@@ -9,11 +9,50 @@
     <version>0.1.0-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
+    <description>LLM demo application.</description>
+    <url>https://github.com/aplpolaris/promptfx</url>
+    <inceptionYear>2023</inceptionYear>
+
+    <!-- configuration of the default license to use -->
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Johns Hopkins University Applied Physics Laboratory</name>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Elisha Peterson</name>
+            <email>triathematician+blaise@gmail.com</email>
+            <url>https://github.com/triathematician</url>
+            <organization>JHU-APL</organization>
+            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aplpolaris/promptfx</url>
+        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
+        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/aplpolaris/promptfx/issues</url>
+    </issueManagement>
 
     <properties>
         <module.name>tri.promptfx</module.name>
         <main.class>tri.promptfx.PromptFxKt</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
+        <license.licenseName>apache_v2</license.licenseName>
         <junit.version>5.9.2</junit.version>
         <javafx.version>17.0.2</javafx.version>
         <kotlin.version>1.8.10</kotlin.version>
@@ -212,6 +251,36 @@
                         <version>1.3.2</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+
+            <!-- Automatically update file headers, and add license file to distribution -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.20</version>
+                <configuration>
+                    <roots>
+                        <root>src/main/kotlin</root>
+                        <root>src/test/kotlin</root>
+                    </roots>
+                    <canUpdateCopyright>true</canUpdateCopyright>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>update-project-license</goal>
+                            <goal>update-file-header</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Version specified for compatibility with maven-project-info-reports-plugin 3.0.0-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.8.2</version>
             </plugin>
         </plugins>
     </build>

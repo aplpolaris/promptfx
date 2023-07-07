@@ -9,9 +9,48 @@
     <version>0.1.0-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
+    <description>LLM and prompt engineering.</description>
+    <url>https://github.com/aplpolaris/promptfx</url>
+    <inceptionYear>2023</inceptionYear>
+
+    <!-- configuration of the default license to use -->
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Johns Hopkins University Applied Physics Laboratory</name>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Elisha Peterson</name>
+            <email>triathematician+blaise@gmail.com</email>
+            <url>https://github.com/triathematician</url>
+            <organization>JHU-APL</organization>
+            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aplpolaris/promptfx</url>
+        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
+        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/aplpolaris/promptfx/issues</url>
+    </issueManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
+        <license.licenseName>apache_v2</license.licenseName>
         <junit.version>5.9.2</junit.version>
         <kotlin.version>1.8.20</kotlin.version>
         <jackson.version>2.14.2</jackson.version>
@@ -117,6 +156,7 @@
     <build>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+
         <plugins>
             <!-- set java 11 -->
             <plugin>
@@ -167,6 +207,122 @@
                     </dependency>
                 </dependencies>
             </plugin>
+
+            <!-- Automatically update file headers, and add license file to distribution -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.20</version>
+                <configuration>
+                    <roots>
+                        <root>src/main/kotlin</root>
+                        <root>src/test/kotlin</root>
+                    </roots>
+                    <canUpdateCopyright>true</canUpdateCopyright>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>update-project-license</goal>
+                            <goal>update-file-header</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Version specified for compatibility with maven-project-info-reports-plugin 3.0.0-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.8.2</version>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <!-- this is for building sources & javadocs, signing, & deploying to staging repo -->
+            <id>release</id>
+            <build>
+                <plugins>
+                    <!-- build sources -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- build javadocs -->
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                        <version>${kotlin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>dokka</goal>
+                                    <goal>javadoc</goal>
+                                    <goal>javadocJar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- build javadocs -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- sign the artifacts with gpg (requires command-line utility) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- deploy to staging repo -->
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.8</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
