@@ -11,7 +11,6 @@ import com.aallam.openai.client.OpenAIConfig
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.COMBO_GPT35
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiSettings
 
 @OptIn(BetaOpenAI::class)
 object OpenAiSimpleChat {

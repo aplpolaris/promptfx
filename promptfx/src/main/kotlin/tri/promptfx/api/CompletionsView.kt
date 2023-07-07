@@ -5,6 +5,7 @@ import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
+import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
 import tri.ai.openai.OpenAiSettings
 import tri.ai.openai.completionModels
@@ -36,16 +37,20 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
-        val completion = CompletionRequest(
-            model = ModelId(model.value),
-            prompt = input.get(),
-            temperature = common.temp.value,
-            topP = common.topP.value,
-            frequencyPenalty = common.freqPenalty.value,
-            presencePenalty = common.presPenalty.value,
-            maxTokens = length.value,
-        )
-        return controller.openAiPlugin.client.completion(completion).asPipelineResult()
+        val completionModel = TextPlugin.textCompletionModels().firstOrNull { it.modelId == model.value.modelId }
+        return if (completionModel != null) {
+            completionModel.complete(text = input.get(), tokens = length.value).asPipelineResult()
+        } else {
+            val completion = CompletionRequest(
+                model = ModelId(model.value.modelId),
+                prompt = input.get(),
+                temperature = common.temp.value,
+                topP = common.topP.value,
+                frequencyPenalty = common.freqPenalty.value,
+                presencePenalty = common.presPenalty.value,
+                maxTokens = length.value,
+            )
+            controller.openAiPlugin.client.completion(completion).asPipelineResult()
     }
 
 }

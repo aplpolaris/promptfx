@@ -30,7 +30,6 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         val newEmbeddings = mutableMapOf<String, EmbeddingDocument>()
         if (newDocs.isNotEmpty()) {
             newDocs.forEach {
-                newEmbeddings[it.absolutePath] = calculateEmbeddingSections(it)
                 try {
                     newEmbeddings[it.absolutePath] = calculateEmbeddingSections(it)
                 } catch (x: IOException) {

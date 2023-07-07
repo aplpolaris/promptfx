@@ -203,7 +203,6 @@ val COMBO_GPT4 = "gpt-4"
 val COMBO_GPT35 = "gpt-3.5-turbo"
 val COMBO_GPT35_16K = "gpt-3.5-turbo-16k"
 
-
 val TEXT_DAVINCI3 = "text-davinci-003"
 val TEXT_DAVINCI2 = "text-davinci-002"
 val TEXT_CURIE = "text-curie-001"
