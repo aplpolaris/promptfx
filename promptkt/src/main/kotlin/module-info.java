@@ -1,3 +1,6 @@
+import tri.ai.core.TextPlugin;
+import tri.ai.openai.OpenAiTextPlugin;
+
 module tri.promptkt {
     requires transitive kotlin.stdlib;
     requires kotlinx.coroutines.core;
@@ -36,4 +39,9 @@ module tri.promptkt {
     exports tri.ai.pips;
     exports tri.ai.prompt;
     exports tri.ai.tool;
+
+    // services (service loader API)
+    uses TextPlugin;
+
+    provides TextPlugin with OpenAiTextPlugin;
 }

@@ -5,12 +5,12 @@ import tri.ai.embedding.TextChunk
 import tri.ai.embedding.TextChunker.chunkBySections
 
 /** An embedding service that uses the OpenAI API. */
-class OpenAiEmbeddingService(val client: OpenAiClient = OpenAiClient.INSTANCE) : EmbeddingService {
+class OpenAiEmbeddingService(val client: OpenAiClient = OpenAiClient.INSTANCE, override val modelId: String = EMBEDDING_ADA) : EmbeddingService {
 
     private val embeddingCache = mutableMapOf<String, List<Double>>()
 
     override suspend fun calculateEmbedding(text: List<String>): List<List<Double>> {
-        val res = client.quickEmbedding(inputs = text).value
+        val res = client.quickEmbedding(inputs = text, modelId = modelId).value
             ?: throw IllegalStateException("No embedding returned.")
         res.forEachIndexed { index, list -> embeddingCache[text[index]] = list }
         return res

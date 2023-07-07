@@ -10,7 +10,7 @@ import java.time.ZoneId
 class ModelsView : AiTaskView("Models", "List all models, sorted by creation date", showInput = false) {
 
     override suspend fun processUserInput(): AiPipelineResult {
-        val models = controller.openAiClient.client.models()
+        val models = controller.openAiPlugin.client.client.models()
             .sortedByDescending { it.created }
             .groupBy { Instant.ofEpochSecond(it.created).monthYear() }
         return models.entries.joinToString("\n\n") { (month, models) ->

@@ -5,7 +5,8 @@ import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
-import tri.ai.openai.OpenAiSettings
+import tri.ai.core.TextPlugin
+import tri.ai.openai.OpenAiClient
 import tri.util.ui.graphic
 
 /** Simple view that aggregates tokens used. */
@@ -21,16 +22,16 @@ class AiEngineView: View() {
             style = "-fx-font-weight: bold;"
         }
         with (controller) {
-            combobox(completionEngine, completionEngineOptions)
+            combobox(completionEngine, TextPlugin.textCompletionModels())
             button("", graphic = FontAwesomeIcon.KEY.graphic) {
                 action {
-                    TextInputDialog(OpenAiSettings.apiKey).apply {
+                    TextInputDialog(OpenAiClient.INSTANCE.settings.apiKey).apply {
                         title = "OpenAI API Key"
                         headerText = "Enter your OpenAI API key."
                         contentText = "API Key:"
                         showAndWait().ifPresent {
                             if (it.isNotBlank())
-                                OpenAiSettings.apiKey = it
+                                OpenAiClient.INSTANCE.settings.apiKey = it
                         }
                     }
                 }

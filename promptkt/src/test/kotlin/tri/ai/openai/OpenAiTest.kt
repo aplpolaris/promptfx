@@ -16,7 +16,7 @@ import tri.ai.embedding.cosineSimilarity
 @Disabled("Requires apikey")
 class OpenAiTest {
 
-    val client = OpenAiSettings.client
+    val client = OpenAiClient.INSTANCE.client
 
     @Test
     fun testChat() = runTest {

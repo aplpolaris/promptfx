@@ -183,7 +183,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 "with $otherPersons. " +
                 "The conversation is taking place ${conversationSetting.value} " +
                 "and has a ${conversationTone.value} tone."
-        return controller.openAiClient.chatCompletion(ChatCompletionRequest(
+        return controller.openAiPlugin.client.chatCompletion(ChatCompletionRequest(
             ModelId(model.value),
             listOf(ChatMessage(ChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),

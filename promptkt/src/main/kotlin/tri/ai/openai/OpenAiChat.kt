@@ -10,7 +10,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 
 /** Chat completion with OpenAI models. */
-class OpenAiChat(val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {
+class OpenAiChat(override val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {
 
     @OptIn(BetaOpenAI::class)
     override suspend fun chat(messages: List<TextChatMessage>, tokenLimit: Int?) =

@@ -5,7 +5,7 @@ import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
 
 /** Text completion with OpenAI models. */
-class OpenAiCompletion(val modelId: String = TEXT_DAVINCI3, val client: OpenAiClient = OpenAiClient.INSTANCE) :
+class OpenAiCompletion(override val modelId: String = TEXT_DAVINCI3, val client: OpenAiClient = OpenAiClient.INSTANCE) :
     TextCompletion {
 
     override fun toString() = modelId

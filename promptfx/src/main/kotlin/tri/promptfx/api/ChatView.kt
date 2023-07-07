@@ -83,7 +83,7 @@ class ChatView : AiTaskView("Chat", "You are chatting with an AI Assistant.") {
             presencePenalty = common.presPenalty.value,
             maxTokens = length.value,
         )
-        return controller.openAiClient.chatCompletion(completion).asPipelineResult()
+        return controller.openAiPlugin.client.chatCompletion(completion).asPipelineResult()
     }
 
 }

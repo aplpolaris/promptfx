@@ -5,10 +5,7 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.memory.*
-import tri.ai.openai.COMBO_GPT35
-import tri.ai.openai.OpenAiChat
-import tri.ai.openai.OpenAiEmbeddingService
-import tri.ai.openai.OpenAiSettings
+import tri.ai.openai.*
 
 /** Example of a chat that has a memory of previous conversations. */
 class OpenAiMemoryChat {
@@ -55,7 +52,7 @@ class OpenAiMemoryChat {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            OpenAiSettings.logLevel = LogLevel.None
+            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
             val chatbot = OpenAiMemoryChat()
             runBlocking {
                 println(chatbot.greeting)

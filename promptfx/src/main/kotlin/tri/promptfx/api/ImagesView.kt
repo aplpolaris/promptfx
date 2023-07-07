@@ -67,7 +67,7 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
-        val result = controller.openAiClient.imageURL(ImageCreation(
+        val result = controller.openAiPlugin.client.imageURL(ImageCreation(
             prompt = input.get(),
             n = numProperty.get(),
             size = imageSize.get()
