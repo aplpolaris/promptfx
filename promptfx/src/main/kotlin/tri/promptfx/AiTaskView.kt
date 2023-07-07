@@ -16,6 +16,26 @@ import tri.ai.pips.AiPipelineResult
 import tri.util.ui.graphic
 import java.lang.Exception
 
+/*-
+ * #%L
+ * promptfx-0.1.0-SNAPSHOT
+ * %%
+ * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 /**
  * A view that executes a task and displays the result. Provides placeholders for input, output, and parameters.
  * Provides a general framework for testing out API calls with basic user input/output.
@@ -50,27 +70,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
         top {
             vbox {
                 label(title) {
-                    style = "-fx-font-size: 18px;
-/*-
- * #%L
- * promptfx-0.1.0-SNAPSHOT
- * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-"
+                    style = "-fx-font-size: 18px;"
                     padding = pad
                 }
                 label(instruction) {

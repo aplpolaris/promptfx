@@ -18,16 +18,6 @@ import tri.promptfx.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.apps.DocumentQaView
 
-/** View for a full-screen chat display. */
-class ImmersiveChatView : Fragment("Immersive Chat") {
-
-    val onUserRequest: suspend (String) -> String by param()
-    val baseComponentTitle: String? by param()
-    val baseComponent: View? by param()
-
-    val indicator = FontAwesomeIcon.ROCKET.graphic.also {
-        it.glyphSize = 60.0
-        it.glyphStyle = "-fx-fill: white;
 /*-
  * #%L
  * promptfx-0.1.0-SNAPSHOT
@@ -37,9 +27,9 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,7 +37,17 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
  * limitations under the License.
  * #L%
  */
-"
+
+/** View for a full-screen chat display. */
+class ImmersiveChatView : Fragment("Immersive Chat") {
+
+    val onUserRequest: suspend (String) -> String by param()
+    val baseComponentTitle: String? by param()
+    val baseComponent: View? by param()
+
+    val indicator = FontAwesomeIcon.ROCKET.graphic.also {
+        it.glyphSize = 60.0
+        it.glyphStyle = "-fx-fill: white;"
     }
 
     val controller: PromptFxController by inject()
