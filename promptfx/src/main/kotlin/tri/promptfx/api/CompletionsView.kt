@@ -51,6 +51,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 maxTokens = length.value,
             )
             controller.openAiPlugin.client.completion(completion).asPipelineResult()
+        }
     }
 
 }
