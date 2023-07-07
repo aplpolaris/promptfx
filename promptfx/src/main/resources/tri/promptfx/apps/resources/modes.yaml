@@ -1,0 +1,115 @@
+# Library of modes for use in other views
+---
+translation:
+  - English
+  - Spanish
+  - French
+  - German
+  - Italian
+  - Latin
+  - Japanese
+  - Chinese
+  - Korean
+  - Russian
+  - Arabic
+  - Greek
+
+entities:
+  - Named Entities
+  - People and Organizations
+  - Locations
+  - Dates and Times
+  - Technologies and Products
+  - Quantities
+  - Money
+  - Percentages
+  - Events
+  - entity-relation triples of facts
+  - entity-relation triples of events
+  - "'is' and 'has' entity relations"
+  - "'is part of' entity relations"
+
+sentiment:
+  - positive or negative
+  - positive, negative, or neutral
+  - very positive, positive, neutral, negative, or very negative
+  - agree, disagree, or discuss
+  - confident, unsure, or neutral
+  - like, dislike, or neutral
+  - joy, sadness, anger, fear, or disgust
+  - work, chore, or fun
+  - work, family, friends, romance, health, money, or recreation
+  - free, cheap, or expensive
+  - person, place, or thing
+  - easy, medium, or hard
+  - 1-5 star rating
+  - 1-5 (1 is very negative, 5 is very positive)
+  - 1-10 (1 is very negative, 10 is very positive)
+
+structured-format:
+  none: ""
+  list: a list
+  csv: CSV
+  json: JSON
+  rdf: RDF triples
+  sql: SQL query
+  uml activity: a PlantUML activity diagram
+  uml mindmap: a PlantUML mindmap diagram
+  vega chart: a Vega chart JSON
+  vegalite chart: a Vega-lite chart JSON
+  xml: XML
+  yaml: YAML
+
+summarization-audience:
+  none: ""
+  alien: "written for an alien civilization"
+  CEO: "written for a CEO"
+  competent engineer: "written for a competent engineer"
+  history: "written for a history textbook"
+  pre-schooler: "written for a pre-schooler"
+  second-grader: "written for a second grader"
+  smart person: "written for the smartest person in the world"
+
+summarization-style:
+  none: ""
+  18th century British Lit: "in the style of 18th century British literature"
+  90s Hip Hop: "in the style of 90s hip hop"
+  Bible: "in the style of the Bible"
+  corporate speak: "in the style of corporate speak"
+  Instagram influencer: "in the style of an Instagram influencer"
+  kindergartener: "in the style of a kindergartener"
+  pirate: "in the style of a pirate"
+  Shakespeare: "in the style of Shakespeare"
+  teenager: "in the style of a moody teenage guy texting his friends"
+
+  Beyonce: "in the style of Beyonce"
+  Childish Gambino: "in the style of Childish Gambino"
+  Churchill: "in the style of Winston Churchill"
+  Edgar Allen Poe: "in the style of Edgar Allen Poe"
+  Gordon Ramsey: "in the style of Gordon Ramsey"
+  JRR Tolkien: "in the style of JRR Tolkien"
+  Lady Gaga: "in the style of Lady Gaga"
+  Mark Twain: "in the style of Mark Twain"
+  Maya Angelou: "in the style of Maya Angelou"
+  Oscar Wilde: "in the style of Oscar Wilde"
+  Stephen Hawking: "in the style of Stephen Hawking"
+  Taylor Swift: "in the style of Taylor Swift"
+
+summarization-format:
+  none: ""
+  aphorism: "an aphorism"
+  bullets: "a numbered list of bullet points, each with sub-bullets"
+  conference paper: "formatted as a conference paper"
+  headline: "a headline"
+  letter: "a letter"
+  meme: "an Internet meme"
+  paper abstract: "formatted as a paper abstract"
+  press release: "formatted as a press release"
+  poem: "formatted as a poem"
+  slide presentation: "formatted as a slide presentation (provide a bullet and sub-bullets for each slide)"
+  speech: "a formal speech"
+  table: "formatted as a markdown table, with topic and summary columns"
+  text: "a text between friends"
+  three main points: "a list of three main points"
+  tl;dr: "a tl;dr summary"
+  tweet: "formatted as a tweet"
