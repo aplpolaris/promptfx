@@ -1,6 +1,5 @@
 package tri.promptfx.api
 
-import tri.ai.openai.OpenAiSettings
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView

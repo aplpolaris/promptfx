@@ -3,19 +3,18 @@ package tri.promptfx.api
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
-import tri.ai.openai.OpenAiSettings
-import tri.ai.openai.completionModels
 import tri.promptfx.AiTaskView
 import tri.promptfx.CommonParameters
 
 class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
 
     private val input = SimpleStringProperty("")
-    private val model = SimpleStringProperty(completionModels[0])
+    private val model = SimpleObjectProperty(TextPlugin.textCompletionModels().first())
     private val length = SimpleIntegerProperty(50)
     private var common = CommonParameters()
 
@@ -23,7 +22,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
         addInputTextArea(input)
         parameters("Completion Model") {
             field("Model") {
-                combobox(model, completionModels)
+                combobox(model, TextPlugin.textCompletionModels())
             }
         }
         parameters("Parameters") {
