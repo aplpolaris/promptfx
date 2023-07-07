@@ -12,6 +12,9 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.stage.DirectoryChooser
 import kotlinx.coroutines.runBlocking
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.safety.Safelist
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalEmbeddingIndex
@@ -27,6 +30,7 @@ import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
@@ -46,7 +50,7 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
     private val chunksToRetrieve = SimpleIntegerProperty(10)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
-    private val maxTokens = SimpleIntegerProperty(150)
+    private val maxTokens = SimpleIntegerProperty(1000)
 
     private val embeddingIndex = documentFolder.objectBinding(maxChunkSize) {
         LocalEmbeddingIndex(it!!, OpenAiEmbeddingService()).apply {
@@ -120,7 +124,7 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
         parameters("Document Snippet Matching and Query") {
             field("# Matches") {
                 tooltip("Number of matching snippets to retrieve from the document database")
-                slider(1..20, chunksToRetrieve)
+                slider(1..50, chunksToRetrieve)
                 label(chunksToRetrieve)
             }
             field("Minimum length") {
@@ -130,12 +134,12 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
             }
             field("Query snippets") {
                 tooltip("Number of matching snippets to send to the question answering engine")
-                slider(1..10, chunksToSendWithQuery)
+                slider(1..20, chunksToSendWithQuery)
                 label(chunksToSendWithQuery)
             }
             field("Max tokens") {
                 tooltip("Max # of tokens for combined query/response from the question answering engine")
-                slider(1..1000, maxTokens)
+                slider(1..2000, maxTokens)
                 label(maxTokens)
             }
         }
@@ -217,13 +221,15 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
 
     val folder: SimpleObjectProperty<File> by param()
 
-    private val url = SimpleStringProperty()
+    private val url = SimpleStringProperty("http://")
 
     override val root = vbox {
         form {
             fieldset("Crawl Settings") {
                 field("URL to Scrape") {
-                    textfield(url)
+                    textfield(url) {
+                        tooltip("Enter URL starting with http:// or https://")
+                    }
                     button("", FontAwesomeIcon.GLOBE.graphic) {
                         disableWhen(url.isEmpty)
                         action { hostServices.showDocument(url.get()) }
@@ -254,9 +260,7 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
             spacing = 10.0
             button("Crawl") {
                 action {
-                    runAsync {
-                        TextCrawler.crawlWebsite(url.value, depth = 1, targetFolder = folder.value)
-                    }
+                    crawlWebsite(url.value, depth = 1, targetFolder = folder.value)
                     close()
                 }
             }
@@ -272,6 +276,39 @@ private fun SimpleObjectProperty<File>.chooseFolder() {
     val selectedFolder = directoryChooser.showDialog(null)
     if (selectedFolder != null) {
         set(selectedFolder)
+    }
+}
+
+private fun crawlWebsite(url: String, depth: Int = 0, targetFolder: File, scraped: MutableSet<String> = mutableSetOf()) {
+    if (url.isBlank() || url in scraped)
+        return
+    runAsync {
+        println("Scraping text and links from $url...")
+        try {
+            val doc = Jsoup.connect(url).get()
+            val docNode = doc.select("article").firstOrNull() ?: doc.body()
+            val nodeHtml = docNode.apply {
+                select("br").before("\\n")
+                select("p").before("\\n")
+            }.html().replace("\\n", "\n")
+            val text = Jsoup.clean(nodeHtml, "", Safelist.none(),
+                Document.OutputSettings().apply { prettyPrint(false) }
+            )
+            if (text.isNotEmpty()) {
+                val title = doc.title().replace("[^a-zA-Z0-9.-]".toRegex(), "_")
+                if (title.length > 2) // require minimum length to avoid saving off blank links
+                    File(targetFolder, "$title.txt").writeText(text)
+                scraped.add(url)
+            }
+            if (depth > 0) {
+                val links = docNode.select("a[href]").map { it.absUrl("href") }.toSet().take(100)
+                links
+                    .filter { it.startsWith("http") }
+                    .forEach { crawlWebsite(it, depth - 1, targetFolder, scraped) }
+            }
+        } catch (x: IOException) {
+            println("  ... failed to retrieve URL due to $x")
+        }
     }
 }
 

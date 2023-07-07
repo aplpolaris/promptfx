@@ -3,29 +3,23 @@ package tri.promptfx
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
+import tri.ai.core.TextChat
 import tri.ai.embedding.EmbeddingService
-import tri.ai.openai.*
 import tri.ai.core.TextCompletion
+import tri.ai.core.TextPlugin
 import tri.ai.pips.UsageUnit
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiClient = OpenAiClient.INSTANCE
-
-    val completionEngineOptions = listOf(
-        OpenAiCompletionChat(COMBO_GPT35, openAiClient),
-        OpenAiCompletionChat(COMBO_GPT4, openAiClient),
-        OpenAiCompletion(TEXT_ADA, openAiClient),
-        OpenAiCompletion(TEXT_BABBAGE, openAiClient),
-        OpenAiCompletion(TEXT_CURIE, openAiClient),
-        OpenAiCompletion(TEXT_DAVINCI3, openAiClient),
-    )
+    val openAiPlugin = TextPlugin.defaultPlugin
 
     val completionEngine: SimpleObjectProperty<TextCompletion> =
-        SimpleObjectProperty(completionEngineOptions.first())
+        SimpleObjectProperty(TextPlugin.textCompletionModels().first())
+    val chatService: SimpleObjectProperty<TextChat> =
+        SimpleObjectProperty(TextPlugin.chatModels().first())
     val embeddingService: SimpleObjectProperty<EmbeddingService> =
-        SimpleObjectProperty(OpenAiEmbeddingService(openAiClient))
+        SimpleObjectProperty(TextPlugin.embeddingModels().first())
 
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)
@@ -33,9 +27,9 @@ class PromptFxController : Controller() {
 
     /** Update usage stats for the OpenAI endpoint. */
     fun updateUsage() {
-        tokensUsed.value = openAiClient.usage[UsageUnit.TOKENS] ?: 0
-        audioUsed.value = openAiClient.usage[UsageUnit.AUDIO_MINUTES] ?: 0
-        imagesUsed.value = openAiClient.usage[UsageUnit.IMAGES] ?: 0
+        tokensUsed.value = openAiPlugin.client.usage[UsageUnit.TOKENS] ?: 0
+        audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_MINUTES] ?: 0
+        imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
     }
 
 }

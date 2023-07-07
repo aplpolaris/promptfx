@@ -5,10 +5,12 @@ import tri.ai.pips.AiTaskResult
 /** Interface for chat completion. */
 interface TextChat {
 
+    val modelId: String
+
     /** Completes user text. */
     suspend fun chat(
         messages: List<TextChatMessage>,
-        tokens: Int? = 150
+        tokens: Int? = 1000
     ): AiTaskResult<TextChatMessage>
 
 }

@@ -3,6 +3,8 @@ package tri.ai.embedding
 /** An interface for chunking text and calculating embeddings. */
 interface EmbeddingService {
 
+    val modelId: String
+
     /**
      * Divide text at reasonable positions. Each chunk should have a length of at most maxChunkSize.
      * The returned map contains the start and end indices of each chunk.

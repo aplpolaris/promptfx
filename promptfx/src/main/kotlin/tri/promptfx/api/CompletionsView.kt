@@ -45,7 +45,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
             presencePenalty = common.presPenalty.value,
             maxTokens = length.value,
         )
-        return controller.openAiClient.completion(completion).asPipelineResult()
+        return controller.openAiPlugin.client.completion(completion).asPipelineResult()
     }
 
 }

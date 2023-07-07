@@ -2,6 +2,7 @@ package tri.ai.tool
 
 import com.aallam.openai.api.logging.LogLevel
 import org.junit.jupiter.api.Test
+import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiCompletion
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiSettings
@@ -9,7 +10,7 @@ import tri.ai.openai.OpenAiSettings
 class ToolChainExecutorTest {
     @Test
     fun testTools() {
-        OpenAiSettings.logLevel = LogLevel.None
+        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Calculator", "Use this to do math") {
             override suspend fun run(input: String) = "42"
@@ -30,7 +31,7 @@ class ToolChainExecutorTest {
 
     @Test
     fun testTools2() {
-        OpenAiSettings.logLevel = LogLevel.None
+        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Data Query", "Use this to search for data that is needed to answer a question") {
             override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500).value!!
@@ -50,7 +51,7 @@ class ToolChainExecutorTest {
 
     @Test
     fun testTools3() {
-        OpenAiSettings.logLevel = LogLevel.None
+        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Calculator", "Use this to do math") {
             override suspend fun run(input: String) = "42"

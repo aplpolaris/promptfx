@@ -8,11 +8,13 @@ import com.aallam.openai.api.core.Usage
 import com.aallam.openai.api.edits.EditsRequest
 import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.file.FileSource
+import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.logging.LogLevel
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.OpenAIHost
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -25,6 +27,7 @@ import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
 import java.io.File
 import java.util.logging.Logger
+import kotlin.time.Duration.Companion.seconds
 
 /** OpenAI API client with built-in usage tracking. */
 class OpenAiClient(val settings: OpenAiSettings) {
@@ -117,31 +120,47 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //endregion
 
     companion object {
-        val INSTANCE by lazy { OpenAiClient(OpenAiSettings) }
+        val INSTANCE by lazy { OpenAiClient(OpenAiSettings()) }
     }
 
 }
 
 /** Manages OpenAI API key and client. */
-object OpenAiSettings {
+class OpenAiSettings {
 
-    const val API_KEY_FILE = "apikey.txt"
-    const val API_KEY_ENV = "OPENAI_API_KEY"
+    val API_KEY_FILE = "apikey.txt"
+    val API_KEY_ENV = "OPENAI_API_KEY"
 
-    var logLevel = LogLevel.Info
+    var baseUrl: String? = null
         set(value) {
             field = value
-            client = OpenAI(OpenAIConfig(token = apiKey, logLevel = value))
+            buildClient()
         }
 
     var apiKey = readApiKey()
         set(value) {
             field = value
-            client = OpenAI(OpenAIConfig(token = value, logLevel = logLevel))
+            buildClient()
         }
 
-    var client = OpenAI(OpenAIConfig(token = apiKey, logLevel = logLevel))
+    var logLevel = LogLevel.Info
+        set(value) {
+            field = value
+            buildClient()
+        }
+
+    var timeoutSeconds = 60
+        set(value) {
+            field = value
+            buildClient()
+        }
+
+    var client: OpenAI
         private set
+
+    init {
+        client = buildClient()
+    }
 
     /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
     private fun readApiKey(): String {
@@ -161,12 +180,29 @@ object OpenAiSettings {
             key
     }
 
+    @Throws(IllegalStateException::class)
+    private fun buildClient(): OpenAI {
+        if (baseUrl.isNullOrBlank() && apiKey.isBlank())
+            throw IllegalStateException("Missing API key")
+        client = OpenAI(
+            OpenAIConfig(
+                host = if (baseUrl == null) OpenAIHost.OpenAI else OpenAIHost(baseUrl!!),
+                token = apiKey ?: "",
+                logLevel = LogLevel.None,
+                timeout = Timeout(socket = timeoutSeconds.seconds)
+            )
+        )
+        return client
+    }
+
 }
 
 //region MODELS
 
 val COMBO_GPT4 = "gpt-4"
 val COMBO_GPT35 = "gpt-3.5-turbo"
+val COMBO_GPT35_16K = "gpt-3.5-turbo-16k"
+
 
 val TEXT_DAVINCI3 = "text-davinci-003"
 val TEXT_DAVINCI2 = "text-davinci-002"

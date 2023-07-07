@@ -9,7 +9,7 @@ import tri.ai.core.TextCompletion
 
 /** Text completion with OpenAI chat models. */
 @OptIn(BetaOpenAI::class)
-class OpenAiCompletionChat(val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) :
+class OpenAiCompletionChat(override val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) :
     TextCompletion {
 
     override fun toString() = modelId

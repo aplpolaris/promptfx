@@ -1,4 +1,4 @@
-package tri.promptfx
+package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -17,7 +17,8 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.openai.audioModels
 import tri.util.ui.AudioRecorder
 import tri.ai.openai.AUDIO_WHISPER
-import tri.ai.openai.OpenAiSettings
+import tri.promptfx.AiTaskView
+import tri.promptfx.CommonParameters
 import java.io.File
 
 /** View for the OpenAI API's [Whisper](https://platform.openai.com/docs/api-reference/audio) endpoint. */
@@ -131,7 +132,7 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
     override suspend fun processUserInput(): AiPipelineResult {
         return when (val f = file.value) {
             null -> AiTaskResult.invalidRequest("No audio file dropped")
-            else -> controller.openAiClient.quickTranscribe(modelId, f)
+            else -> controller.openAiPlugin.client.quickTranscribe(modelId, f)
                 .also { controller.updateUsage() }
         }.asPipelineResult()
     }

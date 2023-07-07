@@ -1,3 +1,4 @@
+import tri.ai.core.TextPlugin;
 import tri.promptfx.apps.*;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
@@ -58,6 +59,7 @@ module tri.promptfx {
     exports tri.util.ui;
 
     // services (service loader API)
+    uses TextPlugin;
     uses NavigableWorkspaceView;
 
     provides NavigableWorkspaceView with

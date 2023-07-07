@@ -1,5 +1,6 @@
 package tri.ai.embedding
 
+import com.aallam.openai.api.exception.OpenAIException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -9,6 +10,7 @@ import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.File
+import java.io.IOException
 
 /** An embedding index that loads the documents from the local file system. */
 class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService) : EmbeddingIndex {
@@ -29,6 +31,13 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         if (newDocs.isNotEmpty()) {
             newDocs.forEach {
                 newEmbeddings[it.absolutePath] = calculateEmbeddingSections(it)
+                try {
+                    newEmbeddings[it.absolutePath] = calculateEmbeddingSections(it)
+                } catch (x: IOException) {
+                    println("Failed to calculate embeddings for $it: $x")
+                } catch (x: OpenAIException) {
+                    println("Failed to calculate embeddings for $it: $x")
+                }
             }
         }
         return newEmbeddings

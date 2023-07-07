@@ -25,7 +25,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
 
     override suspend fun processUserInput(): AiPipelineResult {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
-        return controller.openAiClient.quickEmbedding(model.value, inputs).map {
+        return controller.openAiPlugin.client.quickEmbedding(model.value, inputs).map {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.asPipelineResult()
     }

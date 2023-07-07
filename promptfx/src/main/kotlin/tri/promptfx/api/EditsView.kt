@@ -58,7 +58,7 @@ class EditsView : AiTaskView("Edit", "Enter text to edit, and instructions to ap
             temperature = common.temp.value,
             topP = common.topP.value
         )
-        return controller.openAiClient.edit(request).asPipelineResult()
+        return controller.openAiPlugin.client.edit(request).asPipelineResult()
     }
 
 }

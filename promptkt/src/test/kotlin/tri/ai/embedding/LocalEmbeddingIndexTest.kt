@@ -25,6 +25,8 @@ class LocalEmbeddingIndexTest {
 }
 
 class MockEmbeddingService: EmbeddingService {
+    override val modelId = "mock"
+
     override fun chunkTextBySections(text: String, maxChunkSize: Int): List<TextChunk> {
         return TextChunk(text).chunkBySections(maxChunkSize, combineShortSections = true)
     }
