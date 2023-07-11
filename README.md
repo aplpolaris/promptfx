@@ -59,7 +59,7 @@ The PromptKt library provides a number of features for working with LLM APIs, in
 - configurable prompt templates with [mustache](https://mustache.github.io/) support
 - a basic tool chain execution service
 
-Many of these features resemble features of [LangChcain](https://python.langchain.com/).
+Many of these features resemble features of [LangChain](https://python.langchain.com/).
 
 ## Building PromptKt and PromptFx
 
@@ -81,6 +81,8 @@ To build the project:
 - Run `mvn clean install -DskipTests` from the `promptfx` directory.
 
 Note that you can run tests as part of the build, but many of these require an `apikey.txt` file and use the OpenAI API. We anticipate migrating these to a separate profile and making them available as optional integration tests.
+
+See https://github.com/aplpolaris/promptfx/wiki for additional build/run troubleshooting.
 
 ## Running PromptFx
 
