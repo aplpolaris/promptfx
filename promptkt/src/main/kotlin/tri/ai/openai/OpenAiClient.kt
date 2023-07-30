@@ -104,7 +104,15 @@ class OpenAiClient(val settings: OpenAiSettings) {
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
         client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
-            result(it.choices[0].message!!.content!!, completionRequest.model.id)
+            result(it.choices[0].message!!.content ?: "", completionRequest.model.id)
+        }
+
+    /** Runs a chat response. */
+    @OptIn(BetaOpenAI::class)
+    suspend fun chat(completionRequest: ChatCompletionRequest) =
+        client.chatCompletion(completionRequest).let {
+            usage.increment(it.usage)
+            result(it.choices[0].message!!, completionRequest.model.id)
         }
 
     /** Runs an edit request. */

@@ -81,7 +81,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
         val relevant = chatHistory.map { it to it.embedding.dot(avgHistoryEmbedding) }
             .sortedByDescending { it.second }
             .take(memoryHistoryLimit)
-            .filter { it.first.content.length > 50 }
+            .filter { (it.first.content?: "").length > 50 }
             .map { it.first }
         // gather more recent memories
         val memories = chatHistory.filter { it.isMemory() }.takeLast(memoryHistoryLimit).toSet()
@@ -94,7 +94,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
 
     private suspend fun MemoryItem.withEmbedding(): MemoryItem {
         return if (embedding.isEmpty())
-            MemoryItem(role, content, embeddingService.calculateEmbedding(content).map { String.format("%.4f", it).toFloat() })
+            MemoryItem(role, content, embeddingService.calculateEmbedding(content ?: "").map { String.format("%.4f", it).toFloat() })
         else
             this
     }
@@ -123,11 +123,11 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
                 TextChatMessage(TextChatRole.System, "You are a chatbot that summarizes key content from prior conversations."),
                 TextChatMessage(TextChatRole.User, query)
             ))
-        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + response.value!!.content.trim())
+        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.value!!.content ?: "").trim())
         chatHistory.add(MemoryItem(summaryMessage))
     }
 
     private fun MemoryItem.isMemory() =
-        role == TextChatRole.Assistant && content.startsWith("[MEMORY]")
+        role == TextChatRole.Assistant && (content ?: "").startsWith("[MEMORY]")
 
 }

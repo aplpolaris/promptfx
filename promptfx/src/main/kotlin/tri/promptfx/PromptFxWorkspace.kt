@@ -56,7 +56,8 @@ class PromptFxWorkspace : Workspace() {
             group("OpenAI API", FontAwesomeIcon.CLOUD.graphic.gray) {
                 hyperlinkview<ModelsView>("Models")
                 hyperlinkview<CompletionsView>("Completions")
-                hyperlinkview<ChatView>("Chat")
+                hyperlinkview<ChatViewBasic>("Chat")
+                hyperlinkview<ChatViewAdvanced>("Chat (Advanced)")
                 hyperlinkview<EditsView>("Edits")
                 hyperlinkview<ImagesView>("Images")
                 hyperlinkview<EmbeddingsView>("Embeddings")

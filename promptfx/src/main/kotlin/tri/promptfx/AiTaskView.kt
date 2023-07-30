@@ -220,6 +220,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             try {
                 block()
             } catch (x: Exception) {
+                x.printStackTrace()
                 AiPipelineResult.error(x.message ?: "Unknown error", x)
             }
         }

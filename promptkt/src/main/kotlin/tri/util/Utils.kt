@@ -17,15 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.memory
+package tri.util
 
-import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+val ANSI_RESET = "\u001B[0m"
+val ANSI_RED = "\u001B[31m"
+val ANSI_YELLOW = "\u001B[33m"
+val ANSI_GREEN = "\u001B[32m"
+val ANSI_CYAN = "\u001B[36m"
+val ANSI_GRAY = "\u001B[37m"
 
-data class MemoryItem(val role: TextChatRole, val content: String?, val embedding: List<Float> = listOf()) {
-
-    constructor(msg: TextChatMessage) : this(msg.role, msg.content)
-
-    fun toChatMessage() = TextChatMessage(role, content)
-
-}
+fun <X> String?.ifNotBlank(op: (String) -> X): X? =
+    if (isNullOrBlank()) {
+        null
+    } else {
+        op(this)
+    }

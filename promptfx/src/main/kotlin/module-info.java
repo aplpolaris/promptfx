@@ -35,6 +35,7 @@ module tri.promptfx {
     requires java.logging;
 
     requires kotlinx.coroutines.core;
+    requires kotlinx.serialization.core;
 
     requires openai.core.jvm;
     requires openai.client.jvm;

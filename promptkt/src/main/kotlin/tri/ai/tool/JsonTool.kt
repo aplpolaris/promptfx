@@ -17,15 +17,24 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.memory
+package tri.ai.tool
 
-import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import com.aallam.openai.api.chat.Parameters
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonObject
 
-data class MemoryItem(val role: TextChatRole, val content: String?, val embedding: List<Float> = listOf()) {
+/** A tool that has an explicit JSON schema description. */
+abstract class JsonTool(
+    val name: String,
+    val description: String,
+    val jsonSchema: String
+) {
+    abstract suspend fun run(input: JsonObject): String
 
-    constructor(msg: TextChatMessage) : this(msg.role, msg.content)
-
-    fun toChatMessage() = TextChatMessage(role, content)
+    fun jsonSchemaAsParameters() = try {
+        Parameters.fromJsonString(jsonSchema)
+    } catch (x: SerializationException) {
+        throw RuntimeException("Invalid JSON schema: $jsonSchema", x)
+    }
 
 }
