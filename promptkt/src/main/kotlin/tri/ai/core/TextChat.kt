@@ -35,7 +35,7 @@ interface TextChat {
 }
 
 /** A single message in a chat. */
-class TextChatMessage(val role: TextChatRole, val content: String)
+class TextChatMessage(val role: TextChatRole, val content: String?)
 
 /** The role of a chat message. */
 enum class TextChatRole {

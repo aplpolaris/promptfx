@@ -59,3 +59,10 @@ val MAPPER = ObjectMapper(YAMLFactory()).apply {
 
 fun ResourceLookup.yaml(resource: String) =
     stream(resource).use { MAPPER.readValue(it, Map::class.java) }
+
+fun <X> String?.ifNotBlank(op: (String) -> X): X? =
+    if (isNullOrBlank()) {
+        null
+    } else {
+        op(this)
+    }

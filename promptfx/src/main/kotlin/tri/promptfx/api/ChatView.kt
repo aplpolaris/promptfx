@@ -20,89 +20,113 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.BetaOpenAI
-import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
-import tri.ai.openai.OpenAiSettings
 import tri.ai.openai.chatModels
-import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
-import tri.promptfx.ChatHistoryView
-import tri.promptfx.ChatLineModel
 import tri.promptfx.CommonParameters
 
-@OptIn(BetaOpenAI::class)
-class ChatView : AiTaskView("Chat", "You are chatting with an AI Assistant.") {
+/**
+ * Common functionality for chat API views.
+ * See https://beta.openai.com/docs/api-reference/chat for more information.
+ */
+abstract class ChatView(title: String, instruction: String) : AiTaskView(title, instruction) {
 
-    private val system = SimpleStringProperty("")
-    private lateinit var chatHistory: ChatHistoryView
-    private val model = SimpleStringProperty(chatModels[0])
-    private val messageHistory = SimpleIntegerProperty(10)
-    private val length = SimpleIntegerProperty(50)
-    private var common = CommonParameters()
+    protected val system = SimpleStringProperty("")
+
+    protected val model = SimpleStringProperty(chatModels[0])
+    protected val messageHistory = SimpleIntegerProperty(10)
+
+    protected val stopSequences = SimpleStringProperty("")
+    protected val maxTokens = SimpleIntegerProperty(500)
+    protected var common = CommonParameters()
+
+    protected lateinit var chatHistory: ChatHistoryView
 
     init {
+        initChatSystemMessage()
+        initChatOutput()
+        initChatParameters()
+        initChatResponse()
+    }
+
+    //region INITIALIZATION
+
+    fun initChatSystemMessage() {
         input {
-            text("Enter system message")
+            spacing = 10.0
+            paddingAll = 10.0
+            text("System message:")
+            textarea(system) {
+                vgrow = Priority.ALWAYS
+                isWrapText = true
+            }
         }
-        addInputTextArea(system)
+    }
+
+    fun initChatOutput() {
         output {
+            paddingAll = 10.0
             getChildList()!!.clear()
             chatHistory = ChatHistoryView()
             add(chatHistory)
         }
+    }
+
+    fun initChatParameters() {
         parameters("Chat Model") {
             field("Model") {
                 combobox(model, chatModels)
             }
         }
-        parameters("Parameters") {
+        parameters("Chat Input") {
+            field("Message History") {
+                slider(1..100) {
+                    valueProperty().bindBidirectional(messageHistory)
+                }
+                label(messageHistory.asString())
+            }
+        }
+        parameters("Sampling Parameters") {
             with(common) {
                 temperature()
                 topP()
                 frequencyPenalty()
                 presencePenalty()
             }
-            field("Message History") {
-                slider(1..100) {
-                    valueProperty().bindBidirectional(messageHistory)
-                }
-            }
         }
-        parameters("Output") {
+        parameters("Chat Output") {
             field("Maximum Length") {
                 slider(0..500) {
-                    valueProperty().bindBidirectional(length)
+                    valueProperty().bindBidirectional(maxTokens)
                 }
-                label(length.asString())
+                label(maxTokens.asString())
+            }
+            field("Stop Sequences") {
+                tooltip("A list of up to 4 sequences where the API will stop generating further tokens. Use || to separate sequences.")
+                textfield(stopSequences)
             }
         }
     }
 
-    init {
+    @OptIn(BetaOpenAI::class)
+    fun initChatResponse() {
         onCompleted {
-            chatHistory.components.add(ChatLineModel(ChatRole.Assistant, it.finalResult.toString()))
-            chatHistory.components.add(ChatLineModel(ChatRole.User, ""))
+            it.finalResult?.let {
+                with (chatHistory.components) {
+                    when (it) {
+                        is ChatMessage -> add(ChatLineModel.valueOf(it))
+                        else -> add(ChatLineModel(com.aallam.openai.api.chat.ChatRole.Assistant, it.toString()))
+                    }
+                    add(ChatLineModel(com.aallam.openai.api.chat.ChatRole.User, ""))
+                }
+            }
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
-        val completion = ChatCompletionRequest(
-            model = ModelId(model.value),
-            messages = listOf(ChatMessage(ChatRole.System, system.get())) +
-                    chatHistory.chatMessages().takeLast(messageHistory.value),
-            temperature = common.temp.value,
-            topP = common.topP.value,
-            frequencyPenalty = common.freqPenalty.value,
-            presencePenalty = common.presPenalty.value,
-            maxTokens = length.value,
-        )
-        return controller.openAiPlugin.client.chatCompletion(completion).asPipelineResult()
-    }
+    //endregion
 
 }
