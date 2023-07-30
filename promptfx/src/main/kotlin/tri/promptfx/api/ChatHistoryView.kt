@@ -30,7 +30,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.util.ui.ifNotBlank
+import tri.util.ifNotBlank
 
 @OptIn(BetaOpenAI::class)
 class ChatHistoryView : Fragment() {

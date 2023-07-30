@@ -21,6 +21,11 @@ package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
+import tri.util.ANSI_CYAN
+import tri.util.ANSI_GRAY
+import tri.util.ANSI_GREEN
+import tri.util.ANSI_RESET
+import tri.util.ANSI_YELLOW
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
@@ -102,14 +107,6 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             historyText = "$textCompletion\nObservation: $observation",
             finalResult = if (tool.isTerminal) observation else null
         )
-    }
-
-    companion object {
-        private val ANSI_RESET = "\u001B[0m"
-        private val ANSI_GREEN = "\u001B[32m"
-        private val ANSI_YELLOW = "\u001B[33m"
-        private val ANSI_CYAN = "\u001B[36m"
-        private val ANSI_GRAY = "\u001B[37m"
     }
 
 }

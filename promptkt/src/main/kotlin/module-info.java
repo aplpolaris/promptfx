@@ -23,6 +23,8 @@ import tri.ai.openai.OpenAiTextPlugin;
 module tri.promptkt {
     requires transitive kotlin.stdlib;
     requires kotlinx.coroutines.core;
+    requires kotlinx.serialization.core;
+    requires kotlinx.serialization.json;
 
     requires java.logging;
 
@@ -58,6 +60,7 @@ module tri.promptkt {
     exports tri.ai.pips;
     exports tri.ai.prompt;
     exports tri.ai.tool;
+    exports tri.util;
 
     // services (service loader API)
     uses TextPlugin;

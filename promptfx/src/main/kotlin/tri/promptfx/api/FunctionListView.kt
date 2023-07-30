@@ -21,8 +21,6 @@ package tri.promptfx.api
 
 import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionFunction
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.FunctionCall
 import com.aallam.openai.api.chat.Parameters
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -31,7 +29,7 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.serialization.SerializationException
 import tornadofx.*
-import tri.util.ui.ifNotBlank
+import tri.util.ifNotBlank
 
 @OptIn(BetaOpenAI::class)
 class FunctionListView : Fragment() {

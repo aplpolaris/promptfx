@@ -31,7 +31,7 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.util.ui.ifNotBlank
+import tri.util.ifNotBlank
 
 /**
  * Advanced version of chat API, with support for functions.
