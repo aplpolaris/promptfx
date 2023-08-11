@@ -66,22 +66,20 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     }
 
     override val root = borderpane {
-        val pad = insets(10.0)
+        padding = insets(10.0)
         top {
-            vbox {
+            vbox(10) {
+                padding = insets(0, 0, 10, 0)
                 label(title) {
                     style = "-fx-font-size: 18px;"
-                    padding = pad
                 }
                 label(instruction) {
                     style = "-fx-font-size: 14px;"
-                    padding = pad
                 }
             }
         }
         center {
-            vbox {
-                padding = pad
+            vbox(5) {
                 if (showInput) {
                     splitpane {
                         vgrow = Priority.ALWAYS
@@ -97,12 +95,17 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             }
         }
         right {
-            hbox(10) {
-                isManaged = false
-                padding = pad
-                parameterForm = form {
-                    children.onChange {
-                        this@hbox.isManaged = true
+            hbox {
+                isVisible = false
+                scrollpane {
+                    isFitToWidth = true
+                    isFitToHeight = true
+                    style = "-fx-background-color: transparent; -fx-background-insets: 0";
+                    parameterForm = form {
+                        children.onChange {
+                            this@hbox.isManaged = true
+                            this@hbox.isVisible = true
+                        }
                     }
                 }
             }

@@ -30,6 +30,8 @@ import javafx.scene.control.Dialog
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
+import javafx.stage.Modality
+import javafx.stage.StageStyle
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
@@ -62,10 +64,17 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
                         fitWidth = thumbnailSize
                         fitHeight = thumbnailSize
                         setOnMouseClicked {
-                            Dialog<Image>().apply {
-                                dialogPane.content = ImageView(image)
-                                dialogPane.buttonTypes += ButtonType.CLOSE
-                                showAndWait()
+                            dialog(
+                                modality = Modality.APPLICATION_MODAL,
+                                stageStyle = StageStyle.UNDECORATED,
+                                owner = primaryStage
+                            ) {
+                                form.padding = null
+                                padding = null
+                                imageview(image) {
+                                    onLeftClick { close() }
+                                }
+
                             }
                         }
                     }

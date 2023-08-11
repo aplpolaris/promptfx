@@ -24,7 +24,7 @@ import tri.promptfx.integration.WikipediaViewPlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
 // command line settings:
-// --add-reads kotlin.stdlib=kotlinx.coroutines.core.jvm
+// --add-reads kotlin.stdlib=kotlinx.coroutines.core.jvm (debugging)
 // --add-opens javafx.controls/javafx.scene.control.skin=tornadofx
 // --add-opens javafx.graphics/javafx.scene=tornadofx
 module tri.promptfx {

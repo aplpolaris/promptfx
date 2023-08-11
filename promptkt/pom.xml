@@ -144,13 +144,13 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
-        </dependency>	
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
             <version>1.7.1</version>
             <scope>test</scope>
-        </dependency>	
+        </dependency>
     </dependencies>
 
     <build>

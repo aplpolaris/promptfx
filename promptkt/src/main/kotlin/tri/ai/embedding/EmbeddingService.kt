@@ -46,7 +46,8 @@ interface EmbeddingService {
         println("Calculating embedding for $path...")
         val res = EmbeddingDocument(path)
         val chunks = chunkTextBySections(text, maxChunkSize)
-        val chunkEmbeddings = calculateEmbedding(chunks.map { it.text })
+        val chunkEmbeddings = chunks.map { it.text }.chunked(5) // break into smaller chunks of text for slower embedding APIs
+            .flatMap { calculateEmbedding(it) }
         val embeddingTriples = chunks.zip(chunkEmbeddings).map {
             Triple(it.first.range, it.first.text, it.second)
         }

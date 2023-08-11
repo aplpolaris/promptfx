@@ -28,6 +28,7 @@ import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
+import tri.ai.openai.OpenAiEmbeddingService
 import java.io.File
 import java.io.IOException
 
@@ -136,22 +137,25 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         return embeddingIndex
     }
 
-    companion object {
-        const val INDEX_FILE = "embeddings.json"
+    private fun indexFile() = when {
+        embeddingService is OpenAiEmbeddingService -> "embeddings.json"
+        else -> "embeddings-${embeddingService.modelId.replace("/", "_")}.json"
+    }
 
+    private fun restoreIndex(root: File): Map<String, EmbeddingDocument> =
+        File(root, indexFile()).let {
+            if (it.exists())
+                MAPPER.readValue(File(root, indexFile()))
+            else
+                emptyMap()
+        }
+
+    private fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
+        MAPPER.writerWithDefaultPrettyPrinter()
+            .writeValue(File(root, indexFile()), index)
+
+    companion object {
         private val MAPPER = ObjectMapper()
             .registerModule(KotlinModule())
-
-        fun restoreIndex(root: File): Map<String, EmbeddingDocument> =
-            File(root, INDEX_FILE).let {
-                if (it.exists())
-                    MAPPER.readValue(File(root, INDEX_FILE))
-                else
-                    emptyMap()
-            }
-
-        fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
-            MAPPER.writerWithDefaultPrettyPrinter()
-                .writeValue(File(root, INDEX_FILE), index)
     }
 }

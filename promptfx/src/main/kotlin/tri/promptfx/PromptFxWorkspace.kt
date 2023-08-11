@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.control.TextArea
+import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
 import tri.promptfx.api.*
@@ -36,8 +37,6 @@ import tri.util.ui.gray
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
-
-    private val controller: PromptFxController by inject()
 
     init {
         add(find<AiEngineView>())
@@ -111,6 +110,8 @@ class PromptFxWorkspace : Workspace() {
     }
 
     private fun enterFullScreenMode() {
+        val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
+            ?: Screen.getPrimary()
         find<ImmersiveChatView>(params = mapOf(
             "onUserRequest" to userInputFunction(),
             "baseComponentTitle" to dockedComponent?.title,
@@ -118,8 +119,8 @@ class PromptFxWorkspace : Workspace() {
         )).openWindow(
             StageStyle.UNDECORATED
         )!!.apply {
-            x = 0.0
-            y = 0.0
+            x = curScreen.bounds.minX
+            y = curScreen.bounds.minY
             isMaximized = true
             scene.root.style = "-fx-base:black"
         }
