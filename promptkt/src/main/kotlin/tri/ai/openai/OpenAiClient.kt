@@ -209,12 +209,10 @@ class OpenAiSettings {
 
     @Throws(IllegalStateException::class)
     private fun buildClient(): OpenAI {
-        if (baseUrl.isNullOrBlank() && apiKey.isBlank())
-            throw IllegalStateException("Missing API key")
         client = OpenAI(
             OpenAIConfig(
                 host = if (baseUrl == null) OpenAIHost.OpenAI else OpenAIHost(baseUrl!!),
-                token = apiKey ?: "",
+                token = apiKey,
                 logLevel = LogLevel.None,
                 timeout = Timeout(socket = timeoutSeconds.seconds)
             )

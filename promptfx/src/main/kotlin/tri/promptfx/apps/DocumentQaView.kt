@@ -10,7 +10,7 @@ import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
-import javafx.stage.DirectoryChooser
+import javafx.stage.Window
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -18,10 +18,10 @@ import org.jsoup.safety.Safelist
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.openai.OpenAiEmbeddingService
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.DocumentUtils.browseToDocument
 import tri.promptfx.DocumentUtils.documentThumbnail
@@ -62,6 +62,11 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
         private const val PREF_DOCS_FOLDER = "document-qa.folder"
     }
 
+    private val promptId = SimpleStringProperty("question-answer-docs")
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer") }
+
+    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
     internal val question = SimpleStringProperty("")
     val snippets = observableListOf<EmbeddingMatch>()
 
@@ -72,8 +77,8 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
     private val maxTokens = SimpleIntegerProperty(1000)
 
-    private val embeddingIndex = documentFolder.objectBinding(maxChunkSize) {
-        LocalEmbeddingIndex(it!!, OpenAiEmbeddingService()).apply {
+    private val embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
+        LocalEmbeddingIndex(documentFolder.value, it!!).apply {
             maxChunkSize = this@DocumentQaView.maxChunkSize.value
         }
     }
@@ -112,7 +117,7 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
                 }
                 button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                     tooltip("Select folder with documents for Q&A")
-                    action { documentFolder.chooseFolder() }
+                    action { documentFolder.chooseFolder(currentStage) }
                 }
                 button("", FontAwesomeIcon.GLOBE.graphic) {
                     tooltip("Enter a website to scrape")
@@ -163,6 +168,18 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
                 label(maxTokens)
             }
         }
+        parameters("Prompt Template") {
+            tooltip("Templates are defined in prompts.yaml")
+            field("Template") {
+                combobox(promptId, promptIdList)
+            }
+            field(null, forceLabelIndent = true) {
+                text(promptText).apply {
+                    wrappingWidth = 300.0
+                    promptText.onChange { tooltip(it) }
+                }
+            }
+        }
     }
 
     override fun plan() = aitask("calculate-embeddings") {
@@ -174,7 +191,7 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
         val queryChunks = it.filter { it.section.length >= minChunkSizeForRelevancy.value }
             .take(chunksToSendWithQuery.value)
         val context = constructContextForQuery(queryChunks)
-        completionEngine.instructTask("question-answer-docs", question.get(), context, maxTokens.value)
+        completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value)
     }.planner
 
     private suspend fun findRelevantSection(query: String): AiTaskResult<List<EmbeddingMatch>> {
@@ -270,7 +287,7 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
                         }
                     }
                     button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                        action { folder.chooseFolder() }
+                        action { folder.chooseFolder(currentStage) }
                     }
                 }
             }
@@ -288,14 +305,13 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
     }
 }
 
-private fun SimpleObjectProperty<File>.chooseFolder() {
-    val directoryChooser = DirectoryChooser()
-    if (get().isDirectory) {
-        directoryChooser.initialDirectory = get()
-    }
-    val selectedFolder = directoryChooser.showDialog(null)
-    if (selectedFolder != null) {
-        set(selectedFolder)
+private fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
+    chooseDirectory(
+        title = "Select Document Folder",
+        initialDirectory = value,
+        owner = owner
+    )?.let {
+        set(it)
     }
 }
 

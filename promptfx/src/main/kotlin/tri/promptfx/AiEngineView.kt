@@ -42,10 +42,21 @@ class AiEngineView: View() {
             style = "-fx-font-weight: bold;"
         }
         with (controller) {
-            combobox(completionEngine, TextPlugin.textCompletionModels())
+            combobox(completionEngine, TextPlugin.textCompletionModels()) {
+                tooltip("The default completion engine to use for all text completion tasks, if not selectable in view parameters.")
+                maxWidth = 200.0
+            }
+            label("Embedding Engine: ") {
+                style = "-fx-font-weight: bold;"
+            }
+            combobox(embeddingService, TextPlugin.embeddingModels()) {
+                tooltip("The default embedding engine to use for all text embedding tasks, if not selectable in view parameters.")
+                maxWidth = 200.0
+            }
             button("", graphic = FontAwesomeIcon.KEY.graphic) {
                 action {
                     TextInputDialog(OpenAiClient.INSTANCE.settings.apiKey).apply {
+                        initOwner(primaryStage)
                         title = "OpenAI API Key"
                         headerText = "Enter your OpenAI API key."
                         contentText = "API Key:"
@@ -61,6 +72,7 @@ class AiEngineView: View() {
                     .replace(", 0 audio", "")
                     .replace(", 0 images", "")
             }) {
+                tooltip("Estimated usage of tokens and images. The actual value may be higher. Click to navigate to the OpenAI account usage page.")
                 style = "-fx-font-weight: bold;"
                 cursor = Cursor.HAND
                 onLeftClick {

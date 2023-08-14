@@ -22,6 +22,7 @@ package tri.promptfx.apps
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.instructTextPlan
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -31,6 +32,11 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     private val question = SimpleStringProperty("")
     private val sourceText = SimpleStringProperty("")
 
+    private val promptId = SimpleStringProperty("question-answer")
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer") }
+
+    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
     init {
         addInputTextArea(question)
         input {
@@ -39,10 +45,21 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
                 isWrapText = true
             }
         }
+        parameters("Prompt Template") {
+            field("Template") {
+                combobox(promptId, promptIdList)
+            }
+            field(null, forceLabelIndent = true) {
+                text(promptText).apply {
+                    wrappingWidth = 300.0
+                    promptText.onChange { tooltip(it) }
+                }
+            }
+        }
     }
 
     override fun plan() = completionEngine.instructTextPlan(
-        "question-answer",
+        promptId.value,
         instruct = question.get(),
         userText = sourceText.get(),
         tokenLimit = 500)

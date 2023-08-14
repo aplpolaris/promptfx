@@ -40,7 +40,13 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
     private fun updateOutputTextAreaColor(result: String) {
         val outputEditor = outputPane.lookup(".text-area") as javafx.scene.control.TextArea
         try {
-            val color = Color.web(result.trim())
+            val text = result.substringAfter("#").trim()
+            val color = Color.web(
+                if (text.length == 5 && text.startsWith("FF"))
+                    text.substring(2)
+                else
+                    text
+            )
             val fgColor = if (color.brightness > 0.5) "#000000" else "#ffffff"
             // update outputEditor foreground and background colors based on this
             outputEditor.lookup(".content").style = "-fx-background-color: ${color.hex()};"

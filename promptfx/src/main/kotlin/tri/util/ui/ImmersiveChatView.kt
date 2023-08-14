@@ -73,7 +73,9 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         spacing = 20.0
         stylesheets.add(css.toExternalForm())
 
-        val screenHeight = Screen.getPrimary().bounds.height
+        val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
+            ?: Screen.getPrimary()
+        val screenHeight = curScreen.bounds.height
 
         // add spacer with height 0.1
         vbox {

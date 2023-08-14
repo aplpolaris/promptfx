@@ -1,13 +1,28 @@
 # Library of prompts
+#
+# Usage:
+#  - preconfigured prompt file in "prompts.yaml" in promptkt
+#  - custom prompt file in "prompts.yaml" in the current directory
+#
+# Syntax:
+#  - mustache templates: https://mustache.github.io/mustache.5.html
+#  - double braces to insert text {{...}}
+#  - triple braces to insert text without escaping HTML {{{...}}}
+#
+# Keywords:
+#  - many templates expect {{input}} and/or {{instruct}}
+#  - {{today}} is always replaced with the current date
+#
 ---
 entity-extraction: |
   Extract content from the given text. The result should be a list of {{mode}}{{#format}} formatted as {{format}}{{/format}}. 
   ```
-  {{input}}
+  {{{input}}}
   ```
 
 example-color: |
-  Complete the following with a 6-digit CSS code for a color like {{input}}.
+  Create a 6-digit CSS code (e.g. `#808080`) for a color like the following text.
+  text: {{input}}
   background-color: #
 
 example-emoji: |
@@ -20,9 +35,9 @@ example-emoji: |
 
 question-answer: |
   Answer the following question about the text below. If you do not know the answer, say you don't know.
-  Question: {{instruct}}
+  Question: {{{instruct}}}
   ```
-  {{input}}
+  {{{input}}}
   ```
   Answer:
 
@@ -44,15 +59,15 @@ question-answer-docs: |
   """
   
   Question:
-    {{instruct}}
+    {{{instruct}}}
   Excerpts:
-    {{input}}
+    {{{input}}}
   Answer:
 
 question-answer-docs2: |
   Here is a collection of document sections, to be used for a question below.
   ```
-  {{input}}
+  {{{input}}}
   ```
   Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
   Include numbered citations.
@@ -65,49 +80,98 @@ question-answer-docs2: |
   [2] a_history_of_annapolis.txt
   [3] maryland.txt
 
-  Question: {{instruct}}
+  Question: {{{instruct}}}
 
   Answer: 
 
 question-answer-docs-basic: |
   Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
   Please also indicate the documents used to answer the question.
-  Question: {{instruct}}
+  Question: {{{instruct}}}
   ```
-  {{input}}
+  {{{input}}}
   ```
+  Answer: 
+
+question-answer-docs-basic-dolly: |
+  Below is an instruction that includes a user question and some input. Write a response that appropriately completes the request, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations for your answer.
+  
+  ### Instruction
+  {{{instruct}}}
+
+  Input:
+  {{{input}}}
+
+  ### Response
+
+question-answer-docs-basic-falcon: |
+  >>INSTRUCTION<<
+  Answer the question using the provided text, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations for your answer.
+  >>CONTEXT<<
+  {{{input}}}
+  >>QUESTION<<
+  {{{instruct}}}
+  >>ANSWER<<
+
+question-answer-docs-basic-llama: |
+  [INST]
+  <<SYS>>
+  You are a bot that answers questions succinctly.
+  Below is an instruction that includes a user question and some input. Write a response that appropriately completes the request, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations with your answer. Do not say "Sure" or repeat the question.
+  <</SYS>>
+  
+  Question:
+  ```
+  {{{instruct}}}
+  ```
+  
+  Input:
+  ```
+  {{{input}}}
+  ```
+  [/INST]
+  
   Answer:
+
+question-answer-docs-basic-vicuna: |
+  ### System: You are an assistant that answers questions succinctly in English, using the context below. If the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations with your answer.
+  ### Human: Here is the context for my question:
+  ```
+  {{{input}}}
+  ```
+  ### Human: {{{instruct}}}
+  ### Assistant: 
 
 sentiment-classify: |
   Classify the sentiment in this text as {{instruct}}:
   ```
-  {{input}}
+  {{{input}}}
   ```
 
 summarization: |
   Summarize the following. {{instruct}}:
   ```
-  {{input}}
+  {{{input}}}
   ```
 
 text-to-json: |
   Extract information from the following text:
   ```
-  {{input}}
+  {{{input}}}
   ```
   {{#guidance}}The result should contain {{guidance}}.{{/guidance}}
   The result must be formatted as {{#format}}{{format}}{{/format}}{{^format}}structured data{{/format}}.
   {{#example}}
   The result schema should match the following example:
   ```
-  {{example}}
+  {{{example}}}
   ```
   {{/example}}
 
 traffic-api-request: |
   Today is {{today}}. Convert the following natural language request for traffic information into a JSON object:
   ```
-  {{input}}
+  {{{input}}}
   ```
   The JSON object must conform to the following scheme:
   ```
@@ -120,13 +184,13 @@ traffic-api-request: |
 translate-text: |
   Translate this text to {{instruct}}:
   ```
-  {{input}}
+  {{{input}}}
   ```
 
 weather-api-request: |
   Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
   ```
-  {{input}}
+  {{{input}}}
   ```
   The JSON object must conform to the following schema:
   ```
@@ -142,7 +206,7 @@ weather-response-formatter: |
   If you cannot answer the question directly but there is useful weather information in the data, provide a summary of the JSON as a basic weather forecast.
   Question: {{instruct}}
   ```
-  {{input}}
+  {{{input}}}
   ```
 
 wikipedia-page-guess: |
