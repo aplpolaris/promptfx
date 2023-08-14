@@ -2,7 +2,7 @@
 
 This project provides a prototype Kotlin module for AI prompt chaining (`promptkt`) and an associated JavaFx demonstration UI (`promptfx`). It is intended primarily for demonstration purposes, and is designed to be primarily used with the OpenAI API (https://platform.openai.com/docs/api-reference) or a compatible LLM API.
 
-See below for instructions to build and run PromptFx.
+See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-and-promptfx) and [the wiki](https://github.com/aplpolaris/promptfx/wiki) for instructions to build and run PromptFx and troubleshooting.
 
 ## PromptFx UI Features
 
