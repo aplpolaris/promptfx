@@ -26,6 +26,8 @@ import tri.ai.embedding.TextChunker.chunkBySections
 /** An embedding service that uses the OpenAI API. */
 class OpenAiEmbeddingService(val client: OpenAiClient = OpenAiClient.INSTANCE, override val modelId: String = EMBEDDING_ADA) : EmbeddingService {
 
+    override fun toString() = modelId
+
     private val embeddingCache = mutableMapOf<String, List<Double>>()
 
     override suspend fun calculateEmbedding(text: List<String>): List<List<Double>> {
