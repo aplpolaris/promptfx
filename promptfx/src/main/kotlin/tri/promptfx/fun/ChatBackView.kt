@@ -29,6 +29,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import javafx.scene.text.FontWeight
 import tornadofx.*
 import tri.ai.openai.chatModels
 import tri.ai.pips.AiPlanner
@@ -37,6 +38,8 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.CommonParameters
+import tri.promptfx.ui.ChatView
+import tri.promptfx.ui.UserMessage
 import tri.util.ui.graphic
 
 @OptIn(BetaOpenAI::class)
@@ -58,7 +61,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     private val userInput = SimpleStringProperty("")
 
     private val history = ChatBackHistory()
-    private val chatHistory = SimpleStringProperty("")
+    private val chatHistory = observableListOf<UserMessage>()
 
     //region TRACKING PERSONS - CURRENT AND NEXT
 
@@ -113,16 +116,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                     }
                 }
             }
-            // TODO - make this a listview with a custom cell factory
-            textarea(chatHistory) {
-                vgrow = Priority.ALWAYS
-                isWrapText = true
-                isEditable = false
-                style { fontSize = 18.px }
-                chatHistory.onChange {
-                    appendText("")
-                }
-            }
+            find<ChatView>(params = mapOf("chats" to chatHistory)).root.attachTo(this)
         }
         parameters("Conversation") {
             field("People: ") {
@@ -164,9 +158,9 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             val response = it.finalResult.toString()
             if (response.startsWith("$nextPerson:")) {
                 val (person, message) = response.split(": ", limit = 2)
-                history.conversations.add(person to message)
+                history.conversations.add(UserMessage(person, message))
             } else {
-                history.conversations.add(nextPerson to response)
+                history.conversations.add(UserMessage(nextPerson, response))
             }
             updateHistoryView()
         }
@@ -175,7 +169,6 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     override fun plan() = object : AiPlanner {
         override fun plan(): List<AiTask<*>> {
             addUserInputToHistory()
-            updateHistoryView()
 
             return aitask("chat-back") {
                 chatBack()
@@ -187,13 +180,17 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         val person = userPerson.value
         val input = userInput.value
         if (input.isNotBlank()) {
-            history.conversations.add(person to input)
+            history.conversations.add(UserMessage(person, input))
             userInput.set("")
         }
     }
 
     private fun updateHistoryView() {
-        chatHistory.set(history.conversations.joinToString("\n\n") { "${it.first}: ${it.second}" })
+//        runAsync {
+//            // nothing here, just pass over to UI thread
+//        } ui {
+            chatHistory.setAll(history.conversations)
+//        }
     }
 
     private suspend fun chatBack(): AiTaskResult<String> {
@@ -217,22 +214,20 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
 private class ChatBackHistory {
 
     /** Key is person, value is what they said. */
-    val conversations = mutableListOf<PersonMessage>()
+    val conversations = mutableListOf<UserMessage>()
 
     /** Last person to speak. */
     val lastPerson
-        get() = conversations.lastOrNull()?.first
+        get() = conversations.lastOrNull()?.user
 
     /** Convert to AI message list, with given user mapping. */
     fun toChatMessages(nextPerson: String, otherPersons: String, maxMessageHistory: Int) =
                 conversations.takeLast(maxMessageHistory).map {
-                    val role = if (it.first == nextPerson) ChatRole.Assistant else ChatRole.User
-                    ChatMessage(role, "${it.first}: ${it.second}")
+                    val role = if (it.user == nextPerson) ChatRole.Assistant else ChatRole.User
+                    ChatMessage(role, "${it.user}: ${it.message}")
                 }
 
     fun clear() {
         conversations.clear()
     }
 }
-
-typealias PersonMessage = Pair<String, String>

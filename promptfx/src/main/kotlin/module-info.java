@@ -70,12 +70,14 @@ module tri.promptfx {
     opens tri.promptfx.apps.resources to tornadofx;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
+    opens tri.promptfx.ui to com.fasterxml.jackson.databind;
 
     exports tri.promptfx;
     exports tri.promptfx.api;
     exports tri.promptfx.apps;
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
+    exports tri.promptfx.ui;
     exports tri.util.ui;
 
     // services (service loader API)
