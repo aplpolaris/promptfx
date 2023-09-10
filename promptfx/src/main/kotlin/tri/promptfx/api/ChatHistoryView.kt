@@ -19,7 +19,6 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.chat.FunctionCall
@@ -32,7 +31,6 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.util.ifNotBlank
 
-@OptIn(BetaOpenAI::class)
 class ChatHistoryView : Fragment() {
 
     val components = observableListOf<ChatLineModel>().apply {
@@ -99,27 +97,26 @@ class ChatHistoryView : Fragment() {
     }
 
     fun chatMessages() = components.map {
-        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, it.functionCall)
+        ChatMessage(it.role, it.content, it.name.ifBlank { null }, it.functionCall)
     }
 
 }
 
-@OptIn(BetaOpenAI::class)
 class ChatLineModel(role: ChatRole = ChatRole.User, content: String = "", name: String? = null, functionCall: FunctionCall? = null) : ViewModel() {
     val roleProperty = SimpleObjectProperty(role)
-    val role by roleProperty
+    val role: ChatRole by roleProperty
 
     val contentProperty = SimpleStringProperty(content)
-    var content by contentProperty
+    var content: String by contentProperty
 
     val nameProperty = SimpleStringProperty(name)
-    var name by nameProperty
+    var name: String by nameProperty
 
     val functionCallNameProperty = SimpleStringProperty(functionCall?.name)
-    var functionCallName by functionCallNameProperty
+    var functionCallName: String by functionCallNameProperty
 
     val functionCallArgsProperty = SimpleStringProperty(functionCall?.arguments)
-    var functionCallArgs by functionCallArgsProperty
+    var functionCallArgs: String by functionCallArgsProperty
 
     val functionCall: FunctionCall?
         get() = functionCallName.ifNotBlank { FunctionCall(it, functionCallArgs) }

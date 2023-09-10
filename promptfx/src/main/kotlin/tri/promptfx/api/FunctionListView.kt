@@ -19,7 +19,6 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionFunction
 import com.aallam.openai.api.chat.Parameters
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
@@ -31,7 +30,6 @@ import kotlinx.serialization.SerializationException
 import tornadofx.*
 import tri.util.ifNotBlank
 
-@OptIn(BetaOpenAI::class)
 class FunctionListView : Fragment() {
 
     val components = observableListOf<FunctionLineModel>()
@@ -100,6 +98,7 @@ class FunctionListView : Fragment() {
     fun functions() = components.mapNotNull {
         try {
             val params = it.parameters.ifNotBlank { Parameters.fromJsonString(it) }
+                ?: Parameters.Empty
             ChatCompletionFunction(it.name, it.description, params)
         } catch (x: SerializationException) {
             println(x)
@@ -111,12 +110,12 @@ class FunctionListView : Fragment() {
 
 class FunctionLineModel(name: String, description: String = "", params: String = "") {
     val nameProperty = SimpleStringProperty(name)
-    var name by nameProperty
+    var name: String by nameProperty
 
     val descriptionProperty = SimpleStringProperty(description)
-    var description by descriptionProperty
+    var description: String by descriptionProperty
 
     // example: {"type":"object","properties":{"location":{"type":"string","description":"city and state"}}}
     val parametersProperty = SimpleStringProperty(params)
-    var parameters by parametersProperty
+    var parameters: String by parametersProperty
 }

@@ -19,16 +19,11 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.image.ImageSize
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.scene.control.ButtonType
-import javafx.scene.control.Dialog
-import javafx.scene.image.Image
-import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.stage.Modality
 import javafx.stage.StageStyle
@@ -38,7 +33,6 @@ import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
 
 /** View for the OpenAI API's image endpoint. */
-@OptIn(BetaOpenAI::class)
 class ImagesView : AiTaskView("Images", "Enter image prompt") {
 
     private val input = SimpleStringProperty("")
@@ -48,7 +42,9 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
     private val numProperty = SimpleIntegerProperty(1)
     private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
 
-    private val IMAGE_SIZES = listOf(ImageSize.is256x256, ImageSize.is512x512, ImageSize.is1024x1024)
+    companion object {
+        private val IMAGE_SIZES = listOf(ImageSize.is256x256, ImageSize.is512x512, ImageSize.is1024x1024)
+    }
 
     init {
         addInputTextArea(input)

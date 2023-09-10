@@ -23,10 +23,10 @@ import com.aallam.openai.api.moderation.ModerationModel
 import com.aallam.openai.api.moderation.ModerationRequest
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.*
-import tri.ai.pips.AiPipelineResult
-import tri.ai.openai.OpenAiSettings
+import tornadofx.combobox
+import tornadofx.field
 import tri.ai.openai.mapper
+import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
 

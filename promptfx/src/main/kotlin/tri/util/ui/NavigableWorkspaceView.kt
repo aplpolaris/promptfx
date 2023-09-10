@@ -35,10 +35,8 @@ interface NavigableWorkspaceView {
 
     companion object {
         val viewPlugins: List<NavigableWorkspaceView> by lazy {
-            ServiceLoader.load(NavigableWorkspaceView::class.java).toList().also {
-                it.forEach {
-                    println("Loaded NavigableWorkspaceView: ${it.category} - ${it.name}")
-                }
+            ServiceLoader.load(NavigableWorkspaceView::class.java).toList().onEach {
+                println("Loaded NavigableWorkspaceView: ${it.category} - ${it.name}")
             }
         }
     }

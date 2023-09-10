@@ -57,5 +57,5 @@ val MAPPER = ObjectMapper(YAMLFactory()).apply {
     registerModule(JavaTimeModule())
 }
 
-fun ResourceLookup.yaml(resource: String) =
+fun ResourceLookup.yaml(resource: String): Map<*, *> =
     stream(resource).use { MAPPER.readValue(it, Map::class.java) }

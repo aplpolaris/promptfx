@@ -19,7 +19,6 @@
  */
 package tri.promptfx.`fun`
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -37,11 +36,10 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.CommonParameters
-import tri.promptfx.ui.ChatPanel
 import tri.promptfx.ui.ChatEntry
+import tri.promptfx.ui.ChatPanel
 import tri.util.ui.graphic
 
-@OptIn(BetaOpenAI::class)
 class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting prompt and/or add to conversation below.") {
 
     private val model = SimpleStringProperty(chatModels[0])
@@ -209,7 +207,6 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
 }
 
 /** Tracks conversation among multiple parties over time. */
-@OptIn(BetaOpenAI::class)
 private class ChatBackHistory {
 
     /** Key is person, value is what they said. */

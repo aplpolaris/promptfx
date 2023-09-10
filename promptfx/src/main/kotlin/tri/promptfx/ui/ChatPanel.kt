@@ -20,7 +20,6 @@
 package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
-import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color

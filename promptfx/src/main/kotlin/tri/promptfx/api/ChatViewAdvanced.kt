@@ -19,7 +19,6 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -37,7 +36,6 @@ import tri.util.ifNotBlank
  * Advanced version of chat API, with support for functions.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-@OptIn(BetaOpenAI::class)
 class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an AI Assistant.") {
 
     private val functionVisible = SimpleBooleanProperty(false)
