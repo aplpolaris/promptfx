@@ -12,6 +12,8 @@ import javafx.scene.layout.VBox
 import javafx.scene.text.Font
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.TextCompletion
+import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.AiPipelineResult
 import tri.util.ui.graphic
 import java.lang.Exception
@@ -53,9 +55,9 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
 
-    val completionEngine
+    val completionEngine: TextCompletion
         get() = controller.completionEngine.value
-    val embeddingService
+    val embeddingService: EmbeddingService
         get() = controller.embeddingService.value
 
     init {
@@ -100,7 +102,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
                 scrollpane {
                     isFitToWidth = true
                     isFitToHeight = true
-                    style = "-fx-background-color: transparent; -fx-background-insets: 0";
+                    style = "-fx-background-color: transparent; -fx-background-insets: 0"
                     parameterForm = form {
                         children.onChange {
                             this@hbox.isManaged = true
@@ -171,7 +173,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
         }
     }
 
-    /** Adds a default output area to the view. By default updates with text result of the task. */
+    /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea(): TextArea {
         var result: TextArea? = null
         output {

@@ -19,10 +19,9 @@
  */
 package tri.ai.embedding
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.TextChunker.chunkBySections
-import java.io.File
 
 class TextChunkerTest {
 

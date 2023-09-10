@@ -51,7 +51,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
             memoryFile.writeText("[]")
         }
         val memory = ObjectMapper()
-            .registerModule(KotlinModule())
+            .registerModule(KotlinModule.Builder().build())
             .readValue<List<MemoryItem>>(memoryFile)
         chatHistory.addAll(memory)
     }
@@ -62,7 +62,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
             generateMemories()
             val memories = chatHistory.map { it.withEmbedding() }
             ObjectMapper()
-                .registerModule(KotlinModule())
+                .registerModule(KotlinModule.Builder().build())
                 .writerWithDefaultPrettyPrinter()
                 .writeValue(memoryFile, memories)
         }

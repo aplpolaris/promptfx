@@ -19,19 +19,16 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
-import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 
 /**
  * Basic version of chat through API.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-@OptIn(BetaOpenAI::class)
 class ChatViewBasic : ChatView("Chat", "You are chatting with an AI Assistant.") {
 
     override suspend fun processUserInput(): AiPipelineResult {

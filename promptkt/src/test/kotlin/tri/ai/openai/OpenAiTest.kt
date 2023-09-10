@@ -19,7 +19,6 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
 
-@OptIn(BetaOpenAI::class)
 @Disabled("Requires apikey")
 class OpenAiTest {
 
@@ -45,7 +43,7 @@ class OpenAiTest {
                 listOf(ChatMessage(ChatRole.User, "Give me a haiku about Kotlin."))
             )
         )
-        println(res.choices[0].message!!.content!!.trim())
+        println(res.choices[0].message.content!!.trim())
     }
 
     @Test

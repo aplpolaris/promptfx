@@ -21,7 +21,6 @@ package tri.promptfx.integration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.openai.OpenAiSettings
 import tri.ai.openai.mapper
 import java.io.File
 import java.io.IOException

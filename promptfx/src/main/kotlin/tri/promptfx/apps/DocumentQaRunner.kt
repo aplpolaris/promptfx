@@ -23,7 +23,6 @@ import com.aallam.openai.api.logging.LogLevel
 import javafx.application.Platform
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiSettings
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.IgnoreMonitor
 import java.io.File

@@ -30,8 +30,8 @@ import java.nio.file.Files
 /** Utility class for crawling/scraping a website. */
 object TextCrawler {
 
-    private val REQUIRE_ARTICLE = true
-    private val CRAWL_LIMIT_LINKS = 100
+    private const val REQUIRE_ARTICLE = true
+    private const val CRAWL_LIMIT_LINKS = 100
 
     /** Crawls a website and saves the text from each page to a file. */
     fun crawlWebsite(url: String, depth: Int = 0, targetFolder: File, scraped: MutableSet<String> = mutableSetOf()) {

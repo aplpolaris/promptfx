@@ -19,7 +19,6 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatMessage
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
@@ -112,7 +111,6 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
         }
     }
 
-    @OptIn(BetaOpenAI::class)
     fun initChatResponse() {
         onCompleted {
             it.finalResult?.let {
