@@ -19,13 +19,11 @@
  */
 package tri.ai.embedding
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.TextChunker.chunkBySections
 import kotlin.io.path.toPath
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class LocalEmbeddingIndexTest {
 
     @Test

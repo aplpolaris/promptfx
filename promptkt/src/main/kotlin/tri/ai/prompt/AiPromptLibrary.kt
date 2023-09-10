@@ -46,7 +46,7 @@ class AiPromptLibrary {
         }
 
         val MAPPER = ObjectMapper(YAMLFactory()).apply {
-            registerModule(KotlinModule())
+            registerModule(KotlinModule.Builder().build())
             registerModule(JavaTimeModule())
         }
 

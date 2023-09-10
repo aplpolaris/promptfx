@@ -19,7 +19,7 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.BetaOpenAI
+import com.aallam.openai.api.LegacyOpenAI
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.completion.CompletionRequest
@@ -31,6 +31,7 @@ import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.logging.LogLevel
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.client.LoggingConfig
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
@@ -45,6 +46,7 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
 import java.io.File
+import java.util.*
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
 
@@ -73,7 +75,6 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs a quick audio transcription for a given file. */
-    @OptIn(BetaOpenAI::class)
     suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiTaskResult<String> {
         if (!audioFile.isAudioFile())
             return AiTaskResult.invalidRequest("Audio file not provided.")
@@ -93,6 +94,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
+    @OptIn(LegacyOpenAI::class)
     suspend fun completion(completionRequest: CompletionRequest) =
         client.completion(completionRequest).let {
             usage.increment(it.usage)
@@ -100,22 +102,21 @@ class OpenAiClient(val settings: OpenAiSettings) {
         }
 
     /** Runs a text completion request using a chat model. */
-    @OptIn(BetaOpenAI::class)
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
         client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
-            result(it.choices[0].message!!.content ?: "", completionRequest.model.id)
+            result(it.choices[0].message.content ?: "", completionRequest.model.id)
         }
 
     /** Runs a chat response. */
-    @OptIn(BetaOpenAI::class)
     suspend fun chat(completionRequest: ChatCompletionRequest) =
         client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
-            result(it.choices[0].message!!, completionRequest.model.id)
+            result(it.choices[0].message, completionRequest.model.id)
         }
 
-    /** Runs an edit request. */
+    /** Runs an edit request (deprecated API). */
+    @Suppress("DEPRECATION")
     suspend fun edit(request: EditsRequest) =
         client.edit(request).let {
             usage.increment(it.usage)
@@ -123,7 +124,6 @@ class OpenAiClient(val settings: OpenAiSettings) {
         }
 
     /** Runs an image creation request. */
-    @OptIn(BetaOpenAI::class)
     suspend fun imageURL(imageCreation: ImageCreation) =
         client.imageURL(imageCreation).let {
             usage.increment(it.size, UsageUnit.IMAGES)
@@ -155,8 +155,10 @@ class OpenAiClient(val settings: OpenAiSettings) {
 /** Manages OpenAI API key and client. */
 class OpenAiSettings {
 
-    val API_KEY_FILE = "apikey.txt"
-    val API_KEY_ENV = "OPENAI_API_KEY"
+    companion object {
+        const val API_KEY_FILE = "apikey.txt"
+        const val API_KEY_ENV = "OPENAI_API_KEY"
+    }
 
     var baseUrl: String? = null
         set(value) {
@@ -213,7 +215,7 @@ class OpenAiSettings {
             OpenAIConfig(
                 host = if (baseUrl == null) OpenAIHost.OpenAI else OpenAIHost(baseUrl!!),
                 token = apiKey,
-                logLevel = LogLevel.None,
+                logging = LoggingConfig(LogLevel.None),
                 timeout = Timeout(socket = timeoutSeconds.seconds)
             )
         )
@@ -224,29 +226,29 @@ class OpenAiSettings {
 
 //region MODELS
 
-val COMBO_GPT4 = "gpt-4"
-val COMBO_GPT35 = "gpt-3.5-turbo"
-val COMBO_GPT35_16K = "gpt-3.5-turbo-16k"
+const val COMBO_GPT4 = "gpt-4"
+const val COMBO_GPT35 = "gpt-3.5-turbo"
+const val COMBO_GPT35_16K = "gpt-3.5-turbo-16k"
 
-val TEXT_DAVINCI3 = "text-davinci-003"
-val TEXT_DAVINCI2 = "text-davinci-002"
-val TEXT_CURIE = "text-curie-001"
-val TEXT_BABBAGE = "text-babbage-001"
-val TEXT_ADA = "text-ada-001"
+const val TEXT_DAVINCI3 = "text-davinci-003"
+const val TEXT_DAVINCI2 = "text-davinci-002"
+const val TEXT_CURIE = "text-curie-001"
+const val TEXT_BABBAGE = "text-babbage-001"
+const val TEXT_ADA = "text-ada-001"
 
-val EDIT_DAVINCI = "text-davinci-edit-001"
+const val EDIT_DAVINCI = "text-davinci-edit-001"
 
-val INSERT_DAVINCI2 = "text-davinci-insert-002"
-val INSERT_DAVINCI = "text-davinci-insert-001"
+const val INSERT_DAVINCI2 = "text-davinci-insert-002"
+const val INSERT_DAVINCI = "text-davinci-insert-001"
 
-val CODE_DAVINCI2 = "code-davinci-002"
-val CODE_CUSHMAN1 = "code-cushman-001"
-val CODE_EDIT_DAVINCI = "code-davinci-edit-001"
+const val CODE_DAVINCI2 = "code-davinci-002"
+const val CODE_CUSHMAN1 = "code-cushman-001"
+const val CODE_EDIT_DAVINCI = "code-davinci-edit-001"
 
-val EMBEDDING_ADA = "text-embedding-ada-002"
+const val EMBEDDING_ADA = "text-embedding-ada-002"
 
-val AUDIO_WHISPER = "whisper-1"
-val IMAGE_DALLE = "dalle-2"
+const val AUDIO_WHISPER = "whisper-1"
+const val IMAGE_DALLE = "dalle-2"
 
 val chatModels = listOf(COMBO_GPT35, COMBO_GPT4, "$COMBO_GPT35-0301", "$COMBO_GPT4-0314")
 val textModels = listOf(TEXT_DAVINCI3, TEXT_CURIE, TEXT_BABBAGE, TEXT_ADA)
@@ -264,9 +266,10 @@ val imageModels = listOf(IMAGE_DALLE)
 
 val mapper = ObjectMapper()
     .registerModule(JavaTimeModule())
-    .registerModule(KotlinModule())
+    .registerModule(KotlinModule.Builder().build())
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
 
-fun File.isAudioFile() = extension.toLowerCase() in listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
+fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
+        listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
 
 //endregion

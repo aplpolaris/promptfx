@@ -29,7 +29,7 @@ class EmbeddingDocument(val path: String) {
 
     /** Get short name of path. */
     @get:JsonIgnore
-    val shortName
+    val shortName: String
         get() = File(path).name
 
     /** The raw text of the document. */

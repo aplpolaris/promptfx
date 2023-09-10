@@ -19,7 +19,6 @@
  */
 package tri.ai.tool
 
-import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.model.ModelId
 import kotlinx.serialization.SerializationException
@@ -31,7 +30,6 @@ import tri.util.*
  * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
  * query if needed.
  */
-@OptIn(BetaOpenAI::class)
 class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: List<JsonTool>) {
 
     private val functions = tools.mapNotNull {

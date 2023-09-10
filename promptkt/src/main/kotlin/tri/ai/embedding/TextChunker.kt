@@ -192,12 +192,12 @@ fun <X> List<X>.chunkWhile(op: (List<X>) -> Boolean): List<List<X>> {
     for (item in this) {
         current.add(item)
         if (!op(current)) {
-            if (current.size == 1) {
+            current = if (current.size == 1) {
                 result.add(current)
-                current = mutableListOf()
+                mutableListOf()
             } else {
                 result.add(current.dropLast(1))
-                current = current.takeLast(1).toMutableList()
+                current.takeLast(1).toMutableList()
             }
         }
     }

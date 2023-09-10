@@ -22,8 +22,6 @@ package tri.ai.prompt
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.github.mustachejava.DefaultMustacheFactory
-import com.github.mustachejava.MustacheResolver
-import com.github.mustachejava.resolver.DefaultResolver
 import java.io.StringReader
 import java.io.StringWriter
 import java.time.LocalDate

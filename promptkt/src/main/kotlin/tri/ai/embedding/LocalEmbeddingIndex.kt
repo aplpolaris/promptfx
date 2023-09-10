@@ -156,6 +156,6 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
     companion object {
         private val MAPPER = ObjectMapper()
-            .registerModule(KotlinModule())
+            .registerModule(KotlinModule.Builder().build())
     }
 }
