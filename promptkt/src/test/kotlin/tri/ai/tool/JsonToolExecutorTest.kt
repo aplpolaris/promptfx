@@ -24,11 +24,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.COMBO_GPT35
 import tri.ai.openai.OpenAiClient
 
+@Disabled("Requires apikey")
 class JsonToolExecutorTest {
+
     @Test
     fun testTools() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None

@@ -20,10 +20,12 @@
 package tri.ai.tool
 
 import com.aallam.openai.api.logging.LogLevel
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiCompletionChat
 
+@Disabled("Requires apikey")
 class ToolChainExecutorTest {
     @Test
     fun testTools() {
