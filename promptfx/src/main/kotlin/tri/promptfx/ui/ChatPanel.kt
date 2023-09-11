@@ -41,6 +41,9 @@ class ChatPanel: Fragment() {
             padding = insets(10)
             spacing = 5.0
             bindChildren(chats) { chatmessageui(it) }
+
+            // scroll to bottom when new messages are added
+            heightProperty().onChange { vvalue = 1.0 }
         }
     }
 
