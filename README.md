@@ -70,12 +70,6 @@ System requirements:
 OpenAI Client Library:
 - PromptKt/PromptFx use the `openai-kotlin` API client library from https://github.com/aallam/openai-kotlin.
 
-TornadoFx library (required before you can build `promptfx`):
-- PromptFx uses a version of `tornadofx` that is not available on maven central.
-- Clone the repo https://github.com/triathematician/tornadofx.
-- Checkout out the `jdk11-fx18-kotlin16` branch.
-- Run `mvn clean install` to install the `tornadofx` library in your local maven repository.
-
 To build the project:
 - Run `mvn clean install -DskipTests` from the `promptkt` directory.
 - Run `mvn clean install -DskipTests` from the `promptfx` directory.
