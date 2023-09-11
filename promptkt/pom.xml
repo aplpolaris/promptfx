@@ -270,10 +270,10 @@
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
                         <artifactId>dokka-maven-plugin</artifactId>
-                        <version>1.8.20</version>
+                        <version>${kotlin.version}</version>
                         <executions>
                             <execution>
-                                <phase>pre-site</phase>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>javadocJar</goal>
                                 </goals>
@@ -289,21 +289,6 @@
                             <noStdlibLink>true</noStdlibLink>
                             <noJdkLink>true</noJdkLink>
                         </configuration>
-                    </plugin>
-
-                    <!-- build javadocs -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
 
                     <!-- sign the artifacts with gpg (requires command-line utility) -->
