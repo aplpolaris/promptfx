@@ -20,12 +20,11 @@
 package tri.promptfx.apps
 
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tornadofx.text
 import tri.ai.embedding.cosineSimilarity
-import tri.promptfx.AiTaskView
-import tri.ai.openai.EMBEDDING_ADA
+import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
+import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [TextSimilarityView]. */
@@ -34,8 +33,6 @@ class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Tex
 /** View designed to calculate text similarity. */
 class TextSimilarityView: AiTaskView("Text Similarity",
     "Enter two texts to compare. This will also find the paragraphs in the second text that most closely match the first.") {
-
-    private val modelId = EMBEDDING_ADA
 
     private val firstText = SimpleStringProperty("")
     private val secondText = SimpleStringProperty("")
@@ -48,14 +45,14 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
     override suspend fun processUserInput(): AiPipelineResult {
         val chunks = secondText.get().splitIntoChunks()
-        val embeddings = controller.openAiPlugin.client.quickEmbedding(modelId, listOf(firstText.get(), secondText.get()) + chunks)
-        val embedList = embeddings.value!!
+        val mod = controller.embeddingService.get()
+        val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
 
         val score = cosineSimilarity(embedList[0], embedList[1])
         val scoreText = "Overall similarity: %.2f%%".format(score * 100)
 
         return if (chunks.size == 1) {
-            result(scoreText, modelId).asPipelineResult()
+            result(scoreText, mod.modelId).asPipelineResult()
         } else {
             val scores = chunks.mapIndexed { index, line ->
                 val similarity = cosineSimilarity(embedList[0], embedList[index + 2])
@@ -65,7 +62,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
             val secondText =
                 "${"Second closest paragraph match: %.2f%%\n".format(scores[1].second * 100)}${scores[1].first}"
 
-            result("$scoreText\n\n$highestText\n\n$secondText", modelId).asPipelineResult()
+            result("$scoreText\n\n$highestText\n\n$secondText", mod.modelId).asPipelineResult()
         }
     }
 
