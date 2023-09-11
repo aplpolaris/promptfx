@@ -113,7 +113,10 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                     }
                 }
             }
-            find<ChatPanel>(params = mapOf("chats" to chatHistory)).root.attachTo(this)
+            find<ChatPanel>().apply {
+                chats.bind(chatHistory) { it }
+                root.attachTo(this@input)
+            }
         }
         parameters("Conversation") {
             field("People: ") {
