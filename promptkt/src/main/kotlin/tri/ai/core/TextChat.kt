@@ -29,7 +29,8 @@ interface TextChat {
     /** Completes user text. */
     suspend fun chat(
         messages: List<TextChatMessage>,
-        tokens: Int? = 1000
+        tokens: Int? = 1000,
+        stop: List<String>? = null
     ): AiTaskResult<TextChatMessage>
 
 }

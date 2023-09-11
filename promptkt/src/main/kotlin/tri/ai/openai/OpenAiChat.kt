@@ -30,11 +30,12 @@ import tri.ai.core.TextChatRole
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?) =
+    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?) =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             messages.map { it.openAiMessage() },
-            maxTokens = tokens ?: 500
+            maxTokens = tokens ?: 500,
+            stop = stop
         )).map { TextChatMessage(TextChatRole.Assistant, it) }
 
     private fun TextChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)

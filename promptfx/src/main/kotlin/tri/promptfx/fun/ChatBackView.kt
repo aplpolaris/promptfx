@@ -19,23 +19,20 @@
  */
 package tri.promptfx.`fun`
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.model.ModelId
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.TextChatMessage
+import tri.ai.core.TextChatRole
 import tri.ai.openai.chatModels
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.CommonParameters
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -47,14 +44,14 @@ class ChatBackPlugin : NavigableWorkspaceViewImpl<ChatBackView>("Fun", "AI Conve
 /** View with prompts for configuring a topical conversation among various personalities. */
 class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting prompt and/or add to conversation below.") {
 
-    private val model = SimpleStringProperty(chatModels[0])
-    private var common = CommonParameters()
+    private var maxTokens = SimpleIntegerProperty(500)
     private val maxMessageHistory = SimpleIntegerProperty(10)
 
     private val peopleOptions = SimpleStringProperty("Alice, Barry, Craig")
     private val conversationTopic = SimpleStringProperty("dogs")
     private val conversationSetting = SimpleStringProperty("at a park")
     private val conversationTone = SimpleStringProperty("friendly")
+    private val conversationScript = SimpleStringProperty("in a movie script")
 
     private val peopleList
         get() = peopleOptions.value.split(",").map { it.trim() }
@@ -136,24 +133,24 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             field("with tone:") {
                 textfield(conversationTone)
             }
-        }
-        parameters("Chat Model") {
-            field("Model") {
-                combobox(model, chatModels)
+            field("what they might say:") {
+                textfield(conversationScript)
             }
-            field("Max History Size") {
+        }
+        parameters("Chat Options") {
+            field("Conversation history size") {
+                tooltip("How many messages to keep in the conversation history.")
                 slider(1..50) {
                     valueProperty().bindBidirectional(maxMessageHistory)
                 }
                 label(maxMessageHistory)
             }
-        }
-        parameters("Parameters") {
-            with(common) {
-                temperature()
-                topP()
-                frequencyPenalty()
-                presencePenalty()
+            field("Max tokens") {
+                tooltip("Max # of tokens for combined query/response from the question answering engine")
+                slider(0..500) {
+                    valueProperty().bindBidirectional(maxTokens)
+                }
+                label(maxTokens.asString())
             }
         }
     }
@@ -161,8 +158,9 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     init {
         onCompleted {
             val response = it.finalResult.toString()
-            if (response.startsWith("$nextPerson:")) {
-                val (person, message) = response.split(": ", limit = 2)
+            val person = peopleList.firstOrNull { response.startsWith("$it:") }
+            if (person != null) {
+                val message = response.substringAfter(":").trim()
                 history.conversations.add(ChatEntry(person, message))
             } else {
                 history.conversations.add(ChatEntry(nextPerson, response))
@@ -191,11 +189,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     }
 
     private fun updateHistoryView() {
-//        runAsync {
-//            // nothing here, just pass over to UI thread
-//        } ui {
-            chatHistory.setAll(history.conversations)
-//        }
+        chatHistory.setAll(history.conversations)
     }
 
     private suspend fun chatBack(): AiTaskResult<String> {
@@ -203,13 +197,14 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 "talking about ${conversationTopic.value} " +
                 "with $otherPersons. " +
                 "The conversation is taking place ${conversationSetting.value} " +
-                "and has a ${conversationTone.value} tone."
-        return controller.openAiPlugin.client.chatCompletion(ChatCompletionRequest(
-            ModelId(model.value),
-            listOf(ChatMessage(ChatRole.System, systemMessage)) +
+                "and has a ${conversationTone.value} tone.\n" +
+                "Your response should be what they might say ${conversationScript.value}"
+        return controller.chatService.value.chat(
+            listOf(TextChatMessage(TextChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
+            maxTokens.value,
             stop = listOf("\n")
-        ))
+        ).map { it.content!! }
     }
 
 }
@@ -226,10 +221,10 @@ private class ChatBackHistory {
 
     /** Convert to AI message list, with given user mapping. */
     fun toChatMessages(nextPerson: String, otherPersons: String, maxMessageHistory: Int) =
-                conversations.takeLast(maxMessageHistory).map {
-                    val role = if (it.user == nextPerson) ChatRole.Assistant else ChatRole.User
-                    ChatMessage(role, "${it.user}: ${it.message}")
-                }
+        conversations.takeLast(maxMessageHistory).map {
+            val role = if (it.user == nextPerson) TextChatRole.Assistant else TextChatRole.User
+            TextChatMessage(role, "${it.user}: ${it.message}")
+        }
 
     fun clear() {
         conversations.clear()
