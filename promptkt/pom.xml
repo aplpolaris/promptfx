@@ -45,6 +45,17 @@
         <url>https://github.com/aplpolaris/promptfx/issues</url>
     </issueManagement>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
@@ -266,7 +277,7 @@
                         </executions>
                     </plugin>
 
-                    <!-- build javadocs -->
+                    <!-- build javadocs with dokka -->
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
                         <artifactId>dokka-maven-plugin</artifactId>
@@ -288,6 +299,16 @@
                             </impliedPlatforms>
                             <noStdlibLink>true</noStdlibLink>
                             <noJdkLink>true</noJdkLink>
+                        </configuration>
+                    </plugin>
+
+                    <!-- skip regular javadocs -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <configuration>
+                            <skip>true</skip>
                         </configuration>
                     </plugin>
 
