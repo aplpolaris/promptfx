@@ -261,6 +261,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <arguments>-Dmaven.javadoc.skip=true</arguments>
+                    <releaseProfiles>release</releaseProfiles>
                 </configuration>
             </plugin>
 
@@ -278,12 +279,10 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <reportNotDocumented>false</reportNotDocumented>
+                    <reportUndocumented>false</reportUndocumented>
                     <skipEmptyPackages>true</skipEmptyPackages>
                     <jdkVersion>11</jdkVersion>
-                    <impliedPlatforms>
-                        <platform>JVM</platform>
-                    </impliedPlatforms>
+                    <platform>JVM</platform>
                     <noStdlibLink>true</noStdlibLink>
                     <noJdkLink>true</noJdkLink>
                 </configuration>
