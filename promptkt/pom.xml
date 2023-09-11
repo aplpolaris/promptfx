@@ -254,6 +254,16 @@
                 <version>3.8.2</version>
             </plugin>
 
+            <!-- ensure release plugin skips javadocs step since that's done with dokka -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <arguments>-Dmaven.javadoc.skip=true</arguments>
+                </configuration>
+            </plugin>
+
             <!-- build javadocs with dokka -->
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
@@ -287,16 +297,6 @@
             <id>release</id>
             <build>
                 <plugins>
-                    <!-- skip javadocs -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-release-plugin</artifactId>
-                        <version>3.0.1</version>
-                        <configuration>
-                            <arguments>-Dmaven.javadoc.skip=true</arguments>
-                        </configuration>
-                    </plugin>
-
                     <!-- build sources -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
