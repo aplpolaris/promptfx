@@ -23,8 +23,13 @@ import javafx.scene.Cursor
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
 import tornadofx.*
+import tri.promptfx.apps.DocumentQaView
 
-class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class)
+class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
+    override fun onBeforeShow(view: UIComponent) {
+        workspace.dock<DocumentQaView>()
+    }
+}
 
 fun main(args: Array<String>) {
     launch<PromptFx>(args)

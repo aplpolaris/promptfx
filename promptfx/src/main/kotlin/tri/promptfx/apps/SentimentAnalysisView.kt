@@ -26,6 +26,10 @@ import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
+/** Plugin for the [SentimentAnalysisView]. */
+class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView>("Text", "Sentiment Analysis", SentimentAnalysisView::class)
+
+/** View designed to classify the sentiment of a text. */
 class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
     "Enter text to determine sentiment (or provide a numbered list of items)") {
 
@@ -48,5 +52,3 @@ class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
         tokenLimit = 500)
 
 }
-
-class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView>("Text", "Sentiment Analysis", SentimentAnalysisView::class)

@@ -28,6 +28,9 @@ import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
+/** Plugin for [SummarizationView]. */
+class SummarizationPlugin : NavigableWorkspaceViewImpl<SummarizationView>("Text", "Summarization", SummarizationView::class)
+
 /** A view that allows the user to summarize text. */
 class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summarize") {
 
@@ -71,5 +74,3 @@ class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summariz
     }
 
 }
-
-class SummarizationPlugin : NavigableWorkspaceViewImpl<SummarizationView>("Text", "Summarization", SummarizationView::class)

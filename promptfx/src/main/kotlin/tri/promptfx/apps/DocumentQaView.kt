@@ -52,6 +52,9 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 
+/** Plugin for the [DocumentQaView]. */
+class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Text", "Document Q&A", DocumentQaView::class)
+
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
 class DocumentQaView: AiPlanTaskView("Document Q&A",
     "Enter question below to respond based on content of documents in a specified folder.",) {
@@ -247,8 +250,6 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
 
     //endregion
 }
-
-class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Text", "Document Q&A", DocumentQaView::class)
 
 //region WEBSITE CRAWL
 

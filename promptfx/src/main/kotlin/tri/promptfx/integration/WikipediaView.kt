@@ -25,6 +25,10 @@ import tornadofx.*
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
+/** Plugin for the [WikipediaView]. */
+class WikipediaViewPlugin : NavigableWorkspaceViewImpl<WikipediaView>("Integrations", "Wikipedia Q&A", WikipediaView::class)
+
+/** View to answer questions using wikipedia. */
 class WikipediaView: AiPlanTaskView("Wikipedia", "Enter a question to ask Wikipedia.") {
 
     private val input = SimpleStringProperty("")
@@ -41,5 +45,3 @@ class WikipediaView: AiPlanTaskView("Wikipedia", "Enter a question to ask Wikipe
     override fun plan() = WikipediaAiTaskPlanner(completionEngine, pageTitle, input.get())
 
 }
-
-class WikipediaViewPlugin : NavigableWorkspaceViewImpl<WikipediaView>("Integrations", "Wikipedia", WikipediaView::class)
