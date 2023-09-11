@@ -273,21 +273,29 @@
                         <version>${kotlin.version}</version>
                         <executions>
                             <execution>
-                                <phase>prepare-package</phase>
+                                <phase>pre-site</phase>
                                 <goals>
-                                    <goal>dokka</goal>
-                                    <goal>javadoc</goal>
                                     <goal>javadocJar</goal>
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <reportNotDocumented>false</reportNotDocumented>
+                            <skipEmptyPackages>true</skipEmptyPackages>
+                            <jdkVersion>11</jdkVersion>
+                            <impliedPlatforms>
+                                <platform>JVM</platform>
+                            </impliedPlatforms>
+                            <noStdlibLink>true</noStdlibLink>
+                            <noJdkLink>true</noJdkLink>
+                        </configuration>
                     </plugin>
 
                     <!-- build javadocs -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <version>3.1.1</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
