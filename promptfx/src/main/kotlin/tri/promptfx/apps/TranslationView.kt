@@ -27,6 +27,10 @@ import tri.promptfx.*
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
+/** Plugin for the [TranslationView]. */
+class TranslationPlugin : NavigableWorkspaceViewImpl<TranslationView>("Text", "Translation", TranslationView::class)
+
+/** View designed to automatically translate text. */
 class TranslationView: AiPlanTaskView("Translation", "Enter text to translate") {
 
     private val modeOptions = resources.yaml("resources/modes.yaml")["translation"] as List<String>
@@ -48,5 +52,3 @@ class TranslationView: AiPlanTaskView("Translation", "Enter text to translate") 
         tokenLimit = 1000)
 
 }
-
-class TranslationPlugin : NavigableWorkspaceViewImpl<TranslationView>("Text", "Translation", TranslationView::class)

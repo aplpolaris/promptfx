@@ -1,3 +1,5 @@
+tri.promptfx.api.AudioApiPlugin
+tri.promptfx.api.ImagesApiPlugin
 tri.promptfx.apps.DocumentQaPlugin
 tri.promptfx.apps.EntityExtractionPlugin
 tri.promptfx.apps.QuestionAnsweringPlugin
@@ -6,5 +8,8 @@ tri.promptfx.apps.SummarizationPlugin
 tri.promptfx.apps.TextSimilarityPlugin
 tri.promptfx.apps.TextToJsonPlugin
 tri.promptfx.apps.TranslationPlugin
+tri.promptfx.fun.ChatBackPlugin
+tri.promptfx.fun.ColorPlugin
+tri.promptfx.fun.EmojiPlugin
 tri.promptfx.integration.WeatherViewPlugin
 tri.promptfx.integration.WikipediaViewPlugin

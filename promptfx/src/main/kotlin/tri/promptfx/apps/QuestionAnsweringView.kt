@@ -26,6 +26,10 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
+/** Plugin for the [QuestionAnsweringView]. */
+class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", QuestionAnsweringView::class)
+
+/** View with prompts designed to answer questions. */
 class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     "Enter question in the top box, and the text with an answer in the box below.",) {
 
@@ -65,5 +69,3 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
         tokenLimit = 500)
 
 }
-
-class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", QuestionAnsweringView::class)

@@ -28,6 +28,10 @@ import tri.ai.openai.EMBEDDING_ADA
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.util.ui.NavigableWorkspaceViewImpl
 
+/** Plugin for the [TextSimilarityView]. */
+class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Text", "Text Similarity", TextSimilarityView::class)
+
+/** View designed to calculate text similarity. */
 class TextSimilarityView: AiTaskView("Text Similarity",
     "Enter two texts to compare. This will also find the paragraphs in the second text that most closely match the first.") {
 
@@ -80,5 +84,3 @@ private fun String.splitIntoChunks(): List<String> {
     chunks.add(currentChunk)
     return chunks.filter { it.isNotBlank() }
 }
-
-class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Text", "Text Similarity", TextSimilarityView::class)

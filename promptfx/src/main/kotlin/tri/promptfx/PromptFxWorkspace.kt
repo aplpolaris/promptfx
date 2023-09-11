@@ -27,9 +27,6 @@ import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
 import tri.promptfx.api.*
-import tri.promptfx.`fun`.ChatBackView
-import tri.promptfx.`fun`.ColorView
-import tri.promptfx.`fun`.EmojiView
 import tri.util.ui.ImmersiveChatView
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.graphic
@@ -49,44 +46,54 @@ class PromptFxWorkspace : Workspace() {
     }
 
     init {
-        primaryStage.width = 800.0
-        primaryStage.height = 600.0
+        primaryStage.width = 1200.0
+        primaryStage.height = 800.0
         with(leftDrawer) {
             group("OpenAI API", FontAwesomeIcon.CLOUD.graphic.gray) {
+                (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("Models")
-                hyperlinkview<CompletionsView>("Completions")
+                separator { }
+                label("Text APIs")
                 hyperlinkview<ChatViewBasic>("Chat")
                 hyperlinkview<ChatViewAdvanced>("Chat (Advanced)")
-                hyperlinkview<EditsView>("Edits")
-                hyperlinkview<ImagesView>("Images")
-                hyperlinkview<EmbeddingsView>("Embeddings")
+                hyperlinkview<CompletionsView>("Completions")
+                separator { }
+                label("Audio/Visual APIs")
                 hyperlinkview<AudioView>("Audio")
+                hyperlinkview<ImagesView>("Images")
+                separator { }
+                label("Advanced APIs")
+                hyperlinkview<EmbeddingsView>("Embeddings")
+                hyperlinkview<FineTuningApiView>("Fine-tuning")
                 hyperlinkview<FilesView>("Files")
-                hyperlinkview<FineTuneView>("Fine-tunes")
                 hyperlinkview<ModerationsView>("Moderations")
                 separator { }
+                label("Deprecated APIs")
+                hyperlinkview<EditsView>("Edits")
+                separator { }
+                label("Documentation/Links")
                 browsehyperlink("API Reference", "https://platform.openai.com/docs/api-reference")
                 browsehyperlink("API Playground", "https://platform.openai.com/playground")
                 browsehyperlink("API Pricing", "https://openai.com/pricing")
                 browsehyperlink("OpenAI Blog", "https://openai.com/blog")
             }
             group("Text", FontAwesomeIcon.FILE.graphic.gray) {
-                // content added as plugins
+                // configured via [NavigableWorkspaceView] plugins
             }
             group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.gray) {
-                hyperlinkview<ColorView>("Text to Color")
-                hyperlinkview<EmojiView>("Text to Emoji")
-                hyperlinkview<ChatBackView>("AI-AI Chat")
+                // configured via [NavigableWorkspaceView] plugins
             }
             group("Audio", FontAwesomeIcon.MICROPHONE.graphic.gray) {
-                hyperlinkview<AudioView>("Audio")
+                // configured via [NavigableWorkspaceView] plugins
+
                 // IDEAS for additional audio apps
                 // - speech recognition
                 // - speech translation
                 // - speech synthesis
             }
             group("Vision", FontAwesomeIcon.IMAGE.graphic.gray) {
-                hyperlinkview<ImagesView>("Images")
+                // configured via [NavigableWorkspaceView] plugins
+
                 // IDEAS for additional image apps
                 // - automatic image captioning
                 // - visual question answering
@@ -97,16 +104,14 @@ class PromptFxWorkspace : Workspace() {
                 // - image enhancement, super-resolution, denoising, inpainting, deblurring, etc.
             }
             group("Integrations", FontAwesomeIcon.PLUG.graphic.gray) {
-                // content added as plugins
+                // configured via [NavigableWorkspaceView] plugins
             }
             group("Documentation", FontAwesomeIcon.BOOK.graphic.gray) {
                 // nothing here, but testing to see this doesn't show up in view
+
+                // configured via [NavigableWorkspaceView] plugins
             }
         }
-    }
-
-    init {
-        dock<ModelsView>()
     }
 
     private fun enterFullScreenMode() {

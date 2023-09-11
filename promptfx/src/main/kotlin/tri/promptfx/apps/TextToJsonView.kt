@@ -27,6 +27,10 @@ import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
+/** Plugin for the [TextToJsonView]. */
+class TextToJsonPlugin : NavigableWorkspaceViewImpl<TextToJsonView>("Text", "Text-to-JSON", TextToJsonView::class)
+
+/** View designed to convert text to JSON. */
 class TextToJsonView: AiPlanTaskView("Text-to-JSON",
     "Enter text in the top box to convert to JSON (or other structured format).",) {
 
@@ -82,5 +86,3 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
     )
 
 }
-
-class TextToJsonPlugin : NavigableWorkspaceViewImpl<TextToJsonView>("Text", "Text-to-JSON", TextToJsonView::class)

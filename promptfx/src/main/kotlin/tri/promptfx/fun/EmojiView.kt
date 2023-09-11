@@ -20,7 +20,12 @@
 package tri.promptfx.`fun`
 
 import tri.promptfx.AiCompletionView
+import tri.util.ui.NavigableWorkspaceViewImpl
 
+/** Plugin for the [EmojiView]. */
+class EmojiPlugin : NavigableWorkspaceViewImpl<EmojiView>("Fun", "Text-to-Emoji", EmojiView::class)
+
+/** View to turn text into Emoji. */
 class EmojiView : AiCompletionView(
     "Emoji",
     "Enter text to turn into Emoji",

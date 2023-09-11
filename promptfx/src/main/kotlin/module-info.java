@@ -18,7 +18,12 @@
  * #L%
  */
 import tri.ai.core.TextPlugin;
+import tri.promptfx.api.AudioApiPlugin;
+import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
+import tri.promptfx.fun.ChatBackPlugin;
+import tri.promptfx.fun.ColorPlugin;
+import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
 import tri.util.ui.NavigableWorkspaceView;
@@ -85,6 +90,8 @@ module tri.promptfx {
     uses NavigableWorkspaceView;
 
     provides NavigableWorkspaceView with
+            AudioApiPlugin,
+            ImagesApiPlugin,
             DocumentQaPlugin,
             EntityExtractionPlugin,
             QuestionAnsweringPlugin,
@@ -93,6 +100,9 @@ module tri.promptfx {
             TextSimilarityPlugin,
             TextToJsonPlugin,
             TranslationPlugin,
+            ChatBackPlugin,
+            ColorPlugin,
+            EmojiPlugin,
             WeatherViewPlugin,
             WikipediaViewPlugin
     ;

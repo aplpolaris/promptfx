@@ -31,6 +31,10 @@ import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
+import tri.util.ui.NavigableWorkspaceViewImpl
+
+/** Plugin for the [ImagesView]. */
+class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", ImagesView::class)
 
 /** View for the OpenAI API's image endpoint. */
 class ImagesView : AiTaskView("Images", "Enter image prompt") {

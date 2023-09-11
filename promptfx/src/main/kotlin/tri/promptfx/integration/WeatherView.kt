@@ -26,6 +26,10 @@ import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.AudioPanel
 
+/** Plugin for the [WeatherView]. */
+class WeatherViewPlugin : NavigableWorkspaceViewImpl<WeatherView>("Integrations", "Ask about Weather", WeatherView::class)
+
+/** View demonstrating integration of an external API and audio input. */
 class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query for weather information.") {
 
     private val input = SimpleStringProperty("")
@@ -58,5 +62,3 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
     }
 
 }
-
-class WeatherViewPlugin : NavigableWorkspaceViewImpl<WeatherView>("Integrations", "Weather", WeatherView::class)
