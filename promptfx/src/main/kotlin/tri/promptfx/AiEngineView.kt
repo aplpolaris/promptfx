@@ -38,7 +38,7 @@ class AiEngineView: View() {
         alignment = Pos.CENTER_LEFT
         spacing = 10.0
 
-        label("Completion Engine: ") {
+        label("Completions: ") {
             style = "-fx-font-weight: bold;"
         }
         with (controller) {
@@ -46,7 +46,7 @@ class AiEngineView: View() {
                 tooltip("The default completion engine to use for all text completion tasks, if not selectable in view parameters.")
                 maxWidth = 200.0
             }
-            label("Embedding Engine: ") {
+            label("Embeddings: ") {
                 style = "-fx-font-weight: bold;"
             }
             combobox(embeddingService, TextPlugin.embeddingModels()) {

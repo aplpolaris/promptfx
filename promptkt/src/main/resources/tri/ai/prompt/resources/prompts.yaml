@@ -14,6 +14,10 @@
 #  - {{today}} is always replaced with the current date
 #
 ---
+chat-back: |
+  You are role-playing as {{person}} talking about {{topic}} with {{other persons}} {{setting}}.
+  Your response should be what they might say {{script}} and have a {{tone}} tone.
+
 entity-extraction: |
   Extract content from the given text. The result should be a list of {{mode}}{{#format}} formatted as {{format}}{{/format}}. 
   ```
