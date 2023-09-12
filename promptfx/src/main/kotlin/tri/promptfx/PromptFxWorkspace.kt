@@ -80,6 +80,9 @@ class PromptFxWorkspace : Workspace() {
             group("Text", FontAwesomeIcon.FILE.graphic.gray) {
                 // configured via [NavigableWorkspaceView] plugins
             }
+            group("Tools", FontAwesomeIcon.WRENCH.graphic.gray) {
+                // configured via [NavigableWorkspaceView] plugins
+            }
             group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.gray) {
                 // configured via [NavigableWorkspaceView] plugins
             }

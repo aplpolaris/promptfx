@@ -195,7 +195,7 @@ weather-api-request: |
   The JSON object must conform to the following schema:
   ```
   {
-      "city": "New York City",
+      "city": "Boston, MA",
       "date": "2023-03-04"
   }
   ```

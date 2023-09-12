@@ -26,6 +26,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.tools.PromptTemplatePlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
 // command line settings:
@@ -69,12 +70,14 @@ module tri.promptfx {
     requires de.jensd.fx.glyphs.fontawesome;
     requires org.controlsfx.controls;
     requires org.jsoup;
+    requires com.github.mustachejava;
 
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps.resources to tornadofx;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
+    opens tri.promptfx.tools to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
 
     exports tri.promptfx;
@@ -82,6 +85,7 @@ module tri.promptfx {
     exports tri.promptfx.apps;
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
+    exports tri.promptfx.tools;
     exports tri.promptfx.ui;
     exports tri.util.ui;
 
@@ -104,6 +108,7 @@ module tri.promptfx {
             ColorPlugin,
             EmojiPlugin,
             WeatherViewPlugin,
-            WikipediaViewPlugin
+            WikipediaViewPlugin,
+            PromptTemplatePlugin
     ;
 }

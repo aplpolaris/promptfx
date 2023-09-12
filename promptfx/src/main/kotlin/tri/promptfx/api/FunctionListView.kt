@@ -38,6 +38,7 @@ class FunctionListView : Fragment() {
         vgrow = Priority.ALWAYS
         spacing = 10.0
         listview(components) {
+            isFillWidth = true
             cellFormat {
                 graphic = vbox {
                     spacing = 10.0
@@ -68,11 +69,11 @@ class FunctionListView : Fragment() {
                         textarea(it.parametersProperty) {
                             tooltip("""The parameters the functions accepts, described as a JSON Schema object. To describe a function that accepts no parameters, provide the value {"type":"object", "properties": {}}.""")
                             prefRowCount = 3
-                            prefColumnCount = 40
                             isWrapText = true
                             hgrow = Priority.ALWAYS
                         }
                     }
+                    prefWidth = 0.0
                 }
             }
         }

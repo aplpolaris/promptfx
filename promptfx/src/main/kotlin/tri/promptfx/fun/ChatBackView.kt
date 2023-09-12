@@ -147,7 +147,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             }
             field("Max tokens") {
                 tooltip("Max # of tokens for combined query/response from the question answering engine")
-                slider(0..500) {
+                slider(0..1000) {
                     valueProperty().bindBidirectional(maxTokens)
                 }
                 label(maxTokens.asString())
