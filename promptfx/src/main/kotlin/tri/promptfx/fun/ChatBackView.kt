@@ -27,11 +27,13 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
+import tri.ai.core.TextCompletion
 import tri.ai.openai.chatModels
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
@@ -147,7 +149,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             }
             field("Max tokens") {
                 tooltip("Max # of tokens for combined query/response from the question answering engine")
-                slider(0..500) {
+                slider(0..1000) {
                     valueProperty().bindBidirectional(maxTokens)
                 }
                 label(maxTokens.asString())
@@ -193,12 +195,14 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     }
 
     private suspend fun chatBack(): AiTaskResult<String> {
-        val systemMessage = "You are role-playing as $nextPerson " +
-                "talking about ${conversationTopic.value} " +
-                "with $otherPersons. " +
-                "The conversation is taking place ${conversationSetting.value} " +
-                "and has a ${conversationTone.value} tone.\n" +
-                "Your response should be what they might say ${conversationScript.value}"
+        val systemMessage = AiPromptLibrary.lookupPrompt("chat-back")
+            .fill("person" to nextPerson,
+                "other persons" to otherPersons,
+                "topic" to conversationTopic.value,
+                "setting" to conversationSetting.value,
+                "tone" to conversationTone.value,
+                "script" to conversationScript.value
+            )
         return controller.chatService.value.chat(
             listOf(TextChatMessage(TextChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),

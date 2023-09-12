@@ -54,7 +54,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
 
     //region INITIALIZATION
 
-    fun initChatSystemMessage() {
+    private fun initChatSystemMessage() {
         input {
             spacing = 10.0
             paddingAll = 10.0
@@ -66,7 +66,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
         }
     }
 
-    fun initChatOutput() {
+    private fun initChatOutput() {
         output {
             paddingAll = 10.0
             getChildList()!!.clear()

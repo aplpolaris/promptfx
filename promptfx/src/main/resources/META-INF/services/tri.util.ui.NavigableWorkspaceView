@@ -13,3 +13,4 @@ tri.promptfx.fun.ColorPlugin
 tri.promptfx.fun.EmojiPlugin
 tri.promptfx.integration.WeatherViewPlugin
 tri.promptfx.integration.WikipediaViewPlugin
+tri.promptfx.tools.PromptTemplatePlugin

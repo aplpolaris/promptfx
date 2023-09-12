@@ -27,7 +27,7 @@ import tri.ai.pips.aitask
 /** Generate a task that adds user input to a prompt. */
 suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, stop: String? = null) =
     AiPromptLibrary.lookupPrompt(promptId).prompt(input).let {
-        complete(it, tokenLimit, stop)
+        complete(it, tokenLimit, stop = stop)
     }
 
 /** Generate a task that combines a single instruction or question about contextual text. */
@@ -38,7 +38,11 @@ suspend fun TextCompletion.instructTask(promptId: String, instruct: String, user
 
 /** Generate a task that fills inputs into a prompt. */
 suspend fun TextCompletion.templateTask(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int) =
-    AiPromptLibrary.lookupPrompt(promptId).fill(*fields).let {
+    templateTask(promptId, fields.toMap(), tokenLimit)
+
+/** Generate a task that fills inputs into a prompt. */
+suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int) =
+    AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
         complete(it, tokens = tokenLimit)
     }
 
@@ -67,6 +71,11 @@ fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText
 /** Planner that generates a plan to fill inputs into a prompt. */
 fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int) = aitask(promptId) {
     templateTask(promptId, *fields, tokenLimit = tokenLimit)
+}.planner
+
+/** Planner that generates a plan to fill inputs into a prompt. */
+fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int) = aitask(promptId) {
+    templateTask(promptId, fields, tokenLimit = tokenLimit)
 }.planner
 
 //endregion

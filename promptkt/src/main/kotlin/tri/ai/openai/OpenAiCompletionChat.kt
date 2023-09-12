@@ -24,6 +24,7 @@ import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
+import tri.ai.pips.AiTaskResult
 
 /** Text completion with OpenAI chat models. */
 class OpenAiCompletionChat(override val modelId: String = COMBO_GPT35, val client: OpenAiClient = OpenAiClient.INSTANCE) :
@@ -31,10 +32,11 @@ class OpenAiCompletionChat(override val modelId: String = COMBO_GPT35, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, stop: String?) =
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             listOf(ChatMessage(ChatRole.User, text)),
+            temperature = temperature,
             maxTokens = tokens,
             stop = stop?.let { listOf(it) }
         ))

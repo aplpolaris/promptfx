@@ -30,6 +30,7 @@ interface TextCompletion {
     suspend fun complete(
         text: String,
         tokens: Int? = 150,
+        temperature: Double? = null,
         stop: String? = null
     ): AiTaskResult<String>
 
