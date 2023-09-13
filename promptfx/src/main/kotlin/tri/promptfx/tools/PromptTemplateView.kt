@@ -23,13 +23,10 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.event.EventHandler
 import javafx.geometry.Pos
-import javafx.scene.control.Menu
+import javafx.scene.control.ScrollPane
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tornadofx.Stylesheet.Companion.filler
-import tri.ai.openai.templatePlan
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
@@ -47,7 +44,6 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     "Enter a prompt template and a list of values to fill it in with.") {
 
     private val template = SimpleStringProperty("")
-    private val templateId = SimpleStringProperty("")
     private val fields = observableListOf<Pair<String, String>>()
     private val fieldMap = mutableMapOf<String, String>()
 
@@ -75,15 +71,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                         }
                     }
                 }
-//                label("Preset:")
-//                combobox(templateId, AiPromptLibrary.INSTANCE.prompts.keys.toList()) {
-//                    hgrow = Priority.ALWAYS
-//                    onAction = EventHandler {
-//                        template.set(AiPromptLibrary.lookupPrompt(value).template)
-//                    }
-//                }
             }
             textarea(template) {
+                promptText = "Enter a prompt template"
                 hgrow = Priority.ALWAYS
                 prefRowCount = 20
                 isWrapText = true
@@ -95,23 +85,32 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
             paddingAll = 10.0
             text("Inputs:")
             listview(fields) {
+                vgrow = Priority.ALWAYS
                 cellFormat { field ->
                     graphic = hbox {
                         spacing = 10.0
-                        alignment = Pos.CENTER
+                        alignment = Pos.TOP_CENTER
                         text(field.first)
                         val useText = field.second.ifBlank {
                             if (field.first == "today") LocalDate.now().toString() else ""
                         }
                         fieldMap[field.first] = useText
                         val area = textarea(useText) {
+                            isWrapText = true
                             hgrow = Priority.ALWAYS
-                            prefRowCount = 1
+                            promptText = "Enter value for ${field.first}"
+                            prefRowCount = 0
                             textProperty().onChange { fieldMap[field.first] = it!! }
                         }
                         // add button to toggle expanding the text area
                         button("", FontAwesomeIconView(FontAwesomeIcon.EXPAND)) {
-                            action { area.prefRowCount = if (area.prefRowCount == 1) 4 else 1 }
+                            action {
+                                area.prefRowCount = when (area.prefRowCount) {
+                                    0 -> 5
+                                    5 -> 10
+                                    else -> 0
+                                }
+                            }
                         }
                         prefWidth = 0.0
                     }
@@ -137,12 +136,12 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     }.planner
 
     private fun updateTemplateInputs(template: String) {
-        // extract {{{.}}} delimited fields from new value
+        // extract {{{.}}} and {{.}} delimited fields from new value
         var templateText = template
-        val nueFields = templateText.split("{{{").drop(1).map { it.substringBefore("}}}") }.toMutableList()
+        val nueFields = templateText.split("{{{").drop(1).map { it.substringBefore("}}}") }.toMutableSet()
         nueFields.forEach { templateText = templateText.replace("{{{$it}}}", "") }
         nueFields.addAll(templateText.split("{{").drop(1).map { it.substringBefore("}}") })
-        nueFields.removeIf { it.startsWith("/") || it.startsWith("#") || it.startsWith("^") }
+        nueFields.removeIf { it.isBlank() || it[0] in "/#^" }
         if (fields.toSet() != nueFields.toSet()) {
             val fieldMapCopy = fieldMap.toMap()
             fieldMap.clear()
