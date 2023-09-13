@@ -24,7 +24,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
-import javafx.scene.control.ScrollPane
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.aitask
@@ -73,7 +72,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 }
             }
             textarea(template) {
-                promptText = "Enter a prompt template"
+                promptText = "Enter a prompt template, using syntax like {{field}} for fields to fill in."
                 hgrow = Priority.ALWAYS
                 prefRowCount = 20
                 isWrapText = true

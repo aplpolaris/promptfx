@@ -178,6 +178,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
         var result: TextArea? = null
         output {
             result = textarea(SimpleStringProperty("")) {
+                promptText = "Prompt output will be shown here"
                 isEditable = false
                 isWrapText = true
                 font = Font("Segoe UI Emoji", 18.0)
