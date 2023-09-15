@@ -30,6 +30,7 @@ import javafx.geometry.Pos
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.web.WebView
+import javafx.stage.Modality
 import javafx.stage.Window
 import kotlinx.coroutines.runBlocking
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -300,7 +301,7 @@ class DocumentQaView: AiPlanTaskView(
                                         currentPageNumber.value = page - 1
                                     }
                                 }
-                            }.openModal()
+                            }.openModal(modality = Modality.NONE, resizable = false)
                         }
                     }
 

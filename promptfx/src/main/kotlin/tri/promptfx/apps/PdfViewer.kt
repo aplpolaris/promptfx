@@ -48,6 +48,8 @@ class PdfViewer : View("Pdf Viewer") {
     private val pdfModel: PdfViewModel by inject()
 
     override val root = borderpane {
+        hgrow = Priority.ALWAYS
+        vgrow = Priority.ALWAYS
         top = hbox(spacing = 10) {
             alignment = Pos.CENTER
             paddingAll = 10
@@ -61,8 +63,12 @@ class PdfViewer : View("Pdf Viewer") {
                 action(pdfModel::previousPage)
                 disableWhen(pdfModel.isFirst)
             }
-            textfield(pdfModel.currentPageNumber + 1)
-            label(pdfModel.pageCount)
+            textfield(pdfModel.currentPageNumber + 1) {
+                prefColumnCount = 3
+            }
+            label("/ " + pdfModel.pageCount.value) {
+                style { fontSize = 12.px }
+            }
             // next page
             button("", FontAwesomeIconView(FontAwesomeIcon.ANGLE_RIGHT)) {
                 action(pdfModel::nextPage)
@@ -75,8 +81,6 @@ class PdfViewer : View("Pdf Viewer") {
             }
         }
         center {
-            hgrow = Priority.ALWAYS
-            vgrow = Priority.ALWAYS
             scrollpane {
                 style {
                     padding = box(0.px, 60.px, 0.px, 60.px)
