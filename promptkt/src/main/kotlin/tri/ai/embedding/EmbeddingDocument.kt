@@ -21,6 +21,7 @@ package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.io.File
+import java.net.URL
 
 /** A document with a list of sections. */
 class EmbeddingDocument(val path: String) {
@@ -31,6 +32,26 @@ class EmbeddingDocument(val path: String) {
     @get:JsonIgnore
     val shortName: String
         get() = File(path).name
+
+    /** Get short name of path without extension. */
+    @get:JsonIgnore
+    val shortNameWithoutExtension: String
+        get() = shortName.substringBeforeLast('.')
+
+    /** Get file. */
+    @get:JsonIgnore
+    val file: File
+        get() {
+            val f = File(path)
+            return listOf("pdf", "doc", "docx", "txt").map {
+                File(f.parentFile, f.nameWithoutExtension + ".$it")
+            }.firstOrNull { it.exists() } ?: f
+        }
+
+    /** Get URL of path. */
+    @get:JsonIgnore
+    val url: URL
+        get() = file.toURI().toURL()
 
     /** The raw text of the document. */
     fun readText() = File(path).readText()

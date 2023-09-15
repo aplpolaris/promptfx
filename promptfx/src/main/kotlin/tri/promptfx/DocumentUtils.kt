@@ -41,7 +41,7 @@ object DocumentUtils {
      */
     fun browseToDocument(doc: EmbeddingDocument) {
         val file1 = File(doc.path)
-        val fileList = listOf("pdf", "doc", "docx").map {
+        val fileList = listOf("pdf", "doc", "docx", "txt").map {
             File(file1.parentFile, file1.nameWithoutExtension + ".$it")
         } + file1
         fileList.firstOrNull { it.exists() }?.let {

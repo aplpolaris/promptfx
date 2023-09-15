@@ -29,8 +29,11 @@ import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
+import javafx.scene.web.WebView
 import javafx.stage.Window
 import kotlinx.coroutines.runBlocking
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.text.PDFTextStripper
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.safety.Safelist
@@ -50,14 +53,19 @@ import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
 import java.io.IOException
+import java.net.MalformedURLException
+import java.net.URL
 import java.nio.file.Files
+
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Text", "Document Q&A", DocumentQaView::class)
 
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
-class DocumentQaView: AiPlanTaskView("Document Q&A",
-    "Enter question below to respond based on content of documents in a specified folder.",) {
+class DocumentQaView: AiPlanTaskView(
+    "Document Q&A",
+    "Enter question below to respond based on content of documents in a specified folder.",
+) {
 
     companion object {
         private const val PREF_APP = "promptfx"
@@ -182,6 +190,29 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
                 }
             }
         }
+
+        var result: WebView? = null
+        output {
+            result = webview {
+                fontScale = 1.5
+                engine.isJavaScriptEnabled = true
+                engine.locationProperty().addListener { _, _, newValue ->
+                    try {
+                        if (newValue.isNotBlank()) {
+                            val url = URL(newValue)
+                            val file = File(url.file)
+                            Desktop.getDesktop().open(file)
+                        }
+                    } catch (x: MalformedURLException) {
+                        println("Invalid URL: $newValue")
+                    }
+                }
+                vgrow = Priority.ALWAYS
+            }
+        }
+        onCompleted {
+            result!!.engine.loadContent(it.finalResult.toString())
+        }
     }
 
     override fun plan() = aitask("calculate-embeddings") {
@@ -192,8 +223,24 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
     }.aitask("question-answer") {
         val queryChunks = it.filter { it.section.length >= minChunkSizeForRelevancy.value }
             .take(chunksToSendWithQuery.value)
-        val context = constructContextForQuery(queryChunks)
-        completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value)
+        val context = constructContextForQuery3(queryChunks)
+        completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value).map {
+            queryChunks to it
+        }
+    }.task("process-result") {
+        var text = it.second
+        val docs = it.first.map { it.document }.toSet()
+        docs.forEach {
+            text = text.replace(it.shortName, "<a href=\"${it.url}\">${it.shortNameWithoutExtension}</a>")
+        }
+        // replace "Citations" and all numbers in brackets [1] and similar with bold purple
+        text = text.replace("Citations:", "<b>Citations:</b>")
+        text = "\\[[0-9]+]".toRegex().replace(text) {
+            // make it bold and purple
+            "<font color=\"#800080\"><b>${it.value}</b></font>"
+        }
+        // insert line breaks
+        "<html>\n" + text.replace("\n", "\n<br>\n")
     }.planner
 
     private suspend fun findRelevantSection(query: String): AiTaskResult<List<EmbeddingMatch>> {
@@ -201,18 +248,27 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
         return AiTaskResult.result(matches)
     }
 
-    private fun constructContextForQueryOld(matches: List<EmbeddingMatch>): String {
+    private fun constructContextForQuery1(matches: List<EmbeddingMatch>): String {
         return matches.joinToString("\n```\n") {
             "Document: ${File(it.document.path).name}\n```\nRelevant Text: ${it.readText()}"
         }
     }
 
-    private fun constructContextForQuery(matches: List<EmbeddingMatch>): String {
+    private fun constructContextForQuery2(matches: List<EmbeddingMatch>): String {
         val docs = matches.groupBy { it.document.shortName }
         return docs.entries.mapIndexed { i, entry ->
             "  - \"\"" + entry.value.joinToString("\n... ") { it.readText().trim() } + "\"\"" +
                     " [${i+1}] ${entry.key}"
         }.joinToString("\n  ")
+    }
+
+    private fun constructContextForQuery3(matches: List<EmbeddingMatch>): String {
+        var n = 1
+        val docs = matches.groupBy { it.document.shortName }
+        return docs.map { (doc, text) ->
+            val combinedText = text.joinToString("\n... ") { it.readText().trim() }
+            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
+        }.joinToString("\n\n")
     }
 
     //region DOCUMENT SNIPPET VIEW
@@ -223,16 +279,29 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
             cellFormat {
                 vgrow = Priority.ALWAYS
                 graphic = hbox {
+                    textflow {  }
                     alignment = Pos.CENTER_LEFT
                     text("%.2f".format(it.score)) {
                         style = "-fx-font-weight: bold;"
                     }
-                    hyperlink(it.document.shortName.substringBeforeLast('.')) {
+                    hyperlink(it.document.shortNameWithoutExtension) {
                         val thumb = documentThumbnail(it.document)
                         if (thumb != null) {
                             tooltip { graphic = ImageView(thumb) }
                         }
-                        action { browseToDocument(it.document) }
+                        action {
+                            val page = findTextInPdf(it.document.file, it.readText().take(20))
+                            browseToDocument(it.document)
+                            find<PdfViewer>().apply {
+                                uriString(it.document.url.toURI().toString())
+                                if (page != -1) {
+                                    println("switching to page $page")
+                                    find<PdfViewModel>().apply {
+                                        currentPageNumber.value = page - 1
+                                    }
+                                }
+                            }.openModal()
+                        }
                     }
 
                     val text = it.readText()
@@ -249,6 +318,21 @@ class DocumentQaView: AiPlanTaskView("Document Q&A",
     }
 
     //endregion
+}
+
+private fun findTextInPdf(pdfFile: File, searchText: String): Int {
+    PDDocument.load(pdfFile).use { document ->
+        val stripper = PDFTextStripper()
+        val totalPages = document.numberOfPages
+        for (page in 1..totalPages) {
+            stripper.startPage = page
+            stripper.endPage = page
+            val textOnPage = stripper.getText(document)
+            if (textOnPage.contains(searchText))
+                return page
+        }
+    }
+    return -1
 }
 
 //region WEBSITE CRAWL
