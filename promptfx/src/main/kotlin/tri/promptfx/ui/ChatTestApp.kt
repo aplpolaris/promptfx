@@ -22,7 +22,7 @@ package tri.promptfx.ui
 import tornadofx.*
 
 /** Basic application showing a chat window. */
-class ChatApp : App(ChatAppView::class) {
+class ChatTestApp : App(ChatTestAppView::class) {
 
     override fun start(stage: javafx.stage.Stage) {
         super.start(stage)
@@ -30,15 +30,24 @@ class ChatApp : App(ChatAppView::class) {
         stage.height = 800.0
     }
 
-}
-
-class ChatAppView : View() {
-    init {
-        setInScope(OpenAiChatDriver(), scope, ChatDriver::class)
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            launch<ChatTestApp>(args)
+        }
     }
-    override val root = find<ChatView>().root
 }
 
-fun main(args: Array<String>) {
-    launch<ChatApp>(args)
+class ChatTestAppView : View() {
+    private val driver = OpenAiChatDriver().apply {
+        userName = "Joe"
+        systemName = "GPT"
+        chatHistorySize = 5
+    }
+
+    init {
+        setInScope(driver, scope, ChatDriver::class)
+    }
+
+    override val root = find<ChatFragment>().root
 }
