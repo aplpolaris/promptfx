@@ -40,6 +40,7 @@ import tornadofx.*
 import java.io.FileInputStream
 import java.io.InputStream
 import java.net.URI
+import java.net.URLDecoder
 
 /**
  * This code is adapted from https://github.com/edvin/tornadofx-samples/blob/master/pdf-viewer/src/main/kotlin/pdf/Main.kt.
@@ -111,6 +112,9 @@ class PdfViewModel : ViewModel() {
     val pageCount = SimpleIntegerProperty(0)
     private val scale = SimpleFloatProperty(1.25f)
 
+    var isFirst: BooleanBinding = currentPageNumber.isEqualTo(0)
+    var isLast: BooleanBinding = currentPageNumber.isEqualTo(pageCount - 1)
+
     init {
         documentInputStream.onChange { input ->
             if (input is InputStream) {
@@ -121,9 +125,9 @@ class PdfViewModel : ViewModel() {
             }
         }
         documentURIString.onChange { documentURI.value = URI(it) }
-        documentURI.onChange { nuevaUri ->
-            val input = when (nuevaUri!!.scheme) {
-                "file" -> FileInputStream(nuevaUri.toURL().file)
+        documentURI.onChange {
+            val input = when (it!!.scheme) {
+                "file" -> FileInputStream(URLDecoder.decode(it.path, "UTF-8"))
                 else -> null
             }
             documentInputStream.value = input
@@ -132,7 +136,7 @@ class PdfViewModel : ViewModel() {
     }
 
     private fun openPage(pageCounter: Int) {
-        val bim = pdfRenderer?.renderImage(pageCounter, scale.value)//pdfRenderer?.renderImageWithDPI(pageCounter, 300)
+        val bim = pdfRenderer?.renderImage(pageCounter, scale.value)
         if (bim != null) {
             currentPage.value = SwingFXUtils.toFXImage(bim, null)
         }
@@ -154,7 +158,4 @@ class PdfViewModel : ViewModel() {
         currentPageNumber.value = pageCount.value - 1
     }
 
-    var isFirst: BooleanBinding = currentPageNumber.isEqualTo(0)
-
-    var isLast: BooleanBinding = currentPageNumber.isEqualTo(pageCount - 1)
 }

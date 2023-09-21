@@ -56,6 +56,7 @@ import java.io.File
 import java.io.IOException
 import java.net.MalformedURLException
 import java.net.URL
+import java.net.URLDecoder
 import java.nio.file.Files
 
 
@@ -201,7 +202,7 @@ class DocumentQaView: AiPlanTaskView(
                     try {
                         if (newValue.isNotBlank()) {
                             val url = URL(newValue)
-                            val file = File(url.file)
+                            val file = File(URLDecoder.decode(url.path, "UTF-8"))
                             Desktop.getDesktop().open(file)
                         }
                     } catch (x: MalformedURLException) {
