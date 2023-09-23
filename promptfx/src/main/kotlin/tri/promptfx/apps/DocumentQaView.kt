@@ -194,6 +194,7 @@ class DocumentQaView: AiPlanTaskView(
         }
 
         var result: WebView? = null
+        outputPane.clear()
         output {
             result = webview {
                 fontScale = 1.5
@@ -238,8 +239,8 @@ class DocumentQaView: AiPlanTaskView(
         // replace "Citations" and all numbers in brackets [1] and similar with bold purple
         text = text.replace("Citations:", "<b>Citations:</b>")
         text = "\\[[0-9]+]".toRegex().replace(text) {
-            // make it bold and purple
-            "<font color=\"#800080\"><b>${it.value}</b></font>"
+            // make it bold and light blue
+            "<font color=\"#8abccf\"><b>${it.value}</b></font>"
         }
         // insert line breaks
         "<html>\n" + text.replace("\n", "\n<br>\n")
@@ -297,12 +298,11 @@ class DocumentQaView: AiPlanTaskView(
                             find<PdfViewer>().apply {
                                 uriString(it.document.url.toURI().toString())
                                 if (page != -1) {
-                                    println("switching to page $page")
                                     find<PdfViewModel>().apply {
                                         currentPageNumber.value = page - 1
                                     }
                                 }
-                            }.openModal(modality = Modality.NONE, resizable = false)
+                            }.openModal(modality = Modality.NONE, resizable = true)
                         }
                     }
 

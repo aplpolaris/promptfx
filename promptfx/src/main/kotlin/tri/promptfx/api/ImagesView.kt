@@ -69,12 +69,11 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
                                 stageStyle = StageStyle.UNDECORATED,
                                 owner = primaryStage
                             ) {
-                                form.padding = null
-                                padding = null
                                 imageview(image) {
                                     onLeftClick { close() }
                                 }
-
+                                form.padding = null
+                                padding = null
                             }
                         }
                     }
