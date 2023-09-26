@@ -63,6 +63,7 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
                     imageview(it) {
                         fitWidth = thumbnailSize
                         fitHeight = thumbnailSize
+                        tooltip { graphic = imageview(it) }
                         setOnMouseClicked {
                             dialog(
                                 modality = Modality.APPLICATION_MODAL,

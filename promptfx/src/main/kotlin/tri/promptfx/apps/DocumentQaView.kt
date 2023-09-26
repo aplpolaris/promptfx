@@ -20,45 +20,43 @@
 package tri.promptfx.apps
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.event.EventTarget
-import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.Node
+import javafx.scene.control.Hyperlink
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
+import javafx.scene.text.Text
 import javafx.scene.web.WebView
 import javafx.stage.Modality
-import javafx.stage.Window
 import kotlinx.coroutines.runBlocking
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.text.PDFTextStripper
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.safety.Safelist
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.findTextInPdf
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.DocumentUtils.browseToDocument
+import tri.promptfx.DocumentUtils.browseToSnippet
 import tri.promptfx.DocumentUtils.documentThumbnail
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
-import java.io.IOException
+import java.lang.UnsupportedOperationException
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.file.Files
-
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Text", "Document Q&A", DocumentQaView::class)
@@ -214,7 +212,8 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
         onCompleted {
-            result!!.engine.loadContent(it.finalResult.toString())
+            val fr = it.finalResult as List<Node>
+            result!!.engine.loadContent(CitationTextProcessor.textToHtml(fr))
         }
     }
 
@@ -226,52 +225,17 @@ class DocumentQaView: AiPlanTaskView(
     }.aitask("question-answer") {
         val queryChunks = it.filter { it.section.length >= minChunkSizeForRelevancy.value }
             .take(chunksToSendWithQuery.value)
-        val context = constructContextForQuery3(queryChunks)
+        val context = ContextBuilder.constructContextForQuery3(queryChunks)
         completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value).map {
             queryChunks to it
         }
     }.task("process-result") {
-        var text = it.second
-        val docs = it.first.map { it.document }.toSet()
-        docs.forEach {
-            text = text.replace(it.shortName, "<a href=\"${it.url}\">${it.shortNameWithoutExtension}</a>")
-        }
-        // replace "Citations" and all numbers in brackets [1] and similar with bold purple
-        text = text.replace("Citations:", "<b>Citations:</b>")
-        text = "\\[[0-9]+]".toRegex().replace(text) {
-            // make it bold and light blue
-            "<font color=\"#8abccf\"><b>${it.value}</b></font>"
-        }
-        // insert line breaks
-        "<html>\n" + text.replace("\n", "\n<br>\n")
+        CitationTextProcessor.textToText(hostServices, it.first, it.second)
     }.planner
 
     private suspend fun findRelevantSection(query: String): AiTaskResult<List<EmbeddingMatch>> {
         val matches = embeddingIndex.value!!.findMostSimilar(query, chunksToRetrieve.value)
         return AiTaskResult.result(matches)
-    }
-
-    private fun constructContextForQuery1(matches: List<EmbeddingMatch>): String {
-        return matches.joinToString("\n```\n") {
-            "Document: ${File(it.document.path).name}\n```\nRelevant Text: ${it.readText()}"
-        }
-    }
-
-    private fun constructContextForQuery2(matches: List<EmbeddingMatch>): String {
-        val docs = matches.groupBy { it.document.shortName }
-        return docs.entries.mapIndexed { i, entry ->
-            "  - \"\"" + entry.value.joinToString("\n... ") { it.readText().trim() } + "\"\"" +
-                    " [${i+1}] ${entry.key}"
-        }.joinToString("\n  ")
-    }
-
-    private fun constructContextForQuery3(matches: List<EmbeddingMatch>): String {
-        var n = 1
-        val docs = matches.groupBy { it.document.shortName }
-        return docs.map { (doc, text) ->
-            val combinedText = text.joinToString("\n... ") { it.readText().trim() }
-            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
-        }.joinToString("\n\n")
     }
 
     //region DOCUMENT SNIPPET VIEW
@@ -292,18 +256,7 @@ class DocumentQaView: AiPlanTaskView(
                         if (thumb != null) {
                             tooltip { graphic = ImageView(thumb) }
                         }
-                        action {
-                            val page = findTextInPdf(it.document.file, it.readText().take(20))
-                            browseToDocument(it.document)
-                            find<PdfViewer>().apply {
-                                uriString(it.document.url.toURI().toString())
-                                if (page != -1) {
-                                    find<PdfViewModel>().apply {
-                                        currentPageNumber.value = page - 1
-                                    }
-                                }
-                            }.openModal(modality = Modality.NONE, resizable = true)
-                        }
+                        action { browseToSnippet(hostServices, it) }
                     }
 
                     val text = it.readText()
@@ -322,116 +275,114 @@ class DocumentQaView: AiPlanTaskView(
     //endregion
 }
 
-private fun findTextInPdf(pdfFile: File, searchText: String): Int {
-    PDDocument.load(pdfFile).use { document ->
-        val stripper = PDFTextStripper()
-        val totalPages = document.numberOfPages
-        for (page in 1..totalPages) {
-            stripper.startPage = page
-            stripper.endPage = page
-            val textOnPage = stripper.getText(document)
-            if (textOnPage.contains(searchText))
-                return page
+/** Combines multiple text chunks into a single context. */
+private object ContextBuilder {
+
+    private fun constructContextForQuery1(matches: List<EmbeddingMatch>): String {
+        return matches.joinToString("\n```\n") {
+            "Document: ${File(it.document.path).name}\n```\nRelevant Text: ${it.readText()}"
         }
     }
-    return -1
+
+    private fun constructContextForQuery2(matches: List<EmbeddingMatch>): String {
+        val docs = matches.groupBy { it.document.shortName }
+        return docs.entries.mapIndexed { i, entry ->
+            "  - \"\"" + entry.value.joinToString("\n... ") { it.readText().trim() } + "\"\"" +
+                    " [${i+1}] ${entry.key}"
+        }.joinToString("\n  ")
+    }
+
+    internal fun constructContextForQuery3(matches: List<EmbeddingMatch>): String {
+        var n = 1
+        val docs = matches.groupBy { it.document.shortName }
+        return docs.map { (doc, text) ->
+            val combinedText = text.joinToString("\n... ") { it.readText().trim() }
+            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
+        }.joinToString("\n\n")
+    }
+
 }
 
-//region WEBSITE CRAWL
+/** Adds citations to provided text. */
+private object CitationTextProcessor {
 
-/** Dialog for choosing web scraper settings. */
-class TextCrawlDialog: Fragment("Web Crawler Settings") {
-
-    val folder: SimpleObjectProperty<File> by param()
-
-    private val url = SimpleStringProperty("http://")
-
-    override val root = vbox {
-        form {
-            fieldset("Crawl Settings") {
-                field("URL to Scrape") {
-                    textfield(url) {
-                        tooltip("Enter URL starting with http:// or https://")
-                    }
-                    button("", FontAwesomeIcon.GLOBE.graphic) {
-                        disableWhen(url.isEmpty)
-                        action { hostServices.showDocument(url.get()) }
-                    }
+    /** Convert from [Text] and [Hyperlink] to HTML. */
+    fun textToHtml(resultText: List<Node>): String {
+        val text = StringBuilder("<html>\n")
+        resultText.forEach {
+            when (it) {
+                is Text -> {
+                    val style = it.style
+                    val bold = style.contains("-fx-font-weight: bold")
+                    val italic = style.contains("-fx-font-style: italic")
+                    val color = if (style.contains("-fx-fill:"))
+                        style.substringAfter("-fx-fill:").let { it.substringBefore(";", it) }
+                    else null
+                    val prefix = (if (bold) "<b>" else "") + (if (italic) "<i>" else "") +
+                            (if (color != null) "<font color=\"$color\">" else "")
+                    val suffix = (if (color != null) "</font>" else "") +
+                            (if (italic) "</i>" else "") + (if (bold) "</b>" else "")
+                    text.append(prefix + it.text.replace("\n", "<br>") + suffix)
                 }
-                field("Target Folder") {
-                    hyperlink(folder.stringBinding {
-                        val path = it!!.absolutePath
-                        if (path.length > 25) {
-                            "..." + path.substring(path.length - 24)
-                        } else {
-                            path
-                        }
-                    }) {
-                        action {
-                            Files.createDirectories(folder.get().toPath())
-                            Desktop.getDesktop().open(folder.get())
-                        }
-                    }
-                    button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                        action { folder.chooseFolder(currentStage) }
-                    }
+                is Hyperlink -> text.append("<a href=\"${it.text}\">${it.text}</a>")
+                else -> throw UnsupportedOperationException()
+            }
+        }
+        return text.toString()
+    }
+
+    fun textToText(hostServices: HostServices, matches: List<EmbeddingMatch>, resultText: String): List<Node> {
+        val result = mutableListOf<Node>(Text(resultText))
+        val docs = matches.map { it.document }.toSet()
+        docs.forEach { doc ->
+            result.splitOn(doc.shortName) {
+                Hyperlink().apply {
+                    text = doc.shortNameWithoutExtension
+                    action { browseToDocument(hostServices, doc) }
                 }
             }
         }
-        buttonbar {
-            padding = Insets(10.0)
-            spacing = 10.0
-            button("Crawl") {
-                action {
-                    crawlWebsite(url.value, depth = 1, targetFolder = folder.value)
-                    close()
+        result.splitOn("Citations:") {
+            Text(it).apply { style = "-fx-font-weight: bold;" }
+        }
+        result.splitOn("\\[[0-9]+]".toRegex()) {
+            Text(it).apply { style = "-fx-fill: #8abccf; -fx-font-weight: bold;" }
+        }
+        return result
+    }
+
+    /** Splits all text elements on a given search string. */
+    private fun MutableList<Node>.splitOn(find: String, replace: (String) -> Node) {
+        splitOn(Regex.fromLiteral(find), replace)
+    }
+
+    /** Splits all text elements on a given search string. */
+    private fun MutableList<Node>.splitOn(find: Regex, replace: (String) -> Node) {
+        toList().forEach {
+            if (it is Text) {
+                val newNodes = it.splitOn(find, replace)
+                if (newNodes != listOf(it)) {
+                    addAll(indexOf(it), newNodes)
+                    remove(it)
                 }
             }
         }
     }
-}
 
-private fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
-    chooseDirectory(
-        title = "Select Document Folder",
-        initialDirectory = value,
-        owner = owner
-    )?.let {
-        set(it)
-    }
-}
-
-private fun crawlWebsite(url: String, depth: Int = 0, targetFolder: File, scraped: MutableSet<String> = mutableSetOf()) {
-    if (url.isBlank() || url in scraped)
-        return
-    runAsync {
-        println("Scraping text and links from $url...")
-        try {
-            val doc = Jsoup.connect(url).get()
-            val docNode = doc.select("article").firstOrNull() ?: doc.body()
-            val nodeHtml = docNode.apply {
-                select("br").before("\\n")
-                select("p").before("\\n")
-            }.html().replace("\\n", "\n")
-            val text = Jsoup.clean(nodeHtml, "", Safelist.none(),
-                Document.OutputSettings().apply { prettyPrint(false) }
-            )
-            if (text.isNotEmpty()) {
-                val title = doc.title().replace("[^a-zA-Z0-9.-]".toRegex(), "_")
-                if (title.length > 2) // require minimum length to avoid saving off blank links
-                    File(targetFolder, "$title.txt").writeText(text)
-                scraped.add(url)
+    /** Splits the text on a given search string, replacing it using the provided function. */
+    private fun Text.splitOn(find: Regex, replace: (String) -> Node): List<Node> {
+        val result = mutableListOf<Node>()
+        var index = 0
+        find.findAll(text).forEach {
+            val text0 = text.substring(index, it.range.first)
+            if (text0.length > 1) {
+                result += Text(text0)
             }
-            if (depth > 0) {
-                val links = docNode.select("a[href]").map { it.absUrl("href") }.toSet().take(100)
-                links
-                    .filter { it.startsWith("http") }
-                    .forEach { crawlWebsite(it, depth - 1, targetFolder, scraped) }
-            }
-        } catch (x: IOException) {
-            println("  ... failed to retrieve URL due to $x")
+            result += replace(it.value)
+            index = it.range.last + 1
         }
+        result += Text(text.substring(index))
+        return result
     }
-}
 
-//endregion
+}

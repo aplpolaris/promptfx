@@ -4,11 +4,17 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.animation.Timeline
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.collections.ListChangeListener
+import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.geometry.Pos
+import javafx.scene.Node
+import javafx.scene.control.Hyperlink
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
+import javafx.scene.text.Text
+import javafx.scene.text.TextFlow
 import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -41,7 +47,7 @@ import tri.promptfx.apps.DocumentQaView
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {
 
-    val onUserRequest: suspend (String) -> String by param()
+    val onUserRequest: suspend (String) -> List<Node> by param()
     val baseComponentTitle: String? by param()
     val baseComponent: View? by param()
 
@@ -53,7 +59,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val controller: PromptFxController by inject()
     val thumbnailList = observableListOf<Pair<EmbeddingDocument, Image>>()
     val input = SimpleStringProperty("")
-    val response = SimpleStringProperty("")
+    val response = observableListOf<Node>()
 
     val css = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
 
@@ -108,9 +114,10 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
                 vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
                 maxHeight = Screen.getPrimary().bounds.height / 2
                 hbox {
-                    text(response) {
+                    textflow {
                         id = "chat-response"
-                        wrappingWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
+                        response.onChange { updateTextFlow(it) }
+                        prefWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
                     }
                     vbox { prefWidth = 20.0 }
                 }
@@ -127,8 +134,16 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         }
     }
 
+    private fun TextFlow.updateTextFlow(change: ListChangeListener.Change<out Node>) {
+        children.clear()
+        children.addAll(change.list)
+        children.filterIsInstance<Text>().forEach {
+            it.styleClass += "chat-text-default"
+        }
+    }
+
     private fun handleUserAction() {
-        response.set("")
+        response.setAll()
         blinkIndicator(start = true)
         runAsync {
             runBlocking {
@@ -137,7 +152,11 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         } ui {
             blinkIndicator(start = false)
             controller.updateUsage()
-            response.animateText(it)
+            TextFlowAnimator.animateText(it, target = response, onFrame = {
+                (root.scene.lookup("#chat-response-scroll") as ScrollPane).vvalue = 1.0
+            }, onFinished = {
+                (root.scene.lookup("#chat-input") as TextField).selectAll()
+            })
         }
     }
 
@@ -159,25 +178,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             }
             cursor = javafx.scene.Cursor.HAND
             setOnMouseClicked {
-                browseToDocument(document)
-            }
-        }
-    }
-
-    private fun SimpleStringProperty.animateText(text: String) {
-        val chars = SimpleIntegerProperty(0).apply {
-            onChange {
-                set(text.take(it))
-                (root.scene.lookup("#chat-response-scroll") as ScrollPane).vvalue = 1.0
-            }
-        }
-        val time = minOf(5.0, 0.05 * text.length)
-        timeline {
-            keyframe(time.seconds) {
-                keyvalue(chars, text.length)
-            }
-            setOnFinished {
-                (root.scene.lookup("#chat-input") as TextField).selectAll()
+                browseToDocument(hostServices, document)
             }
         }
     }
@@ -216,4 +217,61 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     //endregion
+}
+
+/** Animates a series of text and hyperlink objects within a [TextFlow]. */
+private object TextFlowAnimator {
+    fun animateText(sourceText: List<Node>, target: ObservableList<Node>, onFrame: () -> Unit, onFinished: () -> Unit) {
+//        target.setAll(sourceText)
+//        onFrame()
+//        onFinished()
+
+        // calculate length of text in this node
+        fun Node.length() = (this as? Text)?.text?.length ?: (this as? Hyperlink)?.text?.length ?: 0
+
+        // get a subset of the nodes based on the number of characters
+        fun takeChars(n: Int): List<Node> {
+            var taken = 0
+            val result = mutableListOf<Node>()
+            for (node in sourceText) {
+                val length = node.length()
+                if (taken + length <= n) {
+                    result.add(node)
+                    taken += length
+                } else {
+                    when (node) {
+                        is Text -> result.add(
+                            Text(node.text.substring(0, n - taken)).apply {
+                                style = node.style
+                            }
+                        )
+                        is Hyperlink -> result.add(
+                            Hyperlink(node.text.substring(0, n - taken)).apply {
+                                style = node.style
+                                onAction = node.onAction
+                            }
+                        )
+                        else -> throw UnsupportedOperationException()
+                    }
+                    break
+                }
+            }
+            return result
+        }
+
+        val totalLength = sourceText.sumOf { it.length() }
+        val time = minOf(5.0, 0.05 * totalLength)
+        val chars = SimpleIntegerProperty(0).apply {
+            onChange {
+                target.setAll(takeChars(it))
+                onFrame()
+            }
+        }
+        timeline {
+            keyframe(time.seconds) {
+                keyvalue(chars, totalLength)
+            }
+            setOnFinished { onFinished() }
+        }
+    }
 }

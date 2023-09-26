@@ -19,33 +19,58 @@
  */
 package tri.promptfx
 
+import javafx.application.HostServices
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.control.Alert
 import javafx.scene.image.Image
+import javafx.stage.Modality
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
-import tornadofx.alert
+import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
-import java.awt.Desktop
+import tri.ai.embedding.EmbeddingMatch
+import tri.ai.embedding.findTextInPdf
+import tri.promptfx.apps.PdfViewer
 import java.awt.image.BufferedImage
 import java.io.File
+import kotlin.collections.contains
+import kotlin.collections.firstOrNull
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mutableMapOf
+import kotlin.collections.plus
+import kotlin.collections.set
 
 /** A cache of document thumbnails. */
 object DocumentUtils {
 
     private val thumbnailCache = mutableMapOf<String, Image>()
 
+    /** Browses to a given snippet within a document. */
+    fun browseToSnippet(hostServices: HostServices, match: EmbeddingMatch) {
+        if (match.document.file.extension.lowercase() == "pdf") {
+            val page = findTextInPdf(match.document.file, match.readText())
+            find<PdfViewer>().apply {
+                viewModel.documentURIString.value = match.document.url.toURI().toString()
+                if (page > 1)
+                    viewModel.currentPageNumber.value = page - 1
+            }.openModal(modality = Modality.NONE, resizable = true)
+        } else {
+            browseToDocument(hostServices, match.document)
+        }
+    }
+
     /**
      * Browses to a given document.
      * TODO - this is a quick way to guess the original extension, but needs to be made more robust
      */
-    fun browseToDocument(doc: EmbeddingDocument) {
+    fun browseToDocument(hostServices: HostServices, doc: EmbeddingDocument) {
         val file1 = File(doc.path)
         val fileList = listOf("pdf", "doc", "docx", "txt").map {
             File(file1.parentFile, file1.nameWithoutExtension + ".$it")
         } + file1
         fileList.firstOrNull { it.exists() }?.let {
-            Desktop.getDesktop().open(it)
+            hostServices.showDocument(it.toURI().toString())
         } ?: run {
             alert(Alert.AlertType.ERROR, "File not found", "Could not find file ${doc.path}")
         }
