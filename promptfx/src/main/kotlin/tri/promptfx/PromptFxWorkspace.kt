@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.control.TextArea
+import javafx.scene.text.Text
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
@@ -134,14 +135,18 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
-    private fun userInputFunction(): suspend (String) -> String = { input ->
+    private fun userInputFunction(): suspend (String) -> List<Node> = { input ->
         (dockedComponent as? AiTaskView)?.let { view ->
             view.inputPane.children.filterIsInstance<TextArea>().firstOrNull()?.let {
                 it.text = input
                 val result = view.processUserInput()
-                result.finalResult.toString()
+                if (result.finalResult is List<*>) {
+                    result.finalResult as List<Node>
+                } else {
+                    listOf(Text(result.finalResult.toString()))
+                }
             }
-        } ?: "This view doesn't support processing user input.\nInput was: $input"
+        } ?: listOf(Text("This view doesn't support processing user input.\nInput was: $input"))
     }
 
     //region LAYOUT

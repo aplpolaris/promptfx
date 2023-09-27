@@ -22,6 +22,7 @@ package tri.promptfx.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.animation.Timeline
+import javafx.beans.binding.Bindings
 import javafx.scene.control.TextField
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
@@ -29,17 +30,16 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 
 /** A view with a chat panel and an entry text box. */
-class ChatView: Fragment() {
+class ChatFragment: Fragment() {
 
     private val viewScope = Scope()
     private val panel = find<ChatPanel>(viewScope)
     private val chats = panel.chats
+    private val chatHistoryEmpty = Bindings.createBooleanBinding({ chats.isEmpty() }, chats)
     private val chatDriver: ChatDriver by inject()
 
     private lateinit var chatField: TextField
     private lateinit var indicator: FontAwesomeIconView
-
-    private val chatHistorySize = 1
 
     override val root = borderpane {
         style {
@@ -71,13 +71,25 @@ class ChatView: Fragment() {
                 vgrow = Priority.ALWAYS
                 action { userChat(text) }
             }
+            panel.chatEntryBox = chatField.textProperty()
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                disableWhen(chatField.textProperty().isBlank())
+                tooltip("Send the current text to the chat engine.")
                 action { userChat(chatField.text) }
             }
             button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
+                disableWhen(chatHistoryEmpty)
+                tooltip("Retry the last chat.")
                 action { retryChat() }
             }
-            button("", FontAwesomeIconView(FontAwesomeIcon.TRASH)) {
+            button("", FontAwesomeIconView(FontAwesomeIcon.CLONE)) {
+                disableWhen(chatHistoryEmpty)
+                tooltip("Clone the last chat (copy into the text box but don't send).")
+                action { cloneChat() }
+            }
+            button("", FontAwesomeIconView(FontAwesomeIcon.TRASH_ALT)) {
+                disableWhen(chatHistoryEmpty)
+                tooltip("Clear the chat history.")
                 action { clearChats() }
             }
         }
@@ -86,7 +98,7 @@ class ChatView: Fragment() {
     private fun userChat(text: String) {
         val message = text.trim()
         if (message.isNotEmpty()) {
-            chats.add(ChatEntry("", message, ChatRoleStyle.USER))
+            chats.add(ChatEntry(chatDriver.userName, message, ChatEntryRole.USER))
             generateChatResponse()
             chatField.clear()
         }
@@ -96,7 +108,7 @@ class ChatView: Fragment() {
         blinkIndicator(start = true)
         runAsync {
             runBlocking {
-                chatDriver.chat(chats.takeLast(chatHistorySize))
+                chatDriver.chat(chats)
             }
         } ui {
             chats.add(it)
@@ -107,6 +119,12 @@ class ChatView: Fragment() {
     private fun retryChat() {
         chats.remove(chats.last())
         generateChatResponse()
+    }
+
+    private fun cloneChat() {
+        chats.reversed().first { it.style == ChatEntryRole.USER }?.message?.let {
+            chatField.text = it
+        }
     }
 
     private fun clearChats() {

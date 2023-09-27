@@ -19,7 +19,14 @@
  */
 package tri.promptfx.ui
 
+import tri.ai.core.TextChatMessage
+
 /** A message from a user. */
-class ChatEntry(val user: String, val message: String, val style: ChatRoleStyle = ChatRoleStyle.USER) {
+class ChatEntry(val user: String, val message: String, val style: ChatEntryRole = ChatEntryRole.USER) {
     override fun toString() = "$user: $message"
+}
+
+/** Convert a [ChatEntry] to a [TextChatMessage]. */
+fun ChatEntry.toTextChatMessage() = style.toTextChatRole()?.let {
+    TextChatMessage(it, message)
 }

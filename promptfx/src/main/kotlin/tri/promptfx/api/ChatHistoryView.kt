@@ -97,7 +97,7 @@ class ChatHistoryView : Fragment() {
     }
 
     fun chatMessages() = components.map {
-        ChatMessage(it.role, it.content, it.name.ifBlank { null }, it.functionCall)
+        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, it.functionCall)
     }
 
 }
@@ -110,16 +110,16 @@ class ChatLineModel(role: ChatRole = ChatRole.User, content: String = "", name: 
     var content: String by contentProperty
 
     val nameProperty = SimpleStringProperty(name)
-    var name: String by nameProperty
+    var name: String? by nameProperty
 
     val functionCallNameProperty = SimpleStringProperty(functionCall?.name)
-    var functionCallName: String by functionCallNameProperty
+    var functionCallName: String? by functionCallNameProperty
 
     val functionCallArgsProperty = SimpleStringProperty(functionCall?.arguments)
     var functionCallArgs: String by functionCallArgsProperty
 
     val functionCall: FunctionCall?
-        get() = functionCallName.ifNotBlank { FunctionCall(it, functionCallArgs) }
+        get() = functionCallName?.ifNotBlank { FunctionCall(it, functionCallArgs) }
 
     companion object {
         fun valueOf(it: ChatMessage) = ChatLineModel(it.role, it.content ?: "", it.name, it.functionCall)

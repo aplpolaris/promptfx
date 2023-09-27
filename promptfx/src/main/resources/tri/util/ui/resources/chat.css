@@ -20,6 +20,10 @@
     -fx-fill: #aaa;
 }
 
+#chat-response .chat-text-default {
+    -fx-fill: #aaa;
+}
+
 #chat-response .scroll-pane .content {
     -fx-background-color: transparent;
     -fx-border-color: transparent;

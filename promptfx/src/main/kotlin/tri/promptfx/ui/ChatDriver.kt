@@ -30,6 +30,16 @@ import tri.ai.openai.OpenAiClient
 /** General-purpose tool that generates responses to chat messages. */
 abstract class ChatDriver : ScopedInstance, Component() {
 
+    /** System message, if present will be included with all chats. */
+    var systemMessage: ChatEntry? = null
+    /** Number of chats from history to include in chat driver call. */
+    var chatHistorySize = 1
+
+    /** General name to show for the user. */
+    abstract val userName: String
+    /** General name to show for the system response. */
+    abstract val systemName: String
+
     /** Generate a response based on a sequence of prior messages. */
     abstract suspend fun chat(messages: List<ChatEntry>): ChatEntry
 
@@ -41,31 +51,14 @@ class OpenAiChatDriver : ChatDriver() {
     private val inst = OpenAiClient.INSTANCE
     private val chatter = OpenAiChat(COMBO_GPT35, inst)
 
+    override var userName = System.getProperty("user.name")
+    override var systemName = "ChatGPT (${chatter.modelId})"
+
     override suspend fun chat(messages: List<ChatEntry>): ChatEntry {
-        val response = chatter.chat(messages.mapNotNull { it.toTextChatMessage() })
-        return ChatEntry("System", response.value?.content ?: "No response",
-            response.value?.role?.toChatRoleStyle() ?: ChatRoleStyle.ERROR)
+        val inputChats = listOfNotNull(systemMessage) + messages.takeLast(chatHistorySize)
+        val response = chatter.chat(inputChats.mapNotNull { it.toTextChatMessage() })
+        return ChatEntry(systemName, response.value?.content ?: "No response",
+            response.value?.role?.toChatRoleStyle() ?: ChatEntryRole.ERROR)
     }
-
-    //region CONVERSIONS
-
-    private fun ChatEntry.toTextChatMessage() = style.toTextChatRole()?.let {
-        TextChatMessage(it, message)
-    }
-
-    private fun ChatRoleStyle.toTextChatRole() = when (this) {
-        ChatRoleStyle.USER -> TextChatRole.User
-        ChatRoleStyle.ASSISTANT -> TextChatRole.Assistant
-        ChatRoleStyle.SYSTEM -> TextChatRole.System
-        ChatRoleStyle.ERROR -> null
-    }
-
-    private fun TextChatRole.toChatRoleStyle(): ChatRoleStyle = when (this) {
-        TextChatRole.User -> ChatRoleStyle.USER
-        TextChatRole.Assistant -> ChatRoleStyle.ASSISTANT
-        TextChatRole.System -> ChatRoleStyle.SYSTEM
-    }
-
-    //endregion
 
 }

@@ -97,15 +97,6 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         }
     }
 
-    private val textStripper = PDFTextStripper()
-
-    /** Extract text from PDF. */
-    private fun pdfText(file: File): String {
-        PDDocument.load(file).use {
-            return textStripper.getText(it)
-        }
-    }
-
     /** Extract text from DOCX. */
     private fun docxText(file: File) = XWPFWordExtractor(XWPFDocument(file.inputStream())).text
 

@@ -64,6 +64,7 @@ module tri.promptfx {
     requires javafx.graphics;
     requires javafx.media;
     requires javafx.swing;
+    requires javafx.web;
 
     requires tornadofx;
     requires de.jensd.fx.glyphs.commons;

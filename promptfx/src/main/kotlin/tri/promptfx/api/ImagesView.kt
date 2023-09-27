@@ -63,18 +63,18 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
                     imageview(it) {
                         fitWidth = thumbnailSize
                         fitHeight = thumbnailSize
+                        tooltip { graphic = imageview(it) }
                         setOnMouseClicked {
                             dialog(
                                 modality = Modality.APPLICATION_MODAL,
                                 stageStyle = StageStyle.UNDECORATED,
                                 owner = primaryStage
                             ) {
-                                form.padding = null
-                                padding = null
                                 imageview(image) {
                                     onLeftClick { close() }
                                 }
-
+                                form.padding = null
+                                padding = null
                             }
                         }
                     }

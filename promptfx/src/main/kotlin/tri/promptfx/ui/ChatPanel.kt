@@ -20,7 +20,12 @@
 package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.StringProperty
 import javafx.event.EventTarget
+import javafx.scene.control.ScrollPane
+import javafx.scene.control.TextField
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
@@ -30,7 +35,11 @@ import kotlin.math.abs
 /** A generic panel that shows labeled text within a scrolling vertical pane. */
 class ChatPanel: Fragment() {
 
+    /** The list of chats to display. */
     val chats = observableListOf<ChatEntry>()
+    /** Used to set the text of the entry box, if present */
+    var chatEntryBox: StringProperty? = null
+    /** If true, randomize colors for each user. */
     var randomColors: Boolean = true
 
     override val root = scrollpane(fitToWidth = true) {
@@ -40,14 +49,15 @@ class ChatPanel: Fragment() {
         vbox {
             padding = insets(10)
             spacing = 5.0
-            bindChildren(chats) { chatmessageui(it) }
+            bindChildren(chats) { chatmessageui(it, it == chats.last() && it.style != ChatEntryRole.USER) }
 
             // scroll to bottom when new messages are added
             heightProperty().onChange { vvalue = 1.0 }
         }
     }
 
-    private fun EventTarget.chatmessageui(chat: ChatEntry) = borderpane {
+    /** Create the UI for a single chat message. */
+    private fun EventTarget.chatmessageui(chat: ChatEntry, animate: Boolean) = borderpane {
         center = vbox {
             spacing = 5.0
             hbox {
@@ -68,7 +78,7 @@ class ChatPanel: Fragment() {
                 if (chat.style.rightAlign) {
                     spacer(Priority.ALWAYS)
                 }
-                label(chat.message).apply {
+                label(if (animate) "" else chat.message).apply {
                     isWrapText = true
                     style {
                         backgroundRadius += box(11.px)
@@ -77,6 +87,20 @@ class ChatPanel: Fragment() {
                         borderWidth += box(1.px)
                         padding = box(5.px)
                         updateColors(chat)
+                    }
+                    if (animate) {
+                        textProperty().animateText(chat.message)
+                    }
+
+                    lazyContextmenu {
+                        item("Copy to clipboard").action {
+                            clipboard.putString(chat.message)
+                        }
+                        if (chatEntryBox != null) {
+                            item("Copy to chat") {
+                                action { chatEntryBox?.set(chat.message) }
+                            }
+                        }
                     }
                 }
             }
@@ -124,5 +148,15 @@ class ChatPanel: Fragment() {
         }
     }
 
+    // animates the chat message
+    private fun StringProperty.animateText(text: String) {
+        val chars = SimpleIntegerProperty(0).apply {
+            onChange { set(text.take(it)) }
+        }
+        val time = minOf(3.0, 0.02 * text.length)
+        timeline {
+            keyframe(time.seconds) { keyvalue(chars, text.length) }
+        }
+    }
 }
 
