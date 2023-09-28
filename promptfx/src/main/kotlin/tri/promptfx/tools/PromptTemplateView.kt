@@ -55,8 +55,8 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
 
     init {
         input {
-            spacing = 10.0
-            paddingAll = 10.0
+            spacing = 5.0
+            paddingAll = 5.0
             vgrow = Priority.ALWAYS
             hbox {
                 alignment = Pos.CENTER_LEFT

@@ -23,8 +23,6 @@ import com.aallam.openai.api.exception.OpenAIException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
@@ -109,7 +107,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         val queryEmbedding = embeddingService.calculateEmbedding(query)
         val matches = getEmbeddingIndex().values.flatMap { doc ->
             doc.sections.map { section ->
-                EmbeddingMatch(doc, section, cosineSimilarity(queryEmbedding, section.embedding))
+                EmbeddingMatch(doc, section, queryEmbedding, cosineSimilarity(queryEmbedding, section.embedding))
             }
         }
         return matches.sortedByDescending { it.score }.take(n)
