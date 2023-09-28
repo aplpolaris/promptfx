@@ -31,6 +31,7 @@ interface EmbeddingIndex {
 class EmbeddingMatch(
     val document: EmbeddingDocument,
     val section: EmbeddingSection,
+    val queryEmbedding: List<Double>,
     val score: Double
 ) {
     fun readText() = document.readText(section)

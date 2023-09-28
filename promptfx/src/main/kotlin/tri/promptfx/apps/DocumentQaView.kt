@@ -19,7 +19,9 @@
  */
 package tri.promptfx.apps
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -33,12 +35,11 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import javafx.scene.web.WebView
-import javafx.stage.Modality
+import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.embedding.findTextInPdf
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
@@ -93,6 +94,8 @@ class DocumentQaView: AiPlanTaskView(
         }
     }
 
+    private val htmlResult = SimpleStringProperty("")
+
     init {
         preferences(PREF_APP) {
             documentFolder.value = File(get(PREF_DOCS_FOLDER, "docs/"))
@@ -107,7 +110,38 @@ class DocumentQaView: AiPlanTaskView(
             style = "-fx-font-size: 18px;"
         }
         input {
-            text("Document Snippets:")
+            hbox {
+                alignment = Pos.CENTER_LEFT
+                spacing = 5.0
+                paddingAll = 5.0
+                text("Document Snippets:")
+                spacer()
+                // export JSON with matches
+                button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+                    disableWhen(snippets.sizeProperty.isEqualTo(0))
+                    action {
+                        val file = chooseFile("Export Document Snippets as JSON", arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")), mode = FileChooserMode.Save, owner = currentWindow)
+                        if (file.isNotEmpty()) {
+                            runAsync {
+                                runBlocking {
+                                    val exportObject = DocumentQaResult(
+                                        promptId = promptId.value,
+                                        modelId = controller.completionEngine.value.modelId,
+                                        embeddingId = controller.embeddingService.value.modelId,
+                                        question = question.value,
+                                        questionEmbedding = snippets.first().queryEmbedding,
+                                        matches = snippets.map { SnippetMatch(it) },
+                                        response = htmlResult.value
+                                    )
+                                    ObjectMapper()
+                                        .writerWithDefaultPrettyPrinter()
+                                        .writeValue(file.first(), exportObject)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             matchlistview(snippets)
         }
         parameters("Document Source and Sectioning") {
@@ -213,7 +247,9 @@ class DocumentQaView: AiPlanTaskView(
         }
         onCompleted {
             val fr = it.finalResult as List<Node>
-            result!!.engine.loadContent(CitationTextProcessor.textToHtml(fr))
+            val html = CitationTextProcessor.textToHtml(fr)
+            htmlResult.set(html)
+            result!!.engine.loadContent(html)
         }
     }
 
@@ -243,8 +279,8 @@ class DocumentQaView: AiPlanTaskView(
     /** Shows information on the list of matches, with document thumbnails. */
     private fun EventTarget.matchlistview(snippets: ObservableList<EmbeddingMatch>) {
         listview(snippets) {
+            vgrow = Priority.ALWAYS
             cellFormat {
-                vgrow = Priority.ALWAYS
                 graphic = hbox {
                     textflow {  }
                     alignment = Pos.CENTER_LEFT
@@ -273,6 +309,36 @@ class DocumentQaView: AiPlanTaskView(
     }
 
     //endregion
+}
+
+/** Result class, used for exporting results. */
+data class DocumentQaResult(
+    val modelId: String,
+    val embeddingId: String,
+    val promptId: String?,
+    val question: String?,
+    val questionEmbedding: List<Double>,
+    val matches: List<SnippetMatch>,
+    val response: String?
+)
+
+/** A snippet match that can be serialized. */
+data class SnippetMatch(
+    val document: String,
+    val snippetStart: Int,
+    val snippetEnd: Int,
+    val snippetText: String,
+    val snippetEmbedding: List<Double>,
+    val score: Double
+) {
+    constructor(match: EmbeddingMatch) : this(
+        match.document.shortName,
+        match.section.start,
+        match.section.end,
+        match.readText(),
+        match.section.embedding,
+        match.score
+    )
 }
 
 /** Combines multiple text chunks into a single context. */
