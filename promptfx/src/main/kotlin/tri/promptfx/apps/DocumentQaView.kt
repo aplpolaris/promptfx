@@ -36,6 +36,7 @@ import javafx.scene.control.Hyperlink
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
+import javafx.scene.text.TextFlow
 import javafx.scene.web.WebView
 import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
@@ -99,6 +100,8 @@ class DocumentQaView: AiPlanTaskView(
 
     private var lastResult: QuestionAnswerResult? = null
     private val htmlResult = SimpleStringProperty("")
+
+    private lateinit var resultBox: TextFlow
 
     init {
         preferences(PREF_APP) {
@@ -220,34 +223,24 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
 
-        var result: WebView? = null
         outputPane.clear()
         output {
-            result = webview {
-                fontScale = 1.5
-                engine.isJavaScriptEnabled = true
-                engine.locationProperty().addListener { _, _, newValue ->
-                    try {
-                        if (newValue.isNotBlank()) {
-                            val url = URL(newValue)
-                            val file = File(URLDecoder.decode(url.path, "UTF-8"))
-                            Desktop.getDesktop().open(file)
-//                            if (newValue.isNotBlank() && lastResult != null) {
-//                                CitationTextProcessor.browseToDocument(hostServices, lastResult!!, newValue, browseToPage = isScoreResult.value)
-//                            }
-                        }
-                    } catch (x: MalformedURLException) {
-                        println("Invalid URL: $newValue")
-                    }
-                }
+            scrollpane {
                 vgrow = Priority.ALWAYS
+                isFitToWidth = true
+                resultBox = textflow {
+                    padding = insets(5.0)
+                    vgrow = Priority.ALWAYS
+                    style = "-fx-font-size: 16px;"
+                }
             }
         }
         onCompleted {
             val fr = it.finalResult as FormattedText
             val html = CitationTextProcessor.textToHtml(fr)
             htmlResult.set(html)
-            result!!.engine.loadContent(html)
+            resultBox.children.clear()
+            resultBox.children.addAll(fr.nodes)
         }
     }
 
