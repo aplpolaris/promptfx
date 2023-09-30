@@ -19,10 +19,12 @@
  */
 package tri.promptfx.apps
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -40,6 +42,7 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
@@ -53,7 +56,6 @@ import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
-import java.lang.UnsupportedOperationException
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLDecoder
@@ -93,7 +95,9 @@ class DocumentQaView: AiPlanTaskView(
             maxChunkSize = this@DocumentQaView.maxChunkSize.value
         }
     }
+    private val isScoreResult = SimpleBooleanProperty(true)
 
+    private var lastResult: QuestionAnswerResult? = null
     private val htmlResult = SimpleStringProperty("")
 
     init {
@@ -124,18 +128,9 @@ class DocumentQaView: AiPlanTaskView(
                         if (file.isNotEmpty()) {
                             runAsync {
                                 runBlocking {
-                                    val exportObject = DocumentQaResult(
-                                        promptId = promptId.value,
-                                        modelId = controller.completionEngine.value.modelId,
-                                        embeddingId = controller.embeddingService.value.modelId,
-                                        question = question.value,
-                                        questionEmbedding = snippets.first().queryEmbedding,
-                                        matches = snippets.map { SnippetMatch(it) },
-                                        response = htmlResult.value
-                                    )
                                     ObjectMapper()
                                         .writerWithDefaultPrettyPrinter()
-                                        .writeValue(file.first(), exportObject)
+                                        .writeValue(file.first(), lastResult)
                                 }
                             }
                         }
@@ -237,6 +232,9 @@ class DocumentQaView: AiPlanTaskView(
                             val url = URL(newValue)
                             val file = File(URLDecoder.decode(url.path, "UTF-8"))
                             Desktop.getDesktop().open(file)
+//                            if (newValue.isNotBlank() && lastResult != null) {
+//                                CitationTextProcessor.browseToDocument(hostServices, lastResult!!, newValue, browseToPage = isScoreResult.value)
+//                            }
                         }
                     } catch (x: MalformedURLException) {
                         println("Invalid URL: $newValue")
@@ -246,7 +244,7 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val fr = it.finalResult as List<Node>
+            val fr = it.finalResult as FormattedText
             val html = CitationTextProcessor.textToHtml(fr)
             htmlResult.set(html)
             result!!.engine.loadContent(html)
@@ -262,17 +260,44 @@ class DocumentQaView: AiPlanTaskView(
         val queryChunks = it.filter { it.section.length >= minChunkSizeForRelevancy.value }
             .take(chunksToSendWithQuery.value)
         val context = ContextBuilder.constructContextForQuery3(queryChunks)
-        completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value).map {
-            queryChunks to it
+        val response = completionEngine.instructTask(promptId.get(), question.get(), context, maxTokens.value)
+        val responseEmbedding = response.value?.let { calcEmbedding(it) }
+        response.map {
+            QuestionAnswerResult(
+                modelId = controller.completionEngine.value.modelId,
+                embeddingId = controller.embeddingService.value.modelId,
+                promptId = promptId.value,
+                question = question.value,
+                questionEmbedding = queryChunks.first().queryEmbedding,
+                matches = snippets.map { SnippetMatch(it) },
+                response = response.value,
+                responseEmbedding = responseEmbedding
+            )
         }
     }.task("process-result") {
-        CitationTextProcessor.textToText(hostServices, it.first, it.second)
+        if (isScoreResult.value) {
+            println("Similarity of question to response: " + it.questionAnswerSimilarity())
+        }
+        lastResult = it
+        CitationTextProcessor.textToText(hostServices, it, browseToPage = isScoreResult.value)
     }.planner
 
+    //region SIMILARITY CALCULATIONS
+
+    /** Finds the most relevant section to the query. */
     private suspend fun findRelevantSection(query: String): AiTaskResult<List<EmbeddingMatch>> {
         val matches = embeddingIndex.value!!.findMostSimilar(query, chunksToRetrieve.value)
         return AiTaskResult.result(matches)
     }
+
+    /** Calculates the embedding for a given response. */
+    private suspend fun calcEmbedding(response: String) = if (isScoreResult.value) {
+        embeddingIndex.value!!.embeddingService.calculateEmbedding(response)
+    } else {
+        null
+    }
+
+    //endregion
 
     //region DOCUMENT SNIPPET VIEW
 
@@ -311,19 +336,32 @@ class DocumentQaView: AiPlanTaskView(
     //endregion
 }
 
-/** Result class, used for exporting results. */
-data class DocumentQaResult(
+//region HELPER OBJECTS
+
+/** Result object. */
+data class QuestionAnswerResult(
     val modelId: String,
     val embeddingId: String,
     val promptId: String?,
-    val question: String?,
+    val question: String,
     val questionEmbedding: List<Double>,
     val matches: List<SnippetMatch>,
-    val response: String?
-)
+    val response: String?,
+    val responseEmbedding: List<Double>?
+) {
+    override fun toString() = response ?: "No response. Question: $question"
+
+    /** Calculates the similarity between the question and response. */
+    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(questionEmbedding, it) } ?: 0
+
+    /** Calculates the snippet that was most similar to the generated answer. */
+    internal fun closestMatchToResponse(snippets: List<SnippetMatch>) =
+        snippets.maxByOrNull { cosineSimilarity(it.snippetEmbedding, responseEmbedding!!) }
+}
 
 /** A snippet match that can be serialized. */
 data class SnippetMatch(
+    @get:JsonIgnore val embeddingMatch: EmbeddingMatch,
     val document: String,
     val snippetStart: Int,
     val snippetEnd: Int,
@@ -332,6 +370,7 @@ data class SnippetMatch(
     val score: Double
 ) {
     constructor(match: EmbeddingMatch) : this(
+        match,
         match.document.shortName,
         match.section.start,
         match.section.end,
@@ -341,41 +380,41 @@ data class SnippetMatch(
     )
 }
 
-/** Combines multiple text chunks into a single context. */
-private object ContextBuilder {
-
-    private fun constructContextForQuery1(matches: List<EmbeddingMatch>): String {
-        return matches.joinToString("\n```\n") {
-            "Document: ${File(it.document.path).name}\n```\nRelevant Text: ${it.readText()}"
-        }
+/** A result that contains plain text and links. */
+class FormattedText(val nodes: List<Node>) {
+    override fun toString() = nodes.joinToString("") {
+        (it as? Text)?.text ?: (it as? Hyperlink)?.text ?: ""
     }
-
-    private fun constructContextForQuery2(matches: List<EmbeddingMatch>): String {
-        val docs = matches.groupBy { it.document.shortName }
-        return docs.entries.mapIndexed { i, entry ->
-            "  - \"\"" + entry.value.joinToString("\n... ") { it.readText().trim() } + "\"\"" +
-                    " [${i+1}] ${entry.key}"
-        }.joinToString("\n  ")
-    }
-
-    internal fun constructContextForQuery3(matches: List<EmbeddingMatch>): String {
-        var n = 1
-        val docs = matches.groupBy { it.document.shortName }
-        return docs.map { (doc, text) ->
-            val combinedText = text.joinToString("\n... ") { it.readText().trim() }
-            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
-        }.joinToString("\n\n")
-    }
-
 }
 
 /** Adds citations to provided text. */
 private object CitationTextProcessor {
 
+    /** Convert the plaintext result to a list of text/hyperlink objects. */
+    fun textToText(hostServices: HostServices, qaResult: QuestionAnswerResult, browseToPage: Boolean): FormattedText {
+        val result = mutableListOf<Node>(Text(qaResult.response ?: "No response."))
+        val docs = qaResult.matches.map { it.document }.toSet()
+        docs.forEach { doc ->
+            result.splitOn(doc) {
+                Hyperlink().apply {
+                    text = qaResult.matches.first { it.document == doc }.embeddingMatch.document.shortNameWithoutExtension
+                    action { browseToDocument(hostServices, qaResult, doc, browseToPage) }
+                }
+            }
+        }
+        result.splitOn("Citations:") {
+            Text(it).apply { style = "-fx-font-weight: bold;" }
+        }
+        result.splitOn("\\[[0-9]+(,\\s*[0-9]+)*]".toRegex()) {
+            Text(it).apply { style = "-fx-fill: #8abccf; -fx-font-weight: bold;" }
+        }
+        return FormattedText(result)
+    }
+
     /** Convert from [Text] and [Hyperlink] to HTML. */
-    fun textToHtml(resultText: List<Node>): String {
+    fun textToHtml(resultText: FormattedText): String {
         val text = StringBuilder("<html>\n")
-        resultText.forEach {
+        resultText.nodes.forEach {
             when (it) {
                 is Text -> {
                     val style = it.style
@@ -390,31 +429,25 @@ private object CitationTextProcessor {
                             (if (italic) "</i>" else "") + (if (bold) "</b>" else "")
                     text.append(prefix + it.text.replace("\n", "<br>") + suffix)
                 }
-                is Hyperlink -> text.append("<a href=\"${it.text}\">${it.text}</a>")
+                is Hyperlink ->
+                    text.append("<a href=\"${it.text}\">${it.text}</a>")
                 else -> throw UnsupportedOperationException()
             }
         }
         return text.toString()
     }
 
-    fun textToText(hostServices: HostServices, matches: List<EmbeddingMatch>, resultText: String): List<Node> {
-        val result = mutableListOf<Node>(Text(resultText))
-        val docs = matches.map { it.document }.toSet()
-        docs.forEach { doc ->
-            result.splitOn(doc.shortName) {
-                Hyperlink().apply {
-                    text = doc.shortNameWithoutExtension
-                    action { browseToDocument(hostServices, doc) }
-                }
-            }
+    /** Browses to the document, or to one of the snippets if possible. */
+    fun browseToDocument(hostServices: HostServices, qaResult: QuestionAnswerResult, doc: String, browseToPage: Boolean) {
+        if (browseToPage) {
+            val docSnippets = qaResult.matches.filter { it.document == doc }
+            println("Browsing to the closest of ${docSnippets.size} snippets within this document...")
+            val closestSnippet = if (docSnippets.size == 1) docSnippets.first() else qaResult.closestMatchToResponse(docSnippets)!!
+            browseToSnippet(hostServices, closestSnippet.embeddingMatch)
+        } else {
+            val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.document
+            browseToDocument(hostServices, sourceDoc)
         }
-        result.splitOn("Citations:") {
-            Text(it).apply { style = "-fx-font-weight: bold;" }
-        }
-        result.splitOn("\\[[0-9]+]".toRegex()) {
-            Text(it).apply { style = "-fx-fill: #8abccf; -fx-font-weight: bold;" }
-        }
-        return result
     }
 
     /** Splits all text elements on a given search string. */
@@ -449,6 +482,36 @@ private object CitationTextProcessor {
         }
         result += Text(text.substring(index))
         return result
+    }
+
+}
+
+//endregion
+
+/** Combines multiple text chunks into a single context. */
+private object ContextBuilder {
+
+    private fun constructContextForQuery1(matches: List<EmbeddingMatch>): String {
+        return matches.joinToString("\n```\n") {
+            "Document: ${File(it.document.path).name}\n```\nRelevant Text: ${it.readText()}"
+        }
+    }
+
+    private fun constructContextForQuery2(matches: List<EmbeddingMatch>): String {
+        val docs = matches.groupBy { it.document.shortName }
+        return docs.entries.mapIndexed { i, entry ->
+            "  - \"\"" + entry.value.joinToString("\n... ") { it.readText().trim() } + "\"\"" +
+                    " [${i+1}] ${entry.key}"
+        }.joinToString("\n  ")
+    }
+
+    internal fun constructContextForQuery3(matches: List<EmbeddingMatch>): String {
+        var n = 1
+        val docs = matches.groupBy { it.document.shortName }
+        return docs.map { (doc, text) ->
+            val combinedText = text.joinToString("\n... ") { it.readText().trim() }
+            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
+        }.joinToString("\n\n")
     }
 
 }

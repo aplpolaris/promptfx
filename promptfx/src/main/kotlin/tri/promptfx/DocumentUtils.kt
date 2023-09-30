@@ -50,11 +50,15 @@ object DocumentUtils {
     fun browseToSnippet(hostServices: HostServices, match: EmbeddingMatch) {
         if (match.document.file.extension.lowercase() == "pdf") {
             val page = findTextInPdf(match.document.file, match.readText())
-            find<PdfViewer>().apply {
+            val viewer = find<PdfViewer>().apply {
                 viewModel.documentURIString.value = match.document.url.toURI().toString()
-                if (page > 1)
-                    viewModel.currentPageNumber.value = page - 1
-            }.openModal(modality = Modality.NONE, resizable = true)
+                viewModel.currentPageNumber.value = maxOf(0, page - 1)
+            }
+            if (viewer.root.scene?.window?.isShowing == true) {
+                viewer.root.scene?.window?.requestFocus()
+            } else {
+                viewer.openModal(modality = Modality.NONE, resizable = true)
+            }
         } else {
             browseToDocument(hostServices, match.document)
         }
