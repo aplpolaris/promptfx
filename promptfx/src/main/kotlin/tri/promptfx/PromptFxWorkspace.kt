@@ -29,6 +29,7 @@ import javafx.stage.StageStyle
 import tornadofx.*
 import tri.promptfx.api.*
 import tri.promptfx.apps.FormattedText
+import tri.promptfx.apps.toFxNodes
 import tri.util.ui.ImmersiveChatView
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.graphic
@@ -141,7 +142,7 @@ class PromptFxWorkspace : Workspace() {
             view.inputPane.children.filterIsInstance<TextArea>().firstOrNull()?.let {
                 it.text = input
                 val result = view.processUserInput()
-                (result.finalResult as? FormattedText)?.nodes
+                (result.finalResult as? FormattedText)?.toFxNodes()
                     ?: listOf(Text(result.finalResult.toString()))
             }
         } ?: listOf(Text("This view doesn't support processing user input.\nInput was: $input"))

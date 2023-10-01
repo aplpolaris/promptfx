@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * promptfx-0.1.0-SNAPSHOT
+ * %%
+ * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
@@ -19,30 +38,10 @@ import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
-import tri.promptfx.DocumentUtils.browseToDocument
 import tri.promptfx.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
+import tri.promptfx.apps.DocumentBrowseToClosestMatch
 import tri.promptfx.apps.DocumentQaView
-
-/*-
- * #%L
- * promptfx-0.1.0-SNAPSHOT
- * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {
@@ -57,7 +56,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     val controller: PromptFxController by inject()
-    val thumbnailList = observableListOf<Pair<EmbeddingDocument, Image>>()
+    val thumbnailList = observableListOf<Image>()
     val input = SimpleStringProperty("")
     val response = observableListOf<Node>()
 
@@ -67,7 +66,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         if (baseComponent is DocumentQaView) {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
-                val thumbs = base.snippets.map { it.document }.toSet()
+                val thumbs = base.snippets.map { it.embeddingMatch.document }.toSet()
                     .associateWith { documentThumbnail(it) }
                 animateThumbs(thumbs)
             }
@@ -128,9 +127,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             alignment = Pos.CENTER
             prefHeight = 0.25 * screenHeight
             spacing = 40.0
-            children.bind(thumbnailList) {
-                docthumbnail(it.first, it.second)
-            }
+            children.bind(thumbnailList) { docthumbnail(it) }
         }
     }
 
@@ -162,7 +159,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 
     //region ANIMATION
 
-    private fun EventTarget.docthumbnail(document: EmbeddingDocument, image: Image) = vbox {
+    private fun EventTarget.docthumbnail(image: Image) = vbox {
         imageview(image) {
             opacity = 0.0
             timeline {
@@ -178,14 +175,18 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             }
             cursor = javafx.scene.Cursor.HAND
             setOnMouseClicked {
-                browseToDocument(hostServices, document)
+                DocumentBrowseToClosestMatch(
+                    matches = (baseComponent as DocumentQaView).snippets,
+                    textEmbedding = null,
+                    hostServices = hostServices
+                ).open()
             }
         }
     }
 
     private fun animateThumbs(thumbs: Map<EmbeddingDocument, Image?>) {
         thumbnailList.clear()
-        val entries = thumbs.entries.filter { it.value != null }.map { it.key to it.value!! }
+        val entries = thumbs.entries.mapNotNull { it.value }
         val n = SimpleIntegerProperty(-1).apply {
             onChange { thumbnailList.add(entries[it]) }
         }
