@@ -40,6 +40,7 @@ module tri.promptfx {
     requires java.desktop;
     requires java.logging;
 
+    requires kotlin.stdlib;
     requires kotlinx.coroutines.core;
     requires kotlinx.serialization.core;
 
@@ -72,6 +73,7 @@ module tri.promptfx {
     requires org.controlsfx.controls;
     requires org.jsoup;
     requires com.github.mustachejava;
+    requires commons.logging;
 
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;

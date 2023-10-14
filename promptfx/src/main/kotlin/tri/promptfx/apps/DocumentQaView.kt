@@ -22,6 +22,7 @@ package tri.promptfx.apps
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -35,7 +36,9 @@ import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.DocumentUtils.documentThumbnail
@@ -69,7 +72,7 @@ class DocumentQaView: AiPlanTaskView(
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
     private val maxTokens = SimpleIntegerProperty(1000)
 
-    private val planner = DocumentQaPlanner().apply {
+    internal val planner = DocumentQaPlanner().apply {
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
             LocalEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
@@ -215,7 +218,6 @@ class DocumentQaView: AiPlanTaskView(
         }
         onCompleted {
             val fr = it.finalResult as FormattedText
-            fr.hyperlinkOp = { browseToBestSnippet(it, planner.lastResult) }
             htmlResult.set(fr.toHtml())
             resultBox.children.clear()
             resultBox.children.addAll(fr.toFxNodes())
@@ -233,6 +235,19 @@ class DocumentQaView: AiPlanTaskView(
         completionEngine = controller.completionEngine.value,
         maxTokens = maxTokens.value
     )
+
+    // override the user input to enable clicking hyperlinks
+    override suspend fun processUserInput() =
+        super.processUserInput().also {
+            (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
+                val doc = snippets.firstOrNull { it.document == docName }?.embeddingMatch?.document
+                if (doc == null) {
+                    println("Unable to find document $docName in snippets.")
+                } else {
+                    browseToBestSnippet(doc, planner.lastResult, hostServices)
+                }
+            }
+        }
 
     //region SUPPORTING UI ELEMENTS
 
@@ -269,23 +284,27 @@ class DocumentQaView: AiPlanTaskView(
         }
     }
 
-    private fun browseToBestSnippet(doc: String, result: QuestionAnswerResult?) {
-        if (result == null) {
-            alert(Alert.AlertType.ERROR, "Unable to browse to that document right now.")
-        } else {
-            val matches = result.matches.filter { it.matchesDocument(doc) }
-            if (matches.size == 1) {
-                DocumentBrowseToPage(matches.first(), hostServices).open()
-            } else {
-                DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
-            }
-        }
-    }
-
     //endregion
 
     companion object {
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-qa.folder"
+
+        internal fun browseToBestSnippet(doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
+            if (result == null) {
+                println("Browsing to first page: ${doc.shortNameWithoutExtension}")
+                DocumentOpenInViewer(doc, hostServices).open()
+            } else {
+                println("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
+                val matches = result.matches.filter { it.matchesDocument(doc.shortNameWithoutExtension) }
+                if (matches.size == 1) {
+                    println("Browsing to only match")
+                    DocumentBrowseToPage(matches.first(), hostServices).open()
+                } else {
+                    println("Browsing to closest match")
+                    DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
+                }
+            }
+        }
     }
 }

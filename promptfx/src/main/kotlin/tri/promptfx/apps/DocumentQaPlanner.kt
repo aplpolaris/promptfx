@@ -1,12 +1,27 @@
+/*-
+ * #%L
+ * promptfx-0.1.10-SNAPSHOT
+ * %%
+ * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.promptfx.apps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
-import javafx.scene.Node
-import javafx.scene.control.Hyperlink
-import javafx.scene.text.Text
-import tornadofx.action
 import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
@@ -14,7 +29,6 @@ import tri.ai.embedding.*
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
-import java.io.File
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -25,9 +39,6 @@ class DocumentQaPlanner {
     val snippets = observableListOf<SnippetMatch>()
     /** The most recent result of the QA task. */
     var lastResult: QuestionAnswerResult? = null
-
-    /** The operation used to browse to a chunk. */
-    var chunkOp: (EmbeddingMatch) -> Unit = { }
 
     /**
      * Asynchronous tasks to execute for answering the given question.
@@ -77,7 +88,7 @@ class DocumentQaPlanner {
     }.task("process-result") {
         println("Similarity of question to response: " + it.questionAnswerSimilarity())
         lastResult = it
-        formatResult(it, chunkOp)
+        formatResult(it)
     }.planner
 
     //region SIMILARITY CALCULATIONS
@@ -96,8 +107,11 @@ class DocumentQaPlanner {
 
     //region FORMATTING RESULTS OF QA
 
+    private val BOLD_STYLE = "-fx-font-weight: bold;"
+    private val LINK_STYLE = "-fx-fill: #8abccf; -fx-font-weight: bold;"
+
     /** Formats the result of the QA task. */
-    private fun formatResult(qaResult: QuestionAnswerResult, chunkOp: (EmbeddingMatch) -> Unit): FormattedText {
+    private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
         val result = mutableListOf(FormattedTextNode(qaResult.response ?: "No response."))
         val docs = qaResult.matches.map { it.document }.toSet()
         docs.forEach { doc ->
@@ -106,12 +120,12 @@ class DocumentQaPlanner {
                 FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = sourceDoc.path)
             }
         }
-        result.splitOn("Citations:") {
-            FormattedTextNode(it, style = "-fx-font-weight: bold;")
-        }
-        result.splitOn("\\[[0-9]+(,\\s*[0-9]+)*]".toRegex()) {
-            FormattedTextNode(it, style = "-fx-fill: #8abccf; -fx-font-weight: bold;")
-        }
+        result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
+        // multiple possible citation formats
+        result.splitOn("\\[[0-9]+(,\\s*[0-9]+)*]".toRegex()) { FormattedTextNode(it, LINK_STYLE) }
+        result.splitOn("\\[Citation [0-9]+(,\\s*[0-9]+)*]".toRegex()) { FormattedTextNode(it, LINK_STYLE) }
+        result.splitOn("\\[\\[[0-9]+(,\\s*[0-9]+)*]]".toRegex()) { FormattedTextNode(it, LINK_STYLE) }
+        result.splitOn("\\[\\[Citation [0-9]+(,\\s*[0-9]+)*]]".toRegex()) { FormattedTextNode(it, LINK_STYLE) }
         return FormattedText(result)
     }
 
@@ -148,12 +162,10 @@ data class SnippetMatch(
     val snippetEmbedding: List<Double>,
     val score: Double
 ) {
-    @get:JsonIgnore
-    val snippetLength = snippetEnd - snippetStart
 
     constructor(match: EmbeddingMatch) : this(
         match,
-        match.document.shortName,
+        match.document.shortNameWithoutExtension,
         match.section.start,
         match.section.end,
         match.readText(),
@@ -161,137 +173,13 @@ data class SnippetMatch(
         match.score
     )
 
+    override fun toString() = "SnippetMatch($document, $snippetStart, $snippetEnd, $score)"
+
+    @get:JsonIgnore
+    val snippetLength = snippetEnd - snippetStart
+
     /** Test for a matching document. */
     fun matchesDocument(doc: String) = embeddingMatch.document.shortNameWithoutExtension == doc
-}
-
-//endregion
-
-//region DATA OBJECTS DESCRIBING FORMATTED TEXT
-
-/** A result that contains plain text and links. */
-class FormattedText(val nodes: List<FormattedTextNode>) {
-    var hyperlinkOp: (String) -> Unit = { }
-    override fun toString() = nodes.joinToString("") { it.text }
-}
-
-/** A text node within [FormattedText]. */
-class FormattedTextNode(
-    val text: String,
-    val style: String? = null,
-    val hyperlink: String? = null
-) {
-    /** Splits this node by a [Regex], keeping the same style and hyperlink. */
-    fun splitOn(find: Regex, replace: (String) -> FormattedTextNode): List<FormattedTextNode> {
-        val result = mutableListOf<FormattedTextNode>()
-        var index = 0
-        find.findAll(text).forEach {
-            val text0 = text.substring(index, it.range.first)
-            if (text0.length > 1) {
-                result += FormattedTextNode(text0, style, hyperlink)
-            }
-            result += replace(it.value)
-            index = it.range.last + 1
-        }
-        result += FormattedTextNode(text.substring(index), style, hyperlink)
-        return result
-    }
-}
-
-/** Splits all text elements on a given search string. */
-private fun MutableList<FormattedTextNode>.splitOn(find: String, replace: (String) -> FormattedTextNode) =
-    splitOn(Regex.fromLiteral(find), replace)
-
-/** Splits all text elements on a given search string. */
-private fun MutableList<FormattedTextNode>.splitOn(find: Regex, replace: (String) -> FormattedTextNode) =
-    toList().forEach {
-        val newNodes = it.splitOn(find, replace)
-        if (newNodes != listOf(it)) {
-            addAll(indexOf(it), newNodes)
-            remove(it)
-        }
-    }
-
-/** Convert a [FormattedText] to HTML. */
-fun FormattedText.toHtml(): String {
-    val text = StringBuilder("<html>\n")
-    nodes.forEach {
-        val style = it.style ?: ""
-        val bold = style.contains("-fx-font-weight: bold")
-        val italic = style.contains("-fx-font-style: italic")
-        val color = if (style.contains("-fx-fill:"))
-            style.substringAfter("-fx-fill:").let { it.substringBefore(";", it) }
-        else null
-        val prefix = (if (bold) "<b>" else "") + (if (italic) "<i>" else "") +
-                (if (color != null) "<font color=\"$color\">" else "")
-        val textWithBreaks = it.text.replace("\n", "<br>")
-        val suffix = (if (color != null) "</font>" else "") +
-                (if (italic) "</i>" else "") + (if (bold) "</b>" else "")
-        text.append(prefix)
-        if (it.hyperlink != null)
-            text.append("<a href=\"$textWithBreaks\">${it.hyperlink}</a>")
-        else
-            text.append(textWithBreaks)
-        text.append(suffix)
-    }
-    return text.toString()
-}
-
-/** Convert a [FormattedText] to JavaFx nodes. */
-fun FormattedText.toFxNodes() =
-    nodes.map { it.toFxNode(hyperlinkOp) }
-
-/** Convert a formatted text node to an FX node. */
-fun FormattedTextNode.toFxNode(hyperlinkOp: (String) -> Unit): Node =
-    when (hyperlink) {
-        null -> Text(text).also {
-            it.style = style
-        }
-        else -> Hyperlink(text).also {
-            it.style = style
-            it.action { hyperlinkOp(text) }
-        }
-    }
-
-//endregion
-
-//region CONTEXT TEXT BUILDERS
-
-/**
- * Strategy for constructing a context from a set of matches.
- * This may rearrange the snippets and/or construct the concatenated text for an LLM query.
- */
-sealed class ContextStrategy(val id: String) {
-    /** Constructs the context from the given matches. */
-    abstract fun constructContext(matches: List<SnippetMatch>): String
-}
-
-class ContextStrategyBasic : ContextStrategy("Basic") {
-    override fun constructContext(matches: List<SnippetMatch>) =
-        matches.joinToString("\n```\n") {
-            "Document: ${File(it.embeddingMatch.document.path).name}\n```\nRelevant Text: ${it.snippetText}"
-        }
-}
-
-class ContextStrategyBasic2 : ContextStrategy("Basic") {
-    override fun constructContext(matches: List<SnippetMatch>): String {
-        val docs = matches.groupBy { it.embeddingMatch.document.shortName }
-        return docs.entries.mapIndexed { i, entry ->
-            "  - \"\"" + entry.value.joinToString("\n... ") { it.snippetText.trim() } + "\"\"" +
-                    " [${i+1}] ${entry.key}"
-        }.joinToString("\n  ")
-    }
-}
-
-class ContextStrategyBasic3 : ContextStrategy("Basic") {
-    override fun constructContext(matches: List<SnippetMatch>): String {
-        var n = 1
-        val docs = matches.groupBy { it.embeddingMatch.document.shortName }
-        return docs.map { (doc, text) ->
-            val combinedText = text.joinToString("\n... ") { it.snippetText.trim() }
-            "[[Citation ${n++}]] ${doc}\n\"\"\"\n$combinedText\n\"\"\"\n"
-        }.joinToString("\n\n")
-    }
 }
 
 //endregion
