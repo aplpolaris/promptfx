@@ -73,8 +73,8 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
                                 imageview(image) {
                                     onLeftClick { close() }
                                 }
-                                form.padding = null
-                                padding = null
+                                form.padding = insets(0)
+                                padding = insets(0)
                             }
                         }
                     }
