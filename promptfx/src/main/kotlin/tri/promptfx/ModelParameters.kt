@@ -20,16 +20,22 @@
 package tri.promptfx
 
 import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.event.EventTarget
-import tornadofx.*
+import tornadofx.field
+import tornadofx.label
+import tornadofx.tooltip
 import tri.util.ui.slider
 
-class CommonParameters {
+/** Parameters for model content generation. */
+class ModelParameters {
 
     internal val temp = SimpleDoubleProperty(1.0)
     internal val topP = SimpleDoubleProperty(1.0)
     internal val freqPenalty = SimpleDoubleProperty(0.0)
     internal val presPenalty = SimpleDoubleProperty(0.0)
+
+    internal val maxTokens = SimpleIntegerProperty(500)
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -56,6 +62,14 @@ class CommonParameters {
         field("Presence Penalty") {
             slider(-2.0..2.0, presPenalty)
             label(presPenalty.asString("%.2f"))
+        }
+    }
+
+    fun EventTarget.maxTokens() {
+        field("Maximum Tokens") {
+            tooltip("Max # of tokens for combined query/response from the text completion engine")
+            slider(0..2000, maxTokens)
+            label(maxTokens.asString())
         }
     }
 

@@ -29,6 +29,7 @@ import tri.ai.embedding.*
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.promptfx.ModelParameters
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -51,6 +52,7 @@ class DocumentQaPlanner {
      * @param contextChunks how many of the retrieved chunks to use for constructing the context
      * @param completionEngine completion engine to use
      * @param maxTokens maximum number of tokens to generate
+     * @param tempParameters temperature/randomness parameters
      */
     fun plan(
         question: String,
@@ -62,6 +64,7 @@ class DocumentQaPlanner {
         contextChunks: Int,
         completionEngine: TextCompletion,
         maxTokens: Int,
+        tempParameters: ModelParameters
     ) = aitask("calculate-embeddings") {
         runLater { snippets.setAll() }
         findRelevantSection(question, chunksToRetrieve).also {
@@ -71,7 +74,7 @@ class DocumentQaPlanner {
         val queryChunks = it.filter { it.snippetLength >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
-        val response = completionEngine.instructTask(promptId, question, context, maxTokens)
+        val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
         val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
         response.map {
             QuestionAnswerResult(

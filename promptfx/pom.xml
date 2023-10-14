@@ -82,7 +82,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt</artifactId>
-            <version>0.1.11</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -19,7 +19,6 @@
  */
 package tri.promptfx.apps
 
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.templatePlan
@@ -41,8 +40,6 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
     private val formatMode = SimpleStringProperty(formatModeOptions.keys.first())
 
     private val sampleOutput = SimpleStringProperty("")
-    private val length = SimpleIntegerProperty(300)
-//    private var common = CommonParameters()
 
     init {
         addInputTextArea(sourceText)
@@ -61,18 +58,10 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
                 combobox(formatMode, formatModeOptions.keys.toList())
             }
         }
-//        parameters("Parameters") {
-//            with(common) {
-//                temperature()
-//                topP()
-//            }
-//        }
-        parameters("Output") {
-            field("Maximum Length") {
-                slider(0..2000) {
-                    valueProperty().bindBidirectional(length)
-                }
-                label(length.asString())
+        parameters("Model Parameters") {
+            with (common) {
+                temperature()
+                maxTokens()
             }
         }
     }
@@ -82,7 +71,8 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
         "guidance" to guidance.get(),
         "format" to formatModeOptions[formatMode.value]!!,
         "example" to sampleOutput.get(),
-        tokenLimit = length.get()
+        tokenLimit = common.maxTokens.value,
+        temp = common.temp.value,
     )
 
 }

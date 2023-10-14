@@ -27,7 +27,7 @@ import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.openai.editsModels
 import tri.promptfx.AiTaskView
-import tri.promptfx.CommonParameters
+import tri.promptfx.ModelParameters
 
 class EditsView : AiTaskView("Edit", "Enter text to edit, and instructions to apply to the text below.") {
 
@@ -35,7 +35,7 @@ class EditsView : AiTaskView("Edit", "Enter text to edit, and instructions to ap
     private val instructText = SimpleStringProperty("")
     private val model = SimpleStringProperty(editsModels[0])
     private val length = SimpleIntegerProperty(50)
-    private var common = CommonParameters()
+    private var common = ModelParameters()
 
     init {
         addInputTextArea(input)

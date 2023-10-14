@@ -33,7 +33,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
 
     override fun plan() =
         aitask("wikipedia-page-guess") {
-            completionEngine.promptTask("wikipedia-page-guess", input, tokenLimit = 500)
+            completionEngine.promptTask("wikipedia-page-guess", input, tokenLimit = 100, temp = null)
         }.task("wikipedia-page-search") {
             firstMatchingPage(it).also {
                 pageTitle?.value = it
@@ -43,7 +43,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
                 pageTitle?.apply { value = "$value\n\n$it" }
             }
         }.aitask("question-answer") {
-            completionEngine.instructTask("question-answer", input, it, tokenLimit = 500)
+            completionEngine.instructTask("question-answer", input, it, tokenLimit = 1000, temp = null)
         }.plan
 
     private fun firstMatchingPage(query: String): String {

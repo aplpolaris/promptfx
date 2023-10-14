@@ -21,7 +21,6 @@ package tri.promptfx.tools
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
@@ -30,7 +29,6 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.CommonParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.slider
 import java.time.LocalDate
@@ -45,9 +43,6 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     private val template = SimpleStringProperty("")
     private val fields = observableListOf<Pair<String, String>>()
     private val fieldMap = mutableMapOf<String, String>()
-
-    private val common = CommonParameters()
-    private val maxTokens = SimpleIntegerProperty(500)
 
     init {
         template.onChange { updateTemplateInputs(it!!) }
@@ -116,21 +111,17 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 }
             }
         }
-        parameters("Parameters") {
+        parameters("Model Parameters") {
             with(common) {
                 temperature()
-                field("Max tokens") {
-                    tooltip("Max # of tokens for combined query/response from the question answering engine")
-                    slider(1..2000, maxTokens)
-                    label(maxTokens)
-                }
+                maxTokens()
             }
         }
     }
 
     override fun plan() = aitask("text-completion") {
         AiPrompt(template.value).fill(fieldMap).let {
-            completionEngine.complete(it, temperature = common.temp.value, tokens = maxTokens.value)
+            completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value)
         }
     }.planner
 

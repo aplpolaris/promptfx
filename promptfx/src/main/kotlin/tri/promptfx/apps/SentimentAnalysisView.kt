@@ -44,11 +44,19 @@ class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
                 combobox(mode, modeOptions)
             }
         }
+        parameters("Model Parameters") {
+            with (common) {
+                temperature()
+                maxTokens()
+            }
+        }
     }
 
     override fun plan() = completionEngine.instructTextPlan("sentiment-classify",
         instruct = mode.get(),
         userText = sourceText.get(),
-        tokenLimit = 500)
+        tokenLimit = common.maxTokens.value!!,
+        temp = common.temp.value,
+    )
 
 }

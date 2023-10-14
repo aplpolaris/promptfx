@@ -44,11 +44,19 @@ class TranslationView: AiPlanTaskView("Translation", "Enter text to translate") 
                 combobox(mode, modeOptions)
             }
         }
+        parameters("Model Parameters") {
+            with (common) {
+                temperature()
+                maxTokens()
+            }
+        }
     }
 
     override fun plan() = completionEngine.instructTextPlan("translate-text",
         instruct = mode.get(),
         userText = sourceText.get(),
-        tokenLimit = 1000)
+        tokenLimit = common.maxTokens.value,
+        temp = common.temp.value,
+    )
 
 }

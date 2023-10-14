@@ -30,5 +30,6 @@ class EmojiView : AiCompletionView(
     "Emoji",
     "Enter text to turn into Emoji",
     "example-emoji",
-    tokenLimit = 50
+    tokenLimit = 50,
+    temp = null
 )

@@ -57,6 +57,12 @@ class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summariz
                 combobox(modeOutput, outputOptions.keys.toList())
             }
         }
+        parameters("Model Parameters") {
+            with (common) {
+                temperature()
+                maxTokens()
+            }
+        }
     }
 
     override fun plan(): AiPlanner {
@@ -69,7 +75,8 @@ class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summariz
         return completionEngine.templatePlan("summarization",
             "instruct" to fullInstruct,
             "input" to sourceText.get(),
-            tokenLimit = 500
+            tokenLimit = common.maxTokens.value!!,
+            temp = common.temp.value,
         )
     }
 
