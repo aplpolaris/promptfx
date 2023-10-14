@@ -244,10 +244,12 @@ fun FormattedText.toFxNodes() =
 /** Convert a formatted text node to an FX node. */
 fun FormattedTextNode.toFxNode(hyperlinkOp: (String) -> Unit): Node =
     when (hyperlink) {
-        null -> Text(text).apply { style = style }
-        else -> Hyperlink(text).apply {
-            style = style
-            action { hyperlinkOp(text) }
+        null -> Text(text).also {
+            it.style = style
+        }
+        else -> Hyperlink(text).also {
+            it.style = style
+            it.action { hyperlinkOp(text) }
         }
     }
 
