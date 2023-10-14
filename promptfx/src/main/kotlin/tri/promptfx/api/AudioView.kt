@@ -37,7 +37,7 @@ import tri.ai.openai.audioModels
 import tri.util.ui.AudioRecorder
 import tri.ai.openai.AUDIO_WHISPER
 import tri.promptfx.AiTaskView
-import tri.promptfx.CommonParameters
+import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
 import java.io.File
 
@@ -52,7 +52,7 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
     private val input = SimpleStringProperty("")
     private val file = SimpleObjectProperty<File?>(null)
     private val model = SimpleStringProperty(audioModels[0])
-    private val common = CommonParameters()
+    private val common = ModelParameters()
 
     private var recorder: AudioRecorder? = null
     private var player: MediaPlayer? = null

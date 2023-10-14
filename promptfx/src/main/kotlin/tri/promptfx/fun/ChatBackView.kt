@@ -27,8 +27,6 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
-import tri.ai.core.TextCompletion
-import tri.ai.openai.chatModels
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskResult

@@ -29,18 +29,18 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.control.Alert
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ModelParameters
 import tri.promptfx.DocumentUtils.documentThumbnail
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
@@ -191,6 +191,14 @@ class DocumentQaView: AiPlanTaskView(
                 label(maxTokens)
             }
         }
+        parameters("Model") {
+            field("Model") {
+                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
+            }
+            with (common) {
+                temperature()
+            }
+        }
         parameters("Prompt Template") {
             tooltip("Templates are defined in prompts.yaml")
             field("Template") {
@@ -233,7 +241,8 @@ class DocumentQaView: AiPlanTaskView(
         contextStrategy = ContextStrategyBasic3(),
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
-        maxTokens = maxTokens.value
+        maxTokens = maxTokens.value,
+        tempParameters = common
     )
 
     // override the user input to enable clicking hyperlinks

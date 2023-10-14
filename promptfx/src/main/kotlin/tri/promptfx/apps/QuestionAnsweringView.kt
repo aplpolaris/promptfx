@@ -60,12 +60,20 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
                 }
             }
         }
+        parameters("Model Parameters") {
+            with (common) {
+                temperature()
+                maxTokens()
+            }
+        }
     }
 
     override fun plan() = completionEngine.instructTextPlan(
         promptId.value,
         instruct = question.get(),
         userText = sourceText.get(),
-        tokenLimit = 500)
+        tokenLimit = common.maxTokens.value!!,
+        temp = common.temp.value,
+    )
 
 }

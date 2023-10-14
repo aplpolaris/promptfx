@@ -26,7 +26,7 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.openai.chatModels
 import tri.promptfx.AiTaskView
-import tri.promptfx.CommonParameters
+import tri.promptfx.ModelParameters
 
 /**
  * Common functionality for chat API views.
@@ -41,7 +41,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
 
     protected val stopSequences = SimpleStringProperty("")
     protected val maxTokens = SimpleIntegerProperty(500)
-    protected var common = CommonParameters()
+    protected var common = ModelParameters()
 
     protected lateinit var chatHistory: ChatHistoryView
 

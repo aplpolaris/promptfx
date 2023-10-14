@@ -25,32 +25,28 @@ import tri.ai.core.TextCompletion
 import tri.ai.pips.aitask
 
 /** Generate a task that adds user input to a prompt. */
-suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, stop: String? = null) =
+suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null) =
     AiPromptLibrary.lookupPrompt(promptId).prompt(input).let {
-        complete(it, tokenLimit, stop = stop)
+        complete(it, tokenLimit, temp, stop = stop)
     }
 
 /** Generate a task that combines a single instruction or question about contextual text. */
-suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int) =
+suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?) =
     AiPromptLibrary.lookupPrompt(promptId).instruct(instruct, userText).let {
-        complete(it, tokens = tokenLimit)
+        complete(it, tokenLimit, temp)
     }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int) =
-    templateTask(promptId, fields.toMap(), tokenLimit)
-
-/** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int) =
+suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?) =
     AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
-        complete(it, tokens = tokenLimit)
+        complete(it, tokenLimit, temp)
     }
 
 //region CONVERTING TASKS
 
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
-suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int) =
-    promptTask(id, input, tokenLimit).let {
+suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?) =
+    promptTask(id, input, tokenLimit, temp).let {
         it.map { mapper.readValue<T>(it.trim()) }
     }
 
@@ -59,23 +55,23 @@ suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: 
 //region PLANNERS
 
 /** Planner that generates a plan for a single completion prompt. */
-fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, stop: String? = null) = aitask(promptId) {
-    promptTask(promptId, input, tokenLimit, stop)
+fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null) = aitask(promptId) {
+    promptTask(promptId, input, tokenLimit, temp, stop)
 }.planner
 
 /** Planner that generates a plan for a single instruction or question about user's text. */
-fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int) = aitask(promptId) {
-    instructTask(promptId, instruct, userText, tokenLimit)
+fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?) = aitask(promptId) {
+    instructTask(promptId, instruct, userText, tokenLimit, temp)
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int) = aitask(promptId) {
-    templateTask(promptId, *fields, tokenLimit = tokenLimit)
+fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?) = aitask(promptId) {
+    templateTask(promptId, fields.toMap(), tokenLimit, temp)
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int) = aitask(promptId) {
-    templateTask(promptId, fields, tokenLimit = tokenLimit)
+fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?) = aitask(promptId) {
+    templateTask(promptId, fields, tokenLimit, temp)
 }.planner
 
 //endregion

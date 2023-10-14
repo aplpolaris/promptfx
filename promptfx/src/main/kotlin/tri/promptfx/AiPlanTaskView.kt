@@ -25,6 +25,8 @@ import tri.ai.pips.AiPlanner
 /** View that gets result from a planned set of tasks. */
 abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
 
+    protected val common = ModelParameters()
+
     override suspend fun processUserInput() =
         AiPipelineExecutor.execute(plan().plan(), progress)
 

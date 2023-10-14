@@ -28,6 +28,7 @@ open class AiCompletionView(
     description: String,
     val promptId: String,
     val tokenLimit: Int,
+    val temp: Double?,
     val stop: String? = null
 ) : AiPlanTaskView(title, description) {
 
@@ -37,6 +38,6 @@ open class AiCompletionView(
         addInputTextArea(input)
     }
 
-    override fun plan() = completionEngine.promptPlan(promptId, input.get(), tokenLimit, stop)
+    override fun plan() = completionEngine.promptPlan(promptId, input.get(), tokenLimit, temp, stop)
 
 }

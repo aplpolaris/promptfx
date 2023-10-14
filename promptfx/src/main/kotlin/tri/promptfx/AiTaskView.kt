@@ -3,6 +3,7 @@ package tri.promptfx
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
+import javafx.geometry.Side
 import javafx.scene.control.Alert
 import javafx.scene.control.TextArea
 import javafx.scene.control.Tooltip
@@ -97,16 +98,16 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             }
         }
         right {
-            hbox {
-                isVisible = false
-                scrollpane {
-                    isFitToWidth = true
-                    isFitToHeight = true
-                    style = "-fx-background-color: transparent; -fx-background-insets: 0"
-                    parameterForm = form {
-                        children.onChange {
-                            this@hbox.isManaged = true
-                            this@hbox.isVisible = true
+            drawer(side = Side.RIGHT) {
+                item("Parameters", expanded = false) {
+                    scrollpane {
+                        isFitToWidth = true
+                        isFitToHeight = true
+                        style = "-fx-background-color: transparent; -fx-background-insets: 0"
+                        parameterForm = form {
+                            children.onChange {
+                                this@item.expanded = true
+                            }
                         }
                     }
                 }

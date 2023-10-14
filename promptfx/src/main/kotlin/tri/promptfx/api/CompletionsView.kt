@@ -28,7 +28,7 @@ import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
-import tri.promptfx.CommonParameters
+import tri.promptfx.ModelParameters
 import tri.util.ui.slider
 
 class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
@@ -36,7 +36,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
     private val input = SimpleStringProperty("")
     private val model = SimpleObjectProperty(TextPlugin.textCompletionModels().first())
     private val maxTokens = SimpleIntegerProperty(500)
-    private var common = CommonParameters()
+    private var common = ModelParameters()
 
     init {
         addInputTextArea(input)

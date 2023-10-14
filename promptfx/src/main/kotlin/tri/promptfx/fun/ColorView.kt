@@ -60,7 +60,13 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         }
     }
 
-    override fun plan() = completionEngine.promptPlan("example-color", input.get(), tokenLimit = 6, stop = ";")
+    override fun plan() = completionEngine.promptPlan(
+        "example-color",
+        input.get(),
+        tokenLimit = 6,
+        temp = null,
+        stop = ";"
+    )
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"
 
