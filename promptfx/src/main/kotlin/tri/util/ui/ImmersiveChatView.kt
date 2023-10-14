@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * promptfx-0.1.0-SNAPSHOT
+ * %%
+ * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
@@ -19,30 +38,10 @@ import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
-import tri.promptfx.DocumentUtils.browseToDocument
 import tri.promptfx.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.apps.DocumentQaView
-
-/*-
- * #%L
- * promptfx-0.1.0-SNAPSHOT
- * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+import tri.promptfx.apps.DocumentQaView.Companion.browseToBestSnippet
 
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {
@@ -50,6 +49,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val onUserRequest: suspend (String) -> List<Node> by param()
     val baseComponentTitle: String? by param()
     val baseComponent: View? by param()
+    val inputFontSize = SimpleIntegerProperty(64)
 
     val indicator = FontAwesomeIcon.ROCKET.graphic.also {
         it.glyphSize = 60.0
@@ -57,7 +57,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     val controller: PromptFxController by inject()
-    val thumbnailList = observableListOf<Pair<EmbeddingDocument, Image>>()
+    private val thumbnailList = observableListOf<DocumentThumbnail>()
     val input = SimpleStringProperty("")
     val response = observableListOf<Node>()
 
@@ -67,7 +67,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         if (baseComponent is DocumentQaView) {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
-                val thumbs = base.snippets.map { it.document }.toSet()
+                val thumbs = base.snippets.map { it.embeddingMatch.document }.toSet()
                     .associateWith { documentThumbnail(it) }
                 animateThumbs(thumbs)
             }
@@ -103,6 +103,17 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             prefHeight = 0.2 * screenHeight
             alignment = Pos.CENTER
             action { handleUserAction() }
+            inputFontSize.onChange {
+                style = "-fx-font-size: ${it}px;"
+            }
+            // when pressing up or down adjust the font size
+            setOnKeyPressed {
+                when (it.code) {
+                    javafx.scene.input.KeyCode.UP -> inputFontSize.value += 2
+                    javafx.scene.input.KeyCode.DOWN -> inputFontSize.value -= 2
+                    else -> {}
+                }
+            }
         }
 
         hbox {
@@ -128,9 +139,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             alignment = Pos.CENTER
             prefHeight = 0.25 * screenHeight
             spacing = 40.0
-            children.bind(thumbnailList) {
-                docthumbnail(it.first, it.second)
-            }
+            children.bind(thumbnailList) { docthumbnail(it) }
         }
     }
 
@@ -146,9 +155,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         response.setAll()
         blinkIndicator(start = true)
         runAsync {
-            runBlocking {
-                onUserRequest(input.value)
-            }
+            runBlocking { onUserRequest(input.value) }
         } ui {
             blinkIndicator(start = false)
             controller.updateUsage()
@@ -162,8 +169,22 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 
     //region ANIMATION
 
-    private fun EventTarget.docthumbnail(document: EmbeddingDocument, image: Image) = vbox {
-        imageview(image) {
+    private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
+        val action: (() -> Unit)? = when (val view = baseComponent) {
+            is DocumentQaView -> {
+                { browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
+            }
+            else -> null
+        }
+        if (doc.image == null)
+            hyperlink(doc.document.shortName) {
+                style = "-fx-font-size: 16px;"
+                if (action != null) {
+                    action(action)
+                }
+            }
+        else
+            imageview(doc.image) {
             opacity = 0.0
             timeline {
                 keyframe(1.0.seconds) {
@@ -176,18 +197,18 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
                     keyvalue(scaleYProperty(), 1.0)
                 }
             }
-            cursor = javafx.scene.Cursor.HAND
-            setOnMouseClicked {
-                browseToDocument(hostServices, document)
+            if (action != null) {
+                cursor = javafx.scene.Cursor.HAND
+                setOnMouseClicked { action() }
             }
         }
     }
 
     private fun animateThumbs(thumbs: Map<EmbeddingDocument, Image?>) {
         thumbnailList.clear()
-        val entries = thumbs.entries.filter { it.value != null }.map { it.key to it.value!! }
+        val entries = thumbs.entries.toList()
         val n = SimpleIntegerProperty(-1).apply {
-            onChange { thumbnailList.add(entries[it]) }
+            onChange { thumbnailList.add(DocumentThumbnail(entries[it].key, entries[it].value)) }
         }
         timeline {
             keyframe(2.0.seconds) {
@@ -219,13 +240,12 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     //endregion
 }
 
+/** A document thumbnail object. */
+private class DocumentThumbnail(val document: EmbeddingDocument, val image: Image?)
+
 /** Animates a series of text and hyperlink objects within a [TextFlow]. */
 private object TextFlowAnimator {
     fun animateText(sourceText: List<Node>, target: ObservableList<Node>, onFrame: () -> Unit, onFinished: () -> Unit) {
-//        target.setAll(sourceText)
-//        onFrame()
-//        onFinished()
-
         // calculate length of text in this node
         fun Node.length() = (this as? Text)?.text?.length ?: (this as? Hyperlink)?.text?.length ?: 0
 
@@ -271,7 +291,11 @@ private object TextFlowAnimator {
             keyframe(time.seconds) {
                 keyvalue(chars, totalLength)
             }
-            setOnFinished { onFinished() }
+            setOnFinished {
+                target.setAll(sourceText)
+                onFrame()
+                onFinished()
+            }
         }
     }
 }

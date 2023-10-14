@@ -27,6 +27,11 @@ interface EmbeddingIndex {
     suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
 }
 
+/** A no-op version of the embedding index. */
+object NoOpEmbeddingIndex : EmbeddingIndex {
+    override suspend fun findMostSimilar(query: String, n: Int) = listOf<EmbeddingMatch>()
+}
+
 /** A scored match for a query. */
 class EmbeddingMatch(
     val document: EmbeddingDocument,

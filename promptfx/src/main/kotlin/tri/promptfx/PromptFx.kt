@@ -22,8 +22,12 @@ package tri.promptfx
 import javafx.scene.Cursor
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
+import org.apache.commons.logging.LogFactory
+import org.apache.commons.logging.impl.Jdk14Logger
+import org.apache.pdfbox.pdmodel.font.PDSimpleFont
 import tornadofx.*
 import tri.promptfx.apps.DocumentQaView
+import java.util.logging.Level
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun onBeforeShow(view: UIComponent) {
@@ -32,6 +36,10 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
 }
 
 fun main(args: Array<String>) {
+    (LogFactory.getLog(PDSimpleFont::class.java) as? Jdk14Logger)?.apply {
+        logger.level = Level.SEVERE
+    }
+
     launch<PromptFx>(args)
 }
 
