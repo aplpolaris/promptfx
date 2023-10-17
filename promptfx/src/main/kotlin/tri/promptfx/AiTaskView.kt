@@ -15,7 +15,7 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.*
 import tri.util.ui.graphic
 import java.lang.Exception
 
@@ -207,9 +207,10 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
 
     /** Executes task on a background thread and updates progress info. */
     private fun runTask() {
-        progress.task = executeTask {
+        val task = executeTask {
             processUserInput()
-        } ui {
+        }
+        task.ui {
             val errors = it.results.values.mapNotNull { it.error }
             if (errors.isNotEmpty()) {
                 // show error message to user
@@ -218,7 +219,9 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
                 taskCompleted(it)
             }
             controller.updateUsage()
+            progress.taskCompleted(title)
         }
+        progress.taskStarted(task, title)
     }
 
     /** Run task on a background thread. */

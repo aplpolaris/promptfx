@@ -28,16 +28,16 @@ import javafx.scene.layout.Priority
 import javafx.stage.Modality
 import javafx.stage.StageStyle
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
-import tri.promptfx.AiTaskView
+import tri.ai.pips.aitask
+import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", ImagesView::class)
 
 /** View for the OpenAI API's image endpoint. */
-class ImagesView : AiTaskView("Images", "Enter image prompt") {
+class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     private val input = SimpleStringProperty("")
     /** Image URLs */
@@ -94,15 +94,15 @@ class ImagesView : AiTaskView("Images", "Enter image prompt") {
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override fun plan() = aitask("generate-image") {
         val result = controller.openAiPlugin.client.imageURL(ImageCreation(
             prompt = input.get(),
             n = numProperty.get(),
             size = imageSize.get()
         ))
         images.addAll(result.value ?: listOf())
-        return result(result.value?.get(0) ?: "No images created", "DALL-E").asPipelineResult()
-    }
+        result(result.value?.get(0) ?: "No images created", "DALL-E")
+    }.planner
 
     //region DRAG & DROP IMAGES FOR EDIT - TBD
 

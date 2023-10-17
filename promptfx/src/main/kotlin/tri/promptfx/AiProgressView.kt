@@ -26,22 +26,13 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.Priority
 import javafx.stage.Popup
 import tornadofx.*
-import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskMonitor
-import tri.ai.pips.PrintMonitor
+import tri.ai.pips.*
 
 /** Global progress bar. */
 class AiProgressView: View(), AiTaskMonitor {
 
     lateinit var indicator: javafx.scene.control.ProgressBar
     lateinit var label: Label
-
-    var task: Task<*>? = null
-        set(value) {
-            field = value
-            fxTask = task as? FXTask<*>
-        }
-    var fxTask: FXTask<*>? = null
 
     override val root = borderpane {
         hgrow = Priority.ALWAYS
@@ -96,6 +87,21 @@ class AiProgressView: View(), AiTaskMonitor {
 
     override fun taskFailed(task: AiTask<*>, error: Throwable) {
         PrintMonitor().taskFailed(task, error)
+        end()
+    }
+
+    fun taskStarted(task: Task<AiPipelineResult>, id: String) {
+        taskStarted(object : AiTask<Any>(id) {
+            override suspend fun execute(
+                inputs: Map<String, AiTaskResult<*>>,
+                monitor: AiTaskMonitor
+            ) = task.get() as AiTaskResult<Any>
+        })
+    }
+
+    /** Hook for printing completion of simple tasks. */
+    fun taskCompleted(id: String) {
+        PrintMonitor().taskCompleted(id)
         end()
     }
 
