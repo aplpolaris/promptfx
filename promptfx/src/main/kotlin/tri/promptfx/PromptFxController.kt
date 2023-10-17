@@ -51,4 +51,20 @@ class PromptFxController : Controller() {
         imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
     }
 
+    /** Called to release resources when the application is closed. */
+    fun close() {
+        try {
+            openAiPlugin.client.client.close()
+        } catch (x: Exception) {
+            println("There was an error closing the OpenAI client: ${x.message}")
+        }
+        TextPlugin.orderedPlugins.forEach {
+            try {
+                it.close()
+            } catch (x: Exception) {
+                println("There was an error closing the plugin $it: ${x.message}")
+            }
+        }
+    }
+
 }

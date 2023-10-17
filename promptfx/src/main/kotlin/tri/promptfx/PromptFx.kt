@@ -34,6 +34,7 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
         workspace.dock<DocumentQaView>()
     }
     override fun stop() {
+        workspace.find<PromptFxController>().close()
         super.stop()
     }
 }

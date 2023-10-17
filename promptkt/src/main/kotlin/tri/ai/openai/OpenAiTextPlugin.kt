@@ -46,4 +46,7 @@ class OpenAiTextPlugin : TextPlugin {
         OpenAiEmbeddingService(client)
     )
 
+    override fun close() {
+        client.client.close()
+    }
 }
