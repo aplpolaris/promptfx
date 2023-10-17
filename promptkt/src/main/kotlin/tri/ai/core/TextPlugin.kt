@@ -35,6 +35,9 @@ interface TextPlugin {
     /** Provide a list of embedding models. */
     fun embeddingModels(): List<EmbeddingService>
 
+    /** Closes resources associated with the plugin. */
+    fun close()
+
     companion object {
         private val plugins: ServiceLoader<TextPlugin> by lazy { ServiceLoader.load(TextPlugin::class.java) }
         val defaultPlugin = plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin

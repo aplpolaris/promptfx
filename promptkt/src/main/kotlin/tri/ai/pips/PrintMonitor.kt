@@ -19,13 +19,17 @@
  */
 package tri.ai.pips
 
+/** Task monitor that prints to console. */
 class PrintMonitor: AiTaskMonitor {
+
     override fun taskStarted(task: AiTask<*>) {
         printGray("Started: ${task.id}")
     }
+
     override fun taskUpdate(task: AiTask<*>, progress: Double) {
         printGray("Update: ${task.id} $progress")
     }
+
     override fun taskCompleted(task: AiTask<*>, result: Any?) {
         val value = (result as? AiTaskResult<*>)?.value ?: result
         if (value is Iterable<*>) {
@@ -36,6 +40,12 @@ class PrintMonitor: AiTaskMonitor {
         }
         printGray("  completed: ${task.id}")
     }
+
+    /** Hook for printing completion of simple tasks. */
+    fun taskCompleted(id: String) {
+        printGray("  completed: $id")
+    }
+
     override fun taskFailed(task: AiTask<*>, error: Throwable) {
         printRed("  failed: ${task.id} with error $error")
     }

@@ -169,14 +169,11 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         }
     }
 
-    override fun plan() = object : AiPlanner {
-        override fun plan(): List<AiTask<*>> {
-            addUserInputToHistory()
-
-            return aitask("chat-back") {
-                chatBack()
-            }.plan
-        }
+    override fun plan(): AiPlanner {
+        addUserInputToHistory()
+        return aitask("chat-back") {
+            chatBack()
+        }.planner
     }
 
     private fun addUserInputToHistory() {

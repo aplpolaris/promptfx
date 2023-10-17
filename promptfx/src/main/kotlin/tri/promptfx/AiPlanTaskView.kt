@@ -22,7 +22,10 @@ package tri.promptfx
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPlanner
 
-/** View that gets result from a planned set of tasks. */
+/**
+ * View that gets result from a planned set of tasks from an [AiPlanner] object.
+ * These tasks can be monitored while executing.
+ */
 abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
 
     protected val common = ModelParameters()

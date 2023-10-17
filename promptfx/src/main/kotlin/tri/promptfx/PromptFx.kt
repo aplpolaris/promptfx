@@ -33,6 +33,10 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun onBeforeShow(view: UIComponent) {
         workspace.dock<DocumentQaView>()
     }
+    override fun stop() {
+        workspace.find<PromptFxController>().close()
+        super.stop()
+    }
 }
 
 fun main(args: Array<String>) {

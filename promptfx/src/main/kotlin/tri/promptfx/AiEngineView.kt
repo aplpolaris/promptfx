@@ -29,7 +29,7 @@ import tri.util.ui.graphic
  * #L%
  */
 
-/** Simple view that aggregates tokens used. */
+/** View for selecting which model to use, and for picking between models. */
 class AiEngineView: View() {
 
     val controller: PromptFxController by inject()
