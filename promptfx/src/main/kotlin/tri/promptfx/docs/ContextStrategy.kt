@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 /**
  * Strategy for constructing a context from a set of matches.

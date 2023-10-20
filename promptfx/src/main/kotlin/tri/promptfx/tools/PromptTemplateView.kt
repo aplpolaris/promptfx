@@ -30,7 +30,6 @@ import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.slider
 import java.time.LocalDate
 
 /** Plugin for the [PromptTemplateView]. */

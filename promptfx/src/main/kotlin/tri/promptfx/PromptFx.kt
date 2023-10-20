@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.impl.Jdk14Logger
 import org.apache.pdfbox.pdmodel.font.PDSimpleFont
 import tornadofx.*
-import tri.promptfx.apps.DocumentQaView
+import tri.promptfx.docs.DocumentQaView
 import java.util.logging.Level
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {

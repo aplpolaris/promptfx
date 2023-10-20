@@ -28,7 +28,6 @@ import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPromptLibrary

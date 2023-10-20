@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 import javafx.application.HostServices
 import javafx.scene.control.Alert
@@ -31,12 +31,12 @@ import java.awt.Desktop
 import java.io.File
 
 /** An action to perform when a document link is clicked. */
-sealed class DocumentLinkAction {
+sealed class DocumentOpener {
     abstract fun open()
 }
 
 /** Opens the document in the system default application. */
-class DocumentOpenInSystem(val document: EmbeddingDocument, val hostServices: HostServices?) : DocumentLinkAction() {
+class DocumentOpenInSystem(val document: EmbeddingDocument, val hostServices: HostServices?) : DocumentOpener() {
     override fun open() {
         val file1 = File(document.path)
         val fileList = listOf("pdf", "doc", "docx", "txt").map {
@@ -56,7 +56,7 @@ class DocumentOpenInSystem(val document: EmbeddingDocument, val hostServices: Ho
 }
 
 /** Opens the document in JavaFx PDF viewer. */
-class DocumentOpenInViewer(val document: EmbeddingDocument, val hostServices: HostServices?): DocumentLinkAction() {
+class DocumentOpenInViewer(val document: EmbeddingDocument, val hostServices: HostServices?): DocumentOpener() {
     override fun open() =
         when {
             document.file.extension.lowercase() == "pdf" -> openPdf(page = 0)
@@ -78,11 +78,10 @@ class DocumentOpenInViewer(val document: EmbeddingDocument, val hostServices: Ho
 }
 
 /** Browses to a given snippet within a document. */
-class DocumentBrowseToPage(val match: SnippetMatch, val hostServices: HostServices?): DocumentLinkAction() {
+class DocumentBrowseToPage(val doc: EmbeddingDocument, val text: String, val hostServices: HostServices?): DocumentOpener() {
     override fun open() {
-        val doc = match.embeddingMatch.document
         if (doc.file.extension.lowercase() == "pdf") {
-            val page = findTextInPdf(doc.file, match.snippetText)
+            val page = findTextInPdf(doc.file, text)
             DocumentOpenInViewer(doc, hostServices).openPdf(page - 1)
         } else {
             DocumentOpenInSystem(doc, hostServices).open()
@@ -91,14 +90,14 @@ class DocumentBrowseToPage(val match: SnippetMatch, val hostServices: HostServic
 }
 
 /** Browses to the closest snippet matching given text embedding in a document. */
-class DocumentBrowseToClosestMatch(val matches: List<SnippetMatch>, val textEmbedding: List<Double>?, val hostServices: HostServices?): DocumentLinkAction() {
+class DocumentBrowseToClosestMatch(val matches: List<SnippetMatch>, val textEmbedding: List<Double>?, val hostServices: HostServices?): DocumentOpener() {
     override fun open() {
         println("Browsing to the closest of ${matches.size} snippets within this document...")
         val closestSnippet = when {
             matches.size == 1 || textEmbedding == null -> matches.first()
             else -> closestMatchToResponse(matches, textEmbedding)
         }
-        DocumentBrowseToPage(closestSnippet, hostServices).open()
+        DocumentBrowseToPage(closestSnippet.embeddingMatch.document, closestSnippet.snippetText, hostServices).open()
     }
 
     /** Calculates the snippet that was most similar to the generated answer. */

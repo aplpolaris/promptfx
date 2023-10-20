@@ -28,8 +28,8 @@ import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
 import tri.promptfx.api.*
-import tri.promptfx.apps.FormattedText
-import tri.promptfx.apps.toFxNodes
+import tri.promptfx.docs.FormattedText
+import tri.promptfx.docs.toFxNodes
 import tri.util.ui.ImmersiveChatView
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.graphic
@@ -80,10 +80,13 @@ class PromptFxWorkspace : Workspace() {
                 browsehyperlink("API Pricing", "https://openai.com/pricing")
                 browsehyperlink("OpenAI Blog", "https://openai.com/blog")
             }
-            group("Text", FontAwesomeIcon.FILE.graphic.gray) {
+            group("Tools", FontAwesomeIcon.WRENCH.graphic.gray) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Tools", FontAwesomeIcon.WRENCH.graphic.gray) {
+            group("Documents", FontAwesomeIcon.FILE.graphic.gray) {
+                // configured via [NavigableWorkspaceView] plugins
+            }
+            group("Text", FontAwesomeIcon.FONT.graphic.gray) {
                 // configured via [NavigableWorkspaceView] plugins
             }
             group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.gray) {

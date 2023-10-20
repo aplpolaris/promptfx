@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

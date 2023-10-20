@@ -21,6 +21,8 @@ import tri.ai.core.TextPlugin;
 import tri.promptfx.api.AudioApiPlugin;
 import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
+import tri.promptfx.docs.DocumentInsightPlugin;
+import tri.promptfx.docs.DocumentQaPlugin;
 import tri.promptfx.fun.ChatBackPlugin;
 import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
@@ -78,6 +80,7 @@ module tri.promptfx {
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps.resources to tornadofx;
+    opens tri.promptfx.docs to tornadofx;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
@@ -86,6 +89,7 @@ module tri.promptfx {
     exports tri.promptfx;
     exports tri.promptfx.api;
     exports tri.promptfx.apps;
+    exports tri.promptfx.docs;
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
     exports tri.promptfx.tools;
@@ -99,7 +103,6 @@ module tri.promptfx {
     provides NavigableWorkspaceView with
             AudioApiPlugin,
             ImagesApiPlugin,
-            DocumentQaPlugin,
             EntityExtractionPlugin,
             QuestionAnsweringPlugin,
             SentimentAnalysisPlugin,
@@ -107,6 +110,8 @@ module tri.promptfx {
             TextSimilarityPlugin,
             TextToJsonPlugin,
             TranslationPlugin,
+            DocumentQaPlugin,
+            DocumentInsightPlugin,
             ChatBackPlugin,
             ColorPlugin,
             EmojiPlugin,

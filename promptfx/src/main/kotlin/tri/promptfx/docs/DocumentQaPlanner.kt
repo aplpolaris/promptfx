@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.beans.property.SimpleObjectProperty

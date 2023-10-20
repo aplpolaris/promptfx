@@ -70,3 +70,8 @@ class EmbeddingSection(
     val length
         get() = end - start
 }
+
+/** A section with associated document (not for serialization). */
+class EmbeddingSectionInDocument(val doc: EmbeddingDocument, val section: EmbeddingSection) {
+    fun readText() = doc.readText(section)
+}

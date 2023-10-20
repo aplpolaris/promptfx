@@ -65,7 +65,7 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
             }.toString()
 
         /** Fills in mustache template. */
-        private fun String.fill(vararg fields: Pair<String, Any>) =
+        fun String.fill(vararg fields: Pair<String, Any>) =
             fill(fields.toMap())
 
         private fun mustacheFactory(template: String) = DefaultMustacheFactory {
