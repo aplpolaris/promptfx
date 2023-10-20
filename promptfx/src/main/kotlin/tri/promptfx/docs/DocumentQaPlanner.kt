@@ -60,7 +60,7 @@ class DocumentQaPlanner {
         embeddingService: EmbeddingService,
         chunksToRetrieve: Int,
         minChunkSize: Int,
-        contextStrategy: ContextStrategy,
+        contextStrategy: SnippetJoiner,
         contextChunks: Int,
         completionEngine: TextCompletion,
         maxTokens: Int,

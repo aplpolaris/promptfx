@@ -24,6 +24,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.collections.ObservableList
 import javafx.geometry.Pos
 import javafx.scene.control.TextArea
 import javafx.scene.layout.Priority
@@ -239,7 +240,7 @@ class DocumentInsightView: AiPlanTaskView(
     override fun plan(): AiPlanner {
         mapResult.set("")
         reduceResult.set("")
-        updateDocs()
+        val snippets = updateDocs()
         val limitedSnippets = snippets.groupBy { it.doc }
             .mapValues { it.value.take(snippetsToProcess.value) }
             .values.flatten()
@@ -266,18 +267,17 @@ class DocumentInsightView: AiPlanTaskView(
         return AiTaskList(plans, finalTask).planner
     }
 
-    private fun updateDocs() {
-        runBlocking {
-            val docList = embeddingIndex.value!!.getEmbeddingIndex().values.take(docsToProcess.value)
-            val embeddingList = docs.flatMap { doc ->
-                doc.sections.take(snippetsToProcess.value)
-                    .map { EmbeddingSectionInDocument(doc, it) }
-            }
-            runLater {
-                docs.setAll(docList)
-                snippets.setAll(embeddingList)
-            }
+    private fun updateDocs() = runBlocking {
+        val docList = embeddingIndex.value!!.getEmbeddingIndex().values.take(docsToProcess.value)
+        val embeddingList = docList.flatMap { doc ->
+            doc.sections.take(snippetsToProcess.value)
+                .map { EmbeddingSectionInDocument(doc, it) }
         }
+        runLater {
+            docs.setAll(docList)
+            snippets.setAll(embeddingList)
+        }
+        embeddingList
     }
 
     companion object {

@@ -80,7 +80,7 @@ module tri.promptfx {
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps.resources to tornadofx;
-    opens tri.promptfx.docs to tornadofx;
+    opens tri.promptfx.docs to tornadofx, com.github.mustachejava;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;

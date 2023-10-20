@@ -35,6 +35,7 @@ import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -54,9 +55,12 @@ class DocumentQaView: AiPlanTaskView(
 ) {
 
     private val promptId = SimpleStringProperty("question-answer-docs")
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer") }
-
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer-") }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
+    private val joinerId = SimpleStringProperty("snippet-joiner-citations")
+    private val joinerIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("snippet-joiner-") }
+    private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     internal val question = SimpleStringProperty("")
 
@@ -200,6 +204,15 @@ class DocumentQaView: AiPlanTaskView(
                     promptText.onChange { tooltip(it) }
                 }
             }
+            field("Snippet Joiner") {
+                combobox(joinerId, joinerIdList)
+            }
+            field(null, forceLabelIndent = true) {
+                text(joinerText).apply {
+                    wrappingWidth = 300.0
+                    joinerText.onChange { tooltip(it) }
+                }
+            }
         }
 
         outputPane.clear()
@@ -228,7 +241,7 @@ class DocumentQaView: AiPlanTaskView(
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,
-        contextStrategy = ContextStrategyBasic3(),
+        contextStrategy = GroupingTemplateJoiner(joinerId.value),
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
         maxTokens = common.maxTokens.value,

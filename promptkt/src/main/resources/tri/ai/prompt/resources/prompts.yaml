@@ -18,18 +18,6 @@ chat-back: |
   You are role-playing as {{person}} talking about {{topic}} with {{other persons}} {{setting}}.
   Your response should be what they might say {{script}} and have a {{tone}} tone.
 
-document-map-summarize: |
-  Provide a one-line summary of this text.
-  ```
-  {{{input}}}
-  ```
-
-document-reduce-summarize: |
-  Combine the following summaries into an outline.
-  ```
-  {{{input}}}
-  ```
-
 entity-extraction: |
   Extract content from the given text. The result should be a list of {{mode}}{{#format}} formatted as {{format}}{{/format}}. 
   ```
@@ -56,6 +44,88 @@ question-answer: |
   {{{input}}}
   ```
   Answer:
+
+sentiment-classify: |
+  Classify the sentiment in this text as {{instruct}}:
+  ```
+  {{{input}}}
+  ```
+
+summarization: |
+  Summarize the following. {{instruct}}:
+  ```
+  {{{input}}}
+  ```
+
+text-to-json: |
+  Extract information from the following text:
+  ```
+  {{{input}}}
+  ```
+  {{#guidance}}The result should contain {{guidance}}.{{/guidance}}
+  The result must be formatted as {{#format}}{{format}}{{/format}}{{^format}}structured data{{/format}}.
+  {{#example}}
+  The result schema should match the following example:
+  ```
+  {{{example}}}
+  ```
+  {{/example}}
+
+traffic-api-request: |
+  Today is {{today}}. Convert the following natural language request for traffic information into a JSON object:
+  ```
+  {{{input}}}
+  ```
+  The JSON object must conform to the following scheme:
+  ```
+  {
+      "latitude": 40.712776,
+      "longitude": -74.005974
+  }
+  ```
+
+translate-text: |
+  Translate this text to {{instruct}}:
+  ```
+  {{{input}}}
+  ```
+
+weather-api-request: |
+  Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
+  ```
+  {{{input}}}
+  ```
+  The JSON object must conform to the following schema:
+  ```
+  {
+      "city": "Boston, MA",
+      "date": "2023-03-04"
+  }
+  ```
+
+weather-response-formatter: |
+  Today is {{today}}. Use the following data to answer a user question.
+  If the data indicates unknown or nulls, tell the user there was a problem retrieving weather information.
+  If you cannot answer the question directly but there is useful weather information in the data, provide a summary of the JSON as a basic weather forecast.
+  Question: {{instruct}}
+  ```
+  {{{input}}}
+  ```
+
+wikipedia-page-guess: |
+  What is the title of the Wikipedia page that answers the following question? Give a short answer with your best guess.
+  Question: How big is Texas?
+  Wikipedia Page: Texas
+  Question: {{input}}
+  Wikipedia Page:
+
+############################
+# DOCUMENT Q&A
+############################
+# The templates below use {{{instruct}}} and {{{input}}}.
+# prefix: question-answer-docs-*
+# view: Document Q&A
+############################
 
 question-answer-docs: |
   Answer the question using the provided excerpts from factual sources.
@@ -158,76 +228,78 @@ question-answer-docs-basic-vicuna: |
   ### Human: {{{instruct}}}
   ### Assistant: 
 
-sentiment-classify: |
-  Classify the sentiment in this text as {{instruct}}:
+############################
+# SNIPPET CONCATENATIONS
+############################
+# The templates below use "matches" for the list of documents, and "name", "text", and "number" for the fields of each document.
+# prefix: snippet-joiner-*
+# view: Document Q&A
+############################
+
+snippet-joiner-basic: |
+  {{#matches}}
+  Document: {{name}}
+  Relevant Text: {{{text}}}
+  
+  {{/matches}}
+
+snippet-joiner-numbered: |
+  {{#matches}}
+  - ""{{{text}}}""
+    [{{number}}] {{name}}
+  
+  {{/matches}}
+
+snippet-joiner-citations: |
+  {{#matches}}
+  [[Citation {{number}}]] {{name}}
+  """
+  {{{text}}}
+  """
+  
+  {{/matches}}
+
+
+############################
+
+############################
+# DOCUMENT MAPPING
+############################
+# The document mapping templates use {{{input}}} for processing text.
+# prefix: document-map-*, document-reduce-*
+# view: Document Insights
+############################
+
+document-map-summarize: |
+  Provide a one-line summary of this text.
   ```
   {{{input}}}
   ```
 
-summarization: |
-  Summarize the following. {{instruct}}:
+document-map-math-terms: |
+  Generate a JSON list of mathematical concepts in the following text. If there are no mathematical terms, provide an empty list.
+
+  Text:
+  ```
+  {{{input}}}
+  ```
+  
+  Concepts:
+
+document-reduce-summarize: |
+  Combine the following summaries into an outline.
   ```
   {{{input}}}
   ```
 
-text-to-json: |
-  Extract information from the following text:
-  ```
-  {{{input}}}
-  ```
-  {{#guidance}}The result should contain {{guidance}}.{{/guidance}}
-  The result must be formatted as {{#format}}{{format}}{{/format}}{{^format}}structured data{{/format}}.
-  {{#example}}
-  The result schema should match the following example:
-  ```
-  {{{example}}}
-  ```
-  {{/example}}
-
-traffic-api-request: |
-  Today is {{today}}. Convert the following natural language request for traffic information into a JSON object:
-  ```
-  {{{input}}}
-  ```
-  The JSON object must conform to the following scheme:
-  ```
-  {
-      "latitude": 40.712776,
-      "longitude": -74.005974
-  }
-  ```
-
-translate-text: |
-  Translate this text to {{instruct}}:
+document-reduce-author: |
+  Use the following summaries to generate a profile of the author of these texts.
   ```
   {{{input}}}
   ```
 
-weather-api-request: |
-  Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
+document-reduce-math-terms: |
+  Combine the following lists of mathematical terms into a single list. Group terms that are synonyms.
   ```
   {{{input}}}
   ```
-  The JSON object must conform to the following schema:
-  ```
-  {
-      "city": "Boston, MA",
-      "date": "2023-03-04"
-  }
-  ```
-
-weather-response-formatter: |
-  Today is {{today}}. Use the following data to answer a user question.
-  If the data indicates unknown or nulls, tell the user there was a problem retrieving weather information.
-  If you cannot answer the question directly but there is useful weather information in the data, provide a summary of the JSON as a basic weather forecast.
-  Question: {{instruct}}
-  ```
-  {{{input}}}
-  ```
-
-wikipedia-page-guess: |
-  What is the title of the Wikipedia page that answers the following question? Give a short answer with your best guess.
-  Question: How big is Texas?
-  Wikipedia Page: Texas
-  Question: {{input}}
-  Wikipedia Page:
