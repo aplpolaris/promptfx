@@ -21,7 +21,6 @@ package tri.ai.embedding
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import tri.ai.embedding.TextChunker.chunkBySections
 import kotlin.io.path.toPath
 
 class LocalEmbeddingIndexTest {
@@ -45,7 +44,7 @@ class MockEmbeddingService: EmbeddingService {
     override val modelId = "mock"
 
     override fun chunkTextBySections(text: String, maxChunkSize: Int): List<TextChunk> {
-        return TextChunk(text).chunkBySections(maxChunkSize, combineShortSections = true)
+        return with (TextChunker(maxChunkSize)) { TextChunk(text).chunkBySections(combineShortSections = true) }
     }
 
     override suspend fun calculateEmbedding(text: List<String>): List<List<Double>> {

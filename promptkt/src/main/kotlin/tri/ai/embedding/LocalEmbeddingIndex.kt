@@ -23,12 +23,16 @@ import com.aallam.openai.api.exception.OpenAIException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import kotlinx.coroutines.runBlocking
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.openai.OpenAiEmbeddingService
+import tri.util.ANSI_GREEN
+import tri.util.ANSI_RESET
 import java.io.File
 import java.io.IOException
+import kotlin.system.exitProcess
 
 /** An embedding index that loads the documents from the local file system. */
 class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService) : EmbeddingIndex {
@@ -68,6 +72,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         rootFiles(".txt").forEach {
             docs[it.absolutePath] = calculateEmbeddingSections(it)
         }
+        embeddingIndex.putAll(docs)
         saveIndex(root, embeddingIndex)
     }
 
@@ -146,5 +151,47 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
     companion object {
         private val MAPPER = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=5000")
+            println("""
+                $ANSI_GREEN
+                Arguments expected:
+                  <root folder> <options>
+                Options:
+                  --reindex-all
+                  --reindex-new (default)
+                  --max-chunk-size=<size> (default 1000)
+                $ANSI_RESET
+            """.trimIndent())
+
+            if (args.isEmpty())
+                exitProcess(0)
+
+            val path = args[0]
+            val reindexAll = args.contains("--reindex-all")
+            val reindexNew = args.contains("--reindex-new") || !reindexAll
+            val maxChunkSize = args.find { it.startsWith("--max-chunk-size") }?.substringAfter("=", "")?.toIntOrNull() ?: 1000
+
+            val root = File(path)
+            val embeddingService = OpenAiEmbeddingService()
+            val index = LocalEmbeddingIndex(root, embeddingService)
+            index.maxChunkSize = maxChunkSize
+            runBlocking {
+                if (reindexNew) {
+                    println("Reindexing new documents in $root...")
+                    index.getEmbeddingIndex() // this triggers the reindex
+                } else if (reindexAll) {
+                    println("Reindexing all documents in $root...")
+                    index.reindexAll()
+                } else {
+                    TODO("Impossible to get here.")
+                }
+                println("Reindexing complete.")
+            }
+            index.saveIndex(root, index.embeddingIndex)
+            exitProcess(0)
+        }
     }
 }

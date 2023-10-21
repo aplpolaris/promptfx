@@ -22,10 +22,12 @@ package tri.ai.embedding
 import java.text.BreakIterator
 
 /** Utilities for breaking up text into chunks. */
-object TextChunker {
+class TextChunker(
+    val maxChunkSize: Int = 1000
+) {
 
     /** Basic chunking by splitting on whitespace. */
-    fun chunkTextBySectionsSimple(text: String, maxChunkSize: Int): List<Pair<IntRange, String>> {
+    fun chunkTextBySectionsSimple(text: String): List<Pair<IntRange, String>> {
         val sections = mutableListOf<Pair<IntRange, String>>()
         val words = text.split(Regex("\\s+"))
         val currentSection = StringBuilder()
@@ -56,7 +58,7 @@ object TextChunker {
     }
 
     /** Chunk into sections by section breaks. Optionally combine shorter sections. */
-    fun TextChunk.chunkBySections(maxChunkSize: Int, combineShortSections: Boolean): List<TextChunk> {
+    fun TextChunk.chunkBySections(combineShortSections: Boolean): List<TextChunk> {
         // return chunk if it's short enough
         if (combineShortSections && text.length <= maxChunkSize)
             return listOf(this)
@@ -71,13 +73,13 @@ object TextChunker {
             if (section.text.length <= maxChunkSize) {
                 result += section
             } else {
-                result += section.chunkByParagraphs(maxChunkSize)
+                result += section.chunkByParagraphs()
             }
         }
         return result
     }
 
-    fun TextChunk.chunkByParagraphs(maxChunkSize: Int): List<TextChunk> {
+    fun TextChunk.chunkByParagraphs(): List<TextChunk> {
         // return chunk if it's short enough
         if (text.length <= maxChunkSize)
             return listOf(this)

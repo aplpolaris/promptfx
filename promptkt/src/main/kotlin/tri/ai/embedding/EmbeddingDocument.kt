@@ -20,6 +20,7 @@
 package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.io.File
 import java.net.URL
 
@@ -66,7 +67,7 @@ class EmbeddingSection(
     val start: Int,
     val end: Int
 ) {
-    @get: JsonIgnore
+    @get:JsonIgnore
     val length
         get() = end - start
 }
