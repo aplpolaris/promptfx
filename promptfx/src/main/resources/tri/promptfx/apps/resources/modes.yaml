@@ -6,13 +6,17 @@ translation:
   - French
   - German
   - Italian
-  - Latin
   - Japanese
-  - Chinese
+  - Mandarin Chinese
   - Korean
+  - Hindi
   - Russian
   - Arabic
   - Greek
+  - Ancient Greek
+  - Latin
+  - Hebrew
+  - Emoji
 
 entities:
   - Named Entities

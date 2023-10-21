@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
@@ -26,10 +26,7 @@ import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.collections.ObservableList
-import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
@@ -40,17 +37,17 @@ import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ModelParameters
-import tri.promptfx.DocumentUtils.documentThumbnail
+import tri.promptfx.apps.QuestionAnsweringView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
+import tri.util.ui.promptfield
 import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
 import java.nio.file.Files
 
 /** Plugin for the [DocumentQaView]. */
-class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Text", "Document Q&A", DocumentQaView::class)
+class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", DocumentQaView::class)
 
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
 class DocumentQaView: AiPlanTaskView(
@@ -58,10 +55,13 @@ class DocumentQaView: AiPlanTaskView(
     "Enter question below to respond based on content of documents in a specified folder.",
 ) {
 
-    private val promptId = SimpleStringProperty("question-answer-docs")
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer") }
-
+    private val promptId = SimpleStringProperty("$PROMPT_PREFIX-docs")
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(PROMPT_PREFIX) }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
+    private val joinerId = SimpleStringProperty("$JOINER_PREFIX-citations")
+    private val joinerIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(JOINER_PREFIX) }
+    private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     internal val question = SimpleStringProperty("")
 
@@ -70,7 +70,6 @@ class DocumentQaView: AiPlanTaskView(
     private val chunksToRetrieve = SimpleIntegerProperty(10)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
-    private val maxTokens = SimpleIntegerProperty(1000)
 
     internal val planner = DocumentQaPlanner().apply {
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
@@ -123,7 +122,7 @@ class DocumentQaView: AiPlanTaskView(
                     }
                 }
             }
-            snippetView(planner.snippets)
+            snippetmatchlist(planner.snippets, hostServices)
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
@@ -185,11 +184,6 @@ class DocumentQaView: AiPlanTaskView(
                 slider(1..20, chunksToSendWithQuery)
                 label(chunksToSendWithQuery)
             }
-            field("Max tokens") {
-                tooltip("Max # of tokens for combined query/response from the question answering engine")
-                slider(1..2000, maxTokens)
-                label(maxTokens)
-            }
         }
         parameters("Model") {
             field("Model") {
@@ -197,19 +191,13 @@ class DocumentQaView: AiPlanTaskView(
             }
             with (common) {
                 temperature()
+                maxTokens()
             }
         }
         parameters("Prompt Template") {
-            tooltip("Templates are defined in prompts.yaml")
-            field("Template") {
-                combobox(promptId, promptIdList)
-            }
-            field(null, forceLabelIndent = true) {
-                text(promptText).apply {
-                    wrappingWidth = 300.0
-                    promptText.onChange { tooltip(it) }
-                }
-            }
+            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
+            promptfield("Template", promptId, promptIdList, promptText, workspace)
+            promptfield("Snippet Joiner", joinerId, joinerIdList, joinerText, workspace)
         }
 
         outputPane.clear()
@@ -238,10 +226,10 @@ class DocumentQaView: AiPlanTaskView(
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,
-        contextStrategy = ContextStrategyBasic3(),
+        contextStrategy = GroupingTemplateJoiner(joinerId.value),
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
-        maxTokens = maxTokens.value,
+        maxTokens = common.maxTokens.value,
         tempParameters = common
     )
 
@@ -258,46 +246,12 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
 
-    //region SUPPORTING UI ELEMENTS
-
-    /** Shows information on the list of matches, with document thumbnails. */
-    private fun EventTarget.snippetView(snippets: ObservableList<SnippetMatch>) {
-        listview(snippets) {
-            vgrow = Priority.ALWAYS
-            cellFormat {
-                graphic = hbox {
-                    textflow {  }
-                    alignment = Pos.CENTER_LEFT
-                    text("%.2f".format(it.score)) {
-                        style = "-fx-font-weight: bold;"
-                    }
-                    val doc = it.embeddingMatch.document
-                    hyperlink(doc.shortNameWithoutExtension) {
-                        val thumb = documentThumbnail(doc)
-                        if (thumb != null) {
-                            tooltip { graphic = ImageView(thumb) }
-                        }
-                        action { DocumentBrowseToPage(it, hostServices).open() }
-                    }
-
-                    val text = it.snippetText
-                    val shortText = text.take(50).replace("\n", " ").replace("\r", " ").trim()
-                    text("$shortText...") {
-                        tooltip(text) {
-                            maxWidth = 500.0
-                            isWrapText = true
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //endregion
-
     companion object {
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-qa.folder"
+
+        private const val PROMPT_PREFIX = "question-answer"
+        private const val JOINER_PREFIX = "snippet-joiner"
 
         internal fun browseToBestSnippet(doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (result == null) {
@@ -308,7 +262,8 @@ class DocumentQaView: AiPlanTaskView(
                 val matches = result.matches.filter { it.matchesDocument(doc.shortNameWithoutExtension) }
                 if (matches.size == 1) {
                     println("Browsing to only match")
-                    DocumentBrowseToPage(matches.first(), hostServices).open()
+                    val match = matches.first()
+                    DocumentBrowseToPage(match.embeddingMatch.document, match.snippetText, hostServices).open()
                 } else {
                     println("Browsing to closest match")
                     DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()

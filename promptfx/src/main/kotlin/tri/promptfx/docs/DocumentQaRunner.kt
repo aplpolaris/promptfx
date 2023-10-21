@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx.docs
 
 import com.aallam.openai.api.logging.LogLevel
 import javafx.application.Platform

@@ -43,18 +43,22 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
     )
 
     /** Fills in arbitrary fields. */
-    fun fill(fields: Map<String, String>) = template.fill(
+    fun fill(fields: Map<String, Any>) = template.fill(
         mapOf("today" to LocalDate.now()) + fields
     ).also {
         println(it)
     }
 
     /** Fills in arbitrary fields. */
-    fun fill(vararg fields: Pair<String, String>) = fill(fields.toMap())
+    fun fill(vararg fields: Pair<String, Any>) = fill(fields.toMap())
 
     companion object {
 
         //region MUSTACHE TEMPLATES
+
+        /** Fills in mustache template. */
+        fun String.fill(vararg fields: Pair<String, Any>) =
+            fill(fields.toMap())
 
         /** Fills in mustache template. */
         private fun String.fill(fields: Map<String, Any>) =
@@ -64,11 +68,7 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
                     .execute(this, fields)
             }.toString()
 
-        /** Fills in mustache template. */
-        private fun String.fill(vararg fields: Pair<String, Any>) =
-            fill(fields.toMap())
-
-        private fun mustacheFactory(template: String) = DefaultMustacheFactory {
+        internal fun mustacheFactory(template: String) = DefaultMustacheFactory {
             StringReader(template)
         }
 

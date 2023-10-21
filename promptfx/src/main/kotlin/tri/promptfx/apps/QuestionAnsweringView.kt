@@ -25,6 +25,7 @@ import tri.ai.openai.instructTextPlan
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.promptfield
 
 /** Plugin for the [QuestionAnsweringView]. */
 class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", QuestionAnsweringView::class)
@@ -33,32 +34,31 @@ class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView
 class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     "Enter question in the top box, and the text with an answer in the box below.",) {
 
-    private val question = SimpleStringProperty("")
-    private val sourceText = SimpleStringProperty("")
+    companion object {
+        private const val PROMPT_PREFIX = "question-answer"
+    }
 
-    private val promptId = SimpleStringProperty("question-answer")
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer") }
+    private val instruct = SimpleStringProperty("")
+    private val input = SimpleStringProperty("")
 
+    private val promptId = SimpleStringProperty(PROMPT_PREFIX)
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(PROMPT_PREFIX) }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     init {
-        addInputTextArea(question)
+        addInputTextArea(instruct) {
+            promptText = "Provide the question here. This will replace {{{instruct}}} in the prompt."
+        }
         input {
             label("Source Text:")
-            textarea(sourceText) {
+            textarea(input) {
+                promptText = "Provide the text here. This will replace {{{input}}} in the prompt."
                 isWrapText = true
             }
         }
         parameters("Prompt Template") {
-            field("Template") {
-                combobox(promptId, promptIdList)
-            }
-            field(null, forceLabelIndent = true) {
-                text(promptText).apply {
-                    wrappingWidth = 300.0
-                    promptText.onChange { tooltip(it) }
-                }
-            }
+            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
+            promptfield("Template", promptId, promptIdList, promptText, workspace)
         }
         parameters("Model Parameters") {
             with (common) {
@@ -70,8 +70,8 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
 
     override fun plan() = completionEngine.instructTextPlan(
         promptId.value,
-        instruct = question.get(),
-        userText = sourceText.get(),
+        instruct = instruct.get(),
+        userText = input.get(),
         tokenLimit = common.maxTokens.value!!,
         temp = common.temp.value,
     )

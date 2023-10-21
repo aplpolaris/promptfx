@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx
+package tri.util.ui
 
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image

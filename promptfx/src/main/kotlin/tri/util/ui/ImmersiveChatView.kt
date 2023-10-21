@@ -38,10 +38,10 @@ import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
-import tri.promptfx.DocumentUtils.documentThumbnail
+import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
-import tri.promptfx.apps.DocumentQaView
-import tri.promptfx.apps.DocumentQaView.Companion.browseToBestSnippet
+import tri.promptfx.docs.DocumentQaView
+import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
 
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {

@@ -21,11 +21,14 @@ import tri.ai.core.TextPlugin;
 import tri.promptfx.api.AudioApiPlugin;
 import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
+import tri.promptfx.docs.DocumentInsightPlugin;
+import tri.promptfx.docs.DocumentQaPlugin;
 import tri.promptfx.fun.ChatBackPlugin;
 import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.tools.PromptLibraryPlugin;
 import tri.promptfx.tools.PromptTemplatePlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
@@ -78,6 +81,7 @@ module tri.promptfx {
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps.resources to tornadofx;
+    opens tri.promptfx.docs to tornadofx, com.github.mustachejava;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
@@ -86,6 +90,7 @@ module tri.promptfx {
     exports tri.promptfx;
     exports tri.promptfx.api;
     exports tri.promptfx.apps;
+    exports tri.promptfx.docs;
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
     exports tri.promptfx.tools;
@@ -99,7 +104,10 @@ module tri.promptfx {
     provides NavigableWorkspaceView with
             AudioApiPlugin,
             ImagesApiPlugin,
+            PromptLibraryPlugin,
+            PromptTemplatePlugin,
             DocumentQaPlugin,
+            DocumentInsightPlugin,
             EntityExtractionPlugin,
             QuestionAnsweringPlugin,
             SentimentAnalysisPlugin,
@@ -111,7 +119,6 @@ module tri.promptfx {
             ColorPlugin,
             EmojiPlugin,
             WeatherViewPlugin,
-            WikipediaViewPlugin,
-            PromptTemplatePlugin
+            WikipediaViewPlugin
     ;
 }

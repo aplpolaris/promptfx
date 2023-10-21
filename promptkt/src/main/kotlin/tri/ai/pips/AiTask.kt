@@ -26,5 +26,32 @@ abstract class AiTask<T>(
     val dependencies: Set<String> = setOf()
 ) {
     abstract suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T>
+
+    companion object {
+        /** Creates a task. */
+        fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTask<T> =
+            aitask(id, description) {
+                val res = op()
+                if (res is AiTaskResult<*>) throw IllegalArgumentException("Use aitask() for AiTaskResult")
+                AiTaskResult.result(res, modelId = null)
+            }
+
+        /** Creates a task. */
+        fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiTaskResult<T>): AiTask<T> =
+            object: AiTask<T>(id, description) {
+                override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) = op()
+            }
+
+        /** Creates a task that depends on a provided list of tasks. */
+        fun <T> List<AiTask<*>>.task(id: String, description: String? = null, op: suspend (Map<String, AiTaskResult<*>>) -> T): AiTask<T> =
+            aitask(id, description) { AiTaskResult.result(op(it)) }
+
+        /** Creates a task that depends on a provided list of tasks. */
+        fun <T> List<AiTask<*>>.aitask(id: String, description: String? = null, op: suspend (Map<String, AiTaskResult<*>>) -> AiTaskResult<T>): AiTask<T> =
+            object : AiTask<T>(id, description, map { it.id }.toSet()) {
+                override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
+                    op(inputs)
+            }
+    }
 }
 

@@ -31,7 +31,7 @@ import tri.util.ui.yaml
 class TranslationPlugin : NavigableWorkspaceViewImpl<TranslationView>("Text", "Translation", TranslationView::class)
 
 /** View designed to automatically translate text. */
-class TranslationView: AiPlanTaskView("Translation", "Enter text to translate") {
+class TranslationView: AiPlanTaskView("Translation", "Enter text to translate.") {
 
     private val modeOptions = resources.yaml("resources/modes.yaml")["translation"] as List<String>
     private val mode = SimpleStringProperty(modeOptions[0])
