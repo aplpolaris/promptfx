@@ -45,7 +45,9 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
     /** Fills in arbitrary fields. */
     fun fill(fields: Map<String, Any>) = template.fill(
         mapOf("today" to LocalDate.now()) + fields
-    )
+    ).also {
+        println(it)
+    }
 
     /** Fills in arbitrary fields. */
     fun fill(vararg fields: Pair<String, Any>) = fill(fields.toMap())

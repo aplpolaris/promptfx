@@ -42,6 +42,11 @@ val FontAwesomeIconView.gray
         fill = Color.GRAY
     }
 
+val FontAwesomeIconView.navy
+    get() = apply {
+        fill = Color.NAVY
+    }
+
 fun EventTarget.slider(range: ClosedRange<Double>, value: Property<Number>, op: Slider.() -> Unit = {}) =
     slider(range, 0.0, null, op).apply {
         valueProperty().bindBidirectional(value)

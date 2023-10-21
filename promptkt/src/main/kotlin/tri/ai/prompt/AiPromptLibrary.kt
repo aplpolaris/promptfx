@@ -45,6 +45,14 @@ class AiPromptLibrary {
             }
         }
 
+        val RUNTIME_INSTANCE by lazy {
+            AiPromptLibrary().apply {
+                val file = File("prompts.yaml")
+                if (file.exists())
+                    prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(file))
+            }
+        }
+
         val MAPPER = ObjectMapper(YAMLFactory()).apply {
             registerModule(KotlinModule.Builder().build())
             registerModule(JavaTimeModule())

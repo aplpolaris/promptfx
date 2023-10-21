@@ -28,6 +28,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.tools.PromptLibraryPlugin;
 import tri.promptfx.tools.PromptTemplatePlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
@@ -103,6 +104,10 @@ module tri.promptfx {
     provides NavigableWorkspaceView with
             AudioApiPlugin,
             ImagesApiPlugin,
+            PromptLibraryPlugin,
+            PromptTemplatePlugin,
+            DocumentQaPlugin,
+            DocumentInsightPlugin,
             EntityExtractionPlugin,
             QuestionAnsweringPlugin,
             SentimentAnalysisPlugin,
@@ -110,13 +115,10 @@ module tri.promptfx {
             TextSimilarityPlugin,
             TextToJsonPlugin,
             TranslationPlugin,
-            DocumentQaPlugin,
-            DocumentInsightPlugin,
             ChatBackPlugin,
             ColorPlugin,
             EmojiPlugin,
             WeatherViewPlugin,
-            WikipediaViewPlugin,
-            PromptTemplatePlugin
+            WikipediaViewPlugin
     ;
 }

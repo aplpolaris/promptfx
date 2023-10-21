@@ -30,9 +30,7 @@ import tornadofx.*
 import tri.promptfx.api.*
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
-import tri.util.ui.ImmersiveChatView
-import tri.util.ui.NavigableWorkspaceView
-import tri.util.ui.graphic
+import tri.util.ui.*
 import tri.util.ui.gray
 
 /** View configuration for the app. */
@@ -52,7 +50,7 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group("OpenAI API", FontAwesomeIcon.CLOUD.graphic.gray) {
+            group("OpenAI API", FontAwesomeIcon.CLOUD.graphic.navy) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("Models")
                 separator { }
@@ -80,19 +78,19 @@ class PromptFxWorkspace : Workspace() {
                 browsehyperlink("API Pricing", "https://openai.com/pricing")
                 browsehyperlink("OpenAI Blog", "https://openai.com/blog")
             }
-            group("Tools", FontAwesomeIcon.WRENCH.graphic.gray) {
+            group("Tools", FontAwesomeIcon.WRENCH.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Documents", FontAwesomeIcon.FILE.graphic.gray) {
+            group("Documents", FontAwesomeIcon.FILE.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Text", FontAwesomeIcon.FONT.graphic.gray) {
+            group("Text", FontAwesomeIcon.FONT.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.gray) {
+            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.gray) {
+            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
 
                 // IDEAS for additional audio apps
@@ -100,7 +98,7 @@ class PromptFxWorkspace : Workspace() {
                 // - speech translation
                 // - speech synthesis
             }
-            group("Vision", FontAwesomeIcon.IMAGE.graphic.gray) {
+            group("Vision", FontAwesomeIcon.IMAGE.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
 
                 // IDEAS for additional image apps
@@ -112,10 +110,10 @@ class PromptFxWorkspace : Workspace() {
                 // - image segmentation, depth, pose estimation, gaze estimation, etc.
                 // - image enhancement, super-resolution, denoising, inpainting, deblurring, etc.
             }
-            group("Integrations", FontAwesomeIcon.PLUG.graphic.gray) {
+            group("Integrations", FontAwesomeIcon.PLUG.graphic.navy) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Documentation", FontAwesomeIcon.BOOK.graphic.gray) {
+            group("Documentation", FontAwesomeIcon.BOOK.graphic.navy) {
                 // nothing here, but testing to see this doesn't show up in view
 
                 // configured via [NavigableWorkspaceView] plugins
