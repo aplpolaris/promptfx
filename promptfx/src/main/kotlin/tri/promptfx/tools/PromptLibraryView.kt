@@ -39,14 +39,14 @@ class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools
 /** A view designed to help you test prompt templates. */
 class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates.") {
 
-    val lib = AiPromptLibrary.INSTANCE
-    val customLib = AiPromptLibrary.RUNTIME_INSTANCE
+    private val lib = AiPromptLibrary.INSTANCE
+    private val customLib = AiPromptLibrary.RUNTIME_INSTANCE
 
-    val promptEntries = observableListOf(lib.prompts.entries.toMutableList())
-    var promptFilter: (String) -> Boolean = { true }
-    val filteredPromptEntries = observableListOf(promptEntries)
-    val promptSelection = SimpleObjectProperty<MutableMap.MutableEntry<String, AiPrompt>>()
-    val promptTemplate = Bindings.createStringBinding({ promptSelection.value?.value?.template ?: "" }, promptSelection)
+    private val promptEntries = observableListOf(lib.prompts.entries.toMutableList())
+    private var promptFilter: (String) -> Boolean = { true }
+    private val filteredPromptEntries = observableListOf(promptEntries)
+    private val promptSelection = SimpleObjectProperty<MutableMap.MutableEntry<String, AiPrompt>>()
+    private val promptTemplate = Bindings.createStringBinding({ promptSelection.value?.value?.template ?: "" }, promptSelection)
 
     init {
         input {
@@ -69,13 +69,20 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     action { sendToTemplateView() }
                 }
                 spacer()
+                button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
+                    tooltip("Refresh the prompt list.")
+                    action {
+                        AiPromptLibrary.refreshRuntimePrompts()
+                        promptEntries.setAll(lib.prompts.entries.toMutableList())
+                        refilter()
+                    }
+                }
                 button("", FontAwesomeIconView(FontAwesomeIcon.EDIT)) {
                     tooltip("Edit the custom prompts.yaml file in your default editor.")
                     action {
                         val file = AiPromptLibrary.RUNTIME_PROMPTS_FILE
                         if (!file.exists()) {
-                            file.parentFile.mkdirs()
-                            file.createNewFile()
+                            AiPromptLibrary.createRuntimePromptsFile()
                         }
                         hostServices.showDocument(file.toURI().toString())
                     }

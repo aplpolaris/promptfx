@@ -21,6 +21,10 @@ package tri.ai.core
 
 import tri.ai.embedding.EmbeddingService
 import tri.ai.openai.OpenAiTextPlugin
+import java.io.File
+import java.net.MalformedURLException
+import java.net.URL
+import java.net.URLClassLoader
 import java.util.*
 
 /** Provides a set of plugins at runtime. */
@@ -39,13 +43,43 @@ interface TextPlugin {
     fun close()
 
     companion object {
-        private val plugins: ServiceLoader<TextPlugin> by lazy { ServiceLoader.load(TextPlugin::class.java) }
+        private val plugins: ServiceLoader<TextPlugin> by lazy {
+            ServiceLoader.load(TextPlugin::class.java, pluginsDirClassLoader())
+        }
         val defaultPlugin = plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin
         val orderedPlugins = listOf(defaultPlugin) + (plugins - defaultPlugin)
 
         fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
         fun embeddingModels() = orderedPlugins.flatMap { it.embeddingModels() }
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
+
+        /**
+         * Return a [ClassLoader] that looks for files in the "config/modules"
+         * directory, in addition to the normal system class loader.
+         * @return singleton instance of plugins class loader
+         */
+        private fun pluginsDirClassLoader(): ClassLoader? {
+            // look for jar plugins
+            val jars = File("config/modules/")
+                .listFiles { _: File?, name: String -> name.endsWith(".jar") }
+            return if (jars != null) {
+                println("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
+                // create urls for jars
+                val urls = mutableListOf<URL>()
+                for (f in jars) {
+                    try {
+                        urls.add(f.toURI().toURL())
+                    } catch (ex: MalformedURLException) {
+                        // log
+                    }
+                }
+                return URLClassLoader(urls.toTypedArray<URL>(), ClassLoader.getSystemClassLoader())
+            } else {
+                ClassLoader.getSystemClassLoader()
+            }
+
+            //</editor-fold>
+        }
     }
 
 }

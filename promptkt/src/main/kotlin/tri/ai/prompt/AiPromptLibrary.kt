@@ -38,6 +38,7 @@ class AiPromptLibrary {
 
         val RUNTIME_PROMPTS_FILE = File("prompts.yaml")
 
+        /** The instance of the prompt library with only the prompts configurable at runtime. */
         val RUNTIME_INSTANCE by lazy {
             AiPromptLibrary().apply {
                 if (RUNTIME_PROMPTS_FILE.exists())
@@ -45,11 +46,50 @@ class AiPromptLibrary {
             }
         }
 
+        /** The instance of the prompt library with both preconfigured and runtime prompts. */
         val INSTANCE by lazy {
             AiPromptLibrary().apply {
                 prompts.putAll(AiPromptLibrary::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
                 prompts.putAll(RUNTIME_INSTANCE.prompts)
             }
+        }
+
+        fun createRuntimePromptsFile() {
+            val file = RUNTIME_PROMPTS_FILE
+            file.parentFile?.mkdirs()
+            file.createNewFile()
+            file.writeText("""
+                # This file is used to store prompts that are created at runtime.
+                #
+                # Usage:
+                #  - preconfigured prompt file in "prompts.yaml" in promptkt
+                #  - custom prompt file in "prompts.yaml" in the current directory
+                #
+                # Syntax:
+                #  - mustache templates: https://mustache.github.io/mustache.5.html
+                #  - double braces to insert text {{...}}
+                #  - triple braces to insert text without escaping HTML {{{...}}}
+                #
+                # Keywords:
+                #  - many templates expect {{input}} and/or {{instruct}}
+                #  - {{today}} is always replaced with the current date
+                #
+                ---
+                # This is a sample prompt. You can delete it.
+                my-custom-prompt: |
+                  cheese -> fromage
+                  boy -> garcon
+                  {{input}} ->                   
+            """.trimIndent())
+        }
+
+        fun refreshRuntimePrompts() {
+            RUNTIME_INSTANCE.prompts.clear()
+            if (RUNTIME_PROMPTS_FILE.exists())
+                RUNTIME_INSTANCE.prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(RUNTIME_PROMPTS_FILE))
+            INSTANCE.prompts.clear()
+            INSTANCE.prompts.putAll(AiPromptLibrary::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
+            INSTANCE.prompts.putAll(RUNTIME_INSTANCE.prompts)
         }
 
         val MAPPER = ObjectMapper(YAMLFactory()).apply {
