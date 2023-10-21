@@ -122,10 +122,11 @@ wikipedia-page-guess: |
 ############################
 # DOCUMENT Q&A
 ############################
-# The templates below use {{{instruct}}} and {{{input}}}.
-# prefix: question-answer-docs-*
 # view: Document Q&A
-############################
+# prefix: question-answer-docs-*
+# keywords:
+#   {{{instruct}}} - question
+#   {{{input}}} - document sections
 
 question-answer-docs: |
   Answer the question using the provided excerpts from factual sources.
@@ -231,10 +232,12 @@ question-answer-docs-basic-vicuna: |
 ############################
 # SNIPPET CONCATENATIONS
 ############################
-# The templates below use "matches" for the list of documents, and "name", "text", and "number" for the fields of each document.
-# prefix: snippet-joiner-*
 # view: Document Q&A
-############################
+# prefix: snippet-joiner-*
+# keywords:
+#   {{matches}} - list of snippets
+#   {{name}} - name of snippet
+#   {{{text}}} - text of snippet
 
 snippet-joiner-basic: |
   {{#matches}}
@@ -259,16 +262,15 @@ snippet-joiner-citations: |
   
   {{/matches}}
 
-
-############################
-
 ############################
 # DOCUMENT MAPPING
 ############################
-# The document mapping templates use {{{input}}} for processing text.
-# prefix: document-map-*, document-reduce-*
 # view: Document Insights
-############################
+# prefix:
+#   document-map-* - prompts to run against all snippets
+#   document-reduce-* - method to combine results
+# keywords:
+#   {{{input}}} - text to process
 
 document-map-summarize: |
   Provide a one-line summary of this text.

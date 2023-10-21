@@ -39,7 +39,7 @@ class PromptTemplatePlugin : NavigableWorkspaceViewImpl<PromptTemplateView>("Too
 class PromptTemplateView : AiPlanTaskView("Prompt Template",
     "Enter a prompt template and a list of values to fill it in with.") {
 
-    private val template = SimpleStringProperty("")
+    val template = SimpleStringProperty("")
     private val fields = observableListOf<Pair<String, String>>()
     private val fieldMap = mutableMapOf<String, String>()
 

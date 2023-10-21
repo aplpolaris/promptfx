@@ -9,7 +9,7 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
-import tri.promptfx.DocumentUtils
+import tri.util.ui.DocumentUtils
 
 /**
  * Display a list of documents.

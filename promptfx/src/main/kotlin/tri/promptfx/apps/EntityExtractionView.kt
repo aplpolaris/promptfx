@@ -32,7 +32,7 @@ import tri.util.ui.yaml
 class EntityExtractionPlugin : NavigableWorkspaceViewImpl<EntityExtractionView>("Text", "Entity Extraction", EntityExtractionView::class)
 
 /** View for prompts designed to extract entities from text. */
-class EntityExtractionView: AiPlanTaskView("Entity Extraction", "Enter text to extract entities or facts") {
+class EntityExtractionView: AiPlanTaskView("Entity Extraction", "Enter text to extract entities or facts.") {
 
     private val modeOptions = resources.yaml("resources/modes.yaml")["entities"] as List<String>
     private val formatModeOptions = resources.yaml("resources/modes.yaml")["structured-format"] as Map<String, String>

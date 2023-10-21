@@ -30,6 +30,7 @@ import tornadofx.*
 import tri.promptfx.api.*
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
+import tri.promptfx.tools.PromptTemplateView
 import tri.util.ui.*
 import tri.util.ui.gray
 
@@ -119,6 +120,13 @@ class PromptFxWorkspace : Workspace() {
                 // configured via [NavigableWorkspaceView] plugins
             }
         }
+    }
+
+    /** Launches a template view with the given prompt text. */
+    fun launchTemplateView(prompt: String) {
+        val view = find<PromptTemplateView>()
+        view.template.set(prompt)
+        workspace.dock(view)
     }
 
     private fun enterFullScreenMode() {

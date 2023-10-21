@@ -35,11 +35,12 @@ import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.apps.QuestionAnsweringView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
+import tri.util.ui.promptfield
 import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
@@ -54,12 +55,12 @@ class DocumentQaView: AiPlanTaskView(
     "Enter question below to respond based on content of documents in a specified folder.",
 ) {
 
-    private val promptId = SimpleStringProperty("question-answer-docs")
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("question-answer-") }
+    private val promptId = SimpleStringProperty("$PROMPT_PREFIX-docs")
+    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(PROMPT_PREFIX) }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
-    private val joinerId = SimpleStringProperty("snippet-joiner-citations")
-    private val joinerIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("snippet-joiner-") }
+    private val joinerId = SimpleStringProperty("$JOINER_PREFIX-citations")
+    private val joinerIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(JOINER_PREFIX) }
     private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     internal val question = SimpleStringProperty("")
@@ -194,25 +195,9 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
         parameters("Prompt Template") {
-            tooltip("Templates are defined in prompts.yaml")
-            field("Template") {
-                combobox(promptId, promptIdList)
-            }
-            field(null, forceLabelIndent = true) {
-                text(promptText).apply {
-                    wrappingWidth = 300.0
-                    promptText.onChange { tooltip(it) }
-                }
-            }
-            field("Snippet Joiner") {
-                combobox(joinerId, joinerIdList)
-            }
-            field(null, forceLabelIndent = true) {
-                text(joinerText).apply {
-                    wrappingWidth = 300.0
-                    joinerText.onChange { tooltip(it) }
-                }
-            }
+            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
+            promptfield("Template", promptId, promptIdList, promptText, workspace)
+            promptfield("Snippet Joiner", joinerId, joinerIdList, joinerText, workspace)
         }
 
         outputPane.clear()
@@ -264,6 +249,9 @@ class DocumentQaView: AiPlanTaskView(
     companion object {
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-qa.folder"
+
+        private const val PROMPT_PREFIX = "question-answer"
+        private const val JOINER_PREFIX = "snippet-joiner"
 
         internal fun browseToBestSnippet(doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (result == null) {

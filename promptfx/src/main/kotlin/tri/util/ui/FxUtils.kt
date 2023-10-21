@@ -26,11 +26,13 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
 import javafx.scene.control.Slider
 import javafx.scene.paint.Color
-import tornadofx.ResourceLookup
-import tornadofx.slider
+import tornadofx.*
+import tri.promptfx.PromptFxWorkspace
 
 fun icon(icon: FontAwesomeIcon) = FontAwesomeIconView(icon)
 
@@ -64,3 +66,29 @@ val MAPPER = ObjectMapper(YAMLFactory()).apply {
 
 fun ResourceLookup.yaml(resource: String): Map<*, *> =
     stream(resource).use { MAPPER.readValue(it, Map::class.java) }
+
+/**
+ * Adds a combobox for selecting a prompt, a text for seeing the prompt,
+ * and an option to send the prompt to the template view.
+ */
+fun EventTarget.promptfield(
+    fieldName: String = "Template",
+    promptId: SimpleStringProperty,
+    promptIdList: List<String>,
+    promptText: ObservableStringValue,
+    workspace: Workspace
+) {
+    field(fieldName) {
+        combobox(promptId, promptIdList)
+        button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+            tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
+            action { (workspace as PromptFxWorkspace).launchTemplateView(promptText.value) }
+        }
+    }
+    field(null, forceLabelIndent = true) {
+        text(promptText).apply {
+            wrappingWidth = 300.0
+            promptText.onChange { tooltip(it) }
+        }
+    }
+}

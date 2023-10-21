@@ -36,20 +36,19 @@ class AiPromptLibrary {
             return INSTANCE.prompts[id] ?: throw IllegalArgumentException("No prompt found with id $id")
         }
 
-        val INSTANCE by lazy {
-            AiPromptLibrary().apply {
-                prompts.putAll(AiPromptLibrary::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
-                val file = File("prompts.yaml")
-                if (file.exists())
-                    prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(file))
-            }
-        }
+        val RUNTIME_PROMPTS_FILE = File("prompts.yaml")
 
         val RUNTIME_INSTANCE by lazy {
             AiPromptLibrary().apply {
-                val file = File("prompts.yaml")
-                if (file.exists())
-                    prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(file))
+                if (RUNTIME_PROMPTS_FILE.exists())
+                    prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(RUNTIME_PROMPTS_FILE))
+            }
+        }
+
+        val INSTANCE by lazy {
+            AiPromptLibrary().apply {
+                prompts.putAll(AiPromptLibrary::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
+                prompts.putAll(RUNTIME_INSTANCE.prompts)
             }
         }
 

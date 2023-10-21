@@ -23,9 +23,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
-import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
@@ -33,16 +30,14 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiTaskView
-import tri.promptfx.DocumentUtils
-import tri.promptfx.docs.DocumentOpenInViewer
+import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.NavigableWorkspaceViewImpl
-import java.util.Map
 
 /** Plugin for the [PromptTemplateView]. */
 class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools", "Prompt Library", PromptLibraryView::class)
 
 /** A view designed to help you test prompt templates. */
-class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates") {
+class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates.") {
 
     val lib = AiPromptLibrary.INSTANCE
     val customLib = AiPromptLibrary.RUNTIME_INSTANCE
@@ -56,9 +51,10 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     init {
         input {
             toolbar {
-                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-                    action { onCreate() }
-                }
+                // TODO - tools for prompt CRUD
+//                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+//                    action { onCreate() }
+//                }
                 // add search bar here to update promptFilter when you hit enter
                 textfield("") {
                     promptText = "Search"
@@ -68,9 +64,21 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
 
-                button("Send to Workspace", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                button("Send to Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                     enableWhen(promptSelection.isNotNull)
-                    action { sendToWorkspace() }
+                    action { sendToTemplateView() }
+                }
+                spacer()
+                button("", FontAwesomeIconView(FontAwesomeIcon.EDIT)) {
+                    tooltip("Edit the custom prompts.yaml file in your default editor.")
+                    action {
+                        val file = AiPromptLibrary.RUNTIME_PROMPTS_FILE
+                        if (!file.exists()) {
+                            file.parentFile.mkdirs()
+                            file.createNewFile()
+                        }
+                        hostServices.showDocument(file.toURI().toString())
+                    }
                 }
             }
             listview(filteredPromptEntries) {
@@ -81,6 +89,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                         tooltip(it.value.template)
                         if (it.key in customLib.prompts) {
                             style = "-fx-font-weight: bold"
+                            text = it.key + " (customized)"
                         }
                     }
                 }
@@ -100,8 +109,8 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
         TODO()
     }
 
-    fun sendToWorkspace() {
-        TODO("send this prompt to the template view and open that view")
+    private fun sendToTemplateView() {
+        (workspace as PromptFxWorkspace).launchTemplateView(promptSelection.value!!.value.template)
     }
 
     private fun refilter() {

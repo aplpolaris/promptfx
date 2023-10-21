@@ -38,7 +38,7 @@ import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
-import tri.promptfx.DocumentUtils.documentThumbnail
+import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
