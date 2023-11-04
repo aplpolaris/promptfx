@@ -30,13 +30,14 @@ import java.io.File
  * Designed to save/restore metadata and chunk information to the file system.
  */
 class LocalTextDocumentSet(
-    private val rootFolder: File
+    private val rootFolder: File,
+    _indexFile: File? = null
 ) {
 
     val documents = mutableMapOf<String, TextDocument>()
     val chunks = mutableListOf<TextChunk>()
 
-    private val indexFile = File(rootFolder, "docs.json")
+    private val indexFile = _indexFile ?: File(rootFolder, "docs.json")
 
     //region PROCESSING
 

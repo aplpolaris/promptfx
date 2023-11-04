@@ -29,7 +29,7 @@ object LocalDocumentManager {
     /** Runnable for working with document sets. */
     @JvmStatic
     fun main(args: Array<String>) {
-        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=5000")
+        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
         println(
             """
             $ANSI_GREEN
@@ -39,6 +39,7 @@ object LocalDocumentManager {
               --reindex-all
               --reindex-new (default)
               --max-chunk-size=<size> (default 1000)
+              --index-file=<file> (default docs.json)
             $ANSI_RESET
         """.trimIndent()
         )
@@ -52,9 +53,12 @@ object LocalDocumentManager {
             ?.substringAfter("=", "")
             ?.toIntOrNull() ?: 1000
         val rootFolder = File(path)
+        val indexFile = File(rootFolder, args.find { it.startsWith("--index-file") }
+            ?.substringAfter("=", "")
+            ?: "docs.json")
 
         println("${ANSI_CYAN}Refreshing file text in $rootFolder...$ANSI_RESET")
-        val docs = LocalTextDocumentSet(rootFolder)
+        val docs = LocalTextDocumentSet(rootFolder, indexFile)
         docs.loadIndex()
         docs.processDocuments(reindexAll)
 
