@@ -63,7 +63,7 @@
         <junit.version>5.9.2</junit.version>
         <kotlin.version>1.8.20</kotlin.version>
         <jackson.version>2.15.2</jackson.version>
-        <openai-kotlin.version>3.4.1</openai-kotlin.version>
+        <openai-kotlin.version>3.5.0</openai-kotlin.version>
     </properties>
 
     <dependencies>
