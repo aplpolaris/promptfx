@@ -34,8 +34,8 @@ class LocalTextDocumentSet(
     _indexFile: File? = null
 ) {
 
-    val documents = mutableMapOf<String, TextDocument>()
-    val chunks = mutableListOf<TextChunk>()
+    private val documents = mutableMapOf<String, TextDocument>()
+    private val chunks = mutableListOf<TextChunk>()
 
     private val indexFile = _indexFile ?: File(rootFolder, "docs.json")
 
