@@ -52,6 +52,7 @@ module tri.promptkt {
     opens tri.ai.openai to com.fasterxml.jackson.databind;
     opens tri.ai.pips to com.fasterxml.jackson.databind;
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
+    opens tri.ai.text.chunks to com.fasterxml.jackson.databind;
 
     exports tri.ai.core;
     exports tri.ai.embedding;
@@ -59,6 +60,7 @@ module tri.promptkt {
     exports tri.ai.openai;
     exports tri.ai.pips;
     exports tri.ai.prompt;
+    exports tri.ai.text.chunks;
     exports tri.ai.tool;
     exports tri.util;
 

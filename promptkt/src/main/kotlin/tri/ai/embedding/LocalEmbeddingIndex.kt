@@ -154,7 +154,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=5000")
+            val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
             println("""
                 $ANSI_GREEN
                 Arguments expected:
