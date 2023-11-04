@@ -29,7 +29,7 @@ object LocalDocumentManager {
     /** Runnable for working with document sets. */
     @JvmStatic
     fun main(args: Array<String>) {
-        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
+        val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
         println(
             """
             $ANSI_GREEN
