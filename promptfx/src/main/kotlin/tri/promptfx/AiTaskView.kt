@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.geometry.Side
 import javafx.scene.control.Alert
+import javafx.scene.control.Button
 import javafx.scene.control.TextArea
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.HBox
@@ -48,6 +49,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     lateinit var inputPane: VBox
     lateinit var outputPane: VBox
     lateinit var buttonBar: HBox
+    lateinit var runButton: Button
     lateinit var parameterForm: Form
 
     val controller: PromptFxController by inject()
@@ -123,7 +125,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
 
     /** Adds content to the button bar of the view. */
     private fun EventTarget.buttonBar() = hbox(10) {
-        button("Run") {
+        runButton = button("Run") {
             runTooltip.onChange {
                 if (tooltip == null)
                     tooltip = Tooltip(text)
@@ -190,6 +192,16 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             result!!.text = it.finalResult.toString()
         }
         return result!!
+    }
+
+    /** Hide the parameters view. */
+    fun hideParameters() {
+        root.right.hide()
+    }
+
+    /** Hide the run button. */
+    fun hideRunButton() {
+        buttonBar.hide()
     }
 
     //endregion

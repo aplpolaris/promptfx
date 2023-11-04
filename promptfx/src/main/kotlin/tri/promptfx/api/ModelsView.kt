@@ -27,6 +27,10 @@ import java.time.ZoneId
 
 class ModelsView : AiTaskView("Models", "List all models, sorted by creation date", showInput = false) {
 
+    init {
+        hideParameters()
+    }
+
     override suspend fun processUserInput(): AiPipelineResult {
         val models = controller.openAiPlugin.client.client.models()
             .sortedByDescending { it.created }

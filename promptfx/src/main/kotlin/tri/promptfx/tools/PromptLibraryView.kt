@@ -110,6 +110,8 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 vgrow = Priority.ALWAYS
             }
         }
+        hideParameters()
+        hideRunButton()
     }
 
     override fun onCreate() {
