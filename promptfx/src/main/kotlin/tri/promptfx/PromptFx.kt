@@ -28,6 +28,7 @@ import org.apache.pdfbox.pdmodel.font.PDSimpleFont
 import tornadofx.*
 import tri.promptfx.docs.DocumentQaView
 import java.util.logging.Level
+import kotlin.system.exitProcess
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun onBeforeShow(view: UIComponent) {
@@ -36,6 +37,13 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun stop() {
         workspace.find<PromptFxController>().close()
         super.stop()
+
+        // exit process after 2-second timer that runs in the background
+        // to allow for any cleanup to occur
+        Thread {
+            Thread.sleep(2000)
+            exitProcess(0)
+        }.start()
     }
 }
 
