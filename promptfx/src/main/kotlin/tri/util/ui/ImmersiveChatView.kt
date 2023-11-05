@@ -25,6 +25,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
+import javafx.event.ActionEvent
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -59,6 +60,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val controller: PromptFxController by inject()
     private val thumbnailList = observableListOf<DocumentThumbnail>()
     val input = SimpleStringProperty("")
+    private lateinit var inputField: TextField
     val response = observableListOf<Node>()
 
     val css = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
@@ -98,7 +100,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             style = "-fx-font-size: 24px; -fx-fill: gray; -fx-font-weight: bold;"
         }
 
-        textfield(input) {
+        inputField = textfield(input) {
             id = "chat-input"
             prefHeight = 0.2 * screenHeight
             alignment = Pos.CENTER
@@ -141,6 +143,11 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             spacing = 40.0
             children.bind(thumbnailList) { docthumbnail(it) }
         }
+    }
+
+    internal fun setUserInput(text: String) {
+        input.set(text)
+        inputField.onAction.handle(ActionEvent())
     }
 
     private fun TextFlow.updateTextFlow(change: ListChangeListener.Change<out Node>) {

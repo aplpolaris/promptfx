@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.event.EventHandler
 import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.control.TextArea
@@ -122,6 +123,9 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
+    // hook used to update the full screen view from a remote call
+    internal var updateFullScreenInput: ((String) -> Unit)? = null
+
     /** Launches a template view with the given prompt text. */
     fun launchTemplateView(prompt: String) {
         val view = find<PromptTemplateView>()
@@ -136,13 +140,16 @@ class PromptFxWorkspace : Workspace() {
             "onUserRequest" to userInputFunction(),
             "baseComponentTitle" to dockedComponent?.title,
             "baseComponent" to dockedComponent
-        )).openWindow(
+        )).apply {
+            updateFullScreenInput = this::setUserInput
+        }.openWindow(
             StageStyle.UNDECORATED
         )!!.apply {
             x = curScreen.bounds.minX
             y = curScreen.bounds.minY
             isMaximized = true
             scene.root.style = "-fx-base:black"
+            onHidden = EventHandler { updateFullScreenInput = null }
         }
     }
 

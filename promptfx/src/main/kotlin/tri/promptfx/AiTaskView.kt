@@ -218,7 +218,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     private fun taskCompleted(message: AiPipelineResult) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
-    private fun runTask() {
+    internal fun runTask() {
         val task = executeTask {
             processUserInput()
         }
