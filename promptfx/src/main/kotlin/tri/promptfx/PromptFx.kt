@@ -36,6 +36,13 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun stop() {
         workspace.find<PromptFxController>().close()
         super.stop()
+
+        // exit process after 2 second timer that runs in the background
+        // to allow for any cleanup to occur
+        Thread {
+            Thread.sleep(2000)
+            System.exit(0)
+        }.start()
     }
 }
 
