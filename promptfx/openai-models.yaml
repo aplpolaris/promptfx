@@ -1,0 +1,14 @@
+# Use lists below to override the OpenAI API models shown in PromptFx.
+# Leave a list blank to use the defaults.
+---
+audio: [ ]
+chat: [
+  gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-3.5-turbo-1106,
+  gpt-4, gpt-4-1106-preview
+]
+completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
+embeddings: [ ]
+moderation: [ ]
+multimodal: [ ]
+tts: [ ]
+vision: [ ]

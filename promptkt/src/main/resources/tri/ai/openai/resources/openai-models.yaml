@@ -142,7 +142,6 @@ chat: [
   gpt-4, gpt-4-1106-preview
 ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
-edits: [ text-davinci-edit-001, code-davinci-edit-001 ]
 embeddings: [ text-embedding-ada-002 ]
 moderation: [ text-moderation-latest, text-moderation-stable ]
 multimodal: [ gpt-4-vision-preview ]
