@@ -26,8 +26,8 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import tri.ai.openai.COMBO_GPT35
 import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiModels.GPT35_TURBO
 
 @Disabled("Requires apikey")
 class JsonToolExecutorTest {
@@ -53,13 +53,13 @@ class JsonToolExecutorTest {
         }
 
         runBlocking {
-            JsonToolExecutor(OpenAiClient.INSTANCE, COMBO_GPT35, listOf(tool1, tool2))
+            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, listOf(tool1, tool2))
                 .execute("Multiply 21 times 2 and then convert it to Roman numerals.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, COMBO_GPT35, listOf(tool1, tool2))
+            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, listOf(tool1, tool2))
                 .execute("Convert 5 to a Roman numeral.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, COMBO_GPT35, listOf(tool1, tool2))
+            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, listOf(tool1, tool2))
                 .execute("What year was Jurassic Park?")
         }
     }

@@ -42,6 +42,9 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.http.*
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
+import tri.ai.openai.OpenAiModels.AUDIO_WHISPER
+import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModels.IMAGE_DALLE2
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
@@ -127,7 +130,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
     suspend fun imageURL(imageCreation: ImageCreation) =
         client.imageURL(imageCreation).let {
             usage.increment(it.size, UsageUnit.IMAGES)
-            result(it.map { it.url }, IMAGE_DALLE)
+            result(it.map { it.url }, IMAGE_DALLE2)
         }
 
     //endregion
@@ -223,44 +226,6 @@ class OpenAiSettings {
     }
 
 }
-
-//region MODELS
-
-const val COMBO_GPT4 = "gpt-4"
-const val COMBO_GPT35 = "gpt-3.5-turbo"
-const val COMBO_GPT35_16K = "gpt-3.5-turbo-16k"
-
-const val TEXT_DAVINCI3 = "text-davinci-003"
-const val TEXT_DAVINCI2 = "text-davinci-002"
-const val TEXT_CURIE = "text-curie-001"
-const val TEXT_BABBAGE = "text-babbage-001"
-const val TEXT_ADA = "text-ada-001"
-
-const val EDIT_DAVINCI = "text-davinci-edit-001"
-
-const val INSERT_DAVINCI2 = "text-davinci-insert-002"
-const val INSERT_DAVINCI = "text-davinci-insert-001"
-
-const val CODE_DAVINCI2 = "code-davinci-002"
-const val CODE_CUSHMAN1 = "code-cushman-001"
-const val CODE_EDIT_DAVINCI = "code-davinci-edit-001"
-
-const val EMBEDDING_ADA = "text-embedding-ada-002"
-
-const val AUDIO_WHISPER = "whisper-1"
-const val IMAGE_DALLE = "dalle-2"
-
-val chatModels = listOf(COMBO_GPT35, COMBO_GPT4, "$COMBO_GPT35-0301", "$COMBO_GPT4-0314")
-val textModels = listOf(TEXT_DAVINCI3, TEXT_CURIE, TEXT_BABBAGE, TEXT_ADA)
-val codeModels = listOf(CODE_DAVINCI2, CODE_CUSHMAN1)
-val completionModels = textModels + codeModels
-val insertModels = listOf(TEXT_DAVINCI3, INSERT_DAVINCI2, INSERT_DAVINCI, TEXT_DAVINCI2, CODE_DAVINCI2)
-val editsModels = listOf(EDIT_DAVINCI, CODE_EDIT_DAVINCI)
-val embeddingsModels = listOf(EMBEDDING_ADA)
-val audioModels = listOf(AUDIO_WHISPER)
-val imageModels = listOf(IMAGE_DALLE)
-
-//endregion
 
 //region UTILS
 

@@ -29,13 +29,32 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
+import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
 
-@Disabled("Requires apikey")
 class OpenAiTest {
 
     val client = OpenAiClient.INSTANCE.client
 
     @Test
+    fun testModelLibrary() {
+        println(OpenAiModels.MODEL_INDEX)
+    }
+
+    @Test
+    @Disabled("Requires apikey")
+    fun testModels() = runTest {
+        val res = client.models()
+        println(res)
+        println("-".repeat(50))
+        println("OpenAI API models not in local index: " +
+                (res.map { it.id.id }.toSet() - OpenAiModels.MODEL_INDEX.values.map { it.id }.toSet()))
+        println("-".repeat(50))
+        println("Local index models not in OpenAI API: " +
+                (OpenAiModels.MODEL_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
+    }
+
+    @Test
+    @Disabled("Requires apikey")
     fun testChat() = runTest {
         val res = client.chatCompletion(
             ChatCompletionRequest(
@@ -47,6 +66,7 @@ class OpenAiTest {
     }
 
     @Test
+    @Disabled("Requires apikey")
     fun testEmbedding() = runTest {
         val res = client.embeddings(
             EmbeddingRequest(
@@ -55,7 +75,7 @@ class OpenAiTest {
                     "Give me a haiku about Kotlin.",
                     "Tell me a joke.",
                     "Input text to get embeddings for, encoded as a string or array of tokens. To get embeddings for multiple inputs in a single request, pass an array of strings or array of token arrays. Each input must not exceed 8192 tokens in length.",
-                    "Thrusting playing biting"
+                    "Playing bridge on a starship"
                 )
             )
         )

@@ -71,9 +71,6 @@ class PromptFxWorkspace : Workspace() {
                 hyperlinkview<FilesView>("Files")
                 hyperlinkview<ModerationsView>("Moderations")
                 separator { }
-                label("Deprecated APIs")
-                hyperlinkview<EditsView>("Edits")
-                separator { }
                 label("Documentation/Links")
                 browsehyperlink("API Reference", "https://platform.openai.com/docs/api-reference")
                 browsehyperlink("API Playground", "https://platform.openai.com/playground")

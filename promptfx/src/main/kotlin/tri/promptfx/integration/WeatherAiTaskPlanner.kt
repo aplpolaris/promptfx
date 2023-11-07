@@ -48,7 +48,7 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingSe
         if (similarity < 0.5)
             throw IllegalArgumentException("The input is not about weather.")
 
-        return AiTaskResult.result(input, EMBEDDING_ADA)
+        return AiTaskResult.result(input, embeddingService.modelId)
     }
 
 }

@@ -21,30 +21,23 @@ package tri.ai.openai
 
 import tri.ai.core.TextPlugin
 
-/** OpenAI implementation of [TextPlugin]. */
+/**
+ * OpenAI implementation of [TextPlugin].
+ * Models are as described in `openai-models.yaml`.
+ */
 class OpenAiTextPlugin : TextPlugin {
 
     val client = OpenAiClient.INSTANCE
 
-    override fun chatModels() = listOf(
-        OpenAiChat(COMBO_GPT35, client),
-        OpenAiChat(COMBO_GPT4, client),
-        OpenAiChat(COMBO_GPT35_16K, client)
-    )
+    override fun chatModels() =
+        OpenAiModels.chatModels(false).map { OpenAiChat(it, client) }
 
-    override fun textCompletionModels() = listOf(
-        OpenAiCompletionChat(COMBO_GPT35, client),
-        OpenAiCompletionChat(COMBO_GPT35_16K, client),
-        OpenAiCompletionChat(COMBO_GPT4, client),
-        OpenAiCompletion(TEXT_ADA, client),
-        OpenAiCompletion(TEXT_BABBAGE, client),
-        OpenAiCompletion(TEXT_CURIE, client),
-        OpenAiCompletion(TEXT_DAVINCI3, client)
-    )
+    override fun textCompletionModels() =
+        OpenAiModels.chatModels(false).map { OpenAiCompletionChat(it, client) } +
+        OpenAiModels.completionModels(false).map { OpenAiCompletion(it, client) }
 
-    override fun embeddingModels() = listOf(
-        OpenAiEmbeddingService(client)
-    )
+    override fun embeddingModels() =
+        OpenAiModels.embeddingModels().map { OpenAiEmbeddingService(it, client) }
 
     override fun close() {
         client.client.close()

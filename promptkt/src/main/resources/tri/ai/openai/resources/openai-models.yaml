@@ -1,0 +1,150 @@
+# Library of OpenAI Models
+# See https://platform.openai.com/docs/models
+---
+models:
+
+  GPT-4:
+
+    - id: gpt-4
+      name: GPT-4
+      type: gpt
+      context_tokens: 8192
+      snapshots: [ '0613', '0314' ]
+
+    - id: gpt-4-32k
+      name: GPT-4 32k
+      description: GPT-4 with a 32k context window
+      type: gpt
+      context_tokens: 32768
+      snapshots: [ '0613', '0314' ]
+
+    - id: gpt-4-1106-preview
+      name: GPT-4 Turbo Preview
+      description: |
+        GPT-4 with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more.
+        Returns a maximum of 4,096 output tokens.
+      type: gpt
+      context_tokens: 128000
+
+  GPT-4 multimodal:
+
+    - id: gpt-4-vision-preview
+      name: GPT-4 Turbo with Vision Preview
+      description: |
+        GPT-4 with ability to understand images.
+        Returns a maximum of 4,096 output tokens.
+      context_tokens: 128000
+      type: gpt_multimodal
+
+  GPT-3.5:
+
+    - id: gpt-3.5-turbo
+      name: GPT-3.5 Turbo
+      type: gpt
+      context_tokens: 4096
+      snapshots: [ '0613', '0301' ]
+
+    - id: gpt-3.5-turbo-16k
+      name: GPT-3.5 Turbo 16k
+      description: GPT-3 with a 16k context window
+      type: gpt
+      context_tokens: 16385
+      snapshots: [ '0613' ]
+
+    - id: gpt-3.5-turbo-1106
+      name: GPT-3.5 Turbo Preview
+      description: |
+        GPT-3.5 with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more.
+        Returns a maximum of 4,096 output tokens.
+      type: gpt
+      context_tokens: 16385
+
+  Embeddings:
+
+    - id: text-embedding-ada-002
+      name: Ada Text Embeddings
+      type: text-embedding
+
+  GPT base:
+
+    - id: gpt-3.5-turbo-instruct
+      name: GPT-3.5 Turbo Instruct
+      type: text-completion
+      context_tokens: 4096
+      snapshots: [ '0914' ]
+
+    - id: davinci-002
+      name: Davinci 2
+      type: text-completion
+      context_tokens: 4096
+
+    - id: babbage-002
+      name: Babbage 2
+      type: text-completion
+      context_tokens: 4096
+
+  GPT-3 legacy:
+
+    - id: text-davinci-edit-001
+      name: DaVinci text edit
+      type: text-edit
+      deprecation: 2024-01-04
+
+    - id: code-davinci-edit-001
+      name: DaVinci code edit
+      type: text-edit
+      deprecation: 2024-01-04
+
+  Moderation:
+
+    - id: text-moderation-latest
+      name: Text Moderation (latest)
+      type: text-moderation
+      context_tokens: 32768
+
+    - id: text-moderation-stable
+      name: Text Moderation (stable)
+      type: text-moderation
+      context_tokens: 32768
+
+  Vision:
+
+    - id: dall-e-3
+      name: DALL-E 3
+      type: image-generation
+
+    - id: dall-e-2
+      name: DALL-E 2
+      type: image-generation
+
+  Speech:
+
+    - id: tts-1
+      name: TTS 1
+      description: TTS 1 optimized for real-time text
+      type: text-to-speech
+      snapshots: [ '1106' ]
+
+    - id: tts-1-hd
+      name: TTS 1 HD
+      description: TTS 1 optimized for higher quality audio
+      type: text-to-speech
+      snapshots: [ '1106' ]
+
+    - id: whisper-1
+      name: Whisper v2-large
+      description: Whisper speech recognition model, see https://github.com/openai/whisper and https://arxiv.org/abs/2212.04356
+      type: speech-to-text
+
+audio: [ whisper-1 ]
+chat: [
+  gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-3.5-turbo-1106,
+  gpt-4, gpt-4-1106-preview
+]
+completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
+embeddings: [ text-embedding-ada-002 ]
+moderation: [ text-moderation-latest, text-moderation-stable ]
+multimodal: [ gpt-4-vision-preview ]
+tts: [ tts-1, tts-1-hd ]
+vision: [ dall-e-2, dall-e-3 ]
+

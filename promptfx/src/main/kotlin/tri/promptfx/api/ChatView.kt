@@ -24,7 +24,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.openai.chatModels
+import tri.ai.openai.OpenAiModels
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 
@@ -34,9 +34,11 @@ import tri.promptfx.ModelParameters
  */
 abstract class ChatView(title: String, instruction: String) : AiTaskView(title, instruction) {
 
+    private val CHAT_MODELS = OpenAiModels.chatModels(includeSnapshots = true)
+
     protected val system = SimpleStringProperty("")
 
-    protected val model = SimpleStringProperty(chatModels[0])
+    protected val model = SimpleStringProperty(CHAT_MODELS.first())
     protected val messageHistory = SimpleIntegerProperty(10)
 
     protected val stopSequences = SimpleStringProperty("")
@@ -78,7 +80,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
     fun initChatParameters() {
         parameters("Chat Model") {
             field("Model") {
-                combobox(model, chatModels)
+                combobox(model, CHAT_MODELS)
             }
         }
         parameters("Chat Input") {
