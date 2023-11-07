@@ -28,8 +28,8 @@ import com.aallam.openai.client.LoggingConfig
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import kotlinx.coroutines.runBlocking
-import tri.ai.openai.COMBO_GPT35
 import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiModels.GPT35_TURBO
 
 object OpenAiSimpleChat {
     @JvmStatic
@@ -38,7 +38,7 @@ object OpenAiSimpleChat {
             // chat with the user until they say "bye"
             OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
             val client = OpenAI(OpenAIConfig(OpenAiClient.INSTANCE.settings.apiKey, LoggingConfig(LogLevel.None)))
-            val model = COMBO_GPT35
+            val model = GPT35_TURBO
             val historyLimit = 10
             val chatHistory = mutableListOf<ChatMessage>()
 

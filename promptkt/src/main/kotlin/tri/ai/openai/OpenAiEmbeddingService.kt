@@ -22,9 +22,10 @@ package tri.ai.openai
 import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.TextChunk
 import tri.ai.embedding.TextChunker
+import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
 
 /** An embedding service that uses the OpenAI API. */
-class OpenAiEmbeddingService(val client: OpenAiClient = OpenAiClient.INSTANCE, override val modelId: String = EMBEDDING_ADA) : EmbeddingService {
+class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val client: OpenAiClient = OpenAiClient.INSTANCE) : EmbeddingService {
 
     override fun toString() = modelId
 

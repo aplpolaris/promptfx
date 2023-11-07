@@ -21,11 +21,9 @@ package tri.promptfx.ui
 
 import tornadofx.Component
 import tornadofx.ScopedInstance
-import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
-import tri.ai.openai.COMBO_GPT35
 import tri.ai.openai.OpenAiChat
 import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiModels.GPT35_TURBO
 
 /** General-purpose tool that generates responses to chat messages. */
 abstract class ChatDriver : ScopedInstance, Component() {
@@ -49,7 +47,7 @@ abstract class ChatDriver : ScopedInstance, Component() {
 class OpenAiChatDriver : ChatDriver() {
 
     private val inst = OpenAiClient.INSTANCE
-    private val chatter = OpenAiChat(COMBO_GPT35, inst)
+    private val chatter = OpenAiChat(GPT35_TURBO, inst)
 
     override var userName = System.getProperty("user.name")
     override var systemName = "ChatGPT (${chatter.modelId})"

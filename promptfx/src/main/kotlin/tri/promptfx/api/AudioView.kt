@@ -31,11 +31,10 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
+import tri.ai.openai.OpenAiModels
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult
-import tri.ai.openai.audioModels
 import tri.util.ui.AudioRecorder
-import tri.ai.openai.AUDIO_WHISPER
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -47,11 +46,11 @@ class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to
 /** View for the OpenAI API's [Whisper](https://platform.openai.com/docs/api-reference/audio) endpoint. */
 class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {
 
-    private val modelId = AUDIO_WHISPER
+    private val AUDIO_MODELS = OpenAiModels.audioModels()
 
     private val input = SimpleStringProperty("")
     private val file = SimpleObjectProperty<File?>(null)
-    private val model = SimpleStringProperty(audioModels[0])
+    private val model = SimpleStringProperty(AUDIO_MODELS.first())
     private val common = ModelParameters()
 
     private var recorder: AudioRecorder? = null
@@ -79,7 +78,7 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
     init {
         parameters("Audio Model") {
             field("Model") {
-                combobox(model, audioModels)
+                combobox(model, AUDIO_MODELS)
             }
         }
         parameters("Parameters") {
@@ -155,7 +154,7 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
     override suspend fun processUserInput(): AiPipelineResult {
         return when (val f = file.value) {
             null -> AiTaskResult.invalidRequest("No audio file dropped")
-            else -> controller.openAiPlugin.client.quickTranscribe(modelId, f)
+            else -> controller.openAiPlugin.client.quickTranscribe(model.value, f)
                 .also { controller.updateUsage() }
         }.asPipelineResult()
     }

@@ -25,12 +25,13 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.memory.*
 import tri.ai.openai.*
+import tri.ai.openai.OpenAiModels.GPT35_TURBO
 
 /** Example of a chat that has a memory of previous conversations. */
 class OpenAiMemoryChat {
 
     val greeting = "You are chatting with GPT-3.5 Turbo (with memory). Say 'bye' to exit."
-    val model = COMBO_GPT35
+    val model = GPT35_TURBO
     val chatService = OpenAiChat(modelId = model)
 
     val persona: BotPersona = HelperPersona("Jack")

@@ -39,10 +39,13 @@ class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-t
 /** View for the OpenAI API's image endpoint. */
 class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
+    /** User input */
     private val input = SimpleStringProperty("")
     /** Image URLs */
     private val images = observableListOf<String>()
 
+    /** Model */
+    private val model = SimpleStringProperty("dall-e")
     private val numProperty = SimpleIntegerProperty(1)
     private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
 
