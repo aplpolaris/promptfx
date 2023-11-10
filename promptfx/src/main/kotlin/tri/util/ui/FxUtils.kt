@@ -26,6 +26,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
@@ -78,8 +79,17 @@ fun EventTarget.promptfield(
     promptText: ObservableStringValue,
     workspace: Workspace
 ) {
+    val promptFieldVisible = SimpleBooleanProperty(false)
     field(fieldName) {
-        combobox(promptId, promptIdList)
+        combobox(promptId, promptIdList) {
+            maxWidth = 200.0
+        }
+        togglebutton(text = "") {
+            graphic = FontAwesomeIconView(FontAwesomeIcon.EYE)
+            isSelected = false
+            tooltip("Toggle visibility of the prompt text.")
+            action { promptFieldVisible.set(!promptFieldVisible.value) }
+        }
         button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
             tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
             action { (workspace as PromptFxWorkspace).launchTemplateView(promptText.value) }
@@ -90,5 +100,7 @@ fun EventTarget.promptfield(
             wrappingWidth = 300.0
             promptText.onChange { tooltip(it) }
         }
+        visibleProperty().bindBidirectional(promptFieldVisible)
+        managedProperty().bindBidirectional(promptFieldVisible)
     }
 }
