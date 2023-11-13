@@ -7,6 +7,7 @@ import javafx.geometry.Side
 import javafx.scene.control.Alert
 import javafx.scene.control.Button
 import javafx.scene.control.TextArea
+import javafx.scene.control.TextInputControl
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -205,6 +206,9 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     }
 
     //endregion
+
+    /** Gets the input area of the view. By default this finds the first [TextArea] in the input pane. */
+    open fun inputArea(): TextInputControl? = inputPane.children.filterIsInstance<TextArea>().firstOrNull()
 
     /** Processes whatever input user has provided. */
     abstract suspend fun processUserInput(): AiPipelineResult
