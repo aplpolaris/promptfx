@@ -33,10 +33,11 @@ import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
 import tri.promptfx.tools.PromptTemplateView
 import tri.util.ui.*
-import tri.util.ui.gray
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
+
+    private val views = mutableMapOf<String, Class<out UIComponent>>()
 
     init {
         add(find<AiEngineView>())
@@ -123,18 +124,26 @@ class PromptFxWorkspace : Workspace() {
     // hook used to update the full screen view from a remote call
     internal var updateFullScreenInput: ((String) -> Unit)? = null
 
-    /** Launches a template view with the given prompt text. */
+    //region HOOKS FOR SPECIFIC VIEWS
+
+    /** Looks up a view by name. */
+    fun findTaskView(name: String): AiTaskView? {
+        return views[name]?.let { find(it) } as? AiTaskView
+    }
+
+    /** Launches the template view with the given prompt text. */
     fun launchTemplateView(prompt: String) {
         val view = find<PromptTemplateView>()
         view.template.set(prompt)
         workspace.dock(view)
     }
 
+    //endregion
+
     private fun enterFullScreenMode() {
         val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
             ?: Screen.getPrimary()
         find<ImmersiveChatView>(params = mapOf(
-            "onUserRequest" to userInputFunction(),
             "baseComponentTitle" to dockedComponent?.title,
             "baseComponent" to dockedComponent
         )).apply {
@@ -148,17 +157,6 @@ class PromptFxWorkspace : Workspace() {
             scene.root.style = "-fx-base:black"
             onHidden = EventHandler { updateFullScreenInput = null }
         }
-    }
-
-    private fun userInputFunction(): suspend (String) -> List<Node> = { input ->
-        (dockedComponent as? AiTaskView)?.let { view ->
-            view.inputPane.children.filterIsInstance<TextArea>().firstOrNull()?.let {
-                it.text = input
-                val result = view.processUserInput()
-                (result.finalResult as? FormattedText)?.toFxNodes()
-                    ?: listOf(Text(result.finalResult.toString()))
-            }
-        } ?: listOf(Text("This view doesn't support processing user input.\nInput was: $input"))
     }
 
     //region LAYOUT
@@ -177,6 +175,7 @@ class PromptFxWorkspace : Workspace() {
     }
 
     private inline fun <reified T: UIComponent> EventTarget.hyperlinkview(name: String) {
+        views[name] = T::class.java
         hyperlink(name) {
             action {
                 isVisited = false
@@ -186,6 +185,9 @@ class PromptFxWorkspace : Workspace() {
     }
 
     private fun EventTarget.hyperlinkview(view: NavigableWorkspaceView) {
+        if (view is NavigableWorkspaceViewImpl<*>) {
+            views[view.name] = view.type.java
+        }
         hyperlink(view.name) {
             action {
                 isVisited = false

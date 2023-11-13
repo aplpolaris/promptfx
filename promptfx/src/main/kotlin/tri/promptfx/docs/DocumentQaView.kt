@@ -232,7 +232,7 @@ class DocumentQaView: AiPlanTaskView(
         tempParameters = common
     )
 
-    // override the user input to enable clicking hyperlinks
+    // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
             (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->

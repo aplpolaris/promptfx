@@ -24,7 +24,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
-import org.controlsfx.control.action.ActionMap.action
 import tornadofx.*
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.PromptFxWorkspace
