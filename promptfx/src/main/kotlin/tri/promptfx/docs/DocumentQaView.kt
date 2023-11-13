@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
@@ -123,6 +124,7 @@ class DocumentQaView: AiPlanTaskView(
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
+                (inputContainer as? HBox)?.spacing = 5.0
                 hyperlink(documentFolder.stringBinding {
                     val path = it!!.absolutePath
                     if (path.length > 25) {

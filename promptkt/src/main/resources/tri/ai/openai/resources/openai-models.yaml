@@ -131,9 +131,19 @@ models:
       type: text-to-speech
       snapshots: [ '1106' ]
 
+    - id: canary-tts
+      name: Canary TTS
+      description: Canary TTS
+      type: text-to-speech
+
     - id: whisper-1
       name: Whisper v2-large
       description: Whisper speech recognition model, see https://github.com/openai/whisper and https://arxiv.org/abs/2212.04356
+      type: speech-to-text
+
+    - id: canary-whisper
+      name: Canary Whisper
+      description: Canary Whisper
       type: speech-to-text
 
 audio: [ whisper-1 ]

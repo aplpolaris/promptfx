@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.geometry.Pos
 import javafx.scene.control.TextArea
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -112,6 +113,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
+                (inputContainer as? HBox)?.spacing = 5.0
                 hyperlink(documentFolder.stringBinding {
                     val path = it!!.absolutePath
                     if (path.length > 25) {

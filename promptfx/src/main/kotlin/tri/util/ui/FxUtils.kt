@@ -31,6 +31,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
 import javafx.scene.control.Slider
+import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
@@ -81,6 +82,7 @@ fun EventTarget.promptfield(
 ) {
     val promptFieldVisible = SimpleBooleanProperty(false)
     field(fieldName) {
+        (inputContainer as? HBox)?.spacing = 5.0
         combobox(promptId, promptIdList) {
             maxWidth = 200.0
         }

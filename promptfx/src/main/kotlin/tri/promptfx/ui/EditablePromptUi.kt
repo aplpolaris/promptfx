@@ -24,8 +24,10 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import org.controlsfx.control.action.ActionMap.action
 import tornadofx.*
 import tri.ai.prompt.AiPromptLibrary
+import tri.promptfx.PromptFxWorkspace
 
 /** View for selecting and editing a prompt. */
 class EditablePromptUi(val prefix: String, val instruction: String): Fragment() {
@@ -38,6 +40,7 @@ class EditablePromptUi(val prefix: String, val instruction: String): Fragment() 
         hbox {
             alignment = Pos.CENTER_LEFT
             spacing = 5.0
+            padding = insets(5.0, 0.0, 5.0, 0.0)
             text(instruction)
             spacer()
             menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
@@ -46,6 +49,10 @@ class EditablePromptUi(val prefix: String, val instruction: String): Fragment() 
                         action { templateText.set(AiPromptLibrary.lookupPrompt(key).template) }
                     }
                 }
+            }
+            button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                tooltip("Copy the current prompt to the Prompt Template view under Tools and open that view.")
+                action { (workspace as PromptFxWorkspace).launchTemplateView(templateText.value) }
             }
         }
         textarea(templateText) {
