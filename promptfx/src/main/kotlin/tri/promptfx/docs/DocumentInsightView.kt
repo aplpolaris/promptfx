@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.geometry.Pos
 import javafx.scene.control.TextArea
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -42,6 +43,7 @@ import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.AiPromptLibrary.Companion.lookupPrompt
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 import tri.util.ui.slider
@@ -58,11 +60,8 @@ class DocumentInsightView: AiPlanTaskView(
     "Use a template to extract information from a collection of documents",
 ) {
 
-    // the prompt template to use
-    private val mapPrompts = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("document-map-") }
-    private val mapTemplate = SimpleStringProperty(mapPrompts.firstOrNull()?.let { lookupPrompt(it).template } ?: "")
-    private val reducePrompts = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith("document-reduce-") }
-    private val reduceTemplate = SimpleStringProperty(reducePrompts.firstOrNull()?.let { lookupPrompt(it).template } ?: "")
+    private lateinit var mapPromptUi: EditablePromptUi
+    private lateinit var reducePromptUi: EditablePromptUi
 
     // selection of source documents
     private val documentFolder = SimpleObjectProperty(File(""))
@@ -98,42 +97,10 @@ class DocumentInsightView: AiPlanTaskView(
             squeezebox {
                 fold("Prompts", expanded = true) {
                     vbox {
-                        hbox {
-                            alignment = Pos.CENTER_LEFT
-                            spacing = 5.0
-                            text("Prompt for each snippet:")
-                            spacer()
-                            menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                                mapPrompts.forEach { key ->
-                                    item(key) {
-                                        action { mapTemplate.set(AiPromptLibrary.lookupPrompt(key).template) }
-                                    }
-                                }
-                            }
-                        }
-                        textarea(mapTemplate) {
-                            vgrow = Priority.ALWAYS
-                            isWrapText = true
-                            style = "-fx-font-size: 18px;"
-                        }
-                        hbox {
-                            alignment = Pos.CENTER_LEFT
-                            spacing = 5.0
-                            text("Prompt to summarize results:")
-                            spacer()
-                            menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                                reducePrompts.forEach { key ->
-                                    item(key) {
-                                        action { reduceTemplate.set(AiPromptLibrary.lookupPrompt(key).template) }
-                                    }
-                                }
-                            }
-                        }
-                        textarea(reduceTemplate) {
-                            vgrow = Priority.ALWAYS
-                            isWrapText = true
-                            style = "-fx-font-size: 18px;"
-                        }
+                        mapPromptUi = EditablePromptUi("document-map", "Prompt for each snippet:")
+                        reducePromptUi = EditablePromptUi("document-reduce", "Prompt to summarize results:")
+                        add(mapPromptUi)
+                        add(reducePromptUi)
                     }
                 }
                 fold("Documents", expanded = true) {
@@ -146,6 +113,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
+                (inputContainer as? HBox)?.spacing = 5.0
                 hyperlink(documentFolder.stringBinding {
                     val path = it!!.absolutePath
                     if (path.length > 25) {
@@ -247,7 +215,7 @@ class DocumentInsightView: AiPlanTaskView(
         val plans = limitedSnippets.map {
             aitask("${it.doc.shortName} ${it.section.start} ${it.section.end}") {
                 val res = completionEngine.complete(
-                    mapTemplate.value.fill("input" to it.readText()),
+                    mapPromptUi.templateText.value.fill("input" to it.readText()),
                     common.maxTokens.value,
                     common.temp.value
                 )
@@ -259,7 +227,7 @@ class DocumentInsightView: AiPlanTaskView(
             val concat = it.values.joinToString("\n\n") { it.value as String }
             runLater { mapResult.value = concat }
             completionEngine.complete(
-                reduceTemplate.value.fill("input" to concat),
+                reducePromptUi.templateText.value.fill("input" to concat),
                 common.maxTokens.value,
                 common.temp.value
             ).map { concat to it }

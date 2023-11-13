@@ -42,7 +42,6 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     private val input = SimpleStringProperty("")
 
     private val promptId = SimpleStringProperty(PROMPT_PREFIX)
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(PROMPT_PREFIX) }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     init {
@@ -58,7 +57,7 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
         }
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
-            promptfield("Template", promptId, promptIdList, promptText, workspace)
+            promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
         }
         parameters("Model Parameters") {
             with (common) {

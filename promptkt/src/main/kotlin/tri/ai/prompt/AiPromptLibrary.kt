@@ -29,20 +29,30 @@ import kotlin.reflect.KClass
 
 /** Library of prompt templates. */
 class AiPromptLibrary {
+
     var prompts = mutableMapOf<String, AiPrompt>()
 
     companion object {
+
+        /** Get list of prompts with given prefix. */
+        fun withPrefix(prefix: String) =
+            INSTANCE.prompts.keys.filter { it.startsWith(prefix) }
+
+        /** Get prompt with given id. */
         fun lookupPrompt(id: String): AiPrompt {
             return INSTANCE.prompts[id] ?: throw IllegalArgumentException("No prompt found with id $id")
         }
 
+        //region RUNTIME PROMPT FILE
+
+        /** The file used to store prompts created at runtime. */
         val RUNTIME_PROMPTS_FILE = File("prompts.yaml")
 
         /** The instance of the prompt library with only the prompts configurable at runtime. */
         val RUNTIME_INSTANCE by lazy {
             AiPromptLibrary().apply {
                 if (RUNTIME_PROMPTS_FILE.exists())
-                    prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(RUNTIME_PROMPTS_FILE))
+                    prompts.putAll(read(RUNTIME_PROMPTS_FILE))
             }
         }
 
@@ -86,18 +96,35 @@ class AiPromptLibrary {
         fun refreshRuntimePrompts() {
             RUNTIME_INSTANCE.prompts.clear()
             if (RUNTIME_PROMPTS_FILE.exists())
-                RUNTIME_INSTANCE.prompts.putAll(MAPPER.readValue<Map<String, AiPrompt>>(RUNTIME_PROMPTS_FILE))
+                RUNTIME_INSTANCE.prompts.putAll(read(RUNTIME_PROMPTS_FILE))
             INSTANCE.prompts.clear()
             INSTANCE.prompts.putAll(AiPromptLibrary::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
             INSTANCE.prompts.putAll(RUNTIME_INSTANCE.prompts)
         }
 
+        //endregion
+
+        //region PROMPT LOADING
+
+        /** Load prompts from given URL. */
+        fun read(url: String) =
+            MAPPER.readValue<Map<String, AiPrompt>>(url)
+
+        /** Load prompts from given file. */
+        fun read(file: File) =
+            MAPPER.readValue<Map<String, AiPrompt>>(file)
+
+        /** ObjectMapper for loading prompts. */
         val MAPPER = ObjectMapper(YAMLFactory()).apply {
             registerModule(KotlinModule.Builder().build())
             registerModule(JavaTimeModule())
         }
 
+        /** Load a resource as YAML from the classpath. */
         inline fun <reified X> KClass<*>.yaml(resource: String) =
             java.getResourceAsStream(resource).use { MAPPER.readValue<X>(it!!) }
+
+        //endregion
+
     }
 }

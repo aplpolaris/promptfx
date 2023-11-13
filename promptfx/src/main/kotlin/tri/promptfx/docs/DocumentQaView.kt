@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
@@ -37,7 +38,6 @@ import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.apps.QuestionAnsweringView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 import tri.util.ui.promptfield
@@ -56,11 +56,9 @@ class DocumentQaView: AiPlanTaskView(
 ) {
 
     private val promptId = SimpleStringProperty("$PROMPT_PREFIX-docs")
-    private val promptIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(PROMPT_PREFIX) }
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     private val joinerId = SimpleStringProperty("$JOINER_PREFIX-citations")
-    private val joinerIdList = AiPromptLibrary.INSTANCE.prompts.keys.filter { it.startsWith(JOINER_PREFIX) }
     private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     internal val question = SimpleStringProperty("")
@@ -126,6 +124,7 @@ class DocumentQaView: AiPlanTaskView(
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
+                (inputContainer as? HBox)?.spacing = 5.0
                 hyperlink(documentFolder.stringBinding {
                     val path = it!!.absolutePath
                     if (path.length > 25) {
@@ -196,8 +195,8 @@ class DocumentQaView: AiPlanTaskView(
         }
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
-            promptfield("Template", promptId, promptIdList, promptText, workspace)
-            promptfield("Snippet Joiner", joinerId, joinerIdList, joinerText, workspace)
+            promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
+            promptfield("Snippet Joiner", joinerId, AiPromptLibrary.withPrefix(JOINER_PREFIX), joinerText, workspace)
         }
 
         outputPane.clear()
