@@ -28,7 +28,7 @@ import kotlin.reflect.KClass
 abstract class NavigableWorkspaceViewImpl<T : UIComponent>(
     override val category: String,
     override val name: String,
-    private val type: KClass<T>
+    internal val type: KClass<T>
 ) : NavigableWorkspaceView {
 
     override fun dock(workspace: Workspace) {

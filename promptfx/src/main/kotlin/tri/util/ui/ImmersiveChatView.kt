@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
-import javafx.event.ActionEvent
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -41,13 +40,16 @@ import tornadofx.*
 import tri.ai.embedding.EmbeddingDocument
 import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
+import tri.promptfx.PromptFxDriver.sendInput
+import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
+import tri.promptfx.docs.FormattedText
+import tri.promptfx.docs.toFxNodes
 
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {
 
-    val onUserRequest: suspend (String) -> List<Node> by param()
     val baseComponentTitle: String? by param()
     val baseComponent: View? by param()
     val inputFontSize = SimpleIntegerProperty(64)
@@ -104,7 +106,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             id = "chat-input"
             prefHeight = 0.2 * screenHeight
             alignment = Pos.CENTER
-            action { handleUserAction() }
+            action { handleUserAction { } }
             inputFontSize.onChange {
                 style = "-fx-font-size: ${it}px;"
             }
@@ -145,10 +147,34 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         }
     }
 
-    internal fun setUserInput(text: String) {
+    //region INPUT/OUTPUT
+
+    internal fun setUserInput(text: String, callback: (FormattedText) -> Unit) {
         input.set(text)
-        inputField.onAction.handle(ActionEvent())
+        handleUserAction(callback)
     }
+
+    private fun handleUserAction(callback: (FormattedText) -> Unit) {
+        response.setAll()
+        blinkIndicator(start = true)
+        runAsync {
+            runBlocking {
+                (workspace as PromptFxWorkspace).sendInput(baseComponentTitle!!, input.value, callback)
+            }
+        } ui {
+            blinkIndicator(start = false)
+            controller.updateUsage()
+            TextFlowAnimator.animateText(it.toFxNodes(), target = response, onFrame = {
+                (root.scene.lookup("#chat-response-scroll") as ScrollPane).vvalue = 1.0
+            }, onFinished = {
+                (root.scene.lookup("#chat-input") as TextField).selectAll()
+            })
+        }
+    }
+
+    //endregion
+
+    //region ANIMATION AND LAYOUT
 
     private fun TextFlow.updateTextFlow(change: ListChangeListener.Change<out Node>) {
         children.clear()
@@ -157,24 +183,6 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             it.styleClass += "chat-text-default"
         }
     }
-
-    private fun handleUserAction() {
-        response.setAll()
-        blinkIndicator(start = true)
-        runAsync {
-            runBlocking { onUserRequest(input.value) }
-        } ui {
-            blinkIndicator(start = false)
-            controller.updateUsage()
-            TextFlowAnimator.animateText(it, target = response, onFrame = {
-                (root.scene.lookup("#chat-response-scroll") as ScrollPane).vvalue = 1.0
-            }, onFinished = {
-                (root.scene.lookup("#chat-input") as TextField).selectAll()
-            })
-        }
-    }
-
-    //region ANIMATION
 
     private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
         val action: (() -> Unit)? = when (val view = baseComponent) {
