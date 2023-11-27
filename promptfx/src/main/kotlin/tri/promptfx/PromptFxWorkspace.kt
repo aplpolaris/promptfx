@@ -147,6 +147,8 @@ class PromptFxWorkspace : Workspace() {
         )!!.apply {
             x = curScreen.bounds.minX
             y = curScreen.bounds.minY
+            width = curScreen.bounds.width
+            height = curScreen.bounds.height
             isMaximized = true
             scene.root.style = "-fx-base:black"
             onHidden = EventHandler { immersiveChatView = null }
