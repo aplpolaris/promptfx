@@ -1,14 +1,3 @@
-package tri.promptfx
-
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.geometry.Pos
-import javafx.scene.Cursor
-import javafx.scene.control.TextInputDialog
-import tornadofx.*
-import tri.ai.core.TextPlugin
-import tri.ai.openai.OpenAiClient
-import tri.util.ui.graphic
-
 /*-
  * #%L
  * promptfx-0.1.0-SNAPSHOT
@@ -28,6 +17,17 @@ import tri.util.ui.graphic
  * limitations under the License.
  * #L%
  */
+package tri.promptfx
+
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.geometry.Pos
+import javafx.scene.Cursor
+import javafx.scene.control.TextInputDialog
+import tornadofx.*
+import tri.ai.core.TextPlugin
+import tri.ai.openai.OpenAiClient
+import tri.promptfx.PromptFxDriver.showDriverDialog
+import tri.util.ui.graphic
 
 /** View for selecting which model to use, and for picking between models. */
 class AiEngineView: View() {
@@ -78,6 +78,13 @@ class AiEngineView: View() {
                 onLeftClick {
                     hostServices.showDocument("https://beta.openai.com/account/usage")
                 }
+            }
+
+            // button for testing view driver
+            button("", graphic = FontAwesomeIcon.COG.graphic) {
+                isManaged = false
+                isVisible = false
+                action { showDriverDialog() }
             }
         }
     }

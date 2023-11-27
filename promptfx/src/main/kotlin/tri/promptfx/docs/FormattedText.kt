@@ -26,8 +26,13 @@ import tornadofx.action
 
 /** A result that contains plain text and links. */
 class FormattedText(val nodes: List<FormattedTextNode>) {
+
+    constructor(text: String) : this(listOf(FormattedTextNode(text)))
+
     var hyperlinkOp: (String) -> Unit = { }
+
     override fun toString() = nodes.joinToString("") { it.text }
+
 }
 
 /** A text node within [FormattedText]. */
