@@ -33,6 +33,7 @@ object OpenAiModels {
     private const val WHISPER_ID = "whisper-1"
     private const val ADA_ID = "text-embedding-ada-002"
     private const val DALLE2_ID = "dall-e-2"
+    private const val DALLE3_ID = "dall-e-3"
     private const val GPT35_TURBO_ID = "gpt-3.5-turbo"
     private const val GPT35_TURBO_INSTRUCT_ID = "gpt-3.5-turbo-instruct"
 
