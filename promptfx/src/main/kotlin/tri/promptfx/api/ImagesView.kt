@@ -78,6 +78,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
     /** Image quality */
     private val quality = SimpleStringProperty(STANDARD)
+    /** Image style */
+    private val imageStyle = SimpleStringProperty(VIVID)
 
     init {
         addInputTextArea(input)
@@ -127,7 +129,14 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             field("Quality") {
                 tooltip("Not yet supported by API")
                 isDisable = true // TODO - enable when API supports this
+//                enableWhen { model.isEqualTo(DALLE3_ID) }
                 combobox(quality, imageQualities)
+            }
+            field("Style") {
+                tooltip("Not yet supported by API")
+                isDisable = true // TODO - enable when API supports this
+//                enableWhen { model.isEqualTo(DALLE3_ID) }
+                combobox(imageStyle, listOf(VIVID, NATURAL))
             }
         }
     }
@@ -186,6 +195,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         // TODO - expect these will be replaced by enums in API
         private const val STANDARD = "standard"
         private const val HD = "hd"
+        private const val VIVID = "vivid"
+        private const val NATURAL = "natural"
 
         private val IMAGE_MODELS = OpenAiModels.visionModels()
         private val IMAGE_SIZES = mapOf(

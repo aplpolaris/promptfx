@@ -61,6 +61,7 @@ class PromptFxWorkspace : Workspace() {
                 separator { }
                 label("Audio/Visual APIs")
                 hyperlinkview<AudioView>("Audio")
+                hyperlinkview<AudioSpeechView>("Speech")
                 hyperlinkview<ImagesView>("Images")
                 separator { }
                 label("Advanced APIs")
