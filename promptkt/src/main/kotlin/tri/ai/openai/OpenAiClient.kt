@@ -19,7 +19,6 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.LegacyOpenAI
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.completion.CompletionRequest
@@ -97,7 +96,6 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    @OptIn(LegacyOpenAI::class)
     suspend fun completion(completionRequest: CompletionRequest) =
         client.completion(completionRequest).let {
             usage.increment(it.usage)

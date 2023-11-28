@@ -19,6 +19,7 @@
  */
 import tri.ai.core.TextPlugin;
 import tri.promptfx.api.AudioApiPlugin;
+import tri.promptfx.api.AudioSpeechApiPlugin;
 import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
 import tri.promptfx.docs.DocumentInsightPlugin;
@@ -103,6 +104,7 @@ module tri.promptfx {
 
     provides NavigableWorkspaceView with
             AudioApiPlugin,
+            AudioSpeechApiPlugin,
             ImagesApiPlugin,
             PromptLibraryPlugin,
             PromptTemplatePlugin,

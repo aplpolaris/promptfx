@@ -1,4 +1,5 @@
 tri.promptfx.api.AudioApiPlugin
+tri.promptfx.api.AudioSpeechApiPlugin
 tri.promptfx.api.ImagesApiPlugin
 tri.promptfx.tools.PromptLibraryPlugin
 tri.promptfx.tools.PromptTemplatePlugin
