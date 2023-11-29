@@ -124,7 +124,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 label(numProperty)
             }
             field ("Size") {
-                combobox(imageSize, imageSizes)
+                combobox(imageSize, imageSizes) {
+                    cellFormat { text = it.size }
+                }
             }
             field("Quality") {
                 tooltip("Not yet supported by API")

@@ -21,6 +21,7 @@ package tri.ai.openai
 
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
+import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChat
@@ -31,12 +32,13 @@ import tri.ai.openai.OpenAiModels.GPT35_TURBO
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?) =
+    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?) =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             messages.map { it.openAiMessage() },
             maxTokens = tokens ?: 500,
-            stop = stop
+            stop = stop,
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
         )).map { TextChatMessage(TextChatRole.Assistant, it) }
 
     private fun TextChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)

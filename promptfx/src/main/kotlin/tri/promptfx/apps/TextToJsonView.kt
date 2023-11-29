@@ -19,6 +19,7 @@
  */
 package tri.promptfx.apps
 
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.templatePlan
@@ -38,6 +39,7 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
     private val formatModeOptions = resources.yaml("resources/modes.yaml")["structured-format"] as Map<String, String>
     private val guidance = SimpleStringProperty("")
     private val formatMode = SimpleStringProperty(formatModeOptions.keys.first())
+    private val requestJson = SimpleBooleanProperty()
 
     private val sampleOutput = SimpleStringProperty("")
 
@@ -63,6 +65,10 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
                 temperature()
                 maxTokens()
             }
+            field("Response Format") {
+                tooltip("Important: when using JSON mode, you must also instruct the model to produce JSON yourself via a system or user message.")
+                checkbox("JSON (if supported)", requestJson)
+            }
         }
     }
 
@@ -73,6 +79,7 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
         "example" to sampleOutput.get(),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
+        requestJson = if (requestJson.value) true else null
     )
 
 }

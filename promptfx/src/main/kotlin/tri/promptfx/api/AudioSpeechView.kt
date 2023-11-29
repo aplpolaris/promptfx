@@ -86,10 +86,14 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
                 combobox(model, TTS_MODELS)
             }
             field("Voice") {
-                combobox(voice, TTS_VOICES)
+                combobox(voice, TTS_VOICES) {
+                    cellFormat { text = it.value }
+                }
             }
             field("Response Format") {
-                combobox(format, AUDIO_FORMATS)
+                combobox(format, AUDIO_FORMATS) {
+                    cellFormat { text = it.value }
+                }
             }
             field("Speed") {
                 slider(0.25..4.0) {

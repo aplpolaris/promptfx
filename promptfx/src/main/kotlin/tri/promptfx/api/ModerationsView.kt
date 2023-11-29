@@ -39,7 +39,9 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         addInputTextArea(input)
         parameters("Moderations") {
             field("Model") {
-                combobox(model, listOf(ModerationModel.Latest, ModerationModel.Stable))
+                combobox(model, listOf(ModerationModel.Latest, ModerationModel.Stable)) {
+                    cellFormat { text = it.model }
+                }
             }
         }
     }
