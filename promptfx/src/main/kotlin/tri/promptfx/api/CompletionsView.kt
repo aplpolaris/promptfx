@@ -35,7 +35,6 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
 
     private val input = SimpleStringProperty("")
     private val model = SimpleObjectProperty(TextPlugin.textCompletionModels().first())
-    private val maxTokens = SimpleIntegerProperty(500)
     private var common = ModelParameters()
 
     init {
@@ -51,11 +50,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 topP()
                 frequencyPenalty()
                 presencePenalty()
-                field("Max tokens") {
-                    tooltip("Max # of tokens for combined query/response from the question answering engine")
-                    slider(1..2000, maxTokens)
-                    label(maxTokens)
-                }
+                maxTokens()
             }
         }
     }
@@ -63,7 +58,10 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
     override suspend fun processUserInput(): AiPipelineResult {
         val completionModel = TextPlugin.textCompletionModels().firstOrNull { it.modelId == model.value.modelId }
         return if (completionModel != null) {
-            completionModel.complete(text = input.get(), tokens = maxTokens.value).asPipelineResult()
+            completionModel.complete(
+                text = input.get(),
+                tokens = common.maxTokens.value
+            ).asPipelineResult()
         } else {
             val completion = CompletionRequest(
                 model = ModelId(model.value.modelId),
@@ -72,7 +70,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 topP = common.topP.value,
                 frequencyPenalty = common.freqPenalty.value,
                 presencePenalty = common.presPenalty.value,
-                maxTokens = maxTokens.value,
+                maxTokens = common.maxTokens.value,
             )
             controller.openAiPlugin.client.completion(completion).asPipelineResult()
         }

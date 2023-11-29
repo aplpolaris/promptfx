@@ -30,7 +30,8 @@ interface TextChat {
     suspend fun chat(
         messages: List<TextChatMessage>,
         tokens: Int? = 1000,
-        stop: List<String>? = null
+        stop: List<String>? = null,
+        requestJson: Boolean? = null
     ): AiTaskResult<TextChatMessage>
 
 }

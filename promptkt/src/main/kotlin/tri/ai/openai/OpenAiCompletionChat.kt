@@ -21,6 +21,7 @@ package tri.ai.openai
 
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
+import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
@@ -33,13 +34,17 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?) =
+        complete(text, tokens, temperature, stop, null)
+
+    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?): AiTaskResult<String> =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             listOf(ChatMessage(ChatRole.User, text)),
             temperature = temperature,
             maxTokens = tokens,
-            stop = stop?.let { listOf(it) }
+            stop = stop?.let { listOf(it) },
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
         ))
 
 }

@@ -21,6 +21,7 @@ package tri.promptfx
 
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.event.EventTarget
 import tornadofx.field
 import tornadofx.label

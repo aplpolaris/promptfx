@@ -20,7 +20,10 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.chat.ChatMessage
+import com.aallam.openai.api.chat.ChatResponseFormat
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -41,8 +44,10 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
     protected val model = SimpleStringProperty(CHAT_MODELS.first())
     protected val messageHistory = SimpleIntegerProperty(10)
 
+    protected val seedActive = SimpleBooleanProperty(false)
+    protected val seed = SimpleIntegerProperty(0)
     protected val stopSequences = SimpleStringProperty("")
-    protected val maxTokens = SimpleIntegerProperty(500)
+    protected val responseFormat = SimpleObjectProperty(ChatResponseFormat.Text)
     protected var common = ModelParameters()
 
     protected lateinit var chatHistory: ChatHistoryView
@@ -100,15 +105,23 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
             }
         }
         parameters("Chat Output") {
-            field("Maximum Length") {
-                slider(0..500) {
-                    valueProperty().bindBidirectional(maxTokens)
-                }
-                label(maxTokens.asString())
+            with (common) {
+                maxTokens()
             }
             field("Stop Sequences") {
                 tooltip("A list of up to 4 sequences where the API will stop generating further tokens. Use || to separate sequences.")
                 textfield(stopSequences)
+            }
+            field("Seed") {
+                tooltip("If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same seed and parameters should return the same result.")
+                checkbox("Active", seedActive)
+                textfield(seed) { enableWhen(seedActive) }
+            }
+            field("Response Format") {
+                tooltip("Important: when using JSON mode, you must also instruct the model to produce JSON yourself via a system or user message.")
+                combobox(responseFormat, listOf(ChatResponseFormat.Text, ChatResponseFormat.JsonObject)) {
+                    cellFormat { text = it.type }
+                }
             }
         }
     }

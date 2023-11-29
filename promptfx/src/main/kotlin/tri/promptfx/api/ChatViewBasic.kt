@@ -43,13 +43,17 @@ class ChatViewBasic : ChatView("Chat", "You are chatting with an AI Assistant.")
             topP = common.topP.value,
             n = null,
             stop = if (stopSequences.value.isBlank()) null else stopSequences.value.split("||"),
-            maxTokens = maxTokens.value,
+            maxTokens = common.maxTokens.value,
             presencePenalty = common.presPenalty.value,
             frequencyPenalty = common.freqPenalty.value,
             logitBias = null,
             user = null,
             functions = null,
             functionCall = null,
+            responseFormat = responseFormat.value,
+            tools = null,
+            toolChoice = null,
+            seed = if (seedActive.value) seed.value else null
         )
         return controller.openAiPlugin.client.chat(completion).asPipelineResult()
     }

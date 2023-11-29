@@ -113,6 +113,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         parameters("Model Parameters") {
             with(common) {
                 temperature()
+                topP()
+                frequencyPenalty()
+                presencePenalty()
                 maxTokens()
             }
         }

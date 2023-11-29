@@ -37,9 +37,12 @@ suspend fun TextCompletion.instructTask(promptId: String, instruct: String, user
     }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?) =
+suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?) =
     AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
-        complete(it, tokenLimit, temp)
+        if (this is OpenAiCompletionChat)
+            complete(it, tokenLimit, temp, null, requestJson)
+        else
+            complete(it, tokenLimit, temp)
     }
 
 //region CONVERTING TASKS
@@ -65,13 +68,13 @@ fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?) = aitask(promptId) {
-    templateTask(promptId, fields.toMap(), tokenLimit, temp)
+fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null) = aitask(promptId) {
+    templateTask(promptId, fields.toMap(), tokenLimit, temp, requestJson)
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?) = aitask(promptId) {
-    templateTask(promptId, fields, tokenLimit, temp)
+fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null) = aitask(promptId) {
+    templateTask(promptId, fields, tokenLimit, temp, requestJson)
 }.planner
 
 //endregion

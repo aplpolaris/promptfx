@@ -84,13 +84,17 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
             topP = common.topP.value,
             n = null,
             stop = if (stopSequences.value.isBlank()) null else stopSequences.value.split("||"),
-            maxTokens = maxTokens.value,
+            maxTokens = common.maxTokens.value,
             presencePenalty = common.presPenalty.value,
             frequencyPenalty = common.freqPenalty.value,
             logitBias = null,
             user = null,
             functions = functions,
             functionCall = functionMode,
+            responseFormat = responseFormat.value,
+            tools = null,
+            toolChoice = null,
+            seed = if (seedActive.value) seed.value else null
         )
         return controller.openAiPlugin.client.chat(completion).asPipelineResult()
     }
