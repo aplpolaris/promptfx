@@ -30,12 +30,12 @@ import tri.util.*
  * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
  * query if needed.
  */
-class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: List<JsonTool>) {
+class JsonFunctionExecutor(val client: OpenAiClient, val model: String, val tools: List<JsonTool>) {
 
-    private val chatTools = tools.mapNotNull {
+    private val functions = tools.mapNotNull {
         try {
             val params = it.jsonSchemaAsParameters()
-            Tool(ToolType.Function, it.description, FunctionTool(it.name, params) )
+            ChatCompletionFunction(it.name, it.description, params)
         } catch (x: SerializationException) {
             println(x)
             null
@@ -50,44 +50,38 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
         )
 
         var response = client.chat(ChatCompletionRequest(
-            model = ModelId(this@JsonToolExecutor.model),
+            model = ModelId(this@JsonFunctionExecutor.model),
             messages = messages,
-            tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
+            functions = this@JsonFunctionExecutor.functions.ifEmpty { null }
         )).value!!
-        messages += response
-        var toolCalls = response.toolCalls as? List<ToolCall.Function>
+        var functionCall = response.functionCall
 
-        while (!toolCalls.isNullOrEmpty()) {
-            if (toolCalls.size != 1)
-                println("${ANSI_RED}WARNING: expected a single tool to call, but found ${toolCalls.size}$ANSI_RESET")
-
+        while (functionCall != null) {
             // print interim results
-            toolCalls.forEach { call ->
-                println("Call Function: $ANSI_CYAN${call.function.name}$ANSI_RESET with parameters $ANSI_CYAN${call.function.arguments}$ANSI_RESET")
-                val tool = tools.firstOrNull { it.name == call.function.name }
-                if (tool == null) {
-                    println("${ANSI_RED}Unknown tool: ${call.function.name}$ANSI_RESET")
-                }
-                val json = call.function.tryJson()
-                if (json == null) {
-                    println("${ANSI_RED}Invalid JSON: ${call.function.name}$ANSI_RESET")
-                }
-                if (tool != null && json != null) {
-                    val result = tool.run(json)
-                    println("Result: $ANSI_GREEN${result}$ANSI_RESET")
+            println("Call Function: $ANSI_CYAN${functionCall.name}$ANSI_RESET with parameters $ANSI_CYAN${functionCall.arguments}$ANSI_RESET")
+            val tool = tools.firstOrNull { it.name == functionCall!!.name }
+            if (tool == null) {
+                println("${ANSI_RED}Unknown tool: ${functionCall.name}$ANSI_RESET")
+            }
+            val json = functionCall.tryJson()
+            if (json == null) {
+                println("${ANSI_RED}Invalid JSON: ${functionCall.name}$ANSI_RESET")
+            }
+            if (tool != null && json != null) {
+                val result = tool.run(json)
+                println("Result: $ANSI_GREEN${result}$ANSI_RESET")
 
-                    // add result to message history and call again
-                    messages += ChatMessage(ChatRole.Tool, toolCallId = call.id, name = call.function.name, content = result)
-                    response = client.chat(ChatCompletionRequest(
-                        model = ModelId(this@JsonToolExecutor.model),
-                        messages = messages,
-                        tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-                    )).value!!
-                    messages += response
-                    toolCalls = response.toolCalls as? List<ToolCall.Function>
-                } else {
-                    toolCalls = listOf()
-                }
+                // add result to message history and call again
+                messages += ChatMessage(response.role, name = response.name, content = response.content ?: "", functionCall = response.functionCall)
+                messages += ChatMessage(ChatRole.Function, name = tool.name, content = result)
+                response = client.chat(ChatCompletionRequest(
+                    model = ModelId(this@JsonFunctionExecutor.model),
+                    messages = messages,
+                    functions = this@JsonFunctionExecutor.functions.ifEmpty { null }
+                )).value!!
+                functionCall = response.functionCall
+            } else {
+                functionCall = null
             }
         }
 

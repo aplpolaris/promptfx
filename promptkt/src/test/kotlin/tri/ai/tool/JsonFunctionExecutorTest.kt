@@ -21,27 +21,49 @@ package tri.ai.tool
 
 import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModels.GPT35_TURBO
-import tri.ai.tool.JsonFunctionExecutorTest.Companion.SAMPLE_TOOLS
 
 @Disabled("Requires apikey")
-class JsonToolExecutorTest {
+class JsonFunctionExecutorTest {
+
+    companion object {
+        val SAMPLE_TOOL1 = object : JsonTool("calc", "Use this to do math",
+            """{"type":"object","properties":{"input":{"type":"string"}}}""") {
+            override suspend fun run(input: JsonObject) = "42"
+        }
+        val SAMPLE_TOOL2 = object : JsonTool("romanize", "Converts numbers to Roman numerals",
+            """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+            override suspend fun run(input: JsonObject): String {
+                val value = input["input"]?.jsonPrimitive?.int ?: throw RuntimeException("No input")
+                return when (value) {
+                    5 -> "V"
+                    42 -> "XLII"
+                    84 -> "LXXXIV"
+                    else -> "I don't know"
+                }
+            }
+        }
+        val SAMPLE_TOOLS = listOf(SAMPLE_TOOL1, SAMPLE_TOOL2)
+    }
 
     @Test
     fun testTools() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         runBlocking {
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonFunctionExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
                 .execute("Multiply 21 times 2 and then convert it to Roman numerals.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonFunctionExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
                 .execute("Convert 5 to a Roman numeral.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonFunctionExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
                 .execute("What year was Jurassic Park?")
         }
     }
