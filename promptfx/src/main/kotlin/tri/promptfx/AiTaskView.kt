@@ -1,6 +1,7 @@
 package tri.promptfx
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.geometry.Side
@@ -10,6 +11,9 @@ import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextArea
 import javafx.scene.control.TextInputControl
 import javafx.scene.control.Tooltip
+import javafx.scene.image.Image
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
@@ -177,6 +181,41 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             }
         }
     }
+
+    /** Adds a place for users to drop an image to the input area of the view. */
+    fun addInputImageArea(property: SimpleObjectProperty<Image>) {
+        input {
+            imageview(property) {
+                vgrow = Priority.ALWAYS
+                isPreserveRatio = true
+                fitWidth = 400.0
+                fitHeight = 400.0
+                isSmooth = true
+                isCache = true
+                isPickOnBounds = true
+                style {
+                    backgroundColor += c("#f0f0f0")
+                }
+                setOnDragOver {
+                    if (it.dragboard.hasImage() || it.dragboard.hasImageFile()) {
+                        it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+                    }
+                    it.consume()
+                }
+                setOnDragDropped {
+                    if (it.dragboard.hasImage()) {
+                        property.set(it.dragboard.image)
+                    } else if (it.dragboard.hasImageFile()) {
+                        property.set(Image(it.dragboard.files.first().toURI().toString()))
+                    }
+                    it.isDropCompleted = true
+                    it.consume()
+                }
+            }
+        }
+    }
+
+    private fun Dragboard.hasImageFile() = files.isNotEmpty() && files.first().extension in listOf("png", "jpg", "jpeg")
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea(): TextArea {

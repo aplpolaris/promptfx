@@ -106,6 +106,7 @@ module tri.promptfx {
             AudioApiPlugin,
             AudioSpeechApiPlugin,
             ImagesApiPlugin,
+            ImageDescribePlugin,
             PromptLibraryPlugin,
             PromptTemplatePlugin,
             DocumentQaPlugin,
