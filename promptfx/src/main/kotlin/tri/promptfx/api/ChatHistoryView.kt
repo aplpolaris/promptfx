@@ -19,9 +19,7 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.chat.FunctionCall
+import com.aallam.openai.api.chat.*
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
@@ -29,12 +27,11 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.util.ifNotBlank
 
 class ChatHistoryView : Fragment() {
 
-    val components = observableListOf<ChatLineModel>().apply {
-        add(ChatLineModel(ChatRole.User, ""))
+    val components = observableListOf<ChatMessageUiModel>().apply {
+        add(ChatMessageUiModel(ChatRole.User, ""))
     }
 
     override val root = vbox {
@@ -63,14 +60,14 @@ class ChatHistoryView : Fragment() {
                     hbox {
                         alignment = Pos.CENTER
                         spacing = 10.0
-                        managedWhen(it.functionCallNameProperty.isNotBlank())
-                        visibleWhen(it.functionCallNameProperty.isNotBlank())
-                        text("function:")
-                        textfield(it.functionCallNameProperty) {
+                        managedWhen(it.toolCallNameProperty.isNotBlank())
+                        visibleWhen(it.toolCallNameProperty.isNotBlank())
+                        text("tool:")
+                        textfield(it.toolCallNameProperty) {
                             isEditable = false
                         }
                         text("args:")
-                        textfield(it.functionCallArgsProperty) {
+                        textfield(it.toolCallArgsProperty) {
                             isEditable = false
                             hgrow = Priority.ALWAYS
                         }
@@ -88,7 +85,7 @@ class ChatHistoryView : Fragment() {
         toolbar {
             spacing = 10.0
             button("Add message", FontAwesomeIconView(FontAwesomeIcon.PLUS_CIRCLE)) {
-                action { components.add(ChatLineModel()) }
+                action { components.add(ChatMessageUiModel()) }
             }
             button("Clear", FontAwesomeIconView(FontAwesomeIcon.TRASH)) {
                 action { components.clear() }
@@ -97,12 +94,17 @@ class ChatHistoryView : Fragment() {
     }
 
     fun chatMessages() = components.map {
-        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, it.functionCall)
+        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, toolCalls = it.toolCalls)
     }
 
 }
 
-class ChatLineModel(role: ChatRole = ChatRole.User, content: String = "", name: String? = null, functionCall: FunctionCall? = null) : ViewModel() {
+class ChatMessageUiModel(
+    role: ChatRole = ChatRole.User,
+    content: String = "",
+    name: String? = null,
+    _toolCalls: List<ToolCall.Function>? = null
+) : ViewModel() {
     val roleProperty = SimpleObjectProperty(role)
     val role: ChatRole by roleProperty
 
@@ -112,16 +114,21 @@ class ChatLineModel(role: ChatRole = ChatRole.User, content: String = "", name: 
     val nameProperty = SimpleStringProperty(name)
     var name: String? by nameProperty
 
-    val functionCallNameProperty = SimpleStringProperty(functionCall?.name)
-    var functionCallName: String? by functionCallNameProperty
+    val toolCalls: List<ToolCall.Function>? = _toolCalls
 
-    val functionCallArgsProperty = SimpleStringProperty(functionCall?.arguments)
-    var functionCallArgs: String by functionCallArgsProperty
+    val toolCallNameProperty = SimpleStringProperty(_toolCalls?.joinToString(", ") { it.function.name })
+    var toolCallName: String? by toolCallNameProperty
 
-    val functionCall: FunctionCall?
-        get() = functionCallName?.ifNotBlank { FunctionCall(it, functionCallArgs) }
+    val toolCallArgsProperty = SimpleStringProperty(_toolCalls?.joinToString("\n") { it.function.arguments })
+    var toolCallArgs: String by toolCallArgsProperty
 
     companion object {
-        fun valueOf(it: ChatMessage) = ChatLineModel(it.role, it.content ?: "", it.name, it.functionCall)
+        fun valueOf(it: ChatMessage) =
+            ChatMessageUiModel(
+                role = it.role,
+                content = it.content ?: "",
+                name = it.name,
+                _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>()
+            )
     }
 }

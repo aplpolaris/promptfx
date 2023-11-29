@@ -131,10 +131,10 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
             it.finalResult?.let {
                 with (chatHistory.components) {
                     when (it) {
-                        is ChatMessage -> add(ChatLineModel.valueOf(it))
-                        else -> add(ChatLineModel(com.aallam.openai.api.chat.ChatRole.Assistant, it.toString()))
+                        is ChatMessage -> add(ChatMessageUiModel.valueOf(it))
+                        else -> add(ChatMessageUiModel(com.aallam.openai.api.chat.ChatRole.Assistant, it.toString()))
                     }
-                    add(ChatLineModel(com.aallam.openai.api.chat.ChatRole.User, ""))
+                    add(ChatMessageUiModel(com.aallam.openai.api.chat.ChatRole.User, ""))
                 }
             }
         }

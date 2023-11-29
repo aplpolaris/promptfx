@@ -19,8 +19,10 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.ChatCompletionFunction
+import com.aallam.openai.api.chat.FunctionTool
 import com.aallam.openai.api.chat.Parameters
+import com.aallam.openai.api.chat.Tool
+import com.aallam.openai.api.chat.ToolType
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
@@ -30,9 +32,12 @@ import kotlinx.serialization.SerializationException
 import tornadofx.*
 import tri.util.ifNotBlank
 
-class FunctionListView : Fragment() {
+private const val TOOL_TYPE_FUNCTION = "function"
 
-    val components = observableListOf<FunctionLineModel>()
+/** View for showing a list of tools. */
+class ToolListView : Fragment() {
+
+    val components = observableListOf<ToolUiModel>()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
@@ -50,7 +55,7 @@ class FunctionListView : Fragment() {
                             hgrow = Priority.ALWAYS
                             prefColumnCount = 20
                         }
-                        tooltip("The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.")
+                        tooltip("The name of the tool to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.")
                         button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
                             action { components.remove(it) }
                         }
@@ -80,11 +85,12 @@ class FunctionListView : Fragment() {
         hbox {
             spacing = 10.0
             button("Add function", FontAwesomeIconView(FontAwesomeIcon.PLUS_CIRCLE)) {
-                action { components.add(FunctionLineModel("function")) }
+                action { components.add(ToolUiModel(TOOL_TYPE_FUNCTION, "function")) }
             }
             button("(for example)", FontAwesomeIconView(FontAwesomeIcon.SUN_ALT)) {
                 action {
-                    components.add(FunctionLineModel("current_weather",
+                    components.add(ToolUiModel(TOOL_TYPE_FUNCTION,
+                        "current_weather",
                         "Get the weather for a location",
                         """{"type":"object","properties":{"location":{"type":"string","description":"city and state (e.g. Seattle, WA)"}}}"""
                     ))
@@ -96,11 +102,11 @@ class FunctionListView : Fragment() {
         }
     }
 
-    fun functions() = components.mapNotNull {
+    fun tools() = components.mapNotNull {
         try {
             val params = it.parameters.ifNotBlank { Parameters.fromJsonString(it) }
                 ?: Parameters.Empty
-            ChatCompletionFunction(it.name, it.description, params)
+            Tool(it.toolType, it.description, FunctionTool(it.name, params))
         } catch (x: SerializationException) {
             println(x)
             null
@@ -108,8 +114,16 @@ class FunctionListView : Fragment() {
     }
 }
 
+/** Model for a tool. */
+class ToolUiModel(type: String, name: String, description: String = "", params: String = "") {
+    val typeProperty = SimpleStringProperty(type)
+    var type: String by typeProperty
+    val toolType
+        get() = when (type) {
+            TOOL_TYPE_FUNCTION -> ToolType.Function
+            else -> throw IllegalArgumentException("Unknown tool type: $type")
+        }
 
-class FunctionLineModel(name: String, description: String = "", params: String = "") {
     val nameProperty = SimpleStringProperty(name)
     var name: String by nameProperty
 

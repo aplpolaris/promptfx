@@ -19,10 +19,7 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.chat.FunctionMode
+import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
@@ -33,30 +30,30 @@ import tri.ai.pips.AiPipelineResult
 import tri.util.ifNotBlank
 
 /**
- * Advanced version of chat API, with support for functions.
+ * Advanced version of chat API, with support for tools.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
 class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an AI Assistant.") {
 
-    private val functionVisible = SimpleBooleanProperty(false)
-    private val functionCall = SimpleStringProperty("")
+    private val toolsVisible = SimpleBooleanProperty(false)
+    private val toolCall = SimpleStringProperty("")
 
-    private lateinit var functionView: FunctionListView
+    private lateinit var toolView: ToolListView
 
     init {
         input {
             hbox {
                 alignment = Pos.CENTER
-                checkbox("Functions", functionVisible)
+                checkbox("Tools", toolsVisible)
                 tooltip("A list of functions the model may generate JSON inputs for.")
                 region { hgrow = Priority.ALWAYS }
-                textfield(functionCall) {
+                textfield(toolCall) {
                     tooltip("""Specify name to call a specific function, or "none" (don't call any functions) or "auto" (model picks whether to call a function).""")
                 }
             }
-            functionView = FunctionListView()
-            functionView.root.visibleWhen(functionVisible)
-            add(functionView)
+            toolView = ToolListView()
+            toolView.root.visibleWhen(toolsVisible)
+            add(toolView)
         }
     }
 
@@ -64,17 +61,17 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(ChatMessage(ChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
-        val functionMode = functionCall.value.ifNotBlank {
+        val toolChoice = toolCall.value.ifNotBlank {
             when (it) {
-                "auto" -> FunctionMode.Auto
-                "none" -> FunctionMode.None
-                else -> FunctionMode.Named(it)
+                "auto" -> ToolChoice.Auto
+                "none" -> ToolChoice.None
+                else -> ToolChoice.function(it)
             }
         }
-        val functions = if (functionMode == FunctionMode.None) {
+        val tools = if (toolChoice == ToolChoice.None) {
             null
         } else {
-            functionView.functions().ifEmpty { null }
+            toolView.tools().ifEmpty { null }
         }
 
         val completion = ChatCompletionRequest(
@@ -89,11 +86,11 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
             frequencyPenalty = common.freqPenalty.value,
             logitBias = null,
             user = null,
-            functions = functions,
-            functionCall = functionMode,
+            functions = null,
+            functionCall = null,
             responseFormat = responseFormat.value,
-            tools = null,
-            toolChoice = null,
+            tools = tools,
+            toolChoice = toolChoice,
             seed = if (seedActive.value) seed.value else null
         )
         return controller.openAiPlugin.client.chat(completion).asPipelineResult()
