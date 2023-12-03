@@ -94,9 +94,10 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     imageview(it) {
                         fitWidth = thumbnailSize
                         fitHeight = thumbnailSize
+                        isPreserveRatio = true
                         tooltip { graphic = imageview(it) }
                         setOnMouseClicked {
-                            dialog(
+                            val d = dialog(
                                 modality = Modality.APPLICATION_MODAL,
                                 stageStyle = StageStyle.UNDECORATED,
                                 owner = primaryStage
@@ -106,6 +107,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                                 }
                                 form.padding = insets(0)
                                 padding = insets(0)
+                            }
+                            // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
+                            d?.owner?.let {
+                                d.x = it.x + (it.width / 2) - (d.scene.width / 2)
+                                d.y = it.y + (it.height / 2) - (d.scene.height / 2)
                             }
                         }
                     }
@@ -209,9 +215,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             ),
             DALLE3_ID to listOf(
                 ImageSize.is1024x1024,
-// TODO - update when API supports these
-//                ImageSize.is1792x1024,
-//                ImageSize.is1024x1792
+                ImageSize("1792x1024"),
+                ImageSize("1024x1792")
             )
         )
     }
