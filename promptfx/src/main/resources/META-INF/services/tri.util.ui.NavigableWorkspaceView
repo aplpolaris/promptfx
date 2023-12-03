@@ -4,6 +4,7 @@ tri.promptfx.api.ImagesApiPlugin
 tri.promptfx.apps.ImageDescribePlugin
 tri.promptfx.tools.PromptLibraryPlugin
 tri.promptfx.tools.PromptTemplatePlugin
+tri.promptfx.tools.PromptValidatorPlugin
 tri.promptfx.docs.DocumentQaPlugin
 tri.promptfx.docs.DocumentInsightPlugin
 tri.promptfx.apps.EntityExtractionPlugin

@@ -25,6 +25,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.PromptFxWorkspace
 
@@ -34,6 +35,9 @@ class EditablePromptUi(val prefix: String, val instruction: String): Fragment() 
     private val prompts
         get() = AiPromptLibrary.withPrefix(prefix)
     val templateText = SimpleStringProperty(prompts.firstOrNull()?.let { AiPromptLibrary.lookupPrompt(it).template } ?: "")
+
+    /** Fills the template with the provided values. */
+    fun fill(vararg values: Pair<String, Any>) = templateText.value.fill(*values)
 
     override val root = vbox {
         hbox {

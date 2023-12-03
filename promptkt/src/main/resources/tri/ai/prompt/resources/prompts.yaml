@@ -43,6 +43,18 @@ image-describe-caption: Generate a caption for the image.
 
 image-describe-detailed: Describe everything you see in this image. Provide a detailed list of contents.
 
+prompt-validate: |
+  Determine whether the following is true or false. If it is false, provide a corrected version.
+  ```
+  {{{result}}}
+  ```
+
+prompt-validate-json: |
+  Determine if the result is valid json. Respond simply "valid" or "invalid".
+  ```
+  {{{result}}}
+  ```
+
 question-answer: |
   Answer the following question about the text below. If you do not know the answer, say you don't know.
   Question: {{{instruct}}}
