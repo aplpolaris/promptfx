@@ -20,7 +20,7 @@
 package tri.ai.prompt
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 
@@ -29,8 +29,9 @@ class AiPromptTraceTest {
     private val DEFAULT_TEXT_COMPLETION = TextPlugin.textCompletionModels().first()
 
     @Test
+    @Disabled("Requires OpenAI API key")
     fun testExecute() {
-        val config = AiPromptRunConfig().apply {
+        val config = AiPromptConfig().apply {
             prompt = "Translate {{text}} into French."
             promptParams = mapOf("text" to "Hello, world!")
         }
@@ -41,16 +42,17 @@ class AiPromptTraceTest {
     }
 
     @Test
+    @Disabled("Requires OpenAI API key")
     fun testExecuteList() {
-        val config = AiPromptRunSeriesConfig().apply {
+        val config = AiPromptRunSeries().apply {
+            model = DEFAULT_TEXT_COMPLETION.modelId
             prompt = listOf("Translate {{text}} into French.", "Translate {{text}} into German.")
             promptParams = mapOf("text" to "Hello, world!")
             runs = 2
         }
         runBlocking {
-            config.runConfigs().forEach {
-                val trace = DEFAULT_TEXT_COMPLETION.run(it)
-                println("Trace: $trace")
+            config.execute().onEach {
+                println("Trace: $it")
             }
         }
     }

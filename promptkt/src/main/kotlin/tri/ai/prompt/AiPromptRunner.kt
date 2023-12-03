@@ -1,17 +1,20 @@
 package tri.ai.prompt
 
 import tri.ai.core.TextCompletion
+import tri.ai.core.TextPlugin
 import tri.ai.prompt.AiPrompt.Companion.fill
 
-/** Configuration for running a single prompt completion. */
-data class AiPromptRunConfig(
-    var model: String? = null,
-    var modelParams: Map<String, Any> = mapOf(),
-    var prompt: String = "",
-    var promptParams: Map<String, Any> = mapOf()
-)
+/** Executes the series of prompt completions, using [TextPlugin]. */
+suspend fun AiPromptRunSeries.execute() = runConfigs().map {
+    val model = TextPlugin.textCompletionModels().firstOrNull { m -> m.modelId == it.model }
+    model?.run(it) ?: AiPromptTrace.error(it, "Model not found: ${it.model}")
+}
 
-suspend fun TextCompletion.run(config: AiPromptRunConfig): AiPromptTrace {
+/**
+ * Executes a text completion with a single configuration.
+ * Overwrites the model id in the configuration to match the model.
+ */
+suspend fun TextCompletion.run(config: AiPromptConfig): AiPromptTrace {
     return try {
         val t0 = System.currentTimeMillis()
         config.model = modelId
@@ -33,4 +36,3 @@ suspend fun TextCompletion.run(config: AiPromptRunConfig): AiPromptTrace {
         AiPromptTrace.error(config, x.message)
     }
 }
-
