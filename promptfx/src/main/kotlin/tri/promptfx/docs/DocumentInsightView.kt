@@ -215,7 +215,7 @@ class DocumentInsightView: AiPlanTaskView(
         val plans = limitedSnippets.map {
             aitask("${it.doc.shortName} ${it.section.start} ${it.section.end}") {
                 val res = completionEngine.complete(
-                    mapPromptUi.templateText.value.fill("input" to it.readText()),
+                    mapPromptUi.fill("input" to it.readText()),
                     common.maxTokens.value,
                     common.temp.value
                 )
@@ -227,7 +227,7 @@ class DocumentInsightView: AiPlanTaskView(
             val concat = it.values.joinToString("\n\n") { it.value as String }
             runLater { mapResult.value = concat }
             completionEngine.complete(
-                reducePromptUi.templateText.value.fill("input" to concat),
+                reducePromptUi.fill("input" to concat),
                 common.maxTokens.value,
                 common.temp.value
             ).map { concat to it }

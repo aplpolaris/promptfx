@@ -31,6 +31,7 @@ import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
 import tri.promptfx.tools.PromptLibraryPlugin;
 import tri.promptfx.tools.PromptTemplatePlugin;
+import tri.promptfx.tools.PromptValidatorPlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
 // command line settings:
@@ -109,6 +110,7 @@ module tri.promptfx {
             ImageDescribePlugin,
             PromptLibraryPlugin,
             PromptTemplatePlugin,
+            PromptValidatorPlugin,
             DocumentQaPlugin,
             DocumentInsightPlugin,
             EntityExtractionPlugin,
