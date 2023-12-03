@@ -1,10 +1,13 @@
 package tri.ai.prompt
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 /**
  * Configuration for running a series of prompt completions.
  * Values may be lists or constants. If lists, the i'th value is used for the i'th run,
  * and the list is cycled if there are more runs than values.
  */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 class AiPromptRunSeries {
     var model: Any = ""
     var modelParams: Map<String, Any> = mapOf()

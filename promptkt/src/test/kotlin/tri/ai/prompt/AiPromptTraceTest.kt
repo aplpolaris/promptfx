@@ -23,36 +23,57 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
+import tri.ai.openai.mapper
 
 class AiPromptTraceTest {
 
     private val DEFAULT_TEXT_COMPLETION = TextPlugin.textCompletionModels().first()
+    private val WRITER = mapper.writerWithDefaultPrettyPrinter()
+
+    val config = AiPromptConfig().apply {
+        prompt = "Translate {{text}} into French."
+        promptParams = mapOf("text" to "Hello, world!")
+    }
+    val runSeries = AiPromptRunSeries().apply {
+        model = DEFAULT_TEXT_COMPLETION.modelId
+        prompt = listOf("Translate {{text}} into French.", "Translate {{text}} into German.")
+        promptParams = mapOf("text" to "Hello, world!")
+        runs = 2
+    }
+
+    @Test
+    fun testSerializeConfig() {
+        println(WRITER.writeValueAsString(config))
+    }
+
+    @Test
+    fun testSerializeTrace() {
+        println(WRITER.writeValueAsString(AiPromptTrace(config, "test output")))
+        println(WRITER.writeValueAsString(AiPromptTrace.error(config, "test error")))
+    }
+
+    @Test
+    fun testSerializeRunConfig() {
+        println(WRITER.writeValueAsString(runSeries))
+    }
 
     @Test
     @Disabled("Requires OpenAI API key")
     fun testExecute() {
-        val config = AiPromptConfig().apply {
-            prompt = "Translate {{text}} into French."
-            promptParams = mapOf("text" to "Hello, world!")
-        }
         runBlocking {
             val trace = DEFAULT_TEXT_COMPLETION.run(config)
             println("Trace: $trace")
+            println("Trace: ${WRITER.writeValueAsString(trace)}")
         }
     }
 
     @Test
     @Disabled("Requires OpenAI API key")
     fun testExecuteList() {
-        val config = AiPromptRunSeries().apply {
-            model = DEFAULT_TEXT_COMPLETION.modelId
-            prompt = listOf("Translate {{text}} into French.", "Translate {{text}} into German.")
-            promptParams = mapOf("text" to "Hello, world!")
-            runs = 2
-        }
         runBlocking {
-            config.execute().onEach {
+            runSeries.execute().onEach {
                 println("Trace: $it")
+                println("Trace: ${WRITER.writeValueAsString(it)}")
             }
         }
     }

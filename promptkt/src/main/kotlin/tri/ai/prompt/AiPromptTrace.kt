@@ -1,6 +1,9 @@
 package tri.ai.prompt
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 /** Information about a prompt and associated results. */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 class AiPromptTrace(
     var runConfig: AiPromptConfig,
     var output: String? = null
