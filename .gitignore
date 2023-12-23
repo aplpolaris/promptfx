@@ -1,5 +1,6 @@
 apikey-weather.txt
 apikey.txt
+memory.json
 embeddings.json
 embeddings.yaml
 target/
