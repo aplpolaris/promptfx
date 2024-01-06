@@ -73,7 +73,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
                 val thumbs = base.snippets.map { it.embeddingMatch.document }.toSet()
-                    .associateWith { documentThumbnail(it) }
+                    .associateWith { documentThumbnail(base.planner.embeddingIndex.value!!, it) }
                 animateThumbs(thumbs)
             }
         }
@@ -199,7 +199,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
         val action: (() -> Unit)? = when (val view = baseComponent) {
             is DocumentQaView -> {
-                { browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
+                { browseToBestSnippet(view.planner.embeddingIndex.value!!, doc.document, view.planner.lastResult, hostServices) }
             }
             else -> null
         }

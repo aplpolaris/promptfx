@@ -2,6 +2,8 @@ apikey-weather.txt
 apikey.txt
 embeddings.json
 embeddings.yaml
+memory.json
+
 target/
 .idea/
 

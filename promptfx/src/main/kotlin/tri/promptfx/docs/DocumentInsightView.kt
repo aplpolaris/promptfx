@@ -104,10 +104,10 @@ class DocumentInsightView: AiPlanTaskView(
                     }
                 }
                 fold("Documents", expanded = true) {
-                    docslist(docs, hostServices)
+                    docslist(embeddingIndex.value!!, docs, hostServices)
                 }
                 fold("Snippets", expanded = true) {
-                    snippetlist(snippets, hostServices)
+                    snippetlist(embeddingIndex.value!!, snippets, hostServices)
                 }
             }
         }
@@ -239,7 +239,7 @@ class DocumentInsightView: AiPlanTaskView(
         val docList = embeddingIndex.value!!.getEmbeddingIndex().values.take(docsToProcess.value)
         val embeddingList = docList.flatMap { doc ->
             doc.sections.take(snippetsToProcess.value)
-                .map { EmbeddingSectionInDocument(doc, it) }
+                .map { EmbeddingSectionInDocument(embeddingIndex.value!!, doc, it) }
         }
         runLater {
             docs.setAll(docList)
