@@ -38,6 +38,7 @@ import tri.ai.pips.AiTaskList
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.chooseFolder
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
