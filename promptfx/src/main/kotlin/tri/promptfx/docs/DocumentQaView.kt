@@ -27,8 +27,11 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.control.Hyperlink
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
+import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
@@ -38,10 +41,7 @@ import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.graphic
-import tri.util.ui.promptfield
-import tri.util.ui.slider
+import tri.util.ui.*
 import java.awt.Desktop
 import java.io.File
 import java.nio.file.Files
@@ -208,6 +208,17 @@ class DocumentQaView: AiPlanTaskView(
                     padding = insets(5.0)
                     vgrow = Priority.ALWAYS
                     style = "-fx-font-size: 16px;"
+
+                    contextmenu {
+                        item("Copy output to clipboard") {
+                            action {
+                                clipboard.setContent(mapOf(
+                                    DataFormat.HTML to htmlResult.value,
+                                    DataFormat.PLAIN_TEXT to plainText()
+                                ))
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -32,6 +32,7 @@ import javafx.scene.control.Hyperlink
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
+import javafx.scene.input.DataFormat
 import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.Screen
@@ -133,6 +134,17 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
                         id = "chat-response"
                         response.onChange { updateTextFlow(it) }
                         prefWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
+
+                        // add context menu to copy
+                        contextmenu {
+                            item("Copy output to clipboard") {
+                                action {
+                                    clipboard.setContent(mapOf(
+                                        DataFormat.PLAIN_TEXT to plainText()
+                                    ))
+                                }
+                            }
+                        }
                     }
                     vbox { prefWidth = 20.0 }
                 }

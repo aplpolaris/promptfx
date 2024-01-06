@@ -30,11 +30,19 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
+import javafx.scene.control.Hyperlink
 import javafx.scene.control.Slider
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Text
+import javafx.scene.text.TextFlow
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
+
+fun TextFlow.plainText() = children.joinToString("") {
+    (it as? Text)?.text ?:
+    (it as? Hyperlink)?.text ?: ""
+}
 
 fun icon(icon: FontAwesomeIcon) = FontAwesomeIconView(icon)
 
