@@ -51,7 +51,7 @@ object DocumentUtils {
     }
 
     private fun pdfThumbnail(file: File, thumbnailSize: Int): Image? {
-        if (!file.exists()) {
+        if (!file.exists() || file.extension != "pdf") {
             return null
         }
         val document = PDDocument.load(file)

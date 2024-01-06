@@ -119,7 +119,7 @@ class DocumentQaView: AiPlanTaskView(
                     }
                 }
             }
-            snippetmatchlist(planner.embeddingIndex.value!!, planner.snippets, hostServices)
+            snippetmatchlist(planner.embeddingIndex, planner.snippets, hostServices)
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {

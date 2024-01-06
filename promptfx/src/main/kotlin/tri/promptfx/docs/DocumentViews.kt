@@ -21,6 +21,7 @@
 package tri.promptfx.docs
 
 import javafx.application.HostServices
+import javafx.beans.value.ObservableValue
 import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.geometry.Pos
@@ -36,7 +37,7 @@ import tri.util.ui.DocumentUtils
  * Display a list of documents.
  * Clicking on the document name will open the document in a viewer.
  */
-internal fun EventTarget.docslist(index: EmbeddingIndex, snippets: ObservableList<EmbeddingDocument>, hostServices: HostServices) {
+internal fun EventTarget.docslist(index: ObservableValue<out EmbeddingIndex>, snippets: ObservableList<EmbeddingDocument>, hostServices: HostServices) {
     listview(snippets) {
         vgrow = Priority.ALWAYS
         cellFormat {
@@ -44,11 +45,11 @@ internal fun EventTarget.docslist(index: EmbeddingIndex, snippets: ObservableLis
                 textflow {  }
                 alignment = Pos.CENTER_LEFT
                 hyperlink(it.shortNameWithoutExtension) {
-                    val thumb = DocumentUtils.documentThumbnail(index, it)
+                    val thumb = DocumentUtils.documentThumbnail(index.value, it)
                     if (thumb != null) {
                         tooltip { graphic = ImageView(thumb) }
                     }
-                    action { DocumentOpenInViewer(index, it, hostServices).open() }
+                    action { DocumentOpenInViewer(index.value, it, hostServices).open() }
                 }
             }
         }
@@ -59,7 +60,7 @@ internal fun EventTarget.docslist(index: EmbeddingIndex, snippets: ObservableLis
  * Display a list of document chunks, along with document thumbnails.
  * Clicking on the document name will open the document in a viewer.
  */
-internal fun EventTarget.snippetlist(index: EmbeddingIndex, snippets: ObservableList<EmbeddingSectionInDocument>, hostServices: HostServices) {
+internal fun EventTarget.snippetlist(index: ObservableValue<out EmbeddingIndex>, snippets: ObservableList<EmbeddingSectionInDocument>, hostServices: HostServices) {
     listview(snippets) {
         vgrow = Priority.ALWAYS
         cellFormat {
@@ -67,11 +68,11 @@ internal fun EventTarget.snippetlist(index: EmbeddingIndex, snippets: Observable
                 textflow {  }
                 alignment = Pos.CENTER_LEFT
                 hyperlink(it.doc.shortNameWithoutExtension) {
-                    val thumb = DocumentUtils.documentThumbnail(index, it.doc)
+                    val thumb = DocumentUtils.documentThumbnail(index.value, it.doc)
                     if (thumb != null) {
                         tooltip { graphic = ImageView(thumb) }
                     }
-                    action { DocumentBrowseToPage(index, it.doc, it.readText(), hostServices).open() }
+                    action { DocumentBrowseToPage(index.value, it.doc, it.readText(), hostServices).open() }
                 }
 
                 val text = it.readText()
@@ -91,7 +92,7 @@ internal fun EventTarget.snippetlist(index: EmbeddingIndex, snippets: Observable
  * Display a list of matching snippets, along with document thumbnails.
  * Clicking on the document name will open the document in a viewer.
  */
-internal fun EventTarget.snippetmatchlist(index: EmbeddingIndex, snippets: ObservableList<SnippetMatch>, hostServices: HostServices) {
+internal fun EventTarget.snippetmatchlist(index: ObservableValue<out EmbeddingIndex>, snippets: ObservableList<SnippetMatch>, hostServices: HostServices) {
     listview(snippets) {
         vgrow = Priority.ALWAYS
         cellFormat {
@@ -103,11 +104,11 @@ internal fun EventTarget.snippetmatchlist(index: EmbeddingIndex, snippets: Obser
                 }
                 val doc = it.embeddingMatch.document
                 hyperlink(doc.shortNameWithoutExtension) {
-                    val thumb = DocumentUtils.documentThumbnail(index, doc)
+                    val thumb = DocumentUtils.documentThumbnail(index.value, doc)
                     if (thumb != null) {
                         tooltip { graphic = ImageView(thumb) }
                     }
-                    action { DocumentBrowseToPage(index, it.embeddingMatch.document, it.snippetText, hostServices).open() }
+                    action { DocumentBrowseToPage(index.value!!, it.embeddingMatch.document, it.snippetText, hostServices).open() }
                 }
 
                 val text = it.snippetText

@@ -20,13 +20,10 @@
 package tri.promptfx.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.collections.ObservableList
-import javafx.geometry.Pos
-import javafx.scene.control.TextArea
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
@@ -36,12 +33,8 @@ import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask
 import tri.ai.pips.AiTask.Companion.aitask
 import tri.ai.pips.AiTaskList
-import tri.ai.prompt.AiPrompt.Companion.fill
-import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.AiPromptLibrary.Companion.lookupPrompt
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -66,11 +59,11 @@ class DocumentInsightView: AiPlanTaskView(
     // selection of source documents
     private val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(5000)
-    private val embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
-        LocalEmbeddingIndex(documentFolder.value, it!!).apply {
+    private val embeddingIndex = Bindings.createObjectBinding({
+        LocalEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
-    }
+    }, controller.embeddingService, documentFolder, maxChunkSize)
     private val docs = observableListOf<EmbeddingDocument>()
     private val snippets = observableListOf<EmbeddingSectionInDocument>()
 
@@ -104,10 +97,10 @@ class DocumentInsightView: AiPlanTaskView(
                     }
                 }
                 fold("Documents", expanded = true) {
-                    docslist(embeddingIndex.value!!, docs, hostServices)
+                    docslist(embeddingIndex, docs, hostServices)
                 }
                 fold("Snippets", expanded = true) {
-                    snippetlist(embeddingIndex.value!!, snippets, hostServices)
+                    snippetlist(embeddingIndex, snippets, hostServices)
                 }
             }
         }

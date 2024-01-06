@@ -120,7 +120,7 @@ class DocumentQaPlanner {
         docs.forEach { doc ->
             result.splitOn(doc) {
                 val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.document
-                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = sourceDoc.path)
+                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = embeddingIndex.value!!.documentUrl(sourceDoc)?.absolutePath)
             }
         }
         result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
