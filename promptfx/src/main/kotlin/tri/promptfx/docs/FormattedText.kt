@@ -80,7 +80,7 @@ fun FormattedText.toHtml(): String {
         val bold = style.contains("-fx-font-weight: bold")
         val italic = style.contains("-fx-font-style: italic")
         val color = if (style.contains("-fx-fill:"))
-            style.substringAfter("-fx-fill:").let { it.substringBefore(";", it) }
+            style.substringAfter("-fx-fill:").let { it.substringBefore(";", it).trim() }
         else null
         val prefix = (if (bold) "<b>" else "") + (if (italic) "<i>" else "") +
                 (if (color != null) "<font color=\"$color\">" else "")

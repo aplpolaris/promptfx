@@ -23,11 +23,11 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Insets
-import javafx.stage.Window
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.safety.Safelist
 import tornadofx.*
+import tri.util.ui.chooseFolder
 import tri.util.ui.graphic
 import java.awt.Desktop
 import java.io.File
@@ -83,16 +83,6 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
                 }
             }
         }
-    }
-}
-
-internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
-    chooseDirectory(
-        title = "Select Document Folder",
-        initialDirectory = value,
-        owner = owner
-    )?.let {
-        set(it)
     }
 }
 

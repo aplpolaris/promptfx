@@ -20,9 +20,7 @@
 package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import java.io.File
-import java.net.URL
 
 /** A document with a list of sections. */
 class EmbeddingDocument(val path: String) {
@@ -39,40 +37,35 @@ class EmbeddingDocument(val path: String) {
     val shortNameWithoutExtension: String
         get() = shortName.substringBeforeLast('.')
 
-    /** Get file. */
-    @get:JsonIgnore
-    val file: File
-        get() {
-            val f = File(path)
-            return listOf("pdf", "doc", "docx", "txt").map {
-                File(f.parentFile, f.nameWithoutExtension + ".$it")
-            }.firstOrNull { it.exists() } ?: f
+    /** The file with the raw text. */
+    fun rawTextUrl(rootDir: File): File? {
+        val file1 = File(rootDir, path)
+        val file2 = File(path)
+        return when {
+            file1.exists() -> file1
+            file2.exists() -> file2
+            else -> null
         }
+    }
 
-    /** Get URL of path. */
-    @get:JsonIgnore
-    val url: URL
-        get() = file.toURI().toURL()
+    /** The original file. */
+    fun originalUrl(rootDir: File): File? {
+        val file = rawTextUrl(rootDir) ?: return null
+        return SUPPORTED_EXTENSIONS.map {
+            File(file.parentFile, file.nameWithoutExtension + ".$it")
+        }.firstOrNull { it.exists() } ?: file
+    }
 
     /** The raw text of the document. */
-    fun readText() = File(path).readText()
+    fun readText(rootDir: File) = rawTextUrl(rootDir)?.readText() ?: "Unable to locate $path in $rootDir"
 
     /** The raw text of the section. */
-    fun readText(section: EmbeddingSection) = readText().substring(section.start, section.end)
+    fun readText(rootDir: File, section: EmbeddingSection) =
+        readText(rootDir).substring(section.start, section.end)
+
+    companion object {
+        /** Extensions supported by the embedding index, either raw text or with available scrapers. */
+        val SUPPORTED_EXTENSIONS = listOf("pdf", "doc", "docx", "txt")
+    }
 }
 
-/** A section of a document. */
-class EmbeddingSection(
-    val embedding: List<Double>,
-    val start: Int,
-    val end: Int
-) {
-    @get:JsonIgnore
-    val length
-        get() = end - start
-}
-
-/** A section with associated document (not for serialization). */
-class EmbeddingSectionInDocument(val doc: EmbeddingDocument, val section: EmbeddingSection) {
-    fun readText() = doc.readText(section)
-}

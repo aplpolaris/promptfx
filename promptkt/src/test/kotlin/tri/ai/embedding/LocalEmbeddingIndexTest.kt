@@ -32,7 +32,7 @@ class LocalEmbeddingIndexTest {
         index.getEmbeddingIndex().forEach { (path, doc) ->
             println(path)
             doc.sections.take(10).forEach { section ->
-                val text = doc.readText(section).replace("\\s+".toRegex(), " ")
+                val text = index.readSnippet(doc, section).replace("\\s+".toRegex(), " ")
                 println("  ${section.start} ${section.end} ${text.take(200)}")
             }
         }

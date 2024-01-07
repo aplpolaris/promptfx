@@ -25,23 +25,16 @@ import java.io.File
 interface EmbeddingIndex {
     /** Find the most similar section to the query. */
     suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
+    /** Get a URL for retrieving a given document. */
+    fun documentUrl(doc: EmbeddingDocument): File?
+    /** Gets text for a given document and section. */
+    fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection): String
 }
 
 /** A no-op version of the embedding index. */
 object NoOpEmbeddingIndex : EmbeddingIndex {
     override suspend fun findMostSimilar(query: String, n: Int) = listOf<EmbeddingMatch>()
+    override fun documentUrl(doc: EmbeddingDocument) = TODO("NoOpEmbeddingIndex for testing only.")
+    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = TODO("NoOpEmbeddingIndex for testing only.")
 }
 
-/** A scored match for a query. */
-class EmbeddingMatch(
-    val document: EmbeddingDocument,
-    val section: EmbeddingSection,
-    val queryEmbedding: List<Double>,
-    val score: Double
-) {
-    fun readText() = document.readText(section)
-
-    override fun toString(): String {
-        return "${File(document.path).name} (${"%.2f".format(score)}) ${readText().take(500)}"
-    }
-}

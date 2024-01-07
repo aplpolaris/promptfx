@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
@@ -35,13 +36,11 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
+import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.graphic
-import tri.util.ui.promptfield
-import tri.util.ui.slider
+import tri.util.ui.*
 import java.awt.Desktop
 import java.io.File
 import java.nio.file.Files
@@ -120,7 +119,7 @@ class DocumentQaView: AiPlanTaskView(
                     }
                 }
             }
-            snippetmatchlist(planner.snippets, hostServices)
+            snippetmatchlist(planner.embeddingIndex, planner.snippets, hostServices)
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
@@ -208,6 +207,17 @@ class DocumentQaView: AiPlanTaskView(
                     padding = insets(5.0)
                     vgrow = Priority.ALWAYS
                     style = "-fx-font-size: 16px;"
+
+                    contextmenu {
+                        item("Copy output to clipboard") {
+                            action {
+                                clipboard.setContent(mapOf(
+                                    DataFormat.HTML to htmlResult.value,
+                                    DataFormat.PLAIN_TEXT to plainText()
+                                ))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -240,7 +250,7 @@ class DocumentQaView: AiPlanTaskView(
                 if (doc == null) {
                     println("Unable to find document $docName in snippets.")
                 } else {
-                    browseToBestSnippet(doc, planner.lastResult, hostServices)
+                    browseToBestSnippet(planner.embeddingIndex.value!!, doc, planner.lastResult, hostServices)
                 }
             }
         }
@@ -252,20 +262,20 @@ class DocumentQaView: AiPlanTaskView(
         private const val PROMPT_PREFIX = "question-answer"
         private const val JOINER_PREFIX = "snippet-joiner"
 
-        internal fun browseToBestSnippet(doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
+        internal fun browseToBestSnippet(index: EmbeddingIndex, doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (result == null) {
                 println("Browsing to first page: ${doc.shortNameWithoutExtension}")
-                DocumentOpenInViewer(doc, hostServices).open()
+                DocumentOpenInViewer(index, doc, hostServices).open()
             } else {
                 println("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
                 val matches = result.matches.filter { it.matchesDocument(doc.shortNameWithoutExtension) }
                 if (matches.size == 1) {
                     println("Browsing to only match")
                     val match = matches.first()
-                    DocumentBrowseToPage(match.embeddingMatch.document, match.snippetText, hostServices).open()
+                    DocumentBrowseToPage(index, match.embeddingMatch.document, match.snippetText, hostServices).open()
                 } else {
                     println("Browsing to closest match")
-                    DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
+                    DocumentBrowseToClosestMatch(index, matches, result.responseEmbedding, hostServices).open()
                 }
             }
         }

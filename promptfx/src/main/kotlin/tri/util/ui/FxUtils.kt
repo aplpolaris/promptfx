@@ -27,14 +27,38 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
+import javafx.scene.control.Hyperlink
 import javafx.scene.control.Slider
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Text
+import javafx.scene.text.TextFlow
+import javafx.stage.Window
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
+import java.io.File
+
+fun TextFlow.plainText() = children.joinToString("") {
+    (it as? Text)?.text ?:
+    (it as? Hyperlink)?.text ?: ""
+}
+
+internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
+    chooseDirectory(
+        title = "Select Document Folder",
+        initialDirectory = value?.findDirectory(),
+        owner = owner
+    )?.let {
+        set(it)
+    }
+}
+
+/** Return this if its a directory, otherwise try to find a parent directory. If none, return null. */
+private fun File.findDirectory(): File? = if (isDirectory) this else parentFile?.findDirectory()
 
 fun icon(icon: FontAwesomeIcon) = FontAwesomeIconView(icon)
 
