@@ -60,15 +60,15 @@ class DocumentQaView: AiPlanTaskView(
     private val joinerId = SimpleStringProperty("$JOINER_PREFIX-citations")
     private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
-    internal val question = SimpleStringProperty("")
+    val question = SimpleStringProperty("")
 
-    internal val documentFolder = SimpleObjectProperty(File(""))
+    val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(1000)
     private val chunksToRetrieve = SimpleIntegerProperty(10)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
 
-    internal val planner = DocumentQaPlanner().apply {
+    val planner = DocumentQaPlanner().apply {
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
             LocalEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
