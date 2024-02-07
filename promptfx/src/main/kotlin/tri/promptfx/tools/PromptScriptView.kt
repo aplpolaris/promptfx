@@ -25,6 +25,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
@@ -140,8 +141,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private fun filter(): (String) -> Boolean {
         val filter = filter.value
         when {
-            filter.isBlank() -> return { it.isNotBlank() }
-            "{{input}}" in filter -> return { false }
+            filter.isBlank() ->
+                return { it.isNotBlank() }
+            "{{input}}" in filter ->
+                return { llmFilter(filter, it) }
             else -> {
                 try {
                     val regex = filter.toRegex()
@@ -152,6 +155,15 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 }
             }
         }
+    }
+
+    private fun llmFilter(prompt: String, input: String): Boolean {
+        val result = runBlocking {
+            AiPrompt(prompt).fill("input" to input)
+                .let { completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value) }
+                .value
+        }
+        return result?.contains("yes", ignoreCase = true) ?: false
     }
 
     override fun plan() = aitask("text-completion") {
