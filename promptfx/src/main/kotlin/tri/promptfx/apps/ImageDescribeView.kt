@@ -31,9 +31,8 @@ import tri.ai.openai.OpenAiClient
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.*
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.promptfield
-import tri.util.ui.yaml
 import java.io.ByteArrayOutputStream
 import java.util.*
 import javax.imageio.ImageIO

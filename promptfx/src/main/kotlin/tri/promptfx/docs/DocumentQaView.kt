@@ -40,6 +40,7 @@ import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.*
 import java.awt.Desktop
 import java.io.File

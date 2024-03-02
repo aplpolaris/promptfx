@@ -82,7 +82,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt</artifactId>
-            <version>0.2.3</version>
+            <version>0.2.4-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -172,6 +172,31 @@
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
         <plugins>
+            <!-- maven and java required versions -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M2</version>
+                <executions>
+                    <execution>
+                        <id>enforce</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.5.4</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>11</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- set java 11 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
