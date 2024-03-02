@@ -61,3 +61,18 @@ document-reduce-custom: |
   ```
   {{{input}}}
   ```
+
+# extract author from input
+extract-author: |
+  Input: {{{input}}}
+  Author: 
+
+# extract date from input
+extract-date: |
+  Input: {{{input}}}
+  Date (mm/dd/yyyy): 
+
+# extract topic from text
+extract-topic: |
+  Input: {{{input}}}
+  Topic: 

@@ -2,7 +2,7 @@
  * #%L
  * promptkt-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
     private val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
 
+    override fun documentUrl(doc: EmbeddingDocument) = doc.originalUrl(root)
+
+    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = doc.readText(root, section)
+
     //region INDEXERS
 
     private fun rootFiles(ext: String) = root.listFiles { _, name -> name.endsWith(ext) }?.toList() ?: emptyList()
@@ -48,12 +52,14 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
     /** Command to reindex just new documents. */
     private suspend fun reindexNew(): Map<String, EmbeddingDocument> {
         preprocessDocumentFormats()
-        val newDocs = rootFiles(".txt").filter { !embeddingIndex.containsKey(it.absolutePath) }
+        val newDocs = rootFiles(".txt").filter {
+            !embeddingIndex.containsKey(it.absolutePath) && !embeddingIndex.containsKey(it.name)
+        }
         val newEmbeddings = mutableMapOf<String, EmbeddingDocument>()
         if (newDocs.isNotEmpty()) {
             newDocs.forEach {
                 try {
-                    newEmbeddings[it.absolutePath] = calculateEmbeddingSections(it)
+                    newEmbeddings[it.name] = calculateEmbeddingSections(it)
                 } catch (x: IOException) {
                     println("Failed to calculate embeddings for $it: $x")
                 } catch (x: OpenAIException) {
@@ -136,13 +142,38 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         else -> "embeddings-${embeddingService.modelId.replace("/", "_")}.json"
     }
 
-    private fun restoreIndex(root: File): Map<String, EmbeddingDocument> =
-        File(root, indexFile()).let {
+    private fun restoreIndex(root: File): Map<String, EmbeddingDocument> {
+        var index = File(root, indexFile()).let {
             if (it.exists())
-                MAPPER.readValue(File(root, indexFile()))
+                MAPPER.readValue<Map<String, EmbeddingDocument>>(it)
             else
                 emptyMap()
         }
+        if (index.keys.any { it.localPath(root) != it }) {
+            print("Updating embeddings index to use local file references...")
+            index = index.map { (_, doc) ->
+                val localized = doc.copyWithLocalPath(root)
+                localized.path to localized
+            }.toMap()
+            saveIndex(root, index)
+            println("Completed.")
+        }
+        return index
+    }
+
+    private fun EmbeddingDocument.copyWithLocalPath(root: File) =
+        EmbeddingDocument(path.localPath(root)).also {
+            it.sections.addAll(sections)
+        }
+
+    /** Update a string representing a full path to just reperesent a local path relative to the given file. */
+    private fun String.localPath(root: File): String {
+        val pathSplit = if ("\\" in this) split("\\") else split("/")
+        return if (pathSplit.size > 1 && pathSplit[pathSplit.size - 2] == root.name)
+            pathSplit.last()
+        else
+            this
+    }
 
     private fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
         MAPPER.writerWithDefaultPrettyPrinter()

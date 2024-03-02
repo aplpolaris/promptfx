@@ -2,7 +2,7 @@
  * #%L
  * promptfx-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,8 @@ import tri.ai.openai.OpenAiClient
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.*
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.promptfield
-import tri.util.ui.yaml
 import java.io.ByteArrayOutputStream
 import java.util.*
 import javax.imageio.ImageIO

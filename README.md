@@ -5,6 +5,11 @@ It is intended primarily for demonstration and exploration purposes, and is desi
 
 See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-and-promptfx) and [the wiki](https://github.com/aplpolaris/promptfx/wiki) for instructions to build and run PromptFx and troubleshooting.
 
+## Modules
+
+- **promptkt** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt) *utilities for working with AI APIs*
+- **promptfx** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx) *JavaFx GUI*
+
 ## API Key
 
 PromptFx requires an OpenAI API key. To set the API key, you may click on the key in the toolbar. Alternately, you may save your key in an `apikey.txt` file, or in a system registry variable `OPENAI_API_KEY`.

@@ -3,6 +3,8 @@ apikey.txt
 memory.json
 embeddings.json
 embeddings.yaml
+memory.json
+
 target/
 .idea/
 

@@ -2,14 +2,14 @@
  * #%L
  * promptfx-0.1.10-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -99,7 +99,7 @@ class DocumentQaPlanner {
     /** Finds the most relevant section to the query. */
     private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<SnippetMatch>> {
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
-        return AiTaskResult.result(matches.map { SnippetMatch(it) })
+        return AiTaskResult.result(matches.map { SnippetMatch(it, embeddingIndex.value!!.readSnippet(it.document, it.section)) })
     }
 
     suspend fun reindexAllDocuments() {
@@ -120,7 +120,7 @@ class DocumentQaPlanner {
         docs.forEach { doc ->
             result.splitOn(doc) {
                 val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.document
-                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = sourceDoc.path)
+                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = embeddingIndex.value!!.documentUrl(sourceDoc)?.absolutePath)
             }
         }
         result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
@@ -166,12 +166,12 @@ data class SnippetMatch(
     val score: Double
 ) {
 
-    constructor(match: EmbeddingMatch) : this(
+    constructor(match: EmbeddingMatch, snippetText: String) : this(
         match,
         match.document.shortNameWithoutExtension,
         match.section.start,
         match.section.end,
-        match.readText(),
+        snippetText,
         match.section.embedding,
         match.score
     )

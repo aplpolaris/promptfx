@@ -2,7 +2,7 @@
  * #%L
  * promptfx-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import tornadofx.*
 import tri.ai.openai.instructTextPlan
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.promptfield
 
 /** Plugin for the [QuestionAnsweringView]. */
 class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", QuestionAnsweringView::class)

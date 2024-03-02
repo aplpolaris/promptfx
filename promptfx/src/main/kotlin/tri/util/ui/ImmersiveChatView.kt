@@ -2,14 +2,14 @@
  * #%L
  * promptfx-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,7 @@ import javafx.scene.control.Hyperlink
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
+import javafx.scene.input.DataFormat
 import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.Screen
@@ -72,7 +73,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
                 val thumbs = base.snippets.map { it.embeddingMatch.document }.toSet()
-                    .associateWith { documentThumbnail(it) }
+                    .associateWith { documentThumbnail(base.planner.embeddingIndex.value!!, it) }
                 animateThumbs(thumbs)
             }
         }
@@ -133,6 +134,17 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
                         id = "chat-response"
                         response.onChange { updateTextFlow(it) }
                         prefWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
+
+                        // add context menu to copy
+                        contextmenu {
+                            item("Copy output to clipboard") {
+                                action {
+                                    clipboard.setContent(mapOf(
+                                        DataFormat.PLAIN_TEXT to plainText()
+                                    ))
+                                }
+                            }
+                        }
                     }
                     vbox { prefWidth = 20.0 }
                 }
@@ -187,7 +199,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
         val action: (() -> Unit)? = when (val view = baseComponent) {
             is DocumentQaView -> {
-                { browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
+                { browseToBestSnippet(view.planner.embeddingIndex.value!!, doc.document, view.planner.lastResult, hostServices) }
             }
             else -> null
         }

@@ -18,6 +18,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.scene.text.Font
+import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
@@ -30,14 +31,14 @@ import java.lang.Exception
  * #%L
  * promptfx-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -227,6 +228,25 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
                 isWrapText = true
                 font = Font("Segoe UI Emoji", 18.0)
                 vgrow = Priority.ALWAYS
+
+                // add context menu option to save result to a file
+                contextmenu {
+                    item ("Select All") {
+                        action { selectAll() }
+                    }
+                    item("Copy") {
+                        action { copy() }
+                    }
+                    item("Save to File...") {
+                        action {
+                            val file = chooseFile("Save to File", filters = arrayOf(
+                                FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                                FileChooser.ExtensionFilter("All Files", "*.*")
+                            ), owner = currentWindow, mode = FileChooserMode.Save).firstOrNull()
+                            file?.writeText(selectedText.ifBlank { this@textarea.text })
+                        }
+                    }
+                }
             }
         }
         onCompleted {

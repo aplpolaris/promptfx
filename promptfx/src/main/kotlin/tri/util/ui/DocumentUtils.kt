@@ -2,7 +2,7 @@
  * #%L
  * promptfx-0.1.0-SNAPSHOT
  * %%
- * Copyright (C) 2023 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import javafx.scene.image.Image
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import tri.ai.embedding.EmbeddingDocument
+import tri.ai.embedding.EmbeddingIndex
 import java.awt.image.BufferedImage
 import java.io.File
 import kotlin.collections.set
@@ -37,15 +38,11 @@ object DocumentUtils {
      * Generate a thumbnail for the document if it doesn't exist.
      * TODO - this may take a while, so make it a delayed event
      */
-    fun documentThumbnail(doc: EmbeddingDocument): Image? {
+    fun documentThumbnail(index: EmbeddingIndex, doc: EmbeddingDocument): Image? {
         if (doc.path in thumbnailCache)
             return thumbnailCache[doc.path]
 
-        val file1 = File(doc.path)
-        val pdfFile = File(file1.parentFile, file1.nameWithoutExtension + ".pdf")
-        if (!pdfFile.exists())
-            return null
-
+        val pdfFile = index.documentUrl(doc) ?: return null
         val thumb = pdfThumbnail(pdfFile, 300)
         if (thumb != null)
             thumbnailCache[doc.path] = thumb
@@ -54,7 +51,7 @@ object DocumentUtils {
     }
 
     private fun pdfThumbnail(file: File, thumbnailSize: Int): Image? {
-        if (!file.exists()) {
+        if (!file.exists() || file.extension != "pdf") {
             return null
         }
         val document = PDDocument.load(file)
