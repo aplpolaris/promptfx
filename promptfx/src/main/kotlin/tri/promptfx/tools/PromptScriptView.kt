@@ -69,7 +69,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 text("Filter:")
             }
             textarea(filter) {
-                promptText = "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
+                promptText =
+                    "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
                 hgrow = Priority.ALWAYS
                 prefRowCount = 5
                 isWrapText = true
@@ -86,11 +87,15 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 text("Template:")
                 spacer()
                 menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                    AiPromptLibrary.INSTANCE.prompts.filter {
-                        it.value.fields() == listOf("input")
-                    }.keys.forEach { key ->
-                        item(key) {
-                            action { template.set(AiPromptLibrary.lookupPrompt(key).template) }
+                    // replace items when the menu is shown
+                    setOnShowing {
+                        items.clear()
+                        AiPromptLibrary.INSTANCE.prompts.filter {
+                            it.value.fields() == listOf("input")
+                        }.keys.forEach { key ->
+                            item(key) {
+                                action { template.set(AiPromptLibrary.lookupPrompt(key).template) }
+                            }
                         }
                     }
                 }
@@ -130,6 +135,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 enableDroppingFileContent()
             }
         }
+    }
+
+    init {
         parameters("Model Parameters") {
             with(common) {
                 temperature()
