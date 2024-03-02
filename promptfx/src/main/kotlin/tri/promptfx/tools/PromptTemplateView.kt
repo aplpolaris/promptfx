@@ -113,9 +113,6 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         parameters("Model Parameters") {
             with(common) {
                 temperature()
-                topP()
-                frequencyPenalty()
-                presencePenalty()
                 maxTokens()
             }
         }
@@ -129,11 +126,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
 
     private fun updateTemplateInputs(template: String) {
         // extract {{{.}}} and {{.}} delimited fields from new value
-        var templateText = template
-        val nueFields = templateText.split("{{{").drop(1).map { it.substringBefore("}}}") }.toMutableSet()
-        nueFields.forEach { templateText = templateText.replace("{{{$it}}}", "") }
-        nueFields.addAll(templateText.split("{{").drop(1).map { it.substringBefore("}}") })
-        nueFields.removeIf { it.isBlank() || it[0] in "/#^" }
+        val nueFields = AiPrompt.fieldsInTemplate(template)
         if (fields.toSet() != nueFields.toSet()) {
             val fieldMapCopy = fieldMap.toMap()
             fieldMap.clear()

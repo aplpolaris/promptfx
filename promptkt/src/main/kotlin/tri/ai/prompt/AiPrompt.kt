@@ -52,7 +52,20 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
     /** Fills in arbitrary fields. */
     fun fill(vararg fields: Pair<String, Any>) = fill(fields.toMap())
 
+    /** Get list of fields in the template. */
+    fun fields() = fieldsInTemplate(template)
+
     companion object {
+
+        /** Finds all fields in a template. */
+        fun fieldsInTemplate(template: String): List<String> {
+            var templateText = template
+            val foundFields = templateText.split("{{{").drop(1).map { it.substringBefore("}}}") }.toMutableSet()
+            foundFields.forEach { templateText = templateText.replace("{{{$it}}}", "") }
+            foundFields.addAll(templateText.split("{{").drop(1).map { it.substringBefore("}}") })
+            foundFields.removeIf { it.isBlank() || it[0] in "/#^" }
+            return foundFields.toList()
+        }
 
         //region MUSTACHE TEMPLATES
 

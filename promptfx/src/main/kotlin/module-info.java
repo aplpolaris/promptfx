@@ -29,9 +29,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
-import tri.promptfx.tools.PromptLibraryPlugin;
-import tri.promptfx.tools.PromptTemplatePlugin;
-import tri.promptfx.tools.PromptValidatorPlugin;
+import tri.promptfx.tools.*;
 import tri.util.ui.NavigableWorkspaceView;
 
 // command line settings:
@@ -109,6 +107,7 @@ module tri.promptfx {
             ImagesApiPlugin,
             ImageDescribePlugin,
             PromptLibraryPlugin,
+            PromptScriptPlugin,
             PromptTemplatePlugin,
             PromptValidatorPlugin,
             DocumentQaPlugin,
