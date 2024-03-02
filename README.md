@@ -1,12 +1,14 @@
 # PromptFx
 
-- **promptkt** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt)
-- **promptfx** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx)
-
 This project provides a prototype Kotlin module for AI prompt chaining (`promptkt`) and an associated JavaFx demonstration UI (`promptfx`).
 It is intended primarily for demonstration and exploration purposes, and is designed to be primarily used with the [OpenAI API](https://platform.openai.com/docs/api-reference) or a compatible LLM API.
 
 See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-and-promptfx) and [the wiki](https://github.com/aplpolaris/promptfx/wiki) for instructions to build and run PromptFx and troubleshooting.
+
+## Modules
+
+- **promptkt** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt) *utilities for working with AI APIs*
+- **promptfx** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx) *JavaFx GUI*
 
 ## API Key
 
