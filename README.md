@@ -1,5 +1,8 @@
 # PromptFx
 
+- **promptkt** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt)
+- **promptfx** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx)
+
 This project provides a prototype Kotlin module for AI prompt chaining (`promptkt`) and an associated JavaFx demonstration UI (`promptfx`).
 It is intended primarily for demonstration and exploration purposes, and is designed to be primarily used with the [OpenAI API](https://platform.openai.com/docs/api-reference) or a compatible LLM API.
 
