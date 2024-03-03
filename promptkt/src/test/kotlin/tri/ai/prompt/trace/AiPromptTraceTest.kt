@@ -1,7 +1,7 @@
 package tri.ai.prompt.trace
 
 import org.junit.jupiter.api.Test
-import tri.ai.openai.writer
+import tri.ai.openai.jsonWriter
 
 class AiPromptTraceTest {
 
@@ -16,13 +16,13 @@ class AiPromptTraceTest {
 
     @Test
     fun testSerializePromptInfo() {
-        println(writer.writeValueAsString(promptInfo))
+        println(jsonWriter.writeValueAsString(promptInfo))
     }
 
     @Test
     fun testSerializeTrace() {
-        println(writer.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo(), AiPromptOutputInfo("test output"))))
-        println(writer.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("test error"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo(), AiPromptOutputInfo("test output"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("test error"))))
     }
 
 }

@@ -21,7 +21,7 @@ package tri.promptfx.integration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.openai.mapper
+import tri.ai.openai.jsonMapper
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -58,7 +58,7 @@ class OpenWeatherMapService(private val apiKey: String) : WeatherService {
             val url = "$baseUrl/$endpoint?q=${request.city}&appid=$apiKey&units=imperial"
             println(url)
             val response = URL(url).readText()
-            val responseObj = mapper.readValue<WeatherResponse>(response)
+            val responseObj = jsonMapper.readValue<WeatherResponse>(response)
 
             return WeatherResult(request,
                 category = responseObj.weather[0].main,

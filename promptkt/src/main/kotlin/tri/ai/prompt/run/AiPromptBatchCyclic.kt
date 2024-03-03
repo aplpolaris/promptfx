@@ -1,6 +1,9 @@
 package tri.ai.prompt.run
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.openai.jsonMapper
+import tri.ai.openai.yamlMapper
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
 
@@ -48,6 +51,9 @@ class AiPromptBatchCyclic : AiPromptBatch {
             this.modelParams = model.modelParams
             this.runs = runs
         }
+
+        fun fromJson(json: String) = jsonMapper.readValue<AiPromptBatchCyclic>(json)
+        fun fromYaml(yaml: String) = yamlMapper.readValue<AiPromptBatchCyclic>(yaml)
     }
 
 }

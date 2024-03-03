@@ -23,7 +23,7 @@ import javafx.beans.property.Property
 import tri.ai.pips.AiPlanner
 import tri.ai.core.TextCompletion
 import tri.ai.pips.aitask
-import tri.ai.openai.mapper
+import tri.ai.openai.jsonMapper
 import tri.ai.openai.promptTask
 import tri.ai.openai.instructTask
 import java.net.URL
@@ -50,7 +50,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
         val url = "https://en.wikipedia.org/w/api.php?action=query" +
                 "&format=json&list=search&srsearch=${query.trim().replace(" ", "%20")}"
         val jsonText = URL(url).readText()
-        return mapper.readTree(jsonText).at("/query/search/0/title").asText()
+        return jsonMapper.readTree(jsonText).at("/query/search/0/title").asText()
     }
 
     private fun getWikipediaPage(request: String): String {
@@ -60,7 +60,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
                 "&titles=${URLEncoder.encode(title, "UTF-8")}"
         println(url)
         val jsonText = URL(url).readText()
-        val elements = mapper.readTree(jsonText).at("/query/pages").elements()
+        val elements = jsonMapper.readTree(jsonText).at("/query/pages").elements()
         return if (elements.hasNext())
             elements.next()["extract"].asText()
         else

@@ -1,12 +1,14 @@
 package tri.ai.prompt.trace
 
+import tri.ai.prompt.AiPrompt
+
 /**
  * In-memory database of prompt traces, allowing for reuse of prompt, model, exec, and output objects,
  * and storage of these in separate tables.
  *
  * TODO - this is not optimized for large databases, but should work well for up to a few thousand
  */
-class AiPromptTraceDatabase {
+class AiPromptTraceDatabase() {
 
     var traces = mutableListOf<AiPromptTraceId>()
 
@@ -14,6 +16,10 @@ class AiPromptTraceDatabase {
     var models = mutableSetOf<AiPromptModelInfo>()
     var execs = mutableSetOf<AiPromptExecInfo>()
     var outputs = mutableSetOf<AiPromptOutputInfo>()
+
+    constructor(traces: Iterable<AiPromptTrace>) : this() {
+        addTraces(traces)
+    }
 
     /** Get all prompt traces as list. */
     fun promptTraces() = traces.map { it.promptTrace() }

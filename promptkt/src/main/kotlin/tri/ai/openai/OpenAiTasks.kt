@@ -50,7 +50,7 @@ suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, St
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
 suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?) =
     promptTask(id, input, tokenLimit, temp).let {
-        it.map { mapper.readValue<T>(it.trim()) }
+        it.map { jsonMapper.readValue<T>(it.trim()) }
     }
 
 //endregion

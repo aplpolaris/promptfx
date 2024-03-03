@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
-import tri.ai.openai.writer
+import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
 
@@ -27,7 +27,7 @@ class AiPromptRunnerTest {
         runBlocking {
             val trace = (promptInfo to modelInfo).execute(defaultTextCompletion)
             println("Trace: $trace")
-            println("Trace: ${writer.writeValueAsString(trace)}")
+            println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
     }
 

@@ -2,7 +2,7 @@ package tri.ai.prompt.trace
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.openai.writer
+import tri.ai.openai.jsonWriter
 
 class AiPromptTraceDatabaseTest {
 
@@ -33,7 +33,7 @@ class AiPromptTraceDatabaseTest {
         assertEquals(2, db.execs.size)
         assertEquals(2, db.outputs.size)
 
-        println(writer.writeValueAsString(db))
+        println(jsonWriter.writeValueAsString(db))
     }
 
 }

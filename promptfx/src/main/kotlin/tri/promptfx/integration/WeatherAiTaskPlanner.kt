@@ -37,7 +37,7 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingSe
         }.task("weather-api") {
             weatherService.getWeather(it)
         }.aitask("weather-response-formatter") {
-            val json = mapper.writeValueAsString(it)
+            val json = jsonMapper.writeValueAsString(it)
             completionEngine.instructTask("weather-response-formatter", instruct = input, userText = json, tokenLimit = 500, temp = null)
         }.plan
 

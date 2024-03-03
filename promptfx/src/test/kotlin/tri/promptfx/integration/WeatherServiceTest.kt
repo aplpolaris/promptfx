@@ -22,7 +22,7 @@ package tri.promptfx.integration
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import tri.ai.openai.mapper
+import tri.ai.openai.jsonMapper
 
 class WeatherServiceTest {
 
@@ -75,7 +75,7 @@ class WeatherServiceTest {
 
     @Test
     fun testParse() {
-        val response = mapper.readValue<WeatherResponse>(testJson)
+        val response = jsonMapper.readValue<WeatherResponse>(testJson)
         Assertions.assertEquals(52.11, response.main.temp)
         Assertions.assertEquals(75, response.clouds!!.all)
         Assertions.assertEquals(24.16, response.wind!!.speed)

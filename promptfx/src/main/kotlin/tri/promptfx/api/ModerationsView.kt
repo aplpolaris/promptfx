@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.openai.mapper
+import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
@@ -52,7 +52,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
             model = model.value
         )
         val response = controller.openAiPlugin.client.client.moderations(request)
-        val responseText = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(response)
+        val responseText = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response)
         return result(responseText, model.value.model).asPipelineResult()
     }
 

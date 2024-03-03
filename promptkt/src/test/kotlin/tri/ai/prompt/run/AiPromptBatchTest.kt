@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
-import tri.ai.openai.mapper
-import tri.ai.openai.writer
+import tri.ai.openai.jsonMapper
+import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
@@ -25,7 +25,7 @@ class AiPromptBatchTest {
 
     @Test
     fun testSerialize() {
-        println(writer.writeValueAsString(batch))
+        println(jsonWriter.writeValueAsString(batch))
     }
 
     @Test
@@ -33,7 +33,7 @@ class AiPromptBatchTest {
     fun testExecute() {
         runBlocking {
             batch.execute().onEach {
-                println("Trace: ${writer.writeValueAsString(it)}")
+                println("Trace: ${jsonWriter.writeValueAsString(it)}")
             }
         }
     }
@@ -51,13 +51,13 @@ class AiPromptBatchTest {
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result)
             }
-            val output = writer.writeValueAsString(db)
-            val db2 = mapper.readValue<AiPromptTraceDatabase>(output)
+            val output = jsonWriter.writeValueAsString(db)
+            val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)
             assertEquals(db.traces, db2.traces)
             assertEquals(db.prompts, db2.prompts)
             assertEquals(db.models, db2.models)
             assertEquals(db.execs, db2.execs)
-            println(writer.writeValueAsString(db2))
+            println(jsonWriter.writeValueAsString(db2))
         }
     }
 
