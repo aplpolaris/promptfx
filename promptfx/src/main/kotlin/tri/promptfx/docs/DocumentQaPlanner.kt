@@ -30,6 +30,7 @@ import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.promptfx.ModelParameters
+import tri.util.info
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -89,7 +90,7 @@ class DocumentQaPlanner {
             )
         }
     }.task("process-result") {
-        println("Similarity of question to response: " + it.questionAnswerSimilarity())
+        info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
         lastResult = it
         formatResult(it)
     }.planner
