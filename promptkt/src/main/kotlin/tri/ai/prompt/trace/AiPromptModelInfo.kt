@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Model configuration info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-class AiPromptModelInfo(
+data class AiPromptModelInfo(
     var model: String,
     var modelParams: Map<String, Any> = mapOf()
 )

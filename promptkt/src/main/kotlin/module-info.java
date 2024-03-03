@@ -62,6 +62,8 @@ module tri.promptkt {
     exports tri.ai.openai;
     exports tri.ai.pips;
     exports tri.ai.prompt;
+    exports tri.ai.prompt.run;
+    exports tri.ai.prompt.trace;
     exports tri.ai.text.chunks;
     exports tri.ai.tool;
     exports tri.util;

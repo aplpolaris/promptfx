@@ -15,7 +15,7 @@ class AiPromptTraceTest {
     )
 
     @Test
-    fun testSerializeConfig() {
+    fun testSerializePromptInfo() {
         println(writer.writeValueAsString(promptInfo))
     }
 

@@ -38,4 +38,16 @@ class AiPromptBatchCyclic : AiPromptBatch {
         is Map<*, *> -> throw UnsupportedOperationException()
         else -> this
     }
+
+    companion object {
+        /** Get a batch to repeat the same prompt/model pairings for a number of runs. */
+        fun repeat(prompt: AiPromptInfo, model: AiPromptModelInfo, runs: Int) = AiPromptBatchCyclic().apply {
+            this.prompt = prompt.prompt
+            this.promptParams = prompt.promptParams
+            this.model = model.model
+            this.modelParams = model.modelParams
+            this.runs = runs
+        }
+    }
+
 }

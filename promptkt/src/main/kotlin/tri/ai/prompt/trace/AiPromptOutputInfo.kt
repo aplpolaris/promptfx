@@ -4,6 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Text inference output info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-class AiPromptOutputInfo(
+data class AiPromptOutputInfo(
     var output: String? = null
 )
