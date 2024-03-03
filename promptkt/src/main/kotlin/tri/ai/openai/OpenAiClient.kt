@@ -232,6 +232,8 @@ val mapper = ObjectMapper()
     .registerModule(KotlinModule.Builder().build())
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
 
+val writer = mapper.writerWithDefaultPrettyPrinter()
+
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
 

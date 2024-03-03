@@ -26,7 +26,7 @@ import java.io.StringReader
 import java.io.StringWriter
 import java.time.LocalDate
 
-/** A prompt template that can be filled in with a user input. */
+/** A prompt template that can be filled in with user input. */
 class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@JsonValue var template: String) {
 
     /** Fills in input field. */
@@ -81,7 +81,8 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
                     .execute(this, fields)
             }.toString()
 
-        internal fun mustacheFactory(template: String) = DefaultMustacheFactory {
+        /** Creates a mustache factory for a template. */
+        private fun mustacheFactory(template: String) = DefaultMustacheFactory {
             StringReader(template)
         }
 
