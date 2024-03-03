@@ -19,6 +19,8 @@
  */
 package tri.ai.embedding
 
+import tri.util.info
+
 /** An interface for chunking text and calculating embeddings. */
 interface EmbeddingService {
 
@@ -43,7 +45,7 @@ interface EmbeddingService {
 
     /** Chunks a text into sections and calculates the embedding for each section. */
     suspend fun chunkedEmbedding(path: String, text: String, maxChunkSize: Int): EmbeddingDocument {
-        println("Calculating embedding for $path...")
+        info<EmbeddingService>("Calculating embedding for $path...")
         val res = EmbeddingDocument(path)
         val chunks = chunkTextBySections(text, maxChunkSize)
         val chunkEmbeddings = chunks.map { it.text }.chunked(5) // break into smaller chunks of text for slower embedding APIs

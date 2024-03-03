@@ -21,6 +21,7 @@ package tri.ai.core
 
 import tri.ai.embedding.EmbeddingService
 import tri.ai.openai.OpenAiTextPlugin
+import tri.util.info
 import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
@@ -63,7 +64,7 @@ interface TextPlugin {
             val jars = File("config/modules/")
                 .listFiles { _: File?, name: String -> name.endsWith(".jar") }
             return if (jars != null) {
-                println("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
+                info<TextPlugin>("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
                 // create urls for jars
                 val urls = mutableListOf<URL>()
                 for (f in jars) {

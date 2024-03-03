@@ -30,6 +30,8 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.openai.OpenAiEmbeddingService
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
+import tri.util.info
+import tri.util.warning
 import java.io.File
 import java.io.IOException
 import kotlin.system.exitProcess
@@ -61,9 +63,9 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
                 try {
                     newEmbeddings[it.name] = calculateEmbeddingSections(it)
                 } catch (x: IOException) {
-                    println("Failed to calculate embeddings for $it: $x")
+                    warning<LocalEmbeddingIndex>("Failed to calculate embeddings for $it: $x")
                 } catch (x: OpenAIException) {
-                    println("Failed to calculate embeddings for $it: $x")
+                    warning<LocalEmbeddingIndex>("Failed to calculate embeddings for $it: $x")
                 }
             }
         }
@@ -150,13 +152,13 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
                 emptyMap()
         }
         if (index.keys.any { it.localPath(root) != it }) {
-            print("Updating embeddings index to use local file references...")
+            info<LocalEmbeddingIndex>("Updating embeddings index to use local file references...")
             index = index.map { (_, doc) ->
                 val localized = doc.copyWithLocalPath(root)
                 localized.path to localized
             }.toMap()
             saveIndex(root, index)
-            println("Completed.")
+            info<LocalEmbeddingIndex>("Completed.")
         }
         return index
     }

@@ -19,6 +19,9 @@
  */
 package tri.ai.pips
 
+import tri.util.info
+import tri.util.warning
+
 /** Task monitor that prints to console. */
 class PrintMonitor: AiTaskMonitor {
 
@@ -51,10 +54,10 @@ class PrintMonitor: AiTaskMonitor {
     }
 
     private fun printGray(text: String) {
-        println("\u001B[90m$text\u001B[0m")
+        info<PrintMonitor>("\u001B[90m$text\u001B[0m")
     }
 
     private fun printRed(text: String) {
-        println("\u001B[91m$text\u001B[0m")
+        warning<PrintMonitor>("\u001B[91m$text\u001B[0m")
     }
 }

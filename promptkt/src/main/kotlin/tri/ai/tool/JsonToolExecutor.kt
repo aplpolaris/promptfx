@@ -37,13 +37,13 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             val params = it.jsonSchemaAsParameters()
             Tool(ToolType.Function, it.description, FunctionTool(it.name, params) )
         } catch (x: SerializationException) {
-            println(x)
+            warning<JsonToolExecutor>("Invalid JSON schema", x)
             null
         }
     }
 
     suspend fun execute(query: String) {
-        println("User Question: $ANSI_YELLOW$query$ANSI_RESET")
+        info<JsonToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
         val messages = mutableListOf(
             ChatMessage(ChatRole.System, SYSTEM_MESSAGE_1),
             ChatMessage(ChatRole.User, query)
@@ -59,22 +59,22 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
 
         while (!toolCalls.isNullOrEmpty()) {
             if (toolCalls.size != 1)
-                println("${ANSI_RED}WARNING: expected a single tool to call, but found ${toolCalls.size}$ANSI_RESET")
+                info<JsonToolExecutor>("${ANSI_RED}WARNING: expected a single tool to call, but found ${toolCalls.size}$ANSI_RESET")
 
             // print interim results
             toolCalls.forEach { call ->
-                println("Call Function: $ANSI_CYAN${call.function.name}$ANSI_RESET with parameters $ANSI_CYAN${call.function.arguments}$ANSI_RESET")
+                info<JsonToolExecutor>("Call Function: $ANSI_CYAN${call.function.name}$ANSI_RESET with parameters $ANSI_CYAN${call.function.arguments}$ANSI_RESET")
                 val tool = tools.firstOrNull { it.name == call.function.name }
                 if (tool == null) {
-                    println("${ANSI_RED}Unknown tool: ${call.function.name}$ANSI_RESET")
+                    info<JsonToolExecutor>("${ANSI_RED}Unknown tool: ${call.function.name}$ANSI_RESET")
                 }
                 val json = call.function.tryJson()
                 if (json == null) {
-                    println("${ANSI_RED}Invalid JSON: ${call.function.name}$ANSI_RESET")
+                    info<JsonToolExecutor>("${ANSI_RED}Invalid JSON: ${call.function.name}$ANSI_RESET")
                 }
                 if (tool != null && json != null) {
                     val result = tool.run(json)
-                    println("Result: $ANSI_GREEN${result}$ANSI_RESET")
+                    info<JsonToolExecutor>("Result: $ANSI_GREEN${result}$ANSI_RESET")
 
                     // add result to message history and call again
                     messages += ChatMessage(ChatRole.Tool, toolCallId = call.id, name = call.function.name, content = result)
@@ -91,7 +91,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             }
         }
 
-        println("Final Response: $ANSI_GREEN${response.content}$ANSI_RESET")
+        info<JsonToolExecutor>("Final Response: $ANSI_GREEN${response.content}$ANSI_RESET")
     }
 
     companion object {

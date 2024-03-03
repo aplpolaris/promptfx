@@ -11,24 +11,12 @@ import tri.ai.prompt.trace.*
  * @param policy the policy for re-attempting failed completions
  * @return trace of the execution, including output and run info
  */
-suspend fun AiPromptRunConfig.execute(completion: TextCompletion, policy: AiPromptExecutionPolicy = AiPromptExecutionPolicy()): AiPromptTrace {
+suspend fun AiPromptRunConfig.execute(completion: TextCompletion, policy: RunnableExecutionPolicy = RunnableExecutionPolicy()): AiPromptTrace {
     second.model = completion.modelId
     val promptText = first.filled()
-    return try {
-        // TODO - implement retries and delayed query policy
-        val t0 = System.currentTimeMillis()
-        val output = completion.complete(promptText, second)
-        val completionTime = System.currentTimeMillis() - t0
-        val runInfo = if (output.error != null) {
-            AiPromptExecInfo.error(output.error.message)
-        } else {
-            AiPromptExecInfo()
-        }.apply {
-            responseTimeMillis = completionTime
-        }
-        AiPromptTrace(first, second, runInfo, AiPromptOutputInfo(output.value))
-    } catch (x: Exception) {
-        AiPromptTrace(first, second, AiPromptExecInfo.error(x.message))
+    val result = policy.execute { completion.complete(promptText, second) }
+    return AiPromptTrace(first, second, AiPromptExecInfo(result.exception?.message), AiPromptOutputInfo(result.value?.value)).apply {
+        execInfo.responseTimeMillis = result.duration.toMillis()
     }
 }
 

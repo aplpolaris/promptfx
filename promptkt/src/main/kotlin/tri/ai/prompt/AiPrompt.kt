@@ -22,6 +22,7 @@ package tri.ai.prompt
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.github.mustachejava.DefaultMustacheFactory
+import tri.util.info
 import java.io.StringReader
 import java.io.StringWriter
 import java.time.LocalDate
@@ -46,7 +47,7 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
     fun fill(fields: Map<String, Any>) = template.fill(
         mapOf("today" to LocalDate.now()) + fields
     ).also {
-        println(it)
+        info<AiPrompt>(it)
     }
 
     /** Fills in arbitrary fields. */

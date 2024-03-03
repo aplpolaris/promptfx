@@ -17,6 +17,5 @@ class AiPromptTrace(
 
     override fun toString() = listOf("Prompt: $promptInfo", "Model: $modelInfo", "Exec: $execInfo", "Output: $outputInfo").joinToString("\n")
 
-
 }
 
