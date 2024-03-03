@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.2.5-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM and prompt engineering.</description>
@@ -103,12 +103,12 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.2</version>
+            <version>5.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-scratchpad</artifactId>
-            <version>5.2.2</version>
+            <version>5.2.5</version>
         </dependency>
 
         <dependency>
@@ -260,7 +260,7 @@
                         <root>src/test/kotlin</root>
                     </roots>
                     <canUpdateCopyright>true</canUpdateCopyright>
-                    <canUpdateDescription>true</canUpdateDescription>
+                    <canUpdateDescription>false</canUpdateDescription>
                     <projectName>tri.promptfx:promptkt</projectName>
                 </configuration>
                 <executions>
