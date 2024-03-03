@@ -1,6 +1,9 @@
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 /** Text inference execution info. */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 class AiPromptExecInfo(
     var error: String? = null,
     var queryTokens: Int? = null,

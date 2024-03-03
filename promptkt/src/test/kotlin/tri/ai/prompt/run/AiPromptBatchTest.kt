@@ -27,7 +27,6 @@ class AiPromptBatchTest {
     fun testExecute() {
         runBlocking {
             batch.execute().onEach {
-                println("Trace: $it")
                 println("Trace: ${writer.writeValueAsString(it)}")
             }
         }

@@ -8,14 +8,12 @@ import java.util.UUID.randomUUID
 class AiPromptTrace(
     var promptInfo: AiPromptInfo,
     var modelInfo: AiPromptModelInfo,
-    var execInfo: AiPromptExecInfo,
+    var execInfo: AiPromptExecInfo = AiPromptExecInfo(),
     var outputInfo: AiPromptOutputInfo = AiPromptOutputInfo(null)
 ) {
 
     /** Unique identifier for this trace. */
     var uuid = randomUUID().toString()
-
-    override fun toString() = listOf("Prompt: $promptInfo", "Model: $modelInfo", "Exec: $execInfo", "Output: $outputInfo").joinToString("\n")
 
 }
 
