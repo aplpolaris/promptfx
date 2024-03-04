@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
-import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -33,6 +32,10 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.run.AiPromptBatchCyclic
+import tri.ai.prompt.run.RunnableExecutionPolicy
+import tri.ai.prompt.run.execute
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.enableDroppingFileContent
@@ -52,7 +55,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val inputText = SimpleStringProperty("")
 
     private val chunkBy = SimpleStringProperty("\\n")
-    private val lineLimit = SimpleIntegerProperty(10)
+    private val chunkLimit = SimpleIntegerProperty(10)
     private val showUniqueResults = SimpleBooleanProperty(true)
     private val showAllResults = SimpleBooleanProperty(true)
     private val csvHeader = SimpleBooleanProperty(false)
@@ -153,8 +156,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 checkbox("Input has CSV Header", csvHeader)
             }
             field("Chunk Limit") {
-                slider(1..1000, lineLimit)
-                label(lineLimit.asString())
+                slider(1..1000, chunkLimit)
+                label(chunkLimit.asString())
             }
             field("Display") {
                 checkbox("Unique Results", showUniqueResults)
@@ -168,16 +171,20 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
-    private fun inputs(): List<String> {
+    /** Get the first chunk (if has header) and the rest of the chunks. */
+    private fun inputs(): Pair<String?, List<String>> {
         var splitChar = chunkBy.value
         splitChar = if (splitChar.isEmpty())
             "\n"
         else
             splitChar.replace("\\n", "\n").replace("\\t", "\t")
-        val chunks = if (csvHeader.value) (lineLimit.value + 1) else lineLimit.value
-        return inputText.value.split(splitChar)
+        val split = inputText.value.split(splitChar)
+        val header = if (csvHeader.value) split.first() else null
+        return header to split.asSequence()
             .filter(filter())
-            .take(chunks)
+            .drop(if (csvHeader.value) 1 else 0)
+            .take(chunkLimit.value)
+            .toList()
     }
 
     private fun filter(): (String) -> Boolean {
@@ -192,13 +199,17 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                     val regex = filter.toRegex()
                     return { regex.matches(it) }
                 } catch (x: PatternSyntaxException) {
-                    println("Invalid regex: ${x.message}")
+                    tri.util.warning<PromptScriptView>("Invalid regex: ${x.message}")
                     return { false }
                 }
             }
         }
     }
 
+    /**
+     * Attempt to filter an input based on a given prompt.
+     * Returns true if the response contains "yes" (case-insensitive) anywhere.
+     */
     private fun llmFilter(prompt: String, input: String): Boolean {
         val result = runBlocking {
             AiPrompt(prompt).fill("input" to input)
@@ -209,30 +220,30 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     override fun plan() = aitask("text-completion") {
-        val result = mutableListOf<Pair<String, String>>()
-        val inputs = inputs()
-        if (csvHeader.value)
-            result.add((inputs.firstOrNull() ?: "input") to "output")
-        val inputsToProcess = if (csvHeader.value) inputs.drop(1) else inputs
-        inputsToProcess.forEach { line ->
-            AiPrompt(template.value).fill("input" to line).let {
-                completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value)
-                    .value?.let { result.add(line to it) }
-            }
+        val inputs = inputs().second
+        val batch = AiPromptBatchCyclic().apply {
+            model = completionEngine.modelId
+            prompt = template.value
+            promptParams = mapOf("input" to inputs)
+            runs = inputs.size
         }
+        val executionPolicy = RunnableExecutionPolicy()
+        val result = batch.execute(executionPolicy)
         AiTaskResult.result(result)
     }.task("process-results") {
         postProcess(it)
     }.planner
 
-    private fun postProcess(results: List<Pair<String, String>>): String {
+    private fun postProcess(results: List<AiPromptTrace>): String {
         val sectionCount = (if (showUniqueResults.value) 1 else 0) +
                 (if (showAllResults.value) 1 else 0) +
                 (if (outputCsv.value) 1 else 0)
 
         val displayString = StringBuilder()
         if (showUniqueResults.value) {
-            val countEach = results.drop(1).groupingBy { it.second.cleanedup() }.eachCount()
+            val countEach = results.mapNotNull { it.outputInfo.output }
+                .groupingBy { it.cleanedup() }
+                .eachCount()
             if (sectionCount > 1) {
                 displayString.append("Unique Results: ${countEach.size}\n")
                 displayString.append("------------------\n")
@@ -246,7 +257,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 displayString.append("All Results:\n")
                 displayString.append("------------------\n")
             }
-            results.drop(1).forEach { displayString.append("${it.second}\n") }
+            results.forEach {
+                displayString.append(it.outputInfo.output ?: "(error or no output returned)")
+                displayString.append("\n")
+            }
         }
         if (outputCsv.value) {
             if (displayString.isNotEmpty())
@@ -255,7 +269,12 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 displayString.append("CSV Output:\n")
                 displayString.append("------------------\n")
             }
-            results.forEach { displayString.append("${it.first},${it.second}\n") }
+            if (csvHeader.value)
+                displayString.append(inputs().first ?: "input")
+                    .append(",output\n")
+            results.forEach {
+                displayString.append("${it.promptInfo.promptParams["input"]},${it.outputInfo.output}\n")
+            }
         }
         return displayString.toString()
     }
