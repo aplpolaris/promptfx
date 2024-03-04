@@ -60,6 +60,7 @@ and a `Prompt Template` view for experimenting with prompts. Enter the template 
 
 ![image](https://github.com/aplpolaris/promptfx/assets/13057929/3a1d64b7-ecb8-49df-933b-458776351c36)
 
+There are additional views for scripting and validating prompts.
 See [Tools](https://github.com/aplpolaris/promptfx/wiki/Tools) for more information.
 
 ## Text Views
