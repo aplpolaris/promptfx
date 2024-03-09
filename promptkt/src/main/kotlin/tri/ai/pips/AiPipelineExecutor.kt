@@ -22,6 +22,8 @@ package tri.ai.pips
 /** Pipeline for chaining together collection of tasks to be accomplished by AI or APIs. */
 object AiPipelineExecutor {
 
+    val executor = RunnableExecutionPolicy()
+
     /**
      * Execute tasks in order, chaining results from one to another.
      * Returns the table of execution results.
@@ -43,13 +45,15 @@ object AiPipelineExecutor {
                 try {
                     monitor.taskStarted(it)
                     val input = it.dependencies.associateWith { completedTasks[it]!! }
-                    val result = it.execute(input, monitor)
-                    if (result.error == null) {
-                        monitor.taskCompleted(it, result.value)
-                        completedTasks[it.id] = result
+                    val result = executor.execute { it.execute(input, monitor) }
+                    val resultValue = result.value?.value
+                    val err = result.error ?: result.value?.error ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
+                    if (err != null) {
+                        monitor.taskFailed(it, err)
+                        failedTasks[it.id] = result.value ?: AiTaskResult.error(err.message!!, err)
                     } else {
-                        monitor.taskFailed(it, result.error)
-                        failedTasks[it.id] = result
+                        monitor.taskCompleted(it, resultValue)
+                        completedTasks[it.id] = result.value!!
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()

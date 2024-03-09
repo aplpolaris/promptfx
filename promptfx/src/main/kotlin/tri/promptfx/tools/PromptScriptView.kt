@@ -33,11 +33,8 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.run.AiPromptBatchCyclic
-import tri.ai.prompt.run.RunnableExecutionPolicy
+import tri.ai.pips.RunnableExecutionPolicy
 import tri.ai.prompt.run.execute
-import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
-import tri.ai.prompt.trace.AiPromptModelInfo.Companion.STOP
-import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.run
+package tri.ai.pips
 
 import tri.util.info
 import java.time.Duration
@@ -33,7 +33,7 @@ class RunnableExecutionPolicy(
 ) {
 
     /** Executes a runnable with given policy. */
-    suspend fun <T> execute(runnable: suspend () -> T): TimedExecution<T> {
+    suspend fun <T> execute(runnable: suspend () -> T): AiTaskResult<T> {
         var retries = 0
         var delay = initialRetryDelay
         val t00 = System.currentTimeMillis()
@@ -42,11 +42,19 @@ class RunnableExecutionPolicy(
             try {
                 val result = runnable()
                 val t1 = System.currentTimeMillis()
-                return TimedExecution(result, null, Duration.ofMillis(t1 - t0), Duration.ofMillis(t1 - t00), retries + 1)
+                return AiTaskResult(value = result,
+                    duration = Duration.ofMillis(t1 - t0),
+                    durationTotal = Duration.ofMillis(t1 - t00),
+                    attempts = retries + 1
+                )
             } catch (x: Exception) {
                 val t1 = System.currentTimeMillis()
                 if (retries++ >= maxRetries)
-                    return TimedExecution(null, x, Duration.ofMillis(t1 - t0), Duration.ofMillis(t1 - t00), retries)
+                    return AiTaskResult(null, error = x,
+                        duration = Duration.ofMillis(t1 - t0),
+                        durationTotal = Duration.ofMillis(t1 - t00),
+                        attempts = retries
+                    )
                 info<RunnableExecutionPolicy>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")
                 kotlinx.coroutines.delay(delay)
                 delay = (delay * retryBackoff).toLong()
@@ -55,17 +63,3 @@ class RunnableExecutionPolicy(
     }
 
 }
-
-/** Measures execution duration of a runnable and some retry information. */
-class TimedExecution<T>(
-    /** The result of the execution. */
-    val value: T?,
-    /** Exception thrown if the execution failed. */
-    val exception: Exception?,
-    /** Duration of first successful or final retry. */
-    val duration: Duration,
-    /** Total duration including retries. */
-    val durationTotal: Duration,
-    /** Number of executions attempted. */
-    val attempts: Int
-)

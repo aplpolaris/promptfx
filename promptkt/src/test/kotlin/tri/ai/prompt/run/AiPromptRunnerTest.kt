@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
+import tri.ai.pips.RunnableExecutionPolicy
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
 

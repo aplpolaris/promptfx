@@ -19,9 +19,28 @@
  */
 package tri.ai.pips
 
-/** Result of executing a task. */
-data class AiTaskResult<T>(val value: T? = null, val error: Throwable? = null, val modelId: String?) {
+import java.time.Duration
 
+/**
+ * Result of executing a task.
+ * Includes optional parameters for errors, model ids, execution duration, retry attempts.
+ */
+data class AiTaskResult<T>(
+    /** Result of the task. */
+    val value: T? = null,
+    /** Error that occurred during execution, if any. */
+    val error: Throwable? = null,
+    /** Model ID of the task, if any. */
+    val modelId: String? = null,
+    /** Duration of first successful or final retry. */
+    val duration: Duration? = null,
+    /** Total duration including retries. */
+    val durationTotal: Duration? = null,
+    /** Number of executions attempted. */
+    val attempts: Int? = null,
+) {
+
+    /** Applies an operation to the result, if present. The result has the same error and modelId. */
     fun <S> map(function: (T) -> S) = AiTaskResult(value?.let { function(value) }, error, modelId)
 
     /** Wraps this as a pipeline result. */

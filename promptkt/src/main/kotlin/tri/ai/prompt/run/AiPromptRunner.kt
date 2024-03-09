@@ -24,6 +24,7 @@ import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
 import tri.ai.openai.yamlWriter
+import tri.ai.pips.RunnableExecutionPolicy
 import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
@@ -151,8 +152,8 @@ suspend fun RunnableExecutionPolicy.execute(config: AiPromptRunConfig, completio
     val result = execute {
         completion.complete(promptText, config.second)
     }
-    return AiPromptTrace(config.first, config.second, AiPromptExecInfo(result.exception?.message), AiPromptOutputInfo(result.value?.value)).apply {
-        execInfo.responseTimeMillis = result.duration.toMillis()
+    return AiPromptTrace(config.first, config.second, AiPromptExecInfo(result.error?.message), AiPromptOutputInfo(result.value?.value)).apply {
+        execInfo.responseTimeMillis = result.duration?.toMillis()
     }
 }
 

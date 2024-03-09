@@ -38,8 +38,7 @@ import tri.ai.pips.AiTask.Companion.aitask
 import tri.ai.pips.AiTaskList
 import tri.ai.pips.AiTaskResult
 import tri.ai.prompt.run.AiPromptBatchCyclic
-import tri.ai.prompt.run.RunnableExecutionPolicy
-import tri.ai.prompt.run.execute
+import tri.ai.pips.RunnableExecutionPolicy
 import tri.ai.prompt.run.executeTextCompletion
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
