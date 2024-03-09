@@ -41,7 +41,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
     var maxChunkSize: Int = 1000
 
-    private val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
+    val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
 
     override fun documentUrl(doc: EmbeddingDocument) = doc.originalUrl(root)
 
@@ -177,54 +177,12 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
             this
     }
 
-    private fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
+    fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
         MAPPER.writerWithDefaultPrettyPrinter()
             .writeValue(File(root, indexFile()), index)
 
     companion object {
         private val MAPPER = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
-            println("""
-                $ANSI_GREEN
-                Arguments expected:
-                  <root folder> <options>
-                Options:
-                  --reindex-all
-                  --reindex-new (default)
-                  --max-chunk-size=<size> (default 1000)
-                $ANSI_RESET
-            """.trimIndent())
-
-            if (args.isEmpty())
-                exitProcess(0)
-
-            val path = args[0]
-            val reindexAll = args.contains("--reindex-all")
-            val reindexNew = args.contains("--reindex-new") || !reindexAll
-            val maxChunkSize = args.find { it.startsWith("--max-chunk-size") }?.substringAfter("=", "")?.toIntOrNull() ?: 1000
-
-            val root = File(path)
-            val embeddingService = OpenAiEmbeddingService()
-            val index = LocalEmbeddingIndex(root, embeddingService)
-            index.maxChunkSize = maxChunkSize
-            runBlocking {
-                if (reindexNew) {
-                    println("Reindexing new documents in $root...")
-                    index.getEmbeddingIndex() // this triggers the reindex
-                } else if (reindexAll) {
-                    println("Reindexing all documents in $root...")
-                    index.reindexAll()
-                } else {
-                    TODO("Impossible to get here.")
-                }
-                println("Reindexing complete.")
-            }
-            index.saveIndex(root, index.embeddingIndex)
-            exitProcess(0)
-        }
     }
 }
