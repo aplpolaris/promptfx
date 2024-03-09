@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.0-SNAPSHOT
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -46,7 +46,6 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
 
     protected val seedActive = SimpleBooleanProperty(false)
     protected val seed = SimpleIntegerProperty(0)
-    protected val stopSequences = SimpleStringProperty("")
     protected val responseFormat = SimpleObjectProperty(ChatResponseFormat.Text)
     protected var common = ModelParameters()
 
@@ -107,10 +106,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
         parameters("Chat Output") {
             with (common) {
                 maxTokens()
-            }
-            field("Stop Sequences") {
-                tooltip("A list of up to 4 sequences where the API will stop generating further tokens. Use || to separate sequences.")
-                textfield(stopSequences)
+                stopSequences()
             }
             field("Seed") {
                 tooltip("If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same seed and parameters should return the same result.")

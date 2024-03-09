@@ -26,6 +26,9 @@ import tri.ai.openai.jsonWriter
 import tri.ai.openai.yamlWriter
 import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.STOP
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 import tri.util.*
 import java.io.File
 import kotlin.system.exitProcess
@@ -74,9 +77,8 @@ object AiPromptRunner {
         }
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
-        val result = runBlocking {
-            batch.execute()
-        }
+        val executor = RunnableExecutionPolicy()
+        val result = runBlocking { executor.execute(batch) }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         val writer = if (jsonOut) jsonWriter else yamlWriter
@@ -96,37 +98,69 @@ object AiPromptRunner {
     }
 }
 
-/** Executes the series of prompt completions, using [TextPlugin]. */
-suspend fun AiPromptBatch.execute(policy: RunnableExecutionPolicy = RunnableExecutionPolicy()): List<AiPromptTrace> = runConfigs().map {
-    info<AiPromptRunner>("Executing prompt with ${it.second.model}: $ANSI_GRAY${it.first.filled()}$ANSI_RESET")
-    val model = TextPlugin.textCompletionModels().firstOrNull { m -> m.modelId == it.second.model }
-    if (model == null)
-        AiPromptTrace(it.first, it.second, AiPromptExecInfo("Model not found: ${it.second.model}"))
-    else
-        it.execute(model, policy)
+/**
+ * Executes the series of prompt completions, using [TextPlugin].
+ * Supports callbacks indicating when a completion starts and finishes.
+ * @param batch the series of prompt and model configurations
+ * @param initiated callback when a completion starts (blocks execution)
+ * @param completed callback when a completion finishes (blocks execution)
+ */
+suspend fun RunnableExecutionPolicy.execute(
+    batch: AiPromptBatch,
+    initiated: (AiPromptRunConfig) -> Unit = { },
+    completed: (AiPromptRunConfig, AiPromptTrace) -> Unit = { _, _ -> }
+): List<AiPromptTrace> = batch.runConfigs().map {
+    executeTextCompletion(it, it.second.model, initiated, completed)
+}
+
+/**
+ * Execute a single prompt completion, using [TextPlugin].
+ * Supports callbacks indicating when a completion starts and finishes.
+ * @param runConfig the prompt and model configuration
+ * @param modelId the model id to use for the completion
+ * @param initiated callback when a completion starts (blocks execution)
+ * @param completed callback when a completion finishes (blocks execution)
+ */
+suspend fun RunnableExecutionPolicy.executeTextCompletion(
+    runConfig: AiPromptRunConfig,
+    modelId: String,
+    initiated: (AiPromptRunConfig) -> Unit = { },
+    completed: (AiPromptRunConfig, AiPromptTrace) -> Unit = { _, _ -> }
+): AiPromptTrace {
+    info<AiPromptRunner>("Executing prompt with ${runConfig.second.model}: $ANSI_GRAY${runConfig.first.filled()}$ANSI_RESET")
+    initiated(runConfig)
+    val result = try {
+        execute(runConfig, TextPlugin.textCompletionModel(modelId))
+    } catch (x: NoSuchElementException) {
+        AiPromptTrace(runConfig.first, runConfig.second, AiPromptExecInfo("Model not found: ${runConfig.second.model}"))
+    }
+    completed(runConfig, result)
+    return result
 }
 
 /**
  * Executes a text completion with a single configuration.
  * Overwrites the model id in the configuration to match the model.
+ * @param config the prompt and model configuration
  * @param completion the text completion model
- * @param policy the policy for re-attempting failed completions
  * @return trace of the execution, including output and run info
  */
-suspend fun AiPromptRunConfig.execute(completion: TextCompletion, policy: RunnableExecutionPolicy = RunnableExecutionPolicy()): AiPromptTrace {
-    second.model = completion.modelId
-    val promptText = first.filled()
-    val result = policy.execute { completion.complete(promptText, second) }
-    return AiPromptTrace(first, second, AiPromptExecInfo(result.exception?.message), AiPromptOutputInfo(result.value?.value)).apply {
+suspend fun RunnableExecutionPolicy.execute(config: AiPromptRunConfig, completion: TextCompletion): AiPromptTrace {
+    config.second.model = completion.modelId
+    val promptText = config.first.filled()
+    val result = execute {
+        completion.complete(promptText, config.second)
+    }
+    return AiPromptTrace(config.first, config.second, AiPromptExecInfo(result.exception?.message), AiPromptOutputInfo(result.value?.value)).apply {
         execInfo.responseTimeMillis = result.duration.toMillis()
     }
 }
 
 suspend fun TextCompletion.complete(prompt: String, modelInfo: AiPromptModelInfo) =
     complete(prompt,
-        modelInfo.modelParams["maxTokens"] as? Int,
-        modelInfo.modelParams["temperature"] as? Double,
-        modelInfo.modelParams["stop"] as? String
+        tokens = modelInfo.modelParams[MAX_TOKENS] as? Int,
+        temperature = modelInfo.modelParams[TEMPERATURE] as? Double,
+        stop = modelInfo.modelParams[STOP] as? String
     )
 
 fun AiPromptInfo.filled() = prompt.fill(promptParams)

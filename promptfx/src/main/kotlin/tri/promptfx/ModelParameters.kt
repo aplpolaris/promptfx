@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.0-SNAPSHOT
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -22,10 +22,13 @@ package tri.promptfx
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import tornadofx.field
 import tornadofx.label
+import tornadofx.textfield
 import tornadofx.tooltip
+import tri.ai.prompt.trace.AiPromptModelInfo
 import tri.util.ui.slider
 
 /** Parameters for model content generation. */
@@ -37,6 +40,7 @@ class ModelParameters {
     internal val presPenalty = SimpleDoubleProperty(0.0)
 
     internal val maxTokens = SimpleIntegerProperty(500)
+    internal val stopSequences = SimpleStringProperty("")
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -73,5 +77,20 @@ class ModelParameters {
             label(maxTokens.asString())
         }
     }
+
+    fun EventTarget.stopSequences() {
+        field("Stop Sequences") {
+            tooltip("A list of up to 4 sequences where the API will stop generating further tokens. Use || to separate sequences.")
+            textfield(stopSequences)
+        }
+    }
+
+    /** Generate model parameters object for [AiPromptModelInfo]. */
+    fun toModelParams() = mapOf(
+        AiPromptModelInfo.MAX_TOKENS to maxTokens.value,
+        AiPromptModelInfo.TEMPERATURE to temp.value
+    ) + if (stopSequences.value.isBlank()) emptyMap() else mapOf(
+        AiPromptModelInfo.STOP to stopSequences.value
+    )
 
 }

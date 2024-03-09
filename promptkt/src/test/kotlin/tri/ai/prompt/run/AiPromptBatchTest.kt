@@ -51,7 +51,7 @@ class AiPromptBatchTest {
     @Disabled("Requires OpenAI API key")
     fun testExecute() {
         runBlocking {
-            batch.execute().onEach {
+            RunnableExecutionPolicy().execute(batch).onEach {
                 println("Trace: ${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -66,7 +66,7 @@ class AiPromptBatchTest {
                 AiPromptModelInfo(defaultTextCompletion.modelId),
                 4
             )
-            val result = batch.execute()
+            val result = RunnableExecutionPolicy().execute(batch)
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result)
             }

@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.8
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -35,6 +35,9 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.run.AiPromptBatchCyclic
 import tri.ai.prompt.run.RunnableExecutionPolicy
 import tri.ai.prompt.run.execute
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.STOP
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -171,6 +174,22 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
+    override fun plan() = aitask("text-completion") {
+        val result = RunnableExecutionPolicy().execute(promptBatch())
+        AiTaskResult.result(result)
+    }.task("process-results") {
+        postProcess(it)
+    }.planner
+
+    private fun promptBatch() = AiPromptBatchCyclic().apply {
+        val inputs = inputs().second
+        model = completionEngine.modelId
+        modelParams = common.toModelParams()
+        prompt = template.value
+        promptParams = mapOf("input" to inputs)
+        runs = inputs.size
+    }
+
     /** Get the first chunk (if has header) and the rest of the chunks. */
     private fun inputs(): Pair<String?, List<String>> {
         var splitChar = chunkBy.value
@@ -218,21 +237,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         return result?.contains("yes", ignoreCase = true) ?: false
     }
-
-    override fun plan() = aitask("text-completion") {
-        val inputs = inputs().second
-        val batch = AiPromptBatchCyclic().apply {
-            model = completionEngine.modelId
-            prompt = template.value
-            promptParams = mapOf("input" to inputs)
-            runs = inputs.size
-        }
-        val executionPolicy = RunnableExecutionPolicy()
-        val result = batch.execute(executionPolicy)
-        AiTaskResult.result(result)
-    }.task("process-results") {
-        postProcess(it)
-    }.planner
 
     private fun postProcess(results: List<AiPromptTrace>): String {
         val sectionCount = (if (showUniqueResults.value) 1 else 0) +

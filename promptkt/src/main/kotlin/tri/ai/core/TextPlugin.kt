@@ -50,9 +50,22 @@ interface TextPlugin {
         val defaultPlugin = plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin
         val orderedPlugins = listOf(defaultPlugin) + (plugins - defaultPlugin)
 
+        /** Get registered text completion models. */
         fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
+        /** Get registered embedding models. */
         fun embeddingModels() = orderedPlugins.flatMap { it.embeddingModels() }
+        /** Get registered chat models. */
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
+
+        /** Get a text completion model by id. Throws an exception if not found. */
+        fun textCompletionModel(modelId: String) =
+            textCompletionModels().first { it.modelId == modelId }
+        /** Get an embedding model by id. Throws an exception if not found. */
+        fun embeddingModel(modelId: String) =
+            embeddingModels().first { it.modelId == modelId }
+        /** Get a chat model by id. Throws an exception if not found. */
+        fun chatModel(modelId: String) =
+            chatModels().first { it.modelId == modelId }
 
         /**
          * Return a [ClassLoader] that looks for files in the "config/modules"
@@ -81,6 +94,8 @@ interface TextPlugin {
 
             //</editor-fold>
         }
+
+
     }
 
 }

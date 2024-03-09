@@ -26,4 +26,10 @@ import com.fasterxml.jackson.annotation.JsonInclude
 data class AiPromptModelInfo(
     var model: String,
     var modelParams: Map<String, Any> = mapOf()
-)
+) {
+    companion object {
+        const val MAX_TOKENS = "maxTokens"
+        const val STOP = "stop"
+        const val TEMPERATURE = "temperature"
+    }
+}

@@ -44,7 +44,7 @@ class AiPromptRunnerTest {
     @Disabled("Requires OpenAI API key")
     fun testRun() {
         runBlocking {
-            val trace = (promptInfo to modelInfo).execute(defaultTextCompletion)
+            val trace = RunnableExecutionPolicy().execute(promptInfo to modelInfo, defaultTextCompletion)
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
