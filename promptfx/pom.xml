@@ -292,7 +292,7 @@
                         <root>src/test/kotlin</root>
                     </roots>
                     <canUpdateCopyright>true</canUpdateCopyright>
-                    <canUpdateDescription>true</canUpdateDescription>
+                    <canUpdateDescription>false</canUpdateDescription>
                     <projectName>tri.promptfx:promptfx</projectName>
                 </configuration>
                 <executions>
