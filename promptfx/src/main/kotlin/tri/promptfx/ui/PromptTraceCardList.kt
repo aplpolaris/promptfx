@@ -19,17 +19,62 @@
  */
 package tri.promptfx.ui
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.collections.ObservableList
+import javafx.geometry.Pos
+import javafx.scene.layout.Priority
+import javafx.stage.FileChooser
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.PromptFxWorkspace
 
 /** UI for a list of [AiPromptTrace]s. */
-class PromptTraceCardList: Fragment() {
+class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observableListOf()): Fragment() {
 
-    val prompts = observableListOf<AiPromptTrace>()
-
-    override val root = listview(prompts) {
-        cellFormat {
-            graphic = PromptTraceCard().apply { setTrace(it) }.root
+    override val root = vbox {
+        spacing = 5.0
+        paddingAll = 5.0
+        vgrow = Priority.ALWAYS
+        val header = hbox {
+            alignment = Pos.CENTER_LEFT
+            spacing = 5.0
+            text("Results:")
+            spacer()
+        }
+        val list = listview(prompts) {
+            cellFormat {
+                graphic = PromptTraceCard().apply { setTrace(it) }.root
+            }
+        }
+        with (header) {
+            button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                enableWhen(list.selectionModel.selectedItemProperty().isNotNull)
+                action {
+                    val selected = list.selectedItem
+                    if (selected != null)
+                        (workspace as PromptFxWorkspace).launchTemplateView(selected.promptInfo.prompt)
+                }
+            }
+            // add save icon
+            button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+                enableWhen(prompts.sizeProperty.greaterThan(0))
+                action {
+                    val promptTraces = prompts.toList()
+                    val file = chooseFile("Export Prompt Traces as JSON", arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")), mode = FileChooserMode.Save, owner = currentWindow)
+                    if (file.isNotEmpty()) {
+                        runAsync {
+                            runBlocking {
+                                ObjectMapper()
+                                    .writerWithDefaultPrettyPrinter()
+                                    .writeValue(file.first(), promptTraces)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

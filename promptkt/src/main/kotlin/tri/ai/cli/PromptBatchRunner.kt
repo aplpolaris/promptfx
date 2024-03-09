@@ -30,7 +30,7 @@ import java.io.File
 import kotlin.system.exitProcess
 
 /** Command-line runner for executing a batch of prompt runs. */
-object AiPromptBatchRunner {
+object PromptBatchRunner {
     @JvmStatic
     fun main(args: Array<String>) {
         val sampleArgs = arrayOf("D:\\data\\chatgpt\\prompt_batch_test.json",

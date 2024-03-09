@@ -28,12 +28,14 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.PromptTraceCardList
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.enableDroppingFileContent
 import tri.util.ui.slider
@@ -57,6 +59,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val showAllResults = SimpleBooleanProperty(true)
     private val csvHeader = SimpleBooleanProperty(false)
     private val outputCsv = SimpleBooleanProperty(false)
+
+    private val promptTraces = observableListOf<AiPromptTrace>()
 
     init {
         input {
@@ -138,6 +142,18 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     init {
+        outputPane.clear()
+        output {
+            add(PromptTraceCardList(promptTraces))
+        }
+        addOutputTextArea()
+        onCompleted {
+            val result = it.results.values.map { it.value }.filterIsInstance<AiPromptTrace>()
+            promptTraces.setAll(result)
+        }
+    }
+
+    init {
         parameters("Model Parameters") {
             with(common) {
                 temperature()
@@ -168,10 +184,17 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
-    override fun plan() = promptBatch().tasks().aggregate()
-        .task("process-results") {
-            postProcess(it)
-        }.planner
+    override fun plan(): AiPlanner {
+        promptTraces.setAll()
+        return promptBatch().tasks()
+            .map {
+                it.monitor { runLater { promptTraces.add(it) } }
+            }
+            .aggregate()
+            .task("process-results") {
+                postProcess(it)
+            }.planner
+    }
 
     private fun promptBatch() = AiPromptBatchCyclic("prompt-script").apply {
         val inputs = inputs().second
