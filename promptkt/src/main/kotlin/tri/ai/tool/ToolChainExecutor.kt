@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -21,11 +21,7 @@ package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
-import tri.util.ANSI_CYAN
-import tri.util.ANSI_GRAY
-import tri.util.ANSI_GREEN
-import tri.util.ANSI_RESET
-import tri.util.ANSI_YELLOW
+import tri.util.*
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
@@ -59,7 +55,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
 
     /** Answers a question while leveraging a series of tools to get to the answer. */
     fun executeChain(question: String, tools: List<Tool>): String {
-        println("User Question: $ANSI_YELLOW$question$ANSI_RESET")
+        info<ToolChainExecutor>("User Question: $ANSI_YELLOW$question$ANSI_RESET")
 
         val templateForQuestion = toolPrompt
             .replace("{{tools}}", tools.joinToString("\n") { "${it.name}: ${it.description}" })
@@ -82,12 +78,12 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     private suspend fun runExecChain(promptTemplate: String, prevResults: String, tools: List<Tool>): ToolResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", prevResults)
         if (logPrompts)
-            prompt.lines().forEach { println("$ANSI_GRAY        $it$ANSI_RESET") }
+            prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
         val textCompletion = completionEngine.complete(prompt, stop = "Observation: ")
             .value!!.trim()
             .replace("\n\n", "\n")
-        println("$ANSI_GREEN$textCompletion$ANSI_RESET")
+        info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
 
         val responseOp = textCompletion.split("\n")
             .map { it.split(":", limit = 2) }
@@ -101,7 +97,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         val tool = tools.find { it.name == toolName }!!
         val toolInput = responseOp["Action Input"]?.trim()
         val observation = tool.run(toolInput!!)
-        println("Observation: $ANSI_CYAN$observation$ANSI_RESET")
+        info<ToolChainExecutor>("Observation: $ANSI_CYAN$observation$ANSI_RESET")
 
         return ToolResult(
             historyText = "$textCompletion\nObservation: $observation",

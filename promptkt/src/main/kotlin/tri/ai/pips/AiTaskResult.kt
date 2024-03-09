@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -19,26 +19,66 @@
  */
 package tri.ai.pips
 
-/** Result of executing a task. */
-data class AiTaskResult<T>(val value: T? = null, val error: Throwable? = null, val modelId: String?) {
+import tri.ai.prompt.trace.*
+import java.time.Duration
 
-    fun <S> map(function: (T) -> S) = AiTaskResult(value?.let { function(value) }, error, modelId)
+/**
+ * Result of executing a task.
+ * Includes optional parameters for errors, model ids, execution duration, retry attempts.
+ */
+data class AiTaskResult<T>(
+    /** Result of the task. */
+    val value: T? = null,
+    /** Error message, if any. */
+    val errorMessage: String? = null,
+    /** Error that occurred during execution, if any. */
+    val error: Throwable? = null,
+    /** Model ID of the task, if any. */
+    val modelId: String? = null,
+    /** Duration of first successful or final retry. */
+    val duration: Duration? = null,
+    /** Total duration including retries. */
+    val durationTotal: Duration? = null,
+    /** Number of executions attempted. */
+    val attempts: Int? = null,
+) {
 
-    /** Wraps this as a pipeline result. */
-    fun asPipelineResult() = AiPipelineResult("result", mapOf("result" to this))
+    /** Applies an operation to the result value, if present. All other values are copied directly. */
+    fun <S> map(function: (T) -> S) = AiTaskResult(
+        value?.let { function(value) },
+        errorMessage, error, modelId, duration, durationTotal, attempts
+    )
+
+    /**
+     * Wraps this as a pipeline result.
+     * If [promptInfo] and [modelInfo] are provided, result will also be wrapped in [AiPromptTrace].
+     */
+    fun asPipelineResult(promptInfo: AiPromptInfo? = null, modelInfo: AiPromptModelInfo? = null): AiPipelineResult {
+        if (promptInfo != null && modelInfo != null) {
+            return map {
+                AiPromptTrace(
+                    promptInfo,
+                    modelInfo,
+                    AiPromptExecInfo(errorMessage, responseTimeMillis = durationTotal?.toMillis()),
+                    AiPromptOutputInfo(value?.toString())
+                )
+            }.asPipelineResult()
+        }
+        return AiPipelineResult("result", mapOf("result" to this))
+    }
 
     companion object {
         /** Task with token result. */
         fun <T> result(value: T, modelId: String? = null) =
-            AiTaskResult(value, null, modelId)
+            AiTaskResult(value, modelId = modelId)
 
         /** Task not attempted because input was invalid. */
-        fun invalidRequest(message: String) =
-            AiTaskResult(message, IllegalArgumentException(message), null)
+        fun <T> invalidRequest(message: String) =
+            error<T>(message, IllegalArgumentException(message))
 
         /** Task not attempted or successful because of a general error. */
-        fun error(message: String, error: Throwable) =
-            AiTaskResult(message, error, null)
+        fun <T> error(message: String, error: Throwable) =
+            AiTaskResult<T>(errorMessage = message, error = error)
     }
 
 }

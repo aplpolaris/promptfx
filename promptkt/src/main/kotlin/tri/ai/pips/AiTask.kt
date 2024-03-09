@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -26,6 +26,15 @@ abstract class AiTask<T>(
     val dependencies: Set<String> = setOf()
 ) {
     abstract suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T>
+
+    /** Wrap this in a task that monitors and informs a callback when result is obtained. */
+    fun monitor(callback: (T) -> Unit): AiTask<T> = object : AiTask<T>(id) {
+        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T> {
+            val res = this@AiTask.execute(inputs, monitor)
+            res.value?.let { callback(it) }
+            return res
+        }
+    }
 
     companion object {
         /** Creates a task. */

@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai.apps
+package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking

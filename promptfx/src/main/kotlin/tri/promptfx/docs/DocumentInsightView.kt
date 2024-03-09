@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.0-SNAPSHOT
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -32,9 +32,9 @@ import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask.Companion.aitask
-import tri.ai.pips.AiTaskList
+import tri.ai.pips.*
+import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -202,31 +202,42 @@ class DocumentInsightView: AiPlanTaskView(
     override fun plan(): AiPlanner {
         mapResult.set("")
         reduceResult.set("")
+
+        return promptBatch().aggregate()
+            .aitask("results-summarize") { list: List<AiPromptTrace> ->
+                val concat = list.mapNotNull { it.outputInfo.output }
+                    .joinToString("\n\n")
+                runLater { mapResult.value = concat }
+                completionEngine.complete(
+                    reducePromptUi.fill("input" to concat),
+                    common.maxTokens.value,
+                    common.temp.value
+                ).map { concat to it }
+            }.planner
+    }
+
+    private fun promptBatch(): List<AiTask<AiPromptTrace>> {
         val snippets = updateDocs()
         val limitedSnippets = snippets.groupBy { it.doc }
             .mapValues { it.value.take(snippetsToProcess.value) }
             .values.flatten()
-        val plans = limitedSnippets.map {
-            aitask("${it.doc.shortName} ${it.section.start} ${it.section.end}") {
-                val res = completionEngine.complete(
-                    mapPromptUi.fill("input" to it.readText()),
-                    common.maxTokens.value,
-                    common.temp.value
-                )
-                runLater { mapResult.value += "\n\n" + res.value }
-                res
+
+        return AiPromptBatchCyclic("processing-snippets").apply {
+            val names = limitedSnippets.map { "${it.doc.shortName} ${it.section.start} ${it.section.end}" }
+            val inputs = limitedSnippets.map { it.readText() }
+            model = completionEngine.modelId
+            modelParams = common.toModelParams()
+            prompt = mapPromptUi.templateText.value
+            promptParams = mapOf("input" to inputs, "name" to names)
+            runs = inputs.size
+        }.tasks().map {
+            // wrap each task to monitor output and update the UI with interim results
+            it.monitor { res ->
+                res.outputInfo.output?.let {
+                    runLater { mapResult.value += "\n\n$it" }
+                }
             }
         }
-        val finalTask = plans.aitask("results-summarize") {
-            val concat = it.values.joinToString("\n\n") { it.value as String }
-            runLater { mapResult.value = concat }
-            completionEngine.complete(
-                reducePromptUi.fill("input" to concat),
-                common.maxTokens.value,
-                common.temp.value
-            ).map { concat to it }
-        }
-        return AiTaskList(plans, finalTask).planner
     }
 
     private fun updateDocs() = runBlocking {

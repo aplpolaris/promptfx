@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.12-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,16 +17,20 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.text.chunks
+package tri.ai.cli
 
+import tri.ai.text.chunks.LocalTextDocumentSet
+import tri.ai.text.chunks.StandardTextChunker
+import tri.ai.text.chunks.TextSection
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
 import java.io.File
 import kotlin.system.exitProcess
 
-object LocalDocumentManager {
-    /** Runnable for working with document sets. */
+/** Runnable for extracting text from documents, and chunking documents into smaller pieces. */
+object DocumentChunker {
+
     @JvmStatic
     fun main(args: Array<String>) {
         val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")

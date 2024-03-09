@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.0-SNAPSHOT
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%

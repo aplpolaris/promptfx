@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptfx-0.1.0-SNAPSHOT
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -80,7 +80,7 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
             temperature = common.temp.value,
             topP = common.topP.value,
             n = null,
-            stop = if (stopSequences.value.isBlank()) null else stopSequences.value.split("||"),
+            stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
             maxTokens = common.maxTokens.value,
             presencePenalty = common.presPenalty.value,
             frequencyPenalty = common.freqPenalty.value,

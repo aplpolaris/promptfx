@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -21,6 +21,7 @@ package tri.ai.core
 
 import tri.ai.embedding.EmbeddingService
 import tri.ai.openai.OpenAiTextPlugin
+import tri.util.info
 import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
@@ -49,9 +50,22 @@ interface TextPlugin {
         val defaultPlugin = plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin
         val orderedPlugins = listOf(defaultPlugin) + (plugins - defaultPlugin)
 
+        /** Get registered text completion models. */
         fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
+        /** Get registered embedding models. */
         fun embeddingModels() = orderedPlugins.flatMap { it.embeddingModels() }
+        /** Get registered chat models. */
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
+
+        /** Get a text completion model by id. Throws an exception if not found. */
+        fun textCompletionModel(modelId: String) =
+            textCompletionModels().first { it.modelId == modelId }
+        /** Get an embedding model by id. Throws an exception if not found. */
+        fun embeddingModel(modelId: String) =
+            embeddingModels().first { it.modelId == modelId }
+        /** Get a chat model by id. Throws an exception if not found. */
+        fun chatModel(modelId: String) =
+            chatModels().first { it.modelId == modelId }
 
         /**
          * Return a [ClassLoader] that looks for files in the "config/modules"
@@ -63,7 +77,7 @@ interface TextPlugin {
             val jars = File("config/modules/")
                 .listFiles { _: File?, name: String -> name.endsWith(".jar") }
             return if (jars != null) {
-                println("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
+                info<TextPlugin>("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
                 // create urls for jars
                 val urls = mutableListOf<URL>()
                 for (f in jars) {
@@ -80,6 +94,8 @@ interface TextPlugin {
 
             //</editor-fold>
         }
+
+
     }
 
 }

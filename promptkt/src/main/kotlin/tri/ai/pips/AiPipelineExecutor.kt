@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -21,6 +21,9 @@ package tri.ai.pips
 
 /** Pipeline for chaining together collection of tasks to be accomplished by AI or APIs. */
 object AiPipelineExecutor {
+
+    /** More robust execution, allowing for retry of failed attempts. */
+    val executor = RetryExecutor()
 
     /**
      * Execute tasks in order, chaining results from one to another.
@@ -43,18 +46,20 @@ object AiPipelineExecutor {
                 try {
                     monitor.taskStarted(it)
                     val input = it.dependencies.associateWith { completedTasks[it]!! }
-                    val result = it.execute(input, monitor)
-                    if (result.error == null) {
-                        monitor.taskCompleted(it, result.value)
-                        completedTasks[it.id] = result
-                    } else {
-                        monitor.taskFailed(it, result.error)
+                    val result = executor.execute(it, input, monitor)
+                    val resultValue = result.value
+                    val err = result.error ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
+                    if (err != null) {
+                        monitor.taskFailed(it, err)
                         failedTasks[it.id] = result
+                    } else {
+                        monitor.taskCompleted(it, resultValue)
+                        completedTasks[it.id] = result
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
                     monitor.taskFailed(it, x)
-                    failedTasks[it.id] = AiTaskResult.error(x.message!!, x)
+                    failedTasks[it.id] = AiTaskResult.error<Any>(x.message!!, x)
                 }
             }
         } while (tasksToDo.isNotEmpty())

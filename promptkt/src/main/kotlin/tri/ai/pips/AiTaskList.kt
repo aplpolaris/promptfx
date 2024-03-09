@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -54,7 +54,27 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
 
 //region BUILDER METHODS
 
-/** Creates a task list with a single task. */
+/**
+ * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
+ * @throws IllegalArgumentException if there are duplicate task IDs
+ */
+inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
+    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
+    val finalTask = object : AiTask<List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
+        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
+            AiTaskResult.result(inputs.values.map { it.value as T }.toList())
+    }
+    return AiTaskList(this, finalTask)
+}
+
+/**
+ * Creates a sequential task list using provided tasks.
+ * @throws NoSuchElementException if the list is empty
+ */
+fun <T> aitasklist(tasks: List<AiTask<T>>) =
+    AiTaskList(tasks.dropLast(1), tasks.last())
+
+/** Creates a sequential task list with a single task. */
 fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTaskList<T> =
     aitask(id, description) {
         val res = op()
@@ -62,7 +82,7 @@ fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTa
         AiTaskResult.result(res, modelId = null)
     }
 
-/** Creates a task list with a single task. */
+/** Creates a sequential task list with a single task. */
 fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiTaskResult<T>): AiTaskList<T> =
     AiTaskList(id, description, op)
 

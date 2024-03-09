@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -36,6 +36,8 @@ import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.http.*
@@ -48,6 +50,7 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
 import java.io.File
+import java.time.Duration
 import java.util.*
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
@@ -96,18 +99,31 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    suspend fun completion(completionRequest: CompletionRequest) =
-        client.completion(completionRequest).let {
-            usage.increment(it.usage)
-            result(it.choices[0].text, completionRequest.model.id)
-        }
+    suspend fun completion(completionRequest: CompletionRequest): AiTaskResult<String> {
+        val t0 = System.currentTimeMillis()
+        val resp = client.completion(completionRequest)
+        usage.increment(resp.usage)
+        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
+        return AiTaskResult(
+            value = resp.choices[0].text,
+            modelId = completionRequest.model.id,
+            duration = millis,
+            durationTotal = millis
+        )
+    }
 
     /** Runs a text completion request using a chat model. */
-    suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
-        client.chatCompletion(completionRequest).let {
-            usage.increment(it.usage)
-            result(it.choices[0].message.content ?: "", completionRequest.model.id)
-        }
+    suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiTaskResult<String> {
+        val t0 = System.currentTimeMillis()
+        val resp = client.chatCompletion(completionRequest)
+        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
+        return AiTaskResult(
+            value = resp.choices[0].message.content ?: "",
+            modelId = completionRequest.model.id,
+            duration = millis,
+            durationTotal = millis
+        )
+    }
 
     /** Runs a chat response. */
     suspend fun chat(completionRequest: ChatCompletionRequest) =
@@ -227,10 +243,17 @@ class OpenAiSettings {
 
 //region UTILS
 
-val mapper = ObjectMapper()
+val jsonMapper = ObjectMapper()
     .registerModule(JavaTimeModule())
     .registerModule(KotlinModule.Builder().build())
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
+val yamlMapper = ObjectMapper(YAMLFactory())
+    .registerModule(JavaTimeModule())
+    .registerModule(KotlinModule.Builder().build())
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
+
+val jsonWriter: ObjectWriter = jsonMapper.writerWithDefaultPrettyPrinter()
+val yamlWriter: ObjectWriter = yamlMapper.writerWithDefaultPrettyPrinter()
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")

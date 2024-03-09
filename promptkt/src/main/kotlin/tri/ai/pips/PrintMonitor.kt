@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -19,6 +19,10 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.util.info
+import tri.util.warning
+
 /** Task monitor that prints to console. */
 class PrintMonitor: AiTaskMonitor {
 
@@ -34,11 +38,17 @@ class PrintMonitor: AiTaskMonitor {
         val value = (result as? AiTaskResult<*>)?.value ?: result
         if (value is Iterable<*>) {
             printGray("  result:")
-            value.forEach { printGray("\u001B[1m    - $it") }
+            value.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
         } else {
-            printGray("  result: \u001B[1m$value")
+            printGray("  result: \u001B[1m${value.pretty()}")
         }
         printGray("  completed: ${task.id}")
+    }
+
+    private fun Any?.pretty() = when (this) {
+        null -> "null"
+        is AiPromptTrace -> outputInfo.output
+        else -> toString()
     }
 
     /** Hook for printing completion of simple tasks. */
@@ -51,10 +61,10 @@ class PrintMonitor: AiTaskMonitor {
     }
 
     private fun printGray(text: String) {
-        println("\u001B[90m$text\u001B[0m")
+        info<PrintMonitor>("\u001B[90m$text\u001B[0m")
     }
 
     private fun printRed(text: String) {
-        println("\u001B[91m$text\u001B[0m")
+        warning<PrintMonitor>("\u001B[91m$text\u001B[0m")
     }
 }

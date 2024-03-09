@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -22,11 +22,12 @@ package tri.ai.prompt
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.github.mustachejava.DefaultMustacheFactory
+import tri.util.info
 import java.io.StringReader
 import java.io.StringWriter
 import java.time.LocalDate
 
-/** A prompt template that can be filled in with a user input. */
+/** A prompt template that can be filled in with user input. */
 class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@JsonValue var template: String) {
 
     /** Fills in input field. */
@@ -46,7 +47,7 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
     fun fill(fields: Map<String, Any>) = template.fill(
         mapOf("today" to LocalDate.now()) + fields
     ).also {
-        println(it)
+        info<AiPrompt>(it)
     }
 
     /** Fills in arbitrary fields. */
@@ -74,14 +75,15 @@ class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@Js
             fill(fields.toMap())
 
         /** Fills in mustache template. */
-        private fun String.fill(fields: Map<String, Any>) =
+        fun String.fill(fields: Map<String, Any>) =
             StringWriter().apply {
                 mustacheFactory(this@fill)
                     .compile(this@fill)
                     .execute(this, fields)
             }.toString()
 
-        internal fun mustacheFactory(template: String) = DefaultMustacheFactory {
+        /** Creates a mustache factory for a template. */
+        private fun mustacheFactory(template: String) = DefaultMustacheFactory {
             StringReader(template)
         }
 

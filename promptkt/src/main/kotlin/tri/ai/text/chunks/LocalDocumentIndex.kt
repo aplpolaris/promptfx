@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.12-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.DocumentDocument
 import java.io.File
 
 /** Index of documents and document sections designed for serialization. */

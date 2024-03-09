@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -19,6 +19,9 @@
  */
 package tri.util
 
+import java.util.logging.Level
+import java.util.logging.Logger
+
 const val ANSI_RESET = "\u001B[0m"
 const val ANSI_RED = "\u001B[31m"
 const val ANSI_YELLOW = "\u001B[33m"
@@ -32,3 +35,43 @@ fun <X> String?.ifNotBlank(op: (String) -> X): X? =
     } else {
         op(this)
     }
+
+//region LOGGER SHORTCUTS
+
+inline fun <reified T : Any> loggerFor(): Logger = Logger.getLogger(T::class.java.name)
+
+fun Logger.severe(msg: String, x: Throwable? = null) = log(Level.SEVERE, msg, x)
+fun Logger.warning(msg: String, x: Throwable? = null) = log(Level.WARNING, msg, x)
+fun Logger.info(msg: String, x: Throwable? = null) = log(Level.INFO, msg, x)
+fun Logger.fine(msg: String, x: Throwable? = null) = log(Level.FINE, msg, x)
+
+//endregion
+
+//region CLASS LOGGERS
+
+inline fun <reified T : Any> severe(msg: String, x: Throwable? = null) = log<T>(Level.SEVERE, msg, x)
+inline fun <reified T : Any> warning(msg: String, x: Throwable? = null) = log<T>(Level.WARNING, msg, x)
+inline fun <reified T : Any> info(msg: String, x: Throwable? = null) = log<T>(Level.INFO, msg, x)
+inline fun <reified T : Any> fine(msg: String, x: Throwable? = null) = log<T>(Level.FINE, msg, x)
+
+inline fun <reified T : Any> severe(template: String, vararg args: Any?) = log<T>(Level.SEVERE, template, args)
+inline fun <reified T : Any> warning(template: String, vararg args: Any?) = log<T>(Level.WARNING, template, args)
+inline fun <reified T : Any> info(template: String, vararg args: Any?) = log<T>(Level.INFO, template, args)
+inline fun <reified T : Any> fine(template: String, vararg args: Any?) = log<T>(Level.FINE, template, args)
+
+const val USE_STDOUT_LOGGER = true
+
+inline fun <reified T : Any> log(level: Level, msg: String, x: Exception? = null) {
+    if (USE_STDOUT_LOGGER) {
+        println("$level: $msg")
+    } else
+        loggerFor<T>().log(level, msg, x)
+}
+inline fun <reified T : Any> log(level: Level, template: String, vararg args: Any?) {
+    if (USE_STDOUT_LOGGER) {
+        println("$level: $template".format(*args))
+    } else
+        loggerFor<T>().log(level, template, args)
+}
+
+//endregion

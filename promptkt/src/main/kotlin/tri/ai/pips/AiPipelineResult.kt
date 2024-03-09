@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -34,7 +34,7 @@ class AiPipelineResult(finalTaskId: String, val results: Map<String, AiTaskResul
     companion object {
         fun error(message: String, error: Throwable) = AiPipelineResult(
             "error",
-            mapOf("error" to AiTaskResult.error(message, error))
+            mapOf("error" to AiTaskResult.error<Any>(message, error))
         )
 
         fun todo() = error("This pipeline is not yet implemented.", UnsupportedOperationException())

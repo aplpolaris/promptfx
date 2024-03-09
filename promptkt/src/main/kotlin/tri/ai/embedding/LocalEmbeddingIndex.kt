@@ -1,6 +1,6 @@
 /*-
  * #%L
- * promptkt-0.1.0-SNAPSHOT
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -30,6 +30,8 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.openai.OpenAiEmbeddingService
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
+import tri.util.info
+import tri.util.warning
 import java.io.File
 import java.io.IOException
 import kotlin.system.exitProcess
@@ -39,7 +41,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
     var maxChunkSize: Int = 1000
 
-    private val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
+    val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
 
     override fun documentUrl(doc: EmbeddingDocument) = doc.originalUrl(root)
 
@@ -61,9 +63,9 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
                 try {
                     newEmbeddings[it.name] = calculateEmbeddingSections(it)
                 } catch (x: IOException) {
-                    println("Failed to calculate embeddings for $it: $x")
+                    warning<LocalEmbeddingIndex>("Failed to calculate embeddings for $it: $x")
                 } catch (x: OpenAIException) {
-                    println("Failed to calculate embeddings for $it: $x")
+                    warning<LocalEmbeddingIndex>("Failed to calculate embeddings for $it: $x")
                 }
             }
         }
@@ -150,13 +152,13 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
                 emptyMap()
         }
         if (index.keys.any { it.localPath(root) != it }) {
-            print("Updating embeddings index to use local file references...")
+            info<LocalEmbeddingIndex>("Updating embeddings index to use local file references...")
             index = index.map { (_, doc) ->
                 val localized = doc.copyWithLocalPath(root)
                 localized.path to localized
             }.toMap()
             saveIndex(root, index)
-            println("Completed.")
+            info<LocalEmbeddingIndex>("Completed.")
         }
         return index
     }
@@ -175,54 +177,12 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
             this
     }
 
-    private fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
+    fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
         MAPPER.writerWithDefaultPrettyPrinter()
             .writeValue(File(root, indexFile()), index)
 
     companion object {
         private val MAPPER = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
-            println("""
-                $ANSI_GREEN
-                Arguments expected:
-                  <root folder> <options>
-                Options:
-                  --reindex-all
-                  --reindex-new (default)
-                  --max-chunk-size=<size> (default 1000)
-                $ANSI_RESET
-            """.trimIndent())
-
-            if (args.isEmpty())
-                exitProcess(0)
-
-            val path = args[0]
-            val reindexAll = args.contains("--reindex-all")
-            val reindexNew = args.contains("--reindex-new") || !reindexAll
-            val maxChunkSize = args.find { it.startsWith("--max-chunk-size") }?.substringAfter("=", "")?.toIntOrNull() ?: 1000
-
-            val root = File(path)
-            val embeddingService = OpenAiEmbeddingService()
-            val index = LocalEmbeddingIndex(root, embeddingService)
-            index.maxChunkSize = maxChunkSize
-            runBlocking {
-                if (reindexNew) {
-                    println("Reindexing new documents in $root...")
-                    index.getEmbeddingIndex() // this triggers the reindex
-                } else if (reindexAll) {
-                    println("Reindexing all documents in $root...")
-                    index.reindexAll()
-                } else {
-                    TODO("Impossible to get here.")
-                }
-                println("Reindexing complete.")
-            }
-            index.saveIndex(root, index.embeddingIndex)
-            exitProcess(0)
-        }
     }
 }
