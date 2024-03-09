@@ -17,8 +17,6 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import javafx.scene.text.Font
-import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
@@ -219,40 +217,14 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     private fun Dragboard.hasImageFile() = files.isNotEmpty() && files.first().extension in listOf("png", "jpg", "jpeg")
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
-    fun addOutputTextArea(): TextArea {
-        var result: TextArea? = null
+    fun addOutputTextArea() {
+        val result = PromptResultArea()
         output {
-            result = textarea(SimpleStringProperty("")) {
-                promptText = "Prompt output will be shown here"
-                isEditable = false
-                isWrapText = true
-                font = Font("Segoe UI Emoji", 18.0)
-                vgrow = Priority.ALWAYS
-
-                // add context menu option to save result to a file
-                contextmenu {
-                    item ("Select All") {
-                        action { selectAll() }
-                    }
-                    item("Copy") {
-                        action { copy() }
-                    }
-                    item("Save to File...") {
-                        action {
-                            val file = chooseFile("Save to File", filters = arrayOf(
-                                FileChooser.ExtensionFilter("Text Files", "*.txt"),
-                                FileChooser.ExtensionFilter("All Files", "*.*")
-                            ), owner = currentWindow, mode = FileChooserMode.Save).firstOrNull()
-                            file?.writeText(selectedText.ifBlank { this@textarea.text })
-                        }
-                    }
-                }
-            }
+            add(result.root)
         }
         onCompleted {
-            result!!.text = it.finalResult.toString()
+            result.setFinalResult(it.finalResult)
         }
-        return result!!
     }
 
     /** Hide the parameters view. */

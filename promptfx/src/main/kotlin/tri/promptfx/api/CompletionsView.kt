@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
+import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.util.ui.slider
@@ -57,11 +58,12 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
 
     override suspend fun processUserInput(): AiPipelineResult {
         val completionModel = TextPlugin.textCompletionModels().firstOrNull { it.modelId == model.value.modelId }
-        return if (completionModel != null) {
+        val response = if (completionModel != null) {
             completionModel.complete(
                 text = input.get(),
-                tokens = common.maxTokens.value
-            ).asPipelineResult()
+                tokens = common.maxTokens.value,
+                temperature = common.temp.value
+            )
         } else {
             val completion = CompletionRequest(
                 model = ModelId(model.value.modelId),
@@ -72,8 +74,12 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 presencePenalty = common.presPenalty.value,
                 maxTokens = common.maxTokens.value,
             )
-            controller.openAiPlugin.client.completion(completion).asPipelineResult()
+            controller.openAiPlugin.client.completion(completion)
         }
+        return response.asPipelineResult(
+            promptInfo = AiPromptInfo(input.get()),
+            modelInfo = AiPromptModelInfo(model.value.modelId, common.toModelParams())
+        )
     }
 
 }

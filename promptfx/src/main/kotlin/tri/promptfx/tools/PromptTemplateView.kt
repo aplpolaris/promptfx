@@ -28,6 +28,7 @@ import tornadofx.*
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import java.time.LocalDate
@@ -119,8 +120,16 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     }
 
     override fun plan() = aitask("text-completion") {
-        AiPrompt(template.value).fill(fieldMap).let {
+        val resp = AiPrompt(template.value).fill(fieldMap).let {
             completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value)
+        }
+        resp.map {
+            AiPromptTrace(
+                AiPromptInfo(template.value, fieldMap.toMap()),
+                AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),
+                AiPromptExecInfo(resp.errorMessage, responseTimeMillis = resp.durationTotal?.toMillis()),
+                AiPromptOutputInfo(it)
+            )
         }
     }.planner
 

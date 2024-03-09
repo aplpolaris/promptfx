@@ -91,7 +91,7 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
             "error" to it.error,
             "query_tokens" to it.queryTokens,
             "response_tokens" to it.responseTokens,
-            "duration" to "${it.responseTimeMillis}ms"
+            "duration" to it.responseTimeMillis?.let { "${it}ms" }
         ).entries.filter { it.value != null }
             .joinToString(", ") { (k, v) -> "$k: $v" }
     }

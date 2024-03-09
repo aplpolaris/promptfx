@@ -50,6 +50,7 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
 import java.io.File
+import java.time.Duration
 import java.util.*
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
@@ -98,18 +99,31 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    suspend fun completion(completionRequest: CompletionRequest) =
-        client.completion(completionRequest).let {
-            usage.increment(it.usage)
-            result(it.choices[0].text, completionRequest.model.id)
-        }
+    suspend fun completion(completionRequest: CompletionRequest): AiTaskResult<String> {
+        val t0 = System.currentTimeMillis()
+        val resp = client.completion(completionRequest)
+        usage.increment(resp.usage)
+        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
+        return AiTaskResult(
+            value = resp.choices[0].text,
+            modelId = completionRequest.model.id,
+            duration = millis,
+            durationTotal = millis
+        )
+    }
 
     /** Runs a text completion request using a chat model. */
-    suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
-        client.chatCompletion(completionRequest).let {
-            usage.increment(it.usage)
-            result(it.choices[0].message.content ?: "", completionRequest.model.id)
-        }
+    suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiTaskResult<String> {
+        val t0 = System.currentTimeMillis()
+        val resp = client.chatCompletion(completionRequest)
+        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
+        return AiTaskResult(
+            value = resp.choices[0].message.content ?: "",
+            modelId = completionRequest.model.id,
+            duration = millis,
+            durationTotal = millis
+        )
+    }
 
     /** Runs a chat response. */
     suspend fun chat(completionRequest: ChatCompletionRequest) =

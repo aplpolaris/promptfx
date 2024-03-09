@@ -54,9 +54,10 @@ class AiPromptRunConfig(
         val promptText = promptInfo.filled()
         val result = completion.complete(promptText, modelInfo)
         return result.map {
-            AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo(result.error?.message), AiPromptOutputInfo(it)).apply {
-                execInfo.responseTimeMillis = result.duration?.toMillis()
-            }
+            AiPromptTrace(promptInfo, modelInfo,
+                AiPromptExecInfo(result.error?.message, responseTimeMillis = result.duration?.toMillis()),
+                AiPromptOutputInfo(it)
+            )
         }
     }
 

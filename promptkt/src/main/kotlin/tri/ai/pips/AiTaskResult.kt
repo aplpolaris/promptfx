@@ -19,6 +19,7 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.*
 import java.time.Duration
 
 /**
@@ -48,8 +49,23 @@ data class AiTaskResult<T>(
         errorMessage, error, modelId, duration, durationTotal, attempts
     )
 
-    /** Wraps this as a pipeline result. */
-    fun asPipelineResult() = AiPipelineResult("result", mapOf("result" to this))
+    /**
+     * Wraps this as a pipeline result.
+     * If [promptInfo] and [modelInfo] are provided, result will also be wrapped in [AiPromptTrace].
+     */
+    fun asPipelineResult(promptInfo: AiPromptInfo? = null, modelInfo: AiPromptModelInfo? = null): AiPipelineResult {
+        if (promptInfo != null && modelInfo != null) {
+            return map {
+                AiPromptTrace(
+                    promptInfo,
+                    modelInfo,
+                    AiPromptExecInfo(errorMessage, responseTimeMillis = durationTotal?.toMillis()),
+                    AiPromptOutputInfo(value?.toString())
+                )
+            }.asPipelineResult()
+        }
+        return AiPipelineResult("result", mapOf("result" to this))
+    }
 
     companion object {
         /** Task with token result. */
