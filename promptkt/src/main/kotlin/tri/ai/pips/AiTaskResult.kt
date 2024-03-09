@@ -28,6 +28,8 @@ import java.time.Duration
 data class AiTaskResult<T>(
     /** Result of the task. */
     val value: T? = null,
+    /** Error message, if any. */
+    val errorMessage: String? = null,
     /** Error that occurred during execution, if any. */
     val error: Throwable? = null,
     /** Model ID of the task, if any. */
@@ -40,8 +42,11 @@ data class AiTaskResult<T>(
     val attempts: Int? = null,
 ) {
 
-    /** Applies an operation to the result, if present. The result has the same error and modelId. */
-    fun <S> map(function: (T) -> S) = AiTaskResult(value?.let { function(value) }, error, modelId)
+    /** Applies an operation to the result value, if present. All other values are copied directly. */
+    fun <S> map(function: (T) -> S) = AiTaskResult(
+        value?.let { function(value) },
+        errorMessage, error, modelId, duration, durationTotal, attempts
+    )
 
     /** Wraps this as a pipeline result. */
     fun asPipelineResult() = AiPipelineResult("result", mapOf("result" to this))
@@ -49,15 +54,15 @@ data class AiTaskResult<T>(
     companion object {
         /** Task with token result. */
         fun <T> result(value: T, modelId: String? = null) =
-            AiTaskResult(value, null, modelId)
+            AiTaskResult(value, modelId = modelId)
 
         /** Task not attempted because input was invalid. */
-        fun invalidRequest(message: String) =
-            AiTaskResult(message, IllegalArgumentException(message), null)
+        fun <T> invalidRequest(message: String) =
+            error<T>(message, IllegalArgumentException(message))
 
         /** Task not attempted or successful because of a general error. */
-        fun error(message: String, error: Throwable) =
-            AiTaskResult(message, error, null)
+        fun <T> error(message: String, error: Throwable) =
+            AiTaskResult<T>(errorMessage = message, error = error)
     }
 
 }

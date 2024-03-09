@@ -27,7 +27,7 @@ interface AiTaskMonitor {
     fun taskFailed(task: AiTask<*>, error: Throwable)
 }
 
-class IgnoreMonitor : AiTaskMonitor {
+object IgnoreMonitor : AiTaskMonitor {
     override fun taskStarted(task: AiTask<*>) {}
     override fun taskUpdate(task: AiTask<*>, progress: Double) {}
     override fun taskCompleted(task: AiTask<*>, result: Any?) {}

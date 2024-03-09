@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai.apps
+package tri.ai.cli
 
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage

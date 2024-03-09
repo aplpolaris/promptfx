@@ -19,11 +19,15 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.info
 import java.time.Duration
 
-/** Policy for re-attempting failed executions of a given runnable. */
-class RunnableExecutionPolicy(
+/**
+ * Policy for re-attempting failed executions of a given runnable.
+ * Tracks number of attempts and total duration within [AiTaskResult], and [AiPromptTrace] if the result is a prompt trace object.
+ */
+class RetryExecutor(
     /** Max number of times to reattempt a failed execution. */
     var maxRetries: Int = 3,
     /** Initial delay before first retry. */
@@ -32,30 +36,38 @@ class RunnableExecutionPolicy(
     var retryBackoff: Double = 1.5,
 ) {
 
-    /** Executes a runnable with given policy. */
-    suspend fun <T> execute(runnable: suspend () -> T): AiTaskResult<T> {
+    /**
+     * Executes a task with given policy. Adds additional information about the execution to [AiTaskResult]
+     * related to the number of attempts and total duration.
+     */
+    suspend fun <T> execute(task: AiTask<T>, inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T> {
         var retries = 0
         var delay = initialRetryDelay
         val t00 = System.currentTimeMillis()
         while (true) {
             val t0 = System.currentTimeMillis()
             try {
-                val result = runnable()
+                val success = task.execute(inputs, monitor)
                 val t1 = System.currentTimeMillis()
-                return AiTaskResult(value = result,
+                return success.copy(
                     duration = Duration.ofMillis(t1 - t0),
                     durationTotal = Duration.ofMillis(t1 - t00),
                     attempts = retries + 1
-                )
+                ).also {
+                    // TODO - this hard-coded type check is brittle, potentially unexpected side effect behavior
+                    (it.value as? AiPromptTrace)?.execInfo?.error = it.errorMessage
+                    (it.value as? AiPromptTrace)?.execInfo?.responseTimeMillis = it.duration?.toMillis()
+                }
             } catch (x: Exception) {
                 val t1 = System.currentTimeMillis()
                 if (retries++ >= maxRetries)
-                    return AiTaskResult(null, error = x,
+                    return AiTaskResult(
+                        error = x,
                         duration = Duration.ofMillis(t1 - t0),
                         durationTotal = Duration.ofMillis(t1 - t00),
                         attempts = retries
                     )
-                info<RunnableExecutionPolicy>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")
+                info<RetryExecutor>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")
                 kotlinx.coroutines.delay(delay)
                 delay = (delay * retryBackoff).toLong()
             }

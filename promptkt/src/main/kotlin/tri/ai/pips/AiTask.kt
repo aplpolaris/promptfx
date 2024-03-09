@@ -27,6 +27,15 @@ abstract class AiTask<T>(
 ) {
     abstract suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T>
 
+    /** Wrap this in a task that monitors and informs a callback when result is obtained. */
+    fun monitor(callback: (T) -> Unit): AiTask<T> = object : AiTask<T>(id) {
+        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T> {
+            val res = this@AiTask.execute(inputs, monitor)
+            res.value?.let { callback(it) }
+            return res
+        }
+    }
+
     companion object {
         /** Creates a task. */
         fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTask<T> =

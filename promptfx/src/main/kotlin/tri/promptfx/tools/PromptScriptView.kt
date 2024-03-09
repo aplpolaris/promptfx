@@ -28,13 +28,9 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.pips.AiTaskResult
-import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.run.AiPromptBatchCyclic
-import tri.ai.pips.RunnableExecutionPolicy
-import tri.ai.prompt.run.execute
+import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -171,14 +167,12 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
-    override fun plan() = aitask("text-completion") {
-        val result = RunnableExecutionPolicy().execute(promptBatch())
-        AiTaskResult.result(result)
-    }.task("process-results") {
-        postProcess(it)
-    }.planner
+    override fun plan() = promptBatch().taskList()
+        .task("process-results") {
+            postProcess(it)
+        }.planner
 
-    private fun promptBatch() = AiPromptBatchCyclic().apply {
+    private fun promptBatch() = AiPromptBatchCyclic("prompt-script").apply {
         val inputs = inputs().second
         model = completionEngine.modelId
         modelParams = common.toModelParams()

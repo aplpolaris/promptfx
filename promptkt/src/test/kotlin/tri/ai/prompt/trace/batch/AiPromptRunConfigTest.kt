@@ -17,18 +17,20 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.run
+package tri.ai.prompt.trace.batch
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
-import tri.ai.pips.RunnableExecutionPolicy
+import tri.ai.pips.PrintMonitor
+import tri.ai.pips.RetryExecutor
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiPromptTrace
 
-class AiPromptRunnerTest {
+class AiPromptRunConfigTest {
 
     private val defaultTextCompletion = TextPlugin.textCompletionModels().first()
 
@@ -40,12 +42,27 @@ class AiPromptRunnerTest {
         "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
+    private val modelInfo2 = AiPromptModelInfo(
+        defaultTextCompletion.modelId,
+        mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
+    )
+
+    @Test
+    fun testExecute() {
+        runBlocking {
+            val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
+            println("Trace: $trace")
+            println("Trace: ${jsonWriter.writeValueAsString(trace)}")
+        }
+    }
 
     @Test
     @Disabled("Requires OpenAI API key")
-    fun testRun() {
+    fun testExecute2() {
         runBlocking {
-            val trace = RunnableExecutionPolicy().execute(promptInfo to modelInfo, defaultTextCompletion)
+            val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

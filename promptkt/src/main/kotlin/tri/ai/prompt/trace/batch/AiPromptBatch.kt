@@ -17,17 +17,24 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.run
+package tri.ai.prompt.trace.batch
 
-import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
-
-typealias AiPromptRunConfig = Pair<AiPromptInfo, AiPromptModelInfo>
+import tri.ai.pips.*
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Provides a series of prompt/model pairings for execution. */
-interface AiPromptBatch {
+abstract class AiPromptBatch(val id: String) {
 
     /** Get all run configs within this series. */
-    fun runConfigs(): Iterable<AiPromptRunConfig>
+    abstract fun runConfigs(): Iterable<AiPromptRunConfig>
 
+    /**
+     * Generate executable list of tasks for a prompt batch.
+     * These can be passed to [AiPipelineExecutor] for execution.
+     */
+    fun tasks(): List<AiTask<AiPromptTrace>> =
+        runConfigs().mapIndexed { i, v -> v.task("$id $i") }
+
+    /** Get an [AiPlanner] for executing this batch of prompts. */
+    fun plan() = tasks().aggregate().planner
 }

@@ -64,7 +64,7 @@ class AiPipelineExecutorTest {
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
         override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.error("fail", Exception("fail"))
+            AiTaskResult.error<String>("fail", Exception("fail"))
     }
 
 }

@@ -32,14 +32,8 @@ import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.embedding.LocalEmbeddingIndex
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask
-import tri.ai.pips.AiTask.Companion.aitask
-import tri.ai.pips.AiTaskList
-import tri.ai.pips.AiTaskResult
-import tri.ai.prompt.run.AiPromptBatchCyclic
-import tri.ai.pips.RunnableExecutionPolicy
-import tri.ai.prompt.run.executeTextCompletion
+import tri.ai.pips.*
+import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.EditablePromptUi
@@ -208,18 +202,18 @@ class DocumentInsightView: AiPlanTaskView(
     override fun plan(): AiPlanner {
         mapResult.set("")
         reduceResult.set("")
-        val plans = promptBatch()
-        val finalTask = plans.aitask("results-summarize") {
-            val concat = it.values.mapNotNull { (it.value as AiPromptTrace).outputInfo.output }
-                .joinToString("\n\n")
-            runLater { mapResult.value = concat }
-            completionEngine.complete(
-                reducePromptUi.fill("input" to concat),
-                common.maxTokens.value,
-                common.temp.value
-            ).map { concat to it }
-        }
-        return AiTaskList(plans, finalTask).planner
+
+        return promptBatch().aggregate()
+            .aitask("results-summarize") { list: List<AiPromptTrace> ->
+                val concat = list.mapNotNull { it.outputInfo.output }
+                    .joinToString("\n\n")
+                runLater { mapResult.value = concat }
+                completionEngine.complete(
+                    reducePromptUi.fill("input" to concat),
+                    common.maxTokens.value,
+                    common.temp.value
+                )
+            }.planner
     }
 
     private fun promptBatch(): List<AiTask<AiPromptTrace>> {
@@ -228,7 +222,7 @@ class DocumentInsightView: AiPlanTaskView(
             .mapValues { it.value.take(snippetsToProcess.value) }
             .values.flatten()
 
-        val batch = AiPromptBatchCyclic().apply {
+        return AiPromptBatchCyclic("processing-snippets").apply {
             val names = limitedSnippets.map { "${it.doc.shortName} ${it.section.start} ${it.section.end}" }
             val inputs = limitedSnippets.map { it.readText() }
             model = completionEngine.modelId
@@ -236,26 +230,14 @@ class DocumentInsightView: AiPlanTaskView(
             prompt = mapPromptUi.templateText.value
             promptParams = mapOf("input" to inputs, "name" to names)
             runs = inputs.size
-        }
-
-        val exec = RunnableExecutionPolicy()
-        val plans = batch.runConfigs().map {
-            aitask(it.first.promptParams["name"] as String) {
-                val model = completionEngine
-                val trace = exec.executeTextCompletion(it, model.modelId,
-                    initiated = { },
-                    completed = { _, result ->
-                        runLater {
-                            val output = result.outputInfo.output
-                            if (output != null)
-                                mapResult.value += "\n\n$output"
-                        }
-                    }
-                )
-                AiTaskResult.result(trace, it.second.model)
+        }.tasks().map {
+            // wrap each task to monitor output and update the UI with interim results
+            it.monitor { res ->
+                res.outputInfo.output?.let {
+                    runLater { mapResult.value += "\n\n$it" }
+                }
             }
         }
-        return plans
     }
 
     private fun updateDocs() = runBlocking {

@@ -36,7 +36,7 @@ class PromptTraceCard : Fragment() {
     fun setTrace(trace: AiPromptTrace) {
         prompt.value = trace.promptInfo.prompt
         promptParams.value = trace.promptInfo.promptParams.toString()
-        model.value = trace.modelInfo.model
+        model.value = trace.modelInfo.modelId
         modelParams.value = trace.modelInfo.modelParams.toString()
         exec.value = trace.execInfo.toString()
         result.value = trace.outputInfo.output

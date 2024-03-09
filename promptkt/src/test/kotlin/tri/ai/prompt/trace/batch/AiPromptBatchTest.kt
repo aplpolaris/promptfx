@@ -17,26 +17,28 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.run
+package tri.ai.prompt.trace.batch
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonMapper
 import tri.ai.openai.jsonWriter
-import tri.ai.pips.RunnableExecutionPolicy
-import tri.ai.prompt.trace.AiPromptTraceDatabase
+import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.PrintMonitor
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceDatabase
 
 class AiPromptBatchTest {
 
     private val defaultTextCompletion = TextPlugin.textCompletionModels().first()
 
-    private val batch = AiPromptBatchCyclic().apply {
+    private val batch = AiPromptBatchCyclic("test-batch-languages").apply {
         model = defaultTextCompletion.modelId
         prompt = listOf("Translate {{text}} into {{language}}.")
         promptParams = mapOf("text" to "Hello, world!", "language" to listOf("French", "German"))
@@ -52,8 +54,8 @@ class AiPromptBatchTest {
     @Disabled("Requires OpenAI API key")
     fun testExecute() {
         runBlocking {
-            RunnableExecutionPolicy().execute(batch).onEach {
-                println("Trace: ${jsonWriter.writeValueAsString(it)}")
+            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).results.values.onEach {
+                println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
     }
@@ -62,21 +64,21 @@ class AiPromptBatchTest {
     @Disabled("Requires OpenAI API key")
     fun testBatchExecuteDatabase() {
         runBlocking {
-            val batch = AiPromptBatchCyclic.repeat(
+            val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
                 AiPromptInfo("Generate a random number between 1 and 100."),
                 AiPromptModelInfo(defaultTextCompletion.modelId),
                 4
             )
-            val result = RunnableExecutionPolicy().execute(batch)
+            val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
-                addTraces(result)
+                addTraces(result.results.values.map { it.value as AiPromptTrace })
             }
             val output = jsonWriter.writeValueAsString(db)
             val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)
-            assertEquals(db.traces, db2.traces)
-            assertEquals(db.prompts, db2.prompts)
-            assertEquals(db.models, db2.models)
-            assertEquals(db.execs, db2.execs)
+            Assertions.assertEquals(db.traces, db2.traces)
+            Assertions.assertEquals(db.prompts, db2.prompts)
+            Assertions.assertEquals(db.models, db2.models)
+            Assertions.assertEquals(db.execs, db2.execs)
             println(jsonWriter.writeValueAsString(db2))
         }
     }
