@@ -68,7 +68,7 @@ object DocumentQaRunner {
             }
             println("Asking a question about documents in ${view.getFolder()}.")
             view.question.set(input)
-            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor())
+            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor)
             result.finalResult as? String
         }
     }
@@ -95,7 +95,7 @@ object DocumentQaRunner {
                     }
                 } else {
                     view.question.set(input)
-                    val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor())
+                    val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor)
                     println(result.finalResult)
                 }
                 print("> ")

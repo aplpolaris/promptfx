@@ -28,6 +28,7 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
@@ -167,7 +168,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
-    override fun plan() = promptBatch().taskList()
+    override fun plan() = promptBatch().tasks().aggregate()
         .task("process-results") {
             postProcess(it)
         }.planner

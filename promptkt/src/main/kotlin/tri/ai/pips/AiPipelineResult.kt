@@ -32,12 +32,12 @@ class AiPipelineResult(finalTaskId: String, val results: Map<String, AiTaskResul
     }
 
     companion object {
-        fun <T> error(message: String, error: Throwable) = AiPipelineResult(
+        fun error(message: String, error: Throwable) = AiPipelineResult(
             "error",
-            mapOf("error" to AiTaskResult.error<T>(message, error))
+            mapOf("error" to AiTaskResult.error<Any>(message, error))
         )
 
-        fun <T> todo() = error<T>("This pipeline is not yet implemented.", UnsupportedOperationException())
+        fun todo() = error("This pipeline is not yet implemented.", UnsupportedOperationException())
     }
 
 }
