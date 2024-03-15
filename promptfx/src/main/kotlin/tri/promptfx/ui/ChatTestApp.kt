@@ -49,5 +49,15 @@ class ChatTestAppView : View() {
         setInScope(driver, scope, ChatDriver::class)
     }
 
-    override val root = find<ChatFragment>().root
+    override val root = vbox {
+        val chatPanel = find<ChatFragment>()
+        button {
+            button("click to test chat") {
+                action {
+                    chatPanel.addChat(ChatEntry(user = "test", message = "this is a test", ChatEntryRole.SYSTEM))
+                }
+            }
+        }
+        add(chatPanel)
+    }
 }

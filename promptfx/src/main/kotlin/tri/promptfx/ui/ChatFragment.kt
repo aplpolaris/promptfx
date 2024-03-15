@@ -95,6 +95,21 @@ class ChatFragment: Fragment() {
         }
     }
 
+    /** Add chat directly to the UI. */
+    fun addChat(entry: ChatEntry) {
+        chats.add(entry)
+    }
+
+    /** Remove a chat entry from the UI. */
+    fun removeChat(entry: ChatEntry) {
+        chats.remove(entry)
+    }
+
+    /** Clear all chat entries from the UI. */
+    fun clearChats() {
+        chats.clear()
+    }
+
     private fun userChat(text: String) {
         val message = text.trim()
         if (message.isNotEmpty()) {
@@ -125,10 +140,6 @@ class ChatFragment: Fragment() {
         chats.reversed().first { it.style == ChatEntryRole.USER }?.message?.let {
             chatField.text = it
         }
-    }
-
-    private fun clearChats() {
-        chats.clear()
     }
 
     //region ANIMATION WHILE THINKING
