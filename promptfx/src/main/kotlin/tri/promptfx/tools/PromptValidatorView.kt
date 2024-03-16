@@ -50,12 +50,7 @@ class PromptValidatorView : AiPlanTaskView(
             validatorPromptUi = EditablePromptUi(PROMPT_VALIDATE_PREFIX, "Prompt to validate the result:")
             add(validatorPromptUi)
         }
-        parameters("Model Parameters") {
-            with(common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
 
         outputPane.clear()
         output {

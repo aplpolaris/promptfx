@@ -111,12 +111,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 }
             }
         }
-        parameters("Model Parameters") {
-            with(common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = aitask("text-completion") {

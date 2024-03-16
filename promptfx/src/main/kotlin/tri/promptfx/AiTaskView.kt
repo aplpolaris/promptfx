@@ -20,6 +20,7 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
+import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.util.ui.graphic
@@ -166,6 +167,19 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
         with (parameterForm) {
             fieldset(text) {
                 op()
+            }
+        }
+    }
+
+    /** Adds default model parameters (model, temperature, tokens) to the view. */
+    fun addDefaultTextCompletionParameters(common: ModelParameters) {
+        parameters("Text Completion Model") {
+            field("Model") {
+                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
+            }
+            with (common) {
+                temperature()
+                maxTokens()
             }
         }
     }

@@ -28,7 +28,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.embedding.LocalEmbeddingIndex
@@ -108,6 +107,9 @@ class DocumentInsightView: AiPlanTaskView(
                 }
             }
         }
+    }
+
+    init {
         parameters("Document Source and Sectioning") {
             field("Folder") {
                 (inputContainer as? HBox)?.spacing = 5.0
@@ -136,9 +138,11 @@ class DocumentInsightView: AiPlanTaskView(
                     tooltip("Rebuild embedding index for this folder")
                     action {
                         // confirm with user then refresh
-                        confirm("Rebuild Embedding Index",
+                        confirm(
+                            "Rebuild Embedding Index",
                             "Are you sure you want to rebuild the entire embedding index?\n" +
-                                    "This may require significant API usage and cost.") {
+                                    "This may require significant API usage and cost."
+                        ) {
                             runAsync {
                                 runBlocking { embeddingIndex.value!!.reindexAll() }
                             }
@@ -147,8 +151,10 @@ class DocumentInsightView: AiPlanTaskView(
                 }
             }
             field("Max snippet size") {
-                tooltip("Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
-                        "This will only apply to newly chunked documents.")
+                tooltip(
+                    "Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
+                            "This will only apply to newly chunked documents."
+                )
                 slider(500..5000, maxChunkSize)
                 label(maxChunkSize)
             }
@@ -170,16 +176,10 @@ class DocumentInsightView: AiPlanTaskView(
                 label(minSnippetCharsToProcess)
             }
         }
-        parameters("Model") {
-            field("Model") {
-                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
-            }
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
+    }
 
+    init {
         outputPane.clear()
         output {
             textarea(mapResult) {

@@ -34,7 +34,6 @@ import javafx.scene.text.TextFlow
 import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
@@ -186,15 +185,7 @@ class DocumentQaView: AiPlanTaskView(
                 label(chunksToSendWithQuery)
             }
         }
-        parameters("Model") {
-            field("Model") {
-                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
-            }
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
             promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)

@@ -154,24 +154,24 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     init {
-        parameters("Model Parameters") {
-            with(common) {
-                temperature()
-                maxTokens()
-            }
-        }
-        parameters("Scripting Options") {
+        parameters("Data Import") {
             field("Chunk Input by") {
                 tooltip("Character(s) separating chunks of input, e.g. \\n for new lines or \\n\\n for paragraphs")
                 textfield(chunkBy)
             }
             field("Input Format") {
-                checkbox("Input has CSV Header", csvHeader)
+                checkbox("Input has Header Row", csvHeader)
             }
-            field("Chunk Limit") {
+        }
+        parameters("Batch Processing") {
+            field("Limit") {
+                tooltip("Maximum number of chunks to process")
                 slider(1..1000, chunkLimit)
                 label(chunkLimit.asString())
             }
+        }
+        addDefaultTextCompletionParameters(common)
+        parameters("Output Options") {
             field("Display") {
                 checkbox("Unique Results", showUniqueResults)
             }
