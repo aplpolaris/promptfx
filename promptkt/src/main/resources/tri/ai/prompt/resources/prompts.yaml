@@ -248,6 +248,26 @@ question-answer-docs-basic-vicuna: |
   ### Assistant: 
 
 ############################
+# TEXT JOINER CONCATENATIONS
+############################
+# view: Prompt Scripting
+# prefix: text-joiner-*
+# keywords:
+#   {{matches}} - list of items
+#   {{{text}}} - text of snippet
+
+text-joiner-basic: |
+  {{#matches}}
+  {{{text}}}  
+  {{/matches}}
+
+text-joiner-bullets: |
+  {{#matches}}
+  - {{{text}}}  
+  {{/matches}}
+  
+
+############################
 # SNIPPET CONCATENATIONS
 ############################
 # view: Document Q&A
