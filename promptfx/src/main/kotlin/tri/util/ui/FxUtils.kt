@@ -74,3 +74,8 @@ val FontAwesomeIconView.navy
     get() = apply {
         fill = Color.NAVY
     }
+
+val FontAwesomeIconView.burgundy
+    get() = apply {
+        fill = Color(128.0/255, 0.0, 32.0/255, 1.0)
+    }

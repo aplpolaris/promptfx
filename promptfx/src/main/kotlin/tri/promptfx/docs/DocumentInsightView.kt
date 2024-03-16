@@ -93,8 +93,8 @@ class DocumentInsightView: AiPlanTaskView(
             squeezebox {
                 fold("Prompts", expanded = true) {
                     vbox {
-                        mapPromptUi = EditablePromptUi("document-map", "Prompt for each snippet:")
-                        reducePromptUi = EditablePromptUi("document-reduce", "Prompt to summarize results:")
+                        mapPromptUi = EditablePromptUi(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
+                        reducePromptUi = EditablePromptUi(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
                         add(mapPromptUi)
                         add(reducePromptUi)
                     }
@@ -259,5 +259,8 @@ class DocumentInsightView: AiPlanTaskView(
     companion object {
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-insights.folder"
+
+        private const val DOCUMENT_MAP_PREFIX = "document-map"
+        internal const val DOCUMENT_REDUCE_PREFIX = "document-reduce"
     }
 }
