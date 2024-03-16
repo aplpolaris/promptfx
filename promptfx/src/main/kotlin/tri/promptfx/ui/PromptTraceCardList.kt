@@ -61,6 +61,14 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
                             }
                     }
                 }
+                item("Try in template view") {
+                    enableWhen(selectionModel.selectedItemProperty().isNotNull)
+                    action {
+                        val selected = selectionModel.selectedItem
+                        if (selected != null)
+                            (workspace as PromptFxWorkspace).launchTemplateView(selected)
+                    }
+                }
             }
         }
         with (header) {

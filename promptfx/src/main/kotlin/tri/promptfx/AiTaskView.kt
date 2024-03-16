@@ -23,6 +23,7 @@ import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
+import tri.ai.prompt.trace.*
 import tri.util.ui.graphic
 import java.lang.Exception
 
@@ -240,7 +241,19 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             add(result.root)
         }
         onCompleted {
-            result.setFinalResult(it.finalResult)
+            val r = it.finalResult
+            if (r is AiPromptTrace) {
+                result.setFinalResult(r)
+            } else {
+                // TODO - views should return a prompt trace object wherever possible
+                val trace = AiPromptTrace(
+                    AiPromptInfo(""),
+                    AiPromptModelInfo(completionEngine.modelId),
+                    AiPromptExecInfo(),
+                    AiPromptOutputInfo(r.toString())
+                )
+                result.setFinalResult(trace)
+            }
         }
     }
 

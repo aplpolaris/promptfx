@@ -35,7 +35,7 @@ import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.*
@@ -190,10 +190,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             add(PromptTraceCardList(promptTraces))
         }
         addOutputTextArea()
-        onCompleted {
-            val result = it.results.values.map { it.value }.filterIsInstance<AiPromptTrace>()
-            promptTraces.setAll(result)
-        }
+        outputPane.children.last().vgrow = Priority.ALWAYS
     }
 
     override fun plan(): AiPlanner {
@@ -275,7 +272,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         return result?.contains("yes", ignoreCase = true) ?: false
     }
 
-    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: Pair<String?, List<String>>): String {
+    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: Pair<String?, List<String>>): AiPromptTrace {
         val resultSets = mutableMapOf<String, String>()
 
         if (showUniqueResults.value) {
@@ -295,6 +292,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val csv = results.joinToString("\n") { "${it.promptInfo.promptParams["input"]},${it.outputInfo.output}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
+        val promptInfo: AiPromptInfo
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerText.value.fill("matches" to
@@ -303,14 +301,23 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val summarizer = summaryPromptText.value.fill("input" to joined)
             val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
             resultSets[key] = summarizerResult.value ?: "(error or no output returned)"
+            promptInfo = AiPromptInfo(summaryPromptText.value, mapOf("input" to joined))
+        } else {
+            promptInfo = AiPromptInfo("")
         }
-        return if (resultSets.size <= 1) {
+        val output = if (resultSets.size <= 1) {
             resultSets.values.firstOrNull() ?: ""
         } else {
             resultSets.entries.joinToString("\n\n") {
                 "${it.key}\n" + "-".repeat(it.key.length) + "\n${it.value}"
             }
         }
+        return AiPromptTrace(
+            promptInfo,
+            AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),
+            AiPromptExecInfo(),
+            AiPromptOutputInfo(output)
+        )
     }
 
     private fun String.cleanedup() = lowercase().removeSuffix(".")
