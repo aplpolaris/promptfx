@@ -10,7 +10,7 @@ import tri.promptfx.docs.SnippetMatch
 /** View model for document chunks. */
 interface TextChunkViewModel {
     val score: Double?
-    val doc: EmbeddingDocument
+    val doc: EmbeddingDocument?
     val text: String
 }
 

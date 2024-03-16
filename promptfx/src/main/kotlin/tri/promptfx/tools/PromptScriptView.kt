@@ -23,27 +23,28 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.embedding.EmbeddingIndex
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.docs.DocumentInsightView.Companion.DOCUMENT_REDUCE_PREFIX
-import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.ui.PromptTraceCardList
+import tri.promptfx.ui.TextChunkListView
+import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.enableDroppingFileContent
 import tri.util.ui.slider
-import java.lang.StringBuilder
 import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
@@ -58,6 +59,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val csvHeader = SimpleBooleanProperty(false)
     private val inputText = SimpleStringProperty("")
 
+    // inputs as chunks
+    private val embeddingIndex = SimpleObjectProperty<EmbeddingIndex>(null)
+    private val inputChunks = observableListOf<TextChunkViewModel>()
+
     // pre-processing
     private val filter = SimpleStringProperty("")
 
@@ -68,7 +73,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val template = SimpleStringProperty("")
 
     // options for prompted summary of all results
-    private val summaryPromptId = SimpleStringProperty("$DOCUMENT_REDUCE_PREFIX-summarize")
+    private val summaryPromptId = SimpleStringProperty("$TEXT_SUMMARIZER_PREFIX-summarize")
     private val summaryPromptText = summaryPromptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     private val joinerId = SimpleStringProperty("$TEXT_JOINER_PREFIX-basic")
@@ -83,6 +88,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val summarizeResults = SimpleBooleanProperty(false)
     private val outputCsv = SimpleBooleanProperty(false)
 
+    // input views
     init {
         input {
             spacing = 5.0
@@ -160,20 +166,20 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 enableDroppingFileContent()
             }
         }
+        input {
+            spacing = 5.0
+            paddingAll = 5.0
+            vgrow = Priority.ALWAYS
+            hbox {
+                alignment = Pos.CENTER_LEFT
+                spacing = 5.0
+                text("Text chunks to process:")
+            }
+            add(TextChunkListView(inputChunks, embeddingIndex, hostServices))
+        }
     }
 
-    init {
-        outputPane.clear()
-        output {
-            add(PromptTraceCardList(promptTraces))
-        }
-        addOutputTextArea()
-        onCompleted {
-            val result = it.results.values.map { it.value }.filterIsInstance<AiPromptTrace>()
-            promptTraces.setAll(result)
-        }
-    }
-
+    // parameter views
     init {
         parameters("Data Import") {
             tooltip("These settings control how input is divided into separate chunks of text for further processing.")
@@ -212,26 +218,49 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         parameters("Result Summarization Template") {
             enableWhen(summarizeResults)
-            tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $DOCUMENT_REDUCE_PREFIX")
+            tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
             promptfield("Text Joiner", joinerId, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), joinerText, workspace)
-            promptfield("Summarizer", summaryPromptId, AiPromptLibrary.withPrefix(DOCUMENT_REDUCE_PREFIX), summaryPromptText, workspace)
+            promptfield("Summarizer", summaryPromptId, AiPromptLibrary.withPrefix(TEXT_SUMMARIZER_PREFIX), summaryPromptText, workspace)
+        }
+    }
+
+    // output views
+    init {
+        outputPane.clear()
+        output {
+            add(PromptTraceCardList(promptTraces))
+        }
+        addOutputTextArea()
+        onCompleted {
+            val result = it.results.values.map { it.value }.filterIsInstance<AiPromptTrace>()
+            promptTraces.setAll(result)
         }
     }
 
     override fun plan(): AiPlanner {
-        runLater { promptTraces.setAll() }
-        return promptBatch().tasks()
+        val inputs = inputs()
+        runLater {
+            promptTraces.setAll()
+            inputChunks.setAll(inputs.second.map {
+                object : TextChunkViewModel {
+                    override val text = it
+                    override val score = null
+                    override val doc = null
+                }
+            })
+        }
+        val tasks = promptBatch(inputs.second).tasks()
+        return tasks
             .map {
                 it.monitor { runLater { promptTraces.add(it) } }
             }
             .aggregate()
             .task("process-results") {
-                postProcess(it)
+                postProcess(it, inputs)
             }.planner
     }
 
-    private fun promptBatch() = AiPromptBatchCyclic("prompt-script").apply {
-        val inputs = inputs().second
+    private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {
         model = completionEngine.modelId
         modelParams = common.toModelParams()
         prompt = template.value
@@ -287,7 +316,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         return result?.contains("yes", ignoreCase = true) ?: false
     }
 
-    private suspend fun postProcess(results: List<AiPromptTrace>): String {
+    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: Pair<String?, List<String>>): String {
         val resultSets = mutableMapOf<String, String>()
 
         if (showUniqueResults.value) {
@@ -303,7 +332,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         if (outputCsv.value) {
             val key = "CSV Output"
-            val csvHeader = if (csvHeader.value) inputs().first ?: "input" else ""
+            val csvHeader = inputs.first?.let { "$it,output" } ?: "input,output"
             val csv = results.joinToString("\n") { "${it.promptInfo.promptParams["input"]},${it.outputInfo.output}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }

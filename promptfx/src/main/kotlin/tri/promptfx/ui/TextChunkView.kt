@@ -16,17 +16,20 @@ import tri.util.ui.DocumentUtils
 /** View for a [TextChunkViewModel]. */
 class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out EmbeddingIndex>, hostServices: HostServices) : HBox() {
     init {
-//        textflow {  }
         alignment = Pos.CENTER_LEFT
-        text("%.2f".format(it.score)) {
-            style = "-fx-font-weight: bold;"
-        }
-        hyperlink(it.doc.shortNameWithoutExtension) {
-            val thumb = DocumentUtils.documentThumbnail(index.value, it.doc)
-            if (thumb != null) {
-                tooltip { graphic = ImageView(thumb) }
+        it.score?.let { score ->
+            text("%.2f".format(score)) {
+                style = "-fx-font-weight: bold;"
             }
-            action { DocumentBrowseToPage(index.value, it.doc, it.text, hostServices).open() }
+        }
+        it.doc?.let { doc ->
+            hyperlink(doc.shortNameWithoutExtension) {
+                val thumb = DocumentUtils.documentThumbnail(index.value, doc)
+                if (thumb != null) {
+                    tooltip { graphic = ImageView(thumb) }
+                }
+                action { DocumentBrowseToPage(index.value, doc, it.text, hostServices).open() }
+            }
         }
 
         val text = it.text
