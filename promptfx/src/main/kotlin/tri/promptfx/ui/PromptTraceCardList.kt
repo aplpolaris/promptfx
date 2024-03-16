@@ -65,11 +65,12 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
         }
         with (header) {
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                tooltip("Try out the selected prompt and inputs in the Prompt Template view.")
                 enableWhen(list.selectionModel.selectedItemProperty().isNotNull)
                 action {
                     val selected = list.selectedItem
                     if (selected != null)
-                        (workspace as PromptFxWorkspace).launchTemplateView(selected.promptInfo.prompt)
+                        (workspace as PromptFxWorkspace).launchTemplateView(selected)
                 }
             }
             // add save icon

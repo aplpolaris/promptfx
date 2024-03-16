@@ -26,6 +26,7 @@ import javafx.scene.Node
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.api.*
 import tri.promptfx.tools.PromptTemplateView
 import tri.util.ui.*
@@ -124,6 +125,13 @@ class PromptFxWorkspace : Workspace() {
     /** Looks up a view by name. */
     fun findTaskView(name: String): AiTaskView? {
         return views[name]?.let { find(it) } as? AiTaskView
+    }
+
+    /** Launches the template view with the given prompt trace. */
+    fun launchTemplateView(prompt: AiPromptTrace) {
+        val view = find<PromptTemplateView>()
+        view.importPromptTrace(prompt)
+        workspace.dock(view)
     }
 
     /** Launches the template view with the given prompt text. */

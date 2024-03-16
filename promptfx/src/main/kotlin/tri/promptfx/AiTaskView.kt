@@ -149,9 +149,12 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     }
 
     /** Adds content to the input area of the view. */
-    fun input(op: VBox.() -> Unit) {
+    fun input(spacing: Number? = null, padding: Number? = null, vgrow: Priority? = null, op: VBox.() -> Unit) {
         with (inputPane) {
             op()
+            if (spacing != null) this.spacing = spacing.toDouble()
+            if (padding != null) this.padding = insets(padding.toDouble())
+            if (vgrow != null) this.vgrow = vgrow
         }
     }
 

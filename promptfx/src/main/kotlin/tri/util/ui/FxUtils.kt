@@ -22,6 +22,8 @@ package tri.util.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
 import javafx.scene.control.TextInputControl
 import javafx.scene.input.TransferMode
@@ -29,7 +31,12 @@ import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.Window
+import tornadofx.action
 import tornadofx.chooseDirectory
+import tornadofx.item
+import tornadofx.menubutton
+import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.AiPromptLibrary
 import java.io.File
 
 /** Configures a [TextInputControl] to accept dropped files and set its text to the content of the first file. */
@@ -60,6 +67,8 @@ internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
     }
 }
 
+//region ICONS
+
 fun icon(icon: FontAwesomeIcon) = FontAwesomeIconView(icon)
 
 val FontAwesomeIcon.graphic
@@ -78,4 +87,31 @@ val FontAwesomeIconView.navy
 val FontAwesomeIconView.burgundy
     get() = apply {
         fill = Color(128.0/255, 0.0, 32.0/255, 1.0)
+    }
+
+//endregion
+
+/**
+ * Creates a [menubutton] to select a template
+ */
+fun EventTarget.templatemenubutton(template: SimpleStringProperty, promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean = { true }) =
+    listmenubutton(
+        items = { AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys },
+        action = { template.set(AiPromptLibrary.lookupPrompt(it).template) }
+    )
+
+/**
+ * Creates a [menubutton] with the provided items and action.
+ * The list is dynamically updated each time the button is shown.
+ */
+fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String) -> Unit) =
+    menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
+        setOnShowing {
+            this.items.clear()
+            items().forEach { key ->
+                item(key) {
+                    action { action(key) }
+                }
+            }
+        }
     }

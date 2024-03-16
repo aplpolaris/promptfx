@@ -38,13 +38,8 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.PromptTraceCardList
-import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.promptfield
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.enableDroppingFileContent
-import tri.util.ui.slider
+import tri.promptfx.ui.*
+import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
@@ -70,7 +65,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val chunkLimit = SimpleIntegerProperty(10)
 
     // completion template for individual items
-    private val template = SimpleStringProperty("")
+    private lateinit var promptUi: EditablePromptUi
 
     // options for prompted summary of all results
     private val summaryPromptId = SimpleStringProperty("$TEXT_SUMMARIZER_PREFIX-summarize")
@@ -91,91 +86,55 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     // input views
     init {
         input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Filter:")
-            }
-            textarea(filter) {
-                promptText =
-                    "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
-                hgrow = Priority.ALWAYS
-                prefRowCount = 5
-                isWrapText = true
-                prefWidth = 0.0
-            }
-        }
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Template:")
-                spacer()
-                menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                    // replace items when the menu is shown
-                    setOnShowing {
-                        items.clear()
-                        AiPromptLibrary.INSTANCE.prompts.filter {
-                            it.value.fields() == listOf("input")
-                        }.keys.forEach { key ->
-                            item(key) {
-                                action { template.set(AiPromptLibrary.lookupPrompt(key).template) }
+            squeezebox {
+                fold("Prompt Settings", expanded = true) {
+                    promptUi = EditablePromptUi(
+                        promptFilter = { it.value.fields() == listOf("input") },
+                        instruction = "Prompt to Execute:"
+                    )
+                    add(promptUi)
+                }
+                fold("Select Inputs", expanded = true) {
+                    vbox(5) {
+                        vgrow = Priority.ALWAYS
+                        hbox(5, Pos.CENTER_LEFT) {
+                            text("Inputs:")
+                            spacer()
+                            button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
+                                action {
+                                    val file = chooseFile("Select a file to load", filters = arrayOf())
+                                    if (file.isNotEmpty())
+                                        inputText.set(file.first().readText())
+                                }
                             }
+                        }
+                        textarea(inputText) {
+                            promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
+                            hgrow = Priority.ALWAYS
+                            vgrow = Priority.ALWAYS
+                            isWrapText = true
+                            prefWidth = 0.0
+                            enableDroppingFileContent()
+                        }
+                    }
+                    vbox(5) {
+                        hbox(5, Pos.CENTER_LEFT) {
+                            text("Filter:")
+                        }
+                        textarea(filter) {
+                            promptText =
+                                "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
+                            hgrow = Priority.ALWAYS
+                            prefRowCount = 5
+                            isWrapText = true
+                            prefWidth = 0.0
                         }
                     }
                 }
-            }
-            textarea(template) {
-                promptText = "Provide a prompt template, using {{input}} as a placeholder for user content."
-                hgrow = Priority.ALWAYS
-                prefRowCount = 10
-                isWrapText = true
-                prefWidth = 0.0
-            }
-        }
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Inputs:")
-                spacer()
-                button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
-                    action {
-                        val file = chooseFile("Select a file to load", filters = arrayOf())
-                        if (file.isNotEmpty())
-                            inputText.set(file.first().readText())
-                    }
+                fold("Input Preview", expanded = false) {
+                    add(TextChunkListView(inputChunks, embeddingIndex, hostServices))
                 }
             }
-            // text box to preview input
-            textarea(inputText) {
-                promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
-                hgrow = Priority.ALWAYS
-                vgrow = Priority.ALWAYS
-                isWrapText = true
-                prefWidth = 0.0
-                enableDroppingFileContent()
-            }
-        }
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Text chunks to process:")
-            }
-            add(TextChunkListView(inputChunks, embeddingIndex, hostServices))
         }
     }
 
@@ -263,7 +222,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {
         model = completionEngine.modelId
         modelParams = common.toModelParams()
-        prompt = template.value
+        prompt = promptUi.templateText.value
         promptParams = mapOf("input" to inputs)
         runs = inputs.size
     }

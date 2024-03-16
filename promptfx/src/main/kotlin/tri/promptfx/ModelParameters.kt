@@ -21,7 +21,6 @@ package tri.promptfx
 
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import tornadofx.field
@@ -34,13 +33,22 @@ import tri.util.ui.slider
 /** Parameters for model content generation. */
 class ModelParameters {
 
-    internal val temp = SimpleDoubleProperty(1.0)
-    internal val topP = SimpleDoubleProperty(1.0)
-    internal val freqPenalty = SimpleDoubleProperty(0.0)
-    internal val presPenalty = SimpleDoubleProperty(0.0)
+    companion object {
+        private const val DEFAULT_TEMP = 1.0
+        private const val DEFAULT_TOP_P = 1.0
+        private const val DEFAULT_FREQ_PENALTY = 0.0
+        private const val DEFAULT_PRES_PENALTY = 0.0
+        private const val DEFAULT_MAX_TOKENS = 500
+        private const val DEFAULT_STOP_SEQUENCES = ""
+    }
 
-    internal val maxTokens = SimpleIntegerProperty(500)
-    internal val stopSequences = SimpleStringProperty("")
+    internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
+    internal val topP = SimpleDoubleProperty(DEFAULT_TOP_P)
+    internal val freqPenalty = SimpleDoubleProperty(DEFAULT_FREQ_PENALTY)
+    internal val presPenalty = SimpleDoubleProperty(DEFAULT_PRES_PENALTY)
+
+    internal val maxTokens = SimpleIntegerProperty(DEFAULT_MAX_TOKENS)
+    internal val stopSequences = SimpleStringProperty(DEFAULT_STOP_SEQUENCES)
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -90,11 +98,24 @@ class ModelParameters {
     }
 
     /** Generate model parameters object for [AiPromptModelInfo]. */
-    fun toModelParams() = mapOf(
-        AiPromptModelInfo.MAX_TOKENS to maxTokens.value,
-        AiPromptModelInfo.TEMPERATURE to temp.value
-    ) + if (stopSequences.value.isBlank()) emptyMap() else mapOf(
-        AiPromptModelInfo.STOP to stopSequences.value
-    )
+    fun toModelParams() = listOf(
+        AiPromptModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
+        AiPromptModelInfo.TOP_P to if (topP.value == DEFAULT_TOP_P) null else topP.value,
+        AiPromptModelInfo.FREQUENCY_PENALTY to if (freqPenalty.value == DEFAULT_FREQ_PENALTY) null else freqPenalty.value,
+        AiPromptModelInfo.PRESENCE_PENALTY to if (presPenalty.value == DEFAULT_PRES_PENALTY) null else presPenalty.value,
+        AiPromptModelInfo.MAX_TOKENS to if (maxTokens.value == DEFAULT_MAX_TOKENS) null else maxTokens.value,
+        AiPromptModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value
+    ).filter { it.second != null }
+    .toMap() as Map<String, Any>
+
+    /** Import model parameters from a map. */
+    fun importModelParams(modelParams: Map<String, Any>) {
+        (modelParams[AiPromptModelInfo.TEMPERATURE] as? Double)?.let { temp.set(it) }
+        (modelParams[AiPromptModelInfo.TOP_P] as? Double)?.let { topP.set(it) }
+        (modelParams[AiPromptModelInfo.FREQUENCY_PENALTY] as? Double)?.let { freqPenalty.set(it) }
+        (modelParams[AiPromptModelInfo.PRESENCE_PENALTY] as? Double)?.let { presPenalty.set(it) }
+        (modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int)?.let { maxTokens.set(it) }
+        (modelParams[AiPromptModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
+    }
 
 }
