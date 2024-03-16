@@ -36,7 +36,10 @@ import tri.ai.pips.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
+import tri.promptfx.ui.TextChunkListView
+import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.chooseFolder
 import tri.util.ui.graphic
@@ -98,10 +101,10 @@ class DocumentInsightView: AiPlanTaskView(
                     }
                 }
                 fold("Documents", expanded = true) {
-                    docslist(embeddingIndex, docs, hostServices)
+                    add(DocumentListView(docs, embeddingIndex, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    snippetlist(embeddingIndex, snippets, hostServices)
+                    add(TextChunkListView(snippets.sectionViewModel(), embeddingIndex, hostServices))
                 }
             }
         }

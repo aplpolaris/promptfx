@@ -28,6 +28,7 @@ import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.embedding.findTextInPdf
+import tri.util.ui.pdf.PdfViewer
 import java.awt.Desktop
 
 /** An action to perform when a document link is clicked. */

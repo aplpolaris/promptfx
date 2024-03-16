@@ -96,6 +96,7 @@ module tri.promptfx {
     exports tri.promptfx.tools;
     exports tri.promptfx.ui;
     exports tri.util.ui;
+    exports tri.util.ui.pdf;
 
     // services (service loader API)
     uses TextPlugin;

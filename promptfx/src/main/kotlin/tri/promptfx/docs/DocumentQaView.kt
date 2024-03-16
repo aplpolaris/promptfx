@@ -40,7 +40,9 @@ import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.promptfield
+import tri.promptfx.ui.matchViewModel
 import tri.util.ui.*
 import java.awt.Desktop
 import java.io.File
@@ -120,7 +122,7 @@ class DocumentQaView: AiPlanTaskView(
                     }
                 }
             }
-            snippetmatchlist(planner.embeddingIndex, planner.snippets, hostServices)
+            add(TextChunkListView(planner.snippets.matchViewModel(), planner.embeddingIndex, hostServices))
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
