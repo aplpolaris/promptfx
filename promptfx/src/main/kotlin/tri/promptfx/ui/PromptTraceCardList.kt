@@ -48,6 +48,20 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
             cellFormat {
                 graphic = PromptTraceCard().apply { setTrace(it) }.root
             }
+            // add context menu
+            contextmenu {
+                item("Details...") {
+                    enableWhen(selectionModel.selectedItemProperty().isNotNull)
+                    action {
+                        val selected = selectionModel.selectedItem
+                        if (selected != null)
+                            find<PromptTraceDetails>().apply {
+                                setTrace(selected)
+                                openModal()
+                            }
+                    }
+                }
+            }
         }
         with (header) {
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {

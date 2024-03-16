@@ -44,6 +44,7 @@ class ModelParameters {
 
     fun EventTarget.temperature() {
         field("Temperature") {
+            tooltip("Controls the randomness of the generated text. Lower values make the text more deterministic, higher values make it more random.")
             slider(0.0..2.0, temp)
             label(temp.asString("%.2f"))
         }
@@ -51,6 +52,7 @@ class ModelParameters {
 
     fun EventTarget.topP() {
         field("Top P") {
+            tooltip("Controls the diversity of the generated text. Lower values make the text more deterministic, higher values make it more random.")
             slider(0.0..1.0, topP)
             label(topP.asString("%.2f"))
         }
@@ -58,6 +60,7 @@ class ModelParameters {
 
     fun EventTarget.frequencyPenalty() {
         field("Frequency Penalty") {
+            tooltip("Penalizes new tokens based on existing frequency in the text so far, decreasing likelihood of repetition (or increasing if the value is negative).")
             slider(-2.0..2.0, freqPenalty)
             label(freqPenalty.asString("%.2f"))
         }
@@ -65,6 +68,7 @@ class ModelParameters {
 
     fun EventTarget.presencePenalty() {
         field("Presence Penalty") {
+            tooltip("Penalizes new tokens based on existing presence in the text so far, increasing likelihood of new topics (or decreasing if the value is negative).")
             slider(-2.0..2.0, presPenalty)
             label(presPenalty.asString("%.2f"))
         }
@@ -72,7 +76,7 @@ class ModelParameters {
 
     fun EventTarget.maxTokens() {
         field("Maximum Tokens") {
-            tooltip("Max # of tokens for combined query/response from the text completion engine")
+            tooltip("Maximum number of tokens for combined query and response from the model (interpretation may vary by model).")
             slider(0..2000, maxTokens)
             label(maxTokens.asString())
         }

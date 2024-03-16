@@ -155,6 +155,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
 
     init {
         parameters("Data Import") {
+            tooltip("These settings control how input is divided into separate chunks of text for further processing.")
             field("Chunk Input by") {
                 tooltip("Character(s) separating chunks of input, e.g. \\n for new lines or \\n\\n for paragraphs")
                 textfield(chunkBy)
@@ -164,6 +165,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             }
         }
         parameters("Batch Processing") {
+            tooltip("These settings control the batch processing of inputs.")
             field("Limit") {
                 tooltip("Maximum number of chunks to process")
                 slider(1..1000, chunkLimit)
@@ -172,6 +174,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         addDefaultTextCompletionParameters(common)
         parameters("Output Options") {
+            tooltip("These settings control how the results are displayed.")
             field("Display") {
                 checkbox("Unique Results", showUniqueResults)
             }
@@ -185,7 +188,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     override fun plan(): AiPlanner {
-        promptTraces.setAll()
+        runLater { promptTraces.setAll() }
         return promptBatch().tasks()
             .map {
                 it.monitor { runLater { promptTraces.add(it) } }
