@@ -20,6 +20,9 @@
 package tri.util.ui
 
 import tornadofx.Workspace
+import tri.util.ANSI_RESET
+import tri.util.ANSI_YELLOW
+import tri.util.info
 import java.util.*
 
 /** A view that can be added to a workspace. */
@@ -35,8 +38,11 @@ interface NavigableWorkspaceView {
 
     companion object {
         val viewPlugins: List<NavigableWorkspaceView> by lazy {
-            ServiceLoader.load(NavigableWorkspaceView::class.java).toList().onEach {
-                println("Loaded NavigableWorkspaceView: ${it.category} - ${it.name}")
+            ServiceLoader.load(NavigableWorkspaceView::class.java).toList().also {
+                info<NavigableWorkspaceView>("Loading views...")
+                it.groupBy { it.category }.toSortedMap().forEach { (category, views) ->
+                    info<NavigableWorkspaceView>("  - $category: $ANSI_YELLOW${views.joinToString { it.name }}$ANSI_RESET")
+                }
             }
         }
     }
