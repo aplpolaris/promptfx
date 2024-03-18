@@ -34,6 +34,12 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     init {
         input {
             toolbar {
+                // generate chunks
+                button("New...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+                    action {
+                        find<TextChunkerWizard>().openModal()
+                    }
+                }
                 // load a TextLibrary file
                 button("Load", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
                     action {
