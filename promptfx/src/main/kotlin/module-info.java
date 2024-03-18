@@ -111,6 +111,7 @@ module tri.promptfx {
             PromptScriptPlugin,
             PromptTemplatePlugin,
             PromptValidatorPlugin,
+            TextManagerPlugin,
             DocumentQaPlugin,
             DocumentInsightPlugin,
             EntityExtractionPlugin,

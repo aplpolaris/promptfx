@@ -17,13 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.text.chunks
+package tri.ai.text.chunks.process
 
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.embedding.pdfText
+import tri.ai.text.chunks.*
 import java.io.File
+import java.time.Instant
+import java.time.LocalDateTime
 
 /**
  * Document set managed within local file structure.
@@ -34,8 +37,8 @@ class LocalTextDocumentSet(
     _indexFile: File? = null
 ) {
 
-    private val documents = mutableMapOf<String, TextDocument>()
-    private val chunks = mutableListOf<TextChunk>()
+    /** Tracks documents by id. */
+    val documents = mutableMapOf<String, Pair<File, TextBook>>()
 
     private val indexFile = _indexFile ?: File(rootFolder, "docs.json")
 
@@ -46,27 +49,40 @@ class LocalTextDocumentSet(
         preprocessDocumentFormats(reindexAll)
         if (reindexAll) {
             documents.clear()
-            chunks.clear()
         }
-        val docs = mutableMapOf<String, TextDocumentImpl>()
+        val docs = mutableMapOf<String, Pair<File, TextBook>>()
         rootFiles(".txt").forEach {
-            if (reindexAll || it.absolutePath !in docs)
-                docs[it.absolutePath] = TextDocumentImpl(it)
+            if (reindexAll || it.absolutePath !in docs) {
+                val book = TextBook(it.name).apply {
+                    metadata.title = it.nameWithoutExtension
+                    metadata.date = LocalDateTime.ofInstant(Instant.ofEpochMilli(it.lastModified()), java.time.ZoneId.systemDefault()).toLocalDate()
+                    metadata.path = it.absolutePath
+                    metadata.relativePath = it.name
+                }
+                docs[book.metadata.id] = it to book
+            }
         }
-        documents.putAll(docs)
+        if (reindexAll)
+            documents.putAll(docs)
+        else
+            documents.putAll(docs.filter { it.key !in documents })
     }
 
     /** Breaks up documents into chunks. */
-    fun processChunks(chunker: TextChunker, reindexAll: Boolean): List<TextChunk> {
-        val newChunks = if (reindexAll) {
-            chunks.clear()
-            documents.flatMap { chunker.chunk(it.value) }
-        } else {
-            val existing = chunks.filterIsInstance<TextSection>().map { it.doc.metadata.id }.toSet()
-            documents.filterKeys { it !in existing }.flatMap { chunker.chunk(it.value) }
+    fun processChunks(chunker: TextChunker, reindexAll: Boolean) {
+        documents.values.forEach {
+            chunker.process(it.first, it.second, reindexAll)
         }
-        chunks.addAll(newChunks)
-        return newChunks
+    }
+
+    /** Breaks up a single document into chunks. */
+    fun TextChunker.process(file: File, doc: TextBook, reindexAll: Boolean) {
+        if (doc.chunks.isEmpty() || reindexAll) {
+            doc.chunks.clear()
+
+            val all = TextChunkRaw(file.readText())
+            doc.chunks.addAll(chunk(all))
+        }
     }
 
     //endregion
@@ -77,28 +93,22 @@ class LocalTextDocumentSet(
     fun loadIndex() {
         if (indexFile.exists()) {
             documents.clear()
-            chunks.clear()
-            val index = LocalDocumentIndex.loadFrom(indexFile)
-            val docsLookup = index.documents.associateWith { TextDocumentImpl(File(it.metadata.id)) }
-            documents.putAll(docsLookup.mapKeys { it.key.metadata.id })
-            chunks.addAll(index.documents.flatMap { doc ->
-                doc.sections.map { TextSection(docsLookup[doc]!!, it.first..it.last) }
-            })
+            val index = TextLibrary.loadFrom(indexFile)
+            index.books.forEach { doc ->
+                // TODO - allow absolute and relative path attempts to find file
+                val file = File(doc.metadata.path ?: throw IllegalStateException("File path not found in metadata"))
+                require(file.exists()) { "File not found: ${doc.metadata.path} ... TODO try relative path automatically" }
+                documents[doc.metadata.id] = file to doc
+            }
         }
     }
 
     /** Saves index to file. */
     fun saveIndex() {
-        val index = LocalDocumentIndex().apply {
-            documents = chunks
-                .filterIsInstance<TextSection>()
-                .groupBy { it.doc }
-                .entries
-                .map {
-                    LocalDocumentInfo(it.key.metadata, it.key.attributes, it.value.map { TextSectionInfo(it) })
-                }
+        val index = TextLibrary("").apply {
+            books.addAll(documents.values.map { it.second })
         }
-        LocalDocumentIndex.saveTo(index, indexFile)
+        TextLibrary.saveTo(index, indexFile)
     }
 
     //endregion
@@ -136,4 +146,5 @@ class LocalTextDocumentSet(
     //endregion
 
     //endregion
+
 }

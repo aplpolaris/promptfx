@@ -6,6 +6,7 @@ tri.promptfx.tools.PromptLibraryPlugin
 tri.promptfx.tools.PromptScriptPlugin
 tri.promptfx.tools.PromptTemplatePlugin
 tri.promptfx.tools.PromptValidatorPlugin
+tri.promptfx.tools.TextManagerPlugin
 tri.promptfx.docs.DocumentQaPlugin
 tri.promptfx.docs.DocumentInsightPlugin
 tri.promptfx.apps.EntityExtractionPlugin

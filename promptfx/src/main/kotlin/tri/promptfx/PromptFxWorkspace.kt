@@ -51,7 +51,7 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group("API", FontAwesomeIcon.CLOUD.graphic.burgundy) {
+            group("API", FontAwesomeIcon.CLOUD.graphic.forestGreen) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("Models")
                 separator { }
@@ -77,19 +77,19 @@ class PromptFxWorkspace : Workspace() {
                 browsehyperlink("OpenAI API Pricing", "https://openai.com/pricing")
                 browsehyperlink("OpenAI Blog", "https://openai.com/blog")
             }
-            group("Tools", FontAwesomeIcon.WRENCH.graphic.burgundy) {
+            group("Tools", FontAwesomeIcon.WRENCH.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Documents", FontAwesomeIcon.FILE.graphic.burgundy) {
+            group("Documents", FontAwesomeIcon.FILE.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Text", FontAwesomeIcon.FONT.graphic.burgundy) {
+            group("Text", FontAwesomeIcon.FONT.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.burgundy) {
+            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.burgundy) {
+            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
 
                 // IDEAS for additional audio apps
@@ -97,7 +97,7 @@ class PromptFxWorkspace : Workspace() {
                 // - speech translation
                 // - speech synthesis
             }
-            group("Vision", FontAwesomeIcon.IMAGE.graphic.burgundy) {
+            group("Vision", FontAwesomeIcon.IMAGE.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
 
                 // IDEAS for additional image apps
@@ -109,10 +109,10 @@ class PromptFxWorkspace : Workspace() {
                 // - image segmentation, depth, pose estimation, gaze estimation, etc.
                 // - image enhancement, super-resolution, denoising, inpainting, deblurring, etc.
             }
-            group("Integrations", FontAwesomeIcon.PLUG.graphic.burgundy) {
+            group("Integrations", FontAwesomeIcon.PLUG.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
             }
-            group("Documentation", FontAwesomeIcon.BOOK.graphic.burgundy) {
+            group("Documentation", FontAwesomeIcon.BOOK.graphic.forestGreen) {
                 // nothing here, but testing to see this doesn't show up in view
 
                 // configured via [NavigableWorkspaceView] plugins

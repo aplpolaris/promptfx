@@ -17,9 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.text.chunks
+package tri.ai.text.chunks.process
 
-/** A text chunker splits a document into chunks. */
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunkRaw
+
+/** A text chunker splits one chunk into more chunks. */
 interface TextChunker {
-    fun chunk(doc: TextDocument): List<TextChunk>
+    fun chunk(doc: TextChunkRaw): List<TextChunk>
 }

@@ -21,8 +21,14 @@ package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.Property
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ChangeListener
+import javafx.beans.value.ObservableValue
+import javafx.collections.FXCollections
+import javafx.collections.ListChangeListener
+import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
 import javafx.scene.control.TextInputControl
@@ -31,13 +37,12 @@ import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.Window
-import tornadofx.action
-import tornadofx.chooseDirectory
-import tornadofx.item
-import tornadofx.menubutton
+import tornadofx.*
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import java.io.File
+
+//region FILE I/O
 
 /** Configures a [TextInputControl] to accept dropped files and set its text to the content of the first file. */
 fun TextInputControl.enableDroppingFileContent() {
@@ -52,11 +57,6 @@ fun TextInputControl.enableDroppingFileContent() {
     }
 }
 
-fun TextFlow.plainText() = children.joinToString("") {
-    (it as? Text)?.text ?:
-    (it as? Hyperlink)?.text ?: ""
-}
-
 internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
     chooseDirectory(
         title = "Select Document Folder",
@@ -66,6 +66,17 @@ internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
         set(it)
     }
 }
+
+//endregion
+
+//region Text and TextFlow UTILS
+
+fun TextFlow.plainText() = children.joinToString("") {
+    (it as? Text)?.text ?:
+    (it as? Hyperlink)?.text ?: ""
+}
+
+//endregion
 
 //region ICONS
 
@@ -89,7 +100,14 @@ val FontAwesomeIconView.burgundy
         fill = Color(128.0/255, 0.0, 32.0/255, 1.0)
     }
 
+val FontAwesomeIconView.forestGreen
+    get() = apply {
+        fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0)
+    }
+
 //endregion
+
+//region UI BUILDERS
 
 /**
  * Creates a [menubutton] to select a template
@@ -115,3 +133,25 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
             }
         }
     }
+
+//endregion
+
+//region PROPERTY BINDINGS
+
+/** Create an observable list backed by a mutable property and a [List] or [ObservableList] property therein. */
+fun <X, Y> createListBinding(obj: Property<X>, op: (X?) -> List<Y>): ObservableList<Y> {
+    var listeningList = op(obj.value) as? ObservableList<Y>
+    val resultList = FXCollections.observableArrayList(listeningList)
+    val listener = ListChangeListener<Y> { resultList.setAll(it.list.toList()) }
+    listeningList?.addListener(listener)
+    obj.onChange {
+        val nueList = op(it!!)
+        listeningList?.removeListener(listener)
+        resultList.setAll(nueList)
+        listeningList = nueList as? ObservableList<Y>
+        listeningList?.addListener(listener)
+    }
+    return resultList
+}
+
+//endregion
