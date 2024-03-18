@@ -80,8 +80,8 @@ class LocalTextDocIndex(
         if (doc.chunks.isEmpty() || reindexAll) {
             doc.chunks.clear()
 
-            val all = TextChunkRaw(file.readText())
-            doc.chunks.addAll(chunk(all))
+            doc.all = TextChunkRaw(file.readText())
+            doc.chunks.addAll(chunk(doc.all!!))
         }
     }
 
@@ -94,11 +94,8 @@ class LocalTextDocIndex(
         if (indexFile.exists()) {
             docIndex.clear()
             val index = TextLibrary.loadFrom(indexFile)
-            index.books.forEach { doc ->
-                // TODO - allow absolute and relative path attempts to find file
-                val file = File(doc.metadata.path ?: throw IllegalStateException("File path not found in metadata"))
-                require(file.exists()) { "File not found: ${doc.metadata.path} ... TODO try relative path automatically" }
-                docIndex[doc.metadata.id] = file to doc
+            index.docs.forEach { doc ->
+                docIndex[doc.metadata.id] = fileFor(doc.metadata) to doc
             }
         }
     }
@@ -106,7 +103,7 @@ class LocalTextDocIndex(
     /** Saves index to file. */
     fun saveIndex() {
         val index = TextLibrary("").apply {
-            books.addAll(docIndex.values.map { it.second })
+            docs.addAll(docIndex.values.map { it.second })
         }
         TextLibrary.saveTo(index, indexFile)
     }
@@ -146,5 +143,14 @@ class LocalTextDocIndex(
     //endregion
 
     //endregion
+    companion object {
+        /** Get the file associated with the metadata. */
+        fun fileFor(metadata: TextDocMetadata): File {
+            // TODO - allow absolute and relative path attempts to find file
+            val file = File(metadata.path ?: throw IllegalStateException("File path not found in metadata"))
+            require(file.exists()) { "File not found: ${metadata.path} ... TODO try relative path automatically" }
+            return file
+        }
+    }
 
 }

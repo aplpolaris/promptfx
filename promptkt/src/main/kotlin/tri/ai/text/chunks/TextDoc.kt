@@ -1,5 +1,6 @@
 package tri.ai.text.chunks
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.LocalDate
 
@@ -16,10 +17,13 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
     val chunks = mutableListOf<TextChunk>()
 
     /** Optional chunk representation of the entire book contents. */
-    val all: TextChunkRaw? = _all
+    @get:JsonIgnore
+    var all: TextChunkRaw? = _all
 
     /** Construct a [TextDoc] with a given text string. */
     constructor(id: String, text: String) : this(id, TextChunkRaw(text))
+
+    override fun toString() = metadata.id
 }
 
 /** Metadata for [TextDoc]. */

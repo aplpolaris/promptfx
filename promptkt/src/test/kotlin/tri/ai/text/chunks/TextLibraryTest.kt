@@ -8,11 +8,11 @@ class TextLibraryTest {
     @Test
     fun testTextLibrary() {
         val lib = TextLibrary("test library").apply {
-            books.add(TextDoc("test book").apply {
+            docs.add(TextDoc("test book").apply {
                 chunks.add(TextChunkRaw("this is a raw string"))
             })
             val raw = TextChunkRaw("this is all the content in this book")
-            books.add(TextDoc("test book 2", raw).apply {
+            docs.add(TextDoc("test book 2", raw).apply {
                 chunks.add(TextChunkInDoc(0..20))
                 chunks.add(TextChunkInDoc(20..35))
             })

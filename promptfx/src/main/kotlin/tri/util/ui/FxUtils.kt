@@ -138,16 +138,29 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
 
 //region PROPERTY BINDINGS
 
-/** Create an observable list backed by a mutable property and a [List] or [ObservableList] property therein. */
-fun <X, Y> createListBinding(obj: Property<X>, op: (X?) -> List<Y>): ObservableList<Y> {
+/**
+ * Create an observable list backed by a mutable property and a [List] or [ObservableList] property therein.
+ * @param obj the property to listen to
+ * @param op a function to extract the list from the property
+ */
+fun <X, Y> createListBinding(obj: Property<X>, op: (X?) -> List<Y>): ObservableList<Y> =
+    createListBinding(obj, op) { _, it -> it }
+
+/**
+ * Create an observable list backed by a mutable property and a [List] or [ObservableList] property therein.
+ * @param obj the property to listen to
+ * @param op a function to extract the list from the property
+ * @param transform a function to transform the list elements
+ */
+fun <X, Y, Z> createListBinding(obj: Property<X>, op: (X?) -> List<Y>, transform: (X, Y) -> Z): ObservableList<Z> {
     var listeningList = op(obj.value) as? ObservableList<Y>
-    val resultList = FXCollections.observableArrayList(listeningList)
-    val listener = ListChangeListener<Y> { resultList.setAll(it.list.toList()) }
+    val resultList = observableListOf(listeningList?.map { transform(obj.value, it) } ?: listOf())
+    val listener = ListChangeListener<Y> { resultList.setAll(it.list.map { transform(obj.value, it) }) }
     listeningList?.addListener(listener)
     obj.onChange {
         val nueList = op(it!!)
         listeningList?.removeListener(listener)
-        resultList.setAll(nueList)
+        resultList.setAll(nueList.map { transform(obj.value, it) })
         listeningList = nueList as? ObservableList<Y>
         listeningList?.addListener(listener)
     }

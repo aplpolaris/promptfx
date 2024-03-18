@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import tri.ai.text.chunks.process.LocalTextDocIndex
 import java.io.File
 
 /**
@@ -16,12 +17,19 @@ class TextLibrary(_id: String? = null) {
     val metadata = TextLibraryMetadata().apply {
         id = _id ?: ""
     }
-    /** Books in the library. */
-    val books = mutableListOf<TextDoc>()
+    /** Docs in the library. */
+    val docs = mutableListOf<TextDoc>()
+
+    override fun toString() = metadata.id
 
     companion object {
         fun loadFrom(indexFile: File): TextLibrary =
-            MAPPER.readValue(indexFile)
+            MAPPER.readValue<TextLibrary>(indexFile).also {
+                it.docs.forEach { doc ->
+                    val file = LocalTextDocIndex.fileFor(doc.metadata)
+                    doc.all = TextChunkRaw(file.readText())
+                }
+            }
 
         fun saveTo(index: TextLibrary, indexFile: File) {
             MAPPER.writerWithDefaultPrettyPrinter()

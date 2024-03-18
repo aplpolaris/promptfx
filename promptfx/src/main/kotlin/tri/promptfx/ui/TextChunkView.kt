@@ -14,7 +14,7 @@ import tri.promptfx.docs.DocumentBrowseToPage
 import tri.util.ui.DocumentUtils
 
 /** View for a [TextChunkViewModel]. */
-class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out EmbeddingIndex>, hostServices: HostServices) : HBox() {
+class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out EmbeddingIndex>?, hostServices: HostServices) : HBox() {
     init {
         alignment = Pos.CENTER_LEFT
         it.score?.let { score ->
@@ -23,12 +23,14 @@ class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out Embedding
             }
         }
         it.doc?.let { doc ->
-            hyperlink(doc.shortNameWithoutExtension) {
-                val thumb = DocumentUtils.documentThumbnail(index.value, doc)
-                if (thumb != null) {
-                    tooltip { graphic = ImageView(thumb) }
+            index?.value?.let { embeddingIndex ->
+                hyperlink(doc.shortNameWithoutExtension) {
+                    val thumb = DocumentUtils.documentThumbnail(embeddingIndex, doc)
+                    if (thumb != null) {
+                        tooltip { graphic = ImageView(thumb) }
+                    }
+                    action { DocumentBrowseToPage(embeddingIndex, doc, it.text, hostServices).open() }
                 }
-                action { DocumentBrowseToPage(index.value, doc, it.text, hostServices).open() }
             }
         }
 

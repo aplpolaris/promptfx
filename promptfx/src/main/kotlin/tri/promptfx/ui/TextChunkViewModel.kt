@@ -5,6 +5,7 @@ import tornadofx.observableListOf
 import tornadofx.onChange
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
+import tri.ai.text.chunks.TextChunk
 import tri.promptfx.docs.SnippetMatch
 
 /** View model for document chunks. */
@@ -40,4 +41,11 @@ fun EmbeddingSectionInDocument.asTextChunkViewModel() = object : TextChunkViewMo
     override val score = null
     override val doc = this@asTextChunkViewModel.doc
     override val text = readText()
+}
+
+/** Wrap [TextChunk] as a view model. */
+fun TextChunk.asTextChunkViewModel(_doc: TextChunk) = object : TextChunkViewModel {
+    override val score = null
+    override val doc = null
+    override val text = text(_doc)
 }
