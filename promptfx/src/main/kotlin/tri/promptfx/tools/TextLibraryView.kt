@@ -25,7 +25,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     private val librarySelection = SimpleObjectProperty<TextLibrary>()
     private val docList = createListBinding(librarySelection) { it?.docs ?: mutableListOf() }
     private val docSelection = SimpleObjectProperty<TextDoc>()
-    private val chunkList = createListBinding(docSelection, { it?.chunks ?: mutableListOf() }, { doc, chunk -> chunk.asTextChunkViewModel(doc.all!!) })
+    private val chunkList = createListBinding(docSelection, { it?.chunks ?: mutableListOf() }, { doc, chunk -> chunk.asTextChunkViewModel(doc.all) })
 
     private lateinit var libraryListView: ListView<TextLibrary>
     private lateinit var docListView: ListView<TextDoc>

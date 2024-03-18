@@ -35,8 +35,8 @@ class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out Embedding
         }
 
         val text = it.text
-        val shortText = text.take(50).replace("\n", " ").replace("\r", " ").trim()
-        text("$shortText...") {
+        val shortText = (if (text.length <= 80) text else "${text.take(80)}...").replace("\n", " ").replace("\r", " ").trim()
+        text(shortText) {
             tooltip(text) {
                 maxWidth = 500.0
                 isWrapText = true

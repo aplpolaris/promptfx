@@ -26,8 +26,12 @@ class TextLibrary(_id: String? = null) {
         fun loadFrom(indexFile: File): TextLibrary =
             MAPPER.readValue<TextLibrary>(indexFile).also {
                 it.docs.forEach { doc ->
-                    val file = LocalTextDocIndex.fileFor(doc.metadata)
-                    doc.all = TextChunkRaw(file.readText())
+                    try {
+                        val file = LocalTextDocIndex.fileFor(doc.metadata)
+                        doc.all = TextChunkRaw(file.readText())
+                    } catch (x: IllegalStateException) {
+                        // file not found exception expected for docs with explicit text chunks
+                    }
                 }
             }
 

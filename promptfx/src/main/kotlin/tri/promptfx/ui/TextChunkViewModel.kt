@@ -44,7 +44,7 @@ fun EmbeddingSectionInDocument.asTextChunkViewModel() = object : TextChunkViewMo
 }
 
 /** Wrap [TextChunk] as a view model. */
-fun TextChunk.asTextChunkViewModel(_doc: TextChunk) = object : TextChunkViewModel {
+fun TextChunk.asTextChunkViewModel(_doc: TextChunk?) = object : TextChunkViewModel {
     override val score = null
     override val doc = null
     override val text = text(_doc)

@@ -158,11 +158,16 @@ fun <X, Y, Z> createListBinding(obj: Property<X>, op: (X?) -> List<Y>, transform
     val listener = ListChangeListener<Y> { resultList.setAll(it.list.map { transform(obj.value, it) }) }
     listeningList?.addListener(listener)
     obj.onChange {
-        val nueList = op(it!!)
         listeningList?.removeListener(listener)
-        resultList.setAll(nueList.map { transform(obj.value, it) })
-        listeningList = nueList as? ObservableList<Y>
-        listeningList?.addListener(listener)
+        if (it == null) {
+            resultList.setAll()
+            listeningList = null
+        } else {
+            val nueList = op(it)
+            resultList.setAll(nueList.map { transform(obj.value, it) })
+            listeningList = nueList as? ObservableList<Y>
+            listeningList?.addListener(listener)
+        }
     }
     return resultList
 }
