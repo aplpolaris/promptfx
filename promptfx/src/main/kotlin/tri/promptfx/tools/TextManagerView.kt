@@ -1,16 +1,9 @@
 package tri.promptfx.tools
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
-import javafx.beans.binding.Binding
-import javafx.beans.binding.ListBinding
-import javafx.beans.binding.ListExpression
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.value.ObservableValue
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
-import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.*
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -26,7 +19,7 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
     private val libraryList = observableListOf<TextLibrary>()
     private val librarySelection = SimpleObjectProperty<TextLibrary>()
     private val docList = createListBinding(librarySelection) { it?.books ?: listOf() }
-    private val docSelection = SimpleObjectProperty<TextBook>()
+    private val docSelection = SimpleObjectProperty<TextDoc>()
     private val chunkList = createListBinding(docSelection) { it?.chunks ?: listOf() }
     private val chunkSelection = SimpleObjectProperty<TextChunk>()
 

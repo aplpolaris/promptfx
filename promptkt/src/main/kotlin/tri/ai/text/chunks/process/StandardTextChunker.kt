@@ -19,7 +19,7 @@
  */
 package tri.ai.text.chunks.process
 
-import tri.ai.text.chunks.TextChunkInBook
+import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.util.info
@@ -72,10 +72,10 @@ class StandardTextChunker(
     fun TextChunkRaw.chunkBySections(combineShortSections: Boolean): List<TextChunk> {
         // return chunk if it's short enough
         if (combineShortSections && text.length <= maxChunkSize)
-            return listOf(TextChunkInBook(text.indices))
+            return listOf(TextChunkInDoc(text.indices))
 
         // break into sections and optionally concatenate short sections
-        val all = TextChunkInBook(text.indices)
+        val all = TextChunkInDoc(text.indices)
         val sections = all.splitOnSections(this)
             .recombine(if (combineShortSections) maxChunkSize else 0)
 
@@ -91,7 +91,7 @@ class StandardTextChunker(
 
         // log chunks
         result.forEach { chunk ->
-            info<StandardTextChunker>("  ${(chunk as TextChunkInBook).range} ${chunk.text(this).firstFiftyChars()}")
+            info<StandardTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
         }
 
         return result
@@ -101,7 +101,7 @@ class StandardTextChunker(
         if (it.length <= 50) it.trim() else (it.substring(0, 50).trim()+"...")
     }
 
-    fun TextChunkInBook.chunkByParagraphs(doc: TextChunkRaw): List<TextChunkInBook> {
+    fun TextChunkInDoc.chunkByParagraphs(doc: TextChunkRaw): List<TextChunkInDoc> {
         // return chunk if it's short enough
         if (text(doc).length <= maxChunkSize)
             return listOf(this)
@@ -111,7 +111,7 @@ class StandardTextChunker(
             .recombine(maxChunkSize)
 
         // split up any paragraphs that are too long
-        val result = mutableListOf<TextChunkInBook>()
+        val result = mutableListOf<TextChunkInDoc>()
         paragraphs.forEach { section ->
             if (section.text(doc).length <= maxChunkSize) {
                 result += section
@@ -124,14 +124,14 @@ class StandardTextChunker(
     }
 
     // TODO - make this find things like likely section headings
-    private fun TextChunkInBook.splitOnSections(doc: TextChunkRaw) =
+    private fun TextChunkInDoc.splitOnSections(doc: TextChunkRaw) =
         chunkByDividers(doc, listOf("\n\n\n", "\r\n\r\n\r\n", "\r\r\r", "\n\n", "\r\n\r\n", "\r\r"))
 
-    private fun TextChunkInBook.splitOnParagraphs(doc: TextChunkRaw) =
+    private fun TextChunkInDoc.splitOnParagraphs(doc: TextChunkRaw) =
         chunkByDividers(doc, listOf("\n", "\r\n", "\r"))
 
-    private fun TextChunkInBook.splitOnSentences(doc: TextChunkRaw): List<TextChunkInBook> {
-        val sentences = mutableListOf<TextChunkInBook>()
+    private fun TextChunkInDoc.splitOnSentences(doc: TextChunkRaw): List<TextChunkInDoc> {
+        val sentences = mutableListOf<TextChunkInDoc>()
         val iterator = BreakIterator.getSentenceInstance()
         iterator.setText(text(doc))
 
@@ -141,7 +141,7 @@ class StandardTextChunker(
         while (end != BreakIterator.DONE) {
             val sentence = doc.text.substring(start, end).trim()
             if (sentence.isNotEmpty()) {
-                sentences.add(TextChunkInBook(range.first + start, range.first + end - 1))
+                sentences.add(TextChunkInDoc(range.first + start, range.first + end - 1))
             }
             start = end
             end = iterator.next()
@@ -150,10 +150,10 @@ class StandardTextChunker(
         return sentences
     }
 
-    private fun TextChunkInBook.chunkByDividers(doc: TextChunkRaw, dividers: List<String>): List<TextChunk> {
+    private fun TextChunkInDoc.chunkByDividers(doc: TextChunkRaw, dividers: List<String>): List<TextChunk> {
         val pattern = dividers.joinToString(separator = "|") { Regex.escape(it) }
         val regex = Regex(pattern)
-        val chunks = mutableListOf<TextChunkInBook>()
+        val chunks = mutableListOf<TextChunkInDoc>()
         var currentIndex = 0
 
         val text = text(doc)
@@ -161,7 +161,7 @@ class StandardTextChunker(
             val chunkEnd = matchResult.range.first
             if (chunkEnd > currentIndex) {
                 chunks.add(
-                    TextChunkInBook(range.first + currentIndex, range.first + chunkEnd)
+                    TextChunkInDoc(range.first + currentIndex, range.first + chunkEnd)
                 )
             }
             currentIndex = matchResult.range.last + 1
@@ -169,7 +169,7 @@ class StandardTextChunker(
 
         if (currentIndex < doc.text.length) {
             chunks.add(
-                TextChunkInBook(range.first + currentIndex, range.first + text.length - 1)
+                TextChunkInDoc(range.first + currentIndex, range.first + text.length - 1)
             )
         }
 
@@ -185,16 +185,16 @@ class StandardTextChunker(
                 .map { it.concatenate() }
 
         /** Total number of characters in chunks. */
-        private fun List<TextChunk>.totalSize() = filterIsInstance<TextChunkInBook>().let {
+        private fun List<TextChunk>.totalSize() = filterIsInstance<TextChunkInDoc>().let {
             val min = it.minOfOrNull { it.range.first } ?: 0
             val max = it.maxOfOrNull { it.range.last } ?: 0
             max - min + 1
         }
 
         /** Concatenates all chunks into one. */
-        private fun List<TextChunk>.concatenate() = filterIsInstance<TextChunkInBook>().let {
+        private fun List<TextChunk>.concatenate() = filterIsInstance<TextChunkInDoc>().let {
             require(it.isNotEmpty())
-            TextChunkInBook(it.minOfOrNull { it.range.first } ?: 0, it.maxOfOrNull { it.range.last } ?: 0)
+            TextChunkInDoc(it.minOfOrNull { it.range.first } ?: 0, it.maxOfOrNull { it.range.last } ?: 0)
         }
 
         /**

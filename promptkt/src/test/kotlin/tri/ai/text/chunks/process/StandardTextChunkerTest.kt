@@ -3,8 +3,8 @@ package tri.ai.text.chunks.process
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.TextChunkerTest
-import tri.ai.text.chunks.TextBook
-import tri.ai.text.chunks.TextChunkInBook
+import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.process.StandardTextChunker.Companion.chunkWhile
 
 class StandardTextChunkerTest {
@@ -30,10 +30,10 @@ class StandardTextChunkerTest {
 
         println("--- Section Chunking ---")
         val chunks2 = with(chunker) {
-            TextBook("id", fullText).all!!.chunkBySections(combineShortSections = true)
+            TextDoc("id", fullText).all!!.chunkBySections(combineShortSections = true)
         }
         chunks2.take(10).forEach { section ->
-            val sb = section as TextChunkInBook
+            val sb = section as TextChunkInDoc
             val text = fullText.substring(sb.range).replace("\\s+".toRegex(), " ").trim()
             println("  ${sb.range} ${text.take(200)}")
         }

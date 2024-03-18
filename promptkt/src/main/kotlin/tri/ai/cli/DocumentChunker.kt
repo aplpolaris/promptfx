@@ -19,7 +19,7 @@
  */
 package tri.ai.cli
 
-import tri.ai.text.chunks.process.LocalTextDocumentSet
+import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.ai.text.chunks.process.StandardTextChunker
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
@@ -61,7 +61,7 @@ object DocumentChunker {
             ?: "docs.json")
 
         println("${ANSI_CYAN}Refreshing file text in $rootFolder...$ANSI_RESET")
-        val docs = LocalTextDocumentSet(rootFolder, indexFile)
+        val docs = LocalTextDocIndex(rootFolder, indexFile)
         docs.loadIndex()
         docs.processDocuments(reindexAll)
 

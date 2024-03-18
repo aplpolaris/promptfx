@@ -16,7 +16,7 @@ class TextChunkDeserializer : JsonDeserializer<TextChunk>() {
         return if (node.has("text") && !node.has("first") && !node.has("last")) {
             objectMapper.treeToValue(node, TextChunkRaw::class.java)
         } else if (node.has("first") && node.has("last") && !node.has("text")) {
-            objectMapper.treeToValue(node, TextChunkInBook::class.java)
+            objectMapper.treeToValue(node, TextChunkInDoc::class.java)
         } else {
             throw IllegalArgumentException("Unknown type of TextChunk")
         }

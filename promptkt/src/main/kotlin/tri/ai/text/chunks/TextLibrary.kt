@@ -9,7 +9,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 
 /**
- * Collection of [TextBook]s.
+ * Collection of [TextDoc]s.
  */
 class TextLibrary(_id: String? = null) {
     /** Metadata for the library. */
@@ -17,7 +17,7 @@ class TextLibrary(_id: String? = null) {
         id = _id ?: ""
     }
     /** Books in the library. */
-    val books = mutableListOf<TextBook>()
+    val books = mutableListOf<TextDoc>()
 
     companion object {
         fun loadFrom(indexFile: File): TextLibrary =

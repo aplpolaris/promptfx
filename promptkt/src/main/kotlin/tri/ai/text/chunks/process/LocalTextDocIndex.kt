@@ -29,16 +29,16 @@ import java.time.Instant
 import java.time.LocalDateTime
 
 /**
- * Document set managed within local file structure.
+ * Manages set of [TextDoc]s coming from a local file structure.
  * Designed to save/restore metadata and chunk information to the file system.
  */
-class LocalTextDocumentSet(
+class LocalTextDocIndex(
     private val rootFolder: File,
     _indexFile: File? = null
 ) {
 
-    /** Tracks documents by id. */
-    val documents = mutableMapOf<String, Pair<File, TextBook>>()
+    /** Index of documents by id. */
+    val docIndex = mutableMapOf<String, Pair<File, TextDoc>>()
 
     private val indexFile = _indexFile ?: File(rootFolder, "docs.json")
 
@@ -48,12 +48,12 @@ class LocalTextDocumentSet(
     fun processDocuments(reindexAll: Boolean) {
         preprocessDocumentFormats(reindexAll)
         if (reindexAll) {
-            documents.clear()
+            docIndex.clear()
         }
-        val docs = mutableMapOf<String, Pair<File, TextBook>>()
+        val docs = mutableMapOf<String, Pair<File, TextDoc>>()
         rootFiles(".txt").forEach {
             if (reindexAll || it.absolutePath !in docs) {
-                val book = TextBook(it.name).apply {
+                val book = TextDoc(it.name).apply {
                     metadata.title = it.nameWithoutExtension
                     metadata.date = LocalDateTime.ofInstant(Instant.ofEpochMilli(it.lastModified()), java.time.ZoneId.systemDefault()).toLocalDate()
                     metadata.path = it.absolutePath
@@ -63,20 +63,20 @@ class LocalTextDocumentSet(
             }
         }
         if (reindexAll)
-            documents.putAll(docs)
+            docIndex.putAll(docs)
         else
-            documents.putAll(docs.filter { it.key !in documents })
+            docIndex.putAll(docs.filter { it.key !in docIndex })
     }
 
     /** Breaks up documents into chunks. */
     fun processChunks(chunker: TextChunker, reindexAll: Boolean) {
-        documents.values.forEach {
+        docIndex.values.forEach {
             chunker.process(it.first, it.second, reindexAll)
         }
     }
 
     /** Breaks up a single document into chunks. */
-    fun TextChunker.process(file: File, doc: TextBook, reindexAll: Boolean) {
+    fun TextChunker.process(file: File, doc: TextDoc, reindexAll: Boolean) {
         if (doc.chunks.isEmpty() || reindexAll) {
             doc.chunks.clear()
 
@@ -92,13 +92,13 @@ class LocalTextDocumentSet(
     /** Loads index from file. */
     fun loadIndex() {
         if (indexFile.exists()) {
-            documents.clear()
+            docIndex.clear()
             val index = TextLibrary.loadFrom(indexFile)
             index.books.forEach { doc ->
                 // TODO - allow absolute and relative path attempts to find file
                 val file = File(doc.metadata.path ?: throw IllegalStateException("File path not found in metadata"))
                 require(file.exists()) { "File not found: ${doc.metadata.path} ... TODO try relative path automatically" }
-                documents[doc.metadata.id] = file to doc
+                docIndex[doc.metadata.id] = file to doc
             }
         }
     }
@@ -106,7 +106,7 @@ class LocalTextDocumentSet(
     /** Saves index to file. */
     fun saveIndex() {
         val index = TextLibrary("").apply {
-            books.addAll(documents.values.map { it.second })
+            books.addAll(docIndex.values.map { it.second })
         }
         TextLibrary.saveTo(index, indexFile)
     }

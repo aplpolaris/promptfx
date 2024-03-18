@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
  * Tracks first and last character in a text string, inclusive.
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-class TextChunkInBook(
+class TextChunkInDoc(
     @get:JsonInclude(JsonInclude.Include.ALWAYS)
     val first: Int,
     @get:JsonInclude(JsonInclude.Include.ALWAYS)
