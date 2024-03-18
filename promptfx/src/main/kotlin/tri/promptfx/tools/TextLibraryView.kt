@@ -41,7 +41,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     }
                 }
                 // load a TextLibrary file
-                button("Load", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
+                button("Import...", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
                     action {
                         chooseFile(
                             "Select Text Library",

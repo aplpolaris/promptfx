@@ -26,3 +26,9 @@ import tri.ai.text.chunks.TextChunkRaw
 interface TextChunker {
     fun chunk(doc: TextChunkRaw): List<TextChunk>
 }
+
+/** Text chunker that returns unalterated input. */
+object NoOpTextChunker : TextChunker {
+    override fun chunk(doc: TextChunkRaw) = listOf(doc)
+}
+
