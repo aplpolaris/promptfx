@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
+import javafx.stage.FileChooser
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.text.chunks.*
@@ -37,21 +38,52 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 // generate chunks
                 button("New...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
                     action {
-                        find<TextChunkerWizard>().openModal()
+                        find<TextChunkerWizard>().apply {
+                            onComplete {
+                                val wizardChunks = model.finalChunks()
+                                val doc = TextDoc().apply {
+                                    metadata.id = "New Document"
+                                    chunks.addAll(wizardChunks)
+                                }
+                                val lib = TextLibrary().apply {
+                                    metadata.id = "New Library"
+                                    docs.add(doc)
+                                }
+                                libraryList.add(lib)
+                                libraryListView.selectionModel.select(lib)
+                                docListView.selectionModel.select(doc)
+                            }
+                            openModal()
+                        }
                     }
                 }
                 // load a TextLibrary file
-                button("Import...", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+                button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
                     action {
                         chooseFile(
-                            "Select Text Library",
-                            filters = arrayOf(),
+                            "Load Text Library",
+                            filters = arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")),
                             mode = FileChooserMode.Single
                         ).firstOrNull()?.let {
                             val lib = TextLibrary.loadFrom(it)
                             lib.metadata.id = it.name
                             libraryList.add(lib)
                             libraryListView.selectionModel.select(lib)
+                        }
+                    }
+                }
+                // save a TextLibrary file
+                button("Save...", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+                    enableWhen(librarySelection.isNotNull)
+                    action {
+                        librarySelection.value?.let { library ->
+                            chooseFile(
+                                "Save Text Library",
+                                filters = arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")),
+                                mode = FileChooserMode.Save
+                            ).firstOrNull()?.let {
+                                TextLibrary.saveTo(library, it)
+                            }
                         }
                     }
                 }
