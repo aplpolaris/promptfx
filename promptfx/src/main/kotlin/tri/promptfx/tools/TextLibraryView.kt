@@ -40,18 +40,16 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     action {
                         find<TextChunkerWizard>().apply {
                             onComplete {
-                                val wizardChunks = model.finalChunks()
-                                val doc = TextDoc().apply {
-                                    metadata.id = "New Document"
-                                    chunks.addAll(wizardChunks)
+                                val wizardDocs = model.finalDocs()
+                                if (wizardDocs.isNotEmpty()) {
+                                    val lib = TextLibrary().apply {
+                                        metadata.id = "New Library"
+                                        docs.addAll(wizardDocs)
+                                    }
+                                    libraryList.add(lib)
+                                    libraryListView.selectionModel.select(lib)
+                                    docListView.selectionModel.select(wizardDocs.first())
                                 }
-                                val lib = TextLibrary().apply {
-                                    metadata.id = "New Library"
-                                    docs.add(doc)
-                                }
-                                libraryList.add(lib)
-                                libraryListView.selectionModel.select(lib)
-                                docListView.selectionModel.select(doc)
                             }
                             openModal()
                         }

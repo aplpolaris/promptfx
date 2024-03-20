@@ -22,7 +22,6 @@ package tri.ai.text.chunks.process
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
-import tri.ai.embedding.pdfText
 import tri.ai.text.chunks.*
 import java.io.File
 import java.time.Instant
@@ -46,12 +45,12 @@ class LocalTextDocIndex(
 
     /** Scrapes text from documents in index. */
     fun processDocuments(reindexAll: Boolean) {
-        preprocessDocumentFormats(reindexAll)
+        preprocessDocumentFormats(rootFolder, reindexAll)
         if (reindexAll) {
             docIndex.clear()
         }
         val docs = mutableMapOf<String, Pair<File, TextDoc>>()
-        rootFiles(".txt").forEach {
+        rootFolder.rootFiles(".txt").forEach {
             if (reindexAll || it.absolutePath !in docs) {
                 val book = TextDoc(it.name).apply {
                     metadata.title = it.nameWithoutExtension
@@ -110,39 +109,6 @@ class LocalTextDocIndex(
 
     //endregion
 
-    //region FROM LocalEmbeddingIndex.kt
-
-    private fun rootFiles(ext: String) = rootFolder.listFiles { _, name -> name.endsWith(ext) }?.toList() ?: emptyList()
-
-    //region ALTERNATE FORMAT PROCESSING
-
-    /**
-     * Convert docs in other formats to text files if they don't already exist.
-     */
-    private fun preprocessDocumentFormats(reprocessAll: Boolean = false) {
-        preprocess(".pdf", reprocessAll) { pdfText(it) }
-        preprocess(".docx", reprocessAll) { docxText(it) }
-        preprocess(".doc", reprocessAll) { docText(it) }
-    }
-
-    private fun preprocess(ext: String, reprocessAll: Boolean, op: (File) -> String) {
-        rootFiles(ext).forEach {
-            val txtFile = File(it.absolutePath.replace(ext, ".txt"))
-            if (reprocessAll || !txtFile.exists()) {
-                txtFile.writeText(op(it))
-            }
-        }
-    }
-
-    /** Extract text from DOCX. */
-    private fun docxText(file: File) = XWPFWordExtractor(XWPFDocument(file.inputStream())).text
-
-    /** Extract text from DOC. */
-    private fun docText(file: File) = WordExtractor(file.inputStream()).text
-
-    //endregion
-
-    //endregion
     companion object {
         /** Get the file associated with the metadata. */
         fun fileFor(metadata: TextDocMetadata): File {
@@ -151,6 +117,64 @@ class LocalTextDocIndex(
             require(file.exists()) { "File not found: ${metadata.path} ... TODO try relative path automatically" }
             return file
         }
+
+
+        //region ALTERNATE FORMAT PROCESSING
+
+        /**
+         * Convert docs in other formats to text files if they don't already exist.
+         */
+        internal fun preprocessDocumentFormats(folder: File, reprocessAll: Boolean = false) {
+            require(folder.isDirectory)
+
+            fun File.process(ext: String, op: (File) -> String) = rootFiles(ext).preprocess(ext, reprocessAll, op)
+
+            folder.process(".pdf", ::pdfText)
+            folder.process(".docx", ::docxText)
+            folder.process(".doc", ::docText)
+        }
+
+        private fun List<File>.preprocess(ext: String, reprocessAll: Boolean, op: (File) -> String) {
+            forEach {
+                val txtFile = File(it.absolutePath.replace(ext, ".txt"))
+                if (reprocessAll || !txtFile.exists()) {
+                    txtFile.writeText(op(it))
+                }
+            }
+        }
+
+        //endregion
+
+        //region CONVERT FILES TO TEXT
+
+        /** Check if file is a plaintext file, or can be converted to text, based on extension. */
+        // TODO - think about how to calibrate supported extensions
+        fun File.isFileWithText() = extension in setOf("pdf", "docx", "doc") ||
+                extension in setOf("txt", "csv")
+//                extension in setOf("txt", "md", "html", "htm", "xml", "json", "csv", "tsv")
+
+        /** Get text from a file by extension. */
+        // TODO - think about how to calibrate supported extensions
+        fun File.fileToText() = when (extension) {
+            "pdf" -> pdfText(this)
+            "docx" -> docxText(this)
+            "doc" -> docText(this)
+            else -> readText()
+        }
+
+        /** Extract text from PDF. */
+        private fun pdfText(file: File) = tri.ai.embedding.pdfText(file)
+
+        /** Extract text from DOCX. */
+        private fun docxText(file: File) = XWPFWordExtractor(XWPFDocument(file.inputStream())).text
+
+        /** Extract text from DOC. */
+        private fun docText(file: File) = WordExtractor(file.inputStream()).text
+
+        //endregion
+
+        /** Get all files in the root folder with the given extension. */
+        internal fun File.rootFiles(ext: String) = listFiles { _, name -> name.endsWith(ext) }?.toList() ?: emptyList()
     }
 
 }

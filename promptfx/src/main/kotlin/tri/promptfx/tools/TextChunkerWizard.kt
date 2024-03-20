@@ -11,11 +11,10 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
-import tri.ai.text.chunks.process.DelimiterTextChunker
-import tri.ai.text.chunks.process.NoOpTextChunker
-import tri.ai.text.chunks.process.RegexTextChunker
-import tri.ai.text.chunks.process.StandardTextChunker
-import tri.ai.text.chunks.process.TextChunker
+import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.process.*
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_AUTO
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_DELIMITER
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_REGEX
@@ -28,6 +27,7 @@ import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
 import java.io.File
+import java.net.URI
 import java.util.regex.PatternSyntaxException
 
 /** Model for the [TextChunkerWizard]. */
@@ -35,14 +35,20 @@ class TextChunkerWizardModel: ViewModel() {
 
     // inputs
     var sourceToggleSelection: ObjectProperty<String> = SimpleObjectProperty(FILE_OPTION)
+
     var isFileMode = sourceToggleSelection.isEqualTo(FILE_OPTION)!!
     val file = SimpleObjectProperty<File>()
     val fileName = file.stringBinding { it?.name ?: "None" }
+
     val isFolderMode = sourceToggleSelection.isEqualTo(FOLDER_OPTION)!!
     val folder = SimpleObjectProperty<File>()
     val folderName = folder.stringBinding { it?.name ?: "None" }
+    val folderIncludeSubfolders = SimpleObjectProperty(false)
+    val folderExtractText = SimpleObjectProperty(true)
+
     val isUserInputMode = sourceToggleSelection.isEqualTo(USER_INPUT)!!
     val userText = SimpleStringProperty()
+
     val isWebScrapingMode = sourceToggleSelection.isEqualTo(WEB_SCRAPING)!!
 
     // whether source has been properly selected
@@ -77,11 +83,27 @@ class TextChunkerWizardModel: ViewModel() {
     /** Get sample of input text based on current settings. */
     private fun inputTextSample(): String {
         return when {
-            isFileMode.get() -> file.value?.readText() ?: ""
-            isFolderMode.get() -> folder.value?.walkTopDown()?.joinToString("\n") { it.readText() } ?: "" // TODO <-- adapt this for selective file types
+            isFileMode.get() -> file.value?.fileToText() ?: ""
+            isFolderMode.get() -> folder.value?.walkTopDown()
+                        ?.filter { it.isFileWithText() }
+                        ?.firstOrNull()
+                        ?.fileToText() ?: ""
             isUserInputMode.get() -> userText.value
             isWebScrapingMode.get() -> ""
             else -> ""
+        }
+    }
+
+    /** Get all text based on current settings, with multiple strings returned if multiple files. */
+    private fun allInputText(): Map<URI?, String> {
+        return when {
+            isFileMode.get() -> mapOf(file.value.toURI() to (file.value?.fileToText() ?: ""))
+            isFolderMode.get() -> folder.value!!.walkTopDown()
+                        .filter { it.isFileWithText() }
+                        .associate { it.toURI() to it.fileToText() }
+            isUserInputMode.get() -> mapOf(null to userText.value)
+            isWebScrapingMode.get() -> mapOf(null to "")
+            else -> throw IllegalStateException("No source selected")
         }
     }
 
@@ -96,33 +118,35 @@ class TextChunkerWizardModel: ViewModel() {
     }
 
     /** Chunker based on current settings. */
-    private fun chunker(): TextChunker {
-        return when {
-            isChunkAutomatic.get() ->
-                StandardTextChunker(maxChunkSize.value)
-            isChunkDelimiter.get() ->
-                DelimiterTextChunker(listOf(chunkDelimiter.value
-                    .replace("\\n", "\n")
-                    .replace("\\r", "\r")
-                    .replace("\\t", "\t")
-                    .ifEmpty { "\n" }))
-            isChunkRegex.get() -> try {
-                RegexTextChunker(chunkRegex.value.toRegex())
-            } catch (x: PatternSyntaxException) {
-                // TODO - show error to user
-                NoOpTextChunker
-            }
-            isChunkField.get() -> NoOpTextChunker // TODO
-            else -> NoOpTextChunker
+    private fun chunker(): TextChunker = when {
+        isChunkAutomatic.get() ->
+            StandardTextChunker(maxChunkSize.value)
+        isChunkDelimiter.get() ->
+            DelimiterTextChunker(listOf(chunkDelimiter.value
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+                .ifEmpty { "\n" }))
+        isChunkRegex.get() -> try {
+            RegexTextChunker(chunkRegex.value.toRegex())
+        } catch (x: PatternSyntaxException) {
+            // TODO - show error to user
+            NoOpTextChunker
         }
+        isChunkField.get() -> NoOpTextChunker // TODO
+        else -> NoOpTextChunker
     }
 
     /** Get final chunks. */
-    fun finalChunks(): List<TextChunk> {
-        val inputTextSample = inputTextSample()
+    fun finalDocs(): List<TextDoc> {
         val chunker = chunker()
-        val docChunk = TextChunkRaw(inputTextSample)
-        return chunker.chunk(docChunk)
+        val inputText = allInputText()
+        return inputText.map { (uri, text) ->
+            val docChunk = TextChunkRaw(text)
+            TextDoc(uri.toString(), docChunk).apply {
+                chunks.addAll(chunker.chunk(docChunk))
+            }
+        }
     }
 
 }
@@ -189,13 +213,25 @@ class TextChunkerWizardSelectData: View("Select Source") {
             hbox(5, alignment = Pos.CENTER_LEFT) {
                 visibleWhen(model.isFolderMode)
                 managedWhen(model.isFolderMode)
-                button("Select...") {
-                    action {
-                        model.folder.value = chooseDirectory("Select Directory", owner = currentWindow)
+                vbox(5) {
+                    hbox {
+                        button("Select...") {
+                            action {
+                                model.folder.value = chooseDirectory("Select Directory", owner = currentWindow)
+                            }
+                        }
+                        label("Folder:")
+                        label(model.folderName)
+                    }
+                    checkbox("Include subfolders", model.folderIncludeSubfolders) {
+                        // TODO - scripting over subfolders might be too aggressive
+                        isDisable = true
+//                        enableWhen(model.folder.isNotNull)
+                    }
+                    checkbox("Extract text from PDF, DOC files", model.folderExtractText) {
+                        enableWhen(model.folder.isNotNull)
                     }
                 }
-                label("Folder:")
-                label(model.folderName)
             }
             hbox(5) {
                 visibleWhen(model.isUserInputMode)
