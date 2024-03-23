@@ -19,6 +19,7 @@ import java.nio.file.Files
 class WebScrapeFragment: Fragment("Web Scraper Settings") {
 
     val model: WebScrapeViewModel by param()
+    val isShowLocalFolder = SimpleBooleanProperty(false)
 
     override val root = form {
         fieldset("Crawl Settings") {
@@ -50,6 +51,8 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
                 label(model.webUrlLimit)
             }
             field("Target Folder") {
+                visibleWhen(isShowLocalFolder)
+                managedWhen(isShowLocalFolder)
                 hyperlink(model.webTargetFolder.stringBinding {
                     val path = it!!.absolutePath
                     if (path.length > 25) {

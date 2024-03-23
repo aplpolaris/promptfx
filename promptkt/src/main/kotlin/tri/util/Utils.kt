@@ -19,6 +19,7 @@
  */
 package tri.util
 
+import java.util.IllegalFormatException
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -73,7 +74,7 @@ inline fun <reified T : Any> log(level: Level, template: String, vararg args: An
     } else if (USE_STDOUT_LOGGER) {
         try {
             println("$level: $template".format(*args))
-        } catch (e: Exception) {
+        } catch (e: IllegalFormatException) {
             println("$level: $template")
         }
     } else {

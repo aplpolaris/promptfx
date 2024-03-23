@@ -13,13 +13,13 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.*
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
-import tri.promptfx.docs.WebCrawler
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_AUTO
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_DELIMITER
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_FIELD
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_REGEX
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.FILE_OPTION
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.FOLDER_OPTION
+import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.RSS_FEED
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.USER_INPUT
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.WEB_SCRAPING
 import tri.promptfx.ui.TextChunkListView
@@ -27,6 +27,7 @@ import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
 import java.io.File
 import java.net.URI
+import java.net.URL
 import java.util.regex.PatternSyntaxException
 
 /** Model for the [TextChunkerWizard]. */
@@ -51,11 +52,15 @@ class TextChunkerWizardModel: ViewModel() {
     val isWebScrapeMode = sourceToggleSelection.isEqualTo(WEB_SCRAPING)!!
     val webScrapeModel = WebScrapeViewModel()
 
+    val isRssMode = sourceToggleSelection.isEqualTo(RSS_FEED)!!
+    val rssFeed = SimpleObjectProperty<URL>()
+
     // whether source has been properly selected
     val isSourceSelected = (isFileMode.and(file.isNotNull))
         .or(isFolderMode.and(folder.isNotNull))
         .or(isUserInputMode.and(userText.isNotEmpty))
-        .or(isWebScrapeMode.and(webScrapeModel.webUrl.isNotEmpty).and(webScrapeModel.webTargetFolder.isNotNull))!!
+        .or(isWebScrapeMode.and(webScrapeModel.webUrl.isNotEmpty))
+        .or(isRssMode.and(rssFeed.isNotNull))!!
 
     // chunking options
     var chunkMethodSelection: ObjectProperty<String> = SimpleObjectProperty(CHUNK_AUTO)
@@ -90,6 +95,7 @@ class TextChunkerWizardModel: ViewModel() {
                         ?.fileToText() ?: ""
             isUserInputMode.get() -> userText.value
             isWebScrapeMode.get() -> webScrapeModel.mainUrlText()
+            isRssMode.get() -> TODO()
             else -> ""
         }
     }
@@ -103,6 +109,7 @@ class TextChunkerWizardModel: ViewModel() {
                         .associate { it.toURI() to it.fileToText() }
             isUserInputMode.get() -> mapOf(null to userText.value)
             isWebScrapeMode.get() -> webScrapeModel.scrapeWebsite()
+            isRssMode.get() -> TODO()
             else -> throw IllegalStateException("No source selected")
         }
     }
@@ -190,6 +197,10 @@ class TextChunkerWizardSelectData: View("Select Source") {
                     radiobutton(WEB_SCRAPING) {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.GLOBE)
                     }
+                    radiobutton(RSS_FEED) {
+                        isDisable = true
+                        graphic = FontAwesomeIconView(FontAwesomeIcon.RSS)
+                    }
                     model.sourceToggleSelection.bindBidirectional(selectedValueProperty())
                     model.sourceToggleSelection.set(FILE_OPTION)
                 }
@@ -245,7 +256,14 @@ class TextChunkerWizardSelectData: View("Select Source") {
             hbox(5) {
                 visibleWhen(model.isWebScrapeMode)
                 managedWhen(model.isWebScrapeMode)
-                add(find<WebScrapeFragment>("model" to model.webScrapeModel))
+                add(find<WebScrapeFragment>("model" to model.webScrapeModel) {
+                    isShowLocalFolder.set(false)
+                })
+            }
+            hbox(5) {
+                visibleWhen(model.isRssMode)
+                managedWhen(model.isRssMode)
+                text("TODO")
             }
         }
     }
@@ -255,6 +273,7 @@ class TextChunkerWizardSelectData: View("Select Source") {
         internal const val FOLDER_OPTION = "Directory"
         internal const val USER_INPUT = "User Input"
         internal const val WEB_SCRAPING = "Web Scraping"
+        internal const val RSS_FEED = "RSS Feed"
     }
 }
 
