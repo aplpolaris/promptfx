@@ -68,10 +68,17 @@ inline fun <reified T : Any> log(level: Level, msg: String, x: Exception? = null
         loggerFor<T>().log(level, msg, x)
 }
 inline fun <reified T : Any> log(level: Level, template: String, vararg args: Any?) {
-    if (USE_STDOUT_LOGGER) {
-        println("$level: $template".format(*args))
-    } else
+    if (USE_STDOUT_LOGGER && args.isEmpty()) {
+        println("$level: $template")
+    } else if (USE_STDOUT_LOGGER) {
+        try {
+            println("$level: $template".format(*args))
+        } catch (e: Exception) {
+            println("$level: $template")
+        }
+    } else {
         loggerFor<T>().log(level, template, args)
+    }
 }
 
 //endregion

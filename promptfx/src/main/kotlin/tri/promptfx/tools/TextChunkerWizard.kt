@@ -3,9 +3,7 @@ package tri.promptfx.tools
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
-import javafx.beans.property.ObjectProperty
-import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.*
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -15,12 +13,13 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.*
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
+import tri.promptfx.docs.WebCrawler
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_AUTO
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_DELIMITER
-import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_REGEX
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_FIELD
-import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.FOLDER_OPTION
+import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_REGEX
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.FILE_OPTION
+import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.FOLDER_OPTION
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.USER_INPUT
 import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.WEB_SCRAPING
 import tri.promptfx.ui.TextChunkListView
@@ -49,13 +48,14 @@ class TextChunkerWizardModel: ViewModel() {
     val isUserInputMode = sourceToggleSelection.isEqualTo(USER_INPUT)!!
     val userText = SimpleStringProperty()
 
-    val isWebScrapingMode = sourceToggleSelection.isEqualTo(WEB_SCRAPING)!!
+    val isWebScrapeMode = sourceToggleSelection.isEqualTo(WEB_SCRAPING)!!
+    val webScrapeModel = WebScrapeViewModel()
 
     // whether source has been properly selected
     val isSourceSelected = (isFileMode.and(file.isNotNull))
         .or(isFolderMode.and(folder.isNotNull))
         .or(isUserInputMode.and(userText.isNotEmpty))
-        .or(isWebScrapingMode.and(false))!!
+        .or(isWebScrapeMode.and(webScrapeModel.webUrl.isNotEmpty).and(webScrapeModel.webTargetFolder.isNotNull))!!
 
     // chunking options
     var chunkMethodSelection: ObjectProperty<String> = SimpleObjectProperty(CHUNK_AUTO)
@@ -89,7 +89,7 @@ class TextChunkerWizardModel: ViewModel() {
                         ?.firstOrNull()
                         ?.fileToText() ?: ""
             isUserInputMode.get() -> userText.value
-            isWebScrapingMode.get() -> ""
+            isWebScrapeMode.get() -> webScrapeModel.mainUrlText()
             else -> ""
         }
     }
@@ -102,7 +102,7 @@ class TextChunkerWizardModel: ViewModel() {
                         .filter { it.isFileWithText() }
                         .associate { it.toURI() to it.fileToText() }
             isUserInputMode.get() -> mapOf(null to userText.value)
-            isWebScrapingMode.get() -> mapOf(null to "")
+            isWebScrapeMode.get() -> webScrapeModel.scrapeWebsite()
             else -> throw IllegalStateException("No source selected")
         }
     }
@@ -188,7 +188,6 @@ class TextChunkerWizardSelectData: View("Select Source") {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.KEYBOARD_ALT)
                     }
                     radiobutton(WEB_SCRAPING) {
-                        isDisable = true
                         graphic = FontAwesomeIconView(FontAwesomeIcon.GLOBE)
                     }
                     model.sourceToggleSelection.bindBidirectional(selectedValueProperty())
@@ -244,9 +243,9 @@ class TextChunkerWizardSelectData: View("Select Source") {
                 vgrow = Priority.ALWAYS
             }
             hbox(5) {
-                visibleWhen(model.isWebScrapingMode)
-                managedWhen(model.isWebScrapingMode)
-                label("TBD")
+                visibleWhen(model.isWebScrapeMode)
+                managedWhen(model.isWebScrapeMode)
+                add(find<WebScrapeFragment>("model" to model.webScrapeModel))
             }
         }
     }
