@@ -54,7 +54,7 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
                 visibleWhen(isShowLocalFolder)
                 managedWhen(isShowLocalFolder)
                 hyperlink(model.webTargetFolder.stringBinding {
-                    val path = it!!.absolutePath
+                    val path = it?.absolutePath ?: ""
                     if (path.length > 25) {
                         "..." + path.substring(path.length - 24)
                     } else {
