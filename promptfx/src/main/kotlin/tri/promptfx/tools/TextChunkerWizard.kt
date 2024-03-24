@@ -115,14 +115,14 @@ class TextChunkerWizardModel: ViewModel() {
     }
 
     /** Get all text based on current settings, with multiple strings returned if multiple files. */
-    private fun allInputText(): Map<URI?, String> {
+    private fun allInputText(progressUpdate: (String) -> Unit): Map<URI?, String> {
         return when {
             isFileMode.get() -> mapOf(file.value.toURI() to (file.value?.fileToText() ?: ""))
             isFolderMode.get() -> folder.value!!.walkTopDown()
                         .filter { it.isFileWithText() }
                         .associate { it.toURI() to it.fileToText() }
             isUserInputMode.get() -> mapOf(null to userText.value)
-            isWebScrapeMode.get() -> webScrapeModel.scrapeWebsite()
+            isWebScrapeMode.get() -> webScrapeModel.scrapeWebsite(progressUpdate)
             isRssMode.get() -> TODO()
             else -> throw IllegalStateException("No source selected")
         }
@@ -166,9 +166,9 @@ class TextChunkerWizardModel: ViewModel() {
     }
 
     /** Get final chunks. */
-    fun finalDocs(): List<TextDoc> {
+    fun finalDocs(progressUpdate: (String) -> Unit): List<TextDoc> {
         val chunker = chunker()
-        val inputText = allInputText()
+        val inputText = allInputText(progressUpdate)
         val addedChunks = mutableSetOf<String>()
         return inputText.mapNotNull { (uri, text) ->
             val docChunk = TextChunkRaw(text)
@@ -189,7 +189,7 @@ class TextChunkerWizardModel: ViewModel() {
         }
     }
 
-    fun finalLibrary(): TextLibrary? {
+    fun finalLibrary(progressUpdate: (String) -> Unit): TextLibrary? {
         val sourceInfo = when {
             isFileMode.get() -> file.value?.toURI()?.toString()
             isFolderMode.get() -> folder.value?.toURI()?.toString()
@@ -198,7 +198,7 @@ class TextChunkerWizardModel: ViewModel() {
             isRssMode.get() -> rssFeed.value.toString()
             else -> "Unknown"
         }
-        val finalDocs = finalDocs()
+        val finalDocs = finalDocs(progressUpdate)
         return if (finalDocs.isEmpty()) null
         else TextLibrary().apply {
             metadata.id = "Text Content from $sourceInfo"

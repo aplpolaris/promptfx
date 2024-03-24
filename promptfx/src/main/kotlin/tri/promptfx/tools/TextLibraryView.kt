@@ -6,8 +6,7 @@ import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ObservableList
-import javafx.scene.control.ListView
-import javafx.scene.control.SelectionMode
+import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import javafx.stage.FileChooser
@@ -77,19 +76,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 // generate chunks
                 button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
                     tooltip("Create a new text library.")
-                    action {
-                        TextChunkerWizard().apply {
-                            onComplete {
-                                val wizardLib = model.finalLibrary()
-                                if (wizardLib != null) {
-                                    libraryList.add(wizardLib)
-                                    libraryListView.selectionModel.select(wizardLib)
-                                    docListView.selectionModel.select(wizardLib.docs.first())
-                                }
-                            }
-                            openModal()
-                        }
-                    }
+                    action { showTextLibraryWizard() }
                 }
                 // load a TextLibrary file
                 button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
@@ -125,6 +112,37 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     }
                 }
             }
+        }
+    }
+
+    private fun showTextLibraryWizard() {
+        TextChunkerWizard().apply {
+            onComplete {
+                // show an indefinite progress indicator dialog while importing text in background
+                val progressDialog = Dialog<ButtonType>().apply {
+                    graphic = ProgressIndicator(-1.0)
+                    title = "Creating Text Library"
+                    isResizable = false
+                    initOwner(currentWindow)
+                    result = ButtonType.OK
+                }
+                runAsync {
+                    println("Creating library from user settings")
+                    model.finalLibrary {
+                        runLater { progressDialog.contentText = it }
+                    }
+                } ui {
+                    println("Created library: $it")
+                    progressDialog.close()
+                    if (it != null) {
+                        libraryList.add(it)
+                        libraryListView.selectionModel.select(it)
+                        docListView.selectionModel.select(it.docs.first())
+                    }
+                }
+                progressDialog.showAndWait()
+            }
+            openModal()
         }
     }
 

@@ -86,7 +86,15 @@ class WebScrapeViewModel {
     /** Get text of main URL. */
     fun mainUrlText() = WebCrawler.scrapeText(webUrl.value).third
     /** Scrape the website, with the given crawl settings. */
-    fun scrapeWebsite() = WebCrawler.crawlWebsite(webUrl.value, webUrlDepth.value, webUrlLimit.value, webUrlDomain.value)
-        .map { (url, titleText) -> URI.create(url) to titleText.second }.toMap()
-
+    fun scrapeWebsite(progressUpdate: (String) -> Unit) =
+        WebCrawler.crawlWebsite(
+            url = webUrl.value,
+            depth = webUrlDepth.value,
+            maxLinks = webUrlLimit.value,
+            requireSameDomain = webUrlDomain.value,
+            scraped = mutableSetOf(),
+            progressUpdate = progressUpdate
+        ).map { (url, titleText) ->
+            URI.create(url) to titleText.second
+        }.toMap()
 }
