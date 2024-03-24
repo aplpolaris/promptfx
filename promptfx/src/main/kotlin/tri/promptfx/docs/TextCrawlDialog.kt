@@ -79,7 +79,13 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
             spacing = 10.0
             button("Crawl") {
                 action {
-                    WebCrawler.crawlWebsite(url.value, depth = 1, maxLinks = 100, targetFolder = folder.value)
+                    WebCrawler.crawlWebsite(
+                        url.value,
+                        depth = 1,
+                        maxLinks = 100,
+                        requireSameDomain = true,
+                        targetFolder = folder.value
+                    )
                     close()
                 }
             }
@@ -90,8 +96,8 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
 object WebCrawler {
 
     /** Crawls a given URL, extracting text and optionally following links. */
-    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, targetFolder: File) {
-        val urlTitleText = crawlWebsite(url, depth, maxLinks)
+    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, targetFolder: File) {
+        val urlTitleText = crawlWebsite(url, depth, maxLinks, requireSameDomain)
         urlTitleText.forEach { (_, titleText) ->
             File(targetFolder, "${titleText.first}.txt")
                 .writeText(titleText.second)
@@ -99,11 +105,12 @@ object WebCrawler {
     }
 
     /** Crawls a given URL, extracting text and optionally following links. */
-    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, scraped: MutableSet<String> = mutableSetOf()): Map<String, Pair<String, String>> {
+    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, scraped: MutableSet<String> = mutableSetOf()): Map<String, Pair<String, String>> {
         if (url.isBlank() || url in scraped)
             return mapOf()
         return runAsync {
-            println("Scraping text and links from $url...")
+            val domain = domain(url)
+            println("Scraping text and links from $url, domain $domain...")
             val urlTitleText = mutableMapOf<String, Pair<String, String>>()
             try {
                 val (doc, docNode, text) = scrapeText(url)
@@ -113,8 +120,10 @@ object WebCrawler {
                         urlTitleText[url] = title to text
                 }
                 if (depth > 0) {
-                    docNode.links().take(maxLinks).forEach {
-                        urlTitleText.putAll(crawlWebsite(it, depth - 1, maxLinks, urlTitleText.keys))
+                    docNode.links().take(maxLinks).filter {
+                        !requireSameDomain || it.contains("//$domain")
+                    }.forEach {
+                        urlTitleText.putAll(crawlWebsite(it, depth - 1, maxLinks, requireSameDomain, urlTitleText.keys))
                     }
                 }
             } catch (x: IOException) {
@@ -122,6 +131,11 @@ object WebCrawler {
             }
             urlTitleText
         }.get()
+    }
+
+    /** Get domain from URL. */
+    private fun domain(url: String): String {
+        return url.substringAfter("//").substringBefore("/")
     }
 
     /** Get text from URL. */

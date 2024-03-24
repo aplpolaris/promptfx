@@ -143,7 +143,7 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
  * @param obj the property to listen to
  * @param op a function to extract the list from the property
  */
-fun <X, Y> createListBinding(obj: Property<X>, op: (X?) -> List<Y>): ObservableList<Y> =
+fun <X, Y> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>): ObservableList<Y> =
     createListBinding(obj, op) { _, it -> it }
 
 /**
@@ -152,7 +152,7 @@ fun <X, Y> createListBinding(obj: Property<X>, op: (X?) -> List<Y>): ObservableL
  * @param op a function to extract the list from the property
  * @param transform a function to transform the list elements
  */
-fun <X, Y, Z> createListBinding(obj: Property<X>, op: (X?) -> List<Y>, transform: (X, Y) -> Z): ObservableList<Z> {
+fun <X, Y, Z> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>, transform: (X, Y) -> Z): ObservableList<Z> {
     var listeningList = op(obj.value) as? ObservableList<Y>
     val resultList = observableListOf(listeningList?.map { transform(obj.value, it) } ?: listOf())
     val listener = ListChangeListener<Y> { resultList.setAll(it.list.map { transform(obj.value, it) }) }

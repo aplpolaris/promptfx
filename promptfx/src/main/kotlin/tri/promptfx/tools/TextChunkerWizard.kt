@@ -10,6 +10,7 @@ import tornadofx.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.*
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
@@ -25,6 +26,7 @@ import tri.promptfx.tools.TextChunkerWizardSelectData.Companion.WEB_SCRAPING
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
+import tri.util.ui.slider
 import java.io.File
 import java.net.URI
 import java.net.URL
@@ -59,11 +61,17 @@ class TextChunkerWizardModel: ViewModel() {
     val isSourceSelected = (isFileMode.and(file.isNotNull))
         .or(isFolderMode.and(folder.isNotNull))
         .or(isUserInputMode.and(userText.isNotEmpty))
-        .or(isWebScrapeMode.and(webScrapeModel.webUrl.isNotEmpty))
+        .or(isWebScrapeMode.and(
+            webScrapeModel.webUrl.booleanBinding {
+                !it.isNullOrBlank() && (it.startsWith("http://") || it.startsWith("https://"))
+                        && it.substringAfter("//").isNotBlank()
+            }
+        ))
         .or(isRssMode.and(rssFeed.isNotNull))!!
 
     // chunking options
     var chunkMethodSelection: ObjectProperty<String> = SimpleObjectProperty(CHUNK_AUTO)
+    val isCleanUpWhiteSpace = SimpleBooleanProperty(true)
     val isChunkAutomatic = chunkMethodSelection.isEqualTo(CHUNK_AUTO)!!
     private val maxChunkSize = SimpleObjectProperty(1000)
     internal val isChunkDelimiter = chunkMethodSelection.isEqualTo(CHUNK_BY_DELIMITER)
@@ -71,6 +79,10 @@ class TextChunkerWizardModel: ViewModel() {
     internal val isChunkRegex = chunkMethodSelection.isEqualTo(CHUNK_BY_REGEX)
     internal val chunkRegex = SimpleStringProperty("\\n{2,}")
     internal val isChunkField = chunkMethodSelection.isEqualTo(CHUNK_BY_FIELD)
+
+    // chunk filter
+    val chunkFilterMinSize = SimpleIntegerProperty(50)
+    val chunkFilterRemoveDuplicates = SimpleBooleanProperty(true)
 
     // preview of chunks
     val previewChunks = observableListOf<TextChunkViewModel>()
@@ -80,9 +92,11 @@ class TextChunkerWizardModel: ViewModel() {
 
     init {
         maxChunkSize.onChange { updatePreview() }
+        isCleanUpWhiteSpace.onChange { updatePreview() }
         chunkMethodSelection.onChange { updatePreview() }
         chunkDelimiter.onChange { updatePreview() }
         chunkRegex.onChange { updatePreview() }
+        chunkFilterMinSize.onChange { updatePreview() }
     }
 
     /** Get sample of input text based on current settings. */
@@ -120,7 +134,9 @@ class TextChunkerWizardModel: ViewModel() {
         val inputTextSample = inputTextSample()
         val chunker = chunker()
         val docChunk = TextChunkRaw(inputTextSample)
-        val chunks = chunker.chunk(docChunk).take(MAX_PREVIEW_CHUNKS)
+        val chunks = chunker.chunk(docChunk)
+            .filter(chunkFilter(docChunk))
+            .take(MAX_PREVIEW_CHUNKS)
         previewChunks.setAll(chunks.map { it.asTextChunkViewModel(docChunk) })
     }
 
@@ -129,13 +145,13 @@ class TextChunkerWizardModel: ViewModel() {
         isChunkAutomatic.get() ->
             StandardTextChunker(maxChunkSize.value)
         isChunkDelimiter.get() ->
-            DelimiterTextChunker(listOf(chunkDelimiter.value
+            DelimiterTextChunker(isCleanUpWhiteSpace.value, listOf(chunkDelimiter.value
                 .replace("\\n", "\n")
                 .replace("\\r", "\r")
                 .replace("\\t", "\t")
                 .ifEmpty { "\n" }))
         isChunkRegex.get() -> try {
-            RegexTextChunker(chunkRegex.value.toRegex())
+            RegexTextChunker(isCleanUpWhiteSpace.value, chunkRegex.value.toRegex())
         } catch (x: PatternSyntaxException) {
             // TODO - show error to user
             NoOpTextChunker
@@ -144,15 +160,49 @@ class TextChunkerWizardModel: ViewModel() {
         else -> NoOpTextChunker
     }
 
+    /** Get chunk filter. */
+    fun chunkFilter(doc: TextChunk?): (TextChunk) -> Boolean = {
+        it.text(doc).length >= chunkFilterMinSize.value
+    }
+
     /** Get final chunks. */
     fun finalDocs(): List<TextDoc> {
         val chunker = chunker()
         val inputText = allInputText()
-        return inputText.map { (uri, text) ->
+        val addedChunks = mutableSetOf<String>()
+        return inputText.mapNotNull { (uri, text) ->
             val docChunk = TextChunkRaw(text)
-            TextDoc(uri.toString(), docChunk).apply {
-                chunks.addAll(chunker.chunk(docChunk))
+            val docChunks = chunker.chunk(docChunk).filter(chunkFilter(docChunk))
+            val doc = TextDoc(uri.toString(), docChunk).apply {
+                if (!chunkFilterRemoveDuplicates.value)
+                    chunks.addAll(docChunks)
+                else
+                    docChunks.forEach {
+                        val chunkText = it.text(docChunk)
+                        if (chunkText !in addedChunks) {
+                            chunks.add(it)
+                            addedChunks.add(chunkText)
+                        }
+                    }
             }
+            if (doc.chunks.isNotEmpty()) doc else null
+        }
+    }
+
+    fun finalLibrary(): TextLibrary? {
+        val sourceInfo = when {
+            isFileMode.get() -> file.value?.toURI()?.toString()
+            isFolderMode.get() -> folder.value?.toURI()?.toString()
+            isUserInputMode.get() -> "User Input"
+            isWebScrapeMode.get() -> webScrapeModel.webUrl.value
+            isRssMode.get() -> rssFeed.value.toString()
+            else -> "Unknown"
+        }
+        val finalDocs = finalDocs()
+        return if (finalDocs.isEmpty()) null
+        else TextLibrary().apply {
+            metadata.id = "Text Content from $sourceInfo"
+            docs.addAll(finalDocs)
         }
     }
 
@@ -315,47 +365,72 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
                         tooltip = tooltip("Select a field in a CSV or JSON file to use as the source of text chunks.")
                     }
                     model.chunkMethodSelection.bindBidirectional(selectedValueProperty())
+                    model.chunkMethodSelection.set(CHUNK_AUTO)
                 }
             }
         }
 
         // detailed options for chunking
-        vbox(10) {
-            hbox(5, alignment = Pos.CENTER_LEFT) {
+        form {
+            fieldset("Automatic Chunking Options") {
                 visibleWhen(model.isChunkAutomatic)
                 managedWhen(model.isChunkAutomatic)
-                label("TBD")
+                field("TBD")
             }
-            hbox(5, alignment = Pos.CENTER_LEFT) {
+            fieldset("Delimited Chunking Options") {
                 visibleWhen(model.isChunkDelimiter)
                 managedWhen(model.isChunkDelimiter)
-                label("Delimeter: ")
-                textfield(model.chunkDelimiter) {
-                    tooltip("Character(s) separating chunks of input, e.g. \\n or \\r for new lines or \\n\\n for paragraphs")
-                    hgrow = Priority.ALWAYS
-                    promptText = "Enter delimiter separating chunks (\\n or \\r for line breaks, \\t for tabs)..."
+                tooltip("Character(s) separating chunks of input, e.g. \\n or \\r for line breaks, \\t for tabs, or \\n\\n for paragraphs." +
+                        "\nDefaults to \\n if left blank.")
+                field("Preprocess") {
+                    checkbox("Clean up white space", model.isCleanUpWhiteSpace) {
+                        tooltip("Standardize white space before splitting text.")
+                    }
+                }
+                field("Delimiter") {
+                    textfield(model.chunkDelimiter) {
+                        hgrow = Priority.ALWAYS
+                        promptText = "Enter delimiter separating chunks (\\n or \\r for line breaks, \\t for tabs)"
+                    }
                 }
             }
-            hbox(5, alignment = Pos.CENTER_LEFT) {
+            fieldset("Regex Chunking Options") {
                 visibleWhen(model.isChunkRegex)
                 managedWhen(model.isChunkRegex)
-                label("Regex: ")
-                textfield(model.chunkRegex) {
-                    hgrow = Priority.ALWAYS
-                    promptText = "Enter a regular expression..."
+                field("Preprocess") {
+                    checkbox("Clean up white space", model.isCleanUpWhiteSpace) {
+                        tooltip("Standardize white space before splitting text.")
+                    }
+                }
+                field("Regex") {
+                    textfield(model.chunkRegex) {
+                        hgrow = Priority.ALWAYS
+                        promptText = "Enter a regular expression..."
+                    }
                 }
             }
-            hbox(5, alignment = Pos.CENTER_LEFT) {
-                isDisable = true
+            fieldset("Field Chunking Options") {
                 visibleWhen(model.isChunkField)
                 managedWhen(model.isChunkField)
-                label("TBD")
+                field("TBD")
+            }
+
+            // filter options
+            fieldset("Filtering Options") {
+                field("Minimum chunk size") {
+                    slider(1..1000, model.chunkFilterMinSize)
+                    label(model.chunkFilterMinSize)
+                }
+                field("Duplicates") {
+                    checkbox("Remove duplicates", model.chunkFilterRemoveDuplicates)
+                }
             }
         }
 
         // preview of text chunks
         separator()
         vbox(5) {
+            prefWidth = 800.0
             label("Preview of chunks:")
             chunkPreview = TextChunkListView(model.previewChunks, null, hostServices)
             add(chunkPreview)

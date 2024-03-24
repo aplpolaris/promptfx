@@ -35,9 +35,7 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
             }
             field("Crawl Depth") {
                 tooltip("How many links deep to follow when scraping the website.")
-                slider(1..3, model.webUrlDepth) {
-                    valueProperty().bindBidirectional(model.webUrlDepth)
-                }
+                slider(1..3, model.webUrlDepth)
                 label(model.webUrlDepth)
             }
             field("Domains") {
@@ -45,9 +43,7 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
             }
             field("Max # Links to Crawl", forceLabelIndent = true) {
                 tooltip("Maximum number of links to crawl from each page.")
-                slider(1..1000, model.webUrlLimit) {
-                    valueProperty().bindBidirectional(model.webUrlLimit)
-                }
+                slider(1..1000, model.webUrlLimit)
                 label(model.webUrlLimit)
             }
             field("Target Folder") {
@@ -90,7 +86,7 @@ class WebScrapeViewModel {
     /** Get text of main URL. */
     fun mainUrlText() = WebCrawler.scrapeText(webUrl.value).third
     /** Scrape the website, with the given crawl settings. */
-    fun scrapeWebsite() = WebCrawler.crawlWebsite(webUrl.value, webUrlDepth.value, webUrlLimit.value)
+    fun scrapeWebsite() = WebCrawler.crawlWebsite(webUrl.value, webUrlDepth.value, webUrlLimit.value, webUrlDomain.value)
         .map { (url, titleText) -> URI.create(url) to titleText.second }.toMap()
 
 }
