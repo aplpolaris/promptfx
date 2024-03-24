@@ -8,9 +8,10 @@ import javafx.collections.ObservableList
 import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
-import javafx.stage.FileChooser
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.*
+import tri.ai.pips.AiTask.Companion.task
+import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiTaskView
@@ -185,5 +186,20 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         }
     }
 
-    override suspend fun processUserInput() = AiPipelineResult("", mapOf())
+    override suspend fun processUserInput(): AiPipelineResult {
+        val service = embeddingService
+        val result = mutableMapOf<TextChunk, List<Double>>()
+
+        val planner = libraryList.flatMap { it.docs }.map { doc ->
+            task("calculate-embeddings: " + doc.metadata.id.substringAfterLast("/")) {
+                val chunks = doc.chunks
+                val embeddings = service.calculateEmbedding(chunks.map { it.text(doc.all) })
+                chunks.forEachIndexed { i, ch -> result[ch] = embeddings[i] }
+            }
+        }.aggregate().task("summarize-results") {
+            "Calculated ${result.size} total embeddings."
+        }.planner
+
+        return AiPipelineExecutor.execute(planner.plan(), progress)
+    }
 }
