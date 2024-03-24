@@ -7,7 +7,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.promptfx.docs.WebCrawler
-import tri.util.ui.chooseFolder
+import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
@@ -63,7 +63,7 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
                     }
                 }
                 button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                    action { model.webTargetFolder.chooseFolder(currentStage) }
+                    action { promptFxDirectoryChooser { model.webTargetFolder.set(it) } }
                 }
             }
         }

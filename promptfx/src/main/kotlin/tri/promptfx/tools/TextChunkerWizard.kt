@@ -14,6 +14,10 @@ import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.*
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.promptFxDirectoryChooser
+import tri.promptfx.promptFxFileChooser
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_AUTO
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_DELIMITER
 import tri.promptfx.tools.TextChunkerWizardMethod.Companion.CHUNK_BY_FIELD
@@ -264,33 +268,43 @@ class TextChunkerWizardSelectData: View("Select Source") {
                 managedWhen(model.isFileMode)
                 button("Select...") {
                     action {
-                        model.file.value = chooseFile("Select File", filters = arrayOf(), mode = FileChooserMode.Single, owner = currentWindow).firstOrNull()
+                        promptFxFileChooser(
+                            dirKey = DIR_KEY_TXT,
+                            title = "Select File",
+                            filters = arrayOf(FF_ALL),
+                            mode = FileChooserMode.Single
+                        ) {
+                            model.file.value = it.firstOrNull()
+                        }
                     }
                 }
                 label("File:")
                 label(model.fileName)
             }
-            hbox(5, alignment = Pos.CENTER_LEFT) {
+            vbox(5) {
                 visibleWhen(model.isFolderMode)
                 managedWhen(model.isFolderMode)
-                vbox(5) {
-                    hbox {
-                        button("Select...") {
-                            action {
-                                model.folder.value = chooseDirectory("Select Directory", owner = currentWindow)
+                hbox(5, Pos.CENTER_LEFT) {
+                    button("Select...") {
+                        action {
+                            promptFxDirectoryChooser(
+                                dirKey = DIR_KEY_TXT,
+                                title = "Select Directory"
+                            ) {
+                                model.folder.value = it
                             }
                         }
-                        label("Folder:")
-                        label(model.folderName)
                     }
-                    checkbox("Include subfolders", model.folderIncludeSubfolders) {
-                        // TODO - scripting over subfolders might be too aggressive
-                        isDisable = true
+                    label("Folder:")
+                    label(model.folderName)
+                }
+                checkbox("Include subfolders", model.folderIncludeSubfolders) {
+                    // TODO - scripting over subfolders might be too aggressive
+                    isDisable = true
 //                        enableWhen(model.folder.isNotNull)
-                    }
-                    checkbox("Extract text from PDF, DOC files", model.folderExtractText) {
-                        enableWhen(model.folder.isNotNull)
-                    }
+                }
+                checkbox("Extract text from PDF, DOC files", model.folderExtractText) {
+                    enableWhen(model.folder.isNotNull)
                 }
             }
             hbox(5) {

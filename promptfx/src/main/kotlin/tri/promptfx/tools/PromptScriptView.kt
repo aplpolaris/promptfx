@@ -38,6 +38,8 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.*
 import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
@@ -102,9 +104,12 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                             spacer()
                             button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
                                 action {
-                                    val file = chooseFile("Select a file to load", filters = arrayOf())
-                                    if (file.isNotEmpty())
-                                        inputText.set(file.first().readText())
+                                    promptFxFileChooser(
+                                        title = "Select a file to load",
+                                        filters = arrayOf(FF_ALL)
+                                    ) {
+                                        it.firstOrNull()?.readText()?.let { inputText.set(it) }
+                                    }
                                 }
                             }
                         }

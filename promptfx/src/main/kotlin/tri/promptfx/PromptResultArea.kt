@@ -26,6 +26,9 @@ import javafx.scene.text.Font
 import javafx.stage.FileChooser
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.ui.PromptTraceDetails
 
 /**
@@ -74,11 +77,14 @@ class PromptResultArea : Fragment("Prompt Result Area") {
             }
             item("Save to File...") {
                 action {
-                    val file = chooseFile("Save to File", filters = arrayOf(
-                        FileChooser.ExtensionFilter("Text Files", "*.txt"),
-                        FileChooser.ExtensionFilter("All Files", "*.*")
-                    ), owner = currentWindow, mode = FileChooserMode.Save).firstOrNull()
-                    file?.writeText(selectedText.ifBlank { this@textarea.text })
+                    promptFxFileChooser(
+                        dirKey = DIR_KEY_TXT,
+                        title = "Save to File",
+                        filters = arrayOf(FF_TXT, FF_ALL),
+                        mode = FileChooserMode.Save
+                    ) {
+                        it.firstOrNull()?.writeText(selectedText.ifBlank { this@textarea.text })
+                    }
                 }
             }
         }

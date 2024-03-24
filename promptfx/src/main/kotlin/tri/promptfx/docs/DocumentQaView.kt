@@ -39,6 +39,12 @@ import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.promptFxDirectoryChooser
+import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.promptfield
 import tri.promptfx.ui.matchViewModel
@@ -108,13 +114,19 @@ class DocumentQaView: AiPlanTaskView(
                 button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
                     disableWhen(planner.snippets.sizeProperty.isEqualTo(0))
                     action {
-                        val file = chooseFile("Export Document Snippets as JSON", arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")), mode = FileChooserMode.Save, owner = currentWindow)
-                        if (file.isNotEmpty()) {
-                            runAsync {
-                                runBlocking {
-                                    ObjectMapper()
-                                        .writerWithDefaultPrettyPrinter()
-                                        .writeValue(file.first(), planner.lastResult)
+                        promptFxFileChooser(
+                            dirKey = DIR_KEY_TEXTLIB,
+                            title = "Export Document Snippets as JSON",
+                            filters = arrayOf(FF_JSON, FF_ALL),
+                            mode = FileChooserMode.Save
+                        ) {
+                            if (it.isNotEmpty()) {
+                                runAsync {
+                                    runBlocking {
+                                        ObjectMapper()
+                                            .writerWithDefaultPrettyPrinter()
+                                            .writeValue(it.first(), planner.lastResult)
+                                    }
                                 }
                             }
                         }
@@ -141,7 +153,9 @@ class DocumentQaView: AiPlanTaskView(
                 }
                 button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                     tooltip("Select folder with documents for Q&A")
-                    action { documentFolder.chooseFolder(currentStage) }
+                    action {
+                        promptFxDirectoryChooser("Select folder") { documentFolder.set(it) }
+                    }
                 }
                 button("", FontAwesomeIcon.GLOBE.graphic) {
                     tooltip("Enter a website to scrape")

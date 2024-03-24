@@ -29,7 +29,11 @@ import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.promptFxFileChooser
 
 /** UI for a list of [AiPromptTrace]s. */
 class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observableListOf()): Fragment() {
@@ -86,13 +90,19 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
                 enableWhen(prompts.sizeProperty.greaterThan(0))
                 action {
                     val promptTraces = prompts.toList()
-                    val file = chooseFile("Export Prompt Traces as JSON", arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")), mode = FileChooserMode.Save, owner = currentWindow)
-                    if (file.isNotEmpty()) {
-                        runAsync {
-                            runBlocking {
-                                ObjectMapper()
-                                    .writerWithDefaultPrettyPrinter()
-                                    .writeValue(file.first(), promptTraces)
+                    val file = promptFxFileChooser(
+                        dirKey = DIR_KEY_TRACE,
+                        title = "Export Prompt Traces as JSON",
+                        filters = arrayOf(FF_JSON, FF_ALL),
+                        mode = FileChooserMode.Save
+                    ) { file ->
+                        if (file.isNotEmpty()) {
+                            runAsync {
+                                runBlocking {
+                                    ObjectMapper()
+                                        .writerWithDefaultPrettyPrinter()
+                                        .writeValue(file.first(), promptTraces)
+                                }
                             }
                         }
                     }

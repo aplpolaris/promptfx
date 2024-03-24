@@ -57,16 +57,6 @@ fun TextInputControl.enableDroppingFileContent() {
     }
 }
 
-internal fun SimpleObjectProperty<File>.chooseFolder(owner: Window?) {
-    chooseDirectory(
-        title = "Select Document Folder",
-        initialDirectory = value?.findDirectory(),
-        owner = owner
-    )?.let {
-        set(it)
-    }
-}
-
 //endregion
 
 //region Text and TextFlow UTILS

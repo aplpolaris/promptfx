@@ -35,12 +35,12 @@ import tri.ai.pips.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.chooseFolder
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
@@ -128,7 +128,7 @@ class DocumentInsightView: AiPlanTaskView(
                 }
                 button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                     tooltip("Select folder with documents for Q&A")
-                    action { documentFolder.chooseFolder(currentStage) }
+                    action { promptFxDirectoryChooser { documentFolder.set(it) } }
                 }
                 button("", FontAwesomeIcon.GLOBE.graphic) {
                     tooltip("Enter a website to scrape")

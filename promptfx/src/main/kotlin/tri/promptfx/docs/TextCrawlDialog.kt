@@ -28,7 +28,7 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.safety.Safelist
 import tornadofx.*
-import tri.util.ui.chooseFolder
+import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.graphic
 import java.awt.Desktop
 import java.io.File
@@ -69,7 +69,7 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
                         }
                     }
                     button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                        action { folder.chooseFolder(currentStage) }
+                        action { promptFxDirectoryChooser { folder.set(it) } }
                     }
                 }
             }

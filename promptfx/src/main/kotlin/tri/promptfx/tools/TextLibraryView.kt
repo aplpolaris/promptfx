@@ -3,10 +3,7 @@ package tri.promptfx.tools
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
-import javafx.beans.binding.ListBinding
 import javafx.beans.property.ReadOnlyObjectProperty
-import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.value.ObservableValue
 import javafx.collections.ObservableList
 import javafx.scene.control.*
 import javafx.scene.layout.Priority
@@ -14,8 +11,13 @@ import javafx.scene.text.Text
 import javafx.stage.FileChooser
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.text.chunks.*
+import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiTaskView
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.TextChunkViewModelImpl
@@ -113,16 +115,19 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
                     tooltip("Load a text library from a JSON file.")
                     action {
-                        chooseFile(
-                            "Load Text Library",
-                            filters = arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")),
+                        promptFxFileChooser(
+                            dirKey = DIR_KEY_TEXTLIB,
+                            title = "Load Text Library",
+                            filters = arrayOf(FF_JSON, FF_ALL),
                             mode = FileChooserMode.Single
-                        ).firstOrNull()?.let {
-                            val lib = TextLibrary.loadFrom(it)
-                            if (lib.metadata.id.isBlank())
-                                lib.metadata.id = it.name
-                            libraryList.add(lib)
-                            libraryListView.selectionModel.select(lib)
+                        ) {
+                            it.firstOrNull()?.let {
+                                val lib = TextLibrary.loadFrom(it)
+                                if (lib.metadata.id.isBlank())
+                                    lib.metadata.id = it.name
+                                libraryList.add(lib)
+                                libraryListView.selectionModel.select(lib)
+                            }
                         }
                     }
                 }
@@ -132,12 +137,15 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     enableWhen(librarySelection.isNotNull)
                     action {
                         librarySelection.value?.let { library ->
-                            chooseFile(
-                                "Save Text Library",
-                                filters = arrayOf(FileChooser.ExtensionFilter("JSON", "*.json")),
+                            promptFxFileChooser(
+                                dirKey = DIR_KEY_TEXTLIB,
+                                title = "Save Text Library",
+                                filters = arrayOf(FF_JSON, FF_ALL),
                                 mode = FileChooserMode.Save
-                            ).firstOrNull()?.let {
-                                TextLibrary.saveTo(library, it)
+                            ) {
+                                it.firstOrNull()?.let {
+                                    TextLibrary.saveTo(library, it)
+                                }
                             }
                         }
                     }
