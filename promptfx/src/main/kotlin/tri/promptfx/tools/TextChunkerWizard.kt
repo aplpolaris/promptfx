@@ -122,9 +122,14 @@ class TextChunkerWizardModel: ViewModel() {
     private fun allInputText(progressUpdate: (String) -> Unit): Map<URI?, String> {
         return when {
             isFileMode.get() -> mapOf(file.value.toURI() to (file.value?.fileToText() ?: ""))
-            isFolderMode.get() -> folder.value!!.walkTopDown()
-                        .filter { it.isFileWithText() }
-                        .associate { it.toURI() to it.fileToText() }
+            isFolderMode.get() -> {
+                folder.value!!.walkTopDown()
+                    .filter { it.isDirectory }
+                    .forEach { LocalTextDocIndex.preprocessDocumentFormats(it) }
+                folder.value!!.walkTopDown()
+                    .filter { it.extension.lowercase() == "txt" }
+                    .associate { it.toURI() to it.fileToText() }
+            }
             isUserInputMode.get() -> mapOf(null to userText.value)
             isWebScrapeMode.get() -> webScrapeModel.scrapeWebsite(progressUpdate)
             isRssMode.get() -> TODO()

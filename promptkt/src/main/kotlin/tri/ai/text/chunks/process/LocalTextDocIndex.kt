@@ -124,7 +124,7 @@ class LocalTextDocIndex(
         /**
          * Convert docs in other formats to text files if they don't already exist.
          */
-        internal fun preprocessDocumentFormats(folder: File, reprocessAll: Boolean = false) {
+        fun preprocessDocumentFormats(folder: File, reprocessAll: Boolean = false) {
             require(folder.isDirectory)
 
             fun File.process(ext: String, op: (File) -> String) = rootFiles(ext).preprocess(ext, reprocessAll, op)
@@ -155,7 +155,7 @@ class LocalTextDocIndex(
 
         /** Get text from a file by extension. */
         // TODO - think about how to calibrate supported extensions
-        fun File.fileToText() = when (extension) {
+        fun File.fileToText(): String = when (extension) {
             "pdf" -> pdfText(this)
             "docx" -> docxText(this)
             "doc" -> docText(this)
