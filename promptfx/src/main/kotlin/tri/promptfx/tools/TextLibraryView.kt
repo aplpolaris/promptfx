@@ -8,6 +8,7 @@ import javafx.collections.ObservableList
 import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.*
 import tri.ai.pips.AiTask.Companion.task
@@ -154,6 +155,12 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                         }
                     }
                 }
+                // calculate embeddings
+                button("Calculate Embeddings", FontAwesomeIconView(FontAwesomeIcon.MAP_MARKER)) {
+                    tooltip("Calculate embedding vectors for all chunks in the currently selected library.")
+                    enableWhen { librarySelection.isNotNull }
+                    action { executeEmbeddings() }
+                }
             }
         }
     }
@@ -190,10 +197,21 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
+        return executeEmbeddings().value
+    }
+
+    fun executeEmbeddings() = runAsync {
+        runBlocking {
+            AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), this@TextLibraryView.progress)
+        }
+    } ui {
+        chunkListView.refresh()
+    }
+
+    private fun calculateEmbeddingsPlan(): AiPlanner {
         val service = embeddingService
         val result = mutableMapOf<TextChunk, List<Double>>()
-
-        val planner = libraryList.flatMap { it.docs }.map { doc ->
+        return libraryList.flatMap { it.docs }.map { doc ->
             task("calculate-embeddings: " + doc.metadata.id) {
                 service.addEmbeddingInfo(doc, EmbeddingPrecision.FIRST_FOUR)
                 var count = 0
@@ -209,7 +227,5 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         }.aggregate().task("summarize-results") {
             "Calculated ${result.size} total embeddings."
         }.planner
-
-        return AiPipelineExecutor.execute(planner.plan(), progress)
     }
 }

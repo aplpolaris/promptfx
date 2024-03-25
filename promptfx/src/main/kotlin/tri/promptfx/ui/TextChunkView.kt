@@ -18,6 +18,7 @@ import tri.util.ui.DocumentUtils
 /** View for a [TextChunkViewModel]. */
 class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out EmbeddingIndex>?, hostServices: HostServices) : HBox() {
     init {
+        spacing = 5.0
         alignment = Pos.CENTER_LEFT
         it.embedding?.let {
             children.add(FontAwesomeIconView(FontAwesomeIcon.MAP_MARKER))

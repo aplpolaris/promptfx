@@ -14,11 +14,17 @@ import tri.ai.embedding.EmbeddingIndex
  * Clicking on the document name will open the document in a viewer.
  */
 class TextChunkListView(snippets: ObservableList<TextChunkViewModel>, index: ObservableValue<out EmbeddingIndex>?, hostServices: HostServices) : Fragment("TextChunk List") {
+
     override val root = listview(snippets) {
         vgrow = Priority.ALWAYS
         cellFormat {
             graphic = TextChunkView(it, index, hostServices)
         }
     }
+
+    fun refresh() {
+        root.refresh()
+    }
+
 }
 
