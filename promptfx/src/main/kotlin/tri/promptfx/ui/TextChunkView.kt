@@ -1,5 +1,7 @@
 package tri.promptfx.ui
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
 import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
@@ -17,6 +19,9 @@ import tri.util.ui.DocumentUtils
 class TextChunkView(it: TextChunkViewModel, index: ObservableValue<out EmbeddingIndex>?, hostServices: HostServices) : HBox() {
     init {
         alignment = Pos.CENTER_LEFT
+        it.embedding?.let {
+            children.add(FontAwesomeIconView(FontAwesomeIcon.MAP_MARKER))
+        }
         it.score?.let { score ->
             text("%.2f".format(score)) {
                 style = "-fx-font-weight: bold;"

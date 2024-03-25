@@ -6,10 +6,13 @@ import tornadofx.onChange
 import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.SnippetMatch
 
 /** View model for document chunks. */
 interface TextChunkViewModel {
+    val embedding: List<Double>?
     val score: Double?
     val doc: EmbeddingDocument?
     val text: String
@@ -32,6 +35,7 @@ fun ObservableList<EmbeddingSectionInDocument>.sectionViewModel(): ObservableLis
 /** Wrap [SnippetMatch] as a view model. */
 fun SnippetMatch.asTextChunkViewModel() = object : TextChunkViewModel {
     override val score = this@asTextChunkViewModel.score
+    override val embedding = this@asTextChunkViewModel.snippetEmbedding
     override val doc = embeddingMatch.document
     override val text = snippetText
 }
@@ -39,16 +43,20 @@ fun SnippetMatch.asTextChunkViewModel() = object : TextChunkViewModel {
 /** Wrap [EmbeddingSectionInDocument] as a view model. */
 fun EmbeddingSectionInDocument.asTextChunkViewModel() = object : TextChunkViewModel {
     override val score = null
+    override val embedding = this@asTextChunkViewModel.section.embedding
     override val doc = this@asTextChunkViewModel.doc
     override val text = readText()
 }
 
 /** Wrap [TextChunk] as a view model. */
-fun TextChunk.asTextChunkViewModel(parentDoc: TextChunk?, score: Double? = null) =
-    TextChunkViewModelImpl(parentDoc, this, score)
+fun TextChunk.asTextChunkViewModel(parentDoc: TextChunk?, embeddingModelId: String?, score: Double? = null) =
+    TextChunkViewModelImpl(parentDoc, this, embeddingModelId, score)
 
 /** Wrap [TextChunk] as a view model. */
-class TextChunkViewModelImpl(parentDoc: TextChunk?, val chunk: TextChunk, override val score: Double? = null) : TextChunkViewModel {
+class TextChunkViewModelImpl(parentDoc: TextChunk?, val chunk: TextChunk, embeddingModelId: String?, override val score: Double? = null) : TextChunkViewModel {
+    constructor(text: String) : this(null, TextChunkRaw(text), null)
+
     override val doc = null
+    override val embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
     override val text = chunk.text(parentDoc)
 }

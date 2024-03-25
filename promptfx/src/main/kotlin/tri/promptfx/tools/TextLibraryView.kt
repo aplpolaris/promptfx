@@ -14,6 +14,9 @@ import tri.ai.pips.AiTask.Companion.task
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.chunks.process.EmbeddingPrecision
+import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
+import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -84,7 +87,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             docSelection.onChange {
                 chunkList.clear()
                 chunkList.addAll(docSelection.flatMap { doc ->
-                    doc.chunks.map { it.asTextChunkViewModel(doc.all) }
+                    doc.chunks.map { it.asTextChunkViewModel(doc.all, embeddingService.modelId) }
                 })
             }
 
@@ -191,10 +194,17 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         val result = mutableMapOf<TextChunk, List<Double>>()
 
         val planner = libraryList.flatMap { it.docs }.map { doc ->
-            task("calculate-embeddings: " + doc.metadata.id.substringAfterLast("/")) {
-                val chunks = doc.chunks
-                val embeddings = service.calculateEmbedding(chunks.map { it.text(doc.all) })
-                chunks.forEachIndexed { i, ch -> result[ch] = embeddings[i] }
+            task("calculate-embeddings: " + doc.metadata.id) {
+                service.addEmbeddingInfo(doc, EmbeddingPrecision.FIRST_FOUR)
+                var count = 0
+                doc.chunks.forEach {
+                    val embed = it.getEmbeddingInfo(service.modelId)
+                    if (embed != null) {
+                        result[it] = embed
+                        count++
+                    }
+                }
+                "Calculated $count embeddings for ${doc.metadata.id}."
             }
         }.aggregate().task("summarize-results") {
             "Calculated ${result.size} total embeddings."

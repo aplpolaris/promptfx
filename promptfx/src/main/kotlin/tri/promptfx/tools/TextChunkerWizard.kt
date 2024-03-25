@@ -146,7 +146,7 @@ class TextChunkerWizardModel: ViewModel() {
         val chunks = chunker.chunk(docChunk)
             .filter(chunkFilter(docChunk))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(chunks.map { it.asTextChunkViewModel(docChunk) })
+        previewChunks.setAll(chunks.map { it.asTextChunkViewModel(docChunk, null) })
     }
 
     /** Chunker based on current settings. */
@@ -183,6 +183,7 @@ class TextChunkerWizardModel: ViewModel() {
             val docChunk = TextChunkRaw(text)
             val docChunks = chunker.chunk(docChunk).filter(chunkFilter(docChunk))
             val doc = TextDoc(uri.toString(), docChunk).apply {
+                metadata.path = uri?.path
                 if (!chunkFilterRemoveDuplicates.value)
                     chunks.addAll(docChunks)
                 else

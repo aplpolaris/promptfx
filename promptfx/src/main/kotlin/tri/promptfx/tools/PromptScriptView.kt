@@ -202,13 +202,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         val inputs = inputs()
         runLater {
             promptTraces.setAll()
-            inputChunks.setAll(inputs.second.map {
-                object : TextChunkViewModel {
-                    override val text = it
-                    override val score = null
-                    override val doc = null
-                }
-            })
+            inputChunks.setAll(inputs.second.map { TextChunkViewModelImpl(it) })
         }
         val tasks = promptBatch(inputs.second).tasks()
         return tasks
