@@ -2,13 +2,20 @@ package tri.promptfx
 
 import javafx.stage.FileChooser
 import tornadofx.*
+import tri.promptfx.tools.TextLibraryView
+import tri.util.loggerFor
 import java.io.File
+import java.net.URI
+import java.net.URISyntaxException
 
-/** Central management of configuration options for PromptFX. */
+/**
+ * Central management of configuration options for PromptFX.
+ * All configuration that is saved/restored across multiple runs should be managed here.
+ */
 class PromptFxConfig: Component(), ScopedInstance {
 
     /** Management of local file/folder directory selections. */
-    val directories by lazy {
+    private val directories by lazy {
         mutableMapOf<String, File>().apply {
             put("default", File(System.getProperty("user.home")))
             config.keys.filterIsInstance<String>().filter { it.startsWith(DIR_PREFIX) }.forEach {
@@ -17,7 +24,7 @@ class PromptFxConfig: Component(), ScopedInstance {
         }
     }
     /** Management of local file/folder directory selections. */
-    val directoryFiles by lazy {
+    private val directoryFiles by lazy {
         mutableMapOf<String, String>().apply {
             config.keys.filterIsInstance<String>().filter { it.startsWith(DIR_FILE_PREFIX) }.forEach {
                 put(it.substringAfter(DIR_FILE_PREFIX), config.getProperty(it))
@@ -39,14 +46,28 @@ class PromptFxConfig: Component(), ScopedInstance {
         config[DIR_PREFIX + key] = file.parentFile.absolutePath
     }
 
+    /** Get library files from configuration. */
+    fun libraryFiles(): List<File> = try {
+        (config.getProperty(TEXTLIB_FILES) ?: "").split(",")
+            .map { URI.create(it) }
+            .map { File(it) }
+    } catch (x: IllegalArgumentException) {
+        loggerFor<PromptFxConfig>().warning("Error loading text library files: ${x.message}")
+        listOf()
+    }
+
     /** Save configuration options before closing application. */
     fun save() {
+        val libs = find<TextLibraryView>().libraryList
+        config[TEXTLIB_FILES] = libs.mapNotNull { it.file?.toURI().toString() }.joinToString(",")
         config.save()
     }
 
     companion object {
         private const val DIR_PREFIX = "dir."
         private const val DIR_FILE_PREFIX = "dir_file."
+
+        const val TEXTLIB_FILES = "textlib.files"
 
         const val DIR_KEY_TEXTLIB = "textlib"
         const val DIR_KEY_TXT = "txt"
