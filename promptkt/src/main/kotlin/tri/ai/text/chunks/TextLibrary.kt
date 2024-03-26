@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import tri.ai.text.chunks.process.LocalTextDocIndex
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
 import java.io.File
 
 /**
@@ -28,7 +29,7 @@ class TextLibrary(_id: String? = null) {
                 it.docs.forEach { doc ->
                     try {
                         val file = LocalTextDocIndex.fileFor(doc.metadata)
-                        doc.all = TextChunkRaw(file.readText())
+                        doc.all = TextChunkRaw(file.fileToText(useExistingTxtFile = true))
                     } catch (x: IllegalStateException) {
                         // file not found exception expected for docs with explicit text chunks
                     }

@@ -110,6 +110,12 @@ class LocalTextDocIndex(
     //endregion
 
     companion object {
+        /** Get the original file for the given text file. */
+        fun originalFileFor(file: File): File {
+            return listOf(".pdf", ".docx", ".doc", ".txt").map { File(file.absolutePath.replace(".txt", it)) }
+                .firstOrNull { it.exists() } ?: file
+        }
+
         /** Get the file associated with the metadata. */
         fun fileFor(metadata: TextDocMetadata): File {
             // TODO - allow absolute and relative path attempts to find file
@@ -153,13 +159,25 @@ class LocalTextDocIndex(
                 extension in setOf("txt", "csv")
 //                extension in setOf("txt", "md", "html", "htm", "xml", "json", "csv", "tsv")
 
-        /** Get text from a file by extension. */
+        /**
+         * Get text from a file by extension.
+         * @param useExistingTxtFile if true, will look for a .txt file with the same name as the original file and return its contents
+         *                           otherwise, scrapes the text from the file and returns that directly, without storing in a .txt file
+         */
         // TODO - think about how to calibrate supported extensions
-        fun File.fileToText(): String = when (extension) {
-            "pdf" -> pdfText(this)
-            "docx" -> docxText(this)
-            "doc" -> docText(this)
-            else -> readText()
+        fun File.fileToText(useExistingTxtFile: Boolean): String {
+            if (useExistingTxtFile) {
+                val txtFile = File(absolutePath.replace(extension, ".txt"))
+                if (txtFile.exists()) {
+                    return txtFile.readText()
+                }
+            }
+            return when (extension) {
+                "pdf" -> pdfText(this)
+                "docx" -> docxText(this)
+                "doc" -> docText(this)
+                else -> readText()
+            }
         }
 
         /** Extract text from PDF. */
