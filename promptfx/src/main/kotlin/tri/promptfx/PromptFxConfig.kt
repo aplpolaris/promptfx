@@ -59,7 +59,7 @@ class PromptFxConfig: Component(), ScopedInstance {
     /** Save configuration options before closing application. */
     fun save() {
         val libs = find<TextLibraryView>().libraryList
-        config[TEXTLIB_FILES] = libs.mapNotNull { it.file?.toURI().toString() }.joinToString(",")
+        config[TEXTLIB_FILES] = libs.mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
         config.save()
     }
 
