@@ -11,6 +11,8 @@ import tri.ai.text.chunks.process.LocalFileManager.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.util.warning
 import java.io.File
+import java.net.URI
+import java.net.URISyntaxException
 
 /**
  * Collection of [TextDoc]s.
@@ -29,14 +31,15 @@ class TextLibrary(_id: String? = null) {
         fun loadFrom(indexFile: File): TextLibrary =
             MAPPER.readValue<TextLibrary>(indexFile).also {
                 it.docs.forEach { doc ->
-                    doc.metadata.path?.let {
-                        File(it).let { f ->
-                            val fixFile = LocalFileManager.fixPath(f, indexFile.parentFile)
-                            if (fixFile?.exists() == true) {
-                                doc.all = TextChunkRaw(fixFile.fileToText(useCache = true))
-                            } else {
-                                warning<TextLibrary>("Failed to find file for ${doc.metadata.id}")
-                            }
+                    val uri = doc.metadata.path
+                    if (uri != null) {
+                        try {
+                            val file = LocalFileManager.fixPath(File(uri), indexFile.parentFile)
+                            doc.all = TextChunkRaw(file!!.fileToText(useCache = true))
+                        } catch (x: URISyntaxException) {
+                            warning<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
+                        } catch (x: NullPointerException) {
+                            warning<TextLibrary>("Failed to find file for ${doc.metadata}")
                         }
                     }
                 }

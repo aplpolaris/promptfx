@@ -58,7 +58,7 @@ class LocalTextDocIndex(
                         Instant.ofEpochMilli(it.lastModified()),
                         java.time.ZoneId.systemDefault()
                     ).toLocalDate()
-                    metadata.path = it.absolutePath
+                    metadata.path = it.toURI()
                     metadata.relativePath = it.name
                 }
                 docs[doc.metadata.id] = it to doc

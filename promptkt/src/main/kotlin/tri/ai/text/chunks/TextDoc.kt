@@ -35,14 +35,13 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
     fun browsable(rootDir: File?): BrowsableSource? {
         require(rootDir == null || rootDir.isDirectory)
         val path = metadata.path ?: return null
-        val uri = URI(path)
         val file: File? = try {
-            File(uri).let { if (rootDir != null) LocalFileManager.fixPath(it, rootDir) else it }
+            File(path).let { if (rootDir != null) LocalFileManager.fixPath(it, rootDir) else it }
         } catch (x: IllegalArgumentException) {
             // URI is not a file
             null
         }?.let { if (it.exists()) it else null }
-        return BrowsableSource(file?.toURI() ?: uri)
+        return BrowsableSource(file?.toURI() ?: path)
     }
 }
 
@@ -56,6 +55,6 @@ data class TextDocMetadata(
     var title: String? = null,
     var author: String? = null,
     var date: LocalDate? = null,
-    var path: String? = null,
+    var path: URI? = null,
     var relativePath: String? = null,
 )

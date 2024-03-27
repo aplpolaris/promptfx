@@ -32,7 +32,9 @@ class TextChunkView(it: TextChunkViewModel, hostServices: HostServices) : HBox()
                 if (thumb != null) {
                     tooltip { graphic = ImageView(thumb) }
                 }
-                action { DocumentBrowseToPage(doc, it.text, hostServices).open() }
+                action {
+                    DocumentBrowseToPage(doc, it.text, hostServices).open()
+                }
             }
         }
 

@@ -171,7 +171,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         docsTitle = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.title ?: "" }.trim() }, docSelection)
         docsAuthor = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.author ?: "" }.trim() }, docSelection)
         docsDate = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.date?.toString() ?: "" }.trim() }, docSelection)
-        docsPath = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.path ?: "" }.trim() }, docSelection)
+        docsPath = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.path?.toString() ?: "" }.trim() }, docSelection)
         docsRelativePath = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.relativePath ?: "" }.trim() }, docSelection)
         chunkType = Bindings.createStringBinding({ chunkSelection.joinToString("\n") { "" } }, chunkSelection) // TODO
         chunksText = Bindings.createStringBinding({ chunkSelection.joinToString("\n") { it.text }.trim() }, chunkSelection)

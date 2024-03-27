@@ -251,7 +251,7 @@ enum class TcwSourceMode(val uiName: String) {
             metadata.title = nameWithoutExtension // TODO - can we be smarter about this?
             // TODO metadata.author =
             metadata.date = lastModified().let { LocalDate.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
-            metadata.path = uri.path
+            metadata.path = uri
             metadata.relativePath = relativeTo(File(parent)).path
         }
     }
