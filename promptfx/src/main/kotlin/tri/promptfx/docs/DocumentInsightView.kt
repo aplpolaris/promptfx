@@ -226,7 +226,7 @@ class DocumentInsightView: AiPlanTaskView(
             .values.flatten()
 
         return AiPromptBatchCyclic("processing-snippets").apply {
-            val names = limitedSnippets.map { "${it.doc.shortName} ${it.section.start} ${it.section.end}" }
+            val names = limitedSnippets.map { "${it.doc.browsable.shortName} ${it.section.start} ${it.section.end}" }
             val inputs = limitedSnippets.map { it.readText() }
             model = completionEngine.modelId
             modelParams = common.toModelParams()
@@ -250,7 +250,7 @@ class DocumentInsightView: AiPlanTaskView(
                 .map { EmbeddingSectionInDocument(embeddingIndex.value!!, doc, it) }
         }
         runLater {
-            docs.setAll(docList.map { it.browsable(documentFolder.value!!) })
+            docs.setAll(docList.map { it.browsable })
             snippets.setAll(embeddingList)
         }
         embeddingList

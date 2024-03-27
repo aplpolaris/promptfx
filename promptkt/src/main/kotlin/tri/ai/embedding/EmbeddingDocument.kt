@@ -21,39 +21,22 @@ package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.process.LocalFileManager
-import java.io.File
 import java.net.URI
 
 /** A document with a list of sections. */
-class EmbeddingDocument(val path: String) {
+class EmbeddingDocument(val uri: URI) {
     /** The sections of the document. */
     val sections: MutableList<EmbeddingSection> = mutableListOf()
 
-    /** Get short name of path. */
-    @get:JsonIgnore
-    val shortName: String
-        get() = File(path).name
-
-    /** Get short name of path without extension. */
-    @get:JsonIgnore
-    val shortNameWithoutExtension: String
-        get() = shortName.substringBeforeLast('.')
-
     /** Get browsable source of this document. */
-    fun browsable(rootDir: File) = uri(rootDir)?.let { BrowsableSource(it) }
-
-    /** Get URI of this document. */
-    private fun uri(rootDir: File): URI? =
-        LocalFileManager.fixPath(File(path), rootDir)?.toURI()
+    @get:JsonIgnore
+    val browsable = BrowsableSource(uri)
 
     /** The raw text of the section. */
-    fun readText(rootDir: File, section: EmbeddingSection) =
-        readText(rootDir).substring(section.start, section.end)
+    fun readText(section: EmbeddingSection) =
+        readText().substring(section.start, section.end)
 
     /** The raw text of the document. */
-    fun readText(rootDir: File) =
-        uri(rootDir)?.let { File(it).readText() } ?: "Unable to locate $path in $rootDir"
-
+    fun readText() = browsable.file?.readText()!!
 }
 

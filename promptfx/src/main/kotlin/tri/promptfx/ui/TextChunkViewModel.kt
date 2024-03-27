@@ -2,17 +2,13 @@ package tri.promptfx.ui
 
 import javafx.collections.ObservableList
 import tornadofx.*
-import tri.ai.embedding.EmbeddingDocument
-import tri.ai.embedding.EmbeddingSection
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.SnippetMatch
-import java.net.URI
 
 /** View model for document chunks. */
 interface TextChunkViewModel {
@@ -40,7 +36,7 @@ fun ObservableList<EmbeddingSectionInDocument>.sectionViewModel(): ObservableLis
 fun SnippetMatch.asTextChunkViewModel() = object : TextChunkViewModel {
     override val score = this@asTextChunkViewModel.score
     override val embedding = this@asTextChunkViewModel.snippetEmbedding
-    override val browsable = embeddingMatch.browsable
+    override val browsable = embeddingMatch.document.browsable
     override val text = snippetText
 }
 

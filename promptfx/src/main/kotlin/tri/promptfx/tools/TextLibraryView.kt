@@ -4,14 +4,18 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectProperty
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ObservableList
 import javafx.event.EventTarget
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.*
 import tri.ai.pips.AiTask.Companion.task
 import tri.ai.text.chunks.TextChunk
@@ -41,13 +45,17 @@ class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "
 class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text.") {
 
     val libraryList = observableListOf<TextLibraryInfo>()
-    private lateinit var docList: ObservableList<TextDoc>
-    private lateinit var chunkList: ObservableList<TextChunkViewModel>
 
     private lateinit var libraryListView: ListView<TextLibraryInfo>
     private lateinit var librarySelection: ReadOnlyObjectProperty<TextLibraryInfo>
+
+    private lateinit var docList: ObservableList<TextDoc>
     private lateinit var docListView: ListView<TextDoc>
     private lateinit var docSelection: ObservableList<TextDoc>
+
+    private val chunkFilter = SimpleObjectProperty<(TextChunk) -> Double>(null)
+    private val isChunkFilterEnabled = SimpleBooleanProperty(false)
+    private lateinit var chunkList: ObservableList<TextChunkViewModel>
     private lateinit var chunkListView: TextChunkListView
     private lateinit var chunkSelection: ObservableList<TextChunkViewModel>
 
@@ -111,13 +119,47 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             }
             chunkList = observableListOf()
             docSelection.onChange {
-                chunkList.clear()
-                chunkList.addAll(docSelection.flatMap { doc ->
-                    doc.chunks.map { it.asTextChunkViewModel(doc, embeddingService.modelId) }
-                })
+                refilterChunkList()
+            }
+            chunkFilter.onChange {
+                refilterChunkList()
             }
 
-            text("Text Chunks in Selected Document(s)")
+            hbox(alignment = Pos.CENTER_LEFT) {
+                val label = isChunkFilterEnabled.stringBinding {
+                    if (it == true)
+                        "Filtering by Semantic Text"
+                    else
+                        "Text Chunks in Selected Document(s)"
+                }
+                text(label)
+                spacer()
+                togglebutton(text = "", selectFirst = false) {
+                    graphic = FontAwesomeIconView(FontAwesomeIcon.FILTER)
+                    tooltip("Filter chunks by semantic text matching.")
+                    action {
+                        if (isSelected)
+                            TextInputDialog("").apply {
+                                initOwner(primaryStage)
+                                title = "Semantic Text for Chunk Search"
+                                headerText = "Enter text to find similar text chunks."
+                                contentText = "Semantic Text:"
+                            }.showAndWait().ifPresent {
+                                if (it.isNotBlank())
+                                    runAsync {
+                                        createSemanticFilter(it)
+                                    } ui {
+                                        chunkFilter.value = it
+                                        isChunkFilterEnabled.set(true)
+                                    }
+                            }
+                        else {
+                            chunkFilter.value = null
+                            isChunkFilterEnabled.set(false)
+                        }
+                    }
+                }
+            }
             chunkListView = TextChunkListView(chunkList, hostServices).apply {
                 root.selectionModel.selectionMode = SelectionMode.MULTIPLE
                 chunkSelection = root.selectionModel.selectedItems
@@ -221,6 +263,39 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     }
 
     //region UI HELPERS
+
+    val REFILTER_LIST_MAX_COUNT = 20
+    val MIN_CHUNK_SIMILARITY = 0.7
+
+    /** Refilters the chunk list. */
+    private fun refilterChunkList() {
+        chunkList.clear()
+        val filter = chunkFilter.value
+        val chunksWithScores = docSelection.flatMap { doc -> doc.chunks.map { doc to it } }.let {
+            if (filter == null)
+                it.associateWith { null }
+            else {
+                it.associateWith { filter(it.second) }.entries
+                    .sortedByDescending { it.value }
+                    .take(REFILTER_LIST_MAX_COUNT)
+                    .filter { it.value >= MIN_CHUNK_SIMILARITY }
+                    .associate { it.key to it.value }
+            }
+        }
+        chunkList.addAll(chunksWithScores.map {
+            it.key.second.asTextChunkViewModel(it.key.first, embeddingService.modelId, score = it.value)
+        })
+    }
+
+    /** Create semantic filtering, by returning the cosine similarity of a chunk to the given argument. */
+    private fun createSemanticFilter(text: String): (TextChunk) -> Double {
+        val model = embeddingService
+        val embedding = runBlocking { model.calculateEmbedding(text) }
+        return { chunk ->
+            val chunkEmbedding = chunk.getEmbeddingInfo(model.modelId)
+            if (chunkEmbedding == null) 0.0 else cosineSimilarity(embedding, chunkEmbedding)
+        }
+    }
 
     private fun EventTarget.fieldifnotblank(label: String, text: ObservableValue<String>) {
         field(label) {
@@ -326,7 +401,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     private fun calculateEmbeddingsPlan(): AiPlanner {
         val service = embeddingService
         val result = mutableMapOf<TextChunk, List<Double>>()
-        return libraryList.flatMap { it.library.docs }.map { doc ->
+        return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             task("calculate-embeddings: " + doc.metadata.id) {
                 service.addEmbeddingInfo(doc, EmbeddingPrecision.FIRST_FOUR)
                 var count = 0

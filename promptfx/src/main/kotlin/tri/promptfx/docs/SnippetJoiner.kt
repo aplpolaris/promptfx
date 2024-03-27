@@ -40,7 +40,7 @@ class BasicTemplateJoiner(_id: String) : SnippetJoiner(_id) {
 
 class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
     override fun constructContext(matches: List<SnippetMatch>) =
-        matches.groupBy { it.embeddingMatch.document.shortNameWithoutExtension }.mapValues {
+        matches.groupBy { it.embeddingMatch.document.browsable.shortNameWithoutExtension }.mapValues {
             it.value.joinToString("\n...\n") { it.snippetText.trim() }
         }.let {
             AiPromptLibrary.lookupPrompt(id)
@@ -49,5 +49,5 @@ class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
 }
 
 private class NameText(val number: Int, val name: String, val text: String) {
-    constructor(index: Int, match: SnippetMatch) : this(index, match.embeddingMatch.document.shortNameWithoutExtension, match.snippetText.trim())
+    constructor(index: Int, match: SnippetMatch) : this(index, match.embeddingMatch.document.browsable.shortNameWithoutExtension, match.snippetText.trim())
 }

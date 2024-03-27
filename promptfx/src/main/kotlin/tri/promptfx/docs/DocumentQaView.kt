@@ -254,7 +254,7 @@ class DocumentQaView: AiPlanTaskView(
     override suspend fun processUserInput() =
         super.processUserInput().also {
             (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
-                val doc = snippets.firstOrNull { it.document == docName }?.embeddingMatch?.browsable
+                val doc = snippets.firstOrNull { it.browsable.shortNameWithoutExtension == docName }?.embeddingMatch?.document?.browsable
                 if (doc == null) {
                     println("Unable to find document $docName in snippets.")
                 } else {
@@ -280,7 +280,7 @@ class DocumentQaView: AiPlanTaskView(
                 if (matches.size == 1) {
                     println("Browsing to only match")
                     val match = matches.first()
-                    DocumentBrowseToPage(match.embeddingMatch.browsable, match.snippetText, hostServices).open()
+                    DocumentBrowseToPage(match.embeddingMatch.document.browsable, match.snippetText, hostServices).open()
                 } else {
                     println("Browsing to closest match")
                     DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()

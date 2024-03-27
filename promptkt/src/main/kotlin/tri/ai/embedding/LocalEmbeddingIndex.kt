@@ -27,35 +27,38 @@ import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.openai.OpenAiEmbeddingService
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.TXT
 import tri.util.info
 import tri.util.warning
 import java.io.File
 import java.io.IOException
+import java.net.URI
 
 /** An embedding index that loads the documents from the local file system. */
 class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService) : EmbeddingIndex {
 
     var maxChunkSize: Int = 1000
 
-    val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
+    val embeddingIndex = mutableMapOf<URI, EmbeddingDocument>()
 
-    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = doc.readText(root, section)
+    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = doc.readText(section)
 
     //region INDEXERS
 
     private fun rootFiles(ext: String) = root.listFiles { _, name -> name.endsWith(ext) }?.toList() ?: emptyList()
 
     /** Command to reindex just new documents. */
-    private suspend fun reindexNew(): Map<String, EmbeddingDocument> {
+    private suspend fun reindexNew(): Map<URI, EmbeddingDocument> {
         preprocessDocumentFormats()
         val newDocs = rootFiles(".txt").filter {
-            !embeddingIndex.containsKey(it.absolutePath) && !embeddingIndex.containsKey(it.name)
+            !embeddingIndex.containsKey(it.toURI())
         }
-        val newEmbeddings = mutableMapOf<String, EmbeddingDocument>()
+        val newEmbeddings = mutableMapOf<URI, EmbeddingDocument>()
         if (newDocs.isNotEmpty()) {
             newDocs.forEach {
                 try {
-                    newEmbeddings[it.name] = calculateEmbeddingSections(it)
+                    newEmbeddings[it.toURI()] = calculateEmbeddingSections(it)
                 } catch (x: IOException) {
                     warning<LocalEmbeddingIndex>("Failed to calculate embeddings for $it: $x")
                 } catch (x: OpenAIException) {
@@ -70,9 +73,9 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
     suspend fun reindexAll() {
         embeddingIndex.clear()
         preprocessDocumentFormats()
-        val docs = mutableMapOf<String, EmbeddingDocument>()
-        rootFiles(".txt").forEach {
-            docs[it.absolutePath] = calculateEmbeddingSections(it)
+        val docs = mutableMapOf<URI, EmbeddingDocument>()
+        rootFiles(".$TXT").forEach {
+            docs[it.toURI()] = calculateEmbeddingSections(it)
         }
         embeddingIndex.putAll(docs)
         saveIndex(root, embeddingIndex)
@@ -80,7 +83,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
 
     /** Chunks the document and calculates the embedding for each chunk. */
     private suspend fun calculateEmbeddingSections(file: File) =
-        embeddingService.chunkedEmbedding(file.absolutePath, file.readText(), maxChunkSize)
+        embeddingService.chunkedEmbedding(file.toURI(), file.readText(), maxChunkSize)
 
     //endregion
 
@@ -121,7 +124,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
     }
 
     /** Gets embedding index, processing new files if needed. */
-    suspend fun getEmbeddingIndex(): MutableMap<String, EmbeddingDocument> {
+    suspend fun getEmbeddingIndex(): MutableMap<URI, EmbeddingDocument> {
         if (embeddingIndex.isEmpty())
             embeddingIndex.putAll(restoreIndex(root))
         reindexNew().let {
@@ -138,40 +141,39 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
         else -> "embeddings-${embeddingService.modelId.replace("/", "_")}.json"
     }
 
-    private fun restoreIndex(root: File): Map<String, EmbeddingDocument> {
-        var index = File(root, indexFile()).let {
+    private fun restoreIndex(root: File): Map<URI, EmbeddingDocument> {
+        val index = File(root, indexFile()).let {
             if (it.exists())
                 MAPPER.readValue<Map<String, EmbeddingDocument>>(it)
             else
                 emptyMap()
         }
-        if (index.keys.any { it.localPath(root) != it }) {
-            info<LocalEmbeddingIndex>("Updating embeddings index to use local file references...")
-            index = index.map { (_, doc) ->
-                val localized = doc.copyWithLocalPath(root)
-                localized.path to localized
-            }.toMap()
-            saveIndex(root, index)
+        val updatedKeys = mutableMapOf<String, String>()
+        index.keys.forEach {
+            // old formats were saved as file paths, so we need to update them to URIs
+            val fixedFileUri = LocalFileManager.fixPath(File(it), root)?.toURI()?.toString()
+            if (fixedFileUri != it && fixedFileUri != null)
+                updatedKeys[it] = fixedFileUri
+        }
+        val uriIndex = mutableMapOf<URI, EmbeddingDocument>()
+        index.forEach {
+            val uriString = updatedKeys[it.key] ?: it.key
+            uriIndex[URI.create(uriString)] = it.value
+        }
+        if (updatedKeys.isNotEmpty()) {
+            info<LocalEmbeddingIndex>("Updating embeddings index to use URIs...")
+            saveIndex(root, uriIndex)
             info<LocalEmbeddingIndex>("Completed.")
         }
-        return index
+        return uriIndex
     }
 
-    private fun EmbeddingDocument.copyWithLocalPath(root: File) =
-        EmbeddingDocument(path.localPath(root)).also {
+    private fun EmbeddingDocument.copyWithFixedPath(rootDir: File) =
+        EmbeddingDocument(LocalFileManager.fixPath(File(uri), rootDir)!!.toURI()).also {
             it.sections.addAll(sections)
         }
 
-    /** Update a string representing a full path to just represent a local path relative to the given file. */
-    private fun String.localPath(root: File): String {
-        val pathSplit = if ("\\" in this) split("\\") else split("/")
-        return if (pathSplit.size > 1 && pathSplit[pathSplit.size - 2] == root.name)
-            pathSplit.last()
-        else
-            this
-    }
-
-    fun saveIndex(root: File, index: Map<String, EmbeddingDocument>) =
+    fun saveIndex(root: File, index: Map<URI, EmbeddingDocument>) =
         MAPPER.writerWithDefaultPrettyPrinter()
             .writeValue(File(root, indexFile()), index)
 

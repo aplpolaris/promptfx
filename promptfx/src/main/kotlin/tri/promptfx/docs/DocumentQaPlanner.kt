@@ -118,10 +118,10 @@ class DocumentQaPlanner {
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
         val result = mutableListOf(FormattedTextNode(qaResult.response ?: "No response."))
-        val docs = qaResult.matches.map { it.document }.toSet()
+        val docs = qaResult.matches.map { it.browsable }.toSet()
         docs.forEach { doc ->
-            result.splitOn(doc) {
-                val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.browsable
+            result.splitOn(doc.shortNameWithoutExtension) {
+                val sourceDoc = qaResult.matches.first { it.browsable == doc }.embeddingMatch.document.browsable
                 FormattedTextNode(sourceDoc.shortNameWithoutExtension,
                     hyperlink = sourceDoc.file?.absolutePath ?: sourceDoc.uri.path)
             }
@@ -161,7 +161,7 @@ data class QuestionAnswerResult(
 /** A snippet match that can be serialized. */
 data class SnippetMatch(
     @get:JsonIgnore val embeddingMatch: EmbeddingMatch,
-    val document: String,
+    val browsable: BrowsableSource,
     val snippetStart: Int,
     val snippetEnd: Int,
     val snippetText: String,
@@ -171,7 +171,7 @@ data class SnippetMatch(
 
     constructor(match: EmbeddingMatch, snippetText: String) : this(
         match,
-        match.document.shortNameWithoutExtension,
+        match.document.browsable,
         match.section.start,
         match.section.end,
         snippetText,
@@ -179,16 +179,13 @@ data class SnippetMatch(
         match.score
     )
 
-    override fun toString() = "SnippetMatch($document, $snippetStart, $snippetEnd, $score)"
-
-    val browsable: BrowsableSource
-        get() = TODO()
+    override fun toString() = "SnippetMatch(${browsable.uri}, $snippetStart, $snippetEnd, $score)"
 
     @get:JsonIgnore
     val snippetLength = snippetEnd - snippetStart
 
     /** Test for a matching document. */
-    fun matchesDocument(doc: String) = embeddingMatch.document.shortNameWithoutExtension == doc
+    fun matchesDocument(doc: String) = browsable.shortNameWithoutExtension == doc
 }
 
 //endregion
