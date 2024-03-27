@@ -23,18 +23,14 @@ import com.aallam.openai.api.exception.OpenAIException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import kotlinx.coroutines.runBlocking
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.openai.OpenAiEmbeddingService
-import tri.util.ANSI_GREEN
-import tri.util.ANSI_RESET
 import tri.util.info
 import tri.util.warning
 import java.io.File
 import java.io.IOException
-import kotlin.system.exitProcess
 
 /** An embedding index that loads the documents from the local file system. */
 class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService) : EmbeddingIndex {
@@ -42,8 +38,6 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
     var maxChunkSize: Int = 1000
 
     val embeddingIndex = mutableMapOf<String, EmbeddingDocument>()
-
-    override fun documentUrl(doc: EmbeddingDocument) = doc.originalUrl(root)
 
     override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = doc.readText(root, section)
 
@@ -168,7 +162,7 @@ class LocalEmbeddingIndex(val root: File, val embeddingService: EmbeddingService
             it.sections.addAll(sections)
         }
 
-    /** Update a string representing a full path to just reperesent a local path relative to the given file. */
+    /** Update a string representing a full path to just represent a local path relative to the given file. */
     private fun String.localPath(root: File): String {
         val pathSplit = if ("\\" in this) split("\\") else split("/")
         return if (pathSplit.size > 1 && pathSplit[pathSplit.size - 2] == root.name)

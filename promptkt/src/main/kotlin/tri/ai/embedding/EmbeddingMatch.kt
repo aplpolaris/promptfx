@@ -19,10 +19,15 @@
  */
 package tri.ai.embedding
 
+import tri.ai.text.chunks.BrowsableSource
+
 /** A scored match for a query. */
 class EmbeddingMatch(
     val document: EmbeddingDocument,
     val section: EmbeddingSection,
     val queryEmbedding: List<Double>,
     val score: Double
-)
+) {
+    val browsable: BrowsableSource
+        get() = TODO()
+}

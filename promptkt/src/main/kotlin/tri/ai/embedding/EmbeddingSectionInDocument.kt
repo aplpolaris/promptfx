@@ -19,7 +19,13 @@
  */
 package tri.ai.embedding
 
+import tri.ai.text.chunks.BrowsableSource
+
 /** A section with associated document (not for serialization). */
 class EmbeddingSectionInDocument(val index: EmbeddingIndex, val doc: EmbeddingDocument, val section: EmbeddingSection) {
+    val browsable: BrowsableSource
+        get() = TODO()
+
     fun readText() = index.readSnippet(doc, section)
+
 }

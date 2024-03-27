@@ -19,10 +19,10 @@
  */
 package tri.ai.text.chunks.process
 
-import org.apache.poi.hwpf.extractor.WordExtractor
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor
-import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.text.chunks.*
+import tri.ai.text.chunks.process.LocalFileManager.extractTextContent
+import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
+import tri.ai.text.chunks.process.LocalFileManager.textFiles
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -45,20 +45,23 @@ class LocalTextDocIndex(
 
     /** Scrapes text from documents in index. */
     fun processDocuments(reindexAll: Boolean) {
-        preprocessDocumentFormats(rootFolder, reindexAll)
+        rootFolder.extractTextContent(reindexAll)
         if (reindexAll) {
             docIndex.clear()
         }
         val docs = mutableMapOf<String, Pair<File, TextDoc>>()
-        rootFolder.rootFiles(".txt").forEach {
+        rootFolder.textFiles().forEach {
             if (reindexAll || it.absolutePath !in docs) {
-                val book = TextDoc(it.name).apply {
+                val doc = TextDoc(it.name).apply {
                     metadata.title = it.nameWithoutExtension
-                    metadata.date = LocalDateTime.ofInstant(Instant.ofEpochMilli(it.lastModified()), java.time.ZoneId.systemDefault()).toLocalDate()
+                    metadata.date = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(it.lastModified()),
+                        java.time.ZoneId.systemDefault()
+                    ).toLocalDate()
                     metadata.path = it.absolutePath
                     metadata.relativePath = it.name
                 }
-                docs[book.metadata.id] = it to book
+                docs[doc.metadata.id] = it to doc
             }
         }
         if (reindexAll)
@@ -94,7 +97,7 @@ class LocalTextDocIndex(
             docIndex.clear()
             val index = TextLibrary.loadFrom(indexFile)
             index.docs.forEach { doc ->
-                docIndex[doc.metadata.id] = fileFor(doc.metadata) to doc
+                docIndex[doc.metadata.id] = File(doc.metadata.path!!).textCacheFile() to doc
             }
         }
     }
@@ -108,91 +111,5 @@ class LocalTextDocIndex(
     }
 
     //endregion
-
-    companion object {
-        /** Get the original file for the given text file. */
-        fun originalFileFor(file: File): File {
-            return listOf(".pdf", ".docx", ".doc", ".txt").map { File(file.absolutePath.replace(".txt", it)) }
-                .firstOrNull { it.exists() } ?: file
-        }
-
-        /** Get the file associated with the metadata. */
-        fun fileFor(metadata: TextDocMetadata): File {
-            // TODO - allow absolute and relative path attempts to find file
-            val file = File(metadata.path ?: throw IllegalStateException("File path not found in metadata"))
-            require(file.exists()) { "File not found: ${metadata.path} ... TODO try relative path automatically" }
-            return file
-        }
-
-
-        //region ALTERNATE FORMAT PROCESSING
-
-        /**
-         * Convert docs in other formats to text files if they don't already exist.
-         */
-        fun preprocessDocumentFormats(folder: File, reprocessAll: Boolean = false) {
-            require(folder.isDirectory)
-
-            fun File.process(ext: String, op: (File) -> String) = rootFiles(ext).preprocess(ext, reprocessAll, op)
-
-            folder.process(".pdf", ::pdfText)
-            folder.process(".docx", ::docxText)
-            folder.process(".doc", ::docText)
-        }
-
-        private fun List<File>.preprocess(ext: String, reprocessAll: Boolean, op: (File) -> String) {
-            forEach {
-                val txtFile = File(it.absolutePath.replace(ext, ".txt"))
-                if (reprocessAll || !txtFile.exists()) {
-                    txtFile.writeText(op(it))
-                }
-            }
-        }
-
-        //endregion
-
-        //region CONVERT FILES TO TEXT
-
-        /** Check if file is a plaintext file, or can be converted to text, based on extension. */
-        // TODO - think about how to calibrate supported extensions
-        fun File.isFileWithText() = extension in setOf("pdf", "docx", "doc") ||
-                extension in setOf("txt", "csv")
-//                extension in setOf("txt", "md", "html", "htm", "xml", "json", "csv", "tsv")
-
-        /**
-         * Get text from a file by extension.
-         * @param useExistingTxtFile if true, will look for a .txt file with the same name as the original file and return its contents
-         *                           otherwise, scrapes the text from the file and returns that directly, without storing in a .txt file
-         */
-        // TODO - think about how to calibrate supported extensions
-        fun File.fileToText(useExistingTxtFile: Boolean): String {
-            if (useExistingTxtFile) {
-                val txtFile = File(absolutePath.replace(extension, ".txt"))
-                if (txtFile.exists()) {
-                    return txtFile.readText()
-                }
-            }
-            return when (extension) {
-                "pdf" -> pdfText(this)
-                "docx" -> docxText(this)
-                "doc" -> docText(this)
-                else -> readText()
-            }
-        }
-
-        /** Extract text from PDF. */
-        private fun pdfText(file: File) = tri.ai.embedding.pdfText(file)
-
-        /** Extract text from DOCX. */
-        private fun docxText(file: File) = XWPFWordExtractor(XWPFDocument(file.inputStream())).text
-
-        /** Extract text from DOC. */
-        private fun docText(file: File) = WordExtractor(file.inputStream()).text
-
-        //endregion
-
-        /** Get all files in the root folder with the given extension. */
-        internal fun File.rootFiles(ext: String) = listFiles { _, name -> name.endsWith(ext) }?.toList() ?: emptyList()
-    }
-
 }
+

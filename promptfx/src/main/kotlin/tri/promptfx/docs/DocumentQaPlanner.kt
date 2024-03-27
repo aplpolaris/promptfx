@@ -29,6 +29,7 @@ import tri.ai.embedding.*
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.ModelParameters
 import tri.util.info
 
@@ -120,8 +121,9 @@ class DocumentQaPlanner {
         val docs = qaResult.matches.map { it.document }.toSet()
         docs.forEach { doc ->
             result.splitOn(doc) {
-                val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.document
-                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = embeddingIndex.value!!.documentUrl(sourceDoc)?.absolutePath)
+                val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.browsable
+                FormattedTextNode(sourceDoc.shortNameWithoutExtension,
+                    hyperlink = sourceDoc.file?.absolutePath ?: sourceDoc.uri.path)
             }
         }
         result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
@@ -178,6 +180,9 @@ data class SnippetMatch(
     )
 
     override fun toString() = "SnippetMatch($document, $snippetStart, $snippetEnd, $score)"
+
+    val browsable: BrowsableSource
+        get() = TODO()
 
     @get:JsonIgnore
     val snippetLength = snippetEnd - snippetStart

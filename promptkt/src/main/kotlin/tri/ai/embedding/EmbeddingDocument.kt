@@ -20,7 +20,10 @@
 package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.process.LocalFileManager
 import java.io.File
+import java.net.URI
 
 /** A document with a list of sections. */
 class EmbeddingDocument(val path: String) {
@@ -37,35 +40,20 @@ class EmbeddingDocument(val path: String) {
     val shortNameWithoutExtension: String
         get() = shortName.substringBeforeLast('.')
 
-    /** The file with the raw text. */
-    fun rawTextUrl(rootDir: File): File? {
-        val file1 = File(rootDir, path)
-        val file2 = File(path)
-        return when {
-            file1.exists() -> file1
-            file2.exists() -> file2
-            else -> null
-        }
-    }
+    /** Get browsable source of this document. */
+    fun browsable(rootDir: File) = uri(rootDir)?.let { BrowsableSource(it) }
 
-    /** The original file. */
-    fun originalUrl(rootDir: File): File? {
-        val file = rawTextUrl(rootDir) ?: return null
-        return SUPPORTED_EXTENSIONS.map {
-            File(file.parentFile, file.nameWithoutExtension + ".$it")
-        }.firstOrNull { it.exists() } ?: file
-    }
-
-    /** The raw text of the document. */
-    fun readText(rootDir: File) = rawTextUrl(rootDir)?.readText() ?: "Unable to locate $path in $rootDir"
+    /** Get URI of this document. */
+    private fun uri(rootDir: File): URI? =
+        LocalFileManager.fixPath(File(path), rootDir)?.toURI()
 
     /** The raw text of the section. */
     fun readText(rootDir: File, section: EmbeddingSection) =
         readText(rootDir).substring(section.start, section.end)
 
-    companion object {
-        /** Extensions supported by the embedding index, either raw text or with available scrapers. */
-        val SUPPORTED_EXTENSIONS = listOf("pdf", "doc", "docx", "txt")
-    }
+    /** The raw text of the document. */
+    fun readText(rootDir: File) =
+        uri(rootDir)?.let { File(it).readText() } ?: "Unable to locate $path in $rootDir"
+
 }
 

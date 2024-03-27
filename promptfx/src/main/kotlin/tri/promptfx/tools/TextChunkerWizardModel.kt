@@ -8,8 +8,12 @@ import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.*
-import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
-import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.isFileWithText
+import tri.ai.text.chunks.process.LocalFileManager.TXT
+import tri.ai.text.chunks.process.LocalFileManager.extractTextContent
+import tri.ai.text.chunks.process.LocalFileManager.fileToText
+import tri.ai.text.chunks.process.LocalFileManager.fileWithTextContentFilter
+import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.promptfx.PromptFxController
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
 import java.io.File
@@ -22,6 +26,8 @@ import java.util.regex.PatternSyntaxException
 
 /** Model for the [TextChunkerWizard]. */
 class TextChunkerWizardModel: ViewModel() {
+
+    val controller: PromptFxController by inject()
 
     // inputs
     var sourceToggleSelection: ObjectProperty<String> = SimpleObjectProperty(TcwSourceMode.FILE.uiName)
@@ -101,11 +107,11 @@ class TextChunkerWizardModel: ViewModel() {
         val MAX_PREVIEW_CHUNKS = 100
         val inputTextSample = inputTextSample()
         val chunker = chunker()
-        val docChunk = TextChunkRaw(inputTextSample)
-        val chunks = chunker.chunk(docChunk)
-            .filter(chunkFilter(docChunk))
+        val doc = TextDoc("", inputTextSample)
+        val chunks = chunker.chunk(doc.all!!)
+            .filter(chunkFilter(doc.all!!))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(chunks.map { it.asTextChunkViewModel(docChunk, null) })
+        previewChunks.setAll(chunks.map { it.asTextChunkViewModel(doc, controller.embeddingService.value?.modelId, null) })
     }
 
     /** Chunker based on current settings. */
@@ -187,22 +193,22 @@ enum class TcwSourceMode(val uiName: String) {
     FOLDER("Folder") {
         override fun inputTextSample(model: TextChunkerWizardModel) =
             model.folder.value?.walkTopDown()
-                ?.filter { it.isFileWithText() }
+                ?.filter(fileWithTextContentFilter::accept)
                 ?.firstOrNull()
                 ?.fileToText(true) ?: ""
+
         override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> {
             val folder = model.folder.value!!
             folder.walkTopDown()
                 .filter { it.isDirectory }
                 .forEach {
-                    progressUpdate("Preprocessing ${it.absolutePath}...")
-                    LocalTextDocIndex.preprocessDocumentFormats(it)
+                    progressUpdate("Extracting text from files in ${it.absolutePath}...")
+                    it.extractTextContent(reprocessAll = true)
                 }
             return folder.walkTopDown()
-                .filter { it.extension.lowercase() == "txt" }
+                .filter { it.extension.lowercase() == TXT }
                 .map {
-                    val original = LocalTextDocIndex.originalFileFor(it)
-                    original.asTextDoc()
+                    it.originalFile()!!.asTextDoc()
                 }.toList()
         }
 
@@ -240,7 +246,7 @@ enum class TcwSourceMode(val uiName: String) {
 
     internal fun File.asTextDoc(): TextDoc {
         val uri = toURI()
-        val raw = TextChunkRaw(fileToText(useExistingTxtFile = true))
+        val raw = TextChunkRaw(fileToText(useCache = true))
         return TextDoc(uri.toString(), raw).apply {
             metadata.title = nameWithoutExtension // TODO - can we be smarter about this?
             // TODO metadata.author =

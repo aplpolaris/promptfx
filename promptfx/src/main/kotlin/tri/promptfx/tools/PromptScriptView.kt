@@ -23,13 +23,11 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingIndex
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
@@ -57,7 +55,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val inputText = SimpleStringProperty("")
 
     // inputs as chunks
-    private val embeddingIndex = SimpleObjectProperty<EmbeddingIndex>(null)
     private val inputChunks = observableListOf<TextChunkViewModel>()
 
     // pre-processing
@@ -137,7 +134,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                     }
                 }
                 fold("Input Preview", expanded = false) {
-                    add(TextChunkListView(inputChunks, embeddingIndex, hostServices))
+                    add(TextChunkListView(inputChunks, hostServices))
                 }
             }
         }

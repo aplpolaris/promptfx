@@ -31,24 +31,24 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
-import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingDocument
-import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.promptfield
 import tri.promptfx.ui.matchViewModel
-import tri.util.ui.*
+import tri.promptfx.ui.promptfield
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.graphic
+import tri.util.ui.plainText
+import tri.util.ui.slider
 import java.awt.Desktop
 import java.io.File
 import java.nio.file.Files
@@ -133,7 +133,7 @@ class DocumentQaView: AiPlanTaskView(
                     }
                 }
             }
-            add(TextChunkListView(planner.snippets.matchViewModel(), planner.embeddingIndex, hostServices))
+            add(TextChunkListView(planner.snippets.matchViewModel(), hostServices))
         }
         parameters("Document Source and Sectioning") {
             field("Folder") {
@@ -254,11 +254,11 @@ class DocumentQaView: AiPlanTaskView(
     override suspend fun processUserInput() =
         super.processUserInput().also {
             (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
-                val doc = snippets.firstOrNull { it.document == docName }?.embeddingMatch?.document
+                val doc = snippets.firstOrNull { it.document == docName }?.embeddingMatch?.browsable
                 if (doc == null) {
                     println("Unable to find document $docName in snippets.")
                 } else {
-                    browseToBestSnippet(planner.embeddingIndex.value!!, doc, planner.lastResult, hostServices)
+                    browseToBestSnippet(doc, planner.lastResult, hostServices)
                 }
             }
         }
@@ -270,20 +270,20 @@ class DocumentQaView: AiPlanTaskView(
         private const val PROMPT_PREFIX = "question-answer"
         private const val JOINER_PREFIX = "snippet-joiner"
 
-        internal fun browseToBestSnippet(index: EmbeddingIndex, doc: EmbeddingDocument, result: QuestionAnswerResult?, hostServices: HostServices) {
+        internal fun browseToBestSnippet(doc: BrowsableSource, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (result == null) {
                 println("Browsing to first page: ${doc.shortNameWithoutExtension}")
-                DocumentOpenInViewer(index, doc, hostServices).open()
+                DocumentOpenInViewer(doc, hostServices).open()
             } else {
                 println("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
                 val matches = result.matches.filter { it.matchesDocument(doc.shortNameWithoutExtension) }
                 if (matches.size == 1) {
                     println("Browsing to only match")
                     val match = matches.first()
-                    DocumentBrowseToPage(index, match.embeddingMatch.document, match.snippetText, hostServices).open()
+                    DocumentBrowseToPage(match.embeddingMatch.browsable, match.snippetText, hostServices).open()
                 } else {
                     println("Browsing to closest match")
-                    DocumentBrowseToClosestMatch(index, matches, result.responseEmbedding, hostServices).open()
+                    DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
                 }
             }
         }

@@ -239,7 +239,7 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
         vbox(5) {
             prefWidth = 800.0
             label("Preview of chunks:")
-            chunkPreview = TextChunkListView(model.previewChunks, null, hostServices)
+            chunkPreview = TextChunkListView(model.previewChunks, hostServices)
             add(chunkPreview)
         }
     }

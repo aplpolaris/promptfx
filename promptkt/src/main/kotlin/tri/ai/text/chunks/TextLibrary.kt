@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.fileToText
 import tri.ai.text.chunks.process.LocalTextDocIndex
-import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.fileToText
+import tri.util.warning
 import java.io.File
 
 /**
@@ -27,11 +29,15 @@ class TextLibrary(_id: String? = null) {
         fun loadFrom(indexFile: File): TextLibrary =
             MAPPER.readValue<TextLibrary>(indexFile).also {
                 it.docs.forEach { doc ->
-                    try {
-                        val file = LocalTextDocIndex.fileFor(doc.metadata)
-                        doc.all = TextChunkRaw(file.fileToText(useExistingTxtFile = true))
-                    } catch (x: IllegalStateException) {
-                        // file not found exception expected for docs with explicit text chunks
+                    doc.metadata.path?.let {
+                        File(it).let { f ->
+                            val fixFile = LocalFileManager.fixPath(f, indexFile.parentFile)
+                            if (fixFile?.exists() == true) {
+                                doc.all = TextChunkRaw(fixFile.fileToText(useCache = true))
+                            } else {
+                                warning<TextLibrary>("Failed to find file for ${doc.metadata.id}")
+                            }
+                        }
                     }
                 }
             }

@@ -28,12 +28,12 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingDocument
 import tri.ai.embedding.EmbeddingSectionInDocument
 import tri.ai.embedding.LocalEmbeddingIndex
 import tri.ai.pips.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.ui.DocumentListView
@@ -67,7 +67,7 @@ class DocumentInsightView: AiPlanTaskView(
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
-    private val docs = observableListOf<EmbeddingDocument>()
+    private val docs = observableListOf<BrowsableSource>()
     private val snippets = observableListOf<EmbeddingSectionInDocument>()
 
     // for processing chunks to generate results
@@ -100,10 +100,10 @@ class DocumentInsightView: AiPlanTaskView(
                     }
                 }
                 fold("Documents", expanded = true) {
-                    add(DocumentListView(docs, embeddingIndex, hostServices))
+                    add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    add(TextChunkListView(snippets.sectionViewModel(), embeddingIndex, hostServices))
+                    add(TextChunkListView(snippets.sectionViewModel(), hostServices))
                 }
             }
         }
@@ -250,7 +250,7 @@ class DocumentInsightView: AiPlanTaskView(
                 .map { EmbeddingSectionInDocument(embeddingIndex.value!!, doc, it) }
         }
         runLater {
-            docs.setAll(docList)
+            docs.setAll(docList.map { it.browsable(documentFolder.value!!) })
             snippets.setAll(embeddingList)
         }
         embeddingList

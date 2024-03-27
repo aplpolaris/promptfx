@@ -21,7 +21,6 @@ import tri.ai.text.chunks.process.EmbeddingPrecision
 import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.AiTaskView
-import tri.promptfx.PromptFx
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -114,12 +113,12 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             docSelection.onChange {
                 chunkList.clear()
                 chunkList.addAll(docSelection.flatMap { doc ->
-                    doc.chunks.map { it.asTextChunkViewModel(doc.all, embeddingService.modelId) }
+                    doc.chunks.map { it.asTextChunkViewModel(doc, embeddingService.modelId) }
                 })
             }
 
             text("Text Chunks in Selected Document(s)")
-            chunkListView = TextChunkListView(chunkList, null, hostServices).apply {
+            chunkListView = TextChunkListView(chunkList, hostServices).apply {
                 root.selectionModel.selectionMode = SelectionMode.MULTIPLE
                 chunkSelection = root.selectionModel.selectedItems
                 root.contextmenu {
