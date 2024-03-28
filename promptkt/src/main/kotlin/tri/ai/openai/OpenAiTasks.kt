@@ -22,7 +22,11 @@ package tri.ai.openai
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.core.TextCompletion
+import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 
 /** Generate a task that adds user input to a prompt. */
 suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null) =
@@ -37,13 +41,26 @@ suspend fun TextCompletion.instructTask(promptId: String, instruct: String, user
     }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?) =
-    AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
+suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?): AiTaskResult<AiPromptTrace> {
+    val res = AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
         if (this is OpenAiCompletionChat)
             complete(it, tokenLimit, temp, null, requestJson)
         else
             complete(it, tokenLimit, temp)
     }
+    return res.map {
+        AiPromptTrace(
+            AiPromptInfo(AiPromptLibrary.lookupPrompt(promptId).template, fields),
+            AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp)),
+            AiPromptExecInfo(res.errorMessage, responseTimeMillis = res.durationTotal?.toMillis()),
+            AiPromptOutputInfo(it)
+        )
+    }
+}
+
+private fun <X> mapOfNotNull(vararg pairs: Pair<X, Any?>) =
+    pairs.filter { it.second != null }
+        .associate { it.first to it.second!! }
 
 //region CONVERTING TASKS
 

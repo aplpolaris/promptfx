@@ -19,22 +19,14 @@
  */
 package tri.ai.embedding
 
-import java.io.File
-
 /** An interface for an embedding index. */
 interface EmbeddingIndex {
     /** Find the most similar section to the query. */
     suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
-    /** Get a URL for retrieving a given document. */
-    fun documentUrl(doc: EmbeddingDocument): File?
-    /** Gets text for a given document and section. */
-    fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection): String
 }
 
 /** A no-op version of the embedding index. */
 object NoOpEmbeddingIndex : EmbeddingIndex {
     override suspend fun findMostSimilar(query: String, n: Int) = listOf<EmbeddingMatch>()
-    override fun documentUrl(doc: EmbeddingDocument) = TODO("NoOpEmbeddingIndex for testing only.")
-    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = TODO("NoOpEmbeddingIndex for testing only.")
 }
 

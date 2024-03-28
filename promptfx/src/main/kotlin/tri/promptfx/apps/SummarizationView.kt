@@ -57,12 +57,7 @@ class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summariz
                 combobox(modeOutput, outputOptions.keys.toList())
             }
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan(): AiPlanner {

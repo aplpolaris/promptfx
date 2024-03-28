@@ -20,8 +20,10 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
+import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
+import tri.ai.prompt.trace.*
 import tri.util.ui.graphic
 import java.lang.Exception
 
@@ -148,9 +150,12 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     }
 
     /** Adds content to the input area of the view. */
-    fun input(op: VBox.() -> Unit) {
+    fun input(spacing: Number? = null, padding: Number? = null, vgrow: Priority? = null, op: VBox.() -> Unit) {
         with (inputPane) {
             op()
+            if (spacing != null) this.spacing = spacing.toDouble()
+            if (padding != null) this.padding = insets(padding.toDouble())
+            if (vgrow != null) this.vgrow = vgrow
         }
     }
 
@@ -166,6 +171,19 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
         with (parameterForm) {
             fieldset(text) {
                 op()
+            }
+        }
+    }
+
+    /** Adds default model parameters (model, temperature, tokens) to the view. */
+    fun addDefaultTextCompletionParameters(common: ModelParameters) {
+        parameters("Text Completion Model") {
+            field("Model") {
+                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
+            }
+            with (common) {
+                temperature()
+                maxTokens()
             }
         }
     }
@@ -223,7 +241,19 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             add(result.root)
         }
         onCompleted {
-            result.setFinalResult(it.finalResult)
+            val r = it.finalResult
+            if (r is AiPromptTrace) {
+                result.setFinalResult(r)
+            } else {
+                // TODO - views should return a prompt trace object wherever possible
+                val trace = AiPromptTrace(
+                    AiPromptInfo(""),
+                    AiPromptModelInfo(completionEngine.modelId),
+                    AiPromptExecInfo(),
+                    AiPromptOutputInfo(r.toString())
+                )
+                result.setFinalResult(trace)
+            }
         }
     }
 

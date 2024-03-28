@@ -31,15 +31,15 @@ import tornadofx.*
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.PromptTraceCardList
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.enableDroppingFileContent
-import tri.util.ui.slider
-import java.lang.StringBuilder
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.promptFxFileChooser
+import tri.promptfx.ui.*
+import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
@@ -49,129 +49,121 @@ class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools",
 class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     "Configure a prompt to run on a series of inputs or a CSV file.") {
 
-    private val template = SimpleStringProperty("")
-    private val filter = SimpleStringProperty("")
+    // inputs
+    private val chunkBy = SimpleStringProperty("\\n")
+    private val csvHeader = SimpleBooleanProperty(false)
     private val inputText = SimpleStringProperty("")
 
-    private val chunkBy = SimpleStringProperty("\\n")
-    private val chunkLimit = SimpleIntegerProperty(10)
-    private val showUniqueResults = SimpleBooleanProperty(true)
-    private val showAllResults = SimpleBooleanProperty(true)
-    private val csvHeader = SimpleBooleanProperty(false)
-    private val outputCsv = SimpleBooleanProperty(false)
+    // inputs as chunks
+    private val inputChunks = observableListOf<TextChunkViewModel>()
 
+    // pre-processing
+    private val filter = SimpleStringProperty("")
+
+    // batch processing
+    private val chunkLimit = SimpleIntegerProperty(10)
+
+    // completion template for individual items
+    private lateinit var promptUi: EditablePromptUi
+
+    // options for prompted summary of all results
+    private val summaryPromptId = SimpleStringProperty("$TEXT_SUMMARIZER_PREFIX-summarize")
+    private val summaryPromptText = summaryPromptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
+    private val joinerId = SimpleStringProperty("$TEXT_JOINER_PREFIX-basic")
+    private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+
+    // result list
     private val promptTraces = observableListOf<AiPromptTrace>()
 
+    // result options
+    private val showUniqueResults = SimpleBooleanProperty(true)
+    private val showAllResults = SimpleBooleanProperty(true)
+    private val summarizeResults = SimpleBooleanProperty(false)
+    private val outputCsv = SimpleBooleanProperty(false)
+
+    // input views
     init {
         input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Filter:")
-            }
-            textarea(filter) {
-                promptText =
-                    "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
-                hgrow = Priority.ALWAYS
-                prefRowCount = 5
-                isWrapText = true
-                prefWidth = 0.0
-            }
-        }
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Template:")
-                spacer()
-                menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                    // replace items when the menu is shown
-                    setOnShowing {
-                        items.clear()
-                        AiPromptLibrary.INSTANCE.prompts.filter {
-                            it.value.fields() == listOf("input")
-                        }.keys.forEach { key ->
-                            item(key) {
-                                action { template.set(AiPromptLibrary.lookupPrompt(key).template) }
+            squeezebox {
+                fold("Prompt Settings", expanded = true) {
+                    promptUi = EditablePromptUi(
+                        promptFilter = { it.value.fields() == listOf("input") },
+                        instruction = "Prompt to Execute:"
+                    )
+                    add(promptUi)
+                }
+                fold("Select Inputs", expanded = true) {
+                    vbox(5) {
+                        vgrow = Priority.ALWAYS
+                        hbox(5, Pos.CENTER_LEFT) {
+                            text("Inputs:")
+                            spacer()
+                            button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
+                                action {
+                                    promptFxFileChooser(
+                                        title = "Select a file to load",
+                                        filters = arrayOf(FF_ALL)
+                                    ) {
+                                        it.firstOrNull()?.readText()?.let { inputText.set(it) }
+                                    }
+                                }
                             }
+                        }
+                        textarea(inputText) {
+                            promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
+                            hgrow = Priority.ALWAYS
+                            vgrow = Priority.ALWAYS
+                            isWrapText = true
+                            prefWidth = 0.0
+                            enableDroppingFileContent()
+                        }
+                    }
+                    vbox(5) {
+                        hbox(5, Pos.CENTER_LEFT) {
+                            text("Filter:")
+                        }
+                        textarea(filter) {
+                            promptText =
+                                "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
+                            hgrow = Priority.ALWAYS
+                            prefRowCount = 5
+                            isWrapText = true
+                            prefWidth = 0.0
                         }
                     }
                 }
-            }
-            textarea(template) {
-                promptText = "Provide a prompt template, using {{input}} as a placeholder for user content."
-                hgrow = Priority.ALWAYS
-                prefRowCount = 10
-                isWrapText = true
-                prefWidth = 0.0
-            }
-        }
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                text("Inputs:")
-                spacer()
-                button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
-                    action {
-                        val file = chooseFile("Select a file to load", filters = arrayOf())
-                        if (file.isNotEmpty())
-                            inputText.set(file.first().readText())
-                    }
+                fold("Input Preview", expanded = false) {
+                    add(TextChunkListView(inputChunks, hostServices))
                 }
             }
-            // text box to preview input
-            textarea(inputText) {
-                promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
-                hgrow = Priority.ALWAYS
-                vgrow = Priority.ALWAYS
-                isWrapText = true
-                prefWidth = 0.0
-                enableDroppingFileContent()
-            }
         }
     }
 
+    // parameter views
     init {
-        outputPane.clear()
-        output {
-            add(PromptTraceCardList(promptTraces))
-        }
-        addOutputTextArea()
-        onCompleted {
-            val result = it.results.values.map { it.value }.filterIsInstance<AiPromptTrace>()
-            promptTraces.setAll(result)
-        }
-    }
-
-    init {
-        parameters("Model Parameters") {
-            with(common) {
-                temperature()
-                maxTokens()
-            }
-        }
-        parameters("Scripting Options") {
+        parameters("Data Import") {
+            tooltip("These settings control how input is divided into separate chunks of text for further processing.")
             field("Chunk Input by") {
                 tooltip("Character(s) separating chunks of input, e.g. \\n for new lines or \\n\\n for paragraphs")
                 textfield(chunkBy)
             }
             field("Input Format") {
-                checkbox("Input has CSV Header", csvHeader)
+                checkbox("Input has Header Row", csvHeader)
             }
-            field("Chunk Limit") {
+        }
+        parameters("Filtering") { }
+        parameters("Batch Processing") {
+            tooltip("These settings control the batch processing of inputs.")
+            field("Limit") {
+                tooltip("Maximum number of chunks to process")
                 slider(1..1000, chunkLimit)
                 label(chunkLimit.asString())
             }
+        }
+        addDefaultTextCompletionParameters(common)
+        parameters("Output Options") {
+            tooltip("These settings control how the results are displayed.")
             field("Display") {
                 checkbox("Unique Results", showUniqueResults)
             }
@@ -179,28 +171,51 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 checkbox("All Results", showAllResults)
             }
             field("", forceLabelIndent = true) {
+                checkbox("LLM Summary", summarizeResults)
+            }
+            field("", forceLabelIndent = true) {
                 checkbox("As CSV", outputCsv)
             }
         }
+        parameters("Result Summarization Template") {
+            enableWhen(summarizeResults)
+            tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
+            promptfield("Text Joiner", joinerId, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), joinerText, workspace)
+            promptfield("Summarizer", summaryPromptId, AiPromptLibrary.withPrefix(TEXT_SUMMARIZER_PREFIX), summaryPromptText, workspace)
+        }
+    }
+
+    // output views
+    init {
+        outputPane.clear()
+        output {
+            add(PromptTraceCardList(promptTraces))
+        }
+        addOutputTextArea()
+        outputPane.children.last().vgrow = Priority.ALWAYS
     }
 
     override fun plan(): AiPlanner {
-        promptTraces.setAll()
-        return promptBatch().tasks()
+        val inputs = inputs()
+        runLater {
+            promptTraces.setAll()
+            inputChunks.setAll(inputs.second.map { TextChunkViewModelImpl(it) })
+        }
+        val tasks = promptBatch(inputs.second).tasks()
+        return tasks
             .map {
                 it.monitor { runLater { promptTraces.add(it) } }
             }
             .aggregate()
             .task("process-results") {
-                postProcess(it)
+                postProcess(it, inputs)
             }.planner
     }
 
-    private fun promptBatch() = AiPromptBatchCyclic("prompt-script").apply {
-        val inputs = inputs().second
+    private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {
         model = completionEngine.modelId
         modelParams = common.toModelParams()
-        prompt = template.value
+        prompt = promptUi.templateText.value
         promptParams = mapOf("input" to inputs)
         runs = inputs.size
     }
@@ -253,51 +268,58 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         return result?.contains("yes", ignoreCase = true) ?: false
     }
 
-    private fun postProcess(results: List<AiPromptTrace>): String {
-        val sectionCount = (if (showUniqueResults.value) 1 else 0) +
-                (if (showAllResults.value) 1 else 0) +
-                (if (outputCsv.value) 1 else 0)
+    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: Pair<String?, List<String>>): AiPromptTrace {
+        val resultSets = mutableMapOf<String, String>()
 
-        val displayString = StringBuilder()
         if (showUniqueResults.value) {
             val countEach = results.mapNotNull { it.outputInfo.output }
                 .groupingBy { it.cleanedup() }
                 .eachCount()
-            if (sectionCount > 1) {
-                displayString.append("Unique Results: ${countEach.size}\n")
-                displayString.append("------------------\n")
-            }
-            countEach.entries.forEach { displayString.append("${it.key}: ${it.value}\n") }
+            val key = "Unique Results: ${countEach.size}"
+            resultSets[key] = countEach.entries.joinToString("\n") { "${it.key}: ${it.value}" }
         }
         if (showAllResults.value) {
-            if (displayString.isNotEmpty())
-                displayString.append("\n")
-            if (sectionCount > 1) {
-                displayString.append("All Results:\n")
-                displayString.append("------------------\n")
-            }
-            results.forEach {
-                displayString.append(it.outputInfo.output ?: "(error or no output returned)")
-                displayString.append("\n")
-            }
+            val key = "All Results"
+            resultSets[key] = results.joinToString("\n") { it.outputInfo.output ?: "(error or no output returned)" }
         }
         if (outputCsv.value) {
-            if (displayString.isNotEmpty())
-                displayString.append("\n")
-            if (sectionCount > 1) {
-                displayString.append("CSV Output:\n")
-                displayString.append("------------------\n")
-            }
-            if (csvHeader.value)
-                displayString.append(inputs().first ?: "input")
-                    .append(",output\n")
-            results.forEach {
-                displayString.append("${it.promptInfo.promptParams["input"]},${it.outputInfo.output}\n")
+            val key = "CSV Output"
+            val csvHeader = inputs.first?.let { "$it,output" } ?: "input,output"
+            val csv = results.joinToString("\n") { "${it.promptInfo.promptParams["input"]},${it.outputInfo.output}" }
+            resultSets[key] = "$csvHeader\n$csv".trim()
+        }
+        val promptInfo: AiPromptInfo
+        if (summarizeResults.value) {
+            val key = "LLM Summarized Results"
+            val joined = joinerText.value.fill("matches" to
+                results.map { mapOf("text" to (it.outputInfo.output ?: "")) }
+            )
+            val summarizer = summaryPromptText.value.fill("input" to joined)
+            val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
+            resultSets[key] = summarizerResult.value ?: "(error or no output returned)"
+            promptInfo = AiPromptInfo(summaryPromptText.value, mapOf("input" to joined))
+        } else {
+            promptInfo = AiPromptInfo("")
+        }
+        val output = if (resultSets.size <= 1) {
+            resultSets.values.firstOrNull() ?: ""
+        } else {
+            resultSets.entries.joinToString("\n\n") {
+                "${it.key}\n" + "-".repeat(it.key.length) + "\n${it.value}"
             }
         }
-        return displayString.toString()
+        return AiPromptTrace(
+            promptInfo,
+            AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),
+            AiPromptExecInfo(),
+            AiPromptOutputInfo(output)
+        )
     }
 
     private fun String.cleanedup() = lowercase().removeSuffix(".")
 
+    companion object {
+        private const val TEXT_SUMMARIZER_PREFIX = "document-reduce"
+        private const val TEXT_JOINER_PREFIX = "text-joiner"
+    }
 }

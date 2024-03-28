@@ -19,15 +19,30 @@
  */
 package tri.ai.text.chunks
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
-import java.time.LocalDate
 
-/** Metadata for text documents and chunks. */
+/**
+ * A text chunk that is a contiguous section of a larger document (also represented here as a chunk).
+ * Tracks first and last character in a text string, inclusive.
+ */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class TextMetadata(
-    val id: String,
-    val path: String? = null,
-    val title: String? = null,
-    val author: String? = null,
-    val date: LocalDate? = null
-)
+class TextChunkInDoc(
+    @get:JsonInclude(JsonInclude.Include.ALWAYS)
+    val first: Int,
+    @get:JsonInclude(JsonInclude.Include.ALWAYS)
+    val last: Int
+): TextChunk() {
+
+    constructor(range: IntRange): this(range.first, range.last)
+
+    override fun text(doc: TextChunk?) =
+        doc!!.text(null).substring(first..last)
+
+    @get:JsonIgnore
+    val range
+        get() = first..last
+    @get: JsonIgnore
+    val length
+        get() = last - first
+}

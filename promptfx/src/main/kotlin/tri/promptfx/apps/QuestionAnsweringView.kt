@@ -59,12 +59,7 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
             promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = completionEngine.instructTextPlan(

@@ -31,11 +31,14 @@ import java.util.logging.Level
 import kotlin.system.exitProcess
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
+    val promptFxConfig : PromptFxConfig by inject()
+
     override fun onBeforeShow(view: UIComponent) {
         workspace.dock<DocumentQaView>()
     }
     override fun stop() {
         workspace.find<PromptFxController>().close()
+        promptFxConfig.save()
         super.stop()
 
         // exit process after 2-second timer that runs in the background

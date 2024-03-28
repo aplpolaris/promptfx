@@ -28,17 +28,20 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextPlugin
-import tri.ai.embedding.EmbeddingDocument
-import tri.ai.embedding.EmbeddingSectionInDocument
-import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextDoc
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.promptFxDirectoryChooser
+import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
+import tri.promptfx.ui.TextChunkListView
+import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.chooseFolder
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import java.awt.Desktop
@@ -61,16 +64,16 @@ class DocumentInsightView: AiPlanTaskView(
     private val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(5000)
     private val embeddingIndex = Bindings.createObjectBinding({
-        LocalEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
+        LocalFolderEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
-    private val docs = observableListOf<EmbeddingDocument>()
-    private val snippets = observableListOf<EmbeddingSectionInDocument>()
+    private val docs = observableListOf<BrowsableSource>()
+    private val snippets = observableListOf<Pair<TextDoc, TextChunk>>()
 
     // for processing chunks to generate results
     private val docsToProcess = SimpleIntegerProperty(2)
-    private val snippetsToProcess = SimpleIntegerProperty(10)
+    private val chunksToProcess = SimpleIntegerProperty(10)
     private val minSnippetCharsToProcess = SimpleIntegerProperty(50)
 
     // result of map processing step
@@ -91,20 +94,23 @@ class DocumentInsightView: AiPlanTaskView(
             squeezebox {
                 fold("Prompts", expanded = true) {
                     vbox {
-                        mapPromptUi = EditablePromptUi("document-map", "Prompt for each snippet:")
-                        reducePromptUi = EditablePromptUi("document-reduce", "Prompt to summarize results:")
+                        mapPromptUi = EditablePromptUi(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
+                        reducePromptUi = EditablePromptUi(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
                         add(mapPromptUi)
                         add(reducePromptUi)
                     }
                 }
                 fold("Documents", expanded = true) {
-                    docslist(embeddingIndex, docs, hostServices)
+                    add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    snippetlist(embeddingIndex, snippets, hostServices)
+                    add(TextChunkListView(snippets.sectionViewModel(embeddingService.modelId), hostServices))
                 }
             }
         }
+    }
+
+    init {
         parameters("Document Source and Sectioning") {
             field("Folder") {
                 (inputContainer as? HBox)?.spacing = 5.0
@@ -123,7 +129,7 @@ class DocumentInsightView: AiPlanTaskView(
                 }
                 button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                     tooltip("Select folder with documents for Q&A")
-                    action { documentFolder.chooseFolder(currentStage) }
+                    action { promptFxDirectoryChooser { documentFolder.set(it) } }
                 }
                 button("", FontAwesomeIcon.GLOBE.graphic) {
                     tooltip("Enter a website to scrape")
@@ -133,9 +139,11 @@ class DocumentInsightView: AiPlanTaskView(
                     tooltip("Rebuild embedding index for this folder")
                     action {
                         // confirm with user then refresh
-                        confirm("Rebuild Embedding Index",
+                        confirm(
+                            "Rebuild Embedding Index",
                             "Are you sure you want to rebuild the entire embedding index?\n" +
-                                    "This may require significant API usage and cost.") {
+                                    "This may require significant API usage and cost."
+                        ) {
                             runAsync {
                                 runBlocking { embeddingIndex.value!!.reindexAll() }
                             }
@@ -144,8 +152,10 @@ class DocumentInsightView: AiPlanTaskView(
                 }
             }
             field("Max snippet size") {
-                tooltip("Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
-                        "This will only apply to newly chunked documents.")
+                tooltip(
+                    "Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
+                            "This will only apply to newly chunked documents."
+                )
                 slider(500..5000, maxChunkSize)
                 label(maxChunkSize)
             }
@@ -158,8 +168,8 @@ class DocumentInsightView: AiPlanTaskView(
             }
             field("Limit snippets per doc to") {
                 tooltip("Max number of snippets per document to process")
-                slider(1..50, snippetsToProcess)
-                label(snippetsToProcess)
+                slider(1..50, chunksToProcess)
+                label(chunksToProcess)
             }
             field("Minimum snippet size (chars)") {
                 tooltip("Minimum size to process")
@@ -167,16 +177,10 @@ class DocumentInsightView: AiPlanTaskView(
                 label(minSnippetCharsToProcess)
             }
         }
-        parameters("Model") {
-            field("Model") {
-                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
-            }
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
+    }
 
+    init {
         outputPane.clear()
         output {
             textarea(mapResult) {
@@ -218,13 +222,14 @@ class DocumentInsightView: AiPlanTaskView(
 
     private fun promptBatch(): List<AiTask<AiPromptTrace>> {
         val snippets = updateDocs()
-        val limitedSnippets = snippets.groupBy { it.doc }
-            .mapValues { it.value.take(snippetsToProcess.value) }
+        val limitedSnippets = snippets.groupBy { it.first }
+            .mapValues { it.value.take(chunksToProcess.value) }
             .values.flatten()
 
         return AiPromptBatchCyclic("processing-snippets").apply {
-            val names = limitedSnippets.map { "${it.doc.shortName} ${it.section.start} ${it.section.end}" }
-            val inputs = limitedSnippets.map { it.readText() }
+            var i = 1
+            val names = limitedSnippets.map { "${it.first.browsable()!!.shortName} ${i++}" }
+            val inputs = limitedSnippets.map { it.second.text(it.first.all) }
             model = completionEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPromptUi.templateText.value
@@ -241,20 +246,22 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     private fun updateDocs() = runBlocking {
-        val docList = embeddingIndex.value!!.getEmbeddingIndex().values.take(docsToProcess.value)
-        val embeddingList = docList.flatMap { doc ->
-            doc.sections.take(snippetsToProcess.value)
-                .map { EmbeddingSectionInDocument(embeddingIndex.value!!, doc, it) }
+        val docList = embeddingIndex.value!!.calculateAndGetDocs().take(docsToProcess.value)
+        val chunkList = docList.flatMap { doc ->
+            doc.chunks.take(chunksToProcess.value).map { doc to it }
         }
         runLater {
-            docs.setAll(docList)
-            snippets.setAll(embeddingList)
+            docs.setAll(docList.map { it.browsable() })
+            snippets.setAll(chunkList)
         }
-        embeddingList
+        chunkList
     }
 
     companion object {
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-insights.folder"
+
+        private const val DOCUMENT_MAP_PREFIX = "document-map"
+        internal const val DOCUMENT_REDUCE_PREFIX = "document-reduce"
     }
 }

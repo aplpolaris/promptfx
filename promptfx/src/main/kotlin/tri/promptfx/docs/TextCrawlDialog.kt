@@ -25,9 +25,10 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Insets
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import org.jsoup.safety.Safelist
 import tornadofx.*
-import tri.util.ui.chooseFolder
+import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.graphic
 import java.awt.Desktop
 import java.io.File
@@ -68,7 +69,7 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
                         }
                     }
                     button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                        action { folder.chooseFolder(currentStage) }
+                        action { promptFxDirectoryChooser { folder.set(it) } }
                     }
                 }
             }
@@ -78,7 +79,14 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
             spacing = 10.0
             button("Crawl") {
                 action {
-                    crawlWebsite(url.value, depth = 1, targetFolder = folder.value)
+                    WebCrawler.crawlWebsite(
+                        url.value,
+                        depth = 1,
+                        maxLinks = 100,
+                        requireSameDomain = true,
+                        targetFolder = folder.value,
+                        progressUpdate = { println(it) }
+                    )
                     close()
                 }
             }
@@ -86,35 +94,72 @@ class TextCrawlDialog: Fragment("Web Crawler Settings") {
     }
 }
 
-private fun crawlWebsite(url: String, depth: Int = 0, targetFolder: File, scraped: MutableSet<String> = mutableSetOf()) {
-    if (url.isBlank() || url in scraped)
-        return
-    runAsync {
-        println("Scraping text and links from $url...")
-        try {
-            val doc = Jsoup.connect(url).get()
-            val docNode = doc.select("article").firstOrNull() ?: doc.body()
-            val nodeHtml = docNode.apply {
-                select("br").before("\\n")
-                select("p").before("\\n")
-            }.html().replace("\\n", "\n")
-            val text = Jsoup.clean(nodeHtml, "", Safelist.none(),
-                Document.OutputSettings().apply { prettyPrint(false) }
-            )
-            if (text.isNotEmpty()) {
-                val title = doc.title().replace("[^a-zA-Z0-9.-]".toRegex(), "_")
-                if (title.length > 2) // require minimum length to avoid saving off blank links
-                    File(targetFolder, "$title.txt").writeText(text)
-                scraped.add(url)
-            }
-            if (depth > 0) {
-                val links = docNode.select("a[href]").map { it.absUrl("href") }.toSet().take(100)
-                links
-                    .filter { it.startsWith("http") }
-                    .forEach { crawlWebsite(it, depth - 1, targetFolder, scraped) }
-            }
-        } catch (x: IOException) {
-            println("  ... failed to retrieve URL due to $x")
+object WebCrawler {
+
+    /** Crawls a given URL, extracting text and optionally following links. */
+    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, targetFolder: File, progressUpdate: (String) -> Unit) {
+        val urlTitleText = crawlWebsite(url, depth, maxLinks, requireSameDomain, mutableSetOf(), progressUpdate)
+        urlTitleText.forEach { (_, titleText) ->
+            File(targetFolder, "${titleText.first}.txt")
+                .writeText(titleText.second)
         }
     }
+
+    /** Crawls a given URL, extracting text and optionally following links. */
+    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, scraped: MutableSet<String> = mutableSetOf(), progressUpdate: (String) -> Unit): Map<String, Pair<String, String>> {
+        if (url.isBlank() || url in scraped)
+            return mapOf()
+        return runAsync {
+            val domain = domain(url)
+            progressUpdate("Scraping text and links from $url, domain $domain...")
+            val urlTitleText = mutableMapOf<String, Pair<String, String>>()
+            try {
+                val (doc, docNode, text) = scrapeText(url)
+                if (text.isNotEmpty()) {
+                    val title = doc.title().replace("[^a-zA-Z0-9.-]".toRegex(), "_")
+                    if (title.length > 2) // require minimum length to avoid saving off blank links
+                        urlTitleText[url] = title to text
+                }
+                if (depth > 0) {
+                    docNode.links().take(maxLinks).filter {
+                        !requireSameDomain || it.contains("//$domain")
+                    }.forEach {
+                        urlTitleText.putAll(crawlWebsite(it, depth - 1, maxLinks, requireSameDomain, urlTitleText.keys, progressUpdate))
+                    }
+                }
+            } catch (x: IOException) {
+                println("  ... failed to retrieve URL due to $x")
+            }
+            urlTitleText
+        }.get()
+    }
+
+    /** Get domain from URL. */
+    private fun domain(url: String): String {
+        return url.substringAfter("//").substringBefore("/")
+    }
+
+    /** Get text from URL. */
+    fun scrapeText(url: String) =
+        CACHE.getOrPut(url) { scrapeTextUncached(url) }
+
+    private fun scrapeTextUncached(url: String): Triple<Document, Element, String> {
+        val doc = Jsoup.connect(url).get()
+        val docNode = doc.select("article").firstOrNull() ?: doc.body()
+        val nodeHtml = docNode.apply {
+            select("br").before("\\n")
+            select("p").before("\\n")
+        }.html().replace("\\n", "\n")
+        val text = Jsoup.clean(nodeHtml, "", Safelist.none(),
+            Document.OutputSettings().apply { prettyPrint(false) }
+        )
+        return Triple(doc, docNode, text)
+    }
+
+    /** Get list of links from a web element. */
+    fun Element.links() =
+        select("a[href]").map { it.absUrl("href") }.toSet()
+            .filter { it.startsWith("http") }
+
+    private val CACHE = mutableMapOf<String, Triple<Document, Element, String>>()
 }

@@ -25,40 +25,44 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.PromptFxWorkspace
+import tri.util.ui.templatemenubutton
 
 /** View for selecting and editing a prompt. */
-class EditablePromptUi(val prefix: String, val instruction: String): Fragment() {
+class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean, val instruction: String): Fragment() {
 
     private val prompts
-        get() = AiPromptLibrary.withPrefix(prefix)
-    val templateText = SimpleStringProperty(prompts.firstOrNull()?.let { AiPromptLibrary.lookupPrompt(it).template } ?: "")
+        get() = AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys
+    val templateText = SimpleStringProperty("")
+
+    init {
+        prompts.firstOrNull()?.let {
+            templateText.set(AiPromptLibrary.lookupPrompt(it).template)
+        }
+    }
+
+    /** UI for editing prompts with a given prefix. */
+    constructor(prefix: String, instruction: String) : this({ it.key.startsWith(prefix) }, instruction)
 
     /** Fills the template with the provided values. */
     fun fill(vararg values: Pair<String, Any>) = templateText.value.fill(*values)
 
     override val root = vbox {
-        hbox {
-            alignment = Pos.CENTER_LEFT
-            spacing = 5.0
+        hbox(5, Pos.CENTER_LEFT) {
             padding = insets(5.0, 0.0, 5.0, 0.0)
             text(instruction)
             spacer()
-            menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                prompts.forEach { key ->
-                    item(key) {
-                        action { templateText.set(AiPromptLibrary.lookupPrompt(key).template) }
-                    }
-                }
-            }
+            templatemenubutton(templateText, promptFilter)
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-                tooltip("Copy the current prompt to the Prompt Template view under Tools and open that view.")
+                tooltip("Try out the current prompt in the Prompt Template view.")
                 action { (workspace as PromptFxWorkspace).launchTemplateView(templateText.value) }
             }
         }
         textarea(templateText) {
+            promptText = "Enter a prompt here"
             vgrow = Priority.ALWAYS
             isWrapText = true
             style = "-fx-font-size: 18px;"
