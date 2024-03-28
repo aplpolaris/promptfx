@@ -25,15 +25,16 @@ import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.process.SmartTextChunker
+import tri.ai.text.chunks.process.SmartTextChunkerTest
 import kotlin.io.path.toPath
 
 class LocalFolderEmbeddingIndexTest {
 
     @Test
     fun `test index`() = runTest {
-        val docsPath = LocalFolderEmbeddingIndexTest::class.java.getResource("resources")!!.toURI().toPath().toFile()
+        val docsPath = SmartTextChunkerTest::class.java.getResource("resources")!!.toURI().toPath().toFile()
         val index = LocalFolderEmbeddingIndex(docsPath, MockEmbeddingService())
-        index.library.docs.forEach {
+        index.calculateAndGetDocs().forEach {
             println(it.metadata.path)
             it.chunks.take(10).forEach { chunk ->
                 val chunkDoc = chunk as TextChunkInDoc
