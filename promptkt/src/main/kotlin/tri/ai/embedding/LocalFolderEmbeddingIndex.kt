@@ -37,11 +37,11 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
 
     var maxChunkSize: Int = 1000
 
-    val indexFile by lazy { File(rootDir, "embeddings2.json") }
+    private val indexFile by lazy { File(rootDir, "embeddings2.json") }
 
-    val library: TextLibrary by lazy {
+    private val library: TextLibrary by lazy {
         try {
-            TextLibrary.loadFrom(rootDir)
+            TextLibrary.loadFrom(indexFile)
         } catch (x: Exception) {
             loggerFor<LocalFolderEmbeddingIndex>().warning("Failed to load embedding index from $rootDir: ${x.message}")
             TextLibrary()
@@ -91,16 +91,6 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
 
     //endregion
 
-    //region ALTERNATE FORMAT PROCESSING
-
-    /** Extract text from DOCX. */
-    private fun docxText(file: File) = XWPFWordExtractor(XWPFDocument(file.inputStream())).text
-
-    /** Extract text from DOC. */
-    private fun docText(file: File) = WordExtractor(file.inputStream()).text
-
-    //endregion
-
     private fun TextLibrary.docChunks(): List<Pair<TextDoc, TextChunk>> =
         docs.flatMap { doc ->
             doc.chunks.map { chunk -> doc to chunk }
@@ -110,6 +100,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
         val semanticTextQuery = embeddingService.calculateEmbedding(query).let {
             SemanticTextQuery(query, it, embeddingService.modelId)
         }
+        reindexNew()
         val matches = library.docChunks().map { (doc, chunk) ->
             val chunkEmbedding = chunk.getEmbeddingInfo(embeddingService.modelId)!!
             EmbeddingMatch(semanticTextQuery, doc, chunk,
