@@ -39,7 +39,7 @@ class DocumentQaPlanner {
     /** The embedding index. */
     var embeddingIndex: ObservableValue<out EmbeddingIndex?> = SimpleObjectProperty(NoOpEmbeddingIndex)
     /** The retrieved relevant snippets. */
-    val snippets = observableListOf<SnippetMatch>()
+    val snippets = observableListOf<EmbeddingMatch>()
     /** The most recent result of the QA task. */
     var lastResult: QuestionAnswerResult? = null
 
@@ -73,18 +73,17 @@ class DocumentQaPlanner {
             runLater { snippets.setAll(it.value) }
         }
     }.aitask("question-answer") {
-        val queryChunks = it.filter { it.snippetLength >= minChunkSize }
+        val queryChunks = it.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
         val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
+        val questionEmbedding = embeddingService.calculateEmbedding(question)
         val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
         response.map {
             QuestionAnswerResult(
                 modelId = completionEngine.modelId,
-                embeddingId = embeddingService.modelId,
                 promptId = promptId,
-                question = question,
-                questionEmbedding = queryChunks.first().embeddingMatch.queryEmbedding,
+                query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                 matches = snippets,
                 response = response.value,
                 responseEmbedding = responseEmbedding
@@ -99,13 +98,13 @@ class DocumentQaPlanner {
     //region SIMILARITY CALCULATIONS
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<SnippetMatch>> {
+    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
-        return AiTaskResult.result(matches.map { SnippetMatch(it, embeddingIndex.value!!.readSnippet(it.document, it.section)) })
+        return AiTaskResult.result(matches)
     }
 
     suspend fun reindexAllDocuments() {
-        (embeddingIndex.value as? LocalEmbeddingIndex)?.reindexAll()
+        (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.reindexAll()
     }
 
     //endregion
@@ -118,12 +117,11 @@ class DocumentQaPlanner {
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
         val result = mutableListOf(FormattedTextNode(qaResult.response ?: "No response."))
-        val docs = qaResult.matches.map { it.browsable }.toSet()
+        val docs = qaResult.matches.map { it.document.browsable()!! }.toSet()
         docs.forEach { doc ->
             result.splitOn(doc.shortNameWithoutExtension) {
-                val sourceDoc = qaResult.matches.first { it.browsable == doc }.embeddingMatch.document.browsable
-                FormattedTextNode(sourceDoc.shortNameWithoutExtension,
-                    hyperlink = sourceDoc.file?.absolutePath ?: sourceDoc.uri.path)
+                FormattedTextNode(doc.shortNameWithoutExtension,
+                    hyperlink = doc.file?.absolutePath ?: doc.uri.path)
             }
         }
         result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
@@ -144,48 +142,14 @@ class DocumentQaPlanner {
 /** Result object. */
 data class QuestionAnswerResult(
     val modelId: String,
-    val embeddingId: String,
     val promptId: String?,
-    val question: String,
-    val questionEmbedding: List<Double>,
-    val matches: List<SnippetMatch>,
+    val query: SemanticTextQuery,
+    val matches: List<EmbeddingMatch>,
     val response: String?,
     val responseEmbedding: List<Double>?
 ) {
-    override fun toString() = response ?: "No response. Question: $question"
+    override fun toString() = response ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
-    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(questionEmbedding, it) } ?: 0
+    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(query.embedding, it) } ?: 0
 }
-
-/** A snippet match that can be serialized. */
-data class SnippetMatch(
-    @get:JsonIgnore val embeddingMatch: EmbeddingMatch,
-    val browsable: BrowsableSource,
-    val snippetStart: Int,
-    val snippetEnd: Int,
-    val snippetText: String,
-    val snippetEmbedding: List<Double>,
-    val score: Double
-) {
-
-    constructor(match: EmbeddingMatch, snippetText: String) : this(
-        match,
-        match.document.browsable,
-        match.section.start,
-        match.section.end,
-        snippetText,
-        match.section.embedding,
-        match.score
-    )
-
-    override fun toString() = "SnippetMatch(${browsable.uri}, $snippetStart, $snippetEnd, $score)"
-
-    @get:JsonIgnore
-    val snippetLength = snippetEnd - snippetStart
-
-    /** Test for a matching document. */
-    fun matchesDocument(doc: String) = browsable.shortNameWithoutExtension == doc
-}
-
-//endregion

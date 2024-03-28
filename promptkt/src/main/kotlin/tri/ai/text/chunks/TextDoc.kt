@@ -30,19 +30,9 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
 
     /**
      * Gets a [BrowsableSource] based on the path in the metadata.
-     * If [rootDir] is provided, the path is resolved relative to it, if the metadata path file cannot be found.
      */
-    fun browsable(rootDir: File?): BrowsableSource? {
-        require(rootDir == null || rootDir.isDirectory)
-        val path = metadata.path ?: return null
-        val file: File? = try {
-            File(path).let { if (rootDir != null) LocalFileManager.fixPath(it, rootDir) else it }
-        } catch (x: IllegalArgumentException) {
-            // URI is not a file
-            null
-        }?.let { if (it.exists()) it else null }
-        return BrowsableSource(file?.toURI() ?: path)
-    }
+    fun browsable() =
+        metadata.path?.let { BrowsableSource(it) }
 }
 
 /**

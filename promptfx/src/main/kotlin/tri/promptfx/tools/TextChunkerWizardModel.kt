@@ -117,7 +117,7 @@ class TextChunkerWizardModel: ViewModel() {
     /** Chunker based on current settings. */
     private fun chunker(): TextChunker = when {
         isChunkAutomatic.get() ->
-            StandardTextChunker(maxChunkSize.value)
+            SmartTextChunker(maxChunkSize.value)
         isChunkDelimiter.get() ->
             DelimiterTextChunker(
                 isCleanUpWhiteSpace.value, listOf(chunkDelimiter.value

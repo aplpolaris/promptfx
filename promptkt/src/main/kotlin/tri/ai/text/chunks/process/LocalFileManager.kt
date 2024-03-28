@@ -5,6 +5,7 @@ import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.File
 import java.io.FileFilter
+import java.net.URI
 
 /**
  * Handles local files, including extraction of text from various formats, catching of text in associated ".txt" files,
@@ -35,7 +36,6 @@ object LocalFileManager {
         return null
     }
 
-
     //region FILE MANAGEMENT
 
     /** Return file filter for files that are convertible to text, but not a text cache file themselves. */
@@ -45,8 +45,10 @@ object LocalFileManager {
     fun File.textFiles() = listFiles { f -> f.extension.lowercase() == TXT }?.toList() ?: emptyList()
 
     /** List files that are convertible to text in a given folder. */
-    private fun File.listFilesWithTextContent(): List<File> =
-        listFiles(fileWithTextContentFilter)?.toList() ?: emptyList()
+    fun File.listFilesWithTextContent(): List<File> {
+        require(isDirectory)
+        return listFiles(fileWithTextContentFilter)?.toList() ?: emptyList()
+    }
 
     /** Return true if the file is convertible to text. */
     private fun File.hasTextContent() = extension.lowercase() in SUPPORTED_EXTENSIONS
@@ -70,6 +72,13 @@ object LocalFileManager {
     //endregion
 
     //region SCRAPING
+
+    /**
+     * Reads text content from a given URI, or the text file matching its contents.
+     * Throws an exception if URI is not a file.
+     */
+    fun readText(uri: URI) =
+        File(uri).fileToText(true)
 
     /** Scrape all documents with text content in a folder. */
     fun File.extractTextContent(reprocessAll: Boolean = false) {

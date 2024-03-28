@@ -20,7 +20,7 @@
 package tri.ai.cli
 
 import tri.ai.text.chunks.process.LocalTextDocIndex
-import tri.ai.text.chunks.process.StandardTextChunker
+import tri.ai.text.chunks.process.SmartTextChunker
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
@@ -66,7 +66,7 @@ object DocumentChunker {
         docs.processDocuments(reindexAll)
 
         println("${ANSI_CYAN}Chunking documents with max-chunk-size=$maxChunkSize...$ANSI_RESET")
-        val chunker = StandardTextChunker(maxChunkSize)
+        val chunker = SmartTextChunker(maxChunkSize)
         docs.processChunks(chunker, reindexAll)
 
         println("${ANSI_CYAN}Saving document set info...$ANSI_RESET")

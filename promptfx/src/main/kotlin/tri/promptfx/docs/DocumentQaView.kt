@@ -33,7 +33,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.AiPlanTaskView
@@ -78,7 +78,7 @@ class DocumentQaView: AiPlanTaskView(
 
     val planner = DocumentQaPlanner().apply {
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
-            LocalEmbeddingIndex(documentFolder.value, it!!).apply {
+            LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }
         }
@@ -254,7 +254,7 @@ class DocumentQaView: AiPlanTaskView(
     override suspend fun processUserInput() =
         super.processUserInput().also {
             (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
-                val doc = snippets.firstOrNull { it.browsable.shortNameWithoutExtension == docName }?.embeddingMatch?.document?.browsable
+                val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                 if (doc == null) {
                     println("Unable to find document $docName in snippets.")
                 } else {
@@ -276,11 +276,11 @@ class DocumentQaView: AiPlanTaskView(
                 DocumentOpenInViewer(doc, hostServices).open()
             } else {
                 println("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
-                val matches = result.matches.filter { it.matchesDocument(doc.shortNameWithoutExtension) }
+                val matches = result.matches.filter { it.shortDocName == doc.shortNameWithoutExtension }
                 if (matches.size == 1) {
                     println("Browsing to only match")
                     val match = matches.first()
-                    DocumentBrowseToPage(match.embeddingMatch.document.browsable, match.snippetText, hostServices).open()
+                    DocumentBrowseToPage(match.document.browsable()!!, match.chunkText, hostServices).open()
                 } else {
                     println("Browsing to closest match")
                     DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()

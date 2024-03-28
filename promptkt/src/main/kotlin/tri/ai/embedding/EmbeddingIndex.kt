@@ -23,13 +23,10 @@ package tri.ai.embedding
 interface EmbeddingIndex {
     /** Find the most similar section to the query. */
     suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
-    /** Gets text for a given document and section. */
-    fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection): String
 }
 
 /** A no-op version of the embedding index. */
 object NoOpEmbeddingIndex : EmbeddingIndex {
     override suspend fun findMostSimilar(query: String, n: Int) = listOf<EmbeddingMatch>()
-    override fun readSnippet(doc: EmbeddingDocument, section: EmbeddingSection) = TODO("NoOpEmbeddingIndex for testing only.")
 }
 

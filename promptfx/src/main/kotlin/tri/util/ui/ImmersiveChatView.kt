@@ -72,7 +72,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         if (baseComponent is DocumentQaView) {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
-                val thumbs = base.snippets.map { it.embeddingMatch.document.browsable }.toSet()
+                val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
                     .associateWith { documentThumbnail(it) }
                 animateThumbs(thumbs)
             }

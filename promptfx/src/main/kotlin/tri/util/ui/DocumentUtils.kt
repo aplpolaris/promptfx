@@ -23,12 +23,9 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
-import tri.ai.embedding.EmbeddingDocument
-import tri.ai.embedding.EmbeddingIndex
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.process.LocalFileManager.PDF
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
-import tri.ai.text.chunks.process.LocalTextDocIndex
 import java.awt.image.BufferedImage
 import java.io.File
 import kotlin.collections.set
@@ -46,7 +43,7 @@ object DocumentUtils {
         if (doc.path in thumbnailCache)
             return thumbnailCache[doc.path]
 
-        val pdfFile = doc.uri?.let {
+        val pdfFile = doc.uri.let {
             try {
                 val file = File(it)
                 file.originalFile()?.let {

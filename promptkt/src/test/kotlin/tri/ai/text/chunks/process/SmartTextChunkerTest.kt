@@ -2,12 +2,11 @@ package tri.ai.text.chunks.process
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import tri.ai.embedding.TextChunkerTest
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextChunkInDoc
-import tri.ai.text.chunks.process.StandardTextChunker.Companion.chunkWhile
+import tri.ai.text.chunks.process.SmartTextChunker.Companion.chunkWhile
 
-class StandardTextChunkerTest {
+class SmartTextChunkerTest {
 
     @Test
     fun testChunkWhile() {
@@ -18,8 +17,8 @@ class StandardTextChunkerTest {
 
     @Test
     fun testTextChunking() {
-        val chunker = StandardTextChunker(5000)
-        val fullText = TextChunkerTest::class.java.getResource("resources/pg1513.txt")!!.readText()
+        val chunker = SmartTextChunker(5000)
+        val fullText = SmartTextChunkerTest::class.java.getResource("resources/pg1513.txt")!!.readText()
 
         println("--- Simple ---")
         val chunks1 = chunker.chunkTextBySectionsSimple(fullText)

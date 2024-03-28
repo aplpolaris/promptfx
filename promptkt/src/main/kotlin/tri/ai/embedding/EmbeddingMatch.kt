@@ -19,10 +19,27 @@
  */
 package tri.ai.embedding
 
-/** A scored match for a query. */
+import com.fasterxml.jackson.annotation.JsonIgnore
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextDoc
+
+/** A scored match for a semantic query. */
 class EmbeddingMatch(
-    val document: EmbeddingDocument,
-    val section: EmbeddingSection,
-    val queryEmbedding: List<Double>,
+    val query: SemanticTextQuery,
+    val document: TextDoc,
+    val chunk: TextChunk,
+    val chunkEmbedding: List<Double>,
     val score: Double
-)
+) {
+    @get:JsonIgnore
+    val chunkText: String
+        get() = chunk.text(document.all)
+
+    @get:JsonIgnore
+    val chunkSize: Int
+        get() = chunkText.length
+
+    @get:JsonIgnore
+    val shortDocName: String
+        get() = document.browsable()?.shortNameWithoutExtension ?: document.metadata.id
+}

@@ -28,12 +28,13 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingSectionInDocument
-import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextDoc
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.ui.DocumentListView
@@ -63,16 +64,16 @@ class DocumentInsightView: AiPlanTaskView(
     private val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(5000)
     private val embeddingIndex = Bindings.createObjectBinding({
-        LocalEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
+        LocalFolderEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
     private val docs = observableListOf<BrowsableSource>()
-    private val snippets = observableListOf<EmbeddingSectionInDocument>()
+    private val snippets = observableListOf<Pair<TextDoc, TextChunk>>()
 
     // for processing chunks to generate results
     private val docsToProcess = SimpleIntegerProperty(2)
-    private val snippetsToProcess = SimpleIntegerProperty(10)
+    private val chunksToProcess = SimpleIntegerProperty(10)
     private val minSnippetCharsToProcess = SimpleIntegerProperty(50)
 
     // result of map processing step
@@ -103,7 +104,7 @@ class DocumentInsightView: AiPlanTaskView(
                     add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    add(TextChunkListView(snippets.sectionViewModel(), hostServices))
+                    add(TextChunkListView(snippets.sectionViewModel(embeddingService.modelId), hostServices))
                 }
             }
         }
@@ -167,8 +168,8 @@ class DocumentInsightView: AiPlanTaskView(
             }
             field("Limit snippets per doc to") {
                 tooltip("Max number of snippets per document to process")
-                slider(1..50, snippetsToProcess)
-                label(snippetsToProcess)
+                slider(1..50, chunksToProcess)
+                label(chunksToProcess)
             }
             field("Minimum snippet size (chars)") {
                 tooltip("Minimum size to process")
@@ -221,13 +222,14 @@ class DocumentInsightView: AiPlanTaskView(
 
     private fun promptBatch(): List<AiTask<AiPromptTrace>> {
         val snippets = updateDocs()
-        val limitedSnippets = snippets.groupBy { it.doc }
-            .mapValues { it.value.take(snippetsToProcess.value) }
+        val limitedSnippets = snippets.groupBy { it.first }
+            .mapValues { it.value.take(chunksToProcess.value) }
             .values.flatten()
 
         return AiPromptBatchCyclic("processing-snippets").apply {
-            val names = limitedSnippets.map { "${it.doc.browsable.shortName} ${it.section.start} ${it.section.end}" }
-            val inputs = limitedSnippets.map { it.readText() }
+            var i = 1
+            val names = limitedSnippets.map { "${it.first.browsable()!!.shortName} ${i++}" }
+            val inputs = limitedSnippets.map { it.second.text(it.first.all) }
             model = completionEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPromptUi.templateText.value
@@ -244,16 +246,15 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     private fun updateDocs() = runBlocking {
-        val docList = embeddingIndex.value!!.getEmbeddingIndex().values.take(docsToProcess.value)
-        val embeddingList = docList.flatMap { doc ->
-            doc.sections.take(snippetsToProcess.value)
-                .map { EmbeddingSectionInDocument(embeddingIndex.value!!, doc, it) }
+        val docList = embeddingIndex.value!!.calculateAndGetDocs().take(docsToProcess.value)
+        val chunkList = docList.flatMap { doc ->
+            doc.chunks.take(chunksToProcess.value).map { doc to it }
         }
         runLater {
-            docs.setAll(docList.map { it.browsable })
-            snippets.setAll(embeddingList)
+            docs.setAll(docList.map { it.browsable() })
+            snippets.setAll(chunkList)
         }
-        embeddingList
+        chunkList
     }
 
     companion object {

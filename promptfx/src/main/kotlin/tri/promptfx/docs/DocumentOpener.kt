@@ -23,6 +23,7 @@ import javafx.application.HostServices
 import javafx.scene.control.Alert
 import javafx.stage.Modality
 import tornadofx.*
+import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.embedding.findTextInPdf
 import tri.ai.text.chunks.BrowsableSource
@@ -89,17 +90,17 @@ class DocumentBrowseToPage(val doc: BrowsableSource, val text: String, val hostS
 }
 
 /** Browses to the closest snippet matching given text embedding in a document. */
-class DocumentBrowseToClosestMatch(val matches: List<SnippetMatch>, val textEmbedding: List<Double>?, val hostServices: HostServices?): DocumentOpener() {
+class DocumentBrowseToClosestMatch(val matches: List<EmbeddingMatch>, val textEmbedding: List<Double>?, val hostServices: HostServices?): DocumentOpener() {
     override fun open() {
         println("Browsing to the closest of ${matches.size} snippets within this document...")
         val closestSnippet = when {
             matches.size == 1 || textEmbedding == null -> matches.first()
             else -> closestMatchToResponse(matches, textEmbedding)
         }
-        DocumentBrowseToPage(closestSnippet.browsable, closestSnippet.snippetText, hostServices).open()
+        DocumentBrowseToPage(closestSnippet.document.browsable()!!, closestSnippet.chunkText, hostServices).open()
     }
 
     /** Calculates the snippet that was most similar to the generated answer. */
-    private fun closestMatchToResponse(snippets: List<SnippetMatch>, embedding: List<Double>) =
-        snippets.maxBy { cosineSimilarity(it.snippetEmbedding, embedding) }
+    private fun closestMatchToResponse(snippets: List<EmbeddingMatch>, embedding: List<Double>) =
+        snippets.maxBy { cosineSimilarity(it.chunkEmbedding, embedding) }
 }

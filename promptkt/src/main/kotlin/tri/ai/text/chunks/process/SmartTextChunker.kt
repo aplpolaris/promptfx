@@ -25,8 +25,11 @@ import tri.ai.text.chunks.TextChunkRaw
 import tri.util.info
 import java.text.BreakIterator
 
-/** Standard implementation of [TextChunker]. */
-class StandardTextChunker(
+/**
+ * Smart implementation of [TextChunker], attempting to automatically split up text into reasonable sections based on
+ * natural breaks.
+ */
+class SmartTextChunker(
     val maxChunkSize: Int = 1000
 ) : TextChunker {
 
@@ -91,7 +94,7 @@ class StandardTextChunker(
 
         // log chunks
         result.forEach { chunk ->
-            info<StandardTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
+            info<SmartTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
         }
 
         return result
