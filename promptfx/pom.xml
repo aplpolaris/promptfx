@@ -63,7 +63,7 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
         <junit.version>5.9.2</junit.version>
-        <javafx.version>17.0.2</javafx.version>
+        <javafx.version>17.0.10</javafx.version>
         <kotlin.version>1.8.20</kotlin.version>
     </properties>
 
