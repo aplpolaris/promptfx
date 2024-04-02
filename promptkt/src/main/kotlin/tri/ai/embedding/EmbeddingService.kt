@@ -50,7 +50,7 @@ interface EmbeddingService {
 
     /** Chunks a text into sections and calculates the embedding for each section. */
     suspend fun chunkedEmbedding(path: URI, text: String, maxChunkSize: Int): TextDoc {
-        info<EmbeddingService>("Calculating embedding for $path...")
+        info<EmbeddingService>("Calculating embeddings for $path...")
         val doc = TextDoc(path.toString(), text).apply {
             metadata.path = path
         }

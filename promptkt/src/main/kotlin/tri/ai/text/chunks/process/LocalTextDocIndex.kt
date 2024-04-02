@@ -52,15 +52,7 @@ class LocalTextDocIndex(
         val docs = mutableMapOf<String, Pair<File, TextDoc>>()
         rootFolder.textFiles().forEach {
             if (reindexAll || it.absolutePath !in docs) {
-                val doc = TextDoc(it.name).apply {
-                    metadata.title = it.nameWithoutExtension
-                    metadata.date = LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(it.lastModified()),
-                        java.time.ZoneId.systemDefault()
-                    ).toLocalDate()
-                    metadata.path = it.toURI()
-                    metadata.relativePath = it.name
-                }
+                val doc = it.createTextDoc()
                 docs[doc.metadata.id] = it to doc
             }
         }
@@ -111,5 +103,19 @@ class LocalTextDocIndex(
     }
 
     //endregion
+
+    companion object {
+
+        /** Create a [TextDoc] with metadata from a file's attributes. */
+        fun File.createTextDoc() = TextDoc(name).apply {
+            metadata.title = nameWithoutExtension
+            metadata.date = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(lastModified()),
+                java.time.ZoneId.systemDefault()
+            ).toLocalDate()
+            metadata.path = toURI()
+            metadata.relativePath = name
+        }
+    }
 }
 

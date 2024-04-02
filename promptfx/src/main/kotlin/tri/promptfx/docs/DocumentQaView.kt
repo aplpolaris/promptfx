@@ -20,6 +20,7 @@
 package tri.promptfx.docs
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
@@ -34,8 +35,15 @@ import javafx.scene.text.TextFlow
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.TextChunkInDoc
+import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.process.EmbeddingPrecision
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL

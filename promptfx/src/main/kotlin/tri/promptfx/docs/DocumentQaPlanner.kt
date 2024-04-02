@@ -19,19 +19,29 @@
  */
 package tri.promptfx.docs
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
+import tri.ai.openai.OpenAiModels.ADA_ID
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
-import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.TextChunkInDoc
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.chunks.process.EmbeddingPrecision
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.ModelParameters
 import tri.util.info
+import java.io.File
+import java.lang.IllegalArgumentException
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -67,33 +77,36 @@ class DocumentQaPlanner {
         completionEngine: TextCompletion,
         maxTokens: Int,
         tempParameters: ModelParameters
-    ) = aitask("calculate-embeddings") {
-        runLater { snippets.setAll() }
-        findRelevantSection(question, chunksToRetrieve).also {
-            runLater { snippets.setAll(it.value) }
-        }
-    }.aitask("question-answer") {
-        val queryChunks = it.filter { it.chunkSize >= minChunkSize }
-            .take(contextChunks)
-        val context = contextStrategy.constructContext(queryChunks)
-        val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
-        val questionEmbedding = embeddingService.calculateEmbedding(question)
-        val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
-        response.map {
-            QuestionAnswerResult(
-                modelId = completionEngine.modelId,
-                promptId = promptId,
-                query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
-                matches = snippets,
-                response = response.value,
-                responseEmbedding = responseEmbedding
-            )
-        }
-    }.task("process-result") {
-        info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
-        lastResult = it
-        formatResult(it)
-    }.planner
+    ) = aitask("upgrade-existing-embeddings") {
+            runLater { snippets.setAll() }
+            upgradeEmbeddingIndex()
+            AiTaskResult.result("")
+        }.aitask("calculate-embeddings") {
+            findRelevantSection(question, chunksToRetrieve).also {
+                runLater { snippets.setAll(it.value) }
+            }
+        }.aitask("question-answer") {
+            val queryChunks = it.filter { it.chunkSize >= minChunkSize }
+                .take(contextChunks)
+            val context = contextStrategy.constructContext(queryChunks)
+            val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
+            val questionEmbedding = embeddingService.calculateEmbedding(question)
+            val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
+            response.map {
+                QuestionAnswerResult(
+                    modelId = completionEngine.modelId,
+                    promptId = promptId,
+                    query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
+                    matches = snippets,
+                    response = response.value,
+                    responseEmbedding = responseEmbedding
+                )
+            }
+        }.task("process-result") {
+            info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
+            lastResult = it
+            formatResult(it)
+        }.planner
 
     //region SIMILARITY CALCULATIONS
 
@@ -135,6 +148,48 @@ class DocumentQaPlanner {
 
     //endregion
 
+    //region WORKING WITH LEGACY DATA
+
+    /** Upgrades a legacy format embeddings file. Only supports upgrading from OpenAI embeddings file, `embeddings.json`. */
+    private fun upgradeEmbeddingIndex() {
+        val index = embeddingIndex.value as LocalFolderEmbeddingIndex
+        val folder = index.rootDir
+        val file = File(folder, "embeddings.json")
+        if (file.exists()) {
+            info<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $file")
+            try {
+                var changed = false
+                LegacyEmbeddingIndex.loadFrom(file).info.values.map {
+                    val f = LocalFileManager.fixPath(File(it.path), folder)?.originalFile()
+                        ?: throw IllegalArgumentException("File not found: ${it.path}")
+                    f.createTextDoc().apply {
+                        all = TextChunkRaw(f.textCacheFile().readText())
+                        chunks.addAll(it.sections.map {
+                            TextChunkInDoc(it.start, it.end).apply {
+                                if (it.embedding.isNotEmpty())
+                                    putEmbeddingInfo(ADA_ID, it.embedding, EmbeddingPrecision.FIRST_EIGHT)
+                            }
+                        })
+                    }
+                }.forEach {
+                    if (index.addIfNotPresent(it))
+                        changed = true
+                }
+                if (changed) {
+                    info<DocumentQaPlanner>("Upgraded legacy embeddings file to new format.")
+                    index.saveIndex()
+                } else {
+                    info<DocumentQaPlanner>("No new embeddings found in legacy embeddings file.")
+                }
+                info<DocumentQaPlanner>("Legacy embeddings file $file can be deleted unless needed for previous versions of PromptFx.")
+            } catch (x: Exception) {
+                info<DocumentQaPlanner>("Failed to load legacy embeddings file: ${x.message}")
+            }
+        }
+    }
+
+    //endregion
+
 }
 
 //region DATA OBJECTS DESCRIBING TASK
@@ -153,3 +208,5 @@ data class QuestionAnswerResult(
     /** Calculates the similarity between the question and response. */
     internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(query.embedding, it) } ?: 0
 }
+
+//endregion

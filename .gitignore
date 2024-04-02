@@ -5,6 +5,7 @@ embeddings.json
 embeddings.yaml
 memory.json
 
+conf/
 target/
 .idea/
 

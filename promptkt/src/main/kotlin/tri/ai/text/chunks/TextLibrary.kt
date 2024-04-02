@@ -47,6 +47,10 @@ class TextLibrary(_id: String? = null) {
     override fun toString() = metadata.id
 
     companion object {
+        /**
+         * Load a [TextLibrary] from a file.
+         * May automatically fix some paths if the folder with index file and all its referenced files have been copied from another location.
+         */
         fun loadFrom(indexFile: File): TextLibrary =
             MAPPER.readValue<TextLibrary>(indexFile).also {
                 it.docs.forEach { doc ->
@@ -54,7 +58,8 @@ class TextLibrary(_id: String? = null) {
                     if (uri != null) {
                         try {
                             val file = LocalFileManager.fixPath(File(uri), indexFile.parentFile)
-                            doc.all = TextChunkRaw(file!!.fileToText(useCache = true))
+                            doc.metadata.path = file!!.toURI()
+                            doc.all = TextChunkRaw(file.fileToText(useCache = true))
                         } catch (x: URISyntaxException) {
                             warning<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
                         } catch (x: NullPointerException) {
@@ -64,6 +69,7 @@ class TextLibrary(_id: String? = null) {
                 }
             }
 
+        /** Save a [TextLibrary] to a file. */
         fun saveTo(index: TextLibrary, indexFile: File) {
             MAPPER.writerWithDefaultPrettyPrinter()
                 .writeValue(indexFile, index)

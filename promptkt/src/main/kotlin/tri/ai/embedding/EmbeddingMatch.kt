@@ -42,4 +42,7 @@ class EmbeddingMatch(
     @get:JsonIgnore
     val shortDocName: String
         get() = document.browsable()?.shortNameWithoutExtension ?: document.metadata.id
+
+    override fun toString() = "EmbeddingMatch(document=$shortDocName, chunk size=${chunk.text(document.all).length}, score=$score)"
+
 }

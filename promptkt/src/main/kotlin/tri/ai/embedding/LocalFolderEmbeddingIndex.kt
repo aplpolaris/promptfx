@@ -19,9 +19,6 @@
  */
 package tri.ai.embedding
 
-import org.apache.poi.hwpf.extractor.WordExtractor
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor
-import org.apache.poi.xwpf.usermodel.XWPFDocument
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
@@ -64,7 +61,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
             library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
         }
         if (newDocs.isNotEmpty())
-            TextLibrary.saveTo(library, indexFile)
+            saveIndex()
     }
 
     /**
@@ -77,6 +74,19 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
         }
         library.docs.clear()
         library.docs.addAll(updatedDocs)
+        saveIndex()
+    }
+
+    /** Adds a document to the library if it is not already present. */
+    fun addIfNotPresent(it: TextDoc): Boolean {
+        if (library.docs.any { doc -> doc.metadata.path == it.metadata.path })
+            return false
+        library.docs.add(it)
+        return true
+    }
+
+    /** Saves the index to file. */
+    fun saveIndex() {
         TextLibrary.saveTo(library, indexFile)
     }
 
@@ -97,9 +107,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
         }
 
     override suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch> {
-        val semanticTextQuery = embeddingService.calculateEmbedding(query).let {
-            SemanticTextQuery(query, it, embeddingService.modelId)
-        }
+        val semanticTextQuery = SemanticTextQuery(query, embeddingService.calculateEmbedding(query), embeddingService.modelId)
         reindexNew()
         val matches = library.docChunks().map { (doc, chunk) ->
             val chunkEmbedding = chunk.getEmbeddingInfo(embeddingService.modelId)!!

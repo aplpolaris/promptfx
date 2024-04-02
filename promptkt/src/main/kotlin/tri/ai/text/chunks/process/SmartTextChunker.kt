@@ -22,6 +22,7 @@ package tri.ai.text.chunks.process
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
+import tri.util.fine
 import tri.util.info
 import java.text.BreakIterator
 
@@ -93,9 +94,9 @@ class SmartTextChunker(
         }
 
         // log chunks
-        result.forEach { chunk ->
-            info<SmartTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
-        }
+//        result.take(10).forEach { chunk ->
+//            fine<SmartTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
+//        }
 
         return result
     }

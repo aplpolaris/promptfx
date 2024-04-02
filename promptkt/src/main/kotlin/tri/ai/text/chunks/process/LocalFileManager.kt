@@ -47,12 +47,12 @@ object LocalFileManager {
      */
     fun fixPath(file: File, alternateFolder: File): File? {
         require(alternateFolder.isDirectory)
-        if (file.exists())
-            return file
         val file2 = File(alternateFolder, file.name)
-        if (file2.exists())
-            return file2
-        return null
+        return when {
+            file2.exists() -> file2
+            file.exists() -> file
+            else -> null
+        }
     }
 
     //region FILE MANAGEMENT
