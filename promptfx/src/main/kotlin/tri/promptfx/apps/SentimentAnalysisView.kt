@@ -44,12 +44,7 @@ class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
                 combobox(mode, modeOptions)
             }
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = completionEngine.instructTextPlan("sentiment-classify",

@@ -72,14 +72,30 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     override val root = vbox {
         form {
             fieldset("Input") {
-                field("Prompt") { label(prompt) }
-                field("Prompt Params") { label(promptParams.stringBinding { it.prettyPerLine() }) }
-                field("Model") { label(model) }
-                field("Model Params") { label(modelParams.stringBinding { it.pretty() }) }
+                field("Prompt") {
+                    text(prompt)
+                }
+                field("Prompt Params") {
+                    text(promptParams.stringBinding { it.prettyPerLine() }) {
+                        wrappingWidth = 400.0
+                    }
+                }
+                field("Model") {
+                    text(model)
+                }
+                field("Model Params") {
+                    text(modelParams.stringBinding { it.pretty() })
+                }
             }
             fieldset("Result") {
-                field("Execution") { label(exec.stringBinding { it.pretty() }) }
-                field("Result") { label(result) }
+                field("Execution") {
+                    text(exec.stringBinding { it.pretty() })
+                }
+                field("Result") {
+                    text(result) {
+                        wrappingWidth = 400.0
+                    }
+                }
             }
         }
     }

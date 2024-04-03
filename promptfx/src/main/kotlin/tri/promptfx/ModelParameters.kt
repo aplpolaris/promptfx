@@ -21,7 +21,6 @@ package tri.promptfx
 
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import tornadofx.field
@@ -34,16 +33,26 @@ import tri.util.ui.slider
 /** Parameters for model content generation. */
 class ModelParameters {
 
-    internal val temp = SimpleDoubleProperty(1.0)
-    internal val topP = SimpleDoubleProperty(1.0)
-    internal val freqPenalty = SimpleDoubleProperty(0.0)
-    internal val presPenalty = SimpleDoubleProperty(0.0)
+    companion object {
+        private const val DEFAULT_TEMP = 1.0
+        private const val DEFAULT_TOP_P = 1.0
+        private const val DEFAULT_FREQ_PENALTY = 0.0
+        private const val DEFAULT_PRES_PENALTY = 0.0
+        private const val DEFAULT_MAX_TOKENS = 500
+        private const val DEFAULT_STOP_SEQUENCES = ""
+    }
 
-    internal val maxTokens = SimpleIntegerProperty(500)
-    internal val stopSequences = SimpleStringProperty("")
+    internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
+    internal val topP = SimpleDoubleProperty(DEFAULT_TOP_P)
+    internal val freqPenalty = SimpleDoubleProperty(DEFAULT_FREQ_PENALTY)
+    internal val presPenalty = SimpleDoubleProperty(DEFAULT_PRES_PENALTY)
+
+    internal val maxTokens = SimpleIntegerProperty(DEFAULT_MAX_TOKENS)
+    internal val stopSequences = SimpleStringProperty(DEFAULT_STOP_SEQUENCES)
 
     fun EventTarget.temperature() {
         field("Temperature") {
+            tooltip("Controls the randomness of the generated text. Lower values make the text more deterministic, higher values make it more random.")
             slider(0.0..2.0, temp)
             label(temp.asString("%.2f"))
         }
@@ -51,6 +60,7 @@ class ModelParameters {
 
     fun EventTarget.topP() {
         field("Top P") {
+            tooltip("Controls the diversity of the generated text. Lower values make the text more deterministic, higher values make it more random.")
             slider(0.0..1.0, topP)
             label(topP.asString("%.2f"))
         }
@@ -58,6 +68,7 @@ class ModelParameters {
 
     fun EventTarget.frequencyPenalty() {
         field("Frequency Penalty") {
+            tooltip("Penalizes new tokens based on existing frequency in the text so far, decreasing likelihood of repetition (or increasing if the value is negative).")
             slider(-2.0..2.0, freqPenalty)
             label(freqPenalty.asString("%.2f"))
         }
@@ -65,6 +76,7 @@ class ModelParameters {
 
     fun EventTarget.presencePenalty() {
         field("Presence Penalty") {
+            tooltip("Penalizes new tokens based on existing presence in the text so far, increasing likelihood of new topics (or decreasing if the value is negative).")
             slider(-2.0..2.0, presPenalty)
             label(presPenalty.asString("%.2f"))
         }
@@ -72,7 +84,7 @@ class ModelParameters {
 
     fun EventTarget.maxTokens() {
         field("Maximum Tokens") {
-            tooltip("Max # of tokens for combined query/response from the text completion engine")
+            tooltip("Maximum number of tokens for combined query and response from the model (interpretation may vary by model).")
             slider(0..2000, maxTokens)
             label(maxTokens.asString())
         }
@@ -86,11 +98,24 @@ class ModelParameters {
     }
 
     /** Generate model parameters object for [AiPromptModelInfo]. */
-    fun toModelParams() = mapOf(
-        AiPromptModelInfo.MAX_TOKENS to maxTokens.value,
-        AiPromptModelInfo.TEMPERATURE to temp.value
-    ) + if (stopSequences.value.isBlank()) emptyMap() else mapOf(
-        AiPromptModelInfo.STOP to stopSequences.value
-    )
+    fun toModelParams() = listOf(
+        AiPromptModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
+        AiPromptModelInfo.TOP_P to if (topP.value == DEFAULT_TOP_P) null else topP.value,
+        AiPromptModelInfo.FREQUENCY_PENALTY to if (freqPenalty.value == DEFAULT_FREQ_PENALTY) null else freqPenalty.value,
+        AiPromptModelInfo.PRESENCE_PENALTY to if (presPenalty.value == DEFAULT_PRES_PENALTY) null else presPenalty.value,
+        AiPromptModelInfo.MAX_TOKENS to if (maxTokens.value == DEFAULT_MAX_TOKENS) null else maxTokens.value,
+        AiPromptModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value
+    ).filter { it.second != null }
+    .toMap() as Map<String, Any>
+
+    /** Import model parameters from a map. */
+    fun importModelParams(modelParams: Map<String, Any>) {
+        (modelParams[AiPromptModelInfo.TEMPERATURE] as? Double)?.let { temp.set(it) }
+        (modelParams[AiPromptModelInfo.TOP_P] as? Double)?.let { topP.set(it) }
+        (modelParams[AiPromptModelInfo.FREQUENCY_PENALTY] as? Double)?.let { freqPenalty.set(it) }
+        (modelParams[AiPromptModelInfo.PRESENCE_PENALTY] as? Double)?.let { presPenalty.set(it) }
+        (modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int)?.let { maxTokens.set(it) }
+        (modelParams[AiPromptModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
+    }
 
 }

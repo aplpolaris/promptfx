@@ -60,11 +60,8 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
                 combobox(formatMode, formatModeOptions.keys.toList())
             }
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
+        addDefaultTextCompletionParameters(common)
+        parameters("Response") {
             field("Response Format") {
                 tooltip("Important: when using JSON mode, you must also instruct the model to produce JSON yourself via a system or user message.")
                 checkbox("JSON (if supported)", requestJson)

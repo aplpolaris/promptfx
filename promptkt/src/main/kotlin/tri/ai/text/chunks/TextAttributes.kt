@@ -17,9 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.embedding
+package tri.ai.text.chunks
 
-/** A section with associated document (not for serialization). */
-class EmbeddingSectionInDocument(val index: EmbeddingIndex, val doc: EmbeddingDocument, val section: EmbeddingSection) {
-    fun readText() = index.readSnippet(doc, section)
-}
+/** Alias for document attributes. */
+typealias TextAttributes = MutableMap<String, Any?>

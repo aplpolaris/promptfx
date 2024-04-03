@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.docs
+package tri.util.ui.pdf
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -35,6 +35,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Screen
 import okhttp3.internal.closeQuietly
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.rendering.PDFRenderer
 import tornadofx.*
 import java.io.FileInputStream
@@ -146,6 +147,7 @@ class PdfViewModel : ViewModel() {
                 document = PDDocument.load(input)
                 pdfRenderer = PDFRenderer(document)
                 pageCount.value = document?.pages?.count
+                document?.getPage(0)?.let { setScaleFor(it) }
                 openPage(0)
             }
         }
@@ -158,6 +160,20 @@ class PdfViewModel : ViewModel() {
             documentInputStream.value = input
         }
         currentPageNumber.onChange { openPage(it) }
+    }
+
+    private fun setScaleFor(page: PDPage) {
+        val box = page.mediaBox
+        if (box != null) {
+            val width = box.width
+            val height = box.height
+            val screen = Screen.getPrimary()
+            val screenWidth = screen.bounds.width.toFloat() * .75f
+            val screenHeight = screen.bounds.height.toFloat() * .75f
+            val scaleWidth = screenWidth / width
+            val scaleHeight = screenHeight / height
+            scale.value = if (scaleWidth < scaleHeight) scaleWidth else scaleHeight
+        }
     }
 
     private fun openPage(pageCounter: Int) {

@@ -20,7 +20,7 @@
 package tri.ai.cli
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.embedding.LocalEmbeddingIndex
+import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.OpenAiEmbeddingService
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
@@ -32,7 +32,7 @@ object DocumentEmbeddings {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
+//        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=1000")
         println("""
                 $ANSI_GREEN
                 Arguments expected:
@@ -54,21 +54,20 @@ object DocumentEmbeddings {
 
         val root = File(path)
         val embeddingService = OpenAiEmbeddingService()
-        val index = LocalEmbeddingIndex(root, embeddingService)
+        val index = LocalFolderEmbeddingIndex(root, embeddingService)
         index.maxChunkSize = maxChunkSize
         runBlocking {
             if (reindexNew) {
                 println("Reindexing new documents in $root...")
-                index.getEmbeddingIndex() // this triggers the reindex
+                index.reindexNew() // this triggers the reindex, and saves the library
             } else if (reindexAll) {
                 println("Reindexing all documents in $root...")
-                index.reindexAll()
+                index.reindexAll() // this triggers the reindex, and saves the library
             } else {
                 TODO("Impossible to get here.")
             }
             println("Reindexing complete.")
         }
-        index.saveIndex(root, index.embeddingIndex)
         exitProcess(0)
     }
 

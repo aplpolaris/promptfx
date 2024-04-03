@@ -38,7 +38,7 @@ import javafx.scene.text.TextFlow
 import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingDocument
+import tri.ai.text.chunks.BrowsableSource
 import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxDriver.sendInput
@@ -72,8 +72,8 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         if (baseComponent is DocumentQaView) {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
-                val thumbs = base.snippets.map { it.embeddingMatch.document }.toSet()
-                    .associateWith { documentThumbnail(base.planner.embeddingIndex.value!!, it) }
+                val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
+                    .associateWith { documentThumbnail(it) }
                 animateThumbs(thumbs)
             }
         }
@@ -199,7 +199,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
         val action: (() -> Unit)? = when (val view = baseComponent) {
             is DocumentQaView -> {
-                { browseToBestSnippet(view.planner.embeddingIndex.value!!, doc.document, view.planner.lastResult, hostServices) }
+                { browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
             }
             else -> null
         }
@@ -231,7 +231,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         }
     }
 
-    private fun animateThumbs(thumbs: Map<EmbeddingDocument, Image?>) {
+    private fun animateThumbs(thumbs: Map<BrowsableSource, Image?>) {
         thumbnailList.clear()
         val entries = thumbs.entries.toList()
         val n = SimpleIntegerProperty(-1).apply {
@@ -268,7 +268,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 }
 
 /** A document thumbnail object. */
-private class DocumentThumbnail(val document: EmbeddingDocument, val image: Image?)
+private class DocumentThumbnail(val document: BrowsableSource, val image: Image?)
 
 /** Animates a series of text and hyperlink objects within a [TextFlow]. */
 private object TextFlowAnimator {

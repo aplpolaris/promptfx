@@ -19,18 +19,29 @@
  */
 package tri.promptfx.docs
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
+import tri.ai.openai.OpenAiModels.ADA_ID
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.text.chunks.TextChunkInDoc
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.chunks.process.EmbeddingPrecision
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.ModelParameters
 import tri.util.info
+import java.io.File
+import java.lang.IllegalArgumentException
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -38,7 +49,7 @@ class DocumentQaPlanner {
     /** The embedding index. */
     var embeddingIndex: ObservableValue<out EmbeddingIndex?> = SimpleObjectProperty(NoOpEmbeddingIndex)
     /** The retrieved relevant snippets. */
-    val snippets = observableListOf<SnippetMatch>()
+    val snippets = observableListOf<EmbeddingMatch>()
     /** The most recent result of the QA task. */
     var lastResult: QuestionAnswerResult? = null
 
@@ -66,45 +77,47 @@ class DocumentQaPlanner {
         completionEngine: TextCompletion,
         maxTokens: Int,
         tempParameters: ModelParameters
-    ) = aitask("calculate-embeddings") {
-        runLater { snippets.setAll() }
-        findRelevantSection(question, chunksToRetrieve).also {
-            runLater { snippets.setAll(it.value) }
-        }
-    }.aitask("question-answer") {
-        val queryChunks = it.filter { it.snippetLength >= minChunkSize }
-            .take(contextChunks)
-        val context = contextStrategy.constructContext(queryChunks)
-        val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
-        val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
-        response.map {
-            QuestionAnswerResult(
-                modelId = completionEngine.modelId,
-                embeddingId = embeddingService.modelId,
-                promptId = promptId,
-                question = question,
-                questionEmbedding = queryChunks.first().embeddingMatch.queryEmbedding,
-                matches = snippets,
-                response = response.value,
-                responseEmbedding = responseEmbedding
-            )
-        }
-    }.task("process-result") {
-        info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
-        lastResult = it
-        formatResult(it)
-    }.planner
+    ) = aitask("upgrade-existing-embeddings") {
+            runLater { snippets.setAll() }
+            upgradeEmbeddingIndex()
+            AiTaskResult.result("")
+        }.aitask("calculate-embeddings") {
+            findRelevantSection(question, chunksToRetrieve).also {
+                runLater { snippets.setAll(it.value) }
+            }
+        }.aitask("question-answer") {
+            val queryChunks = it.filter { it.chunkSize >= minChunkSize }
+                .take(contextChunks)
+            val context = contextStrategy.constructContext(queryChunks)
+            val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
+            val questionEmbedding = embeddingService.calculateEmbedding(question)
+            val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
+            response.map {
+                QuestionAnswerResult(
+                    modelId = completionEngine.modelId,
+                    promptId = promptId,
+                    query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
+                    matches = snippets,
+                    response = response.value,
+                    responseEmbedding = responseEmbedding
+                )
+            }
+        }.task("process-result") {
+            info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
+            lastResult = it
+            formatResult(it)
+        }.planner
 
     //region SIMILARITY CALCULATIONS
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<SnippetMatch>> {
+    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
-        return AiTaskResult.result(matches.map { SnippetMatch(it, embeddingIndex.value!!.readSnippet(it.document, it.section)) })
+        return AiTaskResult.result(matches)
     }
 
     suspend fun reindexAllDocuments() {
-        (embeddingIndex.value as? LocalEmbeddingIndex)?.reindexAll()
+        (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.reindexAll()
     }
 
     //endregion
@@ -117,11 +130,11 @@ class DocumentQaPlanner {
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
         val result = mutableListOf(FormattedTextNode(qaResult.response ?: "No response."))
-        val docs = qaResult.matches.map { it.document }.toSet()
+        val docs = qaResult.matches.map { it.document.browsable()!! }.toSet()
         docs.forEach { doc ->
-            result.splitOn(doc) {
-                val sourceDoc = qaResult.matches.first { it.document == doc }.embeddingMatch.document
-                FormattedTextNode(sourceDoc.shortNameWithoutExtension, hyperlink = embeddingIndex.value!!.documentUrl(sourceDoc)?.absolutePath)
+            result.splitOn(doc.shortNameWithoutExtension) {
+                FormattedTextNode(doc.shortNameWithoutExtension,
+                    hyperlink = doc.file?.absolutePath ?: doc.uri.path)
             }
         }
         result.splitOn("Citations:") { FormattedTextNode(it, BOLD_STYLE) }
@@ -135,6 +148,48 @@ class DocumentQaPlanner {
 
     //endregion
 
+    //region WORKING WITH LEGACY DATA
+
+    /** Upgrades a legacy format embeddings file. Only supports upgrading from OpenAI embeddings file, `embeddings.json`. */
+    private fun upgradeEmbeddingIndex() {
+        val index = embeddingIndex.value as LocalFolderEmbeddingIndex
+        val folder = index.rootDir
+        val file = File(folder, "embeddings.json")
+        if (file.exists()) {
+            info<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $file")
+            try {
+                var changed = false
+                LegacyEmbeddingIndex.loadFrom(file).info.values.map {
+                    val f = LocalFileManager.fixPath(File(it.path), folder)?.originalFile()
+                        ?: throw IllegalArgumentException("File not found: ${it.path}")
+                    f.createTextDoc().apply {
+                        all = TextChunkRaw(f.textCacheFile().readText())
+                        chunks.addAll(it.sections.map {
+                            TextChunkInDoc(it.start, it.end).apply {
+                                if (it.embedding.isNotEmpty())
+                                    putEmbeddingInfo(ADA_ID, it.embedding, EmbeddingPrecision.FIRST_EIGHT)
+                            }
+                        })
+                    }
+                }.forEach {
+                    if (index.addIfNotPresent(it))
+                        changed = true
+                }
+                if (changed) {
+                    info<DocumentQaPlanner>("Upgraded legacy embeddings file to new format.")
+                    index.saveIndex()
+                } else {
+                    info<DocumentQaPlanner>("No new embeddings found in legacy embeddings file.")
+                }
+                info<DocumentQaPlanner>("Legacy embeddings file $file can be deleted unless needed for previous versions of PromptFx.")
+            } catch (x: Exception) {
+                info<DocumentQaPlanner>("Failed to load legacy embeddings file: ${x.message}")
+            }
+        }
+    }
+
+    //endregion
+
 }
 
 //region DATA OBJECTS DESCRIBING TASK
@@ -142,48 +197,16 @@ class DocumentQaPlanner {
 /** Result object. */
 data class QuestionAnswerResult(
     val modelId: String,
-    val embeddingId: String,
     val promptId: String?,
-    val question: String,
-    val questionEmbedding: List<Double>,
-    val matches: List<SnippetMatch>,
+    val query: SemanticTextQuery,
+    val matches: List<EmbeddingMatch>,
     val response: String?,
     val responseEmbedding: List<Double>?
 ) {
-    override fun toString() = response ?: "No response. Question: $question"
+    override fun toString() = response ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
-    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(questionEmbedding, it) } ?: 0
-}
-
-/** A snippet match that can be serialized. */
-data class SnippetMatch(
-    @get:JsonIgnore val embeddingMatch: EmbeddingMatch,
-    val document: String,
-    val snippetStart: Int,
-    val snippetEnd: Int,
-    val snippetText: String,
-    val snippetEmbedding: List<Double>,
-    val score: Double
-) {
-
-    constructor(match: EmbeddingMatch, snippetText: String) : this(
-        match,
-        match.document.shortNameWithoutExtension,
-        match.section.start,
-        match.section.end,
-        snippetText,
-        match.section.embedding,
-        match.score
-    )
-
-    override fun toString() = "SnippetMatch($document, $snippetStart, $snippetEnd, $score)"
-
-    @get:JsonIgnore
-    val snippetLength = snippetEnd - snippetStart
-
-    /** Test for a matching document. */
-    fun matchesDocument(doc: String) = embeddingMatch.document.shortNameWithoutExtension == doc
+    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(query.embedding, it) } ?: 0
 }
 
 //endregion

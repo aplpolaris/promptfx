@@ -19,6 +19,7 @@
  */
 package tri.promptfx.docs
 
+import tri.ai.embedding.EmbeddingMatch
 import tri.ai.prompt.AiPromptLibrary
 
 /**
@@ -27,11 +28,11 @@ import tri.ai.prompt.AiPromptLibrary
  */
 sealed class SnippetJoiner(val id: String) {
     /** Constructs the context from the given matches. */
-    abstract fun constructContext(matches: List<SnippetMatch>): String
+    abstract fun constructContext(matches: List<EmbeddingMatch>): String
 }
 
 class BasicTemplateJoiner(_id: String) : SnippetJoiner(_id) {
-    override fun constructContext(matches: List<SnippetMatch>) =
+    override fun constructContext(matches: List<EmbeddingMatch>) =
         AiPromptLibrary.lookupPrompt(id)
             .fill("matches" to matches.mapIndexed { i, it ->
                 NameText(i + 1, it)
@@ -39,9 +40,9 @@ class BasicTemplateJoiner(_id: String) : SnippetJoiner(_id) {
 }
 
 class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
-    override fun constructContext(matches: List<SnippetMatch>) =
-        matches.groupBy { it.embeddingMatch.document.shortNameWithoutExtension }.mapValues {
-            it.value.joinToString("\n...\n") { it.snippetText.trim() }
+    override fun constructContext(matches: List<EmbeddingMatch>) =
+        matches.groupBy { it.shortDocName }.mapValues {
+            it.value.joinToString("\n...\n") { it.chunkText.trim() }
         }.let {
             AiPromptLibrary.lookupPrompt(id)
                 .fill("matches" to it.entries.mapIndexed { i, it -> NameText(i + 1, it.key, it.value) })
@@ -49,5 +50,5 @@ class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
 }
 
 private class NameText(val number: Int, val name: String, val text: String) {
-    constructor(index: Int, match: SnippetMatch) : this(index, match.embeddingMatch.document.shortNameWithoutExtension, match.snippetText.trim())
+    constructor(index: Int, match: EmbeddingMatch) : this(index, match.document.browsable()!!.shortNameWithoutExtension, match.chunkText.trim())
 }

@@ -44,12 +44,7 @@ class TranslationView: AiPlanTaskView("Translation", "Enter text to translate.")
                 combobox(mode, modeOptions)
             }
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = completionEngine.instructTextPlan("translate-text",

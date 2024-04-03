@@ -24,7 +24,6 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.templatePlan
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
@@ -50,12 +49,7 @@ class EntityExtractionView: AiPlanTaskView("Entity Extraction", "Enter text to e
                 combobox(formatMode, formatModeOptions.keys.toList())
             }
         }
-        parameters("Model Parameters") {
-            with (common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = completionEngine.templatePlan("entity-extraction",

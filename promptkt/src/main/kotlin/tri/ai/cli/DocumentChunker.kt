@@ -19,9 +19,8 @@
  */
 package tri.ai.cli
 
-import tri.ai.text.chunks.LocalTextDocumentSet
-import tri.ai.text.chunks.StandardTextChunker
-import tri.ai.text.chunks.TextSection
+import tri.ai.text.chunks.process.LocalTextDocIndex
+import tri.ai.text.chunks.process.SmartTextChunker
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
@@ -33,7 +32,7 @@ object DocumentChunker {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val sampleArgs = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
+//        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=5000")
         println(
             """
             $ANSI_GREEN
@@ -62,28 +61,18 @@ object DocumentChunker {
             ?: "docs.json")
 
         println("${ANSI_CYAN}Refreshing file text in $rootFolder...$ANSI_RESET")
-        val docs = LocalTextDocumentSet(rootFolder, indexFile)
+        val docs = LocalTextDocIndex(rootFolder, indexFile)
         docs.loadIndex()
         docs.processDocuments(reindexAll)
 
         println("${ANSI_CYAN}Chunking documents with max-chunk-size=$maxChunkSize...$ANSI_RESET")
-        val chunker = StandardTextChunker(maxChunkSize)
-        val updatedChunks = docs.processChunks(chunker, reindexAll)
-        updatedChunks.forEach {
-            when (it) {
-                is TextSection -> println("  ${it.first} ${it.last} ${it.text.firstFiftyChars()}")
-                else -> println("  ${it.text.firstFiftyChars()}")
-            }
-        }
+        val chunker = SmartTextChunker(maxChunkSize)
+        docs.processChunks(chunker, reindexAll)
 
         println("${ANSI_CYAN}Saving document set info...$ANSI_RESET")
         docs.saveIndex()
 
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
         exitProcess(0)
-    }
-
-    private fun String.firstFiftyChars() = replace("[\r\n]+".toRegex(), " ").let {
-        if (it.length <= 50) it.trim() else (it.substring(0, 50).trim()+"...")
     }
 }

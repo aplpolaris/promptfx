@@ -25,12 +25,14 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.TextPlugin
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.templatemenubutton
+import tri.util.warning
 import java.time.LocalDate
 
 /** Plugin for the [PromptTemplateView]. */
@@ -49,22 +51,11 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     }
 
     init {
-        input {
-            spacing = 5.0
-            paddingAll = 5.0
-            vgrow = Priority.ALWAYS
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
+        input(5, 5, Priority.ALWAYS) {
+            hbox(5, Pos.CENTER_LEFT) {
                 text("Template:")
                 spacer()
-                menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                    AiPromptLibrary.INSTANCE.prompts.keys.forEach { key ->
-                        item(key) {
-                            action { template.set(AiPromptLibrary.lookupPrompt(key).template) }
-                        }
-                    }
-                }
+                templatemenubutton(template)
             }
             textarea(template) {
                 promptText = "Enter a prompt template, using syntax like {{field}} for fields to fill in."
@@ -74,16 +65,12 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 prefWidth = 0.0
             }
         }
-        input {
-            spacing = 10.0
-            paddingAll = 10.0
+        input(10, 10) {
             text("Inputs:")
             listview(fields) {
                 vgrow = Priority.ALWAYS
                 cellFormat { field ->
-                    graphic = hbox {
-                        spacing = 10.0
-                        alignment = Pos.TOP_CENTER
+                    graphic = hbox(10, Pos.TOP_CENTER) {
                         text(field.first)
                         val useText = field.second.ifBlank {
                             if (field.first == "today") LocalDate.now().toString() else ""
@@ -111,12 +98,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 }
             }
         }
-        parameters("Model Parameters") {
-            with(common) {
-                temperature()
-                maxTokens()
-            }
-        }
+        addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = aitask("text-completion") {
@@ -132,6 +114,22 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
             )
         }
     }.planner
+
+    /**
+     * Loads a prompt trace into the view.
+     * Will set the prompt, prompt inputs, model, and model parameters associated with the trace.
+     */
+    fun importPromptTrace(prompt: AiPromptTrace) {
+        template.set(prompt.promptInfo.prompt)
+        fields.setAll(prompt.promptInfo.promptParams.entries.map { it.key to it.value.toString() })
+        val model = TextPlugin.textCompletionModels().find { it.modelId == prompt.modelInfo.modelId }
+        if (model != null) {
+            controller.completionEngine.set(model)
+        } else {
+            warning<PromptTemplateView>("Model ${prompt.modelInfo.modelId} not found.")
+        }
+        common.importModelParams(prompt.modelInfo.modelParams)
+    }
 
     private fun updateTemplateInputs(template: String) {
         // extract {{{.}}} and {{.}} delimited fields from new value

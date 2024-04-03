@@ -26,7 +26,9 @@ import javafx.scene.text.Font
 import javafx.stage.FileChooser
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.promptfx.docs.FormattedText
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
+import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.ui.PromptTraceDetails
 
 /**
@@ -34,16 +36,11 @@ import tri.promptfx.ui.PromptTraceDetails
  */
 class PromptResultArea : Fragment("Prompt Result Area") {
 
-    val text = SimpleStringProperty("")
+    private val text = SimpleStringProperty("")
     val trace = SimpleObjectProperty<AiPromptTrace>(null)
 
-    fun setFinalResult(finalResult: Any?) {
-        text.set(
-            (finalResult as? AiPromptTrace)?.outputInfo?.output
-                ?: (finalResult as? FormattedText)?.toString()
-                ?: finalResult?.toString()
-                ?: "(No result)"
-        )
+    fun setFinalResult(finalResult: AiPromptTrace) {
+        text.set(finalResult.outputInfo.output ?: "(No result)")
         trace.set(finalResult as? AiPromptTrace)
     }
 
@@ -65,6 +62,13 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                     }
                 }
             }
+            item("Try in template view") {
+                enableWhen(trace.isNotNull)
+                action {
+                    (workspace as PromptFxWorkspace).launchTemplateView(trace.value)
+                }
+            }
+            separator()
             item ("Select All") {
                 action { selectAll() }
             }
@@ -73,11 +77,14 @@ class PromptResultArea : Fragment("Prompt Result Area") {
             }
             item("Save to File...") {
                 action {
-                    val file = chooseFile("Save to File", filters = arrayOf(
-                        FileChooser.ExtensionFilter("Text Files", "*.txt"),
-                        FileChooser.ExtensionFilter("All Files", "*.*")
-                    ), owner = currentWindow, mode = FileChooserMode.Save).firstOrNull()
-                    file?.writeText(selectedText.ifBlank { this@textarea.text })
+                    promptFxFileChooser(
+                        dirKey = DIR_KEY_TXT,
+                        title = "Save to File",
+                        filters = arrayOf(FF_TXT, FF_ALL),
+                        mode = FileChooserMode.Save
+                    ) {
+                        it.firstOrNull()?.writeText(selectedText.ifBlank { this@textarea.text })
+                    }
                 }
             }
         }

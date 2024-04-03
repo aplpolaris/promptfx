@@ -21,19 +21,25 @@ package tri.ai.embedding
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunkInDoc
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.process.SmartTextChunker
+import tri.ai.text.chunks.process.SmartTextChunkerTest
 import kotlin.io.path.toPath
 
-class LocalEmbeddingIndexTest {
+class LocalFolderEmbeddingIndexTest {
 
     @Test
     fun `test index`() = runTest {
-        val docsPath = LocalEmbeddingIndexTest::class.java.getResource("resources")!!.toURI().toPath().toFile()
-        val index = LocalEmbeddingIndex(docsPath, MockEmbeddingService())
-        index.getEmbeddingIndex().forEach { (path, doc) ->
-            println(path)
-            doc.sections.take(10).forEach { section ->
-                val text = index.readSnippet(doc, section).replace("\\s+".toRegex(), " ")
-                println("  ${section.start} ${section.end} ${text.take(200)}")
+        val docsPath = SmartTextChunkerTest::class.java.getResource("resources")!!.toURI().toPath().toFile()
+        val index = LocalFolderEmbeddingIndex(docsPath, MockEmbeddingService())
+        index.calculateAndGetDocs().forEach {
+            println(it.metadata.path)
+            it.chunks.take(10).forEach { chunk ->
+                val chunkDoc = chunk as TextChunkInDoc
+                val text = chunk.text(it.all).replace("\\s+".toRegex(), " ")
+                println("  ${chunkDoc.first} ${chunkDoc.last} ${text.take(200)}")
             }
         }
     }
@@ -44,7 +50,7 @@ class MockEmbeddingService: EmbeddingService {
     override val modelId = "mock"
 
     override fun chunkTextBySections(text: String, maxChunkSize: Int): List<TextChunk> {
-        return with (TextChunker(maxChunkSize)) { TextChunk(text).chunkBySections(combineShortSections = true) }
+        return with (SmartTextChunker(maxChunkSize)) { TextChunkRaw(text).chunkBySections(combineShortSections = true) }
     }
 
     override suspend fun calculateEmbedding(text: List<String>): List<List<Double>> {

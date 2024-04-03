@@ -17,17 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.embedding
+package tri.ai.text.chunks.process
 
-import com.fasterxml.jackson.annotation.JsonIgnore
+import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunkRaw
 
-/** A section of a document. */
-class EmbeddingSection(
-    val embedding: List<Double>,
-    val start: Int,
-    val end: Int
-) {
-    @get:JsonIgnore
-    val length
-        get() = end - start
+/** A text chunker splits one chunk into more chunks. */
+interface TextChunker {
+    fun chunk(doc: TextChunkRaw): List<TextChunk>
 }
+
+/** Text chunker that returns unalterated input. */
+object NoOpTextChunker : TextChunker {
+    override fun chunk(doc: TextChunkRaw) = listOf(doc)
+}
+

@@ -23,8 +23,9 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
-import tri.ai.embedding.EmbeddingDocument
-import tri.ai.embedding.EmbeddingIndex
+import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.process.LocalFileManager.PDF
+import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import java.awt.image.BufferedImage
 import java.io.File
 import kotlin.collections.set
@@ -38,11 +39,21 @@ object DocumentUtils {
      * Generate a thumbnail for the document if it doesn't exist.
      * TODO - this may take a while, so make it a delayed event
      */
-    fun documentThumbnail(index: EmbeddingIndex, doc: EmbeddingDocument): Image? {
+    fun documentThumbnail(doc: BrowsableSource): Image? {
         if (doc.path in thumbnailCache)
             return thumbnailCache[doc.path]
 
-        val pdfFile = index.documentUrl(doc) ?: return null
+        val pdfFile = doc.uri.let {
+            try {
+                val file = File(it)
+                file.originalFile()?.let {
+                    if (it.extension.lowercase() == PDF) it else null
+                }
+            } catch (x: IllegalArgumentException) {
+                // not a file URI
+                null
+            }
+        } ?: return null
         val thumb = pdfThumbnail(pdfFile, 300)
         if (thumb != null)
             thumbnailCache[doc.path] = thumb

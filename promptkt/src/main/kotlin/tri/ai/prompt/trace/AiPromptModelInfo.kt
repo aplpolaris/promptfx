@@ -28,8 +28,11 @@ data class AiPromptModelInfo(
     var modelParams: Map<String, Any> = mapOf()
 ) {
     companion object {
-        const val MAX_TOKENS = "maxTokens"
+        const val MAX_TOKENS = "max_tokens"
         const val STOP = "stop"
         const val TEMPERATURE = "temperature"
+        const val TOP_P = "top_p"
+        const val FREQUENCY_PENALTY = "frequency_penalty"
+        const val PRESENCE_PENALTY = "presence_penalty"
     }
 }

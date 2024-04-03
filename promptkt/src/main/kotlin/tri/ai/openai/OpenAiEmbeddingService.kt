@@ -20,9 +20,9 @@
 package tri.ai.openai
 
 import tri.ai.embedding.EmbeddingService
-import tri.ai.embedding.TextChunk
-import tri.ai.embedding.TextChunker
 import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.process.SmartTextChunker
 
 /** An embedding service that uses the OpenAI API. */
 class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val client: OpenAiClient = OpenAiClient.INSTANCE) : EmbeddingService {
@@ -39,8 +39,8 @@ class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val c
     }
 
     override fun chunkTextBySections(text: String, maxChunkSize: Int) =
-        with (TextChunker(maxChunkSize)) {
-            TextChunk(text).chunkBySections(combineShortSections = true)
+        with (SmartTextChunker(maxChunkSize)) {
+            TextChunkRaw(text).chunkBySections(combineShortSections = true)
         }
 
 }
