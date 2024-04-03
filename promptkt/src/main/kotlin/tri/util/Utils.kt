@@ -58,9 +58,11 @@ inline fun <reified T : Any> fine(msg: String, x: Throwable? = null) = log<T>(Le
 inline fun <reified T : Any> severe(template: String, vararg args: Any?) = log<T>(Level.SEVERE, template, args)
 inline fun <reified T : Any> warning(template: String, vararg args: Any?) = log<T>(Level.WARNING, template, args)
 inline fun <reified T : Any> info(template: String, vararg args: Any?) = log<T>(Level.INFO, template, args)
+inline fun <reified T : Any> config(template: String, vararg args: Any?) = log<T>(Level.CONFIG, template, args)
 inline fun <reified T : Any> fine(template: String, vararg args: Any?) = log<T>(Level.FINE, template, args)
 
 const val USE_STDOUT_LOGGER = true
+var MIN_LEVEL_TO_LOG = Level.INFO
 
 inline fun <reified T : Any> log(level: Level, msg: String, x: Exception? = null) {
     if (USE_STDOUT_LOGGER) {
@@ -69,7 +71,9 @@ inline fun <reified T : Any> log(level: Level, msg: String, x: Exception? = null
         loggerFor<T>().log(level, msg, x)
 }
 inline fun <reified T : Any> log(level: Level, template: String, vararg args: Any?) {
-    if (USE_STDOUT_LOGGER && args.isEmpty()) {
+    if (level.intValue() < MIN_LEVEL_TO_LOG.intValue())
+        return
+    else if (USE_STDOUT_LOGGER && args.isEmpty()) {
         println("$level: $template")
     } else if (USE_STDOUT_LOGGER) {
         try {

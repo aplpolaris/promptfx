@@ -31,12 +31,12 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 /** View model for document chunks. */
 interface TextChunkViewModel {
     val embedding: List<Double>?
-    val score: Double?
+    val score: Float?
     val browsable: BrowsableSource?
     val text: String
 }
 
-/** Convert an observable list of [SnippetMatch] to a list of [TextChunkViewModel]. */
+/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
 fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
     val result = observableListOf(map { it.asTextChunkViewModel()})
     onChange { result.setAll(map { it.asTextChunkViewModel() }) }
@@ -52,7 +52,7 @@ fun ObservableList<Pair<TextDoc, TextChunk>>.sectionViewModel(embeddingModelId: 
 
 /** Wrap [EmbeddingMatch] as a view model. */
 fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
-    override val score = this@asTextChunkViewModel.score
+    override val score = this@asTextChunkViewModel.queryScore
     override val embedding = chunkEmbedding
     override val browsable = document.browsable()
     override val text = chunkText
@@ -67,11 +67,11 @@ fun Pair<TextDoc, TextChunk>.asTextChunkViewModel(embeddingModelId: String) = ob
 }
 
 /** Wrap [TextChunk] as a view model. */
-fun TextChunk.asTextChunkViewModel(parentDoc: TextDoc?, embeddingModelId: String?, score: Double? = null) =
+fun TextChunk.asTextChunkViewModel(parentDoc: TextDoc?, embeddingModelId: String?, score: Float? = null) =
     TextChunkViewModelImpl(parentDoc, this, embeddingModelId, score)
 
 /** Wrap [TextChunk] as a view model. */
-class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddingModelId: String?, override val score: Double? = null) : TextChunkViewModel {
+class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddingModelId: String?, override val score: Float? = null) : TextChunkViewModel {
     constructor(text: String) : this(null, TextChunkRaw(text), null)
 
     override val browsable = parentDoc?.browsable()

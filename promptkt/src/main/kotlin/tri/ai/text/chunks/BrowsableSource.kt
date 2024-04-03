@@ -26,9 +26,9 @@ import java.net.URI
  * Provides information needed to browse to a source.
  * Examples: a snippet of text in a PDF, a file, a website, etc.
  */
-class BrowsableSource(val uri: URI) {
+data class BrowsableSource(val uri: URI) {
     /** The path to the source file. */
-    val path = uri.path
+    val path: String = uri.path
     /** Get the source as a file, if it exists. */
     val file = try {
         File(uri).let { if (it.exists()) it else null }

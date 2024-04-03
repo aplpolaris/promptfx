@@ -120,10 +120,10 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
             val chunkEmbedding = chunk.getEmbeddingInfo(embeddingService.modelId)!!
             EmbeddingMatch(semanticTextQuery, doc, chunk,
                 chunkEmbedding,
-                cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding)
+                cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding).toFloat()
             )
         }
-        return matches.sortedByDescending { it.score }.take(n)
+        return matches.sortedByDescending { it.queryScore }.take(n)
     }
 
     /** Gets embedding index, processing new files and overwriting saved library if needed. */

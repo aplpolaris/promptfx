@@ -19,8 +19,6 @@
  */
 package tri.promptfx.docs
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
@@ -38,12 +36,6 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.TextChunkInDoc
-import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.EmbeddingPrecision
-import tri.ai.text.chunks.process.LocalFileManager
-import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -53,6 +45,7 @@ import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
+import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 import tri.util.ui.plainText
@@ -121,24 +114,7 @@ class DocumentQaView: AiPlanTaskView(
                 // export JSON with matches
                 button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
                     disableWhen(planner.snippets.sizeProperty.isEqualTo(0))
-                    action {
-                        promptFxFileChooser(
-                            dirKey = DIR_KEY_TEXTLIB,
-                            title = "Export Document Snippets as JSON",
-                            filters = arrayOf(FF_JSON, FF_ALL),
-                            mode = FileChooserMode.Save
-                        ) {
-                            if (it.isNotEmpty()) {
-                                runAsync {
-                                    runBlocking {
-                                        ObjectMapper()
-                                            .writerWithDefaultPrettyPrinter()
-                                            .writeValue(it.first(), planner.lastResult)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    action { exportDocumentSnippets() }
                 }
             }
             add(TextChunkListView(planner.snippets.matchViewModel(), hostServices))
@@ -258,13 +234,36 @@ class DocumentQaView: AiPlanTaskView(
         tempParameters = common
     )
 
+    //region ACTIONS
+
+    private fun exportDocumentSnippets() {
+        promptFxFileChooser(
+            dirKey = DIR_KEY_TEXTLIB,
+            title = "Export Document Snippets as JSON",
+            filters = arrayOf(FF_JSON, FF_ALL),
+            mode = FileChooserMode.Save
+        ) {
+            if (it.isNotEmpty()) {
+                runAsync {
+                    runBlocking {
+                        jsonMapper
+                            .writerWithDefaultPrettyPrinter()
+                            .writeValue(it.first(), planner.lastResult)
+                    }
+                }
+            }
+        }
+    }
+
+    //endregion
+
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
             (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
                 val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                 if (doc == null) {
-                    println("Unable to find document $docName in snippets.")
+                    tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
                 } else {
                     browseToBestSnippet(doc, planner.lastResult, hostServices)
                 }
@@ -280,17 +279,17 @@ class DocumentQaView: AiPlanTaskView(
 
         internal fun browseToBestSnippet(doc: BrowsableSource, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (result == null) {
-                println("Browsing to first page: ${doc.shortNameWithoutExtension}")
+                info<DocumentQaView>("Browsing to first page: ${doc.shortNameWithoutExtension}")
                 DocumentOpenInViewer(doc, hostServices).open()
             } else {
-                println("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
+                info<DocumentQaView>("Browsing to best snippet: ${doc.shortNameWithoutExtension}")
                 val matches = result.matches.filter { it.shortDocName == doc.shortNameWithoutExtension }
                 if (matches.size == 1) {
-                    println("Browsing to only match")
+                    info<DocumentQaView>("Browsing to only match")
                     val match = matches.first()
                     DocumentBrowseToPage(match.document.browsable()!!, match.chunkText, hostServices).open()
                 } else {
-                    println("Browsing to closest match")
+                    info<DocumentQaView>("Browsing to closest match")
                     DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
                 }
             }

@@ -39,6 +39,9 @@ import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.ModelParameters
+import tri.util.ANSI_GRAY
+import tri.util.ANSI_RESET
+import tri.util.fine
 import tri.util.info
 import java.io.File
 import java.lang.IllegalArgumentException
@@ -92,9 +95,15 @@ class DocumentQaPlanner {
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
             val questionEmbedding = embeddingService.calculateEmbedding(question)
             val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
+            if (responseEmbedding != null) {
+                snippets.forEach {
+                    it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding)?.toFloat()
+                }
+            }
             response.map {
                 QuestionAnswerResult(
                     modelId = completionEngine.modelId,
+                    embeddingModelId = embeddingService.modelId,
                     promptId = promptId,
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,
@@ -103,7 +112,7 @@ class DocumentQaPlanner {
                 )
             }
         }.task("process-result") {
-            info<DocumentQaPlanner>("Similarity of question to response: " + it.questionAnswerSimilarity())
+            info<DocumentQaPlanner>("$ANSI_GRAY  Similarity of question to response: ${it.responseScore}$ANSI_RESET")
             lastResult = it
             formatResult(it)
         }.planner
@@ -156,7 +165,7 @@ class DocumentQaPlanner {
         val folder = index.rootDir
         val file = File(folder, "embeddings.json")
         if (file.exists()) {
-            info<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $file")
+            fine<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $file")
             try {
                 var changed = false
                 LegacyEmbeddingIndex.loadFrom(file).info.values.map {
@@ -178,10 +187,10 @@ class DocumentQaPlanner {
                 if (changed) {
                     info<DocumentQaPlanner>("Upgraded legacy embeddings file to new format.")
                     index.saveIndex()
+                    info<DocumentQaPlanner>("Legacy embeddings file $file can be deleted unless needed for previous versions of PromptFx.")
                 } else {
-                    info<DocumentQaPlanner>("No new embeddings found in legacy embeddings file.")
+                    fine<DocumentQaPlanner>("No new embeddings found in legacy embeddings file.")
                 }
-                info<DocumentQaPlanner>("Legacy embeddings file $file can be deleted unless needed for previous versions of PromptFx.")
             } catch (x: Exception) {
                 info<DocumentQaPlanner>("Failed to load legacy embeddings file: ${x.message}")
             }
@@ -197,6 +206,7 @@ class DocumentQaPlanner {
 /** Result object. */
 data class QuestionAnswerResult(
     val modelId: String,
+    val embeddingModelId: String,
     val promptId: String?,
     val query: SemanticTextQuery,
     val matches: List<EmbeddingMatch>,
@@ -206,7 +216,8 @@ data class QuestionAnswerResult(
     override fun toString() = response ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
-    internal fun questionAnswerSimilarity() = responseEmbedding?.let { cosineSimilarity(query.embedding, it) } ?: 0
+    val responseScore
+        get() = responseEmbedding?.let { cosineSimilarity(query.embedding, it).toFloat() } ?: 0f
 }
 
 //endregion

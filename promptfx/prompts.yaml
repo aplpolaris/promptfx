@@ -52,6 +52,15 @@ document-map-custom: |
   ```
   {{{input}}}
   ```
+  
+# document-map-* prompts are used in the Document Insights view to run against all snippets
+# keywords:
+#   {{{input}}} - text to process
+document-map-custom3: |
+  Extract three main points from this text:
+  ```
+  {{{input}}}
+  ```
 
 # document-reduce-* prompts are used in the Document Insights view to combine snippet results
 # keywords:

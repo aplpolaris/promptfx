@@ -21,17 +21,26 @@ package tri.ai.embedding
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextDoc
 
 /** A scored match for a semantic query. */
 class EmbeddingMatch(
+    @get:JsonIgnore
     val query: SemanticTextQuery,
+    @get:JsonIgnore
     val document: TextDoc,
+    @get:JsonIgnore
     val chunk: TextChunk,
     val chunkEmbedding: List<Double>,
-    val score: Double
+    val queryScore: Float
 ) {
-    @get:JsonIgnore
+    val source: Map<String, Any?>
+        get() = mapOf(
+            "metadata" to document.metadata,
+            "first" to (chunk as? TextChunkInDoc)?.first,
+            "last" to (chunk as? TextChunkInDoc)?.last
+        )
     val chunkText: String
         get() = chunk.text(document.all)
 
@@ -43,6 +52,10 @@ class EmbeddingMatch(
     val shortDocName: String
         get() = document.browsable()?.shortNameWithoutExtension ?: document.metadata.id
 
-    override fun toString() = "EmbeddingMatch(document=$shortDocName, chunk size=${chunk.text(document.all).length}, score=$score)"
+    var responseScore: Float? = null
+
+    override fun toString() = "EmbeddingMatch(document=$shortDocName, " +
+            "chunk size=${chunk.text(document.all).length}, " +
+            "score=${"%.3f".format(queryScore)})"
 
 }

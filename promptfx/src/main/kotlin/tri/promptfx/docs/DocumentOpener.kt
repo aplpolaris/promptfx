@@ -28,6 +28,7 @@ import tri.ai.embedding.cosineSimilarity
 import tri.ai.embedding.findTextInPdf
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.process.LocalFileManager.PDF
+import tri.util.info
 import tri.util.ui.pdf.PdfViewer
 import java.awt.Desktop
 
@@ -92,7 +93,7 @@ class DocumentBrowseToPage(val doc: BrowsableSource, val text: String, val hostS
 /** Browses to the closest snippet matching given text embedding in a document. */
 class DocumentBrowseToClosestMatch(val matches: List<EmbeddingMatch>, val textEmbedding: List<Double>?, val hostServices: HostServices?): DocumentOpener() {
     override fun open() {
-        println("Browsing to the closest of ${matches.size} snippets within this document...")
+        info<DocumentBrowseToClosestMatch>("Browsing to the closest of ${matches.size} snippets within this document...")
         val closestSnippet = when {
             matches.size == 1 || textEmbedding == null -> matches.first()
             else -> closestMatchToResponse(matches, textEmbedding)

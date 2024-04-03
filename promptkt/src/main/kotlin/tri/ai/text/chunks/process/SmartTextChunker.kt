@@ -94,9 +94,9 @@ class SmartTextChunker(
         }
 
         // log chunks
-//        result.take(10).forEach { chunk ->
-//            fine<SmartTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
-//        }
+        result.take(10).forEach { chunk ->
+            fine<SmartTextChunker>("  ${(chunk as TextChunkInDoc).range} ${chunk.text(this).firstFiftyChars()}")
+        }
 
         return result
     }

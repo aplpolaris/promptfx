@@ -72,7 +72,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     private lateinit var docListView: ListView<TextDoc>
     private lateinit var docSelection: ObservableList<TextDoc>
 
-    private val chunkFilter = SimpleObjectProperty<(TextChunk) -> Double>(null)
+    private val chunkFilter = SimpleObjectProperty<(TextChunk) -> Float>(null)
     private val isChunkFilterEnabled = SimpleBooleanProperty(false)
     private lateinit var chunkList: ObservableList<TextChunkViewModel>
     private lateinit var chunkListView: TextChunkListView
@@ -307,12 +307,12 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     }
 
     /** Create semantic filtering, by returning the cosine similarity of a chunk to the given argument. */
-    private fun createSemanticFilter(text: String): (TextChunk) -> Double {
+    private fun createSemanticFilter(text: String): (TextChunk) -> Float {
         val model = embeddingService
         val embedding = runBlocking { model.calculateEmbedding(text) }
         return { chunk ->
             val chunkEmbedding = chunk.getEmbeddingInfo(model.modelId)
-            if (chunkEmbedding == null) 0.0 else cosineSimilarity(embedding, chunkEmbedding)
+            if (chunkEmbedding == null) 0f else cosineSimilarity(embedding, chunkEmbedding).toFloat()
         }
     }
 
