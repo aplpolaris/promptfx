@@ -175,6 +175,7 @@ class TextChunkerWizardModel: ViewModel() {
         return if (finalDocs.isEmpty()) null
         else TextLibrary().apply {
             metadata.id = "Text Content from $sourceInfo"
+            metadata.path = sourceInfo
             docs.addAll(finalDocs)
         }
     }
