@@ -32,7 +32,7 @@ object DocumentEmbeddings {
 
     @JvmStatic
     fun main(args: Array<String>) {
-//        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-new", "--max-chunk-size=1000")
+//        val args = arrayOf("D:\\data\\chatgpt\\doc-insight-test", "--reindex-all", "--max-chunk-size=1000")
         println("""
                 $ANSI_GREEN
                 Arguments expected:

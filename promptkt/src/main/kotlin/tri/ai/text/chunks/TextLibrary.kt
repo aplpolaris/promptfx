@@ -37,6 +37,8 @@ import java.net.URISyntaxException
  * Collection of [TextDoc]s.
  */
 class TextLibrary(_id: String? = null) {
+    /** JSON version. */
+    val version = "1.0"
     /** Metadata for the library. */
     val metadata = TextLibraryMetadata().apply {
         id = _id ?: ""
@@ -89,6 +91,7 @@ class TextLibrary(_id: String? = null) {
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class TextLibraryMetadata(
-    var id: String = ""
+    var id: String = "",
+    var path: String? = null
 )
 

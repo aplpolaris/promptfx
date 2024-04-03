@@ -38,10 +38,17 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
 
     private val library: TextLibrary by lazy {
         try {
-            TextLibrary.loadFrom(indexFile)
+            TextLibrary.loadFrom(indexFile).apply {
+                if (metadata.path.isNullOrEmpty()) {
+                    metadata.path = rootDir.toURI().toString()
+                }
+            }
         } catch (x: Exception) {
             loggerFor<LocalFolderEmbeddingIndex>().warning("Failed to load embedding index from $rootDir: ${x.message}")
-            TextLibrary()
+            TextLibrary().apply {
+                metadata.id = rootDir.name
+                metadata.path = rootDir.toURI().toString()
+            }
         }
     }
 
