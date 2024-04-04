@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
@@ -35,7 +36,10 @@ import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.*
@@ -53,6 +57,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val chunkBy = SimpleStringProperty("\\n")
     private val csvHeader = SimpleBooleanProperty(false)
     private val inputText = SimpleStringProperty("")
+    private val inputLibrary = SimpleObjectProperty<TextLibrary>()
 
     // inputs as chunks
     private val inputChunks = observableListOf<TextChunkViewModel>()
@@ -100,17 +105,48 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                             text("Inputs:")
                             spacer()
                             button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
+                                tooltip("Load text library file. This will hide any current input text.")
                                 action {
+                                    promptFxFileChooser(
+                                        dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
+                                        title = "Load Text Library",
+                                        filters = arrayOf(PromptFxConfig.FF_JSON, FF_ALL),
+                                        mode = FileChooserMode.Single
+                                    ) {
+                                        it.firstOrNull()?.let {
+                                            val lib = TextLibrary.loadFrom(it)
+                                            inputLibrary.set(lib)
+                                        }
+                                    }
+                                }
+                            }
+                            button("", FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT)) {
+                                tooltip("Load text from file. This will clear any text library that has been previously loaded.")
+                                action {
+                                    inputLibrary.set(null)
                                     promptFxFileChooser(
                                         title = "Select a file to load",
                                         filters = arrayOf(FF_ALL)
                                     ) {
-                                        it.firstOrNull()?.readText()?.let { inputText.set(it) }
+                                        it.firstOrNull()?.readText()?.let {
+                                            inputText.set(it)
+                                        }
                                     }
                                 }
                             }
                         }
+                        label(inputLibrary.stringBinding {
+                            if (it == null)
+                                "No library loaded"
+                            else
+                                "Library: ${it.metadata.id.ifBlank { it.metadata.path }}, ${it.docs.size} documents, ${it.docs.sumOf { it.chunks.size }} chunks"
+                        }) {
+                            visibleWhen { inputLibrary.isNotNull }
+                            managedWhen { inputLibrary.isNotNull }
+                        }
                         textarea(inputText) {
+                            visibleWhen { inputLibrary.isNull }
+                            managedWhen { inputLibrary.isNull }
                             promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
                             hgrow = Priority.ALWAYS
                             vgrow = Priority.ALWAYS
@@ -199,9 +235,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         val inputs = inputs()
         runLater {
             promptTraces.setAll()
-            inputChunks.setAll(inputs.second.map { TextChunkViewModelImpl(it) })
+            inputChunks.setAll(inputs.chunks)
         }
-        val tasks = promptBatch(inputs.second).tasks()
+        val tasks = promptBatch(inputs.chunks.map { it.text }).tasks()
         return tasks
             .map {
                 it.monitor { runLater { promptTraces.add(it) } }
@@ -221,19 +257,29 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     /** Get the first chunk (if has header) and the rest of the chunks. */
-    private fun inputs(): Pair<String?, List<String>> {
-        var splitChar = chunkBy.value
-        splitChar = if (splitChar.isEmpty())
-            "\n"
-        else
-            splitChar.replace("\\n", "\n").replace("\\t", "\t")
-        val split = inputText.value.split(splitChar)
-        val header = if (csvHeader.value) split.first() else null
-        return header to split.asSequence()
-            .filter(filter())
-            .drop(if (csvHeader.value) 1 else 0)
-            .take(chunkLimit.value)
-            .toList()
+    private fun inputs(): PromptScriptInput {
+        if (inputLibrary.value != null) {
+            val chunks = inputLibrary.value!!.docs.flatMap {
+                doc -> doc.chunks.map { it.asTextChunkViewModel(doc, embeddingService.modelId) }
+            }.take(chunkLimit.value)
+            return PromptScriptInput(null, chunks)
+        } else {
+            var splitChar = chunkBy.value
+            splitChar = if (splitChar.isEmpty())
+                "\n"
+            else
+                splitChar.replace("\\n", "\n").replace("\\t", "\t")
+            val split = inputText.value.split(splitChar).map { TextChunkRaw(it) }
+            val header = if (csvHeader.value) split.first().text else null
+            val filter = filter()
+            val chunks = split.asSequence()
+                .filter { filter(it.text) }
+                .drop(if (csvHeader.value) 1 else 0)
+                .take(chunkLimit.value)
+                .map { it.asTextChunkViewModel(null, embeddingService.modelId) }
+                .toList()
+            return PromptScriptInput(header, chunks)
+        }
     }
 
     private fun filter(): (String) -> Boolean {
@@ -268,7 +314,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         return result?.contains("yes", ignoreCase = true) ?: false
     }
 
-    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: Pair<String?, List<String>>): AiPromptTrace {
+    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: PromptScriptInput): AiPromptTrace {
         val resultSets = mutableMapOf<String, String>()
 
         if (showUniqueResults.value) {
@@ -284,7 +330,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         if (outputCsv.value) {
             val key = "CSV Output"
-            val csvHeader = inputs.first?.let { "$it,output" } ?: "input,output"
+            val csvHeader = inputs.headerRow?.let { "$it,output" } ?: "input,output"
             val csv = results.joinToString("\n") { "${it.promptInfo.promptParams["input"]},${it.outputInfo.output}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
@@ -323,3 +369,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         private const val TEXT_JOINER_PREFIX = "text-joiner"
     }
 }
+
+/** Inputs for executing prompt script. */
+private class PromptScriptInput(
+    val headerRow: String?,
+    val chunks: List<TextChunkViewModel>
+)
