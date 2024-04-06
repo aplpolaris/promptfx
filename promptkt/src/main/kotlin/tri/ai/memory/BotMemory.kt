@@ -68,8 +68,8 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
         }
     }
 
-    override suspend fun addChat(chat: MemoryItem) {
-        chatHistory += chat.withEmbedding()
+    override suspend fun addChat(chatMessage: MemoryItem) {
+        chatHistory += chatMessage.withEmbedding()
     }
 
     override fun buildContextualConversationHistory(userInput: MemoryItem): List<MemoryItem> {

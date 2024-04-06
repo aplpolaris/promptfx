@@ -34,9 +34,11 @@ import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import okhttp3.internal.closeQuietly
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.rendering.PDFRenderer
+import org.apache.poi.util.IOUtils
 import tornadofx.*
 import java.io.FileInputStream
 import java.io.InputStream
@@ -144,7 +146,8 @@ class PdfViewModel : ViewModel() {
         documentInputStream.onChange { input ->
             document?.closeQuietly()
             if (input is InputStream) {
-                document = PDDocument.load(input)
+                val bytes = IOUtils.toByteArray(input)
+                document = Loader.loadPDF(bytes)
                 pdfRenderer = PDFRenderer(document)
                 pageCount.value = document?.pages?.count
                 document?.getPage(0)?.let { setScaleFor(it) }

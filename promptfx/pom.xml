@@ -61,9 +61,16 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
-        <junit.version>5.9.2</junit.version>
+
+        <controlsfx.version>11.2.1</controlsfx.version>
+        <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
         <javafx.version>17.0.10</javafx.version>
-        <kotlin.version>1.8.20</kotlin.version>
+        <jsoup.version>1.17.2</jsoup.version>
+        <junit.version>5.10.2</junit.version>
+        <kotlin.version>1.8.22</kotlin.version>
+        <kotlin-coroutines-test.version>1.7.3</kotlin-coroutines-test.version>
+        <kotlin-dokka.version>1.8.20</kotlin-dokka.version>
+        <tornadofx.version>2.0.1</tornadofx.version>
     </properties>
 
     <dependencies>
@@ -87,18 +94,18 @@
         <dependency>
             <groupId>com.googlecode.blaisemath.tornado</groupId>
             <artifactId>tornadofx-fx18k16</artifactId>
-            <version>2.0.1</version>
+            <version>${tornadofx.version}</version>
         </dependency>
         <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx-fontawesome</artifactId>
-            <version>4.7.0-9.1.2</version>
+            <version>${fontawesome.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.15.4</version>
+            <version>${jsoup.version}</version>
         </dependency>
 
         <dependency>
@@ -145,7 +152,7 @@
         <dependency>
             <groupId>org.controlsfx</groupId>
             <artifactId>controlsfx</artifactId>
-            <version>11.1.2</version>
+            <version>${controlsfx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -162,7 +169,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
-            <version>1.7.1</version>
+            <version>${kotlin-coroutines-test.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -327,7 +334,7 @@
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
                 <artifactId>dokka-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin-dokka.version}</version>
                 <executions>
                     <execution>
                         <phase>prepare-package</phase>
@@ -347,6 +354,24 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <!-- check for vulnerabilities, with `mvn verify` or `mvn site` -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.1.0</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
         <profile>

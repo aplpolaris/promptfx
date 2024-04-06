@@ -20,9 +20,9 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.chat.FunctionTool
-import com.aallam.openai.api.chat.Parameters
 import com.aallam.openai.api.chat.Tool
 import com.aallam.openai.api.chat.ToolType
+import com.aallam.openai.api.core.Parameters
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty

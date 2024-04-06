@@ -19,7 +19,7 @@
  */
 package tri.ai.tool
 
-import com.aallam.openai.api.chat.Parameters
+import com.aallam.openai.api.core.Parameters
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonObject
 

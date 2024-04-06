@@ -26,7 +26,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import tornadofx.ResourceLookup
 
 val MAPPER = ObjectMapper(YAMLFactory()).apply {
-    registerModule(KotlinModule())
+    registerModule(KotlinModule.Builder().build())
     registerModule(JavaTimeModule())
 }
 

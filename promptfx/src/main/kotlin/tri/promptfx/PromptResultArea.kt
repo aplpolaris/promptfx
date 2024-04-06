@@ -63,7 +63,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                 }
             }
             item("Try in template view") {
-                enableWhen(trace.isNotNull)
+                enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
                 action {
                     (workspace as PromptFxWorkspace).launchTemplateView(trace.value)
                 }

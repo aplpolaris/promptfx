@@ -66,7 +66,9 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
                     }
                 }
                 item("Try in template view") {
-                    enableWhen(selectionModel.selectedItemProperty().isNotNull)
+                    enableWhen(selectionModel.selectedItemProperty().booleanBinding {
+                        it != null && it.promptInfo.prompt.isNotBlank()
+                    })
                     action {
                         val selected = selectionModel.selectedItem
                         if (selected != null)

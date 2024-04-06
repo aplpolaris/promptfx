@@ -21,6 +21,7 @@ package tri.util.ui
 
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import tri.ai.text.chunks.BrowsableSource
@@ -65,7 +66,7 @@ object DocumentUtils {
         if (!file.exists() || file.extension != "pdf") {
             return null
         }
-        val document = PDDocument.load(file)
+        val document = Loader.loadPDF(file)
         val renderer = PDFRenderer(document)
         val image = renderer.renderImageWithDPI(0, 96f)
         document.close()

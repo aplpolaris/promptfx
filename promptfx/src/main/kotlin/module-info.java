@@ -76,7 +76,7 @@ module tri.promptfx {
     requires org.controlsfx.controls;
     requires org.jsoup;
     requires com.github.mustachejava;
-    requires commons.logging;
+    requires org.apache.commons.logging;
 
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;

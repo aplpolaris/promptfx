@@ -95,7 +95,7 @@ class AiProgressView: View(), AiTaskMonitor {
             override suspend fun execute(
                 inputs: Map<String, AiTaskResult<*>>,
                 monitor: AiTaskMonitor
-            ) = task.get() as AiTaskResult<Any>
+            ) = task.value as AiTaskResult<Any>
         })
     }
 

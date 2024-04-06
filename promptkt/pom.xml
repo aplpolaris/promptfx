@@ -60,10 +60,19 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
-        <junit.version>5.9.2</junit.version>
-        <kotlin.version>1.8.20</kotlin.version>
-        <jackson.version>2.15.2</jackson.version>
-        <openai-kotlin.version>3.6.1</openai-kotlin.version>
+
+        <jackson.version>2.17.0</jackson.version>
+        <junit.version>5.10.2</junit.version>
+        <kotlin.version>1.8.22</kotlin.version>
+        <kotlin-coroutines-test.version>1.7.3</kotlin-coroutines-test.version>
+        <kotlin-dokka.version>1.8.20</kotlin-dokka.version>
+        <ktor.version>2.3.9</ktor.version> <!-- needs to match version in openai-client -->
+        <mustache.version>0.9.11</mustache.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <openai-kotlin.version>3.6.2</openai-kotlin.version>
+        <pdfbox.version>3.0.2</pdfbox.version>
+        <poi.version>5.2.5</poi.version>
+        <slf4j.version>2.0.12</slf4j.version>
     </properties>
 
     <dependencies>
@@ -82,45 +91,98 @@
             <groupId>com.aallam.openai</groupId>
             <artifactId>openai-client-jvm</artifactId>
             <version>${openai-kotlin.version}</version>
+            <exclusions>
+                <!-- require ktor updated to 2.3.9 -->
+                <exclusion>
+                    <groupId>io.ktor</groupId>
+                    <artifactId>ktor-client-core-jvm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.ktor</groupId>
+                    <artifactId>ktor-client-logging-jvm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.ktor</groupId>
+                    <artifactId>ktor-client-auth-jvm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.ktor</groupId>
+                    <artifactId>ktor-client-content-negotiation-jvm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.ktor</groupId>
+                    <artifactId>ktor-serialization-kotlinx-json-jvm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-core-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-logging-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-auth-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-content-negotiation-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-serialization-kotlinx-json-jvm</artifactId>
+            <version>${ktor.version}</version>
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
             <artifactId>ktor-client-okhttp-jvm</artifactId>
-            <version>2.2.4</version>
+            <version>${ktor.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.10.0</version>
+            <version>${okhttp.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
-            <version>2.0.27</version>
+            <version>${pdfbox.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox-io</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+            <version>${poi.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-scratchpad</artifactId>
-            <version>5.2.5</version>
+            <version>${poi.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
-            <version>0.9.10</version>
+            <version>${mustache.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
-            <version>1.7.36</version>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <dependency>
@@ -164,7 +226,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
-            <version>1.7.1</version>
+            <version>${kotlin-coroutines-test.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -296,7 +358,7 @@
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
                 <artifactId>dokka-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
+                <version>${kotlin-dokka.version}</version>
                 <executions>
                     <execution>
                         <phase>prepare-package</phase>
@@ -316,6 +378,24 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <!-- check for vulnerabilities, with `mvn verify` or `mvn site` -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.1.0</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
         <profile>

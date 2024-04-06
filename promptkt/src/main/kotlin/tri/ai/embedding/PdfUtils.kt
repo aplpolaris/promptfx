@@ -19,14 +19,14 @@
  */
 package tri.ai.embedding
 
-import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
 
 /** Extract text from PDF. */
 fun pdfText(file: File): String {
     val pageText = mutableMapOf<Int, String>()
-    PDDocument.load(file).use { doc ->
+    Loader.loadPDF(file).use { doc ->
         (1..doc.numberOfPages).forEach {
             pageText[it] = PDFTextStripper().apply {
                 startPage = it
@@ -46,7 +46,7 @@ fun findTextInPdf(pdfFile: File, searchText: String): Int {
     val mid20 = searchText.substring(searchText.length / 2 - 10, searchText.length / 2 + 10)
     val searchFor = listOf(searchText.take(20), mid20, mid20, searchText.takeLast(20))
     val partialMatches = mutableMapOf<Int, Pair<String, Int>>()
-    PDDocument.load(pdfFile).use { document ->
+    Loader.loadPDF(pdfFile).use { document ->
         val stripper = PDFTextStripper()
         val totalPages = document.numberOfPages
         for (page in 1..totalPages) {

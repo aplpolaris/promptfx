@@ -35,7 +35,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
     private val chatTools = tools.mapNotNull {
         try {
             val params = it.jsonSchemaAsParameters()
-            Tool(ToolType.Function, it.description, FunctionTool(it.name, params) )
+            com.aallam.openai.api.chat.Tool.function(it.name, it.description, params)
         } catch (x: SerializationException) {
             warning<JsonToolExecutor>("Invalid JSON schema", x)
             null
