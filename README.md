@@ -18,7 +18,7 @@ PromptFx requires an OpenAI API key. To set the API key, you may click on the ke
 
 PromptFx has views for testing AI/ML models and for a number of basic applications. These views are organized into tabs on the left side of the UI. Briefly:
 
-- The [OpenAI API tab](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) contains views for testing [OpenAI API](https://platform.openai.com/docs/api-reference) functionality.
+- The [API tab](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) contains views for testing [OpenAI API](https://platform.openai.com/docs/api-reference) functionality.
 - The [Tools tab](https://github.com/aplpolaris/promptfx/wiki/Tools) contains views for testing prompts, scripting prompts, working with text collections, and more.
 - The [Documents tab](https://github.com/aplpolaris/promptfx/wiki/Documents) contains views for working with documents, including document Q&A and other tasks.
 - The [Text tab](https://github.com/aplpolaris/promptfx/wiki/Text) contains views for natural language processing (NLP) and basic text processing (e.g. summarization, translation, sentiment analysis, etc.)
@@ -47,20 +47,25 @@ In "full screen mode" (see button on toolbar), PromptFx provides a more elegant 
 
 See [Documents](https://github.com/aplpolaris/promptfx/wiki/Documents) for more information.
 
-## OpenAI API Views
+## API Views
 
-The `OpenAI API` tab contains a number of views designed for exercising the OpenAI API, including `completions/`, `chat/`, `images/`, `embeddings/`, `audio/`, and more. These are similar to the API playground at https://platform.openai.com/playground, and should be self-explanatory.
+The `API` tab contains a number of views designed for exercising the OpenAI API (or a compatible API), including `completions/`, `chat/`, `images/`, `embeddings/`, `audio/`, and more. These are similar to the API playground at https://platform.openai.com/playground, and should be self-explanatory.
 
 See [OpenAI-API](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) for more information.
 
 ## Tools Views
 
-Under `Tools`, PromptFx provides a `Prompt Library` view for viewing built-in and custom prompts,
-and a `Prompt Template` view for experimenting with prompts. Enter the template at top, using [mustache](https://mustache.github.io/) syntax, and it will provide a list of inputs. This can be used, e.g. to quickly try different models, tweak the prompt template, etc.
+Under `Tools`, PromptFx provides:
+
+* a `Prompt Library` view for viewing built-in and custom prompts
+* a `Prompt Template` view for experimenting with prompt templates using [mustache](https://mustache.github.io/) syntax
 
 ![image](https://github.com/aplpolaris/promptfx/assets/13057929/3a1d64b7-ecb8-49df-933b-458776351c36)
 
-There are additional views for scripting and validating prompts.
+* a `Prompt Scripting` view for executing batches of scripts
+* a `Prompt Validator` view for experimenting with automatic validation methods
+* a `Text Manager` view for creating and working with collections of text
+
 See [Tools](https://github.com/aplpolaris/promptfx/wiki/Tools) for more information.
 
 ## Text Views
