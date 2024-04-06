@@ -19,7 +19,7 @@ PromptFx requires an OpenAI API key. To set the API key, you may click on the ke
 PromptFx has views for testing AI/ML models and for a number of basic applications. These views are organized into tabs on the left side of the UI. Briefly:
 
 - The [OpenAI API tab](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) contains views for testing [OpenAI API](https://platform.openai.com/docs/api-reference) functionality.
-- The [Tools tab](https://github.com/aplpolaris/promptfx/wiki/Tools) contains views for testing prompts.
+- The [Tools tab](https://github.com/aplpolaris/promptfx/wiki/Tools) contains views for testing prompts, scripting prompts, working with text collections, and more.
 - The [Documents tab](https://github.com/aplpolaris/promptfx/wiki/Documents) contains views for working with documents, including document Q&A and other tasks.
 - The [Text tab](https://github.com/aplpolaris/promptfx/wiki/Text) contains views for natural language processing (NLP) and basic text processing (e.g. summarization, translation, sentiment analysis, etc.)
 - The [Fun tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Fun) contains views that may be less useful, but still fun! (like converting text to emoji, or having the AI chat with itself)
