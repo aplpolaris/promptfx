@@ -35,13 +35,16 @@ import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
+import tri.promptfx.ui.PromptTraceDetails
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
@@ -88,6 +91,7 @@ class DocumentQaView: AiPlanTaskView(
         get() = planner.snippets
 
     private val htmlResult = SimpleStringProperty("")
+    private val resultTrace = SimpleObjectProperty<AiPromptTrace>()
 
     private lateinit var resultBox: TextFlow
 
@@ -201,6 +205,22 @@ class DocumentQaView: AiPlanTaskView(
                     style = "-fx-font-size: 16px;"
 
                     contextmenu {
+                        item("Details...") {
+                            enableWhen { resultTrace.isNotNull }
+                            action {
+                                find<PromptTraceDetails>().apply {
+                                    setTrace(resultTrace.get())
+                                    openModal()
+                                }
+                            }
+                        }
+                        item("Try in template view") {
+                            enableWhen(resultTrace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
+                            action {
+                                (workspace as PromptFxWorkspace).launchTemplateView(resultTrace.value)
+                            }
+                        }
+                        separator()
                         item("Copy output to clipboard") {
                             action {
                                 clipboard.setContent(mapOf(
@@ -214,10 +234,11 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val fr = it.finalResult as FormattedText
-            htmlResult.set(fr.toHtml())
+            val fr = it.finalResult as FormattedPromptTraceResult
+            htmlResult.set(fr.text.toHtml())
+            resultTrace.set(fr.trace)
             resultBox.children.clear()
-            resultBox.children.addAll(fr.toFxNodes())
+            resultBox.children.addAll(fr.text.toFxNodes())
         }
     }
 
@@ -260,7 +281,8 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            (it.finalResult as? FormattedText)?.hyperlinkOp = { docName ->
+            val ft = (it.finalResult as FormattedPromptTraceResult).text
+            ft.hyperlinkOp = { docName ->
                 val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                 if (doc == null) {
                     tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")

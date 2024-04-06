@@ -35,10 +35,16 @@ suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimi
     }
 
 /** Generate a task that combines a single instruction or question about contextual text. */
-suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?) =
-    AiPromptLibrary.lookupPrompt(promptId).instruct(instruct, userText).let {
-        complete(it, tokenLimit, temp)
-    }
+suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?): AiTaskResult<AiPromptTrace> {
+    val prompt = AiPromptLibrary.lookupPrompt(promptId)
+    val promptParams = prompt.instructParams(instruct = instruct, input = userText)
+    val result = complete(prompt.fill(promptParams), tokenLimit, temp)
+    val promptInfo = AiPromptInfo(prompt.template, promptParams)
+    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
+    val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
+    val outputInfo = AiPromptOutputInfo(result.value)
+    return AiTaskResult(AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo))
+}
 
 /** Generate a task that fills inputs into a prompt. */
 suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?): AiTaskResult<AiPromptTrace> {

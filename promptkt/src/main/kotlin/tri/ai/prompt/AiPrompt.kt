@@ -30,18 +30,22 @@ import java.time.LocalDate
 /** A prompt template that can be filled in with user input. */
 class AiPrompt @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor (@JsonValue var template: String) {
 
+
     /** Fills in input field. */
-    fun prompt(input: String) = template.fill(
-        "input" to input,
-        "today" to LocalDate.now()
-    )
+    fun prompt(input: String) =
+        template.fill(promptParams(input))
+
+    /** Gets basic input prompt parameters. */
+    fun promptParams(input: String) =
+        mapOf("input" to input, "today" to LocalDate.now())
 
     /** Fills in input and instruct fields. */
-    fun instruct(instruct: String, input: String) = template.fill(
-        "input" to input,
-        "instruct" to instruct,
-        "today" to LocalDate.now()
-    )
+    fun instruct(instruct: String, input: String) =
+        template.fill(instructParams(instruct, input))
+
+    /** Gets instruct parameters. */
+    fun instructParams(instruct: String, input: String) =
+        mapOf("input" to input, "instruct" to instruct, "today" to LocalDate.now())
 
     /** Fills in arbitrary fields. */
     fun fill(fields: Map<String, Any>) = template.fill(

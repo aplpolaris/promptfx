@@ -29,9 +29,9 @@ import tri.ai.openai.OpenAiModels.ADA_ID
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
-import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.EmbeddingPrecision
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
@@ -44,7 +44,6 @@ import tri.util.ANSI_RESET
 import tri.util.fine
 import tri.util.info
 import java.io.File
-import java.lang.IllegalArgumentException
 
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
@@ -94,7 +93,7 @@ class DocumentQaPlanner {
             val context = contextStrategy.constructContext(queryChunks)
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
             val questionEmbedding = embeddingService.calculateEmbedding(question)
-            val responseEmbedding = response.value?.let { embeddingService.calculateEmbedding(it) }
+            val responseEmbedding = response.value?.outputInfo?.output?.let { embeddingService.calculateEmbedding(it) }
             if (responseEmbedding != null) {
                 snippets.forEach {
                     it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding)?.toFloat()
@@ -102,19 +101,16 @@ class DocumentQaPlanner {
             }
             response.map {
                 QuestionAnswerResult(
-                    modelId = completionEngine.modelId,
-                    embeddingModelId = embeddingService.modelId,
-                    promptId = promptId,
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,
-                    response = response.value,
+                    trace = response.value!!,
                     responseEmbedding = responseEmbedding
                 )
             }
         }.task("process-result") {
             info<DocumentQaPlanner>("$ANSI_GRAY  Similarity of question to response: ${it.responseScore}$ANSI_RESET")
             lastResult = it
-            formatResult(it)
+            FormattedPromptTraceResult(it.trace, formatResult(it))
         }.planner
 
     //region SIMILARITY CALCULATIONS
@@ -138,7 +134,7 @@ class DocumentQaPlanner {
 
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
-        val result = mutableListOf(FormattedTextNode(qaResult.response ?: "No response."))
+        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.output ?: "No response."))
         val docs = qaResult.matches.map { it.document.browsable()!! }.toSet()
         docs.forEach { doc ->
             result.splitOn(doc.shortNameWithoutExtension) {
@@ -201,19 +197,21 @@ class DocumentQaPlanner {
 
 }
 
+/** Result including the trace and formatted text. */
+class FormattedPromptTraceResult(val trace: AiPromptTrace, val text: FormattedText) {
+    override fun toString() = trace.outputInfo.output ?: "null"
+}
+
 //region DATA OBJECTS DESCRIBING TASK
 
 /** Result object. */
 data class QuestionAnswerResult(
-    val modelId: String,
-    val embeddingModelId: String,
-    val promptId: String?,
     val query: SemanticTextQuery,
     val matches: List<EmbeddingMatch>,
-    val response: String?,
+    val trace: AiPromptTrace,
     val responseEmbedding: List<Double>?
 ) {
-    override fun toString() = response ?: "No response. Question: ${query.query}"
+    override fun toString() = trace.outputInfo.output ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
     val responseScore

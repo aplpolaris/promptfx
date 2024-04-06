@@ -66,13 +66,14 @@
         <kotlin.version>1.8.22</kotlin.version>
         <kotlin-coroutines-test.version>1.7.3</kotlin-coroutines-test.version>
         <kotlin-dokka.version>1.8.20</kotlin-dokka.version>
-        <ktor.version>2.3.9</ktor.version> <!-- needs to match version in openai-client -->
+        <ktor.version>2.3.9</ktor.version> <!-- match version in openai-client -->
         <mustache.version>0.9.11</mustache.version>
         <okhttp.version>4.12.0</okhttp.version>
         <openai-kotlin.version>3.6.2</openai-kotlin.version>
         <pdfbox.version>3.0.2</pdfbox.version>
         <poi.version>5.2.5</poi.version>
-        <slf4j.version>2.0.12</slf4j.version>
+        <slf4j.version>1.7.35</slf4j.version> <!-- match version in io.ktor -->
+        <log4j.version>2.21.1</log4j.version> <!-- match version in poi -->
     </properties>
 
     <dependencies>
@@ -172,17 +173,16 @@
             <artifactId>poi-scratchpad</artifactId>
             <version>${poi.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
             <version>${mustache.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-nop</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
 
         <dependency>

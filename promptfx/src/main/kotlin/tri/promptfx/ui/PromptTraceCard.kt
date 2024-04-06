@@ -21,6 +21,8 @@ package tri.promptfx.ui
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.geometry.Orientation
+import javafx.geometry.Pos
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
@@ -60,6 +62,8 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     val exec = SimpleObjectProperty<AiPromptExecInfo>(null)
     val result = SimpleStringProperty("")
 
+    lateinit var paramsField: Fieldset
+
     fun setTrace(trace: AiPromptTrace) {
         prompt.value = trace.promptInfo.prompt
         promptParams.value = trace.promptInfo.promptParams
@@ -72,36 +76,51 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     override val root = vbox {
         form {
             fieldset("Input") {
-                field("Prompt") {
-                    text(prompt)
-                }
-                field("Prompt Params") {
-                    text(promptParams.stringBinding { it.prettyPerLine() }) {
-                        wrappingWidth = 400.0
-                    }
-                }
                 field("Model") {
                     text(model)
                 }
                 field("Model Params") {
                     text(modelParams.stringBinding { it.pretty() })
                 }
+                field("Prompt") {
+                    labelContainer.alignment = Pos.TOP_LEFT
+                    text(prompt)
+                }
             }
+            paramsField = fieldset("Prompt Parameters")
             fieldset("Result") {
                 field("Execution") {
                     text(exec.stringBinding { it.pretty() })
                 }
                 field("Result") {
+                    labelContainer.alignment = Pos.TOP_LEFT
                     text(result) {
                         wrappingWidth = 400.0
                     }
                 }
             }
         }
+        updateParamsField()
+        promptParams.onChange { updateParamsField() }
     }
 
-    private fun Map<String, Any?>?.prettyPerLine() = this?.entries?.joinToString("\n") { (k, v) -> "$k: $v" } ?: ""
-    private fun Map<String, Any?>?.pretty() = this?.entries?.joinToString(", ") { (k, v) -> "$k: $v" } ?: ""
+
+    private fun updateParamsField() {
+        with (paramsField) {
+            children.removeAll(paramsField.children.drop(1))
+            promptParams.value?.let { params ->
+                params.entries.forEach { (k, v) ->
+                    field(k) {
+                        labelContainer.alignment = Pos.TOP_LEFT
+                        text(v.truncated)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun Map<String, Any?>?.pretty() =
+        this?.entries?.joinToString(", ") { (k, v) -> "$k: ${v.truncated}" } ?: ""
     private fun AiPromptExecInfo?.pretty() = this?.let {
         mapOf<String, Any?>(
             "error" to it.error,
@@ -111,5 +130,8 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
         ).entries.filter { it.value != null }
             .joinToString(", ") { (k, v) -> "$k: $v" }
     }
+
+    private val Any?.truncated
+        get() = toString().let { if (it.length > 400) it.substring(0, 397) + "..." else it }
 
 }

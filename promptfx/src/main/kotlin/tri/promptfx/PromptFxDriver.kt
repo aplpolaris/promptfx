@@ -28,6 +28,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.promptfx.docs.FormattedPromptTraceResult
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
 
@@ -74,7 +75,8 @@ object PromptFxDriver {
         } else {
             inputArea.text = input
             val result = taskView.processUserInput()
-            val nodeResult = result.finalResult as? FormattedText
+            val nodeResult = (result.finalResult as? FormattedPromptTraceResult)?.text
+                ?: result.finalResult as? FormattedText
                 ?: FormattedText(result.finalResult.toString())
             Platform.runLater {
                 if (outputArea is TextArea) {

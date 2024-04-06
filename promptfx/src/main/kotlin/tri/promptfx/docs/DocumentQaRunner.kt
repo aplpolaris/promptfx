@@ -68,8 +68,14 @@ object DocumentQaRunner {
             }
             println("Asking a question about documents in ${view.getFolder()}.")
             view.question.set(input)
-            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor)
-            result.finalResult as? String
+            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult
+            when (result) {
+                is String -> result
+                is FormattedPromptTraceResult -> result.trace.outputInfo.output
+                is FormattedText -> result.toString()
+                null -> "N/A"
+                else -> result.toString()
+            }
         }
     }
 
