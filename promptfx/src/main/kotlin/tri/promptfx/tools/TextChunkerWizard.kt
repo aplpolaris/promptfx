@@ -33,7 +33,7 @@ import tri.promptfx.ui.TextChunkListView
 import tri.util.ui.slider
 
 /** Wizard for generating a set of [TextChunk]s from user input. */
-class TextChunkerWizard: Wizard("Text Chunker", "Generate a set of text chunks from user input or selected source.") {
+class TextChunkerWizard: Wizard("Create Text Library", "Generate a library of text content from user input or selected source.") {
 
     val model: TextChunkerWizardModel by inject()
 

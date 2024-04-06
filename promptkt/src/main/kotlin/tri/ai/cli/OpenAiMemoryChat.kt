@@ -26,6 +26,7 @@ import tri.ai.core.TextChatRole
 import tri.ai.memory.*
 import tri.ai.openai.*
 import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import kotlin.system.exitProcess
 
 /** Example of a chat that has a memory of previous conversations. */
 class OpenAiMemoryChat {
@@ -86,6 +87,7 @@ class OpenAiMemoryChat {
                 chatbot.memory.saveMemory(interimSave = false)
             }
             println("Goodbye!")
+            exitProcess(0)
         }
 
     }

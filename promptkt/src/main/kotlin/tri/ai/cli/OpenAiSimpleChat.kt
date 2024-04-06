@@ -30,6 +30,7 @@ import com.aallam.openai.client.OpenAIConfig
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import kotlin.system.exitProcess
 
 object OpenAiSimpleChat {
     @JvmStatic
@@ -61,5 +62,6 @@ object OpenAiSimpleChat {
             }
             println("Goodbye!")
         }
+        exitProcess(0)
     }
 }

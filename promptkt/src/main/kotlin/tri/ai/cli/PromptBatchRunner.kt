@@ -33,8 +33,7 @@ import kotlin.system.exitProcess
 object PromptBatchRunner {
     @JvmStatic
     fun main(args: Array<String>) {
-        val sampleArgs = arrayOf("D:\\data\\chatgpt\\prompt_batch_test.json",
-            "D:\\data\\chatgpt\\prompt_batch_test_result.yaml", "--database")
+//        val args = arrayOf("D:\\data\\chatgpt\\prompt_batch_test.json", "D:\\data\\chatgpt\\prompt_batch_test_result.yaml", "--database")
         val useArgs = args
         println("""
                 $ANSI_GREEN

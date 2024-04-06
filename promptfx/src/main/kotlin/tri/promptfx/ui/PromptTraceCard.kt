@@ -112,7 +112,9 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
                 params.entries.forEach { (k, v) ->
                     field(k) {
                         labelContainer.alignment = Pos.TOP_LEFT
-                        text(v.truncated)
+                        text(v.truncated) {
+                            wrappingWidth = 400.0
+                        }
                     }
                 }
             }
