@@ -198,7 +198,11 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     private fun updateDocs() = runBlocking {
-        val docList = embeddingIndex.value!!.calculateAndGetDocs().take(docsToProcess.value)
+        val sourceDocs = if (documentLibrary.value != null)
+            documentLibrary.value!!.docs
+        else
+            embeddingIndex.value!!.calculateAndGetDocs()
+        val docList = sourceDocs.take(docsToProcess.value)
         val chunkList = docList.flatMap { doc ->
             doc.chunks.take(chunksToProcess.value).map { doc to it }
         }
