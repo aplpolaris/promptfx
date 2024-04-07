@@ -82,6 +82,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     private fun EventTarget.addPolicyBox() {
+        if (!PromptFxModels.policy.isShowBanner) return
         label(PromptFxModels.policy.bar.text) {
             padding = insets(0.0, 5.0, 0.0, 5.0)
             alignment = Pos.CENTER

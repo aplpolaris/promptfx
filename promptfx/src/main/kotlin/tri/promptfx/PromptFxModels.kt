@@ -5,7 +5,8 @@ package tri.promptfx
  * Model availability is determined by the current [PromptFxPolicy].
  */
 object PromptFxModels {
-    val policy: PromptFxPolicy = PromptFxPolicyOpenAi
+    val policy: PromptFxPolicy = PromptFxPolicyUnrestricted
+//    val policy: PromptFxPolicy = PromptFxPolicyOpenAi
 
     fun textCompletionModels() = policy.textCompletionModels()
     fun textCompletionModelDefault() = policy.textCompletionModelDefault()

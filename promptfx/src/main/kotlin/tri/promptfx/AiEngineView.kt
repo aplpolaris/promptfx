@@ -20,11 +20,13 @@
 package tri.promptfx
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.event.EventHandler
+import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiClient
 import tri.promptfx.PromptFxDriver.showDriverDialog
 import tri.util.ui.graphic
@@ -38,47 +40,48 @@ class AiEngineView: View() {
         alignment = Pos.CENTER_LEFT
         spacing = 10.0
 
-        label("Completions: ") {
-            style = "-fx-font-weight: bold;"
-        }
         with (controller) {
-            combobox(completionEngine, TextPlugin.textCompletionModels()) {
-                tooltip("The default completion engine to use for all text completion tasks, if not selectable in view parameters.")
-                maxWidth = 200.0
-            }
-            label("Embeddings: ") {
-                style = "-fx-font-weight: bold;"
-            }
-            combobox(embeddingService, TextPlugin.embeddingModels()) {
-                tooltip("The default embedding engine to use for all text embedding tasks, if not selectable in view parameters.")
-                maxWidth = 200.0
-            }
-            button("", graphic = FontAwesomeIcon.KEY.graphic) {
-                action {
-                    TextInputDialog(OpenAiClient.INSTANCE.settings.apiKey).apply {
-                        initOwner(primaryStage)
-                        title = "OpenAI API Key"
-                        headerText = "Enter your OpenAI API key."
-                        contentText = "API Key:"
-                        showAndWait().ifPresent {
-                            if (it.isNotBlank())
-                                OpenAiClient.INSTANCE.settings.apiKey = it
-                        }
+            menubutton("Completions", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
+                tooltip(completionEngine.value?.toString() ?: "Select the completion engine to use.")
+                completionEngine.onChange { tooltip.text = it.toString() }
+                PromptFxModels.textCompletionModels().forEach { model ->
+                    item(model.toString()) {
+                        style = menustyle(model.modelId, completionEngine.value?.modelId)
+                        styleProperty().bind(completionEngine.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { completionEngine.set(model) }
                     }
                 }
             }
-            label(tokensUsed.stringBinding(audioUsed, imagesUsed) {
-                "Usage: $it tokens, ${audioUsed.value} audio, ${imagesUsed.value} images"
-                    .replace(", 0 audio", "")
-                    .replace(", 0 images", "")
-            }) {
-                tooltip("Estimated usage of tokens and images. The actual value may be higher. Click to navigate to the OpenAI account usage page.")
-                style = "-fx-font-weight: bold;"
-                cursor = Cursor.HAND
-                onLeftClick {
-                    hostServices.showDocument("https://beta.openai.com/account/usage")
+            menubutton("Embeddings", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
+                tooltip(embeddingService.value?.toString() ?: "Select the embedding engine to use.")
+                embeddingService.onChange { tooltip.text = it.toString() }
+                PromptFxModels.embeddingModels().forEach { model ->
+                    item(model.toString()) {
+                        style = menustyle(model.modelId, embeddingService.value?.modelId)
+                        styleProperty().bind(embeddingService.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { embeddingService.set(model) }
+                    }
                 }
             }
+
+            if (PromptFxModels.policy.isShowUsage)
+                usagelabel()
+
+            if (PromptFxModels.policy.isShowApiKeyButton)
+                button("", graphic = FontAwesomeIcon.KEY.graphic) {
+                    action {
+                        TextInputDialog(OpenAiClient.INSTANCE.settings.apiKey).apply {
+                            initOwner(primaryStage)
+                            title = "OpenAI API Key"
+                            headerText = "Enter your OpenAI API key."
+                            contentText = "API Key:"
+                            showAndWait().ifPresent {
+                                if (it.isNotBlank())
+                                    OpenAiClient.INSTANCE.settings.apiKey = it
+                            }
+                        }
+                    }
+                }
 
             // button for testing view driver
             button("", graphic = FontAwesomeIcon.COG.graphic) {
@@ -88,5 +91,27 @@ class AiEngineView: View() {
             }
         }
     }
+
+    private fun EventTarget.usagelabel() = label("", graphic = FontAwesomeIconView(FontAwesomeIcon.DOLLAR)) {
+        val defStr = "Estimated usage of tokens and images. The actual value may be higher. Click to navigate to the OpenAI account usage page.\n"
+        tooltip(defStr) {
+            // update usage stats when the tooltip is shown
+            onShowing = EventHandler {
+                controller.updateUsage()
+                text = defStr + "Usage: ${controller.tokensUsed.value} tokens, ${controller.audioUsed.value} audio, ${controller.imagesUsed.value} images"
+                    .replace(", 0 audio", "")
+                    .replace(", 0 images", "")
+            }
+        }
+        style = "-fx-font-weight: bold;"
+        cursor = Cursor.HAND
+        onLeftClick {
+            hostServices.showDocument("https://beta.openai.com/account/usage")
+        }
+    }
+
+    /** Makes the selected menu item bold. */
+    private fun menustyle(a: String, b: String?) =
+        if (a == b) "-fx-font-weight: bold;" else ""
 
 }

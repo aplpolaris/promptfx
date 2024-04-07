@@ -36,6 +36,8 @@ object DocumentUtils {
 
     private val thumbnailCache = mutableMapOf<String, Image>()
 
+    private const val DOC_THUMBNAIL_SIZE = 240
+
     /**
      * Generate a thumbnail for the document if it doesn't exist.
      * TODO - this may take a while, so make it a delayed event
@@ -55,7 +57,7 @@ object DocumentUtils {
                 null
             }
         } ?: return null
-        val thumb = pdfThumbnail(pdfFile, 300)
+        val thumb = pdfThumbnail(pdfFile, DOC_THUMBNAIL_SIZE)
         if (thumb != null)
             thumbnailCache[doc.path] = thumb
 

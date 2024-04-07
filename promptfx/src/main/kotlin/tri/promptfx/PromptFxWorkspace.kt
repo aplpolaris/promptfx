@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.event.EventHandler
 import javafx.event.EventTarget
 import javafx.scene.Node
+import javafx.scene.control.Label
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
@@ -39,6 +40,19 @@ class PromptFxWorkspace : Workspace() {
 
     init {
         add(find<AiEngineView>())
+        with(PromptFxModels.policy) {
+            if (isShowBanner) {
+                add(Label(bar.text).apply {
+                    padding = insets(0.0, 20.0, 0.0, 20.0)
+                    style {
+                        fontWeight = javafx.scene.text.FontWeight.BOLD
+                        fontSize = 18.px
+                        backgroundColor += bar.bgColor
+                        textFill = bar.fgColor
+                    }
+                })
+            }
+        }
         button(graphic = FontAwesomeIcon.SLIDESHARE.graphic).action {
             enterFullScreenMode()
         }
@@ -180,23 +194,27 @@ class PromptFxWorkspace : Workspace() {
     }
 
     private inline fun <reified T: UIComponent> EventTarget.hyperlinkview(name: String) {
-        views[name] = T::class.java
-        hyperlink(name) {
-            action {
-                isVisited = false
-                dock<T>()
+        if (PromptFxModels.policy.supportsView(T::class.java.simpleName)) {
+            views[name] = T::class.java
+            hyperlink(name) {
+                action {
+                    isVisited = false
+                    dock<T>()
+                }
             }
         }
     }
 
     private fun EventTarget.hyperlinkview(view: NavigableWorkspaceView) {
-        if (view is NavigableWorkspaceViewImpl<*>) {
-            views[view.name] = view.type.java
-        }
-        hyperlink(view.name) {
-            action {
-                isVisited = false
-                view.dock(this@PromptFxWorkspace)
+        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
+            if (view is NavigableWorkspaceViewImpl<*>) {
+                views[view.name] = view.type.java
+            }
+            hyperlink(view.name) {
+                action {
+                    isVisited = false
+                    view.dock(this@PromptFxWorkspace)
+                }
             }
         }
     }
