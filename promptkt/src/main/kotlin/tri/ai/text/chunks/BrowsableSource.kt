@@ -36,7 +36,13 @@ data class BrowsableSource(val uri: URI) {
         null
     }
     /** The short name of the source file. */
-    val shortName = path.substringAfterLast('/')
+    val shortName = when {
+        uri.scheme.startsWith("http") -> uri.toString()
+        else -> path.substringAfterLast('/')
+    }
     /** The short name of the source file, without extension. */
-    val shortNameWithoutExtension = shortName.substringBeforeLast('.')
+    val shortNameWithoutExtension = when {
+        uri.scheme.startsWith("http") -> uri.toString()
+        else -> shortName.substringBeforeLast('.')
+    }
 }

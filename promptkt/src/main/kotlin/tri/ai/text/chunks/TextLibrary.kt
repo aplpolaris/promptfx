@@ -27,10 +27,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.fileToText
-import tri.ai.text.chunks.process.LocalTextDocIndex
-import tri.util.warning
+import tri.util.fine
 import java.io.File
-import java.net.URI
 import java.net.URISyntaxException
 
 /**
@@ -63,9 +61,11 @@ class TextLibrary(_id: String? = null) {
                             doc.metadata.path = file!!.toURI()
                             doc.all = TextChunkRaw(file.fileToText(useCache = true))
                         } catch (x: URISyntaxException) {
-                            warning<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
+                            fine<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
                         } catch (x: NullPointerException) {
-                            warning<TextLibrary>("Failed to find file for ${doc.metadata}")
+                            fine<TextLibrary>("Failed to find file for ${doc.metadata}")
+                        } catch (x: IllegalArgumentException) {
+                            fine<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
                         }
                     }
                 }

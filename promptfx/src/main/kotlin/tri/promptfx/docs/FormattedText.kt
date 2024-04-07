@@ -43,6 +43,8 @@ class FormattedTextNode(
 ) {
     /** Splits this node by a [Regex], keeping the same style and hyperlink. */
     fun splitOn(find: Regex, replace: (String) -> FormattedTextNode): List<FormattedTextNode> {
+        if (hyperlink != null)
+            return listOf(this)
         val result = mutableListOf<FormattedTextNode>()
         var index = 0
         find.findAll(text).forEach {

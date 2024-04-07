@@ -32,11 +32,14 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.EmbeddingPrecision
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
 import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
+import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.ModelParameters
 import tri.util.ANSI_GRAY
@@ -48,6 +51,8 @@ import java.io.File
 /** Runs the document QA information retrieval, query, and summarization process. */
 class DocumentQaPlanner {
 
+    /** A document library to use for chunks, if available. */
+    var documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     /** The embedding index. */
     var embeddingIndex: ObservableValue<out EmbeddingIndex?> = SimpleObjectProperty(NoOpEmbeddingIndex)
     /** The retrieved relevant snippets. */
@@ -81,7 +86,8 @@ class DocumentQaPlanner {
         tempParameters: ModelParameters
     ) = aitask("upgrade-existing-embeddings") {
             runLater { snippets.setAll() }
-            upgradeEmbeddingIndex()
+            if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
+                upgradeEmbeddingIndex()
             AiTaskResult.result("")
         }.aitask("calculate-embeddings") {
             findRelevantSection(question, chunksToRetrieve).also {
@@ -96,7 +102,7 @@ class DocumentQaPlanner {
             val responseEmbedding = response.value?.outputInfo?.output?.let { embeddingService.calculateEmbedding(it) }
             if (responseEmbedding != null) {
                 snippets.forEach {
-                    it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding)?.toFloat()
+                    it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding).toFloat()
                 }
             }
             response.map {
@@ -117,7 +123,24 @@ class DocumentQaPlanner {
 
     /** Finds the most relevant section to the query. */
     private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
+        documentLibrary.value?.let { return findRelevantSection(it, query, maxChunks) }
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
+        return AiTaskResult.result(matches)
+    }
+
+    /** Finds the most relevant section to the query. */
+    private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
+        val embeddingSvc = (embeddingIndex.value as LocalFolderEmbeddingIndex).embeddingService
+        val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), embeddingSvc.modelId)
+        val matches = library.docs.flatMap { doc ->
+            doc.calculateMissingEmbeddings(embeddingSvc, EmbeddingPrecision.FIRST_EIGHT)
+            doc.chunks.map {
+                val chunkEmbedding = it.getEmbeddingInfo(embeddingSvc.modelId)!!
+                EmbeddingMatch(semanticTextQuery, doc, it, chunkEmbedding,
+                    cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding).toFloat()
+                )
+            }
+        }.sortedByDescending { it.queryScore }.take(maxChunks)
         return AiTaskResult.result(matches)
     }
 
@@ -135,8 +158,10 @@ class DocumentQaPlanner {
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
         val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.output ?: "No response."))
-        val docs = qaResult.matches.map { it.document.browsable()!! }.toSet()
-        docs.forEach { doc ->
+        val docs = qaResult.matches.mapNotNull { it.document.browsable() }
+            .filter { it.shortNameWithoutExtension.isNotBlank() }
+            .toSet()
+        docs.sortedByDescending { it.shortNameWithoutExtension.length }.forEach { doc ->
             result.splitOn(doc.shortNameWithoutExtension) {
                 FormattedTextNode(doc.shortNameWithoutExtension,
                     hyperlink = doc.file?.absolutePath ?: doc.uri.path)

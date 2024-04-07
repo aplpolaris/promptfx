@@ -19,34 +19,31 @@
  */
 package tri.promptfx.docs
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.pips.*
-import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
+import tri.ai.pips.AiPlanner
+import tri.ai.pips.AiTask
+import tri.ai.pips.aggregate
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.graphic
 import tri.util.ui.slider
-import java.awt.Desktop
 import java.io.File
-import java.nio.file.Files
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", DocumentInsightView::class)
@@ -61,6 +58,7 @@ class DocumentInsightView: AiPlanTaskView(
     private lateinit var reducePromptUi: EditablePromptUi
 
     // selection of source documents
+    private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     private val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(5000)
     private val embeddingIndex = Bindings.createObjectBinding({
@@ -111,55 +109,9 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     init {
-        parameters("Document Source and Sectioning") {
-            field("Folder") {
-                (inputContainer as? HBox)?.spacing = 5.0
-                hyperlink(documentFolder.stringBinding {
-                    val path = it!!.absolutePath
-                    if (path.length > 25) {
-                        "..." + path.substring(path.length - 24)
-                    } else {
-                        path
-                    }
-                }) {
-                    action {
-                        Files.createDirectories(documentFolder.get().toPath())
-                        Desktop.getDesktop().open(documentFolder.get())
-                    }
-                }
-                button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                    tooltip("Select folder with documents for Q&A")
-                    action { promptFxDirectoryChooser { documentFolder.set(it) } }
-                }
-                button("", FontAwesomeIcon.GLOBE.graphic) {
-                    tooltip("Enter a website to scrape")
-                    action { find<TextCrawlDialog>(params = mapOf("folder" to documentFolder)).openModal() }
-                }
-                button("", FontAwesomeIcon.REFRESH.graphic) {
-                    tooltip("Rebuild embedding index for this folder")
-                    action {
-                        // confirm with user then refresh
-                        confirm(
-                            "Rebuild Embedding Index",
-                            "Are you sure you want to rebuild the entire embedding index?\n" +
-                                    "This may require significant API usage and cost."
-                        ) {
-                            runAsync {
-                                runBlocking { embeddingIndex.value!!.reindexAll() }
-                            }
-                        }
-                    }
-                }
-            }
-            field("Max snippet size") {
-                tooltip(
-                    "Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
-                            "This will only apply to newly chunked documents."
-                )
-                slider(500..5000, maxChunkSize)
-                label(maxChunkSize)
-            }
-        }
+        documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
+            reindexOp = { embeddingIndex.value!!.reindexAll() }
+        )
         parameters("Document Snippet Processing") {
             field("Limit documents to") {
                 tooltip("Max number of documents to process")

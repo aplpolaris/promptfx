@@ -4,6 +4,8 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.embedding.EmbeddingService
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import kotlin.math.pow
 
 /** Utilities for adding embedding information to [TextDoc]s. */
@@ -34,6 +36,17 @@ object TextDocEmbeddings {
     /** Get embedding info. */
     fun TextChunk.getEmbeddingInfo(modelId: String): List<Double>? =
         (attributes["embeddings"] as? EmbeddingInfo)?.get(modelId)
+
+    /** Calculates embedding info for all chunks in a document where it is missing. */
+    suspend fun TextDoc.calculateMissingEmbeddings(embeddingService: EmbeddingService, precision: EmbeddingPrecision) {
+        val id = embeddingService.modelId
+        val chunksToCalculate = chunks.filter { it.getEmbeddingInfo(id) == null }
+        if (chunksToCalculate.isNotEmpty()) {
+            embeddingService.calculateEmbedding(chunksToCalculate.map { it.text(all) }).forEachIndexed { i, embedding ->
+                chunksToCalculate[i].putEmbeddingInfo(id, embedding, precision)
+            }
+        }
+    }
 
 }
 

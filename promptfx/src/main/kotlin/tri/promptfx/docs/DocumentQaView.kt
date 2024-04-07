@@ -27,7 +27,6 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.input.DataFormat
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import kotlinx.coroutines.runBlocking
@@ -37,12 +36,12 @@ import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxWorkspace
-import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.PromptTraceDetails
 import tri.promptfx.ui.TextChunkListView
@@ -50,12 +49,9 @@ import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.graphic
 import tri.util.ui.plainText
 import tri.util.ui.slider
-import java.awt.Desktop
 import java.io.File
-import java.nio.file.Files
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", DocumentQaView::class)
@@ -74,6 +70,7 @@ class DocumentQaView: AiPlanTaskView(
 
     val question = SimpleStringProperty("")
 
+    private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(1000)
     private val chunksToRetrieve = SimpleIntegerProperty(10)
@@ -81,6 +78,7 @@ class DocumentQaView: AiPlanTaskView(
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
 
     val planner = DocumentQaPlanner().apply {
+        documentLibrary = this@DocumentQaView.documentLibrary
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
             LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
@@ -123,53 +121,9 @@ class DocumentQaView: AiPlanTaskView(
             }
             add(TextChunkListView(planner.snippets.matchViewModel(), hostServices))
         }
-        parameters("Document Source and Sectioning") {
-            field("Folder") {
-                (inputContainer as? HBox)?.spacing = 5.0
-                hyperlink(documentFolder.stringBinding {
-                    val path = it!!.absolutePath
-                    if (path.length > 25) {
-                        "..." + path.substring(path.length - 24)
-                    } else {
-                        path
-                    }
-                }) {
-                    action {
-                        Files.createDirectories(documentFolder.get().toPath())
-                        Desktop.getDesktop().open(documentFolder.get())
-                    }
-                }
-                button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
-                    tooltip("Select folder with documents for Q&A")
-                    action {
-                        promptFxDirectoryChooser("Select folder") { documentFolder.set(it) }
-                    }
-                }
-                button("", FontAwesomeIcon.GLOBE.graphic) {
-                    tooltip("Enter a website to scrape")
-                    action { find<TextCrawlDialog>(params = mapOf("folder" to documentFolder)).openModal() }
-                }
-                button("", FontAwesomeIcon.REFRESH.graphic) {
-                    tooltip("Rebuild embedding index for this folder")
-                    action {
-                        // confirm with user then refresh
-                        confirm("Rebuild Embedding Index",
-                            "Are you sure you want to rebuild the entire embedding index?\n" +
-                                    "This may require significant API usage and cost.") {
-                            runAsync {
-                                runBlocking { planner.reindexAllDocuments() }
-                            }
-                        }
-                    }
-                }
-            }
-            field("Max snippet size") {
-                tooltip("Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
-                        "This will only apply to newly chunked documents.")
-                slider(500..5000, maxChunkSize)
-                label(maxChunkSize)
-            }
-        }
+        documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
+            reindexOp = { planner.reindexAllDocuments() }
+        )
         parameters("Document Snippet Matching and Query") {
             field("# Matches") {
                 tooltip("Number of matching snippets to retrieve from the document database")
@@ -300,7 +254,10 @@ class DocumentQaView: AiPlanTaskView(
         private const val JOINER_PREFIX = "snippet-joiner"
 
         internal fun browseToBestSnippet(doc: BrowsableSource, result: QuestionAnswerResult?, hostServices: HostServices) {
-            if (result == null) {
+            if (doc.uri.scheme.startsWith("http")) {
+                info<DocumentQaView>("Browsing to website: ${doc.uri}")
+                hostServices.showDocument(doc.uri.toString())
+            } else if (result == null) {
                 info<DocumentQaView>("Browsing to first page: ${doc.shortNameWithoutExtension}")
                 DocumentOpenInViewer(doc, hostServices).open()
             } else {
