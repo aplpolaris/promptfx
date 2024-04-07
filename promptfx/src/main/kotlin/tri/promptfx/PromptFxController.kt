@@ -34,11 +34,11 @@ class PromptFxController : Controller() {
     val openAiPlugin = TextPlugin.defaultPlugin
 
     val completionEngine: SimpleObjectProperty<TextCompletion> =
-        SimpleObjectProperty(TextPlugin.textCompletionModels().first())
+        SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
     val chatService: SimpleObjectProperty<TextChat> =
-        SimpleObjectProperty(TextPlugin.chatModels().first())
+        SimpleObjectProperty(PromptFxModels.chatModelDefault())
     val embeddingService: SimpleObjectProperty<EmbeddingService> =
-        SimpleObjectProperty(TextPlugin.embeddingModels().first())
+        SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
 
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)

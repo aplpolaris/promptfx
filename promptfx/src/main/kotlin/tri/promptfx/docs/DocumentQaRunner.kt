@@ -42,24 +42,6 @@ object DocumentQaRunner {
 
     private fun initPlatform() = platform
 
-    private fun DocumentQaView.getFolder() =
-        documentFolder.get().name
-
-    private fun DocumentQaView.getFolders() =
-        documentFolder.get().parentFile
-            .listFiles(FileFilter { it.isDirectory })!!
-            .map { it.name }
-
-    private fun DocumentQaView.setFolder(folder: String): Boolean {
-        val folderFile = File(documentFolder.get().parentFile, folder)
-        return if (folderFile.exists()) {
-            documentFolder.set(folderFile)
-            true
-        } else {
-            false
-        }
-    }
-
     fun ask(input: String, folder: String?): String? {
         return runBlocking {
             // initialize toolkit and view
@@ -76,6 +58,24 @@ object DocumentQaRunner {
                 null -> "N/A"
                 else -> result.toString()
             }
+        }
+    }
+
+    private fun DocumentQaView.getFolder() =
+        documentFolder.get().name
+
+    private fun DocumentQaView.getFolders() =
+        documentFolder.get().parentFile
+            .listFiles(FileFilter { it.isDirectory })!!
+            .map { it.name }
+
+    private fun DocumentQaView.setFolder(folder: String): Boolean {
+        val folderFile = File(documentFolder.get().parentFile, folder)
+        return if (folderFile.exists()) {
+            documentFolder.set(folderFile)
+            true
+        } else {
+            false
         }
     }
 

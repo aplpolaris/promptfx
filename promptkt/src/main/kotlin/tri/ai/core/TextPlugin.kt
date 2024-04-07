@@ -44,11 +44,18 @@ interface TextPlugin {
     fun close()
 
     companion object {
-        private val plugins: ServiceLoader<TextPlugin> by lazy {
-            ServiceLoader.load(TextPlugin::class.java, pluginsDirClassLoader())
+        /** [ClassLoader] that should be used to load plugins. Can override to change plugin loading behavior. */
+        var customPluginLoader: ClassLoader? = null
+
+        private val pluginLoader: ClassLoader by lazy {
+            customPluginLoader ?: pluginsDirClassLoader() ?: Thread.currentThread().contextClassLoader
         }
-        val defaultPlugin = plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin
-        val orderedPlugins = listOf(defaultPlugin) + (plugins - defaultPlugin)
+        private val plugins: ServiceLoader<TextPlugin> by lazy {
+            ServiceLoader.load(TextPlugin::class.java, pluginLoader)
+        }
+
+        val defaultPlugin by lazy { plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin }
+        val orderedPlugins by lazy { listOf(defaultPlugin) + (plugins - defaultPlugin) }
 
         /** Get registered text completion models. */
         fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }

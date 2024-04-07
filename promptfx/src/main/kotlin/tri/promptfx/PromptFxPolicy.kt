@@ -10,9 +10,9 @@ import tri.ai.openai.OpenAiTextPlugin
 /** Policy for determining which models are available within PromptFx. */
 abstract class PromptFxPolicy {
     abstract fun textCompletionModels(): List<TextCompletion>
-    fun textCompletionModelDefault() = textCompletionModels().firstOrNull()
+    fun textCompletionModelDefault() = textCompletionModels().first()
     abstract fun embeddingModels(): List<EmbeddingService>
-    fun embeddingModelDefault() = embeddingModels().firstOrNull()
+    fun embeddingModelDefault() = embeddingModels().first()
     abstract fun chatModels(): List<TextChat>
     fun chatModelDefault() = chatModels().firstOrNull()
 //    abstract fun imageModels(): List<ImageService>

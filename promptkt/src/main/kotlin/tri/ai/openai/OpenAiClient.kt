@@ -21,6 +21,7 @@ package tri.ai.openai
 
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
+import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.core.Usage
 import com.aallam.openai.api.edits.EditsRequest
@@ -66,21 +67,32 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     //region QUICK API CALLS
 
-    /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, inputs: List<String>) =
-        quickEmbedding(modelId, *inputs.toTypedArray())
+    private fun checkApiKey() {
+        if (!settings.apiKey.startsWith("sk-") || settings.apiKey.trim().contains(" "))
+            throw UnsupportedOperationException("Invalid API key. Please set a valid OpenAI API key.")
+    }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String, vararg inputs: String) = client.embeddings(EmbeddingRequest(
-        ModelId(modelId),
-        inputs.toList()
-    )).let { it ->
-        usage.increment(it.usage)
-        result(it.embeddings.map { it.embedding }, modelId)
+    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, inputs: List<String>): AiTaskResult<List<List<Double>>> {
+        checkApiKey()
+        return quickEmbedding(modelId, *inputs.toTypedArray())
+    }
+
+    /** Runs an embedding using ADA embedding model. */
+    suspend fun quickEmbedding(modelId: String, vararg inputs: String): AiTaskResult<List<List<Double>>> {
+        checkApiKey()
+        return client.embeddings(EmbeddingRequest(
+            ModelId(modelId),
+            inputs.toList()
+        )).let { it ->
+            usage.increment(it.usage)
+            result(it.embeddings.map { it.embedding }, modelId)
+        }
     }
 
     /** Runs a quick audio transcription for a given file. */
     suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiTaskResult<String> {
+        checkApiKey()
         if (!audioFile.isAudioFile())
             return AiTaskResult.invalidRequest("Audio file not provided.")
 
@@ -100,6 +112,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a text completion request. */
     suspend fun completion(completionRequest: CompletionRequest): AiTaskResult<String> {
+        checkApiKey()
         val t0 = System.currentTimeMillis()
         val resp = client.completion(completionRequest)
         usage.increment(resp.usage)
@@ -114,6 +127,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a text completion request using a chat model. */
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiTaskResult<String> {
+        checkApiKey()
         val t0 = System.currentTimeMillis()
         val resp = client.chatCompletion(completionRequest)
         val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
@@ -126,26 +140,32 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs a chat response. */
-    suspend fun chat(completionRequest: ChatCompletionRequest) =
-        client.chatCompletion(completionRequest).let {
+    suspend fun chat(completionRequest: ChatCompletionRequest): AiTaskResult<ChatMessage> {
+        checkApiKey()
+        return client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
             result(it.choices[0].message, completionRequest.model.id)
         }
+    }
 
     /** Runs an edit request (deprecated API). */
     @Suppress("DEPRECATION")
-    suspend fun edit(request: EditsRequest) =
-        client.edit(request).let {
+    suspend fun edit(request: EditsRequest): AiTaskResult<String> {
+        checkApiKey()
+        return client.edit(request).let {
             usage.increment(it.usage)
             result(it.choices[0].text, request.model.id)
         }
+    }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation) =
-        client.imageURL(imageCreation).let {
+    suspend fun imageURL(imageCreation: ImageCreation): AiTaskResult<List<String>> {
+        checkApiKey()
+        return client.imageURL(imageCreation).let {
             usage.increment(it.size, UsageUnit.IMAGES)
             result(it.map { it.url }, IMAGE_DALLE2)
         }
+    }
 
     //endregion
 

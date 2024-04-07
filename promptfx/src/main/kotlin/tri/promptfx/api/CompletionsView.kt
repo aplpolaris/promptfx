@@ -21,28 +21,27 @@ package tri.promptfx.api
 
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.model.ModelId
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
-import tri.util.ui.slider
+import tri.promptfx.PromptFxModels
 
+/** View for text completion API. */
 class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
 
     private val input = SimpleStringProperty("")
-    private val model = SimpleObjectProperty(TextPlugin.textCompletionModels().first())
+    private val model = SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
     private var common = ModelParameters()
 
     init {
         addInputTextArea(input)
         parameters("Completion Model") {
             field("Model") {
-                combobox(model, TextPlugin.textCompletionModels())
+                combobox(model, PromptFxModels.textCompletionModels())
             }
         }
         parameters("Parameters") {
@@ -57,7 +56,8 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
-        val completionModel = TextPlugin.textCompletionModels().firstOrNull { it.modelId == model.value.modelId }
+        val id = model.value!!.modelId
+        val completionModel = PromptFxModels.textCompletionModels().firstOrNull { it.modelId == id }
         val response = if (completionModel != null) {
             completionModel.complete(
                 text = input.get(),
@@ -66,7 +66,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
             )
         } else {
             val completion = CompletionRequest(
-                model = ModelId(model.value.modelId),
+                model = ModelId(id),
                 prompt = input.get(),
                 temperature = common.temp.value,
                 topP = common.topP.value,
@@ -78,7 +78,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
         }
         return response.asPipelineResult(
             promptInfo = AiPromptInfo(input.get()),
-            modelInfo = AiPromptModelInfo(model.value.modelId, common.toModelParams())
+            modelInfo = AiPromptModelInfo(id, common.toModelParams())
         )
     }
 

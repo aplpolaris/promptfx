@@ -25,11 +25,11 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.templatemenubutton
 import tri.util.warning
@@ -122,7 +122,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     fun importPromptTrace(prompt: AiPromptTrace) {
         template.set(prompt.promptInfo.prompt)
         fields.setAll(prompt.promptInfo.promptParams.entries.map { it.key to it.value.toString() })
-        val model = TextPlugin.textCompletionModels().find { it.modelId == prompt.modelInfo.modelId }
+        val model = PromptFxModels.textCompletionModels().find { it.modelId == prompt.modelInfo.modelId }
         if (model != null) {
             controller.completionEngine.set(model)
         } else {

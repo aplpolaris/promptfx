@@ -23,21 +23,21 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.core.TextPlugin
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult
 import tri.promptfx.AiTaskView
+import tri.promptfx.PromptFxModels
 
 class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embedding (each line will be calculated separately).") {
 
     private val input = SimpleStringProperty("")
-    private val model = SimpleObjectProperty(TextPlugin.embeddingModels()[0])
+    private val model = SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
 
     init {
         addInputTextArea(input)
         parameters("Embeddings") {
             field("Model") {
-                combobox(model, TextPlugin.embeddingModels())
+                combobox(model, PromptFxModels.embeddingModels())
             }
         }
         val outputEditor = outputPane.lookup(".text-area") as javafx.scene.control.TextArea
@@ -46,10 +46,10 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
 
     override suspend fun processUserInput(): AiPipelineResult {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
-        return model.value.calculateEmbedding(inputs).let {
+        return model.value!!.calculateEmbedding(inputs).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
-            AiTaskResult.result(it, model.value.modelId).asPipelineResult()
+            AiTaskResult.result(it, model.value!!.modelId).asPipelineResult()
         }
     }
 

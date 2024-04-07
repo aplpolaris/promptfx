@@ -1,5 +1,25 @@
 package tri.promptfx
 
+/*-
+ * #%L
+ * tri.promptfx:promptfx
+ * %%
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
@@ -18,33 +38,12 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
-import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.util.ui.graphic
 import java.io.File
 import java.lang.Exception
-
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
 /**
  * A view that executes a task and displays the result. Provides placeholders for input, output, and parameters.
@@ -178,7 +177,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
     fun addDefaultTextCompletionParameters(common: ModelParameters) {
         parameters("Text Completion Model") {
             field("Model") {
-                combobox(controller.completionEngine, TextPlugin.textCompletionModels())
+                combobox(controller.completionEngine, PromptFxModels.textCompletionModels())
             }
             with (common) {
                 temperature()
