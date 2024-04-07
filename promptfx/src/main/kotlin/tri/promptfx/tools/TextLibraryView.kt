@@ -109,7 +109,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     graphic = Text(it.library.toString())
                 }
                 contextmenu {
-                    item("Remove Selected Library") {
+                    item("Remove selected library") {
                         enableWhen(librarySelection.isNotNull)
                         action { librarySelection.value?.let { libraryList.remove(it) } }
                     }
@@ -126,7 +126,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     graphic = Text(it.toString())
                 }
                 contextmenu {
-                    item("Remove Selected Document(s)") {
+                    item("Remove selected document(s)") {
                         enableWhen(Bindings.isNotEmpty(docSelection))
                         action {
                             val selected = docSelection.toList()
@@ -183,7 +183,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 root.selectionModel.selectionMode = SelectionMode.MULTIPLE
                 chunkSelection = root.selectionModel.selectedItems
                 root.contextmenu {
-                    item("Remove Selected Chunk(s)") {
+                    item("Remove selected chunk(s)") {
                         enableWhen(Bindings.isNotEmpty(chunkSelection))
                         action {
                             val selected = chunkSelection.toList()

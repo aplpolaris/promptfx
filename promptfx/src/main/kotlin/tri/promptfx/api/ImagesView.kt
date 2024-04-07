@@ -19,13 +19,19 @@
  */
 package tri.promptfx.api
 
+import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.image.ImageSize
 import com.aallam.openai.api.model.ModelId
+import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
+import javafx.embed.swing.SwingFXUtils
+import javafx.scene.image.Image
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.Priority
 import javafx.stage.Modality
 import javafx.stage.StageStyle
@@ -33,8 +39,17 @@ import tornadofx.*
 import tri.ai.openai.OpenAiModels
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.aitask
+import tri.ai.prompt.trace.AiPromptExecInfo
+import tri.ai.prompt.trace.AiPromptInfo
+import tri.ai.prompt.trace.AiPromptModelInfo
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig
+import tri.promptfx.promptFxDirectoryChooser
+import tri.promptfx.promptFxFileChooser
 import tri.util.ui.NavigableWorkspaceViewImpl
+import java.io.File
+import java.util.*
+import javax.imageio.ImageIO
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", ImagesView::class)
@@ -81,43 +96,48 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Image style */
     private val imageStyle = SimpleStringProperty(VIVID)
 
+    /** Grid thumbnail size */
+    private val thumbnailSize = SimpleDoubleProperty(128.0)
+
     init {
         addInputTextArea(input)
-        with (outputPane) {
-            val thumbnailSize = 128.0
+    }
+
+    init {
+        with(outputPane) {
             clear()
+            toolbar {
+                button("Save All...") {
+                    enableWhen { Bindings.isNotEmpty(images) }
+                    action { saveAllToFile() }
+                }
+            }
             datagrid(images) {
                 vgrow = Priority.ALWAYS
-                cellWidth = thumbnailSize
-                cellHeight = thumbnailSize
+                prefWidth = 600.0
+                prefHeight = 600.0
+                cellWidthProperty.bind(thumbnailSize)
+                cellHeightProperty.bind(thumbnailSize)
                 cellCache {
                     imageview(it) {
-                        fitWidth = thumbnailSize
-                        fitHeight = thumbnailSize
+                        fitWidthProperty().bind(thumbnailSize)
+                        fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
                         tooltip { graphic = imageview(it) }
-                        setOnMouseClicked {
-                            val d = dialog(
-                                modality = Modality.APPLICATION_MODAL,
-                                stageStyle = StageStyle.UNDECORATED,
-                                owner = primaryStage
-                            ) {
-                                imageview(image) {
-                                    onLeftClick { close() }
-                                }
-                                form.padding = insets(0)
-                                padding = insets(0)
-                            }
-                            // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
-                            d?.owner?.let {
-                                d.x = it.x + (it.width / 2) - (d.scene.width / 2)
-                                d.y = it.y + (it.height / 2) - (d.scene.height / 2)
-                            }
+                        contextmenu {
+                            item("View full size").action { showImageDialog(image) }
+                            item("Copy to clipboard").action { copyToClipboard(image) }
+                            item("Save to file...").action { saveToFile(image) }
+                            separator()
+                            item("Remove").action { images.remove(it) }
                         }
                     }
                 }
             }
         }
+    }
+
+    init {
         parameters("Options") {
             field("Model") {
                 combobox(model, IMAGE_MODELS)
@@ -147,19 +167,126 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 combobox(imageStyle, listOf(VIVID, NATURAL))
             }
         }
+        parameters("Output") {
+            field("Thumbnail Size") {
+                slider(64.0..256.0) {
+                    valueProperty().bindBidirectional(thumbnailSize)
+                }
+                label(thumbnailSize.integerBinding { it!!.toInt() })
+            }
+        }
+    }
+
+    init {
+        onCompleted {
+            val fr = it.finalResult as AiImageTrace
+            if (fr.execInfo.error != null) {
+                error("Error: ${fr.execInfo.error}")
+            } else {
+                images.addAll(fr.outputInfo.imageUrls)
+            }
+        }
     }
 
     override fun plan() = aitask("generate-image") {
-        val result = controller.openAiPlugin.client.imageURL(ImageCreation(
-            model = ModelId(model.value),
-            prompt = input.value,
-            n = numProperty.value,
-            size = imageSize.value,
-//            quality = quality.value
+        val t0 = System.currentTimeMillis()
+        val promptInfo = AiPromptInfo(input.value)
+        val modelInfo = AiPromptModelInfo(model.value, mapOf(
+            "n" to numProperty.value,
+            "size" to imageSize.value,
+            "quality" to quality.value,
+            "style" to imageStyle.value
         ))
-        images.addAll(result.value ?: listOf())
-        result(result.value?.get(0) ?: "No images created", "DALL-E")
+        val result = try {
+            val images = controller.openAiPlugin.client.imageURL(
+                ImageCreation(
+                    model = ModelId(model.value),
+                    prompt = input.value,
+                    n = numProperty.value,
+                    size = imageSize.value,
+//            quality = quality.value,
+//            style = imageStyle.value
+                )
+            )
+            AiImageTrace(promptInfo, modelInfo,
+                AiPromptExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiImageOutputInfo(images.value!!)
+            )
+        } catch (x: OpenAIAPIException) {
+            AiImageTrace(promptInfo, modelInfo, AiPromptExecInfo.error(x.message))
+        }
+        result(result, model.value)
     }.planner
+
+    //region CONTEXT MENU ACTIONS
+
+    private fun showImageDialog(image: Image) {
+        val d = dialog(
+            modality = Modality.APPLICATION_MODAL,
+            stageStyle = StageStyle.UNDECORATED,
+            owner = primaryStage
+        ) {
+            imageview(image) {
+                onLeftClick { close() }
+            }
+            form.padding = insets(0)
+            padding = insets(0)
+        }
+        // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
+        d?.owner?.let {
+            d.x = it.x + (it.width / 2) - (d.scene.width / 2)
+            d.y = it.y + (it.height / 2) - (d.scene.height / 2)
+        }
+    }
+
+    private fun copyToClipboard(image: Image) {
+        // the original image doesn't seem to copy to clipboard properly, so cycle it through [BufferedImage]
+        val image2 = SwingFXUtils.fromFXImage(image, null)
+        val fxImage = SwingFXUtils.toFXImage(image2, null)
+        clipboard.put(DataFormat.IMAGE, fxImage)
+    }
+
+    private fun saveToFile(image: Image) {
+        promptFxFileChooser(
+            dirKey = PromptFxConfig.DIR_KEY_IMAGE,
+            title = "Save to File",
+            filters = arrayOf(PromptFxConfig.FF_PNG, PromptFxConfig.FF_ALL),
+            mode = FileChooserMode.Save
+        ) {
+            it.firstOrNull()?.let {
+                writeImageToFile(image, it)
+                information("Image saved to file: ${it.name}", owner = primaryStage)
+            }
+        }
+    }
+
+    private fun saveAllToFile() {
+        promptFxDirectoryChooser(
+            dirKey = PromptFxConfig.DIR_KEY_IMAGE,
+            title = "Save Images to Folder"
+        ) { folder ->
+            var i = 1
+            var success = 0
+            images.forEach { url ->
+                val image = Image(url)
+                var file = folder.resolve("image-$i.png")
+                while (file.exists()) {
+                    file = folder.resolve("image-${++i}.png")
+                }
+                writeImageToFile(image, file)
+                success++
+            }
+            information("Saved $success images to folder: ${folder.name}", owner = primaryStage)
+        }
+    }
+
+    private fun writeImageToFile(image: Image, file: File) {
+        file.outputStream().use { os ->
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), file.extension, os)
+        }
+    }
+
+    //endregion
 
     //region DRAG & DROP IMAGES FOR EDIT - TBD
 
@@ -222,3 +349,24 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     }
 
 }
+
+/**
+ * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
+ * Not designed for serialization (yet).
+ */
+class AiImageTrace(
+    var promptInfo: AiPromptInfo,
+    var modelInfo: AiPromptModelInfo,
+    var execInfo: AiPromptExecInfo = AiPromptExecInfo(),
+    var outputInfo: AiImageOutputInfo = AiImageOutputInfo(listOf())
+) {
+    /** Unique identifier for this trace. */
+    var uuid = UUID.randomUUID().toString()
+
+    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
+}
+
+/** Output info for an image prompt. */
+class AiImageOutputInfo(
+    var imageUrls: List<String>
+)

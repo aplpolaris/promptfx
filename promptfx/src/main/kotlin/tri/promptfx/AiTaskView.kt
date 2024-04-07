@@ -1,18 +1,16 @@
 package tri.promptfx
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.event.EventHandler
 import javafx.event.EventTarget
 import javafx.geometry.Side
-import javafx.scene.control.Alert
-import javafx.scene.control.Button
-import javafx.scene.control.ScrollPane
-import javafx.scene.control.TextArea
-import javafx.scene.control.TextInputControl
-import javafx.scene.control.Tooltip
+import javafx.scene.control.*
 import javafx.scene.image.Image
-import javafx.scene.input.Dragboard
+import javafx.scene.input.Clipboard
+import javafx.scene.input.DataFormat
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -25,6 +23,7 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.util.ui.graphic
+import java.io.File
 import java.lang.Exception
 
 /*-
@@ -201,38 +200,94 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
 
     /** Adds a place for users to drop an image to the input area of the view. */
     fun addInputImageArea(property: SimpleObjectProperty<Image>) {
+        with (inputPane) {
+            // add menu to paste, if system clipboard has an image
+            contextmenu {
+                item("") // placeholder item, required to get context menu to show later
+                onShowing = EventHandler {
+                    items.clear()
+                    items.add(MenuItem("Paste Image").apply {
+                        val clipboard = controller.clipboard
+                        isDisable = !clipboard.hasImage() && !clipboard.hasImageFile() && !clipboard.hasImageFilePath()
+                        action {
+                            if (clipboard.hasImage()) {
+                                property.set(clipboard.image)
+                            } else if (clipboard.hasImageFile()) {
+                                property.set(Image(clipboard.files.first().toURI().toString()))
+                            } else if (clipboard.hasImageFilePath()) {
+                                val file = clipboard.fileFromPlainTextContent()!!
+                                property.set(Image(file.toURI().toString()))
+                            }
+                        }
+                    })
+                }
+            }
+            setOnDragOver {
+                if (it.dragboard.hasImage() || it.dragboard.hasImageFile()) {
+                    it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+                }
+                it.consume()
+            }
+            setOnDragDropped {
+                if (it.dragboard.hasImage()) {
+                    property.set(it.dragboard.image)
+                } else if (it.dragboard.hasImageFile()) {
+                    property.set(Image(it.dragboard.files.first().toURI().toString()))
+                }
+                it.isDropCompleted = true
+                it.consume()
+            }
+        }
         input {
+            toolbar {
+                button("", FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN)) {
+                    action {
+                        promptFxFileChooser(
+                            "Select an image to describe",
+                            arrayOf(PromptFxConfig.FF_IMAGE, PromptFxConfig.FF_ALL),
+                            dirKey = PromptFxConfig.DIR_KEY_IMAGE
+                        ) {
+                            it.firstOrNull()?.let {
+                                property.set(Image(it.toURI().toString()))
+                            }
+                        }
+                    }
+                }
+            }
             imageview(property) {
                 vgrow = Priority.ALWAYS
                 isPreserveRatio = true
-                fitWidth = 400.0
-                fitHeight = 400.0
+                //region dynamically adjust preview size
+                val imageWidth = property.doubleBinding { it?.width ?: 400.0 }
+                val imageHeight = property.doubleBinding { it?.height ?: 400.0 }
+                val bestWidth = inputPane.widthProperty().doubleBinding(imageWidth) { minOf(it!!.toDouble(), imageWidth.doubleValue()) }
+                val bestHeight = inputPane.heightProperty().doubleBinding(imageHeight) { minOf(it!!.toDouble(), imageHeight.doubleValue()) }
+                fitWidthProperty().bind(bestWidth)
+                fitHeightProperty().bind(bestHeight)
+                minWidth = 200.0
+                minHeight = 200.0
+                //endregion
                 isSmooth = true
                 isCache = true
                 isPickOnBounds = true
                 style {
                     backgroundColor += c("#f0f0f0")
                 }
-                setOnDragOver {
-                    if (it.dragboard.hasImage() || it.dragboard.hasImageFile()) {
-                        it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
-                    }
-                    it.consume()
-                }
-                setOnDragDropped {
-                    if (it.dragboard.hasImage()) {
-                        property.set(it.dragboard.image)
-                    } else if (it.dragboard.hasImageFile()) {
-                        property.set(Image(it.dragboard.files.first().toURI().toString()))
-                    }
-                    it.isDropCompleted = true
-                    it.consume()
-                }
             }
         }
     }
 
-    private fun Dragboard.hasImageFile() = files.isNotEmpty() && files.first().extension in listOf("png", "jpg", "jpeg")
+    private fun Clipboard.hasImageFile() =
+        files.isNotEmpty() && files.first().extension in listOf("png", "jpg", "jpeg")
+
+    private fun Clipboard.hasImageFilePath() =
+        fileFromPlainTextContent()?.let { it.extension in listOf("png", "jpg", "jpeg") } ?: false
+
+    private fun Clipboard.fileFromPlainTextContent(): File? =
+        (getContent(DataFormat.PLAIN_TEXT) as? String)?.let {
+            it.removePrefix("\"").removeSuffix("\"").substringBefore(",")
+                .let { File(it) }
+        }
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea() {

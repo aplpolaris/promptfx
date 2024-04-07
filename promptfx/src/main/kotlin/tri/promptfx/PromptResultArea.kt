@@ -69,13 +69,13 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                 }
             }
             separator()
-            item ("Select All") {
+            item ("Select all") {
                 action { selectAll() }
             }
             item("Copy") {
                 action { copy() }
             }
-            item("Save to File...") {
+            item("Save to file...") {
                 action {
                     promptFxFileChooser(
                         dirKey = DIR_KEY_TXT,
