@@ -21,6 +21,7 @@ package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.animation.Timeline
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ListChangeListener
@@ -42,6 +43,7 @@ import tri.ai.text.chunks.BrowsableSource
 import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxDriver.sendInput
+import tri.promptfx.PromptFxModels
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
@@ -53,7 +55,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 
     val baseComponentTitle: String? by param()
     val baseComponent: View? by param()
-    val inputFontSize = SimpleIntegerProperty(64)
+    val inputFontSize = SimpleIntegerProperty(48)
 
     val indicator = FontAwesomeIcon.ROCKET.graphic.also {
         it.glyphSize = 60.0
@@ -79,6 +81,21 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         }
     }
 
+    private fun EventTarget.addPolicyBox() {
+        label(PromptFxModels.policy.bar.text) {
+            padding = insets(0.0, 5.0, 0.0, 5.0)
+            alignment = Pos.CENTER
+            style {
+                fontSize = 24.px
+                fontWeight = javafx.scene.text.FontWeight.BOLD
+                fill = PromptFxModels.policy.bar.fgColorDark
+                backgroundColor += PromptFxModels.policy.bar.bgColorDark
+                borderRadius += box(10.px)
+                backgroundRadius += box(10.px)
+            }
+        }
+    }
+
     override val root = vbox {
         alignment = Pos.CENTER
         spacing = 20.0
@@ -91,21 +108,24 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         // add spacer with height 0.1
         vbox {
             prefHeight = 0.1 * screenHeight
-            hbox {
+            padding = insets(10.0, 0.0, 0.0, 0.0)
+            hbox(50.0) {
                 alignment = Pos.CENTER
+                addPolicyBox()
                 indicator.attachTo(this)
+                addPolicyBox()
             }
         }
 
         text("You are in: ${baseComponentTitle ?: "Test"} Mode") {
             alignment = Pos.CENTER
-            prefHeight = 0.1 * screenHeight
+            prefHeight = 0.07 * screenHeight
             style = "-fx-font-size: 24px; -fx-fill: gray; -fx-font-weight: bold;"
         }
 
         inputField = textfield(input) {
             id = "chat-input"
-            prefHeight = 0.2 * screenHeight
+            prefHeight = 0.15 * screenHeight
             alignment = Pos.CENTER
             action { handleUserAction { } }
             inputFontSize.onChange {
@@ -153,9 +173,14 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 
         hbox {
             alignment = Pos.CENTER
-            prefHeight = 0.25 * screenHeight
+            prefHeight = 0.22 * screenHeight
             spacing = 40.0
             children.bind(thumbnailList) { docthumbnail(it) }
+        }
+
+        vbox {
+            prefHeight = 0.02 * screenHeight
+            padding = insets(10.0, 0.0, 0.0, 0.0)
         }
     }
 
@@ -167,8 +192,10 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     private fun handleUserAction(callback: (FormattedText) -> Unit) {
-        response.setAll()
-        blinkIndicator(start = true)
+        runLater {
+            response.setAll()
+            blinkIndicator(start = true)
+        }
         runAsync {
             runBlocking {
                 (workspace as PromptFxWorkspace).sendInput(baseComponentTitle!!, input.value, callback)

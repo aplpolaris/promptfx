@@ -46,8 +46,11 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
+import tri.util.loggerFor
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.warning
 import java.io.File
+import java.io.IOException
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -59,8 +62,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     /** User input */
     private val input = SimpleStringProperty("")
-    /** Image URLs */
-    private val images = observableListOf<String>()
+    /** Image results */
+    private val images = observableListOf<AiImageTrace>()
 
     /** Model */
     private val model = SimpleStringProperty(IMAGE_MODELS.first()).apply {
@@ -119,14 +122,18 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 cellWidthProperty.bind(thumbnailSize)
                 cellHeightProperty.bind(thumbnailSize)
                 cellCache {
-                    imageview(it) {
+                    imageview(it.outputInfo.imageUrls.first()) {
                         fitWidthProperty().bind(thumbnailSize)
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
-                        tooltip { graphic = imageview(it) }
+                        tooltip { graphic = vbox {
+                            label(it.promptInfo.prompt)
+                            imageview(it.outputInfo.imageUrls.first())
+                        } }
                         contextmenu {
                             item("View full size").action { showImageDialog(image) }
                             item("Copy to clipboard").action { copyToClipboard(image) }
+                            item("Copy prompt to clipboard").action { copyPromptToClipboard(it) }
                             item("Save to file...").action { saveToFile(image) }
                             separator()
                             item("Remove").action { images.remove(it) }
@@ -183,7 +190,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             if (fr.execInfo.error != null) {
                 error("Error: ${fr.execInfo.error}")
             } else {
-                images.addAll(fr.outputInfo.imageUrls)
+                images.addAll(fr.splitImages())
             }
         }
     }
@@ -246,6 +253,10 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         clipboard.put(DataFormat.IMAGE, fxImage)
     }
 
+    private fun copyPromptToClipboard(trace: AiImageTrace) {
+        clipboard.putString(trace.promptInfo.prompt)
+    }
+
     private fun saveToFile(image: Image) {
         promptFxFileChooser(
             dirKey = PromptFxConfig.DIR_KEY_IMAGE,
@@ -267,23 +278,29 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         ) { folder ->
             var i = 1
             var success = 0
-            images.forEach { url ->
-                val image = Image(url)
-                var file = folder.resolve("image-$i.png")
-                while (file.exists()) {
-                    file = folder.resolve("image-${++i}.png")
+            images.forEach { trace ->
+                trace.outputInfo.imageUrls.forEach {
+                    val image = Image(it)
+                    var file = folder.resolve("image-$i.png")
+                    while (file.exists()) {
+                        file = folder.resolve("image-${++i}.png")
+                    }
+                    if (writeImageToFile(image, file))
+                        success++
                 }
-                writeImageToFile(image, file)
-                success++
             }
             information("Saved $success images to folder: ${folder.name}", owner = primaryStage)
         }
     }
 
-    private fun writeImageToFile(image: Image, file: File) {
+    private fun writeImageToFile(image: Image, file: File): Boolean = try {
         file.outputStream().use { os ->
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), file.extension, os)
         }
+        true
+    } catch (x: IOException) {
+        loggerFor<ImagesView>().warning("Error saving image to file: $file", x)
+        false
     }
 
     //endregion
@@ -364,6 +381,12 @@ class AiImageTrace(
     var uuid = UUID.randomUUID().toString()
 
     override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
+
+    /** Splits this image trace into individual images. */
+    fun splitImages(): List<AiImageTrace> =
+        outputInfo.imageUrls.map {
+            AiImageTrace(promptInfo, modelInfo, execInfo, AiImageOutputInfo(listOf(it)))
+        }
 }
 
 /** Output info for an image prompt. */
