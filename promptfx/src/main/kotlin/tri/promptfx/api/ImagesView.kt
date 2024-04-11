@@ -127,8 +127,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
                         tooltip { graphic = vbox {
-                            label(it.promptInfo.prompt)
-                            imageview(it.outputInfo.imageUrls.first())
+                            val text = text(it.promptInfo.prompt) {
+                                style = "-fx-fill: white;"
+                            }
+                            val image = imageview(it.outputInfo.imageUrls.first())
+                            text.wrappingWidthProperty().bind(image.image.widthProperty())
                         } }
                         contextmenu {
                             item("View full size").action { showImageDialog(image) }
