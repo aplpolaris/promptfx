@@ -133,7 +133,7 @@ class DocumentQaPlanner {
         val embeddingSvc = (embeddingIndex.value as LocalFolderEmbeddingIndex).embeddingService
         val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), embeddingSvc.modelId)
         val matches = library.docs.flatMap { doc ->
-            doc.calculateMissingEmbeddings(embeddingSvc, EmbeddingPrecision.FIRST_EIGHT)
+            doc.calculateMissingEmbeddings(embeddingSvc)
             doc.chunks.map {
                 val chunkEmbedding = it.getEmbeddingInfo(embeddingSvc.modelId)!!
                 EmbeddingMatch(semanticTextQuery, doc, it, chunkEmbedding,

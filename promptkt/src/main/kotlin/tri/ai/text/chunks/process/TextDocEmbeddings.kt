@@ -1,5 +1,25 @@
 package tri.ai.text.chunks.process
 
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import kotlinx.coroutines.runBlocking
 import tri.ai.embedding.EmbeddingService
 import tri.ai.text.chunks.TextChunk
@@ -20,7 +40,7 @@ object TextDocEmbeddings {
         calculateEmbedding(doc.chunks.map { it.text(doc.all) })
 
     /** Add embedding info for all chunks in a document. */
-    fun EmbeddingService.addEmbeddingInfo(doc: TextDoc, precision: EmbeddingPrecision) {
+    fun EmbeddingService.addEmbeddingInfo(doc: TextDoc) {
         val embeddings = runBlocking { calculate(doc) }
         doc.chunks.forEachIndexed { i, chunk ->
             chunk.putEmbeddingInfo(modelId, embeddings[i], precision)
@@ -38,12 +58,12 @@ object TextDocEmbeddings {
         (attributes["embeddings"] as? EmbeddingInfo)?.get(modelId)
 
     /** Calculates embedding info for all chunks in a document where it is missing. */
-    suspend fun TextDoc.calculateMissingEmbeddings(embeddingService: EmbeddingService, precision: EmbeddingPrecision) {
+    suspend fun TextDoc.calculateMissingEmbeddings(embeddingService: EmbeddingService) {
         val id = embeddingService.modelId
         val chunksToCalculate = chunks.filter { it.getEmbeddingInfo(id) == null }
         if (chunksToCalculate.isNotEmpty()) {
             embeddingService.calculateEmbedding(chunksToCalculate.map { it.text(all) }).forEachIndexed { i, embedding ->
-                chunksToCalculate[i].putEmbeddingInfo(id, embedding, precision)
+                chunksToCalculate[i].putEmbeddingInfo(id, embedding, embeddingService.precision)
             }
         }
     }
@@ -62,26 +82,6 @@ enum class EmbeddingPrecision {
     FIRST_EIGHT {
         override fun op(x: Double) = Math.round(x * 10.0.pow(8.0)) / 10.0.pow(8.0)
     };
-
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
     /** Apply given transformation to an embedding value, e.g. to reduce storage requirements. */
     abstract fun op(x: Double): Double

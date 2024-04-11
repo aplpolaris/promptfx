@@ -24,7 +24,9 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.listFilesWithTextContent
+import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.util.loggerFor
 import java.io.File
 import java.net.URI
@@ -60,19 +62,28 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
      * Saves over existing library of chunked document embeddings if there are any changes.
      */
     suspend fun reindexNew() {
+        val allPaths = chunkableFiles().map { it.toURI() }
         val docsWithEmbeddings = library.docs.filter {
             it.chunks.any { it.getEmbeddingInfo(embeddingService.modelId) != null }
-        }.mapNotNull { it.metadata.path }
-        val newDocs = chunkableFiles().map { it.toURI() }.filter { it !in docsWithEmbeddings }
+        }.toSet()
+
+        // add to existing chunks that just need embedding calculations
+        val docsNeedingEmbeddings = (library.docs - docsWithEmbeddings).toSet()
+        docsNeedingEmbeddings.forEach { it.calculateMissingEmbeddings(embeddingService) }
+
+        // add new documents from file system that were not in library
+        val newDocs = allPaths - library.docs.mapNotNull { it.metadata.path }.toSet()
         newDocs.forEach {
             library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
         }
-        if (newDocs.isNotEmpty())
+
+        if (newDocs.isNotEmpty() || docsNeedingEmbeddings.isNotEmpty())
             saveIndex()
     }
 
     /**
      * Reindex all documents, calculating and storing embedding vectors for them.
+     * This may remove existing embedding calculations from other models.
      * Replaces the existing library of chunked document embeddings.
      */
     suspend fun reindexAll() {

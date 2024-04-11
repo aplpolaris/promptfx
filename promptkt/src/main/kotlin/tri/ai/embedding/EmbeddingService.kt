@@ -30,6 +30,8 @@ import java.net.URI
 interface EmbeddingService {
 
     val modelId: String
+    val precision
+        get() = EmbeddingPrecision.FIRST_EIGHT
 
     /**
      * Divide text at reasonable positions. Each chunk should have a length of at most maxChunkSize.
@@ -58,7 +60,7 @@ interface EmbeddingService {
         val chunkEmbeddings = chunks.map { it.text(doc.all) }.chunked(5) // break into smaller chunks of text for slower embedding APIs
             .flatMap { calculateEmbedding(it) }
         chunks.zip(chunkEmbeddings).forEach { (chunk, embedding) ->
-            chunk.putEmbeddingInfo(modelId, embedding, EmbeddingPrecision.FIRST_EIGHT)
+            chunk.putEmbeddingInfo(modelId, embedding, precision)
         }
         doc.chunks.addAll(chunks)
         return doc

@@ -40,7 +40,6 @@ import tri.ai.pips.AiTask.Companion.task
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.EmbeddingPrecision
 import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.AiTaskView
@@ -422,7 +421,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             task("calculate-embeddings: " + doc.metadata.id) {
-                service.addEmbeddingInfo(doc, EmbeddingPrecision.FIRST_FOUR)
+                service.addEmbeddingInfo(doc)
                 var count = 0
                 doc.chunks.forEach {
                     val embed = it.getEmbeddingInfo(service.modelId)
