@@ -19,7 +19,9 @@
  */
 package tri.ai.prompt
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AiPromptLibraryTest {
@@ -38,5 +40,53 @@ class AiPromptLibraryTest {
         println(result)
         Assertions.assertEquals(161, result.length)
     }
+    @Test
+    fun testTemplateMetadataCompatibility() {
+        val prompt = AiPromptLibrary.INSTANCE.prompts["question-answer"]
+        Assertions.assertNotNull(prompt!!.templateDescription)
+        Assertions.assertNotNull(prompt.templateName)
+        Assertions.assertTrue(prompt.template.isNotEmpty())
+    }
 
+    @Test
+    fun testParsePrompt() {
+        val promptA = "this is a prompt"
+        val promptB = """
+          template-name:
+            Default Model Creation
+          template-description:
+            Use this tool to create a model
+          prompt-template: >
+            I need you to generate json as output.
+            '''
+            OUTPUT=[
+              "A", "B", "C"
+            ]
+            '''
+            INPUT={{input}}
+            OUTPUT=
+        """.trimIndent()
+
+        val parsedPromptA = AiPromptLibrary.MAPPER.readValue<AiPrompt>(promptA)
+        Assertions.assertTrue(parsedPromptA.templateName.isEmpty())
+        Assertions.assertTrue(parsedPromptA.templateDescription.isEmpty())
+        Assertions.assertTrue(parsedPromptA.template.isNotEmpty())
+
+        val parsedPromptB = AiPromptLibrary.MAPPER.readValue<AiPrompt>(promptB)
+        Assertions.assertTrue(parsedPromptB.templateName.isNotEmpty())
+        Assertions.assertTrue(parsedPromptB.templateDescription.isNotEmpty())
+        Assertions.assertTrue(parsedPromptB.template.isNotEmpty())
+    }
+
+    @Test
+    fun testPromptWrite() {
+        val prompt = AiPrompt("a template", "description", "name")
+        assertEquals("""
+            ---
+            prompt-template: "a template"
+            template-description: "description"
+            template-name: "name"
+            
+        """.trimIndent(), AiPromptLibrary.MAPPER.writeValueAsString(prompt))
+    }
 }
