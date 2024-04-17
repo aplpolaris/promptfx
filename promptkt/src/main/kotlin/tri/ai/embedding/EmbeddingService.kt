@@ -20,13 +20,12 @@
 package tri.ai.embedding
 
 import tri.ai.text.chunks.TextChunk
-import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.EmbeddingPrecision
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
-import tri.util.info
-import java.net.URI
 
-/** An interface for chunking text and calculating embeddings. */
+/**
+ * An interface for chunking text and calculating embeddings.
+ * Clients are responsible for API limitations, e.g. that limit the number of embeddings that can be calculated in a single API call.
+ */
 interface EmbeddingService {
 
     val modelId: String
@@ -49,21 +48,5 @@ interface EmbeddingService {
     /** Calculate embedding for a single text. */
     suspend fun calculateEmbedding(vararg text: String): List<List<Double>> =
         calculateEmbedding(listOf(*text))
-
-    /** Chunks a text into sections and calculates the embedding for each section. */
-    suspend fun chunkedEmbedding(path: URI, text: String, maxChunkSize: Int): TextDoc {
-        info<EmbeddingService>("Calculating embeddings for $path...")
-        val doc = TextDoc(path.toString(), text).apply {
-            metadata.path = path
-        }
-        val chunks = chunkTextBySections(text, maxChunkSize)
-        val chunkEmbeddings = chunks.map { it.text(doc.all) }.chunked(5) // break into smaller chunks of text for slower embedding APIs
-            .flatMap { calculateEmbedding(it) }
-        chunks.zip(chunkEmbeddings).forEach { (chunk, embedding) ->
-            chunk.putEmbeddingInfo(modelId, embedding, precision)
-        }
-        doc.chunks.addAll(chunks)
-        return doc
-    }
 
 }

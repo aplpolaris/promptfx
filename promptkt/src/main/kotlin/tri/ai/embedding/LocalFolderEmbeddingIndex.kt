@@ -26,7 +26,7 @@ import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.listFilesWithTextContent
 import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
+import tri.util.info
 import tri.util.loggerFor
 import java.io.File
 import java.net.URI
@@ -116,6 +116,17 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
     /** Chunks the document and calculates the embedding for each chunk. */
     private suspend fun calculateDocChunksAndEmbeddings(uri: URI, text: String) =
         embeddingService.chunkedEmbedding(uri, text, maxChunkSize)
+
+    /** Chunks a text into sections and calculates the embedding for each section. */
+    private suspend fun EmbeddingService.chunkedEmbedding(path: URI, text: String, maxChunkSize: Int): TextDoc {
+        info<EmbeddingService>("Calculating embeddings for $path...")
+        val doc = TextDoc(path.toString(), text).apply {
+            metadata.path = path
+        }
+        doc.chunks.addAll(chunkTextBySections(text, maxChunkSize))
+        doc.calculateMissingEmbeddings(this)
+        return doc
+    }
 
     //endregion
 

@@ -24,12 +24,16 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.embedding.EmbeddingService
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import kotlin.math.pow
 
-/** Utilities for adding embedding information to [TextDoc]s. */
+/**
+ * Utilities for adding embedding information to [TextDoc]s.
+ * Enforces a maximum number of embeddings to calculate in one query.
+ */
 object TextDocEmbeddings {
+
+    /** Max number of embeddings to calculate in one query. */
+    const val MAX_EMBEDDING_BATCH_SIZE = 20
 
     /** Calculate an embedding for a single chunk. */
     suspend fun EmbeddingService.calculate(doc: TextDoc, chunk: TextChunk) =
@@ -37,7 +41,8 @@ object TextDocEmbeddings {
 
     /** Calculate embeddings for a single document. */
     suspend fun EmbeddingService.calculate(doc: TextDoc): List<List<Double>> =
-        calculateEmbedding(doc.chunks.map { it.text(doc.all) })
+        doc.chunks.map { it.text(doc.all) }.chunked(MAX_EMBEDDING_BATCH_SIZE)
+            .flatMap { calculateEmbedding(it) }
 
     /** Add embedding info for all chunks in a document. */
     fun EmbeddingService.addEmbeddingInfo(doc: TextDoc) {
@@ -62,8 +67,10 @@ object TextDocEmbeddings {
         val id = embeddingService.modelId
         val chunksToCalculate = chunks.filter { it.getEmbeddingInfo(id) == null }
         if (chunksToCalculate.isNotEmpty()) {
-            embeddingService.calculateEmbedding(chunksToCalculate.map { it.text(all) }).forEachIndexed { i, embedding ->
-                chunksToCalculate[i].putEmbeddingInfo(id, embedding, embeddingService.precision)
+            chunksToCalculate.chunked(MAX_EMBEDDING_BATCH_SIZE).forEach { batch ->
+                embeddingService.calculateEmbedding(batch.map { it.text(all) }).forEachIndexed { i, embedding ->
+                    batch[i].putEmbeddingInfo(id, embedding, embeddingService.precision)
+                }
             }
         }
     }
