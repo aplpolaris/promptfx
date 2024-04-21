@@ -45,7 +45,7 @@ class AiPrompt @JsonCreator constructor(
 
     /** Gets basic input prompt parameters. */
     fun promptParams(input: String) =
-        mapOf("input" to input, "today" to LocalDate.now())
+        mapOf(INPUT to input, TODAY to LocalDate.now())
 
     /** Fills in input and instruct fields. */
     fun instruct(instruct: String, input: String) =
@@ -53,11 +53,11 @@ class AiPrompt @JsonCreator constructor(
 
     /** Gets instruct parameters. */
     fun instructParams(instruct: String, input: String) =
-        mapOf("input" to input, "instruct" to instruct, "today" to LocalDate.now())
+        mapOf(INPUT to input, INSTRUCT to instruct, TODAY to LocalDate.now())
 
     /** Fills in arbitrary fields. */
     fun fill(fields: Map<String, Any>) = template.fill(
-        mapOf("today" to LocalDate.now()) + fields
+        mapOf(TODAY to LocalDate.now()) + fields
     ).also {
         fine<AiPrompt>(it)
     }
@@ -69,6 +69,13 @@ class AiPrompt @JsonCreator constructor(
     fun fields() = fieldsInTemplate(template)
 
     companion object {
+
+        /** Constant for input string. */
+        const val INPUT = "input"
+        /** Constant for instruct string. */
+        const val INSTRUCT = "instruct"
+        /** Constant for current date. */
+        const val TODAY = "today"
 
         /** Finds all fields in a template. */
         fun fieldsInTemplate(template: String): List<String> {

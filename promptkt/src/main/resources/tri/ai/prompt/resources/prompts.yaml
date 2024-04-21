@@ -326,6 +326,13 @@ document-map-math-terms: |
   
   Concepts:
 
+document-map-simplify: |
+  Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms, appropriate for
+  an elementary school student.
+  ```
+  {{{input}}}
+  ```
+
 document-reduce-summarize: |
   Combine the following summaries into an outline.
   ```
