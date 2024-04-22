@@ -79,7 +79,7 @@ class StarshipView : Fragment("Starship") {
             updatePrefWidth(1040.0)
             updateFontSize(21.0)
             results.outputText.onChange { animateText(FormattedText(it ?: "").toFxNodes()) }
-            this@pane.chromify(root, wid = 18.0, title = baseComponentTitle ?: "Answer", icon = FontAwesomeIcon.FILE_TEXT)
+            this@pane.chromify(root, wid = 17.5, title = baseComponentTitle ?: "Answer", icon = FontAwesomeIcon.FILE_PDF_ALT)
         })
         vbox(54.0) {
             resizeRelocate(1340.0, 400.0, 520.0, 400.0)
@@ -117,8 +117,8 @@ class StarshipView : Fragment("Starship") {
                 val star = FontAwesomeIcon.STAR
                 val size = (5..20).random()
                 add(BlinkingIndicator(star).apply {
-                    layoutX = (size..(1920 - size).toInt()).random().toDouble()
-                    layoutY = (size..(1080 - size).toInt()).random().toDouble() + size
+                    layoutX = (size..(screenWidth - size).toInt()).random().toDouble()
+                    layoutY = (size..(screenHeight - size).toInt()).random().toDouble() + size
                     opacity = (5..30).random().toDouble() / 100
                     glyphSize = size
                     glyphStyle = "-fx-fill:gray;"
@@ -177,10 +177,10 @@ internal object Chromify {
             }
             if (icon != null) {
                 val iconView = icon.graphic.apply {
-                    glyphSize = wid
+                    glyphSize = 0.9 * wid
                     glyphStyle = "-fx-fill: #333;"
                 }
-                iconView.layoutXProperty().bind(circ.centerXProperty() - iconView.layoutBounds.width/2)
+                iconView.layoutXProperty().bind(circ.centerXProperty() - iconView.layoutBounds.width/2 - 1)
                 iconView.layoutYProperty().bind(circ.centerYProperty() + iconView.layoutBounds.height/3.5)
                 children.add(iconView)
             }
