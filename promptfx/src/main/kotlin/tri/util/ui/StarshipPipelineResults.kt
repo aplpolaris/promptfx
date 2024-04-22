@@ -21,7 +21,7 @@ class StarshipPipelineResults {
     /** Secondary run configs for additional prompts based on the first output. */
     val secondaryRunConfigs = observableListOf<AiPromptRunConfig>()
     /** Secondary outputs from additional prompts. */
-    val secondaryOutputs = observableListOf<AiPromptTrace>()
+    val secondaryOutputs = observableListOf<StarshipInterimResult>()
 
     /** Thumbnails associated with output. */
     val thumbnails = observableListOf<DocumentThumbnail>()

@@ -102,11 +102,13 @@ traffic-api-request: |
   }
   ```
 
-translate-text: |
-  Translate this text to {{instruct}}:
-  ```
-  {{{input}}}
-  ```
+translate-text:
+  template-name: Translate
+  template-prompt: |
+    Translate this text to {{instruct}}:
+    ```
+    {{{input}}}
+    ```
 
 weather-api-request: |
   Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
@@ -310,11 +312,13 @@ snippet-joiner-citations: |
 # keywords:
 #   {{{input}}} - text to process
 
-document-map-summarize: |
-  Provide a one-line summary of this text.
-  ```
-  {{{input}}}
-  ```
+document-map-summarize:
+  template-name: Summarize
+  template-prompt: |
+    Provide a one-line summary of this text.
+    ```
+    {{{input}}}
+    ```
 
 document-map-math-terms: |
   Generate a JSON list of mathematical concepts in the following text. If there are no mathematical terms, provide an empty list.
@@ -326,18 +330,22 @@ document-map-math-terms: |
   
   Concepts:
 
-document-map-simplify: |
-  Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms, appropriate for
-  an elementary school student.
-  ```
-  {{{input}}}
-  ```
+document-map-simplify:
+  template-name: Simplify text
+  template-prompt: |
+    Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms, appropriate for
+    an elementary school student.
+    ```
+    {{{input}}}
+    ```
 
-document-reduce-summarize: |
-  Combine the following summaries into an outline.
-  ```
-  {{{input}}}
-  ```
+document-reduce-summarize:
+  template-name: Outline text
+  template-prompt: | 
+    Combine the following summaries into an outline.
+    ```
+    {{{input}}}
+    ```
 
 document-reduce-author: |
   Use the following summaries to generate a profile of the author of these texts.

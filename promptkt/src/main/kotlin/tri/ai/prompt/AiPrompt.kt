@@ -19,9 +19,9 @@
  */
 package tri.ai.prompt
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonValue
 import com.github.mustachejava.DefaultMustacheFactory
 import tri.util.fine
 import java.io.StringReader
@@ -30,7 +30,7 @@ import java.time.LocalDate
 
 /** A prompt template that can be filled in with user input. */
 class AiPrompt @JsonCreator constructor(
-    @JsonProperty("prompt-template") var template: String = "",
+    @JsonProperty("prompt-template") @JsonAlias("template-prompt") var template: String = "",
     @JsonProperty("template-description") var templateDescription: String = "",
     @JsonProperty("template-name") var templateName: String = ""
 ) {

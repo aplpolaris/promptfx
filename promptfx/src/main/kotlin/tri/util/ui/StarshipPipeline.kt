@@ -4,7 +4,6 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
-import tri.ai.pips.IgnoreMonitor
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.INPUT
 import tri.ai.prompt.AiPromptLibrary
@@ -30,9 +29,7 @@ object StarshipPipeline {
         )
         results.runConfig.set(runConfig)
 
-        val firstResponse = runBlocking {
-            config.promptExec.exec(runConfig.promptInfo.filled())
-        }
+        val firstResponse = runBlocking { config.promptExec.exec(config.primaryPrompt, runConfig.promptInfo.filled()) }
         results.output.set(firstResponse)
 
         config.secondaryPrompts.forEach {
@@ -44,13 +41,10 @@ object StarshipPipeline {
             results.secondaryRunConfigs.add(secondRunConfig)
         }
 
-        results.secondaryRunConfigs.forEach {
-            val secondResponse = runBlocking {
-                it.task("").execute(mapOf(), IgnoreMonitor).value
-            }!!
-            runLater {
-                results.secondaryOutputs.add(secondResponse)
-            }
+        results.secondaryRunConfigs.forEachIndexed { i, cfg ->
+            val prompt = config.secondaryPrompts[i]
+            val secondResponse = runBlocking { config.secondaryPromptExec.exec(prompt, cfg.promptInfo.filled()) }
+            runLater { results.secondaryOutputs.add(secondResponse) }
         }
 
         results.completed.set(true)
@@ -60,11 +54,11 @@ object StarshipPipeline {
 
 /** Executes a prompt, returning a string and optional image. */
 interface AiPromptExecutor {
-    suspend fun exec(input: String): StarshipInterimResult
+    suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult
 }
 
 /** Result object for [StarshipPipeline]. */
-class StarshipInterimResult(val text: FormattedText, val image: Image?, val docs: List<DocumentThumbnail>) {
+class StarshipInterimResult(val label: String, val text: FormattedText, val image: Image?, val docs: List<DocumentThumbnail>) {
     val rawText
         get() = text.toString()
 }
@@ -77,18 +71,20 @@ class StarshipPipelineConfig(val completion: TextCompletion) {
     val primaryPrompt = PromptWithParams("document-map-summarize")
     /** Executor for primary prompt. */
     var promptExec: AiPromptExecutor = object : AiPromptExecutor {
-        override suspend fun exec(input: String): StarshipInterimResult {
-            val filledPrompt = primaryPrompt.fill(input)
+        override suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult {
+            val filledPrompt = prompt.fill(input)
             val response = completion.complete(filledPrompt)
-            return StarshipInterimResult(FormattedText(response.value!!), null, listOf())
+            return StarshipInterimResult(prompt.prompt.templateName, FormattedText(response.value!!), null, listOf())
         }
     }
     /** Secondary prompt executors. */
     val secondaryPrompts: List<PromptWithParams> = listOf(
-        PromptWithParams("document-reduce-summarize"),
         PromptWithParams("document-map-simplify"),
-        PromptWithParams("translate-text", mapOf("instruct" to "German"))
+        PromptWithParams("document-reduce-summarize"),
+        PromptWithParams("translate-text", mapOf("instruct" to "a random language"))
     )
+    /** Executor for secondary prompts. */
+    var secondaryPromptExec: AiPromptExecutor = promptExec
 }
 
 /** Groups a prompt with associated parameters. */
@@ -100,7 +96,10 @@ class PromptWithParams(val prompt: AiPrompt, val params: Map<String, Any> = mapO
 }
 
 private suspend fun testRandomQuestion(): String {
-    val prompt = "Generate a random question about LLM and NLP architectures. The question should be no more than 10 words. Example: " +
-            "\"What is the difference between LLM and GPT-3?\""
+    val prompt = """
+        Generate a random question about LLMs. The question should be 10-20 words.
+        Sample topics include LLMs, LSTMs, NLP, GPT3, memory, hallucination, transformers, summarization, and retrieval-augmented generation.
+        Example: "What is the difference between LLM and GPT-3?"
+    """.trimIndent()
     return PromptFxModels.textCompletionModelDefault().complete(prompt).value!!
 }

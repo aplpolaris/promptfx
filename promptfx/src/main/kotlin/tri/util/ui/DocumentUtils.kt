@@ -35,14 +35,13 @@ import kotlin.collections.set
 object DocumentUtils {
 
     private val thumbnailCache = mutableMapOf<String, Image>()
-
     private const val DOC_THUMBNAIL_SIZE = 240
 
     /**
      * Generate a thumbnail for the document if it doesn't exist.
      * TODO - this may take a while, so make it a delayed event
      */
-    fun documentThumbnail(doc: BrowsableSource): Image? {
+    fun documentThumbnail(doc: BrowsableSource, size: Int = DOC_THUMBNAIL_SIZE): Image? {
         if (doc.path in thumbnailCache)
             return thumbnailCache[doc.path]
 
@@ -57,7 +56,7 @@ object DocumentUtils {
                 null
             }
         } ?: return null
-        val thumb = pdfThumbnail(pdfFile, DOC_THUMBNAIL_SIZE)
+        val thumb = pdfThumbnail(pdfFile, size)
         if (thumb != null)
             thumbnailCache[doc.path] = thumb
 
