@@ -320,6 +320,15 @@ document-map-summarize:
     {{{input}}}
     ```
 
+document-map-simplify:
+  template-name: Simplify
+  template-prompt: |
+    Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms with no jargon,
+    appropriate for an elementary school student.
+    ```
+    {{{input}}}
+    ```
+
 document-map-math-terms: |
   Generate a JSON list of mathematical concepts in the following text. If there are no mathematical terms, provide an empty list.
 
@@ -330,17 +339,14 @@ document-map-math-terms: |
   
   Concepts:
 
-document-map-simplify:
-  template-name: Simplify text
-  template-prompt: |
-    Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms, appropriate for
-    an elementary school student.
-    ```
-    {{{input}}}
-    ```
+document-reduce-summarize: |
+  Create a summary of the following text:
+  ```
+  {{{input}}}
+  ```
 
-document-reduce-summarize:
-  template-name: Outline text
+document-reduce-outline:
+  template-name: Outline
   template-prompt: | 
     Combine the following summaries into an outline.
     ```
@@ -358,3 +364,17 @@ document-reduce-math-terms: |
   ```
   {{{input}}}
   ```
+
+document-reduce-technical-terms:
+  template-name: Technical Terms
+  template-prompt: |
+    Extract technical terms and tools from the input text into a bulleted list. Group terms that are synonyms.
+    Sample output:
+    ```
+    - Term 1: describe it
+    - Term 2: describe it
+    ```
+    Input:
+    ```
+    {{{input}}}
+    ```

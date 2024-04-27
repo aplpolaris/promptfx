@@ -86,6 +86,7 @@ module tri.promptfx {
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
+    opens tri.util.ui.starship to com.fasterxml.jackson.databind;
 
     exports tri.promptfx;
     exports tri.promptfx.api;
@@ -97,6 +98,7 @@ module tri.promptfx {
     exports tri.promptfx.ui;
     exports tri.util.ui;
     exports tri.util.ui.pdf;
+    exports tri.util.ui.starship;
 
     // services (service loader API)
     uses TextPlugin;

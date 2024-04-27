@@ -4,6 +4,7 @@ memory.json
 embeddings.json
 embeddings.yaml
 memory.json
+starship-custom.yaml
 
 conf/
 target/

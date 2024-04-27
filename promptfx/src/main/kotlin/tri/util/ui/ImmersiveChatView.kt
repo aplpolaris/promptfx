@@ -56,6 +56,8 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val controller: PromptFxController by inject()
     val input = SimpleStringProperty("")
 
+    private val DOC_THUMBNAIL_SIZE = 240
+
     private lateinit var inputField: TextField
     private lateinit var output: AnimatingTextFlow
     private lateinit var thumbnails: AnimatingThumbnailBox
@@ -67,7 +69,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
                 val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
-                    .map { DocumentThumbnail(it, documentThumbnail(it)) }
+                    .map { DocumentThumbnail(it, documentThumbnail(it, DOC_THUMBNAIL_SIZE, false)) }
                 thumbnails.animateThumbs(thumbs)
             }
         }

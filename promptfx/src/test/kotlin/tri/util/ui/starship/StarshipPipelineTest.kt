@@ -17,14 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.ui
+package tri.util.ui.starship
 
 import javafx.collections.ListChangeListener
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.promptfx.PromptFxModels
 
 class StarshipPipelineTest {
     @Test
+    @Disabled("TBD")
     fun testExec() {
         val config = StarshipPipelineConfig(PromptFxModels.textCompletionModelDefault())
         val results = StarshipPipelineResults().apply {

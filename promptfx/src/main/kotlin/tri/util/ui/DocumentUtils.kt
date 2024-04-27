@@ -22,7 +22,6 @@ package tri.util.ui
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import org.apache.pdfbox.Loader
-import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.process.LocalFileManager.PDF
@@ -34,16 +33,16 @@ import kotlin.collections.set
 /** A cache of document thumbnails. */
 object DocumentUtils {
 
-    private val thumbnailCache = mutableMapOf<String, Image>()
+    private val thumbnailCache = mutableMapOf<Pair<String, Int>, Image>()
     private const val DOC_THUMBNAIL_SIZE = 240
 
     /**
      * Generate a thumbnail for the document if it doesn't exist.
      * TODO - this may take a while, so make it a delayed event
      */
-    fun documentThumbnail(doc: BrowsableSource, size: Int = DOC_THUMBNAIL_SIZE): Image? {
-        if (doc.path in thumbnailCache)
-            return thumbnailCache[doc.path]
+    fun documentThumbnail(doc: BrowsableSource, size: Int = DOC_THUMBNAIL_SIZE, isFixWidth: Boolean = false): Image? {
+        if (doc.path to size in thumbnailCache)
+            return thumbnailCache[doc.path to size]
 
         val pdfFile = doc.uri.let {
             try {
@@ -56,14 +55,14 @@ object DocumentUtils {
                 null
             }
         } ?: return null
-        val thumb = pdfThumbnail(pdfFile, size)
+        val thumb = pdfThumbnail(pdfFile, size, isFixWidth)
         if (thumb != null)
-            thumbnailCache[doc.path] = thumb
+            thumbnailCache[doc.path to size] = thumb
 
         return thumb
     }
 
-    private fun pdfThumbnail(file: File, thumbnailSize: Int): Image? {
+    private fun pdfThumbnail(file: File, thumbnailSize: Int, isFixWidth: Boolean): Image? {
         if (!file.exists() || file.extension != "pdf") {
             return null
         }
@@ -73,8 +72,18 @@ object DocumentUtils {
         document.close()
         // scale it to thumbnail size but preserve aspect ratio
         val aspect = image.width.toDouble() / image.height.toDouble()
-        val width = if (aspect > 1) thumbnailSize else (thumbnailSize * aspect).toInt()
-        val height = if (aspect > 1) (thumbnailSize / aspect).toInt() else thumbnailSize
+
+        val width = when {
+            isFixWidth -> thumbnailSize
+            aspect > 1 -> thumbnailSize
+            else -> (thumbnailSize * aspect).toInt()
+        }
+        val height = when {
+            isFixWidth -> (thumbnailSize / aspect).toInt()
+            aspect > 1 -> (thumbnailSize / aspect).toInt()
+            else -> thumbnailSize
+        }
+
         val scaledImage = image.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH)
         val bufferedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         bufferedImage.createGraphics().drawImage(scaledImage, 0, 0, null)

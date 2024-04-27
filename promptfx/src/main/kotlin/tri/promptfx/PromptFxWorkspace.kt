@@ -31,6 +31,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.api.*
 import tri.promptfx.tools.PromptTemplateView
 import tri.util.ui.*
+import tri.util.ui.starship.StarshipView
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
@@ -186,10 +187,11 @@ class PromptFxWorkspace : Workspace() {
     private fun enterStarshipMode() {
         val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
             ?: Screen.getPrimary()
-        find<StarshipView>(params = mapOf(
+        val view = find<StarshipView>(params = mapOf(
             "baseComponentTitle" to dockedComponent?.title,
             "baseComponent" to dockedComponent
-        )).openWindow(
+        ))
+        view.openWindow(
             StageStyle.UNDECORATED
         )!!.apply {
             x = curScreen.bounds.minX
@@ -198,6 +200,7 @@ class PromptFxWorkspace : Workspace() {
             height = curScreen.bounds.height
             isMaximized = true
             scene.root.style = "-fx-base:black"
+            setOnHiding { view.cancelPipeline() }
         }
     }
 
