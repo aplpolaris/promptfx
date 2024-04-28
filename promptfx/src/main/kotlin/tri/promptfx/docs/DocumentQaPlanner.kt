@@ -33,7 +33,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.EmbeddingPrecision
+import tri.ai.embedding.EmbeddingPrecision
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.ai.text.chunks.process.LocalFileManager.textCacheFile

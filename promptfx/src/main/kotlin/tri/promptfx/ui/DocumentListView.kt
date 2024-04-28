@@ -34,6 +34,7 @@ import tri.util.ui.DocumentUtils
  * Clicking on the document name will open the document in a viewer.
  */
 class DocumentListView(docs: ObservableList<BrowsableSource>, hostServices: HostServices) : Fragment("Document List") {
+    private val DOC_THUMBNAIL_SIZE = 240
     override val root = listview(docs) {
         vgrow = Priority.ALWAYS
         cellFormat {

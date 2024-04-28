@@ -85,3 +85,24 @@ extract-date: |
 extract-topic: |
   Input: {{{input}}}
   Topic: 
+
+# simplify text for a given audience
+text-simplify-audience:
+  template-name: Simplify
+  template-prompt: |
+    Simplify the following text into 1-2 short sentences explaining the main idea.
+    Write it for {{audience}}.
+    For younger audiences, keep it short with minimal jargon. For more technical audiences, use precise technical terminology.
+    ```
+    {{{input}}}
+    ```
+
+# convert input into a Bluey episode
+document-reduce-bluey-episode:
+  template-name: Bluey Episode
+  template-prompt: |
+    Combine the following summaries into an outline of a script for a Bluey episode.
+    Provide three main scenes, and for each scene include a brief description of the setting and the main events.
+    ```
+    {{{input}}}
+    ```

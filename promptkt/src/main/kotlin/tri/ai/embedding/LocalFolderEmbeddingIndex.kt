@@ -25,8 +25,8 @@ import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.listFilesWithTextContent
 import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
+import tri.ai.text.chunks.process.TextDocEmbeddings.chunkedEmbedding
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 import tri.util.loggerFor
 import java.io.File
 import java.net.URI

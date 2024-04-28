@@ -31,10 +31,12 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.api.*
 import tri.promptfx.tools.PromptTemplateView
 import tri.util.ui.*
+import tri.util.ui.starship.StarshipView
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
 
+    val promptFxConfig : PromptFxConfig by inject()
     val views = mutableMapOf<String, Class<out UIComponent>>()
     var immersiveChatView: ImmersiveChatView? = null
 
@@ -55,6 +57,11 @@ class PromptFxWorkspace : Workspace() {
         }
         button(graphic = FontAwesomeIcon.SLIDESHARE.graphic).action {
             enterFullScreenMode()
+        }
+        if (promptFxConfig.isStarshipEnabled) {
+            button(graphic = FontAwesomeIcon.ROCKET.graphic).action {
+                enterStarshipMode()
+            }
         }
         root.bottom {
             add(find<AiProgressView>())
@@ -157,6 +164,8 @@ class PromptFxWorkspace : Workspace() {
 
     //endregion
 
+    //region FULL-SCREEN WINDOW
+
     private fun enterFullScreenMode() {
         val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
             ?: Screen.getPrimary()
@@ -177,6 +186,28 @@ class PromptFxWorkspace : Workspace() {
             onHidden = EventHandler { immersiveChatView = null }
         }
     }
+
+    private fun enterStarshipMode() {
+        val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
+            ?: Screen.getPrimary()
+        val view = find<StarshipView>(params = mapOf(
+            "baseComponentTitle" to dockedComponent?.title,
+            "baseComponent" to dockedComponent
+        ))
+        view.openWindow(
+            StageStyle.UNDECORATED
+        )!!.apply {
+            x = curScreen.bounds.minX
+            y = curScreen.bounds.minY
+            width = curScreen.bounds.width
+            height = curScreen.bounds.height
+            isMaximized = true
+            scene.root.style = "-fx-base:black"
+            setOnHiding { view.cancelPipeline() }
+        }
+    }
+
+    //endregion
 
     //region LAYOUT
 

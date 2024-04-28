@@ -31,6 +31,9 @@ class AiPromptRunConfig(
     val promptInfo: AiPromptInfo,
     val modelInfo: AiPromptModelInfo
 ) {
+    override fun toString() =
+        "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"
+
     /** Create task for executing a run config. */
     fun task(id: String) = object : AiTask<AiPromptTrace>(id) {
         override suspend fun execute(

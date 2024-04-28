@@ -102,11 +102,13 @@ traffic-api-request: |
   }
   ```
 
-translate-text: |
-  Translate this text to {{instruct}}:
-  ```
-  {{{input}}}
-  ```
+translate-text:
+  template-name: Translate
+  template-prompt: |
+    Translate this text to {{instruct}}:
+    ```
+    {{{input}}}
+    ```
 
 weather-api-request: |
   Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
@@ -310,11 +312,22 @@ snippet-joiner-citations: |
 # keywords:
 #   {{{input}}} - text to process
 
-document-map-summarize: |
-  Provide a one-line summary of this text.
-  ```
-  {{{input}}}
-  ```
+document-map-summarize:
+  template-name: Summarize
+  template-prompt: |
+    Provide a one-line summary of this text.
+    ```
+    {{{input}}}
+    ```
+
+document-map-simplify:
+  template-name: Simplify
+  template-prompt: |
+    Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms with no jargon,
+    appropriate for an elementary school student.
+    ```
+    {{{input}}}
+    ```
 
 document-map-math-terms: |
   Generate a JSON list of mathematical concepts in the following text. If there are no mathematical terms, provide an empty list.
@@ -327,10 +340,18 @@ document-map-math-terms: |
   Concepts:
 
 document-reduce-summarize: |
-  Combine the following summaries into an outline.
+  Create a summary of the following text:
   ```
   {{{input}}}
   ```
+
+document-reduce-outline:
+  template-name: Outline
+  template-prompt: | 
+    Combine the following summaries into an outline.
+    ```
+    {{{input}}}
+    ```
 
 document-reduce-author: |
   Use the following summaries to generate a profile of the author of these texts.
@@ -343,3 +364,17 @@ document-reduce-math-terms: |
   ```
   {{{input}}}
   ```
+
+document-reduce-technical-terms:
+  template-name: Technical Terms
+  template-prompt: |
+    Extract technical terms and tools from the input text into a bulleted list. Group terms that are synonyms.
+    Sample output:
+    ```
+    - Term 1: describe it
+    - Term 2: describe it
+    ```
+    Input:
+    ```
+    {{{input}}}
+    ```

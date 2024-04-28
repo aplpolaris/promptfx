@@ -21,14 +21,18 @@ package tri.ai.embedding
 
 import kotlin.math.pow
 
-/** Compute cosine similarity of two vectors. */
-fun cosineSimilarity(resp1: List<Double>, resp2: List<Double>): Double {
-    val dotProduct = resp1.zip(resp2).sumOf { it.first * it.second }
-    val magnitude1 = resp1.sumOf { it * it }.pow(0.5)
-    val magnitude2 = resp2.sumOf { it * it }.pow(0.5)
-    return dotProduct / (magnitude1 * magnitude2)
-}
+/** Precision to use when storing embeddings. */
+enum class EmbeddingPrecision {
+    FULL {
+        override fun op(x: Double) = x
+    },
+    FIRST_FOUR {
+        override fun op(x: Double) = Math.round(x * 10.0.pow(4.0)) / 10.0.pow(4.0)
+    },
+    FIRST_EIGHT {
+        override fun op(x: Double) = Math.round(x * 10.0.pow(8.0)) / 10.0.pow(8.0)
+    };
 
-/** Compute dot product of two vectors. */
-fun List<Float>.dot(resp2: List<Float>) =
-    zip(resp2).sumOf { it.first * it.second.toDouble() }
+    /** Apply given transformation to an embedding value, e.g. to reduce storage requirements. */
+    abstract fun op(x: Double): Double
+}

@@ -34,5 +34,8 @@ class AiPromptTrace(
     /** Unique identifier for this trace. */
     var uuid = randomUUID().toString()
 
+    override fun toString() =
+        "AiPromptTrace(promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
+
 }
 

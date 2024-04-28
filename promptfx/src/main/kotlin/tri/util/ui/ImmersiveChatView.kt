@@ -20,27 +20,17 @@
 package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.animation.Timeline
-import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.collections.ListChangeListener
-import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.Node
-import javafx.scene.control.Hyperlink
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
-import javafx.scene.input.DataFormat
-import javafx.scene.text.Text
-import javafx.scene.text.TextFlow
 import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.text.chunks.BrowsableSource
-import tri.util.ui.DocumentUtils.documentThumbnail
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxDriver.sendInput
 import tri.promptfx.PromptFxModels
@@ -49,6 +39,7 @@ import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
+import tri.util.ui.DocumentUtils.documentThumbnail
 
 /** View for a full-screen chat display. */
 class ImmersiveChatView : Fragment("Immersive Chat") {
@@ -57,16 +48,19 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val baseComponent: View? by param()
     val inputFontSize = SimpleIntegerProperty(48)
 
-    val indicator = FontAwesomeIcon.ROCKET.graphic.also {
+    val indicator = BlinkingIndicator(FontAwesomeIcon.ROCKET).also {
         it.glyphSize = 60.0
         it.glyphStyle = "-fx-fill: white;"
     }
 
     val controller: PromptFxController by inject()
-    private val thumbnailList = observableListOf<DocumentThumbnail>()
     val input = SimpleStringProperty("")
+
+    private val DOC_THUMBNAIL_SIZE = 240
+
     private lateinit var inputField: TextField
-    val response = observableListOf<Node>()
+    private lateinit var output: AnimatingTextFlow
+    private lateinit var thumbnails: AnimatingThumbnailBox
 
     val css = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
 
@@ -75,24 +69,8 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
                 val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
-                    .associateWith { documentThumbnail(it) }
-                animateThumbs(thumbs)
-            }
-        }
-    }
-
-    private fun EventTarget.addPolicyBox() {
-        if (!PromptFxModels.policy.isShowBanner) return
-        label(PromptFxModels.policy.bar.text) {
-            padding = insets(0.0, 5.0, 0.0, 5.0)
-            alignment = Pos.CENTER
-            style {
-                fontSize = 24.px
-                fontWeight = javafx.scene.text.FontWeight.BOLD
-                fill = PromptFxModels.policy.bar.fgColorDark
-                backgroundColor += PromptFxModels.policy.bar.bgColorDark
-                borderRadius += box(10.px)
-                backgroundRadius += box(10.px)
+                    .map { DocumentThumbnail(it, documentThumbnail(it, DOC_THUMBNAIL_SIZE, false)) }
+                thumbnails.animateThumbs(thumbs)
             }
         }
     }
@@ -142,42 +120,23 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             }
         }
 
-        hbox {
-            prefHeight = 0.3 * screenHeight
-            alignment = Pos.CENTER
-            scrollpane {
-                id = "chat-response-scroll"
-                hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
-                vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
-                maxHeight = Screen.getPrimary().bounds.height / 2
-                hbox {
-                    textflow {
-                        id = "chat-response"
-                        response.onChange { updateTextFlow(it) }
-                        prefWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
-
-                        // add context menu to copy
-                        contextmenu {
-                            item("Copy output to clipboard") {
-                                action {
-                                    clipboard.setContent(mapOf(
-                                        DataFormat.PLAIN_TEXT to plainText()
-                                    ))
-                                }
-                            }
-                        }
-                    }
-                    vbox { prefWidth = 20.0 }
-                }
-            }
+        output = AnimatingTextFlow().apply {
+            root.prefHeight = 0.3 * screenHeight
+            root.alignment = Pos.CENTER
         }
+        add(output)
 
-        hbox {
+        val action: ((DocumentThumbnail) -> Unit)? = when (val view = baseComponent) {
+            is DocumentQaView ->
+                { doc -> browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
+            else -> null
+        }
+        thumbnails = AnimatingThumbnailBox(action).apply {
             alignment = Pos.CENTER
             prefHeight = 0.22 * screenHeight
             spacing = 40.0
-            children.bind(thumbnailList) { docthumbnail(it) }
         }
+        add(thumbnails)
 
         vbox {
             prefHeight = 0.02 * screenHeight
@@ -194,163 +153,38 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
 
     private fun handleUserAction(callback: (FormattedText) -> Unit) {
         runLater {
-            response.setAll()
-            blinkIndicator(start = true)
+            output.textNodes.setAll()
+            indicator.startBlinking()
         }
         runAsync {
             runBlocking {
                 (workspace as PromptFxWorkspace).sendInput(baseComponentTitle!!, input.value, callback)
             }
         } ui {
-            blinkIndicator(start = false)
+            indicator.stopBlinking()
             controller.updateUsage()
-            TextFlowAnimator.animateText(it.toFxNodes(), target = response, onFrame = {
-                (root.scene.lookup("#chat-response-scroll") as ScrollPane).vvalue = 1.0
-            }, onFinished = {
+            output.animateText(it.toFxNodes(), onFinished = {
                 (root.scene.lookup("#chat-input") as TextField).selectAll()
             })
         }
     }
 
     //endregion
-
-    //region ANIMATION AND LAYOUT
-
-    private fun TextFlow.updateTextFlow(change: ListChangeListener.Change<out Node>) {
-        children.clear()
-        children.addAll(change.list)
-        children.filterIsInstance<Text>().forEach {
-            it.styleClass += "chat-text-default"
-        }
-    }
-
-    private fun EventTarget.docthumbnail(doc: DocumentThumbnail) = vbox {
-        val action: (() -> Unit)? = when (val view = baseComponent) {
-            is DocumentQaView -> {
-                { browseToBestSnippet(doc.document, view.planner.lastResult, hostServices) }
-            }
-            else -> null
-        }
-        if (doc.image == null)
-            hyperlink(doc.document.shortName) {
-                style = "-fx-font-size: 16px;"
-                if (action != null) {
-                    action(action)
-                }
-            }
-        else
-            imageview(doc.image) {
-            opacity = 0.0
-            timeline {
-                keyframe(1.0.seconds) {
-                    keyvalue(scaleXProperty(), 1.1)
-                    keyvalue(scaleYProperty(), 1.1)
-                }
-                keyframe(2.0.seconds) {
-                    keyvalue(opacityProperty(), 1.0)
-                    keyvalue(scaleXProperty(), 1.0)
-                    keyvalue(scaleYProperty(), 1.0)
-                }
-            }
-            if (action != null) {
-                cursor = javafx.scene.Cursor.HAND
-                setOnMouseClicked { action() }
-            }
-        }
-    }
-
-    private fun animateThumbs(thumbs: Map<BrowsableSource, Image?>) {
-        thumbnailList.clear()
-        val entries = thumbs.entries.toList()
-        val n = SimpleIntegerProperty(-1).apply {
-            onChange { thumbnailList.add(DocumentThumbnail(entries[it].key, entries[it].value)) }
-        }
-        timeline {
-            keyframe(2.0.seconds) {
-                keyvalue(n, entries.size - 1)
-            }
-        }
-    }
-
-    private var indicatorTimeline: Timeline? = null
-
-    private fun blinkIndicator(start: Boolean) {
-        indicatorTimeline?.stop()
-        if (start) {
-            indicatorTimeline = timeline {
-                keyframe(0.5.seconds) {
-                    keyvalue(indicator.opacityProperty(), 0.1)
-                }
-                keyframe(1.0.seconds) {
-                    keyvalue(indicator.opacityProperty(), 1.0)
-                }
-                cycleCount = Timeline.INDEFINITE
-                setOnFinished {
-                    indicator.opacity = 1.0
-                }
-            }
-        }
-    }
-
-    //endregion
 }
 
-/** A document thumbnail object. */
-private class DocumentThumbnail(val document: BrowsableSource, val image: Image?)
-
-/** Animates a series of text and hyperlink objects within a [TextFlow]. */
-private object TextFlowAnimator {
-    fun animateText(sourceText: List<Node>, target: ObservableList<Node>, onFrame: () -> Unit, onFinished: () -> Unit) {
-        // calculate length of text in this node
-        fun Node.length() = (this as? Text)?.text?.length ?: (this as? Hyperlink)?.text?.length ?: 0
-
-        // get a subset of the nodes based on the number of characters
-        fun takeChars(n: Int): List<Node> {
-            var taken = 0
-            val result = mutableListOf<Node>()
-            for (node in sourceText) {
-                val length = node.length()
-                if (taken + length <= n) {
-                    result.add(node)
-                    taken += length
-                } else {
-                    when (node) {
-                        is Text -> result.add(
-                            Text(node.text.substring(0, n - taken)).apply {
-                                style = node.style
-                            }
-                        )
-                        is Hyperlink -> result.add(
-                            Hyperlink(node.text.substring(0, n - taken)).apply {
-                                style = node.style
-                                onAction = node.onAction
-                            }
-                        )
-                        else -> throw UnsupportedOperationException()
-                    }
-                    break
-                }
-            }
-            return result
-        }
-
-        val totalLength = sourceText.sumOf { it.length() }
-        val time = minOf(5.0, 0.05 * totalLength)
-        val chars = SimpleIntegerProperty(0).apply {
-            onChange {
-                target.setAll(takeChars(it))
-                onFrame()
-            }
-        }
-        timeline {
-            keyframe(time.seconds) {
-                keyvalue(chars, totalLength)
-            }
-            setOnFinished {
-                target.setAll(sourceText)
-                onFrame()
-                onFinished()
-            }
+/** Add a box associated with the global model access policy. */
+internal fun EventTarget.addPolicyBox() {
+    if (!PromptFxModels.policy.isShowBanner) return
+    label(PromptFxModels.policy.bar.text) {
+        padding = insets(0.0, 5.0, 0.0, 5.0)
+        alignment = Pos.CENTER
+        style {
+            fontSize = 24.px
+            fontWeight = javafx.scene.text.FontWeight.BOLD
+            fill = PromptFxModels.policy.bar.fgColorDark
+            backgroundColor += PromptFxModels.policy.bar.bgColorDark
+            borderRadius += box(10.px)
+            backgroundRadius += box(10.px)
         }
     }
 }
