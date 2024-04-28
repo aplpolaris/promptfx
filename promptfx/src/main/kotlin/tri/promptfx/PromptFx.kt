@@ -33,6 +33,9 @@ import kotlin.system.exitProcess
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     val promptFxConfig : PromptFxConfig by inject()
 
+    override fun init() {
+        promptFxConfig.isStarshipEnabled = parameters.raw.contains("starship")
+    }
     override fun onBeforeShow(view: UIComponent) {
         workspace.dock<DocumentQaView>()
     }

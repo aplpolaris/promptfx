@@ -36,6 +36,7 @@ import tri.util.ui.starship.StarshipView
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
 
+    val promptFxConfig : PromptFxConfig by inject()
     val views = mutableMapOf<String, Class<out UIComponent>>()
     var immersiveChatView: ImmersiveChatView? = null
 
@@ -57,8 +58,10 @@ class PromptFxWorkspace : Workspace() {
         button(graphic = FontAwesomeIcon.SLIDESHARE.graphic).action {
             enterFullScreenMode()
         }
-        button(graphic = FontAwesomeIcon.ROCKET.graphic).action {
-            enterStarshipMode()
+        if (promptFxConfig.isStarshipEnabled) {
+            button(graphic = FontAwesomeIcon.ROCKET.graphic).action {
+                enterStarshipMode()
+            }
         }
         root.bottom {
             add(find<AiProgressView>())

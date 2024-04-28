@@ -33,6 +33,9 @@ import java.net.URISyntaxException
  */
 class PromptFxConfig: Component(), ScopedInstance {
 
+    /** Whether starship button is enabled. */
+    var isStarshipEnabled: Boolean = false
+
     /** Management of local file/folder directory selections. */
     private val directories by lazy {
         mutableMapOf<String, File>().apply {
