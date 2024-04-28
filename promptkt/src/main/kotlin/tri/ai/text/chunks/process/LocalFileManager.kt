@@ -20,17 +20,13 @@
 package tri.ai.text.chunks.process
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.File
 import java.io.FileFilter
-import java.lang.runtime.ObjectMethods
 import java.net.URI
-import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * Handles local files, including extraction of text from various formats, catching of text in associated ".txt" files,
