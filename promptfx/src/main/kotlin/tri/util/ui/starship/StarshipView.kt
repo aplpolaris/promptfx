@@ -80,7 +80,8 @@ class StarshipView : Fragment("Starship") {
     private val DOC_THUMBNAIL_SIZE = 193
     private var isExplainerVisible = false
 
-    val css = StarshipView::class.java.getResource("resources/starship.css")!!
+    private val css1 = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
+    private val css2 = StarshipView::class.java.getResource("resources/starship.css")!!
 
     init {
         if (baseComponent is DocumentQaView) {
@@ -94,7 +95,8 @@ class StarshipView : Fragment("Starship") {
     }
 
     override val root = pane {
-        stylesheets.add(css.toExternalForm())
+        stylesheets.add(css1.toExternalForm())
+        stylesheets.add(css2.toExternalForm())
 
         val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
             ?: Screen.getPrimary()

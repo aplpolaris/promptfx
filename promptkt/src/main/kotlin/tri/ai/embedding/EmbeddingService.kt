@@ -20,7 +20,6 @@
 package tri.ai.embedding
 
 import tri.ai.text.chunks.TextChunk
-import tri.ai.text.chunks.process.EmbeddingPrecision
 
 /**
  * An interface for chunking text and calculating embeddings.

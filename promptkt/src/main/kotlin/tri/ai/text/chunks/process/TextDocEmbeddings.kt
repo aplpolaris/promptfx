@@ -21,10 +21,12 @@ package tri.ai.text.chunks.process
  */
 
 import kotlinx.coroutines.runBlocking
+import tri.ai.embedding.EmbeddingPrecision
 import tri.ai.embedding.EmbeddingService
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
-import kotlin.math.pow
+import tri.util.info
+import java.net.URI
 
 /**
  * Utilities for adding embedding information to [TextDoc]s.
@@ -62,6 +64,17 @@ object TextDocEmbeddings {
     fun TextChunk.getEmbeddingInfo(modelId: String): List<Double>? =
         (attributes["embeddings"] as? EmbeddingInfo)?.get(modelId)
 
+    /** Chunks a text into sections and calculates the embedding for each section. */
+    suspend fun EmbeddingService.chunkedEmbedding(path: URI, text: String, maxChunkSize: Int): TextDoc {
+        info<TextDocEmbeddings>("Calculating embeddings for $path...")
+        val doc = TextDoc(path.toString(), text).apply {
+            metadata.path = path
+        }
+        doc.chunks.addAll(chunkTextBySections(text, maxChunkSize))
+        doc.calculateMissingEmbeddings(this)
+        return doc
+    }
+
     /** Calculates embedding info for all chunks in a document where it is missing. */
     suspend fun TextDoc.calculateMissingEmbeddings(embeddingService: EmbeddingService) {
         val id = embeddingService.modelId
@@ -78,18 +91,3 @@ object TextDocEmbeddings {
 }
 
 typealias EmbeddingInfo = MutableMap<String, List<Double>>
-
-enum class EmbeddingPrecision {
-    FULL {
-        override fun op(x: Double) = x
-    },
-    FIRST_FOUR {
-        override fun op(x: Double) = Math.round(x * 10.0.pow(4.0)) / 10.0.pow(4.0)
-    },
-    FIRST_EIGHT {
-        override fun op(x: Double) = Math.round(x * 10.0.pow(8.0)) / 10.0.pow(8.0)
-    };
-
-    /** Apply given transformation to an embedding value, e.g. to reduce storage requirements. */
-    abstract fun op(x: Double): Double
-}
