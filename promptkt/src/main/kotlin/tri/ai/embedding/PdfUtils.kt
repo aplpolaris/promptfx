@@ -22,6 +22,9 @@ package tri.ai.embedding
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /** Extract text from PDF. */
 fun pdfText(file: File): String {
@@ -35,6 +38,23 @@ fun pdfText(file: File): String {
         }
     }
     return pageText.entries.joinToString("\n\n\n") { it.value }
+}
+
+/** Extract metadata from PDF. */
+fun pdfMetadata(file: File) = Loader.loadPDF(file).use {
+    it.documentInformation.let {
+        mapOf(
+            "pdf.title" to it.title,
+            "pdf.author" to it.author,
+            "pdf.subject" to it.subject,
+            "pdf.keywords" to it.keywords,
+            "pdf.creator" to it.creator,
+            "pdf.producer" to it.producer,
+            "pdf.creationDate" to LocalDateTime.ofInstant(it.creationDate.toInstant(), ZoneId.systemDefault()),
+            "pdf.modificationDate" to LocalDateTime.ofInstant(it.modificationDate.toInstant(), ZoneId.systemDefault()),
+            "file.modificationDate" to LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), ZoneId.systemDefault())
+        )
+    }
 }
 
 /**
