@@ -260,12 +260,13 @@ question-answer-docs-basic-vicuna: |
 
 text-joiner-basic: |
   {{#matches}}
+  {{#prefix}}({{prefix}}){{/prefix}}
   {{{text}}}  
   {{/matches}}
 
 text-joiner-bullets: |
-  {{#matches}}
-  - {{{text}}}  
+  {{#matches}} 
+  - {{#prefix}}({{prefix}}) {{/prefix}}{{{text}}}  
   {{/matches}}
   
 
@@ -276,12 +277,15 @@ text-joiner-bullets: |
 # prefix: snippet-joiner-*
 # keywords:
 #   {{matches}} - list of snippets
-#   {{name}} - name of snippet
-#   {{{text}}} - text of snippet
+#     {{prefix}} - prefix appended before text (e.g. to describe particular content of a document in more detail)
+#     {{number}} - number of match (starting at 1)
+#     {{name}} - name of snippet in match
+#     {{{text}}} - text of snippet in match
 
 snippet-joiner-basic: |
   {{#matches}}
   Document: {{name}}
+  {{#prefix}}Description: {{prefix}}{{/prefix}}
   Relevant Text: {{{text}}}
   
   {{/matches}}
@@ -290,12 +294,14 @@ snippet-joiner-numbered: |
   {{#matches}}
   - ""{{{text}}}""
     [{{number}}] {{name}}
+    {{#prefix}}({{prefix}}){{/prefix}}
   
   {{/matches}}
 
 snippet-joiner-citations: |
   {{#matches}}
   [[Citation {{number}}]] {{name}}
+  {{#prefix}}{{prefix}}{{/prefix}}
   """
   {{{text}}}
   """
