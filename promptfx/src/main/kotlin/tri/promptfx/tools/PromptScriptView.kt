@@ -64,6 +64,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
 
     // pre-processing
     private val filter = SimpleStringProperty("")
+    private val filterTypeText = filter.stringBinding {
+        when {
+            it.isNullOrBlank() -> "None"
+            "{{input}}" in it -> "LLM Filter"
+            else -> "Regex Match"
+        }
+    }
 
     // batch processing
     private val chunkLimit = SimpleIntegerProperty(10)
@@ -158,6 +165,17 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                     vbox(5) {
                         hbox(5, Pos.CENTER_LEFT) {
                             text("Filter:")
+                            spacer()
+                            text(filterTypeText) {
+                                style {
+                                    fontStyle = javafx.scene.text.FontPosture.ITALIC
+                                }
+                            }
+                            button("", FontAwesomeIcon.FILTER.graphic) {
+                                disableWhen { filterTypeText.isEqualTo("None") }
+                                tooltip("Apply filter")
+                                action { runLater { inputChunks.setAll(inputs().chunks) } }
+                            }
                         }
                         textarea(filter) {
                             promptText =
@@ -258,11 +276,14 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
 
     /** Get the first chunk (if has header) and the rest of the chunks. */
     private fun inputs(): PromptScriptInput {
+        val filter = filter()
         if (inputLibrary.value != null) {
             val chunks = inputLibrary.value!!.docs.flatMap {
                 doc -> doc.chunks.map { it.asTextChunkViewModel(doc, embeddingService.modelId) }
-            }.take(chunkLimit.value)
-            return PromptScriptInput(null, chunks)
+            }.asSequence()
+                .filter { filter(it.text) }
+                .take(chunkLimit.value)
+            return PromptScriptInput(null, chunks.toList())
         } else {
             var splitChar = chunkBy.value
             splitChar = if (splitChar.isEmpty())
@@ -271,7 +292,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 splitChar.replace("\\n", "\n").replace("\\t", "\t")
             val split = inputText.value.split(splitChar).map { TextChunkRaw(it) }
             val header = if (csvHeader.value) split.first().text else null
-            val filter = filter()
             val chunks = split.asSequence()
                 .filter { filter(it.text) }
                 .drop(if (csvHeader.value) 1 else 0)
