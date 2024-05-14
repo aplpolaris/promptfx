@@ -70,7 +70,9 @@ object OpenAiModels {
     fun embeddingModels() = lookupModels(MODELS.embeddings, RUNTIME_MODELS.embeddings).map { it.id }
     fun audioModels() = lookupModels(MODELS.audio, RUNTIME_MODELS.audio).map { it.id }
     fun ttsModels() = lookupModels(MODELS.tts, RUNTIME_MODELS.tts).map { it.id }
-    fun visionModels() = lookupModels(MODELS.vision, RUNTIME_MODELS.vision).map { it.id }
+    fun imageGeneratorModels() = lookupModels(MODELS.image_generator, RUNTIME_MODELS.image_generator).map { it.id }
+    fun visionLanguageModels() = lookupModels(MODELS.vision_language, RUNTIME_MODELS.vision_language).map { it.id }
+
 
     /**
      * Get list of models from two lists.
@@ -92,12 +94,11 @@ class OpenAiModelLibrary {
     var audio = listOf<String>()
     var chat = listOf<String>()
     var completion = listOf<String>()
-    var edits = listOf<String>()
     var embeddings = listOf<String>()
+    var image_generator = listOf<String>()
     var moderation = listOf<String>()
-    var multimodal = listOf<String>()
     var tts = listOf<String>()
-    var vision = listOf<String>()
+    var vision_language = listOf<String>()
 }
 
 /** Configurable info about a model. */
@@ -107,11 +108,12 @@ data class OpenAiModelInfo(
     val description: String? = null,
     val type: String,
     val context_tokens: Int? = null,
+    val output_dimension: Int? = null,
     val deprecation: String? = null,
     val snapshots: List<String> = listOf(),
 ) {
     fun createSnapshots() = snapshots.map {
-        OpenAiModelInfo("$id-$it", "$name ($it)", description, type, context_tokens, deprecation)
+        OpenAiModelInfo("$id-$it", "$name ($it)", description, type, context_tokens, output_dimension, deprecation)
     }
 
     internal fun ids(includeSnapshots: Boolean) = if (includeSnapshots) listOf(id) + snapshots.map { "$id-$it" } else listOf(id)

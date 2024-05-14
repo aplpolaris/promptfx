@@ -89,7 +89,7 @@ class TextChunkerWizardModel: ViewModel() {
     var chunkMethodSelection: ObjectProperty<String> = SimpleObjectProperty(TextChunkerWizardMethod.CHUNK_AUTO)
     val isCleanUpWhiteSpace = SimpleBooleanProperty(true)
     val isChunkAutomatic = chunkMethodSelection.isEqualTo(TextChunkerWizardMethod.CHUNK_AUTO)!!
-    private val maxChunkSize = SimpleObjectProperty(1000)
+    internal val maxChunkSize = SimpleObjectProperty(1000)
     internal val isChunkDelimiter = chunkMethodSelection.isEqualTo(TextChunkerWizardMethod.CHUNK_BY_DELIMITER)
     internal val chunkDelimiter = SimpleStringProperty("\n")
     internal val isChunkRegex = chunkMethodSelection.isEqualTo(TextChunkerWizardMethod.CHUNK_BY_REGEX)

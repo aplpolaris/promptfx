@@ -106,7 +106,7 @@ class ToolListView : Fragment() {
         try {
             val params = it.parameters.ifNotBlank { Parameters.fromJsonString(it) }
                 ?: Parameters.Empty
-            Tool(it.toolType, it.description, FunctionTool(it.name, params))
+            Tool.function(it.name, it.description, params)
         } catch (x: SerializationException) {
             println(x)
             null

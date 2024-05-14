@@ -22,6 +22,8 @@ package tri.promptfx.api
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.image.ImageSize
+import com.aallam.openai.api.image.Quality
+import com.aallam.openai.api.image.Style
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
@@ -74,11 +76,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             when (it) {
                 DALLE3_ID -> {
                     numProperty.set(1)
-                    imageQualities.setAll(STANDARD, HD)
+                    imageQualities.setAll(STANDARD_QUALITY, Quality.HD)
                 }
                 DALLE2_ID -> {
-                    imageQualities.setAll(STANDARD)
-                    quality.set(STANDARD)
+                    imageQualities.setAll(STANDARD_QUALITY)
+                    quality.set(STANDARD_QUALITY)
                 }
                 else ->
                     throw UnsupportedOperationException("Unsupported model: $it")
@@ -88,16 +90,18 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Available sizes based on model */
     private val imageSizes: ObservableList<ImageSize> = observableListOf(IMAGE_SIZES[model.value] ?: listOf())
     /** Available quality values based on model */
-    private val imageQualities: ObservableList<String> = observableListOf(STANDARD)
+    private val imageQualities = observableListOf(STANDARD_QUALITY, Quality.HD)
+    /** Available styles based on model */
+    private val imageStyles = observableListOf(Style.Vivid, Style.Natural)
 
     /** Number of images to generate */
     private val numProperty = SimpleIntegerProperty(1)
     /** Image size */
     private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
     /** Image quality */
-    private val quality = SimpleStringProperty(STANDARD)
+    private val quality = SimpleObjectProperty(STANDARD_QUALITY)
     /** Image style */
-    private val imageStyle = SimpleStringProperty(VIVID)
+    private val imageStyle = SimpleObjectProperty(Style.Vivid)
 
     /** Grid thumbnail size */
     private val thumbnailSize = SimpleDoubleProperty(128.0)
@@ -165,16 +169,12 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 }
             }
             field("Quality") {
-                tooltip("Not yet supported by API")
-                isDisable = true // TODO - enable when API supports this
-//                enableWhen { model.isEqualTo(DALLE3_ID) }
+                enableWhen { model.isEqualTo(DALLE3_ID) }
                 combobox(quality, imageQualities)
             }
             field("Style") {
-                tooltip("Not yet supported by API")
-                isDisable = true // TODO - enable when API supports this
-//                enableWhen { model.isEqualTo(DALLE3_ID) }
-                combobox(imageStyle, listOf(VIVID, NATURAL))
+                enableWhen { model.isEqualTo(DALLE3_ID) }
+                combobox(imageStyle, imageStyles)
             }
         }
         parameters("Output") {
@@ -214,8 +214,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     prompt = input.value,
                     n = numProperty.value,
                     size = imageSize.value,
-//            quality = quality.value,
-//            style = imageStyle.value
+                    quality = quality.value,
+                    style = imageStyle.value
                 )
             )
             AiImageTrace(promptInfo, modelInfo,
@@ -347,13 +347,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private const val DALLE2_ID = "dall-e-2"
         private const val DALLE3_ID = "dall-e-3"
 
-        // TODO - expect these will be replaced by enums in API
-        private const val STANDARD = "standard"
-        private const val HD = "hd"
-        private const val VIVID = "vivid"
-        private const val NATURAL = "natural"
+        private val STANDARD_QUALITY = Quality("standard")
 
-        private val IMAGE_MODELS = OpenAiModels.visionModels()
+        private val IMAGE_MODELS = OpenAiModels.imageGeneratorModels()
         private val IMAGE_SIZES = mapOf(
             DALLE2_ID to listOf(
                 ImageSize.is256x256,
