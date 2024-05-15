@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.4.3-SNAPSHOT</version>
+    <version>0.5.0</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM and prompt engineering.</description>
@@ -37,7 +37,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>promptkt-0.5.0</tag>
     </scm>
 
     <issueManagement>
