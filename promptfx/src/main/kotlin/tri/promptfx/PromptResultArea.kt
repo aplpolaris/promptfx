@@ -24,17 +24,14 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
-import javafx.stage.Modality
-import javafx.stage.StageStyle
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.ui.PromptTraceDetails
-import java.util.*
-import java.util.zip.Deflater
-import java.util.zip.Deflater.DEFLATED
+import tri.util.ui.PlantUmlUtils.plantUmlUrlText
+import tri.util.ui.showImageDialog
 
 
 /**
@@ -116,6 +113,8 @@ class PromptResultArea : Fragment("Prompt Result Area") {
         }
     }
 
+    //region DETECTED CODE ACTIONS
+
     private fun copyCode() {
         val code = text.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
         clipboard.putString(code)
@@ -128,13 +127,13 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     }
 
     private fun browseToPlantUml() {
-        val url = plantUmlUrlText(plantUmlText())
+        val url = plantUmlUrlText(plantUmlText(), type="uml")
         println(url)
         hostServices.showDocument(url)
     }
 
     private fun showPlantUmlPopup() {
-        val url = plantUmlUrlText(plantUmlText())
+        val url = plantUmlUrlText(plantUmlText(), type="png")
         val image = Image(url)
         if (!image.isError && !image.isBackgroundLoading && image.width > 0.0 && image.height > 0.0)
             showImageDialog(image)
@@ -142,51 +141,6 @@ class PromptResultArea : Fragment("Prompt Result Area") {
             error("Error loading PlantUML diagram.")
     }
 
-    // TODO - COPIED FROM ImagesView - remove if possible
-    private fun showImageDialog(image: Image) {
-        val d = dialog(
-            modality = Modality.APPLICATION_MODAL,
-            stageStyle = StageStyle.UNDECORATED,
-            owner = primaryStage
-        ) {
-            imageview(image) {
-                style = "-fx-border-color: black; -fx-border-width: 1px;"
-                onLeftClick { close() }
-            }
-            form.padding = insets(0)
-            padding = insets(0)
-        }
-        // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
-        d?.owner?.let {
-            d.x = it.x + (it.width / 2) - (d.scene.width / 2)
-            d.y = it.y + (it.height / 2) - (d.scene.height / 2)
-        }
-    }
-
-    companion object {
-        //region PlantUML specific encoding of URLs
-        private fun plantUmlUrlText(plantUml: String): String {
-            val compressor = Deflater(DEFLATED, false)
-            compressor.setInput(plantUml.toByteArray(Charsets.UTF_8))
-            compressor.finish()
-            val compressedData = ByteArray(plantUml.length)
-            val compressedSize = compressor.deflate(compressedData)
-            compressor.end()
-            val encodedUml = Base64.getEncoder().withoutPadding()
-                .encodeToString(compressedData.copyOf(compressedSize))
-                .convertToPlantUmlBase()
-            return "http://www.plantuml.com/plantuml/png/~1${encodedUml}"
-        }
-
-        private const val FROM_ARR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-        private const val TO_ARR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_="
-
-        private fun String.convertToPlantUmlBase() = try {
-            map { TO_ARR[FROM_ARR.indexOf(it)] }.joinToString("")
-        } catch (x: ArrayIndexOutOfBoundsException) {
-            println("Error converting to PlantUML base: $this")
-        }
-        //endregion
-    }
+    //endregion
 
 }

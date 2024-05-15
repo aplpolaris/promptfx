@@ -17,14 +17,7 @@ models:
       name: GPT-4
       type: gpt
       context_tokens: 8192
-      snapshots: [ '0613' ]
-
-    - id: gpt-4-32k
-      name: GPT-4 32k
-      description: GPT-4 with a 32k context window
-      type: gpt
-      context_tokens: 32768
-      snapshots: [ '0613' ]
+      snapshots: [ '0613', '1106-preview' ]
 
   GPT-4 multimodal:
 
@@ -160,7 +153,7 @@ models:
 
 audio: [ whisper-1 ]
 chat: [
-  gpt-3.5-turbo, gpt-4o, gpt-4-turbo, gpt-4, gpt-4-32k
+  gpt-3.5-turbo, gpt-4o, gpt-4-turbo, gpt-4
 ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]

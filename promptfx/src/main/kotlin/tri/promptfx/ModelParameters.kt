@@ -40,6 +40,7 @@ class ModelParameters {
         private const val DEFAULT_PRES_PENALTY = 0.0
         private const val DEFAULT_MAX_TOKENS = 500
         private const val DEFAULT_STOP_SEQUENCES = ""
+        private const val TOKEN_SLIDER_MAX = 8000
     }
 
     internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
@@ -85,7 +86,7 @@ class ModelParameters {
     fun EventTarget.maxTokens() {
         field("Maximum Tokens") {
             tooltip("Maximum number of tokens for combined query and response from the model (interpretation may vary by model).")
-            slider(0..2000, maxTokens)
+            slider(0..TOKEN_SLIDER_MAX, maxTokens)
             label(maxTokens.asString())
         }
     }

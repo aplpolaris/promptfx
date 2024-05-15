@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventHandler
 import javafx.event.EventTarget
 import javafx.geometry.Side
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.input.Clipboard
@@ -209,14 +210,7 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
                         val clipboard = controller.clipboard
                         isDisable = !clipboard.hasImage() && !clipboard.hasImageFile() && !clipboard.hasImageFilePath()
                         action {
-                            if (clipboard.hasImage()) {
-                                property.set(clipboard.image)
-                            } else if (clipboard.hasImageFile()) {
-                                property.set(Image(clipboard.files.first().toURI().toString()))
-                            } else if (clipboard.hasImageFilePath()) {
-                                val file = clipboard.fileFromPlainTextContent()!!
-                                property.set(Image(file.toURI().toString()))
-                            }
+                            pasteImageFromClipboard(property)
                         }
                     })
                 }
@@ -251,6 +245,10 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
                             }
                         }
                     }
+                }
+                button("", FontAwesomeIconView(FontAwesomeIcon.CLIPBOARD)) {
+                    enableWhenImageOnClipboard()
+                    action { pasteImageFromClipboard(property) }
                 }
             }
             imageview(property) {
@@ -287,6 +285,28 @@ abstract class AiTaskView(title: String, instruction: String, showInput: Boolean
             it.removePrefix("\"").removeSuffix("\"").substringBefore(",")
                 .let { File(it) }
         }
+
+    private fun Node.enableWhenImageOnClipboard() {
+        runAsync {
+            while (true) {
+                runLater {
+                    isDisable = !controller.clipboard.hasImage() && !controller.clipboard.hasImageFile() && !controller.clipboard.hasImageFilePath()
+                }
+                Thread.sleep(1000)
+            }
+        }
+    }
+
+    private fun pasteImageFromClipboard(property: SimpleObjectProperty<Image>) {
+        if (clipboard.hasImage()) {
+            property.set(clipboard.image)
+        } else if (clipboard.hasImageFile()) {
+            property.set(Image(clipboard.files.first().toURI().toString()))
+        } else if (clipboard.hasImageFilePath()) {
+            val file = clipboard.fileFromPlainTextContent()!!
+            property.set(Image(file.toURI().toString()))
+        }
+    }
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea() {

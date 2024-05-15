@@ -29,18 +29,30 @@ import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
+import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
 import javafx.scene.control.TextInputControl
+import javafx.scene.image.Image
+import javafx.scene.input.DataFormat
 import javafx.scene.input.TransferMode
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
+import javafx.stage.Modality
+import javafx.stage.StageStyle
 import javafx.stage.Window
 import tornadofx.*
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
+import tri.promptfx.PromptFxConfig
+import tri.promptfx.api.ImagesView
+import tri.promptfx.promptFxFileChooser
+import tri.util.loggerFor
+import tri.util.warning
 import java.io.File
+import java.io.IOException
+import javax.imageio.ImageIO
 
 //region FILE I/O
 
@@ -55,6 +67,43 @@ fun TextInputControl.enableDroppingFileContent() {
         it.isDropCompleted = true
         it.consume()
     }
+}
+
+//endregion
+
+//region IMAGES
+
+fun UIComponent.saveToFile(image: Image) {
+    promptFxFileChooser(
+        dirKey = PromptFxConfig.DIR_KEY_IMAGE,
+        title = "Save to File",
+        filters = arrayOf(PromptFxConfig.FF_PNG, PromptFxConfig.FF_ALL),
+        mode = FileChooserMode.Save
+    ) {
+        it.firstOrNull()?.let {
+            writeImageToFile(image, it)
+            information("Image saved to file: ${it.name}", owner = primaryStage)
+        }
+    }
+}
+
+/** Writes an [Image] to a [File]. */
+fun writeImageToFile(image: Image, file: File): Boolean = try {
+    file.outputStream().use { os ->
+        ImageIO.write(SwingFXUtils.fromFXImage(image, null), file.extension, os)
+    }
+    true
+} catch (x: IOException) {
+    loggerFor<ImagesView>().warning("Error saving image to file: $file", x)
+    false
+}
+
+/** Copies an image to a clipboard. */
+fun UIComponent.copyToClipboard(image: Image) {
+    // the original image doesn't seem to copy to clipboard properly, so cycle it through [BufferedImage]
+    val image2 = SwingFXUtils.fromFXImage(image, null)
+    val fxImage = SwingFXUtils.toFXImage(image2, null)
+    clipboard.put(DataFormat.IMAGE, fxImage)
 }
 
 //endregion
@@ -123,6 +172,40 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
             }
         }
     }
+
+//endregion
+
+//region DIALOGS
+
+/**
+ * Shows a dialog with the given [Image].
+ * Click to close dialog.
+ * Context menu provides a copy option.
+ */
+fun UIComponent.showImageDialog(image: Image) {
+    val d = dialog(
+        modality = Modality.APPLICATION_MODAL,
+        stageStyle = StageStyle.UNDECORATED,
+        owner = primaryStage
+    ) {
+        imageview(image) {
+            onLeftClick { close() }
+            contextmenu {
+                item("Copy Image to Clipboard") {
+                    action { copyToClipboard(image) }
+                }
+            }
+        }
+        padding = insets(0)
+        form.padding = insets(1)
+        form.background = Color.BLACK.asBackground()
+    }
+    // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
+    d?.owner?.let {
+        d.x = it.x + (it.width / 2) - (d.scene.width / 2)
+        d.y = it.y + (it.height / 2) - (d.scene.height / 2)
+    }
+}
 
 //endregion
 

@@ -43,6 +43,21 @@ image-describe-caption: Generate a caption for the image.
 
 image-describe-detailed: Describe everything you see in this image. Provide a detailed list of contents.
 
+image-describe-json: Convert the image into a JSON object describing its contents.
+
+image-describe-json-graph: |
+  Convert the image into a JSON object describing its contents and relationships.
+  Example:
+  ```
+  {
+    "items": [ ... ],
+    "relationships": [ ... ]
+  }
+  ```
+
+image-describe-outline: Create a markdown outline of the image contents.
+
+
 prompt-validate: |
   Determine whether the following is true or false. If it is false, provide a corrected version.
   ```
