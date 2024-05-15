@@ -22,6 +22,8 @@ package tri.promptfx.api
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.image.ImageSize
+import com.aallam.openai.api.image.Quality
+import com.aallam.openai.api.image.Style
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
@@ -29,12 +31,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
-import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import javafx.scene.input.DataFormat
 import javafx.scene.layout.Priority
-import javafx.stage.Modality
-import javafx.stage.StageStyle
 import tornadofx.*
 import tri.ai.openai.OpenAiModels
 import tri.ai.pips.AiTaskResult.Companion.result
@@ -45,14 +43,8 @@ import tri.ai.prompt.trace.AiPromptModelInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
-import tri.promptfx.promptFxFileChooser
-import tri.util.loggerFor
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.warning
-import java.io.File
-import java.io.IOException
+import tri.util.ui.*
 import java.util.*
-import javax.imageio.ImageIO
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", ImagesView::class)
@@ -74,11 +66,12 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             when (it) {
                 DALLE3_ID -> {
                     numProperty.set(1)
-                    imageQualities.setAll(STANDARD, HD)
+                    imageQualities.setAll(STANDARD_QUALITY, Quality.HD)
+                    quality.set(STANDARD_QUALITY)
                 }
                 DALLE2_ID -> {
-                    imageQualities.setAll(STANDARD)
-                    quality.set(STANDARD)
+                    imageQualities.setAll(STANDARD_QUALITY)
+                    quality.set(STANDARD_QUALITY)
                 }
                 else ->
                     throw UnsupportedOperationException("Unsupported model: $it")
@@ -88,16 +81,18 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Available sizes based on model */
     private val imageSizes: ObservableList<ImageSize> = observableListOf(IMAGE_SIZES[model.value] ?: listOf())
     /** Available quality values based on model */
-    private val imageQualities: ObservableList<String> = observableListOf(STANDARD)
+    private val imageQualities = observableListOf(STANDARD_QUALITY, Quality.HD)
+    /** Available styles based on model */
+    private val imageStyles = observableListOf(Style.Vivid, Style.Natural)
 
     /** Number of images to generate */
     private val numProperty = SimpleIntegerProperty(1)
     /** Image size */
     private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
     /** Image quality */
-    private val quality = SimpleStringProperty(STANDARD)
+    private val quality = SimpleObjectProperty(STANDARD_QUALITY)
     /** Image style */
-    private val imageStyle = SimpleStringProperty(VIVID)
+    private val imageStyle = SimpleObjectProperty(Style.Vivid)
 
     /** Grid thumbnail size */
     private val thumbnailSize = SimpleDoubleProperty(128.0)
@@ -165,16 +160,16 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 }
             }
             field("Quality") {
-                tooltip("Not yet supported by API")
-                isDisable = true // TODO - enable when API supports this
-//                enableWhen { model.isEqualTo(DALLE3_ID) }
-                combobox(quality, imageQualities)
+                enableWhen { model.isEqualTo(DALLE3_ID) }
+                combobox(quality, imageQualities) {
+                    cellFormat { text = it.value }
+                }
             }
             field("Style") {
-                tooltip("Not yet supported by API")
-                isDisable = true // TODO - enable when API supports this
-//                enableWhen { model.isEqualTo(DALLE3_ID) }
-                combobox(imageStyle, listOf(VIVID, NATURAL))
+                enableWhen { model.isEqualTo(DALLE3_ID) }
+                combobox(imageStyle, imageStyles) {
+                    cellFormat { text = it.value }
+                }
             }
         }
         parameters("Output") {
@@ -214,8 +209,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     prompt = input.value,
                     n = numProperty.value,
                     size = imageSize.value,
-//            quality = quality.value,
-//            style = imageStyle.value
+                    quality = quality.value,
+                    style = imageStyle.value
                 )
             )
             AiImageTrace(promptInfo, modelInfo,
@@ -230,48 +225,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     //region CONTEXT MENU ACTIONS
 
-    private fun showImageDialog(image: Image) {
-        val d = dialog(
-            modality = Modality.APPLICATION_MODAL,
-            stageStyle = StageStyle.UNDECORATED,
-            owner = primaryStage
-        ) {
-            imageview(image) {
-                onLeftClick { close() }
-            }
-            form.padding = insets(0)
-            padding = insets(0)
-        }
-        // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
-        d?.owner?.let {
-            d.x = it.x + (it.width / 2) - (d.scene.width / 2)
-            d.y = it.y + (it.height / 2) - (d.scene.height / 2)
-        }
-    }
-
-    private fun copyToClipboard(image: Image) {
-        // the original image doesn't seem to copy to clipboard properly, so cycle it through [BufferedImage]
-        val image2 = SwingFXUtils.fromFXImage(image, null)
-        val fxImage = SwingFXUtils.toFXImage(image2, null)
-        clipboard.put(DataFormat.IMAGE, fxImage)
-    }
-
     private fun copyPromptToClipboard(trace: AiImageTrace) {
         clipboard.putString(trace.promptInfo.prompt)
-    }
-
-    private fun saveToFile(image: Image) {
-        promptFxFileChooser(
-            dirKey = PromptFxConfig.DIR_KEY_IMAGE,
-            title = "Save to File",
-            filters = arrayOf(PromptFxConfig.FF_PNG, PromptFxConfig.FF_ALL),
-            mode = FileChooserMode.Save
-        ) {
-            it.firstOrNull()?.let {
-                writeImageToFile(image, it)
-                information("Image saved to file: ${it.name}", owner = primaryStage)
-            }
-        }
     }
 
     private fun saveAllToFile() {
@@ -294,16 +249,6 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             }
             information("Saved $success images to folder: ${folder.name}", owner = primaryStage)
         }
-    }
-
-    private fun writeImageToFile(image: Image, file: File): Boolean = try {
-        file.outputStream().use { os ->
-            ImageIO.write(SwingFXUtils.fromFXImage(image, null), file.extension, os)
-        }
-        true
-    } catch (x: IOException) {
-        loggerFor<ImagesView>().warning("Error saving image to file: $file", x)
-        false
     }
 
     //endregion
@@ -347,13 +292,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private const val DALLE2_ID = "dall-e-2"
         private const val DALLE3_ID = "dall-e-3"
 
-        // TODO - expect these will be replaced by enums in API
-        private const val STANDARD = "standard"
-        private const val HD = "hd"
-        private const val VIVID = "vivid"
-        private const val NATURAL = "natural"
+        private val STANDARD_QUALITY = Quality("standard")
 
-        private val IMAGE_MODELS = OpenAiModels.visionModels()
+        private val IMAGE_MODELS = OpenAiModels.imageGeneratorModels()
         private val IMAGE_SIZES = mapOf(
             DALLE2_ID to listOf(
                 ImageSize.is256x256,

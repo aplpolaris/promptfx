@@ -57,12 +57,26 @@ structured-format:
   json: JSON
   rdf: RDF triples
   sql: SQL query
-  uml activity: a PlantUML activity diagram
-  uml mindmap: a PlantUML mindmap diagram
-  vega chart: a Vega chart JSON
-  vegalite chart: a Vega-lite chart JSON
   xml: XML
   yaml: YAML
+  uml activity: a PlantUML activity diagram
+  uml class: a PlantUML class diagram
+  uml component: a PlantUML component diagram
+  uml deployment: a PlantUML deployment diagram
+  uml object: a PlantUML object diagram
+  uml sequence: a PlantUML sequence diagram
+  uml state: a PlantUML state diagram
+  uml timing: a PlantUML timing diagram
+  uml use case: a PlantUML use case diagram
+  plantuml archimate: a PlantUML ArchiMate diagram
+  plantuml entity-relationships: a PlantUML entity-relationships diagram
+  plantuml gantt: a PlantUML Gantt chart
+  plantuml mindmap: a PlantUML mindmap diagram
+  plantuml network: a PlantUML network diagram
+  plantuml wbs: a PlantUML work breakdown structure (WBS) diagram
+  plantuml wireframe: a PlantUML UI wireframe diagram
+  vega chart: a Vega chart JSON
+  vegalite chart: a Vega-lite chart JSON
 
 summarization-audience:
   none: ""

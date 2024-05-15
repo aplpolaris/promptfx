@@ -49,3 +49,4 @@ interface EmbeddingService {
         calculateEmbedding(listOf(*text))
 
 }
+

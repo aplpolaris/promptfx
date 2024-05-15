@@ -20,15 +20,19 @@
 package tri.ai.core
 
 import tri.ai.pips.AiTaskResult
+import java.net.URL
 
-/** Interface for chat completion. */
-interface TextChat {
+/**
+ * An interface for completing vision-language chats.
+ */
+interface VisionLanguageChat {
 
     val modelId: String
 
     /** Completes user text. */
     suspend fun chat(
-        messages: List<TextChatMessage>,
+        messages: List<VisionLanguageChatMessage>,
+        temp: Double? = null,
         tokens: Int? = 1000,
         stop: List<String>? = null,
         requestJson: Boolean? = null
@@ -36,11 +40,5 @@ interface TextChat {
 
 }
 
-/** A single message in a chat. */
-class TextChatMessage(val role: TextChatRole, val content: String?)
-
-/** The role of a chat message. */
-enum class TextChatRole {
-    System, User, Assistant
-}
-
+/** A single message in a vision-language chat. */
+class VisionLanguageChatMessage(val role: TextChatRole, val content: String, val image: URL)

@@ -29,17 +29,24 @@ class OpenAiTextPlugin : TextPlugin {
 
     val client = OpenAiClient.INSTANCE
 
-    override fun chatModels() =
-        OpenAiModels.chatModels(false).map { OpenAiChat(it, client) }
+    override fun embeddingModels() =
+        OpenAiModels.embeddingModels().map { OpenAiEmbeddingService(it, client) }
 
     override fun textCompletionModels() =
         OpenAiModels.chatModels(false).map { OpenAiCompletionChat(it, client) } +
         OpenAiModels.completionModels(false).map { OpenAiCompletion(it, client) }
 
-    override fun embeddingModels() =
-        OpenAiModels.embeddingModels().map { OpenAiEmbeddingService(it, client) }
+    override fun chatModels() =
+        OpenAiModels.chatModels(false).map { OpenAiChat(it, client) }
+
+    override fun visionLanguageModels() =
+        OpenAiModels.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+
+    override fun imageGeneratorModels() =
+        OpenAiModels.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()
     }
 }
+

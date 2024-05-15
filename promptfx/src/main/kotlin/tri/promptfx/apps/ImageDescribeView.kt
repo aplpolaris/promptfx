@@ -25,8 +25,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import tornadofx.stringBinding
-import tornadofx.tooltip
+import tornadofx.*
 import tri.ai.openai.OpenAiClient
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
@@ -49,12 +48,18 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     }
 
     private val image = SimpleObjectProperty<Image>(null)
+    private val model = SimpleObjectProperty(PromptFxModels.visionLanguageModelDefault())
 
     private val promptId = SimpleStringProperty("$PROMPT_PREFIX-basic")
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
 
     init {
         addInputImageArea(image)
+        parameters("Vision Language Model") {
+            field("Model") {
+                combobox(model, PromptFxModels.visionLanguageModels())
+            }
+        }
         parameters("Prompt") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
             promptfield("Prompt", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
@@ -77,13 +82,13 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
         }
 
     override fun plan() = task("Describe Image") {
-        describeImage("Describe the image")
+        describeImage(promptText.value)
     }.planner
 
     private suspend fun describeImage(prompt: String): String? {
         val res = OpenAiClient.INSTANCE.client.chatCompletion(
             chatCompletionRequest {
-                model = ModelId("gpt-4-vision-preview")
+                model = ModelId(this@ImageDescribeView.model.value.modelId)
                 temperature = common.temp.value
                 maxTokens = common.maxTokens.value
                 messages {

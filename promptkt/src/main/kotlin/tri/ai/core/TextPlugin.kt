@@ -31,14 +31,20 @@ import java.util.*
 /** Provides a set of plugins at runtime. */
 interface TextPlugin {
 
+    /** Provide a list of embedding models. */
+    fun embeddingModels(): List<EmbeddingService>
+
     /** Provide a list of chat engines. */
     fun chatModels(): List<TextChat>
 
     /** Provide a list of text completion engines. */
     fun textCompletionModels(): List<TextCompletion>
 
-    /** Provide a list of embedding models. */
-    fun embeddingModels(): List<EmbeddingService>
+    /** Provide a list of vision language models. */
+    fun visionLanguageModels(): List<VisionLanguageChat>
+
+    /** Provide a list of image generators. */
+    fun imageGeneratorModels(): List<ImageGenerator>
 
     /** Closes resources associated with the plugin. */
     fun close()
@@ -57,22 +63,32 @@ interface TextPlugin {
         val defaultPlugin by lazy { plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin }
         val orderedPlugins by lazy { listOf(defaultPlugin) + (plugins - defaultPlugin) }
 
-        /** Get registered text completion models. */
-        fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
         /** Get registered embedding models. */
         fun embeddingModels() = orderedPlugins.flatMap { it.embeddingModels() }
+        /** Get registered text completion models. */
+        fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
         /** Get registered chat models. */
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
+        /** Get registered vision language models. */
+        fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
+        /** Get registered image models. */
+        fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
 
-        /** Get a text completion model by id. Throws an exception if not found. */
-        fun textCompletionModel(modelId: String) =
-            textCompletionModels().first { it.modelId == modelId }
         /** Get an embedding model by id. Throws an exception if not found. */
         fun embeddingModel(modelId: String) =
             embeddingModels().first { it.modelId == modelId }
+        /** Get a text completion model by id. Throws an exception if not found. */
+        fun textCompletionModel(modelId: String) =
+            textCompletionModels().first { it.modelId == modelId }
         /** Get a chat model by id. Throws an exception if not found. */
         fun chatModel(modelId: String) =
             chatModels().first { it.modelId == modelId }
+        /** Get a vision language model by id. Throws an exception if not found. */
+        fun visionLanguageModel(modelId: String) =
+            visionLanguageModels().first { it.modelId == modelId }
+        /** Get an image model by id. Throws an exception if not found. */
+        fun imageGeneratorModel(modelId: String) =
+            imageGeneratorModels().first { it.modelId == modelId }
 
         /**
          * Return a [ClassLoader] that looks for files in the "config/modules"

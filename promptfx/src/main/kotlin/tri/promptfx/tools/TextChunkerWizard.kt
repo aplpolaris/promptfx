@@ -201,7 +201,11 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
             fieldset("Automatic Chunking Options") {
                 visibleWhen(model.isChunkAutomatic)
                 managedWhen(model.isChunkAutomatic)
-                field("TBD")
+                field("Max Chunk Size (characters)") {
+                    spinner(50, 1000000, 1000, 1, editable = true, property = model.maxChunkSize) {
+                        tooltip("Maximum number of characters in a single chunk of text.")
+                    }
+                }
             }
             fieldset("Delimited Chunking Options") {
                 visibleWhen(model.isChunkDelimiter)

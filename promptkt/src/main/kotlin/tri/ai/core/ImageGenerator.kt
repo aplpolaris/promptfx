@@ -19,28 +19,20 @@
  */
 package tri.ai.core
 
-import tri.ai.pips.AiTaskResult
+import java.net.URL
 
-/** Interface for chat completion. */
-interface TextChat {
+/** Interface for image generation. */
+interface ImageGenerator {
 
     val modelId: String
 
-    /** Completes user text. */
-    suspend fun chat(
-        messages: List<TextChatMessage>,
-        tokens: Int? = 1000,
-        stop: List<String>? = null,
-        requestJson: Boolean? = null
-    ): AiTaskResult<TextChatMessage>
+    /** Generate an image, return URL to access image. */
+    suspend fun generateImage(
+        text: String,
+        size: ImageSize,
+        prompt: String? = null
+    ): URL
 
 }
 
-/** A single message in a chat. */
-class TextChatMessage(val role: TextChatRole, val content: String?)
-
-/** The role of a chat message. */
-enum class TextChatRole {
-    System, User, Assistant
-}
-
+data class ImageSize(val width: Int, val height: Int)

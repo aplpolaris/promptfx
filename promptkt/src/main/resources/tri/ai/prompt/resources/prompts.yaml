@@ -43,6 +43,21 @@ image-describe-caption: Generate a caption for the image.
 
 image-describe-detailed: Describe everything you see in this image. Provide a detailed list of contents.
 
+image-describe-json: Convert the image into a JSON object describing its contents.
+
+image-describe-json-graph: |
+  Convert the image into a JSON object describing its contents and relationships.
+  Example:
+  ```
+  {
+    "items": [ ... ],
+    "relationships": [ ... ]
+  }
+  ```
+
+image-describe-outline: Create a markdown outline of the image contents.
+
+
 prompt-validate: |
   Determine whether the following is true or false. If it is false, provide a corrected version.
   ```
@@ -260,12 +275,13 @@ question-answer-docs-basic-vicuna: |
 
 text-joiner-basic: |
   {{#matches}}
+  {{#prefix}}({{prefix}}){{/prefix}}
   {{{text}}}  
   {{/matches}}
 
 text-joiner-bullets: |
-  {{#matches}}
-  - {{{text}}}  
+  {{#matches}} 
+  - {{#prefix}}({{prefix}}) {{/prefix}}{{{text}}}  
   {{/matches}}
   
 
@@ -276,12 +292,15 @@ text-joiner-bullets: |
 # prefix: snippet-joiner-*
 # keywords:
 #   {{matches}} - list of snippets
-#   {{name}} - name of snippet
-#   {{{text}}} - text of snippet
+#     {{prefix}} - prefix appended before text (e.g. to describe particular content of a document in more detail)
+#     {{number}} - number of match (starting at 1)
+#     {{name}} - name of snippet in match
+#     {{{text}}} - text of snippet in match
 
 snippet-joiner-basic: |
   {{#matches}}
   Document: {{name}}
+  {{#prefix}}Description: {{prefix}}{{/prefix}}
   Relevant Text: {{{text}}}
   
   {{/matches}}
@@ -290,12 +309,14 @@ snippet-joiner-numbered: |
   {{#matches}}
   - ""{{{text}}}""
     [{{number}}] {{name}}
+    {{#prefix}}({{prefix}}){{/prefix}}
   
   {{/matches}}
 
 snippet-joiner-citations: |
   {{#matches}}
   [[Citation {{number}}]] {{name}}
+  {{#prefix}}{{prefix}}{{/prefix}}
   """
   {{{text}}}
   """

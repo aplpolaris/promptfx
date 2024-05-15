@@ -3,12 +3,11 @@
 ---
 audio: [ ]
 chat: [
-  gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-3.5-turbo-1106,
-  gpt-4, gpt-4-1106-preview
+  gpt-3.5-turbo, gpt-4o, gpt-4-turbo, gpt-4, gpt-4-turbo-preview
 ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
-embeddings: [ text-embedding-ada-002, text-embedding-3-small, text-embedding-3-large ]
+embeddings: [ ]
 moderation: [ ]
-multimodal: [ ]
 tts: [ ]
-vision: [ ]
+image_generator: [ ]
+vision_language: [ ]
