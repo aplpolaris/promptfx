@@ -18,6 +18,7 @@
  * #L%
  */
 import tri.ai.core.TextPlugin;
+import tri.ai.gemini.GeminiAiPlugin;
 import tri.ai.openai.OpenAiTextPlugin;
 
 module tri.promptkt {
@@ -46,6 +47,15 @@ module tri.promptkt {
     requires com.fasterxml.jackson.datatype.jsr310;
     requires com.fasterxml.jackson.dataformat.yaml;
 
+    requires io.ktor.client.core;
+    requires io.ktor.client.content.negotiation;
+    requires io.ktor.http;
+    requires io.ktor.serialization;
+    requires io.ktor.serialization.kotlinx.json;
+    requires io.ktor.utils;
+
+    opens tri.ai.gemini to io.ktor.serialization;
+
     opens tri.ai.core to com.fasterxml.jackson.databind;
     opens tri.ai.embedding to com.fasterxml.jackson.databind;
     opens tri.ai.memory to com.fasterxml.jackson.databind;
@@ -58,6 +68,7 @@ module tri.promptkt {
 
     exports tri.ai.core;
     exports tri.ai.embedding;
+    exports tri.ai.gemini;
     exports tri.ai.memory;
     exports tri.ai.openai;
     exports tri.ai.pips;
@@ -72,5 +83,5 @@ module tri.promptkt {
     // services (service loader API)
     uses TextPlugin;
 
-    provides TextPlugin with OpenAiTextPlugin;
+    provides TextPlugin with OpenAiTextPlugin, GeminiAiPlugin;
 }

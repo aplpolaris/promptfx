@@ -17,27 +17,27 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai
+package tri.ai.gemini
 
 import tri.ai.embedding.EmbeddingService
-import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
+import tri.ai.gemini.GeminiModels.EMBED1
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.process.SmartTextChunker
 
 /** An embedding service that uses the OpenAI API. */
-class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val client: OpenAiClient = OpenAiClient.INSTANCE) : EmbeddingService {
+class GeminiEmbeddingService(override val modelId: String = EMBED1, val client: GeminiClient = GeminiClient.INSTANCE) : EmbeddingService {
 
     override fun toString() = modelId
 
-    private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Double>>()
+    private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 
     override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
         val uncached = text.filter { (it to outputDimensionality) !in embeddingCache }
         val uncachedCalc = uncached.chunked(MAX_EMBEDDING_BATCH_SIZE).flatMap {
-            client.quickEmbedding(modelId, outputDimensionality, it).value!!
+            client.batchEmbedContents(it, modelId, outputDimensionality).embeddings
         }
-        uncachedCalc.forEachIndexed { index, embedding -> embeddingCache[uncached[index] to outputDimensionality] = embedding }
-        return text.map { embeddingCache[it to outputDimensionality]!! }
+        uncachedCalc.forEachIndexed { index, embedding -> embeddingCache[uncached[index] to outputDimensionality] = embedding.values }
+        return text.map { embeddingCache[it to outputDimensionality]!!.map { it.toDouble() } }
     }
 
     override fun chunkTextBySections(text: String, maxChunkSize: Int) =

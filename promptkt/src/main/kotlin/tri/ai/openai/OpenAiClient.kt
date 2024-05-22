@@ -73,17 +73,18 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, inputs: List<String>): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiTaskResult<List<List<Double>>> {
         checkApiKey()
-        return quickEmbedding(modelId, *inputs.toTypedArray())
+        return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String, vararg inputs: String): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiTaskResult<List<List<Double>>> {
         checkApiKey()
         return client.embeddings(EmbeddingRequest(
             ModelId(modelId),
-            inputs.toList()
+            inputs.toList(),
+            dimensions = outputDimensionality
         )).let { it ->
             usage.increment(it.usage)
             result(it.embeddings.map { it.embedding }, modelId)
@@ -230,7 +231,7 @@ class OpenAiSettings {
 
     /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
     private fun readApiKey(): String {
-        val file = File("apikey.txt")
+        val file = File(API_KEY_FILE)
 
         val key = if (file.exists()) {
             file.readText()

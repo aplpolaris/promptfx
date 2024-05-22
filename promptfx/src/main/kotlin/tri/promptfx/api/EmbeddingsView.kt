@@ -19,10 +19,11 @@
  */
 package tri.promptfx.api
 
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.combobox
-import tornadofx.field
+import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult
 import tri.promptfx.AiTaskView
@@ -32,12 +33,21 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
 
     private val input = SimpleStringProperty("")
     private val model = SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
+    private val customOutputDimensionality = SimpleBooleanProperty(false)
+    private val outputDimensionality = SimpleIntegerProperty(0)
 
     init {
         addInputTextArea(input)
         parameters("Embeddings") {
             field("Model") {
                 combobox(model, PromptFxModels.embeddingModels())
+            }
+            field("Custom output dimensionality") {
+                checkbox(null, customOutputDimensionality)
+                spinner(1, 4096, 1024, 1, editable = true, property = outputDimensionality) {
+                    enableWhen(customOutputDimensionality)
+                    tooltip("Maximum number of characters in a single chunk of text.")
+                }
             }
         }
         val outputEditor = outputPane.lookup(".text-area") as javafx.scene.control.TextArea
@@ -46,7 +56,8 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
 
     override suspend fun processUserInput(): AiPipelineResult {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
-        return model.value!!.calculateEmbedding(inputs).let {
+        val ouputDim = if (customOutputDimensionality.value) outputDimensionality.value else null
+        return model.value!!.calculateEmbedding(inputs, ouputDim).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
             AiTaskResult.result(it, model.value!!.modelId).asPipelineResult()
