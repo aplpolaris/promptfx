@@ -28,19 +28,19 @@ import tri.ai.openai.OpenAiTextPlugin
 abstract class PromptFxPolicy {
 
     abstract fun embeddingModels(): List<EmbeddingService>
-    fun embeddingModelDefault() = embeddingModels().first()
+    open fun embeddingModelDefault() = embeddingModels().first()
 
     abstract fun textCompletionModels(): List<TextCompletion>
-    fun textCompletionModelDefault() = textCompletionModels().first()
+    open fun textCompletionModelDefault() = textCompletionModels().first()
 
     abstract fun chatModels(): List<TextChat>
-    fun chatModelDefault() = chatModels().firstOrNull()
+    open fun chatModelDefault() = chatModels().firstOrNull()
 
     abstract fun visionLanguageModels(): List<VisionLanguageChat>
-    fun visionLanguageModelDefault() = visionLanguageModels().first()
+    open fun visionLanguageModelDefault() = visionLanguageModels().first()
 
     abstract fun imageModels(): List<ImageGenerator>
-    fun imageModelDefault() = imageModels().firstOrNull()
+    open fun imageModelDefault() = imageModels().firstOrNull()
 
     /** Returns true if the given view is supported by this policy. */
     abstract fun supportsView(simpleName: String): Boolean
