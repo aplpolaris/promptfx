@@ -67,8 +67,11 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     //region QUICK API CALLS
 
+    /** Checks for an OpenAI API key, if the base URL points to OpenAI. */
     private fun checkApiKey() {
-        if (!settings.apiKey.startsWith("sk-") || settings.apiKey.trim().contains(" "))
+        val isOpenAi = settings.baseUrl.let { it == null || it.contains("api.openai.com") }
+        val isValidKey = isOpenAi && settings.apiKey.startsWith("sk-") && !settings.apiKey.trim().contains(" ")
+        if (!isValidKey)
             throw UnsupportedOperationException("Invalid API key. Please set a valid OpenAI API key.")
     }
 
