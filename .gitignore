@@ -1,4 +1,4 @@
-apikey-weather.txt
+apikey-*.txt
 apikey.txt
 memory.json
 embeddings.json
