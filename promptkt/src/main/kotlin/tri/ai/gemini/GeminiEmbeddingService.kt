@@ -27,7 +27,7 @@ import tri.ai.text.chunks.process.SmartTextChunker
 /** An embedding service that uses the OpenAI API. */
 class GeminiEmbeddingService(override val modelId: String = EMBED1, val client: GeminiClient = GeminiClient.INSTANCE) : EmbeddingService {
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId (Gemini)"
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 

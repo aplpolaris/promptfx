@@ -29,6 +29,8 @@ import tri.ai.pips.AiTaskResult
 class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextChat {
 
+    override fun toString() = "$modelId (Gemini)"
+
     override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?) =
         client.generateContent(messages, modelId,
             GenerationConfig(

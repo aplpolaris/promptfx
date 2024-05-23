@@ -19,8 +19,6 @@
  */
 package tri.ai.gemini
 
-import tri.ai.core.TextChat
-
 /** Models available in the Gemini API. */
 object GeminiModels {
 
@@ -36,8 +34,6 @@ object GeminiModels {
 
     const val GEMINI_PRO_VISION = "gemini-pro-vision"
     const val GEMINI_1_PRO_VISION_LATEST = "gemini-1.0-pro-vision-latest"
-
-
 
     //endregion
 

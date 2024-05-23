@@ -27,7 +27,7 @@ import tri.ai.pips.AiTaskResult
 class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextCompletion {
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId (Gemini)"
 
     override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
         client.generateContent(text, modelId).candidates!!.first().let {

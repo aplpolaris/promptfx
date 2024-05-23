@@ -54,7 +54,7 @@ class GeminiClientTest {
         runBlocking {
             val models = client.listModels().models
             assertTrue(models.isNotEmpty())
-            println(models.joinToString("\n") { "${it.name} - ${it.displayName}" })
+            println(models.joinToString("\n") { "$it" }) //"${it.name} - ${it.displayName}" })
         }
     }
 

@@ -41,6 +41,9 @@ class GeminiClient : Closeable {
     private val settings = GeminiSettings()
     private val client = settings.client
 
+    /** Returns true if the client is configured with an API key. */
+    fun isConfigured() = settings.apiKey.isNotBlank()
+
     suspend fun listModels(): ModelsResponse {
         return client.get("models")
             .body<ModelsResponse>()
