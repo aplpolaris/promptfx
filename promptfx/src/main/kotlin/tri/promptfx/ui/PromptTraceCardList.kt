@@ -25,7 +25,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.collections.ObservableList
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
-import javafx.stage.FileChooser
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
@@ -34,6 +33,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.promptFxFileChooser
+import tri.util.ui.graphic
 
 /** UI for a list of [AiPromptTrace]s. */
 class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observableListOf()): Fragment() {
@@ -65,7 +65,7 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
                             }
                     }
                 }
-                item("Try in template view") {
+                item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                         it != null && it.promptInfo.prompt.isNotBlank()
                     })

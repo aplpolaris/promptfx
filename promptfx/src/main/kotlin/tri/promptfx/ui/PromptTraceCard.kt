@@ -19,13 +19,17 @@
  */
 package tri.promptfx.ui
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
+import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.PromptFxWorkspace
+import tri.util.ui.graphic
 
 /** A card that displays the trace of a prompt. */
 class PromptTraceCard : Fragment() {
@@ -53,7 +57,10 @@ class PromptTraceCard : Fragment() {
     }
 }
 
+/** View showing all details of a prompt trace. */
 class PromptTraceDetails : Fragment("Prompt Trace") {
+
+    var trace = SimpleObjectProperty<AiPromptTrace>()
 
     val prompt = SimpleStringProperty("")
     val promptParams = SimpleObjectProperty<Map<String, Any>>(null)
@@ -65,6 +72,7 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     lateinit var paramsField: Fieldset
 
     fun setTrace(trace: AiPromptTrace) {
+        this.trace.set(trace)
         prompt.value = trace.promptInfo.prompt
         promptParams.value = trace.promptInfo.promptParams
         model.value = trace.modelInfo.modelId
@@ -74,34 +82,51 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     }
 
     override val root = vbox {
-        form {
-            fieldset("Input") {
-                field("Model") {
-                    text(model)
-                }
-                field("Model Params") {
-                    text(modelParams.stringBinding { it.pretty() })
-                }
-                field("Prompt") {
-                    labelContainer.alignment = Pos.TOP_LEFT
-                    text(prompt)
-                }
-            }
-            paramsField = fieldset("Prompt Parameters")
-            fieldset("Result") {
-                field("Execution") {
-                    text(exec.stringBinding { it.pretty() })
-                }
-                field("Result") {
-                    labelContainer.alignment = Pos.TOP_LEFT
-                    text(result) {
-                        wrappingWidth = 400.0
-                    }
+        toolbar {
+            // add button to close dialog and open trace in template view
+            button("Open in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+                enableWhen(trace.isNotNull)
+                tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
+                action {
+                    close()
+                    (workspace as PromptFxWorkspace).launchTemplateView(trace.value!!)
                 }
             }
         }
-        updateParamsField()
-        promptParams.onChange { updateParamsField() }
+        scrollpane {
+            prefViewportHeight = 800.0
+            hgrow = Priority.ALWAYS
+            vgrow = Priority.ALWAYS
+            isFitToWidth = true
+            form {
+                fieldset("Input") {
+                    field("Model") {
+                        text(model)
+                    }
+                    field("Model Params") {
+                        text(modelParams.stringBinding { it.pretty() })
+                    }
+                    field("Prompt") {
+                        labelContainer.alignment = Pos.TOP_LEFT
+                        text(prompt)
+                    }
+                }
+                paramsField = fieldset("Prompt Parameters")
+                fieldset("Result") {
+                    field("Execution") {
+                        text(exec.stringBinding { it.pretty() })
+                    }
+                    field("Result") {
+                        labelContainer.alignment = Pos.TOP_LEFT
+                        text(result) {
+                            wrappingWidth = 400.0
+                        }
+                    }
+                }
+            }
+            updateParamsField()
+            promptParams.onChange { updateParamsField() }
+        }
     }
 
 
@@ -113,6 +138,7 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
                     field(k) {
                         labelContainer.alignment = Pos.TOP_LEFT
                         text(v.truncated) {
+                            tooltip(v.toString())
                             wrappingWidth = 400.0
                         }
                     }

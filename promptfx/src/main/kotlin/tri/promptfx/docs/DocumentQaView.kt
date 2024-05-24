@@ -49,6 +49,7 @@ import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.graphic
 import tri.util.ui.plainText
 import tri.util.ui.slider
 import java.io.File
@@ -168,7 +169,7 @@ class DocumentQaView: AiPlanTaskView(
                                 }
                             }
                         }
-                        item("Try in template view") {
+                        item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                             enableWhen(resultTrace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
                             action {
                                 (workspace as PromptFxWorkspace).launchTemplateView(resultTrace.value)

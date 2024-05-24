@@ -19,6 +19,7 @@
  */
 package tri.promptfx
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.image.Image
@@ -31,6 +32,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.ui.PromptTraceDetails
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
+import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
 
 
@@ -67,12 +69,12 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                 enableWhen { trace.isNotNull }
                 action {
                     find<PromptTraceDetails>().apply {
-                        setTrace(trace.get())
+                        setTrace(this@PromptResultArea.trace.value)
                         openModal()
                     }
                 }
             }
-            item("Try in template view") {
+            item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                 enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
                 action {
                     (workspace as PromptFxWorkspace).launchTemplateView(trace.value)
