@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,19 +17,22 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.ui
+package tri.ai.gemini
 
-import javafx.beans.property.Property
-import javafx.event.EventTarget
-import javafx.scene.control.Slider
-import tornadofx.slider
+import tri.ai.core.TextCompletion
+import tri.ai.gemini.GeminiModels.GEMINI_PRO
+import tri.ai.pips.AiTaskResult
 
-fun EventTarget.slider(range: ClosedRange<Double>, value: Property<Number>, op: Slider.() -> Unit = {}) =
-    slider(range, 0.0, null, op).apply {
-        valueProperty().bindBidirectional(value)
-    }
+/** Text completion with OpenAI models. */
+class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
+    TextCompletion {
 
-fun EventTarget.slider(range: IntRange, value: Property<Number>, op: Slider.() -> Unit = {}) =
-    slider(range, 0, null, op).apply {
-        valueProperty().bindBidirectional(value)
-    }
+    override fun toString() = "$modelId (Gemini)"
+
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
+        client.generateContent(text, modelId).candidates!!.first().let {
+            AiTaskResult.result(it.content.parts[0].text!!)
+        }
+
+}
+

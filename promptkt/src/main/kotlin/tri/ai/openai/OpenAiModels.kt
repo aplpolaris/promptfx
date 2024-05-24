@@ -24,6 +24,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.core.ModelInfo
+import tri.ai.core.ModelType
 import java.io.File
 
 object OpenAiModels {
@@ -84,13 +86,13 @@ object OpenAiModels {
         if (runtime.isEmpty())
             preconfigured.map { MODEL_INDEX[it]!! }
         else
-            runtime.map { OpenAiModelInfo(it, it, type = "runtime") }
+            runtime.map { ModelInfo(it, ModelType.UNKNOWN, "runtime") }
 
 }
 
 /** Configuration file for OpenAI API. */
 class OpenAiModelLibrary {
-    var models = mapOf<String, List<OpenAiModelInfo>>()
+    var models = mapOf<String, List<ModelInfo>>()
     var audio = listOf<String>()
     var chat = listOf<String>()
     var completion = listOf<String>()
@@ -99,22 +101,4 @@ class OpenAiModelLibrary {
     var moderation = listOf<String>()
     var tts = listOf<String>()
     var vision_language = listOf<String>()
-}
-
-/** Configurable info about a model. */
-data class OpenAiModelInfo(
-    val id: String,
-    val name: String,
-    val description: String? = null,
-    val type: String,
-    val context_tokens: Int? = null,
-    val output_dimension: Int? = null,
-    val deprecation: String? = null,
-    val snapshots: List<String> = listOf(),
-) {
-    fun createSnapshots() = snapshots.map {
-        OpenAiModelInfo("$id-$it", "$name ($it)", description, type, context_tokens, output_dimension, deprecation)
-    }
-
-    internal fun ids(includeSnapshots: Boolean) = if (includeSnapshots) listOf(id) + snapshots.map { "$id-$it" } else listOf(id)
 }

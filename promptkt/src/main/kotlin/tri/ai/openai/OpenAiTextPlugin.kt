@@ -19,15 +19,39 @@
  */
 package tri.ai.openai
 
+import com.aallam.openai.api.model.Model
+import kotlinx.coroutines.runBlocking
+import tri.ai.core.ModelInfo
+import tri.ai.core.ModelType
 import tri.ai.core.TextPlugin
+import java.time.Instant
+import java.time.ZoneId
 
 /**
- * OpenAI implementation of [TextPlugin].
+ * Implementation of [TextPlugin] using OpenAI API.
  * Models are as described in `openai-models.yaml`.
  */
 class OpenAiTextPlugin : TextPlugin {
 
     val client = OpenAiClient.INSTANCE
+
+    override fun modelSource() = "OpenAI"
+
+    override fun modelInfo() = try {
+        runBlocking {
+            client.client.models().map { it.toModelInfo() }
+        }
+    } catch (x: Exception) {
+        x.printStackTrace()
+        emptyList()
+    }
+
+    private fun Model.toModelInfo(): ModelInfo {
+        val existing = OpenAiModels.MODEL_INDEX[id.id]
+        val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, modelSource())
+        info.created = Instant.ofEpochSecond(created).atZone(ZoneId.systemDefault()).toLocalDate()
+        return info
+    }
 
     override fun embeddingModels() =
         OpenAiModels.embeddingModels().map { OpenAiEmbeddingService(it, client) }
@@ -48,5 +72,6 @@ class OpenAiTextPlugin : TextPlugin {
     override fun close() {
         client.client.close()
     }
+
 }
 

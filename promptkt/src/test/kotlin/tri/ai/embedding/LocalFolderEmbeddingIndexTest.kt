@@ -53,7 +53,7 @@ class MockEmbeddingService: EmbeddingService {
         return with (SmartTextChunker(maxChunkSize)) { TextChunkRaw(text).chunkBySections(combineShortSections = true) }
     }
 
-    override suspend fun calculateEmbedding(text: List<String>): List<List<Double>> {
+    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
         return text.map { listOf(1.0) }
     }
 }

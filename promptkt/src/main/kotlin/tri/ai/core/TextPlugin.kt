@@ -31,6 +31,11 @@ import java.util.*
 /** Provides a set of plugins at runtime. */
 interface TextPlugin {
 
+    /** Model source for this plugin. */
+    fun modelSource(): String
+    /** Provide a list of model information. */
+    fun modelInfo(): List<ModelInfo>
+
     /** Provide a list of embedding models. */
     fun embeddingModels(): List<EmbeddingService>
 
@@ -62,6 +67,11 @@ interface TextPlugin {
 
         val defaultPlugin by lazy { plugins.first { it is OpenAiTextPlugin } as OpenAiTextPlugin }
         val orderedPlugins by lazy { listOf(defaultPlugin) + (plugins - defaultPlugin) }
+
+        /** Get all model sources. */
+        fun sources() = orderedPlugins.map { it.modelSource() }
+        /** Get all registered model info. */
+        fun modelInfo() = orderedPlugins.flatMap { it.modelInfo() }
 
         /** Get registered embedding models. */
         fun embeddingModels() = orderedPlugins.flatMap { it.embeddingModels() }
@@ -117,7 +127,6 @@ interface TextPlugin {
 
             //</editor-fold>
         }
-
 
     }
 

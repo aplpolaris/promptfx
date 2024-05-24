@@ -38,15 +38,15 @@ interface EmbeddingService {
     fun chunkTextBySections(text: String, maxChunkSize: Int): List<TextChunk>
 
     /** Calculate embedding for multiple texts. */
-    suspend fun calculateEmbedding(text: List<String>): List<List<Double>>
+    suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int? = null): List<List<Double>>
 
     /** Calculate embedding for a single text. */
-    suspend fun calculateEmbedding(text: String): List<Double> =
-        calculateEmbedding(listOf(text)).first()
+    suspend fun calculateEmbedding(text: String, outputDimensionality: Int? = null): List<Double> =
+        calculateEmbedding(listOf(text), outputDimensionality).first()
 
     /** Calculate embedding for a single text. */
-    suspend fun calculateEmbedding(vararg text: String): List<List<Double>> =
-        calculateEmbedding(listOf(*text))
+    suspend fun calculateEmbedding(vararg text: String, outputDimensionality: Int? = null): List<List<Double>> =
+        calculateEmbedding(listOf(*text), outputDimensionality)
 
 }
 
