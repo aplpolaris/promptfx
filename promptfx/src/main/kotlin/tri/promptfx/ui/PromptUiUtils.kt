@@ -27,7 +27,21 @@ import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
 import javafx.scene.layout.HBox
 import tornadofx.*
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.PromptFxWorkspace
+
+/**
+ * Shows a combobox for viewing a prompt, with a single option so it's not editable.
+ */
+fun EventTarget.promptfield(
+    fieldName: String = "Template",
+    promptId: String,
+    workspace: Workspace
+) {
+    val promptText = SimpleStringProperty(AiPromptLibrary.lookupPrompt(promptId).template)
+    promptfield(fieldName, SimpleStringProperty(promptId), listOf(promptId), promptText, workspace)
+}
+
 
 /**
  * Adds a combobox for selecting a prompt, a text for seeing the prompt,

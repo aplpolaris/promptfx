@@ -23,16 +23,18 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.templatePlan
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
-/** Plugin for the [TextToJsonView]. */
-class TextToJsonPlugin : NavigableWorkspaceViewImpl<TextToJsonView>("Text", "Text-to-JSON", TextToJsonView::class)
+/** Plugin for the [StructuredDataView]. */
+class StructuredDataPlugin : NavigableWorkspaceViewImpl<StructuredDataView>("Text", "Structured Data", StructuredDataView::class)
 
 /** View designed to convert text to JSON. */
-class TextToJsonView: AiPlanTaskView("Text-to-JSON",
-    "Enter text in the top box to convert to JSON (or other structured format).",) {
+class StructuredDataView: AiPlanTaskView("Structured Data",
+    "Enter text in the top box to convert to JSON or another structured format.") {
 
     private val sourceText = SimpleStringProperty("")
 
@@ -57,8 +59,9 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
                 textfield(guidance)
             }
             field("Format as") {
-                combobox(formatMode, formatModeOptions.keys.toList())
+                combobox(formatMode, formatModeOptions.keys.toList()) { isEditable = true }
             }
+            promptfield(promptId = "text-to-json", workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
         parameters("Response") {
@@ -72,7 +75,7 @@ class TextToJsonView: AiPlanTaskView("Text-to-JSON",
     override fun plan() = completionEngine.templatePlan("text-to-json",
         "input" to sourceText.get(),
         "guidance" to guidance.get(),
-        "format" to formatModeOptions[formatMode.value]!!,
+        "format" to (formatModeOptions[formatMode.value] ?: formatMode.value),
         "example" to sampleOutput.get(),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,

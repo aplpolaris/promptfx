@@ -12,9 +12,9 @@ tri.promptfx.docs.DocumentInsightPlugin
 tri.promptfx.apps.EntityExtractionPlugin
 tri.promptfx.apps.QuestionAnsweringPlugin
 tri.promptfx.apps.SentimentAnalysisPlugin
+tri.promptfx.apps.StructuredDataPlugin
 tri.promptfx.apps.SummarizationPlugin
 tri.promptfx.apps.TextSimilarityPlugin
-tri.promptfx.apps.TextToJsonPlugin
 tri.promptfx.apps.TranslationPlugin
 tri.promptfx.fun.ChatBackPlugin
 tri.promptfx.fun.ColorPlugin

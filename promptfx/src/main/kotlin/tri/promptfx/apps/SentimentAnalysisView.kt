@@ -23,6 +23,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.instructTextPlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
@@ -41,8 +42,9 @@ class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
         addInputTextArea(sourceText)
         parameters("Sentiment Mode") {
             field("Mode") {
-                combobox(mode, modeOptions)
+                combobox(mode, modeOptions) { isEditable = true }
             }
+            promptfield(promptId = "sentiment-classify", workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
     }

@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.paint.Color
 import tri.ai.openai.promptPlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /*-
@@ -36,6 +37,9 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
 
     init {
         addInputTextArea(input)
+        parameters("Prompt") {
+            promptfield(promptId = "example-color", workspace = workspace)
+        }
         onCompleted {
             updateOutputTextAreaColor(it.finalResult.toString())
         }

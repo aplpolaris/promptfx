@@ -24,6 +24,7 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.instructTextPlan
 import tri.promptfx.*
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
@@ -41,8 +42,9 @@ class TranslationView: AiPlanTaskView("Translation", "Enter text to translate.")
         addInputTextArea(sourceText)
         parameters("Target Language") {
             field("Language") {
-                combobox(mode, modeOptions)
+                combobox(mode, modeOptions) { isEditable = true }
             }
+            promptfield(promptId = "translate-text", workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
     }

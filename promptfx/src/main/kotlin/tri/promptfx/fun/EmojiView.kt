@@ -20,6 +20,7 @@
 package tri.promptfx.`fun`
 
 import tri.promptfx.AiCompletionView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [EmojiView]. */
@@ -32,4 +33,10 @@ class EmojiView : AiCompletionView(
     "example-emoji",
     tokenLimit = 50,
     temp = null
-)
+) {
+    init {
+        parameters("Prompt") {
+            promptfield(promptId = "example-emoji", workspace = workspace)
+        }
+    }
+}

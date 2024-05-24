@@ -25,6 +25,7 @@ import tornadofx.field
 import tri.ai.openai.templatePlan
 import tri.ai.pips.AiPlanner
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
@@ -48,14 +49,15 @@ class SummarizationView: AiPlanTaskView("Summarization", "Enter text to summariz
         addInputTextArea(sourceText)
         parameters("Summarization Options") {
             field("Summarize for") {
-                combobox(modeAudience, audienceOptions.keys.toList())
+                combobox(modeAudience, audienceOptions.keys.toList()) { isEditable = true }
             }
             field("Style of") {
-                combobox(modeStyle, styleOptions.keys.toList())
+                combobox(modeStyle, styleOptions.keys.toList()) { isEditable = true }
             }
             field("Shown as") {
-                combobox(modeOutput, outputOptions.keys.toList())
+                combobox(modeOutput, outputOptions.keys.toList()) { isEditable = true }
             }
+            promptfield(promptId = "summarization", workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
     }

@@ -24,6 +24,7 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.templatePlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.yaml
 
@@ -43,11 +44,12 @@ class EntityExtractionView: AiPlanTaskView("Entity Extraction", "Enter text to e
         addInputTextArea(sourceText)
         parameters("Extraction Mode") {
             field("Mode") {
-                combobox(mode, modeOptions)
+                combobox(mode, modeOptions) { isEditable = true }
             }
             field("Format as") {
-                combobox(formatMode, formatModeOptions.keys.toList())
+                combobox(formatMode, formatModeOptions.keys.toList()) { isEditable = true }
             }
+            promptfield(promptId = "entity-extraction", workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
     }
