@@ -312,7 +312,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             else -> {
                 try {
                     val regex = filter.toRegex()
-                    return { regex.matches(it) }
+                    return { regex.find(it) != null }
                 } catch (x: PatternSyntaxException) {
                     tri.util.warning<PromptScriptView>("Invalid regex: ${x.message}")
                     return { false }
