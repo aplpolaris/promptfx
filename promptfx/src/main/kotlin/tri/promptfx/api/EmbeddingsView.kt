@@ -34,7 +34,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
     private val input = SimpleStringProperty("")
     private val model = SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
     private val customOutputDimensionality = SimpleBooleanProperty(false)
-    private val outputDimensionality = SimpleIntegerProperty(0)
+    private val outputDimensionality = SimpleIntegerProperty(1)
 
     init {
         addInputTextArea(input)
@@ -43,7 +43,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
                 combobox(model, PromptFxModels.embeddingModels())
             }
             field("Custom output dimensionality") {
-                checkbox(null, customOutputDimensionality)
+                checkbox("", customOutputDimensionality)
                 spinner(1, 4096, 1024, 1, editable = true, property = outputDimensionality) {
                     enableWhen(customOutputDimensionality)
                     tooltip("Maximum number of characters in a single chunk of text.")
