@@ -25,7 +25,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.memory.*
 import tri.ai.openai.*
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import kotlin.system.exitProcess
 
 /** Example of a chat that has a memory of previous conversations. */

@@ -44,9 +44,9 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.http.*
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
-import tri.ai.openai.OpenAiModels.AUDIO_WHISPER
-import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
-import tri.ai.openai.OpenAiModels.IMAGE_DALLE2
+import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
+import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.IMAGE_DALLE2
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit

@@ -27,7 +27,7 @@ import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {

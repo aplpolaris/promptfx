@@ -19,7 +19,7 @@
  */
 import tri.ai.core.TextPlugin;
 import tri.ai.gemini.GeminiAiPlugin;
-import tri.ai.openai.OpenAiTextPlugin;
+import tri.ai.openai.OpenAiPlugin;
 
 module tri.promptkt {
     requires transitive kotlin.stdlib;
@@ -53,6 +53,7 @@ module tri.promptkt {
     requires io.ktor.serialization;
     requires io.ktor.serialization.kotlinx.json;
     requires io.ktor.utils;
+    requires io.ktor.client.logging;
 
     opens tri.ai.gemini to io.ktor.serialization;
 
@@ -83,5 +84,5 @@ module tri.promptkt {
     // services (service loader API)
     uses TextPlugin;
 
-    provides TextPlugin with OpenAiTextPlugin, GeminiAiPlugin;
+    provides TextPlugin with OpenAiPlugin, GeminiAiPlugin;
 }

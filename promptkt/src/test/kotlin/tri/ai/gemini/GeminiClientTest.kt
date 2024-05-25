@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
-import tri.ai.gemini.GeminiModels.EMBED1
-import tri.ai.gemini.GeminiModels.GEMINI_PRO
+import tri.ai.gemini.GeminiModelIndex.EMBED1
+import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
 
 @Disabled("Requires apikey")
 class GeminiClientTest {

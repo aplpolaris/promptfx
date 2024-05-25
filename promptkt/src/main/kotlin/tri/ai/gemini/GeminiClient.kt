@@ -23,6 +23,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -31,8 +32,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
+import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 import java.io.File
+import java.net.URI
 import java.util.logging.Logger
 
 /** General purpose client for the Gemini API. */
@@ -92,6 +95,28 @@ class GeminiClient : Closeable {
                     else -> error("Invalid role: ${it.role}")
                 }
                 Content(listOf(Part(it.content)), role)
+            },
+            systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
+            generationConfig = config
+        )
+        return client.post("models/$modelId:generateContent") {
+            setBody(request)
+        }.body<GenerateContentResponse>()
+    }
+
+    suspend fun generateContentVision(messages: List<VisionLanguageChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
+        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
+        val request = GenerateContentRequest(
+            messages.filter { it.role != TextChatRole.System }.map {
+                val role = when (it.role) {
+                    TextChatRole.User -> "user"
+                    TextChatRole.Assistant -> "model"
+                    else -> error("Invalid role: ${it.role}")
+                }
+                Content(listOf(
+                    Part(it.content),
+                    Part(null, Blob.image(it.image))
+                ), role)
             },
             systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
             generationConfig = config
@@ -170,6 +195,10 @@ class GeminiSettings {
                 ignoreUnknownKeys = true
                 explicitNulls = false
             })
+        }
+        install(Logging) {
+            logger = io.ktor.client.plugins.logging.Logger.SIMPLE
+            level = LogLevel.NONE
         }
         install(HttpTimeout) {
             socketTimeoutMillis = timeoutSeconds * 1000L
@@ -264,9 +293,23 @@ data class Part(
 
 @Serializable
 data class Blob(
-    val data: String,
-    val mimeType: String
-)
+    val mimeType: String,
+    val data: String
+) {
+    companion object {
+        /** Generate blob from image URL. */
+        fun image(url: URI): Blob {
+            val urlStr = url.toASCIIString()
+            if (urlStr.startsWith("data:image/")) {
+                val mimeType = urlStr.substringBefore(";base64,").substringAfter("data:")
+                val base64 = urlStr.substringAfter(";base64,")
+                return Blob(mimeType, base64)
+            } else {
+                throw UnsupportedOperationException("Only data URLs are supported for images.")
+            }
+        }
+    }
+}
 
 @Serializable
 data class GenerationConfig(

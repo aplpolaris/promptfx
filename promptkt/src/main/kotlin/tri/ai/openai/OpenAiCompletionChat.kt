@@ -25,7 +25,7 @@ import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.pips.AiTaskResult
 
 /** Text completion with OpenAI chat models. */

@@ -27,15 +27,15 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
-import tri.ai.openai.OpenAiTextPlugin
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiPlugin
 import tri.ai.prompt.AiPromptLibrary
 
 @Disabled("Requires apikey")
 class JsonFunctionExecutorTest {
 
     companion object {
-        val GPT35 = OpenAiTextPlugin().textCompletionModels().first()
+        val GPT35 = OpenAiPlugin().textCompletionModels().first()
 
         val SAMPLE_TOOL1 = tool("calc", "Use this to do math",
             """{"type":"object","properties":{"input":{"type":"string"}}}""") {

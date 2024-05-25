@@ -22,7 +22,7 @@ package tri.promptfx
 import javafx.scene.paint.Color
 import tri.ai.core.*
 import tri.ai.embedding.EmbeddingService
-import tri.ai.openai.OpenAiTextPlugin
+import tri.ai.openai.OpenAiPlugin
 
 /** Policy for determining which models are available within PromptFx. */
 abstract class PromptFxPolicy {
@@ -63,12 +63,12 @@ data class PromptFxPolicyBar(
     val fgColorDark: Color = fgColor
 )
 
-/** OpenAI-only policy, as managed by [OpenAiTextPlugin]. */
+/** OpenAI-only policy, as managed by [OpenAiPlugin]. */
 object PromptFxPolicyOpenAi : PromptFxPolicy() {
     override val isShowUsage = true
     override val isShowBanner = true
     override val isShowApiKeyButton = true
-    private val plugin = OpenAiTextPlugin()
+    private val plugin = OpenAiPlugin()
     override fun embeddingModels() = plugin.embeddingModels()
     override fun textCompletionModels() = plugin.textCompletionModels()
     override fun chatModels() = plugin.chatModels()

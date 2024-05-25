@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.tool.JsonFunctionExecutorTest.Companion.SAMPLE_TOOLS
 
 @Disabled("Requires apikey")

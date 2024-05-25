@@ -27,7 +27,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.openai.OpenAiModels
+import tri.ai.openai.OpenAiModelIndex
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 
@@ -37,7 +37,7 @@ import tri.promptfx.ModelParameters
  */
 abstract class ChatView(title: String, instruction: String) : AiTaskView(title, instruction) {
 
-    private val CHAT_MODELS = OpenAiModels.chatModels(includeSnapshots = true)
+    private val CHAT_MODELS = OpenAiModelIndex.chatModels(includeSnapshots = true)
 
     protected val system = SimpleStringProperty("")
 

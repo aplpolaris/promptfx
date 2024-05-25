@@ -80,23 +80,23 @@ class GeminiAiPlugin : TextPlugin {
     else listOf()
 
     override fun embeddingModels() = if (client.isConfigured())
-        GeminiModels.embeddingModels().map { GeminiEmbeddingService(it, client) }
+        GeminiModelIndex.embeddingModels().map { GeminiEmbeddingService(it, client) }
     else listOf()
 
     override fun chatModels() = if (client.isConfigured())
-        GeminiModels.chatModels().map { GeminiTextChat(it, client) }
+        GeminiModelIndex.chatModels().map { GeminiTextChat(it, client) }
     else listOf()
 
     override fun textCompletionModels() = if (client.isConfigured())
-        GeminiModels.completionModels().map { GeminiTextCompletion(it, client) }
+        GeminiModelIndex.completionModels().map { GeminiTextCompletion(it, client) }
     else listOf()
 
     override fun visionLanguageModels() = if (client.isConfigured())
-        GeminiModels.visionLanguageModels().map { TODO() }
+        GeminiModelIndex.visionLanguageModels().map { GeminiVisionLanguageChat(it, client) }
     else listOf()
 
     override fun imageGeneratorModels() = if (client.isConfigured())
-        GeminiModels.imageGeneratorModels().map { TODO() }
+        GeminiModelIndex.imageGeneratorModels().map { TODO() }
     else listOf()
 
     override fun close() {

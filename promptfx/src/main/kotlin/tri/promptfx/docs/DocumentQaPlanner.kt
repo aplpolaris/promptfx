@@ -25,7 +25,7 @@ import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
-import tri.ai.openai.OpenAiModels.ADA_ID
+import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.openai.instructTask
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask

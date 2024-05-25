@@ -49,7 +49,17 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
                 temperature = temp
                 maxTokens = tokens
                 this.stop = stop
-                this.messages = messages.map { it.openAiMessage() }
+                messages {
+                    messages.forEach { m ->
+                        message {
+                            role = m.role.openAiRole()
+                            content {
+                                text(m.content)
+                                image(m.image.toString())
+                            }
+                        }
+                    }
+                }
                 responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
             }
         )

@@ -42,13 +42,12 @@ import javafx.scene.media.Media
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.openai.OpenAiModels
+import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -63,7 +62,7 @@ class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio"
 /** View for OpenAI API's [TTS](https://platform.openai.com/docs/api-reference/audio/createSpeech) endpoint. */
 class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate speech.") {
 
-    private val TTS_MODELS = OpenAiModels.ttsModels()
+    private val TTS_MODELS = OpenAiModelIndex.ttsModels()
     private val TTS_VOICES = listOf(Alloy, Echo, Fable, Nova, Onyx, Shimmer)
     private val AUDIO_FORMATS = listOf(Mp3, Aac, Flac, Opus)
 

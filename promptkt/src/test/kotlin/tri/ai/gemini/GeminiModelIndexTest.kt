@@ -17,29 +17,22 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core
+package tri.ai.gemini
 
-import tri.ai.pips.AiTaskResult
-import java.net.URI
-import java.net.URL
+import org.junit.jupiter.api.Test
 
-/**
- * An interface for completing vision-language chats.
- */
-interface VisionLanguageChat {
+class GeminiModelIndexTest {
 
-    val modelId: String
-
-    /** Completes user text. */
-    suspend fun chat(
-        messages: List<VisionLanguageChatMessage>,
-        temp: Double? = null,
-        tokens: Int? = 1000,
-        stop: List<String>? = null,
-        requestJson: Boolean? = null
-    ): AiTaskResult<TextChatMessage>
+    @Test
+    fun testModels() {
+        println(GeminiModelIndex.chatModels())
+        println(GeminiModelIndex.completionModels())
+        println(GeminiModelIndex.embeddingModels())
+        println(GeminiModelIndex.moderationModels())
+        println(GeminiModelIndex.audioModels())
+        println(GeminiModelIndex.ttsModels())
+        println(GeminiModelIndex.imageGeneratorModels())
+        println(GeminiModelIndex.visionLanguageModels())
+    }
 
 }
-
-/** A single message in a vision-language chat. */
-class VisionLanguageChatMessage(val role: TextChatRole, val content: String, val image: URI)

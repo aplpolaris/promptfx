@@ -27,7 +27,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 
 class OpenAiTest {
 
@@ -35,7 +35,7 @@ class OpenAiTest {
 
     @Test
     fun testModelLibrary() {
-        println(OpenAiModels.MODEL_INDEX)
+        println(OpenAiModelIndex.MODEL_INDEX)
     }
 
     @Test
@@ -45,10 +45,10 @@ class OpenAiTest {
         println(res)
         println("-".repeat(50))
         println("OpenAI API models not in local index: " +
-                (res.map { it.id.id }.toSet() - OpenAiModels.MODEL_INDEX.values.map { it.id }.toSet()))
+                (res.map { it.id.id }.toSet() - OpenAiModelIndex.MODEL_INDEX.values.map { it.id }.toSet()))
         println("-".repeat(50))
         println("Local index models not in OpenAI API: " +
-                (OpenAiModels.MODEL_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
+                (OpenAiModelIndex.MODEL_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
     }
 
     @Test

@@ -17,29 +17,22 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core
+package tri.ai.openai
 
-import tri.ai.pips.AiTaskResult
-import java.net.URI
-import java.net.URL
+import org.junit.jupiter.api.Test
 
-/**
- * An interface for completing vision-language chats.
- */
-interface VisionLanguageChat {
+class OpenAiModelIndexTest {
 
-    val modelId: String
-
-    /** Completes user text. */
-    suspend fun chat(
-        messages: List<VisionLanguageChatMessage>,
-        temp: Double? = null,
-        tokens: Int? = 1000,
-        stop: List<String>? = null,
-        requestJson: Boolean? = null
-    ): AiTaskResult<TextChatMessage>
+    @Test
+    fun testModels() {
+        println(OpenAiModelIndex.chatModels())
+        println(OpenAiModelIndex.completionModels())
+        println(OpenAiModelIndex.embeddingModels())
+        println(OpenAiModelIndex.moderationModels())
+        println(OpenAiModelIndex.audioModels())
+        println(OpenAiModelIndex.ttsModels())
+        println(OpenAiModelIndex.imageGeneratorModels())
+        println(OpenAiModelIndex.visionLanguageModels())
+    }
 
 }
-
-/** A single message in a vision-language chat. */
-class VisionLanguageChatMessage(val role: TextChatRole, val content: String, val image: URI)

@@ -25,13 +25,13 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiCompletionChat
-import tri.ai.openai.OpenAiTextPlugin
+import tri.ai.openai.OpenAiPlugin
 import tri.ai.prompt.AiPromptLibrary
 
 @Disabled("Requires apikey")
 class ToolChainExecutorTest {
 
-    val GPT35 = OpenAiTextPlugin().textCompletionModels().first()
+    val GPT35 = OpenAiPlugin().textCompletionModels().first()
 
     @Test
     fun testTools() {

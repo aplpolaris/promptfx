@@ -29,7 +29,7 @@ import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import kotlin.system.exitProcess
 
 object OpenAiSimpleChat {
