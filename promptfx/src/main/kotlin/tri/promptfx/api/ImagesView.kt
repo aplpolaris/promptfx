@@ -34,7 +34,7 @@ import javafx.collections.ObservableList
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.openai.OpenAiModels
+import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptExecInfo
@@ -294,7 +294,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
         private val STANDARD_QUALITY = Quality("standard")
 
-        private val IMAGE_MODELS = OpenAiModels.imageGeneratorModels()
+        private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
         private val IMAGE_SIZES = mapOf(
             DALLE2_ID to listOf(
                 ImageSize.is256x256,

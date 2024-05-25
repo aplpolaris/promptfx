@@ -23,7 +23,7 @@ import tornadofx.Component
 import tornadofx.ScopedInstance
 import tri.ai.openai.OpenAiChat
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModels.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 
 /** General-purpose tool that generates responses to chat messages. */
 abstract class ChatDriver : ScopedInstance, Component() {

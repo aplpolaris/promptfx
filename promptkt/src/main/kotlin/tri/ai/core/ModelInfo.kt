@@ -45,6 +45,7 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     }
 }
 
+/** Model types. */
 enum class ModelType {
     TEXT_COMPLETION,
     TEXT_CHAT,
@@ -58,3 +59,4 @@ enum class ModelType {
     QUESTION_ANSWER,
     UNKNOWN
 }
+

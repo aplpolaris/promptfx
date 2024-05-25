@@ -31,7 +31,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.openai.OpenAiModels
+import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskResult
 import tri.util.ui.AudioRecorder
@@ -46,7 +46,7 @@ class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to
 /** View for the OpenAI API's [Whisper](https://platform.openai.com/docs/api-reference/audio) endpoint. */
 class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {
 
-    private val AUDIO_MODELS = OpenAiModels.audioModels()
+    private val AUDIO_MODELS = OpenAiModelIndex.audioModels()
 
     private val input = SimpleStringProperty("")
     private val file = SimpleObjectProperty<File?>(null)

@@ -19,26 +19,33 @@
  */
 package tri.ai.gemini
 
-import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
-import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
+import tri.ai.core.VisionLanguageChat
+import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.pips.AiTaskResult
 
-/** Text chat with Gemini models. */
-class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
-    TextChat {
+/** Vision chat completion with Gemini models. */
+class GeminiVisionLanguageChat(override val modelId: String, val client: GeminiClient = GeminiClient.INSTANCE) :
+    VisionLanguageChat {
 
     override fun toString() = "$modelId (Gemini)"
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?) =
-        client.generateContent(messages, modelId,
+    override suspend fun chat(
+        messages: List<VisionLanguageChatMessage>,
+        temp: Double?,
+        tokens: Int?,
+        stop: List<String>?,
+        requestJson: Boolean?
+    ): AiTaskResult<TextChatMessage> {
+        val response = client.generateContentVision(messages, modelId,
             GenerationConfig(
                 maxOutputTokens = tokens ?: 500,
                 stopSequences = stop,
                 responseMimeType = if (requestJson == true) "application/json" else null
             )
-        ).candidates!!.first().let {
+        )
+        return response.candidates!!.first().let {
             val role = when (it.content.role) {
                 "user" -> TextChatRole.User
                 "model" -> TextChatRole.Assistant
@@ -46,5 +53,6 @@ class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: Gemi
             }
             AiTaskResult.result(TextChatMessage(role, it.content.parts[0].text))
         }
+    }
 
 }

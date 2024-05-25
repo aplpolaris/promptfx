@@ -20,10 +20,10 @@
 package tri.ai.gemini
 
 import tri.ai.core.TextCompletion
-import tri.ai.gemini.GeminiModels.GEMINI_PRO
+import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
 import tri.ai.pips.AiTaskResult
 
-/** Text completion with OpenAI models. */
+/** Text completion with Gemini models. */
 class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextCompletion {
 

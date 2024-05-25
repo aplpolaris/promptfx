@@ -26,6 +26,8 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import tornadofx.*
+import tri.ai.core.TextChatRole
+import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.openai.OpenAiClient
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
@@ -33,9 +35,10 @@ import tri.promptfx.*
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import java.io.ByteArrayOutputStream
+import java.net.URI
+import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
-
 
 /** Plugin for the [ImageDescribeView]. */
 class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", ImageDescribeView::class)
@@ -86,22 +89,32 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     }.planner
 
     private suspend fun describeImage(prompt: String): String? {
-        val res = OpenAiClient.INSTANCE.client.chatCompletion(
-            chatCompletionRequest {
-                model = ModelId(this@ImageDescribeView.model.value.modelId)
-                temperature = common.temp.value
-                maxTokens = common.maxTokens.value
-                messages {
-                    user {
-                        content {
-                            text(prompt)
-                            image("data:image/png;base64,"+imageBase64!!)
-                        }
-                    }
-                }
-            }
+        val res = model.value.chat(
+            listOf(
+                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create("data:image/png;base64,"+imageBase64!!))
+            ),
+            common.temp.value,
+            common.maxTokens.value,
+            null,
+            false
         )
-        return res.choices[0].message.content
+//        val res = OpenAiClient.INSTANCE.client.chatCompletion(
+//            chatCompletionRequest {
+//                model = ModelId(this@ImageDescribeView.model.value.modelId)
+//                temperature = common.temp.value
+//                maxTokens = common.maxTokens.value
+//                messages {
+//                    user {
+//                        content {
+//                            text(prompt)
+//                            image("data:image/png;base64,"+imageBase64!!)
+//                        }
+//                    }
+//                }
+//            }
+//        )
+//        return res.choices[0].message.content
+        return res.value!!.content!!
     }
 
 }

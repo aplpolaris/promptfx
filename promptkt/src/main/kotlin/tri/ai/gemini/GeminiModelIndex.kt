@@ -19,8 +19,10 @@
  */
 package tri.ai.gemini
 
+import tri.ai.core.ModelIndex
+
 /** Models available in the Gemini API. */
-object GeminiModels {
+object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
 
     //region MODEL ID's
 
@@ -28,19 +30,10 @@ object GeminiModels {
     const val EMBED4 = "text-embedding-004"
 
     const val GEMINI_PRO = "gemini-pro"
-    const val GEMINI_1_PRO = "gemini-1.0-pro"
-    const val GEMINI_1_PRO_001 = "gemini-1.0-pro-001"
-    const val GEMINI_1_PRO_LATEST = "gemini-1.0-pro-latest"
-
     const val GEMINI_PRO_VISION = "gemini-pro-vision"
-    const val GEMINI_1_PRO_VISION_LATEST = "gemini-1.0-pro-vision-latest"
+    const val GEMINI_15_FLASH = "gemini-1.5-flash"
+    const val GEMINI_15_PRO = "gemini-1.5-prop"
 
     //endregion
-
-    fun embeddingModels() = listOf(EMBED1, EMBED4)
-    fun completionModels(includeSnapshots: Boolean = false) = listOf(GEMINI_PRO, GEMINI_1_PRO)
-    fun chatModels(includeSnapshots: Boolean = false) = listOf(GEMINI_PRO, GEMINI_1_PRO)
-    fun visionLanguageModels() = listOf<String>()
-    fun imageGeneratorModels() = listOf<String>()
 
 }

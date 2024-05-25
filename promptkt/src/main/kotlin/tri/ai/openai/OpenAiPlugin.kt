@@ -31,7 +31,7 @@ import java.time.ZoneId
  * Implementation of [TextPlugin] using OpenAI API.
  * Models are as described in `openai-models.yaml`.
  */
-class OpenAiTextPlugin : TextPlugin {
+class OpenAiPlugin : TextPlugin {
 
     val client = OpenAiClient.INSTANCE
 
@@ -47,27 +47,27 @@ class OpenAiTextPlugin : TextPlugin {
     }
 
     private fun Model.toModelInfo(): ModelInfo {
-        val existing = OpenAiModels.MODEL_INDEX[id.id]
+        val existing = OpenAiModelIndex.MODEL_INDEX[id.id]
         val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, modelSource())
         info.created = Instant.ofEpochSecond(created).atZone(ZoneId.systemDefault()).toLocalDate()
         return info
     }
 
     override fun embeddingModels() =
-        OpenAiModels.embeddingModels().map { OpenAiEmbeddingService(it, client) }
+        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingService(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModels.chatModels(false).map { OpenAiCompletionChat(it, client) } +
-        OpenAiModels.completionModels(false).map { OpenAiCompletion(it, client) }
+        OpenAiModelIndex.chatModels(false).map { OpenAiCompletionChat(it, client) } +
+        OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModels.chatModels(false).map { OpenAiChat(it, client) }
+        OpenAiModelIndex.chatModels(false).map { OpenAiChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiModels.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiModels.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
+        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()

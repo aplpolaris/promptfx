@@ -26,11 +26,11 @@ import org.junit.jupiter.api.Test
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.PrintMonitor
 import tri.ai.openai.OpenAiCompletion
-import tri.ai.openai.OpenAiModels
+import tri.ai.openai.OpenAiModelIndex
 
 class WikipediaAiTaskPlannerTest {
 
-    val engine = OpenAiCompletion(OpenAiModels.GPT35_TURBO_INSTRUCT)
+    val engine = OpenAiCompletion(OpenAiModelIndex.GPT35_TURBO_INSTRUCT)
 
     @Test
     fun testPlanner() {

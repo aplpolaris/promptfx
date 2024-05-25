@@ -20,11 +20,11 @@
 package tri.ai.gemini
 
 import tri.ai.embedding.EmbeddingService
-import tri.ai.gemini.GeminiModels.EMBED1
+import tri.ai.gemini.GeminiModelIndex.EMBED1
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.process.SmartTextChunker
 
-/** An embedding service that uses the OpenAI API. */
+/** An embedding service that uses the Gemini API. */
 class GeminiEmbeddingService(override val modelId: String = EMBED1, val client: GeminiClient = GeminiClient.INSTANCE) : EmbeddingService {
 
     override fun toString() = "$modelId (Gemini)"

@@ -22,7 +22,7 @@ package tri.ai.openai
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
-import tri.ai.openai.OpenAiModels.GPT35_TURBO_INSTRUCT
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_INSTRUCT
 import tri.ai.pips.AiTaskResult
 
 /** Text completion with OpenAI models. */

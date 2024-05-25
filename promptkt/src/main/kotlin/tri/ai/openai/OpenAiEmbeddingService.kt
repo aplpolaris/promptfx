@@ -20,7 +20,7 @@
 package tri.ai.openai
 
 import tri.ai.embedding.EmbeddingService
-import tri.ai.openai.OpenAiModels.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.process.SmartTextChunker
 
