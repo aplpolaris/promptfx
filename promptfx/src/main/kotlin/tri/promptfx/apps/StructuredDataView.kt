@@ -38,7 +38,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
 
     private val sourceText = SimpleStringProperty("")
 
-    private val formatModeOptions = RuntimePromptViewConfigs.modes["structured-format"]!!
+    private val formatModeOptions = RuntimePromptViewConfigs.modeOptionMap("structured-format")
     private val guidance = SimpleStringProperty("")
     private val formatMode = SimpleStringProperty(formatModeOptions.keys.first())
     private val requestJson = SimpleBooleanProperty()

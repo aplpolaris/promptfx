@@ -45,7 +45,7 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
         val id = config.id
         val idInTemplate = config.templateId
         val label = config.label
-        val options: List<String> = RuntimePromptViewConfigs.modes[id]!!.keys.toList()
+        val options: List<String> = RuntimePromptViewConfigs.modeOptionList(id)
         val mode = SimpleStringProperty(options[0])
     }
 

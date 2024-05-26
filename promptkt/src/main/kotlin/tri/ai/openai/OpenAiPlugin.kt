@@ -47,7 +47,7 @@ class OpenAiPlugin : TextPlugin {
     }
 
     private fun Model.toModelInfo(): ModelInfo {
-        val existing = OpenAiModelIndex.MODEL_INDEX[id.id]
+        val existing = OpenAiModelIndex.MODEL_INFO_INDEX[id.id]
         val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, modelSource())
         info.created = Instant.ofEpochSecond(created).atZone(ZoneId.systemDefault()).toLocalDate()
         return info
