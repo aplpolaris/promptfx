@@ -46,7 +46,7 @@ class AiPromptLibrary {
         //region RUNTIME PROMPT FILE
 
         /** The file used to store prompts created at runtime. */
-        val RUNTIME_PROMPTS_FILE = File("prompts.yaml")
+        val RUNTIME_PROMPTS_FILE = File("prompts.yaml").let { if (it.exists()) it else File("config/prompts.yaml") }
 
         /** The instance of the prompt library with only the prompts configurable at runtime. */
         val RUNTIME_INSTANCE by lazy {
