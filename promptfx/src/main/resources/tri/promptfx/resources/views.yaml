@@ -15,6 +15,18 @@ entity-extraction:
     id: entity-extraction
   isShowModelParameters: true
 
+sentiment-analysis:
+  category: Text
+  title: Sentiment Analysis
+  description: Enter text to estimate sentiment.
+  modeOptions:
+    - id: sentiment
+      templateId: instruct
+      label: Sentiment
+  promptConfig:
+    id: sentiment-classify
+  isShowModelParameters: true
+
 summarization:
   category: Text
   title: Summarize
