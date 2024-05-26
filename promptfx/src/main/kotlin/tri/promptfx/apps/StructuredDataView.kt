@@ -23,11 +23,11 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.openai.templatePlan
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.AiPrompt
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.yaml
 
 /** Plugin for the [StructuredDataView]. */
 class StructuredDataPlugin : NavigableWorkspaceViewImpl<StructuredDataView>("Text", "Structured Data", StructuredDataView::class)
@@ -38,7 +38,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
 
     private val sourceText = SimpleStringProperty("")
 
-    private val formatModeOptions = resources.yaml("resources/modes.yaml")["structured-format"] as Map<String, String>
+    private val formatModeOptions = RuntimePromptViewConfigs.modes["structured-format"]!!
     private val guidance = SimpleStringProperty("")
     private val formatMode = SimpleStringProperty(formatModeOptions.keys.first())
     private val requestJson = SimpleBooleanProperty()
@@ -73,7 +73,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
     }
 
     override fun plan() = completionEngine.templatePlan("text-to-json",
-        "input" to sourceText.get(),
+        AiPrompt.INPUT to sourceText.get(),
         "guidance" to guidance.get(),
         "format" to (formatModeOptions[formatMode.value] ?: formatMode.value),
         "example" to sampleOutput.get(),

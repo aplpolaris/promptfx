@@ -19,24 +19,24 @@
  */
 package tri.promptfx.apps
 
-import com.aallam.openai.api.chat.*
-import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import tornadofx.*
+import tornadofx.combobox
+import tornadofx.field
+import tornadofx.stringBinding
+import tornadofx.tooltip
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.openai.OpenAiClient
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
-import tri.promptfx.*
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import java.io.ByteArrayOutputStream
 import java.net.URI
-import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 

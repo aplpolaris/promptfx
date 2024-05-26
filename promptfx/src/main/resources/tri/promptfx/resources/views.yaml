@@ -1,0 +1,55 @@
+# Library of view configurations
+---
+entity-extraction:
+  category: Text
+  title: Entity Extraction
+  description: Extract entities from text.
+  modeOptions:
+    - id: entities
+      templateId: mode
+      label: Mode
+    - id: structured-format
+      templateId: format
+      label: Format as
+  promptConfig:
+    id: entity-extraction
+  isShowModelParameters: true
+
+summarization:
+  category: Text
+  title: Summarize
+  description: Summarize text.
+  modeOptions:
+    - id: summarization-audience
+      templateId: audience
+      label: Summarize for
+    - id: summarization-style
+      templateId: style
+      label: Style of
+    - id: summarization-format
+      templateId: format
+      label: Shown as
+  promptConfig:
+    id: summarization
+  isShowModelParameters: true
+
+translation:
+  category: Text
+  title: Translation
+  description: Translate text from one language to another.
+  modeOptions:
+    - id: translation
+      templateId: instruct
+      label: Language
+  promptConfig:
+    id: translate-text
+  isShowModelParameters: true
+
+emoji:
+  category: Fun
+  title: Text-to-Emoji
+  description: Enter text to get an emoji.
+  modeOptions: []
+  promptConfig:
+    id: example-emoji
+  isShowModelParameters: false

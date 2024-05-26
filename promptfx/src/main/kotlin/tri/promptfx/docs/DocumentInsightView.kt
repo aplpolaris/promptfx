@@ -30,6 +30,7 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.aggregate
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
@@ -165,7 +166,7 @@ class DocumentInsightView: AiPlanTaskView(
                     .joinToString("\n\n")
                 runLater { mapResult.value = concat }
                 completionEngine.complete(
-                    reducePromptUi.fill("input" to concat),
+                    reducePromptUi.fill(AiPrompt.INPUT to concat),
                     common.maxTokens.value,
                     common.temp.value
                 ).map { concat to it }
@@ -185,7 +186,7 @@ class DocumentInsightView: AiPlanTaskView(
             model = completionEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPromptUi.templateText.value
-            promptParams = mapOf("input" to inputs, "name" to names)
+            promptParams = mapOf(AiPrompt.INPUT to inputs, "name" to names)
             runs = inputs.size
         }.tasks().map {
             // wrap each task to monitor output and update the UI with interim results

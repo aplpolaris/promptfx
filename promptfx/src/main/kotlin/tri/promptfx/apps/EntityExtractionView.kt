@@ -19,47 +19,12 @@
  */
 package tri.promptfx.apps
 
-import javafx.beans.property.SimpleStringProperty
-import tornadofx.combobox
-import tornadofx.field
-import tri.ai.openai.templatePlan
-import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.promptfield
+import tri.promptfx.RuntimePromptView
+import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.yaml
 
 /** Plugin for [EntityExtractionView]. */
 class EntityExtractionPlugin : NavigableWorkspaceViewImpl<EntityExtractionView>("Text", "Entity Extraction", EntityExtractionView::class)
 
 /** View for prompts designed to extract entities from text. */
-class EntityExtractionView: AiPlanTaskView("Entity Extraction", "Enter text to extract entities or facts.") {
-
-    private val modeOptions = resources.yaml("resources/modes.yaml")["entities"] as List<String>
-    private val formatModeOptions = resources.yaml("resources/modes.yaml")["structured-format"] as Map<String, String>
-    private val sourceText = SimpleStringProperty("")
-    private val mode = SimpleStringProperty(modeOptions[0])
-    private val formatMode = SimpleStringProperty(formatModeOptions.keys.first())
-
-    init {
-        addInputTextArea(sourceText)
-        parameters("Extraction Mode") {
-            field("Mode") {
-                combobox(mode, modeOptions) { isEditable = true }
-            }
-            field("Format as") {
-                combobox(formatMode, formatModeOptions.keys.toList()) { isEditable = true }
-            }
-            promptfield(promptId = "entity-extraction", workspace = workspace)
-        }
-        addDefaultTextCompletionParameters(common)
-    }
-
-    override fun plan() = completionEngine.templatePlan("entity-extraction",
-        "input" to sourceText.get(),
-        "mode" to mode.value,
-        "format" to formatModeOptions[formatMode.value]!!,
-        tokenLimit = common.maxTokens.value!!,
-        temp = common.temp.value
-    )
-
-}
+class EntityExtractionView: RuntimePromptView(RuntimePromptViewConfigs.config("entity-extraction"))

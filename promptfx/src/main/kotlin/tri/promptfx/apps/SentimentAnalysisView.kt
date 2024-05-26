@@ -20,12 +20,13 @@
 package tri.promptfx.apps
 
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.*
+import tornadofx.combobox
+import tornadofx.field
 import tri.ai.openai.instructTextPlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.yaml
 
 /** Plugin for the [SentimentAnalysisView]. */
 class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView>("Text", "Sentiment Analysis", SentimentAnalysisView::class)
@@ -34,7 +35,7 @@ class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView
 class SentimentAnalysisView: AiPlanTaskView("Sentiment Analysis",
     "Enter text to determine sentiment (or provide a numbered list of items)") {
 
-    private val modeOptions = resources.yaml("resources/modes.yaml")["sentiment"] as List<String>
+    private val modeOptions = RuntimePromptViewConfigs.modes["sentiment"]!!.keys.toList()
     private val sourceText = SimpleStringProperty("")
     private val mode = SimpleStringProperty(modeOptions[0])
 
