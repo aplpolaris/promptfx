@@ -22,6 +22,8 @@ package tri.promptfx
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.event.EventTarget
+import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
@@ -30,12 +32,10 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
-import tri.promptfx.PromptFxDriver.setInputAndRun
 import tri.promptfx.ui.PromptTraceDetails
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
-
 
 /**
  * Text area for displaying a prompt result or other output. Adjusts font size, adds ability to copy/save output to a file.
@@ -64,47 +64,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
         font = Font("Segoe UI Emoji", 18.0)
         vgrow = Priority.ALWAYS
 
-        // add context menu option to save result to a file
-        contextmenu {
-            item("Details...") {
-                enableWhen { trace.isNotNull }
-                action {
-                    find<PromptTraceDetails>().apply {
-                        setTrace(this@PromptResultArea.trace.value)
-                        openModal()
-                    }
-                }
-            }
-            item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
-                action {
-                    (workspace as PromptFxWorkspace).launchTemplateView(trace.value)
-                }
-            }
-            menu("Send result to view") {
-                enableWhen(trace.booleanBinding { it != null && !it.outputInfo.output.isNullOrBlank() })
-                // add menu items dynamically, when you load the menu
-                trace.onChange {
-                    items.clear()
-                    (workspace as PromptFxWorkspace).viewsWithInputs.forEach { (group, list) ->
-                        if (list.isNotEmpty()) {
-                            menu(group) {
-                                list.forEach {
-                                    val view = find(it) as AiTaskView
-                                    item(view.title) {
-                                        action {
-                                            with (PromptFxDriver) {
-                                                setInputAndRun(view, trace.value.outputInfo.output!!)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            separator()
+        promptTraceContextMenu(this@PromptResultArea, trace) {
             item("Select all") {
                 action { selectAll() }
             }
@@ -170,3 +130,48 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     //endregion
 
 }
+
+/** Set up a context menu with a given prompt trace object. */
+fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObjectProperty<AiPromptTrace>, op: ContextMenu.() -> Unit = {}) =
+    contextmenu {
+        item("Details...") {
+            enableWhen { trace.isNotNull }
+            action {
+                find<PromptTraceDetails>().apply {
+                    setTrace(trace.value)
+                    openModal()
+                }
+            }
+        }
+        item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+            enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
+            action {
+                (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
+            }
+        }
+        menu("Send result to view") {
+            enableWhen(trace.booleanBinding { it != null && !it.outputInfo.output.isNullOrBlank() })
+            // add menu items dynamically, when you load the menu
+            trace.onChange {
+                items.clear()
+                (component.workspace as PromptFxWorkspace).viewsWithInputs.forEach { (group, list) ->
+                    if (list.isNotEmpty()) {
+                        menu(group) {
+                            list.forEach {
+                                val view = component.find(it) as AiTaskView
+                                item(view.title) {
+                                    action {
+                                        with (PromptFxDriver) {
+                                            component.setInputAndRun(view, trace.value.outputInfo.output!!)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        separator()
+        op()
+    }

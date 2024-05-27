@@ -96,13 +96,3 @@ text-simplify-audience:
     ```
     {{{input}}}
     ```
-
-# convert input into a Bluey episode
-document-reduce-bluey-episode:
-  template-name: Bluey Episode
-  template-prompt: |
-    Combine the following summaries into an outline of a script for a Bluey episode.
-    Provide three main scenes, and for each scene include a brief description of the setting and the main events.
-    ```
-    {{{input}}}
-    ```

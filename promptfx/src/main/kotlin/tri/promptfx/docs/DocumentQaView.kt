@@ -41,15 +41,13 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
-import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.PromptTraceDetails
+import tri.promptfx.promptTraceContextMenu
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.graphic
 import tri.util.ui.plainText
 import tri.util.ui.slider
 import java.io.File
@@ -159,23 +157,7 @@ class DocumentQaView: AiPlanTaskView(
                     vgrow = Priority.ALWAYS
                     style = "-fx-font-size: 16px;"
 
-                    contextmenu {
-                        item("Details...") {
-                            enableWhen { resultTrace.isNotNull }
-                            action {
-                                find<PromptTraceDetails>().apply {
-                                    setTrace(resultTrace.get())
-                                    openModal()
-                                }
-                            }
-                        }
-                        item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                            enableWhen(resultTrace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
-                            action {
-                                (workspace as PromptFxWorkspace).launchTemplateView(resultTrace.value)
-                            }
-                        }
-                        separator()
+                    promptTraceContextMenu(this@DocumentQaView, resultTrace) {
                         item("Copy output to clipboard") {
                             action {
                                 clipboard.setContent(mapOf(
