@@ -28,7 +28,7 @@ import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [QuestionAnsweringView]. */
-class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", QuestionAnsweringView::class)
+class QuestionAnsweringPlugin : NavigableWorkspaceViewImpl<QuestionAnsweringView>("Text", "Question Answering", isScriptable = true, QuestionAnsweringView::class)
 
 /** View with prompts designed to answer questions. */
 class QuestionAnsweringView: AiPlanTaskView("Question Answering",

@@ -38,6 +38,7 @@ class PromptFxWorkspace : Workspace() {
 
     val promptFxConfig : PromptFxConfig by inject()
     val views = mutableMapOf<String, Class<out UIComponent>>()
+    val viewsWithInputs = mutableMapOf<String, MutableList<Class<out UIComponent>>>()
     var immersiveChatView: ImmersiveChatView? = null
 
     init {
@@ -74,23 +75,23 @@ class PromptFxWorkspace : Workspace() {
         with(leftDrawer) {
             group("API", FontAwesomeIcon.CLOUD.graphic.forestGreen) {
                 (this as DrawerItem).padding = insets(5.0)
-                hyperlinkview<ModelsView>("Models")
+                hyperlinkview<ModelsView>("API", "Models")
                 separator { }
                 label("Text APIs")
-                hyperlinkview<ChatViewBasic>("Chat")
-                hyperlinkview<ChatViewAdvanced>("Chat (Advanced)")
-                hyperlinkview<CompletionsView>("Completions")
+                hyperlinkview<ChatViewBasic>("API", "Chat")
+                hyperlinkview<ChatViewAdvanced>("API", "Chat (Advanced)")
+                hyperlinkview<CompletionsView>("API", "Completions")
                 separator { }
                 label("Audio/Visual APIs")
-                hyperlinkview<AudioView>("Audio")
-                hyperlinkview<AudioSpeechView>("Speech")
-                hyperlinkview<ImagesView>("Images")
+                hyperlinkview<AudioView>("API", "Audio")
+                hyperlinkview<AudioSpeechView>("API", "Speech")
+                hyperlinkview<ImagesView>("API", "Images")
                 separator { }
                 label("Advanced APIs")
-                hyperlinkview<EmbeddingsView>("Embeddings")
-                hyperlinkview<FineTuningApiView>("Fine-tuning")
-                hyperlinkview<FilesView>("Files")
-                hyperlinkview<ModerationsView>("Moderations")
+                hyperlinkview<EmbeddingsView>("API", "Embeddings")
+                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
+                hyperlinkview<FilesView>("API", "Files")
+                hyperlinkview<ModerationsView>("API", "Moderations")
                 separator { }
                 label("Documentation/Links")
                 browsehyperlink("OpenAI API Reference", "https://platform.openai.com/docs/api-reference")
@@ -215,7 +216,7 @@ class PromptFxWorkspace : Workspace() {
         item(title, icon, expanded = false) {
             op()
             NavigableWorkspaceView.viewPlugins.filter { it.category == title }.forEach {
-                hyperlinkview(it)
+                hyperlinkview(title, it)
             }
         }.apply {
             if (children.isEmpty()) {
@@ -224,7 +225,7 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
-    private inline fun <reified T: UIComponent> EventTarget.hyperlinkview(name: String) {
+    private inline fun <reified T: UIComponent> EventTarget.hyperlinkview(viewGroup: String, name: String) {
         if (PromptFxModels.policy.supportsView(T::class.java.simpleName)) {
             views[name] = T::class.java
             hyperlink(name) {
@@ -236,10 +237,13 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
-    private fun EventTarget.hyperlinkview(view: NavigableWorkspaceView) {
+    private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
         if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
             if (view is NavigableWorkspaceViewImpl<*>) {
                 views[view.name] = view.type.java
+                if (AiTaskView::class.java.isAssignableFrom(view.type.java) && view.isScriptable) {
+                    viewsWithInputs.getOrPut(viewGroup) { mutableListOf() }.add(view.type.java)
+                }
             }
             hyperlink(view.name) {
                 action {

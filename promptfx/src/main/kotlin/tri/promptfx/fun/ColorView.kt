@@ -28,7 +28,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
  */
 
 /** Plugin for the [ColorView]. */
-class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", ColorView::class)
+class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", isScriptable = true, ColorView::class)
 
 /** View to approximate a color based on user text. */
 class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or object to generate a color.") {

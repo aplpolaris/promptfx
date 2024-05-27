@@ -24,7 +24,7 @@ import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [TranslationView]. */
-class TranslationPlugin : NavigableWorkspaceViewImpl<TranslationView>("Text", "Translation", TranslationView::class)
+class TranslationPlugin : NavigableWorkspaceViewImpl<TranslationView>("Text", "Translation", isScriptable = true, TranslationView::class)
 
 /** View designed to automatically translate text. */
 class TranslationView : RuntimePromptView(RuntimePromptViewConfigs.config("translation"))

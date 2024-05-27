@@ -47,7 +47,7 @@ import tri.util.ui.*
 import java.util.*
 
 /** Plugin for the [ImagesView]. */
-class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", ImagesView::class)
+class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", isScriptable = true, ImagesView::class)
 
 /** View for the OpenAI API's image endpoint (https://platform.openai.com/docs/api-reference/images). */
 class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {

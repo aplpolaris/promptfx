@@ -57,7 +57,7 @@ import tri.util.ui.createListBinding
 import java.io.File
 
 /** Plugin for the [TextLibraryView]. */
-class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "Text Manager", TextLibraryView::class)
+class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "Text Manager", isScriptable = false, TextLibraryView::class)
 
 /** A view designed to help you manage collections of documents and text. */
 class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text.") {

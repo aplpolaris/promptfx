@@ -41,7 +41,7 @@ import java.util.*
 import javax.imageio.ImageIO
 
 /** Plugin for the [ImageDescribeView]. */
-class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", ImageDescribeView::class)
+class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", isScriptable = false, ImageDescribeView::class)
 
 /** View designed to describe an image. */
 class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an image to describe into the box on the left.") {

@@ -30,6 +30,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
+import tri.promptfx.PromptFxDriver.setInputAndRun
 import tri.promptfx.ui.PromptTraceDetails
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
@@ -78,6 +79,29 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                 enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
                 action {
                     (workspace as PromptFxWorkspace).launchTemplateView(trace.value)
+                }
+            }
+            menu("Send result to view") {
+                enableWhen(trace.booleanBinding { it != null && !it.outputInfo.output.isNullOrBlank() })
+                // add menu items dynamically, when you load the menu
+                trace.onChange {
+                    items.clear()
+                    (workspace as PromptFxWorkspace).viewsWithInputs.forEach { (group, list) ->
+                        if (list.isNotEmpty()) {
+                            menu(group) {
+                                list.forEach {
+                                    val view = find(it) as AiTaskView
+                                    item(view.title) {
+                                        action {
+                                            with (PromptFxDriver) {
+                                                setInputAndRun(view, trace.value.outputInfo.output!!)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             separator()

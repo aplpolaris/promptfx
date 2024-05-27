@@ -24,7 +24,7 @@ import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [EmojiView]. */
-class EmojiPlugin : NavigableWorkspaceViewImpl<EmojiView>("Fun", "Text-to-Emoji", EmojiView::class)
+class EmojiPlugin : NavigableWorkspaceViewImpl<EmojiView>("Fun", "Text-to-Emoji", isScriptable = true, EmojiView::class)
 
 /** View to turn text into Emoji. */
 class EmojiView : RuntimePromptView(RuntimePromptViewConfigs.config("emoji"))

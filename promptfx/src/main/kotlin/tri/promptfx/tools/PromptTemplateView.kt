@@ -36,7 +36,7 @@ import tri.util.warning
 import java.time.LocalDate
 
 /** Plugin for the [PromptTemplateView]. */
-class PromptTemplatePlugin : NavigableWorkspaceViewImpl<PromptTemplateView>("Tools", "Prompt Template", PromptTemplateView::class)
+class PromptTemplatePlugin : NavigableWorkspaceViewImpl<PromptTemplateView>("Tools", "Prompt Template", isScriptable = false, PromptTemplateView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptTemplateView : AiPlanTaskView("Prompt Template",

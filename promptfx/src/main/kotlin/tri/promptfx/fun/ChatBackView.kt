@@ -39,7 +39,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 
 /** Plugin for the [ChatBackView]. */
-class ChatBackPlugin : NavigableWorkspaceViewImpl<ChatBackView>("Fun", "AI Conversations", ChatBackView::class)
+class ChatBackPlugin : NavigableWorkspaceViewImpl<ChatBackView>("Fun", "AI Conversations", isScriptable = false, ChatBackView::class)
 
 /** View with prompts for configuring a topical conversation among various personalities. */
 class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting prompt and/or add to conversation below.") {
