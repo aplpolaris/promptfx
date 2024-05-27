@@ -32,7 +32,7 @@ object StarshipContentConfig {
 
     private val configFile = setOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
     private val configFileAlt = setOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
-    private val config = YAMLMapper().readValue<Map<String, Any>>(configFileAlt ?: configFile!!)
+    private val config: Map<String, Any> = (configFileAlt ?: configFile)?.let { YAMLMapper().readValue(it) } ?: mapOf()
 
     val backgroundIcon: FontAwesomeIcon = FontAwesomeIcon.STAR_ALT
     val backgroundIconCount = 1000
