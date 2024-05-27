@@ -37,6 +37,9 @@ class ModelLibrary {
     var moderation = listOf<String>()
     var tts = listOf<String>()
     var vision_language = listOf<String>()
+
+    /** Create model index with unique identifiers, including any registered snapshots. */
+    fun modelInfoIndex() = models.values.flatten().flatMap { listOf(it) + it.createSnapshots() }.associateBy { it.id }
 }
 
 /** A model index with configurable model information and runtime overrides. */
@@ -47,14 +50,15 @@ abstract class ModelIndex(val modelFileName: String) {
         registerModule(JavaTimeModule())
     }
 
-    /** List of model ids can be overridden at runtime. */
-    private val RUNTIME_MODELS: ModelLibrary = File(modelFileName).let {
-        if (it.exists()) MAPPER.readValue(it) else ModelLibrary()
-    }
+    /** Model definitions in library. */
     private val MODELS: ModelLibrary = MAPPER.readValue(javaClass.getResourceAsStream("resources/$modelFileName")!!)
-    private val FLAT_MODELS = MODELS.models.values.flatten()
-    internal val MODEL_INDEX = FLAT_MODELS.associateBy { it.id } +
-            FLAT_MODELS.flatMap { it.createSnapshots() }.associateBy { it.id }
+    /** Model overrides at runtime - ids only. */
+    private val RUNTIME_MODELS: ModelLibrary = setOf(File(modelFileName), File("config/$modelFileName"))
+        .firstOrNull { it.exists() }?.let {
+            MAPPER.readValue(it)
+        } ?: ModelLibrary()
+    /** [ModelInfo] by id, where config in runtime overrides preconfigured info. */
+    internal val MODEL_INFO_INDEX = MODELS.modelInfoIndex() + RUNTIME_MODELS.modelInfoIndex()
 
     fun chatModels(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots)
     fun completionModels(includeSnapshots: Boolean = false) = models(ModelLibrary::completion, includeSnapshots)
@@ -77,7 +81,7 @@ abstract class ModelIndex(val modelFileName: String) {
      */
     private fun lookupModels(preconfigured: List<String>, runtime: List<String>) =
         (runtime.ifEmpty { preconfigured }).map {
-            MODEL_INDEX[it] ?: ModelInfo(it, ModelType.UNKNOWN, "runtime")
+            MODEL_INFO_INDEX[it] ?: ModelInfo(it, ModelType.UNKNOWN, "runtime")
         }
 
 }

@@ -1,0 +1,16 @@
+# Library of view configurations
+---
+entity-extraction:
+  category: Text
+  title: Entity Extraction
+  description: Extract entities from text (runtime override)
+  modeOptions:
+    - id: entities
+      templateId: mode
+      label: Mode
+    - id: structured-format
+      templateId: format
+      label: Format as
+  promptConfig:
+    id: entity-extraction
+  isShowModelParameters: true

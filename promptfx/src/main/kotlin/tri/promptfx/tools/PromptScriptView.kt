@@ -100,7 +100,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             squeezebox {
                 fold("Prompt Settings", expanded = true) {
                     promptUi = EditablePromptUi(
-                        promptFilter = { it.value.fields() == listOf("input") },
+                        promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
                         instruction = "Prompt to Execute:"
                     )
                     add(promptUi)
@@ -270,7 +270,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         model = completionEngine.modelId
         modelParams = common.toModelParams()
         prompt = promptUi.templateText.value
-        promptParams = mapOf("input" to inputs)
+        promptParams = mapOf(AiPrompt.INPUT to inputs)
         runs = inputs.size
     }
 
@@ -327,7 +327,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
      */
     private fun llmFilter(prompt: String, input: String): Boolean {
         val result = runBlocking {
-            AiPrompt(prompt).fill("input" to input)
+            AiPrompt(prompt).fill(AiPrompt.INPUT to input)
                 .let { completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value) }
                 .value
         }
@@ -351,7 +351,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         if (outputCsv.value) {
             val key = "CSV Output"
             val csvHeader = inputs.headerRow?.let { "$it,output" } ?: "input,output"
-            val csv = results.joinToString("\n") { "${it.promptInfo.promptParams["input"]},${it.outputInfo.output}" }
+            val csv = results.joinToString("\n") { "${it.promptInfo.promptParams[AiPrompt.INPUT]},${it.outputInfo.output}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
         val promptInfo: AiPromptInfo
@@ -360,10 +360,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val joined = joinerText.value.fill("matches" to
                 results.map { mapOf("text" to (it.outputInfo.output ?: "")) }
             )
-            val summarizer = summaryPromptText.value.fill("input" to joined)
+            val summarizer = summaryPromptText.value.fill(AiPrompt.INPUT to joined)
             val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
             resultSets[key] = summarizerResult.value ?: "(error or no output returned)"
-            promptInfo = AiPromptInfo(summaryPromptText.value, mapOf("input" to joined))
+            promptInfo = AiPromptInfo(summaryPromptText.value, mapOf(AiPrompt.INPUT to joined))
         } else {
             promptInfo = AiPromptInfo("")
         }

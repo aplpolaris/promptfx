@@ -30,9 +30,9 @@ import java.io.File
 /** Configurable content for Starship demo mode. */
 object StarshipContentConfig {
 
-    private val configFile = File("starship.yaml")
-    private val configFileAlt = File("starship-custom.yaml")
-    private val config = YAMLMapper().readValue<Map<String, Any>>(if (configFileAlt.exists()) configFileAlt else configFile)
+    private val configFile = setOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
+    private val configFileAlt = setOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
+    private val config: Map<String, Any> = (configFileAlt ?: configFile)?.let { YAMLMapper().readValue(it) } ?: mapOf()
 
     val backgroundIcon: FontAwesomeIcon = FontAwesomeIcon.STAR_ALT
     val backgroundIconCount = 1000

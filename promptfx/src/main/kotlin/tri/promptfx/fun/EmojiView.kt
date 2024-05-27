@@ -19,24 +19,12 @@
  */
 package tri.promptfx.`fun`
 
-import tri.promptfx.AiCompletionView
-import tri.promptfx.ui.promptfield
+import tri.promptfx.RuntimePromptView
+import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [EmojiView]. */
 class EmojiPlugin : NavigableWorkspaceViewImpl<EmojiView>("Fun", "Text-to-Emoji", EmojiView::class)
 
 /** View to turn text into Emoji. */
-class EmojiView : AiCompletionView(
-    "Emoji",
-    "Enter text to turn into Emoji",
-    "example-emoji",
-    tokenLimit = 50,
-    temp = null
-) {
-    init {
-        parameters("Prompt") {
-            promptfield(promptId = "example-emoji", workspace = workspace)
-        }
-    }
-}
+class EmojiView : RuntimePromptView(RuntimePromptViewConfigs.config("emoji"))

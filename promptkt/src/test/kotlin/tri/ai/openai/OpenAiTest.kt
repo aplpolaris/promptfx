@@ -35,7 +35,7 @@ class OpenAiTest {
 
     @Test
     fun testModelLibrary() {
-        println(OpenAiModelIndex.MODEL_INDEX)
+        println(OpenAiModelIndex.MODEL_INFO_INDEX)
     }
 
     @Test
@@ -45,10 +45,10 @@ class OpenAiTest {
         println(res)
         println("-".repeat(50))
         println("OpenAI API models not in local index: " +
-                (res.map { it.id.id }.toSet() - OpenAiModelIndex.MODEL_INDEX.values.map { it.id }.toSet()))
+                (res.map { it.id.id }.toSet() - OpenAiModelIndex.MODEL_INFO_INDEX.values.map { it.id }.toSet()))
         println("-".repeat(50))
         println("Local index models not in OpenAI API: " +
-                (OpenAiModelIndex.MODEL_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
+                (OpenAiModelIndex.MODEL_INFO_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
     }
 
     @Test
