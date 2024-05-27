@@ -30,6 +30,7 @@ interface NavigableWorkspaceView {
 
     val category: String
     val name: String
+    val isScriptable: Boolean
 //    val description: String
 //    val icon: String
 

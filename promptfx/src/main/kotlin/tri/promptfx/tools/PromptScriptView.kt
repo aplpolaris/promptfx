@@ -47,7 +47,7 @@ import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
-class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", PromptScriptView::class)
+class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", isScriptable = false, PromptScriptView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptScriptView : AiPlanTaskView("Prompt Scripting",

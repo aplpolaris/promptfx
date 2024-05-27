@@ -47,7 +47,7 @@ import tri.util.ui.slider
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
-class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", DocumentInsightView::class)
+class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", isScriptable = false, DocumentInsightView::class)
 
 /** A view that allows the user to run a template-based script against document(s). */
 class DocumentInsightView: AiPlanTaskView(

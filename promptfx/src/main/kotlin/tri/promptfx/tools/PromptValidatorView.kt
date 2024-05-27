@@ -29,7 +29,7 @@ import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptValidatorView]. */
-class PromptValidatorPlugin : NavigableWorkspaceViewImpl<PromptValidatorView>("Tools", "Prompt Validator", PromptValidatorView::class)
+class PromptValidatorPlugin : NavigableWorkspaceViewImpl<PromptValidatorView>("Tools", "Prompt Validator", isScriptable = false, PromptValidatorView::class)
 
 /** View with a prompt for testing, and a second prompt for validation. */
 class PromptValidatorView : AiPlanTaskView(

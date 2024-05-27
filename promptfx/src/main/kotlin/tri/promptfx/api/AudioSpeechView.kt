@@ -57,7 +57,7 @@ import java.io.IOException
 
 
 /** Plugin for the [AudioSpeechView]. */
-class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", AudioSpeechView::class)
+class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", isScriptable = true, AudioSpeechView::class)
 
 /** View for OpenAI API's [TTS](https://platform.openai.com/docs/api-reference/audio/createSpeech) endpoint. */
 class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate speech.") {

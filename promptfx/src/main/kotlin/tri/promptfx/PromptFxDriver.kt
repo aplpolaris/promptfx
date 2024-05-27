@@ -94,6 +94,13 @@ object PromptFxDriver {
         return result
     }
 
+    /** Apply an input to a task view, bring the view to focus, and execute the task. */
+    fun Component.setInputAndRun(view: AiTaskView, input: String) {
+        view.inputArea()?.text = input
+        workspace.dock(view)
+        view.runTask()
+    }
+
     fun Component.showDriverDialog() {
         // show dialog getting the view name to target, and the input
         val dialog = find<PromptFxDriverDialog>()

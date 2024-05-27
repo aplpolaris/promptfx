@@ -28,6 +28,7 @@ import kotlin.reflect.KClass
 abstract class NavigableWorkspaceViewImpl<T : UIComponent>(
     override val category: String,
     override val name: String,
+    override val isScriptable: Boolean,
     internal val type: KClass<T>
 ) : NavigableWorkspaceView {
 

@@ -28,7 +28,7 @@ import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [TextSimilarityView]. */
-class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Text", "Text Similarity", TextSimilarityView::class)
+class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Text", "Text Similarity", isScriptable = false, TextSimilarityView::class)
 
 /** View designed to calculate text similarity. */
 class TextSimilarityView: AiTaskView("Text Similarity",

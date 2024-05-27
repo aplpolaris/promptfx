@@ -55,7 +55,7 @@ import tri.util.ui.slider
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
-class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", DocumentQaView::class)
+class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", isScriptable = true, DocumentQaView::class)
 
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
 class DocumentQaView: AiPlanTaskView(
