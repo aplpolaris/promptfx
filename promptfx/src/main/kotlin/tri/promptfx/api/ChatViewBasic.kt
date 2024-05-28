@@ -22,6 +22,7 @@ package tri.promptfx.api
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
+import com.aallam.openai.api.core.Role
 import com.aallam.openai.api.model.ModelId
 import tri.ai.pips.AiPipelineResult
 
@@ -29,7 +30,7 @@ import tri.ai.pips.AiPipelineResult
  * Basic version of chat through API.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-class ChatViewBasic : ChatView("Chat", "You are chatting with an AI Assistant.") {
+class ChatViewBasic : ChatView("Chat", "Testing AI Assistant chat", listOf(Role.User, Role.Assistant)) {
 
     override suspend fun processUserInput(): AiPipelineResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else

@@ -20,6 +20,7 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.chat.*
+import com.aallam.openai.api.core.Role
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
@@ -33,7 +34,7 @@ import tri.util.ifNotBlank
  * Advanced version of chat API, with support for tools.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an AI Assistant.") {
+class ChatViewAdvanced : ChatView("Chat (Advanced)", "Test the AI Assistant chat, with optional function calls and full control over chat history.", listOf(Role.System, Role.User, Role.Assistant, Role.Tool)) {
 
     private val toolsVisible = SimpleBooleanProperty(false)
     private val toolCall = SimpleStringProperty("")

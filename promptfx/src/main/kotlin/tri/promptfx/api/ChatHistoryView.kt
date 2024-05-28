@@ -20,6 +20,7 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.chat.*
+import com.aallam.openai.api.core.Role
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
@@ -28,7 +29,8 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
 
-class ChatHistoryView : Fragment() {
+/** Fragment showing a history of chat messages. */
+class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : Fragment() {
 
     val components = observableListOf<ChatMessageUiModel>().apply {
         add(ChatMessageUiModel(ChatRole.User, ""))
@@ -45,8 +47,18 @@ class ChatHistoryView : Fragment() {
                     hbox {
                         spacing = 10.0
                         // only allow user or assistant per intended API use
-                        combobox(it.roleProperty, listOf(ChatRole.User, ChatRole.Assistant)) {
+                        combobox(it.roleProperty, roles) {
                             cellFormat { text = it.role }
+                        }
+                        hbox {
+                            alignment = Pos.CENTER
+                            spacing = 10.0
+                            managedWhen(it.roleProperty.isEqualTo(Role.Tool))
+                            visibleWhen(it.roleProperty.isEqualTo(Role.Tool))
+                            text("id:")
+                            textfield(it.toolCallIdProperty) {
+                                isEditable = false
+                            }
                         }
                         textfield(it.nameProperty) {
                             visibleWhen(it.nameProperty.isNotBlank())
@@ -60,16 +72,20 @@ class ChatHistoryView : Fragment() {
                     hbox {
                         alignment = Pos.CENTER
                         spacing = 10.0
-                        managedWhen(it.toolCallNameProperty.isNotBlank())
-                        visibleWhen(it.toolCallNameProperty.isNotBlank())
+                        managedWhen(it.toolCallsNameProperty.isNotBlank())
+                        visibleWhen(it.toolCallsNameProperty.isNotBlank())
                         text("tool:")
-                        textfield(it.toolCallNameProperty) {
+                        textfield(it.toolCallsNameProperty) {
                             isEditable = false
                         }
                         text("args:")
-                        textfield(it.toolCallArgsProperty) {
+                        textfield(it.toolCallsArgsProperty) {
                             isEditable = false
                             hgrow = Priority.ALWAYS
+                        }
+                        text("id:")
+                        textfield(it.toolCallsIdProperty) {
+                            isEditable = false
                         }
                     }
                     textarea(it.contentProperty) {
@@ -82,7 +98,7 @@ class ChatHistoryView : Fragment() {
                 }
             }
         }
-        toolbar {
+        hbox {
             spacing = 10.0
             button("Add message", FontAwesomeIconView(FontAwesomeIcon.PLUS_CIRCLE)) {
                 action { components.add(ChatMessageUiModel()) }
@@ -94,16 +110,18 @@ class ChatHistoryView : Fragment() {
     }
 
     fun chatMessages() = components.map {
-        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, toolCalls = it.toolCalls)
+        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, toolCalls = it.toolCalls, toolCallId = it.toolCallId)
     }
 
 }
 
+/** UI model for a chat message. */
 class ChatMessageUiModel(
     role: ChatRole = ChatRole.User,
     content: String = "",
     name: String? = null,
-    _toolCalls: List<ToolCall.Function>? = null
+    _toolCalls: List<ToolCall.Function>? = null,
+    _toolCallId: ToolId? = null
 ) : ViewModel() {
     val roleProperty = SimpleObjectProperty(role)
     val role: ChatRole by roleProperty
@@ -115,12 +133,12 @@ class ChatMessageUiModel(
     var name: String? by nameProperty
 
     val toolCalls: List<ToolCall.Function>? = _toolCalls
+    val toolCallId: ToolId? = _toolCallId
 
-    val toolCallNameProperty = SimpleStringProperty(_toolCalls?.joinToString(", ") { it.function.name })
-    var toolCallName: String? by toolCallNameProperty
-
-    val toolCallArgsProperty = SimpleStringProperty(_toolCalls?.joinToString("\n") { it.function.arguments })
-    var toolCallArgs: String by toolCallArgsProperty
+    val toolCallsNameProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.function.name })
+    val toolCallsArgsProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.function.arguments })
+    val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id.id })
+    val toolCallIdProperty = SimpleStringProperty(_toolCallId?.id)
 
     companion object {
         fun valueOf(it: ChatMessage) =
@@ -128,7 +146,8 @@ class ChatMessageUiModel(
                 role = it.role,
                 content = it.content ?: "",
                 name = it.name,
-                _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>()
+                _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>(),
+                _toolCallId = it.toolCallId
             )
     }
 }
