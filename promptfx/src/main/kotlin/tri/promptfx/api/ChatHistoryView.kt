@@ -25,9 +25,15 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.event.EventTarget
 import javafx.geometry.Pos
+import javafx.scene.image.Image
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.promptfx.hasImageFile
+import tri.util.ui.graphic
+import tri.util.ui.toUri
 
 /** Fragment showing a history of chat messages. */
 class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : Fragment() {
@@ -42,60 +48,7 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
         listview(components) {
             vgrow = Priority.ALWAYS
             cellFormat {
-                graphic = vbox {
-                    spacing = 10.0
-                    hbox {
-                        spacing = 10.0
-                        // only allow user or assistant per intended API use
-                        combobox(it.roleProperty, roles) {
-                            cellFormat { text = it.role }
-                        }
-                        hbox {
-                            alignment = Pos.CENTER
-                            spacing = 10.0
-                            managedWhen(it.roleProperty.isEqualTo(Role.Tool))
-                            visibleWhen(it.roleProperty.isEqualTo(Role.Tool))
-                            text("id:")
-                            textfield(it.toolCallIdProperty) {
-                                isEditable = false
-                            }
-                        }
-                        textfield(it.nameProperty) {
-                            visibleWhen(it.nameProperty.isNotBlank())
-                            tooltip("The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content.")
-                            hgrow = Priority.ALWAYS
-                        }
-                        button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
-                            action { components.remove(it) }
-                        }
-                    }
-                    hbox {
-                        alignment = Pos.CENTER
-                        spacing = 10.0
-                        managedWhen(it.toolCallsNameProperty.isNotBlank())
-                        visibleWhen(it.toolCallsNameProperty.isNotBlank())
-                        text("tool:")
-                        textfield(it.toolCallsNameProperty) {
-                            isEditable = false
-                        }
-                        text("args:")
-                        textfield(it.toolCallsArgsProperty) {
-                            isEditable = false
-                            hgrow = Priority.ALWAYS
-                        }
-                        text("id:")
-                        textfield(it.toolCallsIdProperty) {
-                            isEditable = false
-                        }
-                    }
-                    textarea(it.contentProperty) {
-                        managedWhen(it.roleProperty.isEqualTo(ChatRole.User).or(it.contentProperty.isNotBlank()))
-                        visibleWhen(it.roleProperty.isEqualTo(ChatRole.User).or(it.contentProperty.isNotBlank()))
-                        hgrow = Priority.ALWAYS
-                        prefRowCount = 3
-                        isWrapText = true
-                    }
-                }
+                graphic = ChatHistoryItem(it, roles, remove = { components.remove(it) }).root
             }
         }
         hbox {
@@ -110,15 +63,134 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
     }
 
     fun chatMessages() = components.map {
-        ChatMessage(it.role, it.content, it.name?.ifBlank { null }, toolCalls = it.toolCalls, toolCallId = it.toolCallId)
+        chatMessage {
+            role = it.role
+            name = it.name?.ifBlank { null }
+            content {
+                if (it.content.isNotBlank())
+                    text(it.content)
+                if (it.contentImage != null)
+                    image(it.contentImage!!.url, it.detailImageProperty.value.let { if (it == "auto") null else it })
+            }
+            toolCalls = it.toolCalls
+            toolCallId = it.toolCallId
+        }
     }
+}
 
+/** UI for a single chat message. */
+class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
+    override val root = vbox(10.0) {
+        hbox {
+            spacing = 10.0
+            // only allow user or assistant per intended API use
+            combobox(chat.roleProperty, roles) {
+                cellFormat { text = it.role }
+            }
+            hbox(5.0, Pos.CENTER_LEFT) {
+                managedWhen(chat.contentImageProperty.isNotNull)
+                visibleWhen(chat.contentImageProperty.isNotNull)
+                style = "-fx-background-color: #f0f0f0;"
+                text("Image:")
+                button(chat.detailImageProperty) {
+                    action {
+                        chat.detailImageProperty.value = when (chat.detailImageProperty.value) {
+                            "auto" -> "low"
+                            "low" -> "high"
+                            else -> "auto"
+                        }
+                    }
+                }
+                button("", FontAwesomeIcon.MINUS_SQUARE.graphic) {
+                    action {
+                        chat.contentImageProperty.set(null)
+                    }
+                }
+            }
+            hbox {
+                alignment = Pos.CENTER
+                spacing = 10.0
+                managedWhen(chat.roleProperty.isEqualTo(Role.Tool))
+                visibleWhen(chat.roleProperty.isEqualTo(Role.Tool))
+                text("id:")
+                textfield(chat.toolCallIdProperty) {
+                    isEditable = false
+                }
+            }
+            textfield(chat.nameProperty) {
+                visibleWhen(chat.nameProperty.isNotBlank())
+                tooltip("The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content.")
+            }
+            spacer()
+            button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
+                action { remove() }
+            }
+        }
+        hbox {
+            alignment = Pos.CENTER
+            spacing = 10.0
+            managedWhen(chat.toolCallsNameProperty.isNotBlank())
+            visibleWhen(chat.toolCallsNameProperty.isNotBlank())
+            text("tool:")
+            textfield(chat.toolCallsNameProperty) {
+                isEditable = false
+            }
+            text("args:")
+            textfield(chat.toolCallsArgsProperty) {
+                isEditable = false
+                hgrow = Priority.ALWAYS
+            }
+            text("id:")
+            textfield(chat.toolCallsIdProperty) {
+                isEditable = false
+            }
+        }
+        hbox(10.0) {
+            textarea(chat.contentProperty) {
+                managedWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
+                visibleWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
+                hgrow = Priority.ALWAYS
+                prefRowCount = 3
+                isWrapText = true
+            }
+            imagethumbnail(chat.contentImageProperty)
+            setOnDragOver {
+                if (it.dragboard.hasImage() || it.dragboard.hasImageFile()) {
+                    it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+                }
+                it.consume()
+            }
+            setOnDragDropped { it
+                if (it.dragboard.hasImage()) {
+                    chat.contentImageProperty.set(ImagePart.ImageURL(it.dragboard.image.toUri()))
+                } else if (it.dragboard.hasImageFile()) {
+                    chat.contentImageProperty.set(ImagePart.ImageURL(Image(it.dragboard.files.first().toURI().toString()).toUri()))
+                }
+                it.isDropCompleted = true
+                it.consume()
+            }
+        }
+    }
+}
+
+/** Adds an image thumbnail of given size, with optional ability to edit. */
+fun EventTarget.imagethumbnail(image: SimpleObjectProperty<ImagePart.ImageURL>, size: Int = 128) {
+    imageview {
+        managedWhen(image.isNotNull)
+        visibleWhen(image.isNotNull)
+        imageProperty().bind(image.objectBinding { it?.let { Image(it.url) } })
+        fitWidth = size.toDouble()
+        fitHeight = size.toDouble()
+        isPreserveRatio = true
+        isSmooth = true
+    }
 }
 
 /** UI model for a chat message. */
 class ChatMessageUiModel(
     role: ChatRole = ChatRole.User,
     content: String = "",
+    contentImage: ImagePart.ImageURL? = null,
     name: String? = null,
     _toolCalls: List<ToolCall.Function>? = null,
     _toolCallId: ToolId? = null
@@ -128,6 +200,10 @@ class ChatMessageUiModel(
 
     val contentProperty = SimpleStringProperty(content)
     var content: String by contentProperty
+
+    val contentImageProperty = SimpleObjectProperty<ImagePart.ImageURL>(contentImage)
+    var contentImage: ImagePart.ImageURL? by contentImageProperty
+    val detailImageProperty = SimpleStringProperty("auto")
 
     val nameProperty = SimpleStringProperty(name)
     var name: String? by nameProperty
@@ -145,9 +221,14 @@ class ChatMessageUiModel(
             ChatMessageUiModel(
                 role = it.role,
                 content = it.content ?: "",
+                contentImage = it.imageContent(),
                 name = it.name,
                 _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>(),
                 _toolCallId = it.toolCallId
             )
+
+        /** Find first image content in a message, if present. */
+        fun ChatMessage.imageContent() =
+            ((messageContent as? ListContent)?.content?.firstOrNull { it is ImagePart } as? ImagePart)?.imageUrl
     }
 }

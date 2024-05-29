@@ -274,18 +274,6 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
         }
     }
 
-    private fun Clipboard.hasImageFile() =
-        files.isNotEmpty() && files.first().extension in listOf("png", "jpg", "jpeg")
-
-    private fun Clipboard.hasImageFilePath() =
-        fileFromPlainTextContent()?.let { it.extension in listOf("png", "jpg", "jpeg") } ?: false
-
-    private fun Clipboard.fileFromPlainTextContent(): File? =
-        (getContent(DataFormat.PLAIN_TEXT) as? String)?.let {
-            it.removePrefix("\"").removeSuffix("\"").substringBefore(",")
-                .let { File(it) }
-        }
-
     private fun Node.enableWhenImageOnClipboard() {
         runAsync {
             while (true) {
@@ -394,3 +382,18 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     }
 
 }
+
+/** Check if clipboard has an image. */
+fun Clipboard.hasImageFile() =
+    files.isNotEmpty() && files.first().extension.lowercase() in listOf("png", "jpg", "jpeg")
+
+/** Check if clipboard has an image file path. */
+fun Clipboard.hasImageFilePath() =
+    fileFromPlainTextContent()?.let { it.extension.lowercase() in listOf("png", "jpg", "jpeg") } ?: false
+
+/** Get a file from the clipboard content, if there is a string that appears as a file. */
+fun Clipboard.fileFromPlainTextContent(): File? =
+    (getContent(DataFormat.PLAIN_TEXT) as? String)?.let {
+        it.removePrefix("\"").removeSuffix("\"").substringBefore(",")
+            .let { File(it) }
+    }
