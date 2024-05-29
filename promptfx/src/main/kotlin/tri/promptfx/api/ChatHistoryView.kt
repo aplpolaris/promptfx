@@ -90,6 +90,7 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
             hbox(5.0, Pos.CENTER_LEFT) {
                 managedWhen(chat.contentImageProperty.isNotNull)
                 visibleWhen(chat.contentImageProperty.isNotNull)
+                padding = insets(5.0, 2.0)
                 style = "-fx-background-color: #f0f0f0;"
                 text("Image:")
                 button(chat.detailImageProperty) {
