@@ -27,7 +27,6 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.gemini.GeminiModelIndex
 import tri.ai.openai.OpenAiModelIndex
@@ -38,7 +37,7 @@ import tri.promptfx.ModelParameters
  * Common functionality for chat API views.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-abstract class ChatView(title: String, instruction: String, private val roles: List<Role>) : AiTaskView(title, instruction) {
+abstract class ChatView(title: String, instruction: String, private val roles: List<Role>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
 
     private val chatModels = OpenAiModelIndex.chatModels(includeSnapshots = true) +
             GeminiModelIndex.chatModels(includeSnapshots = true)
@@ -65,12 +64,12 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
     //region INITIALIZATION
 
     private fun initChatSystemMessage() {
-        input {
-            spacing = 10.0
-            paddingAll = 10.0
-            text("System message:")
+        output {
+            spacing = 5.0
+            getChildList()!!.clear()
             textarea(system) {
-                vgrow = Priority.ALWAYS
+                promptText = "Optional system message to include in chat history"
+                prefRowCount = 3
                 isWrapText = true
             }
         }
@@ -78,8 +77,6 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun initChatOutput() {
         output {
-            paddingAll = 10.0
-            getChildList()!!.clear()
             chatHistory = ChatHistoryView(roles)
             add(chatHistory)
         }

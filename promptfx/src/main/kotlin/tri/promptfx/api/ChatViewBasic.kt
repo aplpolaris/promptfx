@@ -30,7 +30,8 @@ import tri.ai.pips.AiPipelineResult
  * Basic version of chat through API.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-class ChatViewBasic : ChatView("Chat", "Testing AI Assistant chat", listOf(Role.User, Role.Assistant)) {
+class ChatViewBasic :
+    ChatView("Chat", "Testing AI Assistant chat.", listOf(Role.User, Role.Assistant), showInput = false) {
 
     override suspend fun processUserInput(): AiPipelineResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else

@@ -44,6 +44,7 @@ class ToolListView : Fragment() {
         spacing = 10.0
         listview(components) {
             isFillWidth = true
+            vgrow = Priority.ALWAYS
             cellFormat {
                 graphic = vbox {
                     spacing = 10.0

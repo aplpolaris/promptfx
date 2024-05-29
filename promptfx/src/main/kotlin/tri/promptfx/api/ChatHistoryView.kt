@@ -47,6 +47,7 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
         spacing = 10.0
         listview(components) {
             vgrow = Priority.ALWAYS
+            isFillWidth = true
             cellFormat {
                 graphic = ChatHistoryItem(it, roles, remove = { components.remove(it) }).root
             }

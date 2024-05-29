@@ -34,9 +34,14 @@ import tri.util.ifNotBlank
  * Advanced version of chat API, with support for tools.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-class ChatViewAdvanced : ChatView("Chat (Advanced)", "Test the AI Assistant chat, with optional function calls and full control over chat history.", listOf(Role.System, Role.User, Role.Assistant, Role.Tool)) {
+class ChatViewAdvanced : ChatView(
+    "Chat (Advanced)",
+    "Test the AI Assistant chat, with optional function calls and full control over chat history.",
+    listOf(Role.System, Role.User, Role.Assistant, Role.Tool),
+    showInput = true
+) {
 
-    private val toolsVisible = SimpleBooleanProperty(false)
+    private val toolsVisible = SimpleBooleanProperty(true)
     private val toolCall = SimpleStringProperty("")
 
     private lateinit var toolView: ToolListView
@@ -48,7 +53,9 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "Test the AI Assistant chat
                 checkbox("Tools", toolsVisible)
                 tooltip("A list of functions the model may generate JSON inputs for.")
                 region { hgrow = Priority.ALWAYS }
-                textfield(toolCall) {
+                combobox(toolCall, listOf("", "auto", "none")) {
+                    promptText = "Function call"
+                    isEditable = true
                     tooltip("""Specify name to call a specific function, or "none" (don't call any functions) or "auto" (model picks whether to call a function).""")
                 }
             }
