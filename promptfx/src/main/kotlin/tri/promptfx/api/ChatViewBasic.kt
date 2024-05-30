@@ -19,12 +19,15 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
+import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Role
 import com.aallam.openai.api.model.ModelId
+import tri.ai.core.TextPlugin
+import tri.ai.gemini.*
+import tri.ai.gemini.Content
+import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiTaskResult
 
 /**
  * Basic version of chat through API.
@@ -38,27 +41,83 @@ class ChatViewBasic :
             listOf(ChatMessage(ChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
 
-        val completion = ChatCompletionRequest(
-            model = ModelId(model.value),
-            messages = messages,
-            temperature = common.temp.value,
-            topP = common.topP.value,
-            n = null,
-            stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-            maxTokens = common.maxTokens.value,
-            presencePenalty = common.presPenalty.value,
-            frequencyPenalty = common.freqPenalty.value,
-            logitBias = null,
-            user = null,
-            functions = null,
-            functionCall = null,
-            responseFormat = responseFormat.value,
-            tools = null,
-            toolChoice = null,
-            seed = if (seedActive.value) seed.value else null
-        )
-        return controller.openAiPlugin.client.chat(completion).asPipelineResult()
+        val m = TextPlugin.chatModel(model.value)
+        if (m is OpenAiChat) {
+            val completion = ChatCompletionRequest(
+                model = ModelId(model.value),
+                messages = messages,
+                temperature = common.temp.value,
+                topP = common.topP.value,
+                n = null,
+                stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
+                maxTokens = common.maxTokens.value,
+                presencePenalty = common.presPenalty.value,
+                frequencyPenalty = common.freqPenalty.value,
+                logitBias = null,
+                user = null,
+                functions = null,
+                functionCall = null,
+                responseFormat = responseFormat.value,
+                tools = null,
+                toolChoice = null,
+                seed = if (seedActive.value) seed.value else null
+            )
+            val response = m.client.chat(completion)
+            return response.asPipelineResult()
+        } else if (m is GeminiTextChat) {
+            val response = m.client.generateContent(
+                m.modelId,
+                GenerateContentRequest(
+                    messages.filter { it.role in setOf(ChatRole.User, ChatRole.Assistant) }.map { it.geminiContent() },
+                    systemInstruction = messages.firstOrNull { it.role == ChatRole.System }?.geminiSystemMessage(),
+                    GenerationConfig(
+                        stopSequences = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
+                        responseMimeType = responseFormat.value?.let {
+                            when (it) {
+                                ChatResponseFormat.Text -> "text/plain"
+                                ChatResponseFormat.JsonObject -> "application/json"
+                                else -> throw UnsupportedOperationException("Unsupported response format: $it")
+                            }
+                        },
+                        candidateCount = null,
+                        maxOutputTokens = common.maxTokens.value,
+                        temperature = common.temp.value,
+                        topP = common.topP.value,
+                        topK = null,
+                    )
+                )
+            )
+            return if (response.error != null)
+                AiTaskResult.invalidRequest<Any>(response.error!!.message).asPipelineResult()
+            else
+                AiTaskResult.result(response.candidates!!.first().content, m.modelId).asPipelineResult()
+        } else {
+            throw IllegalStateException("Unsupported model type: $m")
+        }
     }
+
+    private fun ChatMessage.geminiSystemMessage() =
+        Content.text(content!!)
+
+    private fun ChatMessage.geminiContent() =
+        Content(
+            role = when (role) {
+                ChatRole.User -> "user"
+                ChatRole.Assistant -> "model"
+                else -> throw UnsupportedOperationException("Unsupported role: $role")
+            },
+            parts = when (val m = messageContent) {
+                is TextContent -> listOf(Part(m.content))
+                is ListContent -> m.content.map {
+                    when (it) {
+                        is TextPart -> Part(it.text)
+                        is ImagePart -> Part(null, Blob.image(it.imageUrl.url))
+                        else -> throw UnsupportedOperationException("Unsupported content type: $it")
+                    }
+                }
+                else -> throw UnsupportedOperationException("Unsupported content type: $m")
+            }
+        )
 
 }
 

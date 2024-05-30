@@ -47,10 +47,22 @@ class GeminiClient : Closeable {
     /** Returns true if the client is configured with an API key. */
     fun isConfigured() = settings.apiKey.isNotBlank()
 
+    //region CORE API METHODS
+
     suspend fun listModels(): ModelsResponse {
         return client.get("models")
             .body<ModelsResponse>()
     }
+
+    suspend fun generateContent(modelId: String, request: GenerateContentRequest): GenerateContentResponse {
+        return client.post("models/$modelId:generateContent") {
+            setBody(request)
+        }.body<GenerateContentResponse>()
+    }
+
+    //endregion
+
+    //region ALTERNATE API METHODS
 
     suspend fun embedContent(content: String, modelId: String, outputDimensionality: Int? = null): EmbedContentResponse {
         val request = EmbedContentRequest(Content(listOf(Part(content))), outputDimensionality = outputDimensionality)
@@ -68,21 +80,15 @@ class GeminiClient : Closeable {
         }.body<BatchEmbedContentsResponse>()
     }
 
-    suspend fun generateContent(prompt: String, modelId: String): GenerateContentResponse {
-        val request = GenerateContentRequest(Content(listOf(Part(text = prompt))))
-        return client.post("models/$modelId:generateContent") {
-            setBody(request)
-        }.body<GenerateContentResponse>()
-    }
+    suspend fun generateContent(prompt: String, modelId: String) =
+        generateContent(modelId, GenerateContentRequest(Content.text(prompt)))
 
     suspend fun generateContent(prompt: String, image: String, modelId: String): GenerateContentResponse {
         val request = GenerateContentRequest(Content(listOf(
             Part(text = prompt),
             Part(inlineData = Blob(image, "image/jpeg"))
         )))
-        return client.post("models/$modelId:generateContent") {
-            setBody(request)
-        }.body<GenerateContentResponse>()
+        return generateContent(modelId, request)
     }
 
     suspend fun generateContent(messages: List<TextChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
@@ -99,9 +105,7 @@ class GeminiClient : Closeable {
             systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
             generationConfig = config
         )
-        return client.post("models/$modelId:generateContent") {
-            setBody(request)
-        }.body<GenerateContentResponse>()
+        return generateContent(modelId, request)
     }
 
     suspend fun generateContentVision(messages: List<VisionLanguageChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
@@ -121,10 +125,10 @@ class GeminiClient : Closeable {
             systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
             generationConfig = config
         )
-        return client.post("models/$modelId:generateContent") {
-            setBody(request)
-        }.body<GenerateContentResponse>()
+        return generateContent(modelId, request)
     }
+
+    //endregion
 
     override fun close() {
         client.close()
@@ -282,7 +286,12 @@ data class Content(
     val parts: List<Part>,
     val role: String? = null
 ) {
-    init { require(role in listOf(null, "user", "model", "system")) { "Invalid role: $role" } }
+    init { require(role in listOf(null, "user", "model")) { "Invalid role: $role" } }
+
+    companion object {
+        /** Content with a single text part. */
+        fun text(text: String) = Content(listOf(Part(text)), "user")
+    }
 }
 
 @Serializable
@@ -298,8 +307,10 @@ data class Blob(
 ) {
     companion object {
         /** Generate blob from image URL. */
-        fun image(url: URI): Blob {
-            val urlStr = url.toASCIIString()
+        fun image(url: URI) = image(url.toASCIIString())
+
+        /** Generate blob from image URL. */
+        fun image(urlStr: String): Blob {
             if (urlStr.startsWith("data:image/")) {
                 val mimeType = urlStr.substringBefore(";base64,").substringAfter("data:")
                 val base64 = urlStr.substringAfter(";base64,")

@@ -22,12 +22,14 @@ package tri.promptfx.api
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ToolCall
+import com.aallam.openai.api.chat.chatMessage
 import com.aallam.openai.api.core.Role
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
+import tri.ai.gemini.Content
 import tri.ai.gemini.GeminiModelIndex
 import tri.ai.openai.OpenAiModelIndex
 import tri.promptfx.AiTaskView
@@ -135,8 +137,31 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
     private fun addChatsToHistory(it: Any) {
         when (it) {
             is ChatMessage -> addChat(it)
+            is Content -> addChat(it.toChatMessage())
             is List<*> -> it.forEach { addChatsToHistory(it!!) }
             else -> addChat(ChatMessage(Role.Assistant, it.toString()))
+        }
+    }
+
+    private fun Content.toChatMessage() = chatMessage {
+        role = when (this@toChatMessage.role) {
+            "user" -> Role.User
+            "model" -> Role.Assistant
+            else -> throw IllegalArgumentException("Unsupported role: $role")
+        }
+        if (parts.size == 1 && parts[0].text != null && parts[0].inlineData == null) {
+            content = parts[0].text!!
+        } else {
+            content {
+                parts.forEach {
+                    when {
+                        it.text != null && it.inlineData != null -> throw IllegalStateException("Unsupported content: $it")
+                        it.text != null -> this@content.text(it.text!!)
+                        it.inlineData != null -> this@content.image(it.inlineData!!.data)
+                        else -> throw IllegalStateException("Unsupported content: $it")
+                    }
+                }
+            }
         }
     }
 
