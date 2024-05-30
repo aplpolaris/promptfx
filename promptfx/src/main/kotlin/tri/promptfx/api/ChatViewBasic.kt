@@ -60,7 +60,9 @@ class ChatViewBasic :
                 responseFormat = responseFormat.value,
                 tools = null,
                 toolChoice = null,
-                seed = if (seedActive.value) seed.value else null
+                seed = if (seedActive.value) seed.value else null,
+                logprobs = null,
+                topLogprobs = null
             )
             val response = m.client.chat(completion)
             return response.asPipelineResult()
@@ -92,7 +94,7 @@ class ChatViewBasic :
             else
                 AiTaskResult.result(response.candidates!!.first().content, m.modelId).asPipelineResult()
         } else {
-            throw IllegalStateException("Unsupported model type: $m")
+            return AiTaskResult.invalidRequest<Any>("This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
         }
     }
 

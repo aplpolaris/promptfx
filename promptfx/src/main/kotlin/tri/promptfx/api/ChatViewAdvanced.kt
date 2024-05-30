@@ -27,7 +27,10 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.TextPlugin
+import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiTaskResult
 import tri.util.ifNotBlank
 
 /**
@@ -82,26 +85,33 @@ class ChatViewAdvanced : ChatView(
             toolView.tools().ifEmpty { null }
         }
 
-        val completion = ChatCompletionRequest(
-            model = ModelId(model.value),
-            messages = messages,
-            temperature = common.temp.value,
-            topP = common.topP.value,
-            n = null,
-            stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-            maxTokens = common.maxTokens.value,
-            presencePenalty = common.presPenalty.value,
-            frequencyPenalty = common.freqPenalty.value,
-            logitBias = null,
-            user = null,
-            functions = null,
-            functionCall = null,
-            responseFormat = responseFormat.value,
-            tools = tools,
-            toolChoice = toolChoice,
-            seed = if (seedActive.value) seed.value else null
-        )
-        return controller.openAiPlugin.client.chat(completion).asPipelineResult()
+        val m = TextPlugin.chatModel(model.value)
+        if (m is OpenAiChat) {
+            val completion = ChatCompletionRequest(
+                model = ModelId(model.value),
+                messages = messages,
+                temperature = common.temp.value,
+                topP = common.topP.value,
+                n = null,
+                stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
+                maxTokens = common.maxTokens.value,
+                presencePenalty = common.presPenalty.value,
+                frequencyPenalty = common.freqPenalty.value,
+                logitBias = null,
+                user = null,
+                functions = null,
+                functionCall = null,
+                responseFormat = responseFormat.value,
+                tools = tools,
+                toolChoice = toolChoice,
+                seed = if (seedActive.value) seed.value else null,
+                logprobs = null,
+                topLogprobs = null
+            )
+            return controller.openAiPlugin.client.chat(completion).asPipelineResult()
+        } else {
+            return AiTaskResult.invalidRequest<Any>("This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
+        }
     }
 
 }
