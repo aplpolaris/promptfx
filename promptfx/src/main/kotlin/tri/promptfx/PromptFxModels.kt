@@ -43,4 +43,11 @@ object PromptFxModels {
     fun visionLanguageModels() = policy.visionLanguageModels()
     fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
 
+    fun modelIds() =
+        textCompletionModels().map { it.modelId } +
+        embeddingModels().map { it.modelId } +
+        chatModels().map { it.modelId } +
+        imageModels().map { it.modelId } +
+        visionLanguageModels().map { it.modelId }
+
 }
