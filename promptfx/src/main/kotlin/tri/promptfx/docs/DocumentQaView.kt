@@ -50,6 +50,7 @@ import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.plainText
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
@@ -126,17 +127,17 @@ class DocumentQaView: AiPlanTaskView(
         parameters("Document Snippet Matching and Query") {
             field("# Matches") {
                 tooltip("Number of matching snippets to retrieve from the document database")
-                slider(1..50, chunksToRetrieve)
+                slider(1..100, chunksToRetrieve)
                 label(chunksToRetrieve)
             }
-            field("Minimum length") {
+            field("Minimum chars") {
                 tooltip("Snippets with a character count below this limit will be ignored")
-                slider(1..1000, minChunkSizeForRelevancy)
+                sliderwitheditablelabel(1..1000, minChunkSizeForRelevancy)
                 label(minChunkSizeForRelevancy)
             }
             field("Query snippets") {
                 tooltip("Number of matching snippets to send to the question answering engine")
-                slider(1..20, chunksToSendWithQuery)
+                slider(1..50, chunksToSendWithQuery)
                 label(chunksToSendWithQuery)
             }
         }

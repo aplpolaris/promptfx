@@ -209,6 +209,9 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
             models.setAll(it)
             modelSort.value = ModelInfoSort.ID_ASC
             modelFilter.value = ModelInfoFilter.ALL
+            if (it.isEmpty()) {
+                error("No models found", "No models were returned, possibly due to a missing API key. Check the logs for more information.")
+            }
         }
     }
 

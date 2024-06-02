@@ -23,12 +23,11 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
-import tornadofx.field
-import tornadofx.label
-import tornadofx.textfield
-import tornadofx.tooltip
+import javafx.scene.control.TextField
+import tornadofx.*
 import tri.ai.prompt.trace.AiPromptModelInfo
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 
 /** Parameters for model content generation. */
 class ModelParameters {
@@ -40,7 +39,7 @@ class ModelParameters {
         private const val DEFAULT_PRES_PENALTY = 0.0
         private const val DEFAULT_MAX_TOKENS = 500
         private const val DEFAULT_STOP_SEQUENCES = ""
-        private const val TOKEN_SLIDER_MAX = 8000
+        private const val TOKEN_SLIDER_MAX = 32000
     }
 
     internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
@@ -85,9 +84,8 @@ class ModelParameters {
 
     fun EventTarget.maxTokens() {
         field("Maximum Tokens") {
-            tooltip("Maximum number of tokens for combined query and response from the model (interpretation may vary by model).")
-            slider(0..TOKEN_SLIDER_MAX, maxTokens)
-            label(maxTokens.asString())
+            tooltip("Maximum number of tokens for combined query and response from the model.\nUse caution with higher token counts, which may cause expensive API queries.\nNote that interpretation may vary by model.")
+            sliderwitheditablelabel(1..TOKEN_SLIDER_MAX, maxTokens)
         }
     }
 
