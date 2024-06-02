@@ -37,6 +37,72 @@ example-emoji: |
   Text: {{input}}
   Emoji:
 
+generate-list: |
+  Generate a list from the input text based on the provided list, as a JSON with four parts:
+    1. "item_category": copy the category provided
+    2. "known_items": copy the list of items provided
+    3. "items_in_input": list of items found in or related to the input text -- they must be an item in the given category, and should be underlying/higher-level concepts as appropriate
+    4. "new_items": anything in the list of found items that is not in "known_items", along with a reason for their inclusion (leave empty if there are no new items)
+  New items should be substantially different than existing ones (not just alternate word form). They should follow the style conventions of "known_items" (e.g. spacing, punctuation, case, etc.).
+  
+  EXAMPLE
+  
+  input text:
+  ```
+  The quick brown fox jumps over the lazy dog.
+  ```
+  item_category: types of animals
+  known_items: ["fox", "cat", "bird"]
+  output:
+  ```
+  {
+    "item_category": "types of animals",
+    "known_items": ["fox", "cat", "bird"],
+    "items_in_input": [ "fox", "dog" ],
+    "new_items": {
+      "dog": "A dog is another kind of animal in the text."
+    }
+  }
+  ```
+  
+  input text:
+  ```
+  {{{input}}}
+  ```
+  item_category: {{item_category}}
+  known_items: {{known_items}}
+  output:
+
+generate-list-basic: |
+  Generate a list from the input text based on the provided list, as a JSON with two parts:
+    1. "item_category": copy the category provided
+    2. "items_in_input": list of items found in or related to the input text -- they must be an item in the given category, and should be underlying/higher-level concepts as appropriate
+  Use provided sample items where possible.
+  
+  EXAMPLE
+  
+  input text:
+  ```
+  The quick brown fox jumps over the lazy dog.
+  ```
+  item_category: types of animals
+  sample_items: ["fox", "cat", "bird"]
+  output:
+  ```
+  {
+    "item_category": "types of animals",
+    "items_in_input": [ "fox", "dog" ]
+  }
+  ```
+  
+  input text:
+  ```
+  {{{input}}}
+  ```
+  item_category: {{item_category}}
+  sample_items: {{known_items}}
+  output:
+
 image-describe-basic: Describe the image.
 
 image-describe-caption: Generate a caption for the image.
