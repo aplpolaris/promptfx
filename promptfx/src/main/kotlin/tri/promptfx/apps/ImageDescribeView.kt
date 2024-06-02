@@ -21,7 +21,6 @@ package tri.promptfx.apps
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import tornadofx.combobox
 import tornadofx.field
@@ -35,10 +34,8 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import java.io.ByteArrayOutputStream
+import tri.util.ui.toUri
 import java.net.URI
-import java.util.*
-import javax.imageio.ImageIO
 
 /** Plugin for the [ImageDescribeView]. */
 class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", isScriptable = false, ImageDescribeView::class)
@@ -75,15 +72,6 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
         }
     }
 
-    private val imageBase64
-        get() = image.value?.let {
-            val bufferedImage = SwingFXUtils.fromFXImage(it, null)
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            ImageIO.write(bufferedImage, "png", byteArrayOutputStream)
-            val byteArray = byteArrayOutputStream.toByteArray()
-            Base64.getEncoder().encodeToString(byteArray)
-        }
-
     override fun plan() = task("Describe Image") {
         describeImage(promptText.value)
     }.planner
@@ -91,29 +79,13 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     private suspend fun describeImage(prompt: String): String? {
         val res = model.value.chat(
             listOf(
-                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create("data:image/png;base64,"+imageBase64!!))
+                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create(image.value.toUri()))
             ),
             common.temp.value,
             common.maxTokens.value,
             null,
             false
         )
-//        val res = OpenAiClient.INSTANCE.client.chatCompletion(
-//            chatCompletionRequest {
-//                model = ModelId(this@ImageDescribeView.model.value.modelId)
-//                temperature = common.temp.value
-//                maxTokens = common.maxTokens.value
-//                messages {
-//                    user {
-//                        content {
-//                            text(prompt)
-//                            image("data:image/png;base64,"+imageBase64!!)
-//                        }
-//                    }
-//                }
-//            }
-//        )
-//        return res.choices[0].message.content
         return res.value!!.content!!
     }
 

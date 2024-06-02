@@ -20,7 +20,6 @@
 package tri.promptfx.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.layout.HBox
@@ -33,7 +32,7 @@ import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.tools.TextLibraryInfo
 import tri.util.ui.graphic
-import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.awt.Desktop
 import java.io.File
 import java.nio.file.Files
@@ -70,7 +69,11 @@ fun AiTaskView.documentsourceparameters(
             }
             button("", FontAwesomeIcon.GLOBE.graphic) {
                 tooltip("Enter a website to scrape")
-                action { find<TextCrawlDialog>(params = mapOf("folder" to documentFolder)).openModal() }
+                action {
+                    val dialog = find<TextCrawlDialog>()
+                    dialog.model.webTargetFolder.set(documentFolder.get())
+                    dialog.openModal()
+                }
             }
             button("", FontAwesomeIcon.REFRESH.graphic) {
                 tooltip("Rebuild embedding index for this folder")
@@ -86,11 +89,11 @@ fun AiTaskView.documentsourceparameters(
                 }
             }
         }
-        field("Max snippet size") {
+        field("Max snippet chars") {
             enableWhen(library.isNull())
             tooltip("Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
                     "This will only apply to newly chunked documents.")
-            slider(500..5000, maxChunkSize)
+            sliderwitheditablelabel(200..10000, maxChunkSize)
             label(maxChunkSize)
         }
         field("Use Library") {

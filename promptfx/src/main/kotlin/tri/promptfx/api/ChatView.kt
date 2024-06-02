@@ -21,12 +21,16 @@ package tri.promptfx.api
 
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
+import com.aallam.openai.api.chat.ToolCall
+import com.aallam.openai.api.chat.chatMessage
+import com.aallam.openai.api.core.Role
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.gemini.Content
+import tri.ai.gemini.GeminiModelIndex
 import tri.ai.openai.OpenAiModelIndex
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
@@ -35,13 +39,14 @@ import tri.promptfx.ModelParameters
  * Common functionality for chat API views.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-abstract class ChatView(title: String, instruction: String) : AiTaskView(title, instruction) {
+abstract class ChatView(title: String, instruction: String, private val roles: List<Role>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
 
-    private val CHAT_MODELS = OpenAiModelIndex.chatModels(includeSnapshots = true)
+    private val chatModels = OpenAiModelIndex.chatModels(includeSnapshots = true) +
+            GeminiModelIndex.chatModels(includeSnapshots = true)
 
     protected val system = SimpleStringProperty("")
 
-    protected val model = SimpleStringProperty(CHAT_MODELS.first())
+    protected val model = SimpleStringProperty(chatModels.first())
     protected val messageHistory = SimpleIntegerProperty(10)
 
     protected val seedActive = SimpleBooleanProperty(false)
@@ -61,12 +66,12 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
     //region INITIALIZATION
 
     private fun initChatSystemMessage() {
-        input {
-            spacing = 10.0
-            paddingAll = 10.0
-            text("System message:")
+        output {
+            spacing = 5.0
+            getChildList()!!.clear()
             textarea(system) {
-                vgrow = Priority.ALWAYS
+                promptText = "Optional system message to include in chat history"
+                prefRowCount = 3
                 isWrapText = true
             }
         }
@@ -74,9 +79,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
 
     private fun initChatOutput() {
         output {
-            paddingAll = 10.0
-            getChildList()!!.clear()
-            chatHistory = ChatHistoryView()
+            chatHistory = ChatHistoryView(roles)
             add(chatHistory)
         }
     }
@@ -84,7 +87,7 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
     fun initChatParameters() {
         parameters("Chat Model") {
             field("Model") {
-                combobox(model, CHAT_MODELS)
+                combobox(model, chatModels)
             }
         }
         parameters("Chat Input") {
@@ -122,17 +125,58 @@ abstract class ChatView(title: String, instruction: String) : AiTaskView(title, 
         }
     }
 
-    fun initChatResponse() {
+    private fun initChatResponse() {
         onCompleted {
             it.finalResult?.let {
-                with (chatHistory.components) {
-                    when (it) {
-                        is ChatMessage -> add(ChatMessageUiModel.valueOf(it))
-                        else -> add(ChatMessageUiModel(com.aallam.openai.api.chat.ChatRole.Assistant, it.toString()))
+                addChatsToHistory(it)
+            }
+        }
+    }
+
+    /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
+    private fun addChatsToHistory(it: Any) {
+        when (it) {
+            is ChatMessage -> addChat(it)
+            is Content -> addChat(it.toChatMessage())
+            is List<*> -> it.forEach { addChatsToHistory(it!!) }
+            else -> addChat(ChatMessage(Role.Assistant, it.toString()))
+        }
+    }
+
+    private fun Content.toChatMessage() = chatMessage {
+        role = when (this@toChatMessage.role) {
+            "user" -> Role.User
+            "model" -> Role.Assistant
+            else -> throw IllegalArgumentException("Unsupported role: $role")
+        }
+        if (parts.size == 1 && parts[0].text != null && parts[0].inlineData == null) {
+            content = parts[0].text!!
+        } else {
+            content {
+                parts.forEach {
+                    when {
+                        it.text != null && it.inlineData != null -> throw IllegalStateException("Unsupported content: $it")
+                        it.text != null -> this@content.text(it.text!!)
+                        it.inlineData != null -> this@content.image(it.inlineData!!.data)
+                        else -> throw IllegalStateException("Unsupported content: $it")
                     }
-                    add(ChatMessageUiModel(com.aallam.openai.api.chat.ChatRole.User, ""))
                 }
             }
+        }
+    }
+
+    private fun addChat(chat: ChatMessage) {
+        chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
+        val askTools = chat.toolCalls != null
+        if (askTools) {
+            chat.toolCalls!!.forEach {
+                // add response placeholder for each tool
+                val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
+                chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
+            }
+        } else {
+            // add blank message for user to follow up
+            chatHistory.components.add(ChatMessageUiModel(Role.User, ""))
         }
     }
 

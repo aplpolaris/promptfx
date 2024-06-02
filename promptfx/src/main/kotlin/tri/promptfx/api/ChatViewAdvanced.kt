@@ -20,22 +20,31 @@
 package tri.promptfx.api
 
 import com.aallam.openai.api.chat.*
+import com.aallam.openai.api.core.Role
 import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.TextPlugin
+import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiTaskResult
 import tri.util.ifNotBlank
 
 /**
  * Advanced version of chat API, with support for tools.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an AI Assistant.") {
+class ChatViewAdvanced : ChatView(
+    "Chat (Advanced)",
+    "Test the AI Assistant chat, with optional function calls and full control over chat history.",
+    listOf(Role.System, Role.User, Role.Assistant, Role.Tool),
+    showInput = true
+) {
 
-    private val toolsVisible = SimpleBooleanProperty(false)
+    private val toolsVisible = SimpleBooleanProperty(true)
     private val toolCall = SimpleStringProperty("")
 
     private lateinit var toolView: ToolListView
@@ -47,7 +56,9 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
                 checkbox("Tools", toolsVisible)
                 tooltip("A list of functions the model may generate JSON inputs for.")
                 region { hgrow = Priority.ALWAYS }
-                textfield(toolCall) {
+                combobox(toolCall, listOf("", "auto", "none")) {
+                    promptText = "Function call"
+                    isEditable = true
                     tooltip("""Specify name to call a specific function, or "none" (don't call any functions) or "auto" (model picks whether to call a function).""")
                 }
             }
@@ -74,26 +85,33 @@ class ChatViewAdvanced : ChatView("Chat (Advanced)", "You are chatting with an A
             toolView.tools().ifEmpty { null }
         }
 
-        val completion = ChatCompletionRequest(
-            model = ModelId(model.value),
-            messages = messages,
-            temperature = common.temp.value,
-            topP = common.topP.value,
-            n = null,
-            stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-            maxTokens = common.maxTokens.value,
-            presencePenalty = common.presPenalty.value,
-            frequencyPenalty = common.freqPenalty.value,
-            logitBias = null,
-            user = null,
-            functions = null,
-            functionCall = null,
-            responseFormat = responseFormat.value,
-            tools = tools,
-            toolChoice = toolChoice,
-            seed = if (seedActive.value) seed.value else null
-        )
-        return controller.openAiPlugin.client.chat(completion).asPipelineResult()
+        val m = TextPlugin.chatModel(model.value)
+        if (m is OpenAiChat) {
+            val completion = ChatCompletionRequest(
+                model = ModelId(model.value),
+                messages = messages,
+                temperature = common.temp.value,
+                topP = common.topP.value,
+                n = null,
+                stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
+                maxTokens = common.maxTokens.value,
+                presencePenalty = common.presPenalty.value,
+                frequencyPenalty = common.freqPenalty.value,
+                logitBias = null,
+                user = null,
+                functions = null,
+                functionCall = null,
+                responseFormat = responseFormat.value,
+                tools = tools,
+                toolChoice = toolChoice,
+                seed = if (seedActive.value) seed.value else null,
+                logprobs = null,
+                topLogprobs = null
+            )
+            return controller.openAiPlugin.client.chat(completion).asPipelineResult()
+        } else {
+            return AiTaskResult.invalidRequest<Any>("This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
+        }
     }
 
 }

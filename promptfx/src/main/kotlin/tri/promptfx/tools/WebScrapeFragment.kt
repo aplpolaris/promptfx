@@ -29,6 +29,7 @@ import tri.promptfx.docs.WebCrawler
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.graphic
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
@@ -58,12 +59,11 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
                 label(model.webUrlDepth)
             }
             field("Domains") {
-                checkbox("Limit to URLs on same domain", model.webUrlDomain)
+                checkbox("Limit to URLs on same domain", model.webUrlLimitDomain)
             }
             field("Max # Links to Crawl", forceLabelIndent = true) {
                 tooltip("Maximum number of links to crawl from each page.")
-                slider(1..1000, model.webUrlLimit)
-                label(model.webUrlLimit)
+                sliderwitheditablelabel(1..1000, model.webUrlMaxLinks)
             }
             field("Target Folder") {
                 visibleWhen(isShowLocalFolder)
@@ -90,30 +90,30 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
 }
 
 /** Model for crawling web data. */
-class WebScrapeViewModel {
+class WebScrapeViewModel : Component() {
     /** URL to scrape. */
     val webUrl = SimpleStringProperty("http://")
     /** Max depth to crawl when scraping a website. */
     val webUrlDepth = SimpleIntegerProperty(1)
     /** Max number of links to crawl when scraping a website. This is per identified note, not in total. */
-    val webUrlLimit = SimpleIntegerProperty(10)
+    val webUrlMaxLinks = SimpleIntegerProperty(10)
     /** Whether to only crawl links on the same domain. */
-    val webUrlDomain = SimpleBooleanProperty(true)
+    val webUrlLimitDomain = SimpleBooleanProperty(true)
     /** Target folder for saving scraped files. */
     val webTargetFolder = SimpleObjectProperty<File>()
 
     /** Get text of main URL. */
-    fun mainUrlText() = WebCrawler.scrapeText(webUrl.value).third
+    fun mainUrlText() = WebCrawler.scrapeText(webUrl.value).text
     /** Scrape the website, with the given crawl settings. */
     fun scrapeWebsite(progressUpdate: (String) -> Unit) =
         WebCrawler.crawlWebsite(
-            url = webUrl.value,
+            link = webUrl.value,
             depth = webUrlDepth.value,
-            maxLinks = webUrlLimit.value,
-            requireSameDomain = webUrlDomain.value,
+            maxLinks = webUrlMaxLinks.value,
+            requireSameDomain = webUrlLimitDomain.value,
             scraped = mutableSetOf(),
             progressUpdate = progressUpdate
-        ).map { (url, titleText) ->
-            URI.create(url) to titleText.second
+        ).map { (url, content) ->
+            URI.create(url) to content.title
         }.toMap()
 }

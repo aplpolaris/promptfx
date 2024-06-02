@@ -22,6 +22,7 @@ package tri.util.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ChangeListener
@@ -32,6 +33,7 @@ import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
+import javafx.scene.control.TextField
 import javafx.scene.control.TextInputControl
 import javafx.scene.image.Image
 import javafx.scene.input.DataFormat
@@ -41,7 +43,6 @@ import javafx.scene.text.Text
 import javafx.scene.text.TextFlow
 import javafx.stage.Modality
 import javafx.stage.StageStyle
-import javafx.stage.Window
 import tornadofx.*
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
@@ -172,6 +173,32 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
             }
         }
     }
+
+/** Slider with editable label. */
+fun EventTarget.sliderwitheditablelabel(range: IntRange, property: SimpleIntegerProperty) {
+    slider(range, property)
+    val tokenLabel = label(property.asString())
+    tokenLabel.apply {
+        setOnMouseClicked {
+            val textField = TextField(property.value.toString()).apply {
+                prefColumnCount = 1
+                setOnAction {
+                    property.value = text.toIntOrNull()?.coerceIn(range) ?: property.value
+                    replaceWith(tokenLabel)
+                }
+                focusedProperty().addListener { _, _, focused ->
+                    if (!focused) {
+                        property.value = text.toIntOrNull()?.coerceIn(range) ?: property.value
+                        replaceWith(tokenLabel)
+                    }
+                }
+            }
+            replaceWith(textField)
+            textField.requestFocus()
+            textField.selectAll()
+        }
+    }
+}
 
 //endregion
 
