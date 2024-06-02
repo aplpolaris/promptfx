@@ -10,6 +10,7 @@ tri.promptfx.tools.TextManagerPlugin
 tri.promptfx.docs.DocumentQaPlugin
 tri.promptfx.docs.DocumentInsightPlugin
 tri.promptfx.apps.EntityExtractionPlugin
+tri.promptfx.apps.ListGeneratorPlugin
 tri.promptfx.apps.QuestionAnsweringPlugin
 tri.promptfx.apps.SentimentAnalysisPlugin
 tri.promptfx.apps.StructuredDataPlugin
