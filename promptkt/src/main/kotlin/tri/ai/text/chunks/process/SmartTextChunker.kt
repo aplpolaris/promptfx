@@ -23,7 +23,6 @@ import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.util.fine
-import tri.util.info
 import java.text.BreakIterator
 
 /**
@@ -32,7 +31,7 @@ import java.text.BreakIterator
  */
 class SmartTextChunker(
     /** Maximum chunk size in characters. */
-    val maxChunkSize: Int = 2000
+    val maxChunkSize: Int = 1000
 ) : TextChunker {
 
     override fun chunk(doc: TextChunkRaw) =
