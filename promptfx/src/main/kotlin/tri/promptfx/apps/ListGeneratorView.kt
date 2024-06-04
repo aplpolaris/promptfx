@@ -33,9 +33,10 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [ListGeneratorView]. */
-class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "List Generator", isScriptable = true, ListGeneratorView::class)
+class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "List Generator", WorkspaceViewAffordance.INPUT_ONLY, ListGeneratorView::class)
 
 /** View designed to convert text to JSON. */
 class ListGeneratorView: AiPlanTaskView("List Generator",

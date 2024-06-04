@@ -19,7 +19,7 @@
  */
 package tri.util.ui
 
-import tornadofx.Workspace
+import tornadofx.*
 import tri.util.ANSI_RESET
 import tri.util.ANSI_YELLOW
 import tri.util.info
@@ -30,7 +30,7 @@ interface NavigableWorkspaceView {
 
     val category: String
     val name: String
-    val isScriptable: Boolean
+    val affordances: WorkspaceViewAffordance
 //    val description: String
 //    val icon: String
 
@@ -49,3 +49,19 @@ interface NavigableWorkspaceView {
     }
 }
 
+/** Information about type of affordances for the view's primary logic. */
+data class WorkspaceViewAffordance(
+    /** Accepts an input document collection. */
+    var acceptsCollection: Boolean = false,
+    /** Accepts an input string. */
+    var acceptsInput: Boolean = false,
+    /** Produces an output string. */
+    var producesOutput: Boolean = false
+) {
+    companion object {
+        val NONE = WorkspaceViewAffordance()
+        val INPUT_ONLY = WorkspaceViewAffordance(acceptsInput = true)
+        val COLLECTION_ONLY = WorkspaceViewAffordance(acceptsCollection = true)
+        val INPUT_AND_COLLECTION = WorkspaceViewAffordance(acceptsInput = true, acceptsCollection = true)
+    }
+}

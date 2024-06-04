@@ -109,10 +109,10 @@ class LocalTextDocIndex(
         /** Create a [TextDoc] with metadata from a file's attributes. */
         fun File.createTextDoc() = TextDoc(name).apply {
             metadata.title = nameWithoutExtension
-            metadata.date = LocalDateTime.ofInstant(
+            metadata.dateTime = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(lastModified()),
                 java.time.ZoneId.systemDefault()
-            ).toLocalDate()
+            )
             metadata.path = toURI()
             metadata.relativePath = name
         }

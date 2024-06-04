@@ -25,6 +25,7 @@ import tri.ai.text.chunks.process.LocalFileManager
 import java.io.File
 import java.net.URI
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * Collection of [TextChunk]s with metadata.
@@ -63,7 +64,12 @@ data class TextDocMetadata(
     var id: String,
     var title: String? = null,
     var author: String? = null,
+    @Deprecated("Use 'dateTime' instead")
     var date: LocalDate? = null,
+    var dateTime: LocalDateTime? = null,
     var path: URI? = null,
     var relativePath: String? = null,
-)
+) {
+    /** Additional attributes. */
+    var properties: TextAttributes = mutableMapOf()
+}

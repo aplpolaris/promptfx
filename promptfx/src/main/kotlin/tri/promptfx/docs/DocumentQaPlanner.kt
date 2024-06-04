@@ -131,12 +131,13 @@ class DocumentQaPlanner {
     /** Finds the most relevant section to the query. */
     private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
         val embeddingSvc = (embeddingIndex.value as LocalFolderEmbeddingIndex).embeddingService
-        val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), embeddingSvc.modelId)
+        val modelId = embeddingSvc.modelId
+        val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), modelId)
         val matches = library.docs.flatMap { doc ->
             doc.calculateMissingEmbeddings(embeddingSvc)
             doc.chunks.map {
-                val chunkEmbedding = it.getEmbeddingInfo(embeddingSvc.modelId)!!
-                EmbeddingMatch(semanticTextQuery, doc, it, chunkEmbedding,
+                val chunkEmbedding = it.getEmbeddingInfo(modelId)!!
+                EmbeddingMatch(semanticTextQuery, doc, it, modelId, chunkEmbedding,
                     cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding).toFloat()
                 )
             }

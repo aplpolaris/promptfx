@@ -48,6 +48,7 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 import java.io.FileOutputStream
 
@@ -57,7 +58,7 @@ import java.io.IOException
 
 
 /** Plugin for the [AudioSpeechView]. */
-class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", isScriptable = true, AudioSpeechView::class)
+class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", WorkspaceViewAffordance.INPUT_ONLY, AudioSpeechView::class)
 
 /** View for OpenAI API's [TTS](https://platform.openai.com/docs/api-reference/audio/createSpeech) endpoint. */
 class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate speech.") {

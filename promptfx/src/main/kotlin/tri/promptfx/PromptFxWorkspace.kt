@@ -28,8 +28,10 @@ import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
 import tri.promptfx.tools.PromptTemplateView
+import tri.promptfx.tools.TextLibraryView
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -37,9 +39,23 @@ import tri.util.ui.starship.StarshipView
 class PromptFxWorkspace : Workspace() {
 
     val promptFxConfig : PromptFxConfig by inject()
-    val views = mutableMapOf<String, Class<out UIComponent>>()
-    val viewsWithInputs = mutableMapOf<String, MutableList<Class<out UIComponent>>>()
+
+    val views = mutableMapOf<String, MutableMap<String, PromptFxViewInfo>>()
     var immersiveChatView: ImmersiveChatView? = null
+
+    //region VIEW LOOKUPS
+
+    val viewsWithInputs
+        get() = views.filter { it.affordances.acceptsInput }
+    val viewsWithCollections
+        get() = views.filter { it.affordances.acceptsCollection }
+    val viewsWithOutputs
+        get() = views.filter { it.affordances.producesOutput }
+
+    private fun <X> Map<String, Map<String, X>>.filter(predicate: (X) -> Boolean) =
+        mapValues { it.value.filterValues(predicate) }.filterValues { it.isNotEmpty() }
+
+    //endregion
 
     init {
         add(find<AiEngineView>())
@@ -146,7 +162,8 @@ class PromptFxWorkspace : Workspace() {
 
     /** Looks up a view by name. */
     fun findTaskView(name: String): AiTaskView? {
-        return views[name]?.let { find(it) } as? AiTaskView
+        return views.values.map { it.entries }.flatten()
+            .find { it.key == name }?.let { find(it.value.view) } as? AiTaskView
     }
 
     /** Launches the template view with the given prompt trace. */
@@ -160,6 +177,13 @@ class PromptFxWorkspace : Workspace() {
     fun launchTemplateView(prompt: String) {
         val view = find<PromptTemplateView>()
         view.template.set(prompt)
+        workspace.dock(view)
+    }
+
+    /** Launches the text manager view with the given library. */
+    fun launchTextManagerView(library: TextLibrary) {
+        val view = find<TextLibraryView>()
+        view.loadTextLibrary(library)
         workspace.dock(view)
     }
 
@@ -227,7 +251,9 @@ class PromptFxWorkspace : Workspace() {
 
     private inline fun <reified T: UIComponent> EventTarget.hyperlinkview(viewGroup: String, name: String) {
         if (PromptFxModels.policy.supportsView(T::class.java.simpleName)) {
-            views[name] = T::class.java
+            views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(name) {
+                PromptFxViewInfo(viewGroup, name, T::class.java)
+            }
             hyperlink(name) {
                 action {
                     isVisited = false
@@ -240,9 +266,8 @@ class PromptFxWorkspace : Workspace() {
     private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
         if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
             if (view is NavigableWorkspaceViewImpl<*>) {
-                views[view.name] = view.type.java
-                if (AiTaskView::class.java.isAssignableFrom(view.type.java) && view.isScriptable) {
-                    viewsWithInputs.getOrPut(viewGroup) { mutableListOf() }.add(view.type.java)
+                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
+                    PromptFxViewInfo(viewGroup, view.name, view.type.java, view.affordances)
                 }
             }
             hyperlink(view.name) {

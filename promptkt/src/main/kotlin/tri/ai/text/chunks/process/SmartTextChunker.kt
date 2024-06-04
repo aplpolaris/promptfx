@@ -31,7 +31,8 @@ import java.text.BreakIterator
  * natural breaks.
  */
 class SmartTextChunker(
-    val maxChunkSize: Int = 1000
+    /** Maximum chunk size in characters. */
+    val maxChunkSize: Int = 2000
 ) : TextChunker {
 
     override fun chunk(doc: TextChunkRaw) =

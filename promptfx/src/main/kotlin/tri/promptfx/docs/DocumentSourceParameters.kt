@@ -26,10 +26,7 @@ import javafx.scene.layout.HBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.text.chunks.TextLibrary
-import tri.promptfx.AiTaskView
-import tri.promptfx.PromptFxConfig
-import tri.promptfx.promptFxDirectoryChooser
-import tri.promptfx.promptFxFileChooser
+import tri.promptfx.*
 import tri.promptfx.tools.TextLibraryInfo
 import tri.util.ui.graphic
 import tri.util.ui.sliderwitheditablelabel
@@ -94,12 +91,11 @@ fun AiTaskView.documentsourceparameters(
             tooltip("Maximum number of characters to include in a chunked section of the document for the embedding index.\n" +
                     "This will only apply to newly chunked documents.")
             sliderwitheditablelabel(200..10000, maxChunkSize)
-            label(maxChunkSize)
         }
         field("Use Library") {
             (inputContainer as? HBox)?.spacing = 5.0
             label(library.stringBinding { it?.metadata?.id ?: it?.metadata?.path ?: "None" })
-            button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
+            button("", FontAwesomeIcon.UPLOAD.graphic) {
                 tooltip("Select a library to use for document sectioning")
                 action {
                     promptFxFileChooser(
@@ -113,6 +109,13 @@ fun AiTaskView.documentsourceparameters(
                             library.set(libInfo.library)
                         }
                     }
+                }
+            }
+            button("", FontAwesomeIcon.SEND.graphic) {
+                enableWhen(library.isNotNull)
+                tooltip("Open the current library in the Text Manager view")
+                action {
+                    (workspace as PromptFxWorkspace).launchTextManagerView(library.get())
                 }
             }
             button("", FontAwesomeIcon.MINUS_CIRCLE.graphic) {

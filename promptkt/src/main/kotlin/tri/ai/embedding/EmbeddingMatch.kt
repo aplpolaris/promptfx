@@ -32,6 +32,7 @@ class EmbeddingMatch(
     val document: TextDoc,
     @get:JsonIgnore
     val chunk: TextChunk,
+    val embeddingModel: String,
     val chunkEmbedding: List<Double>,
     val queryScore: Float
 ) {

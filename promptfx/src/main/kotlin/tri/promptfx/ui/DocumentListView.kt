@@ -19,6 +19,7 @@
  */
 package tri.promptfx.ui
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.application.HostServices
 import javafx.collections.ObservableList
 import javafx.geometry.Pos
@@ -28,26 +29,42 @@ import tornadofx.*
 import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.docs.DocumentOpenInViewer
 import tri.util.ui.DocumentUtils
+import tri.util.ui.graphic
 
 /**
  * Display a list of documents.
  * Clicking on the document name will open the document in a viewer.
  */
 class DocumentListView(docs: ObservableList<BrowsableSource>, hostServices: HostServices) : Fragment("Document List") {
-    private val DOC_THUMBNAIL_SIZE = 240
     override val root = listview(docs) {
         vgrow = Priority.ALWAYS
         cellFormat {
-            graphic = hbox {
-                textflow {  }
-                alignment = Pos.CENTER_LEFT
-                hyperlink(it.shortNameWithoutExtension) {
-                    val thumb = DocumentUtils.documentThumbnail(it)
-                    if (thumb != null) {
-                        tooltip { graphic = ImageView(thumb) }
-                    }
-                    action { DocumentOpenInViewer(it, hostServices).open() }
+            graphic = hyperlink(it.shortNameWithoutExtension, graphic = it.icon()) {
+                val thumb = DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE)
+                if (thumb != null) {
+                    tooltip { graphic = ImageView(thumb) }
                 }
+                action { DocumentOpenInViewer(it, hostServices).open() }
+            }
+        }
+    }
+
+    companion object {
+        const val DOC_THUMBNAIL_SIZE = 240
+
+        //** Return an icon for the document based on its file extension. */
+        fun BrowsableSource.icon() = when (path.substringAfterLast('.')) {
+            "pdf" -> FontAwesomeIcon.FILE_PDF_ALT.graphic
+            "doc", "docx" -> FontAwesomeIcon.FILE_WORD_ALT.graphic
+            "csv", "xls", "xlsx" -> FontAwesomeIcon.FILE_EXCEL_ALT.graphic
+            "ppt", "pptx" -> FontAwesomeIcon.FILE_POWERPOINT_ALT.graphic
+            "txt" -> FontAwesomeIcon.FILE_TEXT_ALT.graphic
+            "html", "htm" -> FontAwesomeIcon.GLOBE.graphic
+            else -> {
+                if (path.startsWith("html") || path.startsWith("html"))
+                    FontAwesomeIcon.GLOBE.graphic
+                else
+                    FontAwesomeIcon.FILE_ALT.graphic
             }
         }
     }

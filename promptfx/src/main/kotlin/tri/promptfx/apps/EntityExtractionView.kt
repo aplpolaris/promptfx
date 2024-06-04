@@ -22,9 +22,10 @@ package tri.promptfx.apps
 import tri.promptfx.RuntimePromptView
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for [EntityExtractionView]. */
-class EntityExtractionPlugin : NavigableWorkspaceViewImpl<EntityExtractionView>("Text", "Entity Extraction", isScriptable = true, EntityExtractionView::class)
+class EntityExtractionPlugin : NavigableWorkspaceViewImpl<EntityExtractionView>("Text", "Entity Extraction", WorkspaceViewAffordance.INPUT_ONLY, EntityExtractionView::class)
 
 /** View for prompts designed to extract entities from text. */
 class EntityExtractionView: RuntimePromptView(RuntimePromptViewConfigs.config("entity-extraction"))

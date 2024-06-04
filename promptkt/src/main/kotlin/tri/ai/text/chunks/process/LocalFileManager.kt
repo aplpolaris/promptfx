@@ -134,19 +134,27 @@ object LocalFileManager {
         }.also {
             if (useCache) {
                 txtFile.writeText(it)
-                val props = when (extension) {
-                    PDF -> pdfMetadata(this)
-                    DOC -> WordDocUtils.readDocMetadata(this)
-                    DOCX -> WordDocUtils.readDocxMetadata(this)
-                    else -> emptyMap()
-                }.filterValues { it != null && (it !is String || it.isNotBlank()) }
-                if (props.isNotEmpty())
-                    ObjectMapper()
-                        .registerModule(JavaTimeModule())
-                        .writerWithDefaultPrettyPrinter()
-                        .writeValue(metadataFile(), props)
+                extractMetadata()
             }
         }
+    }
+
+    /**
+     * Extract metadata from a given file and save it adjacent to the file so it can be easily accessed later.
+     */
+    fun File.extractMetadata(): Map<String, Any> {
+        val props = when (extension) {
+            PDF -> pdfMetadata(this)
+            DOC -> WordDocUtils.readDocMetadata(this)
+            DOCX -> WordDocUtils.readDocxMetadata(this)
+            else -> emptyMap()
+        }.filterValues { it != null && (it !is String || it.isNotBlank()) }
+        if (props.isNotEmpty())
+            ObjectMapper()
+                .registerModule(JavaTimeModule())
+                .writerWithDefaultPrettyPrinter()
+                .writeValue(metadataFile(), props)
+        return props
     }
 
     /** Extract text from PDF. */

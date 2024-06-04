@@ -38,22 +38,25 @@ import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.tools.TextLibraryInfo
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
-class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", isScriptable = false, DocumentInsightView::class)
+class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", WorkspaceViewAffordance.COLLECTION_ONLY, DocumentInsightView::class)
 
 /** A view that allows the user to run a template-based script against document(s). */
 class DocumentInsightView: AiPlanTaskView(
     "Document Insights",
     "Use a template to extract information from a collection of documents",
-) {
+), TextLibraryReceiver {
 
     private lateinit var mapPromptUi: EditablePromptUi
     private lateinit var reducePromptUi: EditablePromptUi
@@ -196,6 +199,10 @@ class DocumentInsightView: AiPlanTaskView(
                 }
             }
         }
+    }
+
+    override fun loadTextLibrary(library: TextLibraryInfo) {
+        documentLibrary.set(library.library)
     }
 
     private fun updateDocs() = runBlocking {

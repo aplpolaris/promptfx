@@ -125,12 +125,13 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
         }
 
     override suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch> {
-        val semanticTextQuery = SemanticTextQuery(query, embeddingService.calculateEmbedding(query), embeddingService.modelId)
+        val modelId = embeddingService.modelId
+        val semanticTextQuery = SemanticTextQuery(query, embeddingService.calculateEmbedding(query), modelId)
         reindexNew()
         val matches = library.docChunks().map { (doc, chunk) ->
-            val chunkEmbedding = chunk.getEmbeddingInfo(embeddingService.modelId)!!
+            val chunkEmbedding = chunk.getEmbeddingInfo(modelId)!!
             EmbeddingMatch(semanticTextQuery, doc, chunk,
-                chunkEmbedding,
+                modelId, chunkEmbedding,
                 cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding).toFloat()
             )
         }

@@ -22,9 +22,10 @@ package tri.promptfx.apps
 import tri.promptfx.RuntimePromptView
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for [SummarizationView]. */
-class SummarizationPlugin : NavigableWorkspaceViewImpl<SummarizationView>("Text", "Summarization", isScriptable = true, SummarizationView::class)
+class SummarizationPlugin : NavigableWorkspaceViewImpl<SummarizationView>("Text", "Summarization", WorkspaceViewAffordance.INPUT_ONLY, SummarizationView::class)
 
 /** A view that allows the user to summarize text. */
 class SummarizationView: RuntimePromptView(RuntimePromptViewConfigs.config("summarization"))

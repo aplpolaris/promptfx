@@ -22,9 +22,10 @@ package tri.promptfx.apps
 import tri.promptfx.RuntimePromptView
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [SentimentAnalysisView]. */
-class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView>("Text", "Sentiment Analysis", isScriptable = true, SentimentAnalysisView::class)
+class SentimentAnalysisPlugin : NavigableWorkspaceViewImpl<SentimentAnalysisView>("Text", "Sentiment Analysis", WorkspaceViewAffordance.INPUT_ONLY, SentimentAnalysisView::class)
 
 /** View designed to classify the sentiment of a text. */
 class SentimentAnalysisView : RuntimePromptView(RuntimePromptViewConfigs.config("sentiment-analysis"))

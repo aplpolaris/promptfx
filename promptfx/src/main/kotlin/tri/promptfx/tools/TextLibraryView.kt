@@ -30,6 +30,7 @@ import javafx.collections.ObservableList
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import kotlinx.coroutines.runBlocking
@@ -39,28 +40,28 @@ import tri.ai.pips.*
 import tri.ai.pips.AiTask.Companion.task
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
 import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
-import tri.promptfx.AiTaskView
-import tri.promptfx.PromptFxConfig
+import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
-import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.TextChunkViewModelImpl
-import tri.promptfx.ui.asTextChunkViewModel
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.createListBinding
+import tri.promptfx.docs.DocumentOpenInViewer
+import tri.promptfx.ui.*
+import tri.promptfx.ui.DocumentListView.Companion.icon
+import tri.util.ui.*
 import java.io.File
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** Plugin for the [TextLibraryView]. */
-class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "Text Manager", isScriptable = false, TextLibraryView::class)
+class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextLibraryView::class)
 
 /** A view designed to help you manage collections of documents and text. */
-class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text.") {
+class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
 
     val libraryList = observableListOf<TextLibraryInfo>()
 
@@ -78,22 +79,16 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     private lateinit var chunkSelection: ObservableList<TextChunkViewModel>
 
     private val libraryId: ObservableValue<String>
+    private val idChange = SimpleBooleanProperty(false)
     private val libraryInfo: ObservableValue<String>
-    private val docsId: ObservableValue<String>
-    private val docsTitle: ObservableValue<String>
-    private val docsAuthor: ObservableValue<String>
-    private val docsDate: ObservableValue<String>
-    private val docsPath: ObservableValue<String>
-    private val docsRelativePath: ObservableValue<String>
-    private val chunkType: ObservableValue<String>
-    private val chunksText: ObservableValue<String>
-    private val chunksScore: ObservableValue<String>
-    private val chunksEmbedding: ObservableValue<String>
 
     init {
         runButton.isVisible = false
         runButton.isManaged = false
+        hideParameters()
     }
+
+    //region INIT - INPUT PANEL
 
     init {
         input(5) {
@@ -107,8 +102,24 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 cellFormat {
                     graphic = Text(it.library.toString())
                 }
-                contextmenu {
-                    item("Remove selected library") {
+                lazyContextmenu {
+                    buildsendcollectionmenu(this@TextLibraryView, librarySelection)
+                    separator()
+                    item("Open collection file in system viewer") {
+                        enableWhen(librarySelection.isNotNull)
+                        action { librarySelection.value?.file?.let { hostServices.showDocument(it.absolutePath) } }
+                    }
+                    item("Open containing folder") {
+                        enableWhen(librarySelection.isNotNull)
+                        action { librarySelection.value?.file?.parentFile?.let { hostServices.showDocument(it.absolutePath) } }
+                    }
+                    separator()
+                    item("Rename collection") {
+                        enableWhen(librarySelection.isNotNull)
+                        action { renameSelectedCollection() }
+                    }
+                    separator()
+                    item("Remove selected collection from view") {
                         enableWhen(librarySelection.isNotNull)
                         action { librarySelection.value?.let { libraryList.remove(it) } }
                     }
@@ -122,10 +133,17 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 selectionModel.selectionMode = SelectionMode.MULTIPLE
                 docSelection = selectionModel.selectedItems
                 cellFormat {
-                    graphic = Text(it.toString())
+                    val browsable = it.browsable()!!
+                    graphic = hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
+                        val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
+                        if (thumb != null) {
+                            tooltip { graphic = ImageView(thumb) }
+                        }
+                        action { DocumentOpenInViewer(browsable, hostServices).open() }
+                    }
                 }
                 contextmenu {
-                    item("Remove selected document(s)") {
+                    item("Remove selected document(s) from collection") {
                         enableWhen(Bindings.isNotEmpty(docSelection))
                         action {
                             val selected = docSelection.toList()
@@ -146,7 +164,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             hbox(alignment = Pos.CENTER_LEFT) {
                 val label = isChunkFilterEnabled.stringBinding {
                     if (it == true)
-                        "Filtering by Semantic Text"
+                        "Filtering/Ranking by Semantic Search"
                     else
                         "Text Chunks in Selected Document(s)"
                 }
@@ -182,7 +200,21 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 root.selectionModel.selectionMode = SelectionMode.MULTIPLE
                 chunkSelection = root.selectionModel.selectedItems
                 root.contextmenu {
-                    item("Remove selected chunk(s)") {
+                    val selectionString = Bindings.createStringBinding({ chunkSelection.joinToString("\n\n") { it.text } }, chunkSelection)
+                    item("Find similar chunks") {
+                        enableWhen(selectionString.isNotBlank())
+                        action {
+                            runAsync {
+                                createSemanticFilter(selectionString.value)
+                            } ui {
+                                chunkFilter.value = it
+                                isChunkFilterEnabled.set(true)
+                            }
+                        }
+                    }
+                    buildsendresultmenu(selectionString, workspace as PromptFxWorkspace)
+                    separator()
+                    item("Remove selected chunk(s) from document(s)") {
                         enableWhen(Bindings.isNotEmpty(chunkSelection))
                         action {
                             val selected = chunkSelection.toList()
@@ -209,76 +241,157 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     action { loadLibrary() }
                 }
                 // save a TextLibrary file
-                button("Save...", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+                button("Save...", graphic = FontAwesomeIcon.DOWNLOAD.graphic) {
                     tooltip("Save selected text library to a JSON file.")
                     enableWhen(librarySelection.isNotNull)
                     action { saveLibrary() }
                 }
-                // calculate embeddings
-                button("Calculate Embeddings", FontAwesomeIconView(FontAwesomeIcon.MAP_MARKER)) {
-                    tooltip("Calculate embedding vectors for all chunks in the currently selected library.")
-                    enableWhen { librarySelection.isNotNull }
-                    action { executeEmbeddings() }
+                menubutton("Calculate/Extract", graphic = FontAwesomeIcon.COG.graphic) {
+                    enableWhen(librarySelection.isNotNull)
+                    tooltip("Options to extract or generate information for the selected library.")
+                    item("Metadata", graphic = FontAwesomeIcon.INFO.graphic) {
+                        tooltip("Extract metadata for all files in the selected library. Metadata will be stored in a JSON file adjacent to the source file.")
+                        enableWhen { librarySelection.isNotNull }
+                        action { executeMetadataExtraction() }
+                    }
+                    item("Embeddings", graphic = FontAwesomeIcon.MAP_MARKER.graphic) {
+                        textProperty().bind(Bindings.concat("Embeddings (", embeddingService.modelId, ")"))
+                        tooltip("Calculate embedding vectors for all chunks in the currently selected library and embedding model.")
+                        enableWhen { librarySelection.isNotNull }
+                        action { executeEmbeddings() }
+                    }
                 }
             }
         }
     }
 
+    //endregion
+
+    //region INIT - VIEW MODEL VARS
+
     init {
-        libraryId = librarySelection.stringBinding { it?.library?.metadata?.id }
+        libraryId = librarySelection.stringBinding(idChange) { it?.library?.metadata?.id }
         libraryInfo = librarySelection.stringBinding { "${it?.library?.docs?.size ?: 0} documents" }
-        docsId = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.id }.trim() }, docSelection)
-        docsTitle = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.title ?: "" }.trim() }, docSelection)
-        docsAuthor = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.author ?: "" }.trim() }, docSelection)
-        docsDate = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.date?.toString() ?: "" }.trim() }, docSelection)
-        docsPath = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.path?.toString() ?: "" }.trim() }, docSelection)
-        docsRelativePath = Bindings.createStringBinding({ docSelection.joinToString("\n") { it.metadata.relativePath ?: "" }.trim() }, docSelection)
-        chunkType = Bindings.createStringBinding({ chunkSelection.joinToString("\n") { "" } }, chunkSelection) // TODO
-        chunksText = Bindings.createStringBinding({ chunkSelection.joinToString("\n") { it.text }.trim() }, chunkSelection)
-        chunksScore = Bindings.createStringBinding({ chunkSelection.joinToString("\n") { it.score?.toString() ?: "" }.trim() }, chunkSelection)
-        chunksEmbedding = Bindings.createStringBinding({ chunkSelection.count {
-            it.embedding != null
-        }.let { if (it > 0) "$it Embeddings Calculated" else "" } }, chunkSelection)
     }
+
+    //endregion
+
+    //region INIT - OUTPUT PANE
 
     init {
         with (outputPane) {
             clear()
             scrollpane {
-                form {
-                    fieldset("Selected Library") {
-                        visibleWhen { librarySelection.isNotNull }
-                        managedWhen { librarySelection.isNotNull }
-                        field("Id") { text(libraryId) }
-                        field("Info") { text(libraryInfo) }
+                squeezebox(multiselect = true) {
+                    vgrow = Priority.ALWAYS
+                    fold("Details on Selected Collection", expanded = true) {
+                        form {
+                            fieldset("") {
+                                visibleWhen { librarySelection.isNotNull }
+                                managedWhen { librarySelection.isNotNull }
+                                field("Id") { text(libraryId) }
+                                field("Info") { text(libraryInfo) }
+                            }
+                        }
                     }
-                    fieldset("Selected Document(s)") {
-                        visibleWhen { Bindings.isNotEmpty(docSelection) }
-                        managedWhen { Bindings.isNotEmpty(docSelection) }
-                        fieldifnotblank("Id", docsId)
-                        fieldifnotblank("Title", docsTitle)
-                        fieldifnotblank("Author", docsAuthor)
-                        fieldifnotblank("Date", docsDate)
-                        fieldifnotblank("Path", docsPath)
-                        fieldifnotblank("Relative Path", docsRelativePath)
+                    fold("Details on Selected Document", expanded = true) {
+                        isFitToWidth = true
+                        vbox(10) {
+                            hgrow = Priority.ALWAYS
+                            bindChildren(docSelection) { doc ->
+                                val thumb =
+                                    DocumentUtils.documentThumbnail(
+                                        doc.browsable()!!,
+                                        DocumentListView.DOC_THUMBNAIL_SIZE
+                                    )
+                                hbox(10) {
+                                    if (thumb != null) {
+                                        imageview(thumb) {
+                                            fitWidth = 120.0
+                                            isPreserveRatio = true
+                                        }
+                                    }
+                                    form {
+                                        hgrow = Priority.ALWAYS
+                                        fieldset(doc.metadata.id.substringAfterLast("/")) {
+                                            hgrow = Priority.ALWAYS
+                                            fieldifnotblank("Id", doc.metadata.id)
+                                            fieldifnotblank("Title", doc.metadata.title)
+                                            fieldifnotblank("Author", doc.metadata.author)
+                                            fieldifnotblank(
+                                                "Date",
+                                                doc.metadata.dateTime?.toString() ?: doc.metadata.date?.toString()
+                                            )
+                                            field("Path") {
+                                                hyperlink(doc.metadata.path.toString()) {
+                                                    action {
+                                                        DocumentOpenInViewer(
+                                                            doc.browsable()!!,
+                                                            hostServices
+                                                        ).open()
+                                                    }
+                                                }
+                                                doc.metadata.path?.toString()
+                                            }
+                                            fieldifnotblank("Relative Path", doc.metadata.relativePath)
+                                            fieldifnotblank(
+                                                "Additional Properties",
+                                                doc.metadata.properties.keys.joinToString(",")
+                                            ) {
+                                                tooltip(doc.metadata.properties.entries.joinToString("\n") { (k, v) -> "$k: $v" })
+                                            }
+                                            fieldifnotblank("Embeddings", doc.embeddingInfo())
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    fieldset("Selected Text Chunk(s)") {
-                        visibleWhen { Bindings.isNotEmpty(chunkSelection) }
-                        managedWhen { Bindings.isNotEmpty(chunkSelection) }
-                        fieldifnotblank("Type", chunkType)
-                        fieldifnotblank("Text", chunksText)
-                        fieldifnotblank("Score", chunksScore)
-                        fieldifnotblank("Embedding", chunksEmbedding)
+                    fold("Details on Selected Chunk(s)", expanded = true) {
+                        vgrow = Priority.ALWAYS
+                        form {
+                            fieldset("") { }
+                            vbox {
+                                bindChildren(chunkSelection) { chunk ->
+                                    fieldset("") {
+                                        val text = chunk.text.trim()
+                                        fieldifnotblank("Text", text) {
+                                            contextmenu {
+                                                item("Find similar chunks") {
+                                                    action {
+                                                        runAsync {
+                                                            createSemanticFilter(text)
+                                                        } ui {
+                                                            chunkFilter.value = it
+                                                            isChunkFilterEnabled.set(true)
+                                                        }
+                                                    }
+                                                }
+                                                buildsendresultmenu(text, workspace as PromptFxWorkspace)
+                                            }
+                                        }
+                                        fieldifnotblank("Score", chunk.score?.toString())
+                                        fieldifnotblank("Embeddings", chunk.embeddingsAvailable.joinToString(", "))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    //endregion
+
+    //region INIT - LOAD DATA
+
     init {
         val filesToRestore = find<PromptFxConfig>().libraryFiles()
         filesToRestore.forEach { loadLibraryFrom(it) }
     }
+
+    //endregion
 
     //region UI HELPERS
 
@@ -315,6 +428,20 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         }
     }
 
+    /** Get embedding information, as list of calculated embedding models, within a [TextDoc]. */
+    private fun TextDoc.embeddingInfo(): String {
+        val models = chunks.flatMap { it.getEmbeddingInfo()?.keys ?: listOf() }.toSet()
+        return if (models.isEmpty()) "No embeddings calculated."
+        else models.joinToString(", ") { it }
+    }
+
+    /** Get embedding information, as list of calculated embedding models, within a [TextChunk]. */
+    private fun TextChunk.embeddingInfo(): String {
+        val models = getEmbeddingInfo()?.keys ?: listOf()
+        return if (models.isEmpty()) "No embeddings calculated."
+        else models.joinToString(", ") { it }
+    }
+
     private fun EventTarget.fieldifnotblank(label: String, text: ObservableValue<String>) {
         field(label) {
             text(text) {
@@ -325,9 +452,50 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         }
     }
 
+    private fun EventTarget.fieldifnotblank(label: String, text: String?, op: Field.() -> Unit = { }) {
+        if (!text.isNullOrBlank())
+            field(label) {
+                labelContainer.alignment = Pos.TOP_LEFT
+                text(text)
+                op()
+            }
+    }
+
     //endregion
 
     //region USER ACTIONS
+
+    override fun loadTextLibrary(library: TextLibraryInfo) {
+        if (library !in libraryList) {
+            libraryList.add(library)
+            libraryListView.selectionModel.select(library)
+        }
+    }
+
+    fun loadTextLibrary(library: TextLibrary) {
+        val existing = libraryList.find { it.library.metadata.id == library.metadata.id }
+        if (existing != null)
+            libraryListView.selectionModel.select(existing)
+        else {
+            val info = TextLibraryInfo(library, null)
+            libraryList.add(info)
+            libraryListView.selectionModel.select(info)
+        }
+    }
+
+    private fun renameSelectedCollection() {
+        TextInputDialog(librarySelection.value.library.metadata.id).apply {
+            initOwner(primaryStage)
+            title = "Rename Collection"
+            headerText = "Enter a new name for the collection."
+            contentText = "Name:"
+        }.showAndWait().ifPresent {
+            librarySelection.value.library.metadata.id = it
+            saveLibrary()
+            libraryListView.refresh()
+            idChange.set(!idChange.value) // force update of output pane
+        }
+    }
 
     private fun loadLibrary() {
         promptFxFileChooser(
@@ -405,7 +573,46 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), this@TextLibraryView.progress)
         }
     } ui {
+        saveLibrary()
         chunkListView.refresh()
+    }
+
+    private fun executeMetadataExtraction() {
+        var count = 0
+        librarySelection.value.library.docs.forEach {
+            val path = it.metadata.path
+            if (path != null && File(path).exists()) {
+                val md = File(path).extractMetadata()
+                if (md.isNotEmpty()) {
+                    count++
+                    it.metadata.merge(md)
+                }
+            }
+        }
+        alert(Alert.AlertType.INFORMATION, "Extracted metadata from $count files.")
+    }
+
+    private fun TextDocMetadata.merge(other: Map<String, Any>) {
+        other.extract("title", "pdf.title", "doc.title") { title = it }
+        other.extract("author", "pdf.author", "doc.author", "docx.author") { author = it }
+        other.extractDate("date", "pdf.modificationDate", "pdf.creationDate", "doc.editTime", "docx.modified") { dateTime = it }
+        properties.putAll(other)
+    }
+
+    private fun Map<String, Any>.extract(vararg keys: String, setter: (String) -> Unit) {
+        keys.firstNotNullOfOrNull { get(it) }?.let { setter(it.toString()) }
+    }
+
+    private fun Map<String, Any>.extractDate(vararg keys: String, setter: (LocalDateTime) -> Unit) {
+        keys.firstNotNullOfOrNull { get(it) }?.let {
+            when (it) {
+                is LocalDateTime -> setter(it)
+                is LocalDate -> setter(it.atStartOfDay())
+                else -> {
+                    println("Could not parse date from $it, ${it.javaClass}")
+                }
+            }
+        }
     }
 
     //endregion
