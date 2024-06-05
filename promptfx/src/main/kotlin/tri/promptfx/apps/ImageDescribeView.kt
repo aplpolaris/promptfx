@@ -77,6 +77,10 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
         describeImage(promptText.value)
     }.planner
 
+    fun setImage(image: Image) {
+        this.image.value = image
+    }
+
     private suspend fun describeImage(prompt: String): String? {
         val res = model.value.chat(
             listOf(

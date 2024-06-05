@@ -465,3 +465,31 @@ document-reduce-technical-terms:
     ```
     {{{input}}}
     ```
+
+############################
+# DOCUMENT GUESSING
+############################
+# prefix:
+#   document-guess-* - takes general text input and extracts specific content
+# keywords:
+#   {{{input}}} - text to process
+
+document-guess-metadata: |
+  The following is text from a PDF or document. Provide a JSON with any document metadata you can infer from the text.
+  The result may include:
+   - title
+   - subtitle
+   - authors
+   - date (YYYY-MM-DD) -- if there is a clear date of publication
+   - keywords (list of strings) -- if there is a stated list of keywords
+   - abstract (string) -- omit this if there is not a labeled abstract section
+   - executive_summary (string) -- omit this if there is not a labeled executive summary section
+   - sections (list of strings) -- values should include both numbers and titles as shown in text, e.g. "1. Introduction" or "2 METHODS"
+   - captions (list of strings) -- values should include both figure/table caption number and the caption itself
+   - references (list of strings) -- values should be precise bibliographic citations found in any bibliography
+   - other (dictionary) -- any other metadata that is clearly stated in the text
+  
+  Values should be exact matches for the text provided. Use "NONE" or omit the object if a value is not found.
+  ```
+  {{{input}}}
+  ```

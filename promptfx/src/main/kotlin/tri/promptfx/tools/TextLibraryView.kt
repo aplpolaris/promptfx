@@ -24,12 +24,15 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ObservableList
+import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
@@ -43,15 +46,19 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
+import tri.ai.text.chunks.process.PdfMetadataGuesser
 import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.apps.ImageDescribeView
 import tri.promptfx.docs.DocumentOpenInViewer
 import tri.promptfx.ui.*
 import tri.promptfx.ui.DocumentListView.Companion.icon
+import tri.util.info
+import tri.util.pdf.PdfUtils
 import tri.util.ui.*
 import java.io.File
 import java.time.LocalDate
@@ -71,6 +78,8 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     private lateinit var docList: ObservableList<TextDoc>
     private lateinit var docListView: ListView<TextDoc>
     private lateinit var docSelection: ObservableList<TextDoc>
+
+    private val selectedDocImages = observableListOf<Image>()
 
     private val chunkFilter = SimpleObjectProperty<(TextChunk) -> Float>(null)
     private val isChunkFilterEnabled = SimpleBooleanProperty(false)
@@ -143,6 +152,28 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     }
                 }
                 contextmenu {
+                    item("Guess metadata", graphic = FontAwesomeIcon.MAGIC.graphic) {
+                        enableWhen(Bindings.isNotEmpty(docSelection))
+                        action {
+                            val firstPdf = docSelection.mapNotNull { it.browsable() }
+                                .filter { it.path.substringAfterLast(".") == "pdf" }
+                                .mapNotNull { it.file }
+                                .firstOrNull { it.exists() }
+                            if (firstPdf == null) {
+                                alert(Alert.AlertType.ERROR, "No PDF file found for selected document(s).", owner = currentWindow)
+                                return@action
+                            } else {
+                                runAsync {
+                                    runBlocking {
+                                        PdfMetadataGuesser.guessPdfMetadata(controller.completionEngine.value, firstPdf, 4)
+                                    }
+                                } ui {
+                                    info<TextLibraryView>("Metadata guessed results: $it")
+                                }
+                            }
+                        }
+                    }
+                    separator()
                     item("Remove selected document(s) from collection") {
                         enableWhen(Bindings.isNotEmpty(docSelection))
                         action {
@@ -347,6 +378,38 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                             }
                         }
                     }
+                    fold("Images from Document", expanded = false) {
+                        val thumbnailSize = SimpleDoubleProperty(128.0)
+                        datagrid(selectedDocImages) {
+                            vgrow = Priority.ALWAYS
+                            prefWidth = 600.0
+                            prefHeight = 600.0
+                            cellWidthProperty.bind(thumbnailSize)
+                            cellHeightProperty.bind(thumbnailSize)
+                            cellCache {
+                                imageview(it) {
+                                    fitWidthProperty().bind(thumbnailSize)
+                                    fitHeightProperty().bind(thumbnailSize)
+                                    isPreserveRatio = true
+                                    tooltip { graphic = imageview(it) }
+                                    contextmenu {
+                                        item("View full size").action { showImageDialog(image) }
+                                        item("Copy to clipboard").action { copyToClipboard(image) }
+                                        item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
+                                            action {
+                                                val view = (workspace as PromptFxWorkspace).findTaskView("Image Description")
+                                                (view as? ImageDescribeView)?.apply {
+                                                    setImage(image)
+                                                    workspace.dock(view)
+                                                }
+                                            }
+                                        }
+                                        item("Save to file...").action { saveToFile(image) }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     fold("Details on Selected Chunk(s)", expanded = true) {
                         vgrow = Priority.ALWAYS
                         form {
@@ -389,6 +452,25 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
     init {
         val filesToRestore = find<PromptFxConfig>().libraryFiles()
         filesToRestore.forEach { loadLibraryFrom(it) }
+
+        // pull images from selected PDF's
+        docSelection.onChange {
+            selectedDocImages.clear()
+            docSelection.forEach {
+                runAsync {
+                    val browsable = it.browsable()
+                    val pdfFile = browsable?.file?.let { if (it.extension.lowercase() == "pdf") it else null }
+                    if (pdfFile != null && pdfFile.exists()) {
+                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
+                            .map { SwingFXUtils.toFXImage(it, null) }
+                    } else {
+                        listOf()
+                    }
+                } ui {
+                    selectedDocImages.addAll(it)
+                }
+            }
+        }
     }
 
     //endregion
@@ -505,19 +587,21 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
             mode = FileChooserMode.Single
         ) {
             it.firstOrNull()?.let {
-                val libInfo = loadLibraryFrom(it)
-                libraryListView.selectionModel.select(libInfo)
+                loadLibraryFrom(it)
             }
         }
     }
 
-    private fun loadLibraryFrom(file: File): TextLibraryInfo {
-        val lib = TextLibrary.loadFrom(file)
-        if (lib.metadata.id.isBlank())
-            lib.metadata.id = file.name
-        val libInfo = TextLibraryInfo(lib, file)
-        libraryList.add(libInfo)
-        return libInfo
+    private fun loadLibraryFrom(file: File) {
+        runAsync {
+            val lib = TextLibrary.loadFrom(file)
+            if (lib.metadata.id.isBlank())
+                lib.metadata.id = file.name
+            TextLibraryInfo(lib, file)
+        } ui {
+            libraryList.add(it)
+            libraryListView.selectionModel.select(it)
+        }
     }
 
     private fun saveLibrary() {
