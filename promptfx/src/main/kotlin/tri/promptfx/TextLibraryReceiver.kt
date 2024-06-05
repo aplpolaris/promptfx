@@ -17,15 +17,11 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.apps
+package tri.promptfx
 
-import tri.promptfx.RuntimePromptView
-import tri.promptfx.RuntimePromptViewConfigs
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
+import tri.promptfx.tools.TextLibraryInfo
 
-/** Plugin for [EntityExtractionView]. */
-class EntityExtractionPlugin : NavigableWorkspaceViewImpl<EntityExtractionView>("Text", "Entity Extraction", WorkspaceViewAffordance.INPUT_ONLY, EntityExtractionView::class)
-
-/** View for prompts designed to extract entities from text. */
-class EntityExtractionView: RuntimePromptView(RuntimePromptViewConfigs.config("entity-extraction"))
+/** Marks a view as capable of receiving a text library. */
+interface TextLibraryReceiver {
+    fun loadTextLibrary(library: TextLibraryInfo)
+}

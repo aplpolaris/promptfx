@@ -41,26 +41,25 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.promptTraceContextMenu
+import tri.promptfx.tools.TextLibraryInfo
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.plainText
-import tri.util.ui.slider
-import tri.util.ui.sliderwitheditablelabel
+import tri.util.ui.*
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
-class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", isScriptable = true, DocumentQaView::class)
+class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", WorkspaceViewAffordance.INPUT_AND_COLLECTION, DocumentQaView::class)
 
 /** A view that allows the user to ask a question about a document, and the system will find the most relevant section. */
 class DocumentQaView: AiPlanTaskView(
     "Document Q&A",
     "Enter question below to respond based on content of documents in a specified folder.",
-) {
+), TextLibraryReceiver {
 
     private val promptId = SimpleStringProperty("$PROMPT_PREFIX-docs")
     private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
@@ -194,6 +193,10 @@ class DocumentQaView: AiPlanTaskView(
     )
 
     //region ACTIONS
+
+    override fun loadTextLibrary(library: TextLibraryInfo) {
+        documentLibrary.set(library.library)
+    }
 
     private fun exportDocumentSnippets() {
         promptFxFileChooser(

@@ -60,7 +60,11 @@ object TextDocEmbeddings {
         (attributes["embeddings"] as EmbeddingInfo)[modelId] = embedding.map { precision.op(it) }
     }
 
-    /** Get embedding info. */
+    /** Get embedding info object. */
+    fun TextChunk.getEmbeddingInfo(): EmbeddingInfo? =
+        attributes["embeddings"] as? EmbeddingInfo
+
+    /** Get embedding info for a specific model. */
     fun TextChunk.getEmbeddingInfo(modelId: String): List<Double>? =
         (attributes["embeddings"] as? EmbeddingInfo)?.get(modelId)
 

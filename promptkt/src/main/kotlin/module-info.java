@@ -28,6 +28,7 @@ module tri.promptkt {
     requires kotlinx.serialization.json;
 
     requires java.logging;
+    requires java.desktop;
 
     requires openai.core.jvm;
     requires openai.client.jvm;
@@ -80,6 +81,7 @@ module tri.promptkt {
     exports tri.ai.text.chunks.process;
     exports tri.ai.tool;
     exports tri.util;
+    exports tri.util.pdf;
 
     // services (service loader API)
     uses TextPlugin;

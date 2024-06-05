@@ -28,9 +28,10 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [StructuredDataView]. */
-class StructuredDataPlugin : NavigableWorkspaceViewImpl<StructuredDataView>("Text", "Structured Data", isScriptable = true, StructuredDataView::class)
+class StructuredDataPlugin : NavigableWorkspaceViewImpl<StructuredDataView>("Text", "Structured Data", WorkspaceViewAffordance.INPUT_ONLY, StructuredDataView::class)
 
 /** View designed to convert text to JSON. */
 class StructuredDataView: AiPlanTaskView("Structured Data",

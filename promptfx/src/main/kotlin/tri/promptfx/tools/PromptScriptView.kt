@@ -41,17 +41,19 @@ import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.*
 import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
-class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", isScriptable = false, PromptScriptView::class)
+class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", WorkspaceViewAffordance.COLLECTION_ONLY, PromptScriptView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptScriptView : AiPlanTaskView("Prompt Scripting",
-    "Configure a prompt to run on a series of inputs or a CSV file.") {
+    "Configure a prompt to run on a series of inputs or a CSV file."
+), TextLibraryReceiver {
 
     // inputs
     private val chunkBy = SimpleStringProperty("\\n")
@@ -264,6 +266,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             .task("process-results") {
                 postProcess(it, inputs)
             }.planner
+    }
+
+    override fun loadTextLibrary(library: TextLibraryInfo) {
+        inputLibrary.set(library.library)
     }
 
     private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {

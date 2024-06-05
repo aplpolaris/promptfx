@@ -34,7 +34,7 @@ import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptTemplateView]. */
-class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools", "Prompt Library", isScriptable = false, PromptLibraryView::class)
+class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools", "Prompt Library", type = PromptLibraryView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates.") {

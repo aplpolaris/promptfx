@@ -38,10 +38,11 @@ import tri.util.ui.AudioRecorder
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
 /** Plugin for the [AudioView]. */
-class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to-Text", isScriptable = false, AudioView::class)
+class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to-Text", type = AudioView::class)
 
 /** View for the OpenAI API's [Whisper](https://platform.openai.com/docs/api-reference/audio) endpoint. */
 class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {

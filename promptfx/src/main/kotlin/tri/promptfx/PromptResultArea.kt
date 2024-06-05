@@ -133,7 +133,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
 /** Set up a context menu with a given prompt trace object. */
 fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObjectProperty<AiPromptTrace>, op: ContextMenu.() -> Unit = {}) =
-    contextmenu {
+    lazyContextmenu {
         item("Details...") {
             enableWhen { trace.isNotNull }
             action {
@@ -149,29 +149,7 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
                 (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
             }
         }
-        menu("Send result to view") {
-            enableWhen(trace.booleanBinding { it != null && !it.outputInfo.output.isNullOrBlank() })
-            // add menu items dynamically, when you load the menu
-            trace.onChange {
-                items.clear()
-                (component.workspace as PromptFxWorkspace).viewsWithInputs.forEach { (group, list) ->
-                    if (list.isNotEmpty()) {
-                        menu(group) {
-                            list.forEach {
-                                val view = component.find(it) as AiTaskView
-                                item(view.title) {
-                                    action {
-                                        with (PromptFxDriver) {
-                                            component.setInputAndRun(view, trace.value.outputInfo.output!!)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        buildsendresultmenu(trace, component.workspace as PromptFxWorkspace)
         separator()
         op()
     }

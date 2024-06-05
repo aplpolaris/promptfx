@@ -6,6 +6,7 @@ import tri.ai.openai.promptPlan
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /*-
  * #%L
@@ -28,7 +29,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
  */
 
 /** Plugin for the [ColorView]. */
-class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", isScriptable = true, ColorView::class)
+class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", WorkspaceViewAffordance.INPUT_ONLY, ColorView::class)
 
 /** View to approximate a color based on user text. */
 class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or object to generate a color.") {

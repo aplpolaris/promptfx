@@ -34,11 +34,12 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.toUri
 import java.net.URI
 
 /** Plugin for the [ImageDescribeView]. */
-class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", isScriptable = false, ImageDescribeView::class)
+class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Vision", "Image Description", type = ImageDescribeView::class)
 
 /** View designed to describe an image. */
 class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an image to describe into the box on the left.") {
@@ -75,6 +76,10 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     override fun plan() = task("Describe Image") {
         describeImage(promptText.value)
     }.planner
+
+    fun setImage(image: Image) {
+        this.image.value = image
+    }
 
     private suspend fun describeImage(prompt: String): String? {
         val res = model.value.chat(

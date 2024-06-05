@@ -359,7 +359,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             val errors = it.results.values.mapNotNull { it.error }
             if (errors.isNotEmpty()) {
                 // show error message to user
-                alert(Alert.AlertType.ERROR, "There was an error executing the task.", errors.first().message)
+                alert(Alert.AlertType.ERROR, "There was an error executing the task.", errors.first().message, owner = currentWindow)
             } else {
                 taskCompleted(it)
             }

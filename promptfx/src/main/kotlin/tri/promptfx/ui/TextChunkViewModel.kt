@@ -31,6 +31,7 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 /** View model for document chunks. */
 interface TextChunkViewModel {
     val embedding: List<Double>?
+    val embeddingsAvailable: List<String>
     val score: Float?
     val browsable: BrowsableSource?
     val text: String
@@ -54,6 +55,7 @@ fun ObservableList<Pair<TextDoc, TextChunk>>.sectionViewModel(embeddingModelId: 
 fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
     override val score = this@asTextChunkViewModel.queryScore
     override val embedding = chunkEmbedding
+    override val embeddingsAvailable = listOf(embeddingModel)
     override val browsable = document.browsable()
     override val text = chunkText
 }
@@ -62,6 +64,7 @@ fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
 fun Pair<TextDoc, TextChunk>.asTextChunkViewModel(embeddingModelId: String) = object : TextChunkViewModel {
     override val score = null
     override val embedding = second.getEmbeddingInfo(embeddingModelId)
+    override val embeddingsAvailable = second.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val browsable = first.browsable()
     override val text = second.text(first.all)
 }
@@ -76,5 +79,6 @@ class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddin
 
     override val browsable = parentDoc?.browsable()
     override val embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
+    override val embeddingsAvailable = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val text = chunk.text(parentDoc?.all)
 }

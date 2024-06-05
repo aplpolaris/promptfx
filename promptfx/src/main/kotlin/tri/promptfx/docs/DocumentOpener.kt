@@ -25,10 +25,10 @@ import javafx.stage.Modality
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.embedding.findTextInPdf
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.process.LocalFileManager.PDF
 import tri.util.info
+import tri.util.pdf.PdfUtils.findTextInPdf
 import tri.util.ui.pdf.PdfViewer
 import java.awt.Desktop
 
@@ -51,13 +51,12 @@ class DocumentOpenInSystem(val document: BrowsableSource, val hostServices: Host
     }
 }
 
-/** Opens the document in JavaFx PDF viewer. */
+/** Opens the document in JavaFx PDF viewer if a PDF file, otherwise opening/browsing to file in system. */
 class DocumentOpenInViewer(val document: BrowsableSource, val hostServices: HostServices?): DocumentOpener() {
 
     override fun open() {
-        val file = document.file ?: return
         when {
-            file.extension.lowercase() == PDF -> openPdf(page = 0)
+            document.file?.extension?.lowercase() == PDF -> openPdf(page = 0)
             else -> DocumentOpenInSystem(document, hostServices).open()
         }
     }
@@ -77,11 +76,11 @@ class DocumentOpenInViewer(val document: BrowsableSource, val hostServices: Host
     }
 }
 
-/** Browses to a given snippet within a document. */
+/** Browses to a given snippet within a document, using built-in viewer if possible otherwise opening/browsing to file in system. */
 class DocumentBrowseToPage(val doc: BrowsableSource, val text: String, val hostServices: HostServices?): DocumentOpener() {
     override fun open() {
-        val file = doc.file ?: return
-        if (file.extension.lowercase() == "pdf") {
+        val file = doc.file
+        if (file != null && file.extension.lowercase() == "pdf") {
             val page = findTextInPdf(file, text)
             DocumentOpenInViewer(doc, hostServices).openPdf(page - 1)
         } else {

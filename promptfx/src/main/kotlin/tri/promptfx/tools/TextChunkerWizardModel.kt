@@ -244,7 +244,7 @@ enum class TcwSourceMode(val uiName: String) {
             return listOf(TextDoc("User Input $t0", TextChunkRaw(model.userText.value)).apply {
                 metadata.title = "User Input $t0"
                 metadata.author = System.getProperty("user.name")
-                metadata.date = t0.toLocalDate()
+                metadata.dateTime = t0
             })
         }
     },
@@ -256,7 +256,7 @@ enum class TcwSourceMode(val uiName: String) {
             model.webScrapeModel.scrapeWebsite(progressUpdate).map {
                 TextDoc(it.key.toString(), TextChunkRaw(it.value)).apply {
                     metadata.title = it.key.toString()
-                    metadata.date = LocalDate.now()
+                    metadata.dateTime = LocalDateTime.now()
                     metadata.path = it.key
                 }
             }
@@ -273,7 +273,7 @@ enum class TcwSourceMode(val uiName: String) {
         return TextDoc(uri.toString(), raw).apply {
             metadata.title = nameWithoutExtension // TODO - can we be smarter about this?
             // TODO metadata.author =
-            metadata.date = lastModified().let { LocalDate.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
+            metadata.dateTime = lastModified().let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
             metadata.path = uri
             metadata.relativePath = relativeTo(File(parent)).path
         }

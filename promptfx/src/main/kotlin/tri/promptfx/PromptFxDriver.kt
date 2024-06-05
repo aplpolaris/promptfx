@@ -21,16 +21,21 @@ package tri.promptfx
 
 import javafx.application.Platform
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableStringValue
+import javafx.beans.value.ObservableValue
 import javafx.geometry.Insets
+import javafx.scene.control.ContextMenu
 import javafx.scene.control.TextArea
 import javafx.scene.text.TextFlow
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.docs.FormattedPromptTraceResult
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
+import tri.promptfx.tools.TextLibraryInfo
 
 /** General-purpose capability for sending inputs to PromptFx views and getting a result. */
 object PromptFxDriver {
@@ -95,12 +100,19 @@ object PromptFxDriver {
     }
 
     /** Apply an input to a task view, bring the view to focus, and execute the task. */
-    fun Component.setInputAndRun(view: AiTaskView, input: String) {
+    fun PromptFxWorkspace.setInputAndRun(view: AiTaskView, input: String) {
         view.inputArea()?.text = input
         workspace.dock(view)
         view.runTask()
     }
 
+    /** Apply a collection to a task view. */
+    fun AiTaskView.loadCollection(view: AiTaskView, collection: TextLibraryInfo) {
+        (view as? TextLibraryReceiver)?.loadTextLibrary(collection)
+        workspace.dock(view)
+    }
+
+    /** Show a dialog for testing the PromptFxDriver. */
     fun Component.showDriverDialog() {
         // show dialog getting the view name to target, and the input
         val dialog = find<PromptFxDriverDialog>()
@@ -144,6 +156,67 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
                 action {
                     execute = true
                     close()
+                }
+            }
+        }
+    }
+}
+
+/** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
+fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTrace>, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(trace.stringBinding { it?.outputInfo?.output }, workspace)
+}
+
+/** Context menu for sending a string result to a view that accepts a text input. */
+fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(SimpleStringProperty(output), workspace)
+}
+
+/** Context menu for sending result in a string property to a view that accepts a text input. */
+fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send result to view") {
+        disableWhen(value.booleanBinding { it.isNullOrBlank() })
+
+        workspace.viewsWithInputs.forEach { (group, map) ->
+            if (map.isNotEmpty()) {
+                menu(group) {
+                    map.forEach { (_, info) ->
+                        val view = workspace.find(info.view) as AiTaskView
+                        item(view.title) {
+                            action {
+                                with (PromptFxDriver) {
+                                    workspace.setInputAndRun(view, value.value)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Context menu for sending a chunk collection to another view. */
+fun ContextMenu.buildsendcollectionmenu(view: AiTaskView, value: ObservableValue<TextLibraryInfo>) {
+    menu("Load collection in view") {
+        disableWhen(value.booleanBinding { it == null })
+
+        val workspace = view.workspace as PromptFxWorkspace
+        workspace.viewsWithCollections.forEach { (group, map) ->
+            if (map.isNotEmpty()) {
+                menu(group) {
+                    map.forEach { (_, info) ->
+                        val targetView = workspace.find(info.view) as AiTaskView
+                        if (view != targetView) {
+                            item(targetView.title) {
+                                action {
+                                    with(PromptFxDriver) {
+                                        view.loadCollection(targetView, value.value)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
