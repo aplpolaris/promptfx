@@ -2,12 +2,11 @@ package tri.util.pdf
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
-import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.process.PdfMetadataGuesser
 import kotlin.io.path.toPath
-
 
 class PdfUtilsTest {
 
@@ -39,23 +38,9 @@ class PdfUtilsTest {
         assertEquals("Microsoft® Word LTSC", metadata["pdf.creator"])
     }
 
+    @Disabled("This test requires an OpenAI API key")
     @Test
     fun testPdfGuesser() {
-        runBlocking {
-            val model = TextPlugin.textCompletionModels().first()
-            val text = PdfUtils.pdfPageInfo(file)
-            println("Page 1:")
-            val prompt1 = AiPromptLibrary.lookupPrompt("document-guess-metadata").fill("input" to text[0].text)
-            val completion1 = model.complete(prompt1, tokens = 1000, temperature = 0.2)
-            println(completion1)
-            println("Page 2:")
-            val prompt2 = AiPromptLibrary.lookupPrompt("document-guess-metadata").fill("input" to text[1].text)
-            val completion2 = model.complete(prompt2, tokens = 1000, temperature = 0.2)
-            println(completion2)
-        }
-    }
-    @Test
-    fun testPdfGuesser2() {
         runBlocking {
             val metadata = PdfMetadataGuesser.guessPdfMetadata(TextPlugin.textCompletionModels().first(), file, 2)
             println(metadata)
