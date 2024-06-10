@@ -35,6 +35,7 @@ import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
+import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -60,6 +61,7 @@ import tri.promptfx.ui.DocumentListView.Companion.icon
 import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.*
+import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -391,6 +393,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                                     fitWidthProperty().bind(thumbnailSize)
                                     fitHeightProperty().bind(thumbnailSize)
                                     isPreserveRatio = true
+                                    isPickOnBounds = true // so you can click anywhere on transparent images
                                     tooltip { graphic = imageview(it) }
                                     contextmenu {
                                         item("View full size").action { showImageDialog(image) }
@@ -462,16 +465,19 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     val pdfFile = browsable?.file?.let { if (it.extension.lowercase() == "pdf") it else null }
                     if (pdfFile != null && pdfFile.exists()) {
                         PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
-                            .map { SwingFXUtils.toFXImage(it, null) }
+                            .deduplicated()
                     } else {
                         listOf()
                     }
                 } ui {
-                    selectedDocImages.addAll(it)
+                    selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                 }
             }
         }
     }
+
+    private fun List<BufferedImage>.deduplicated() =
+        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 

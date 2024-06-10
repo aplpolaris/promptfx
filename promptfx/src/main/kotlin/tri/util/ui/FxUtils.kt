@@ -225,7 +225,7 @@ fun UIComponent.showImageDialog(image: Image) {
         }
         padding = insets(0)
         form.padding = insets(1)
-        form.background = Color.BLACK.asBackground()
+        form.background = Color.WHITE.asBackground()
     }
     // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
     d?.owner?.let {
