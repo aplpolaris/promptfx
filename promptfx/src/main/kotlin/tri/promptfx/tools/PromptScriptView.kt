@@ -32,7 +32,6 @@ import tornadofx.*
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
@@ -81,11 +80,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private lateinit var promptUi: EditablePromptUi
 
     // options for prompted summary of all results
-    private val summaryPromptId = SimpleStringProperty("$TEXT_SUMMARIZER_PREFIX-summarize")
-    private val summaryPromptText = summaryPromptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
-
-    private val joinerId = SimpleStringProperty("$TEXT_JOINER_PREFIX-basic")
-    private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+    private val summaryPrompt = PromptSelectionModel("$TEXT_SUMMARIZER_PREFIX-summarize")
+    private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX-basic")
 
     // result list
     private val promptTraces = observableListOf<AiPromptTrace>()
@@ -236,8 +232,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         parameters("Result Summarization Template") {
             enableWhen(summarizeResults)
             tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
-            promptfield("Text Joiner", joinerId, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), joinerText, workspace)
-            promptfield("Summarizer", summaryPromptId, AiPromptLibrary.withPrefix(TEXT_SUMMARIZER_PREFIX), summaryPromptText, workspace)
+            promptfield("Text Joiner", joinerPrompt, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), workspace)
+            promptfield("Summarizer", summaryPrompt, AiPromptLibrary.withPrefix(TEXT_SUMMARIZER_PREFIX), workspace)
         }
     }
 
@@ -363,13 +359,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         val promptInfo: AiPromptInfo
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
-            val joined = joinerText.value.fill("matches" to
+            val joined = joinerPrompt.fill("matches" to
                 results.map { mapOf("text" to (it.outputInfo.output ?: "")) }
             )
-            val summarizer = summaryPromptText.value.fill(AiPrompt.INPUT to joined)
+            val summarizer = summaryPrompt.fill(AiPrompt.INPUT to joined)
             val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
             resultSets[key] = summarizerResult.value ?: "(error or no output returned)"
-            promptInfo = AiPromptInfo(summaryPromptText.value, mapOf(AiPrompt.INPUT to joined))
+            promptInfo = AiPromptInfo(summaryPrompt.text.value, mapOf(AiPrompt.INPUT to joined))
         } else {
             promptInfo = AiPromptInfo("")
         }

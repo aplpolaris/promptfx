@@ -460,17 +460,20 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         docSelection.onChange {
             selectedDocImages.clear()
             docSelection.forEach {
-                runAsync {
-                    val browsable = it.browsable()
-                    val pdfFile = browsable?.file?.let { if (it.extension.lowercase() == "pdf") it else null }
-                    if (pdfFile != null && pdfFile.exists()) {
+                val browsable = it.browsable()
+                val pdfFile = browsable?.file?.let { if (it.extension.lowercase() == "pdf") it else null }
+                if (pdfFile != null && pdfFile.exists()) {
+                    runAsync {
                         PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
                             .deduplicated()
-                    } else {
-                        listOf()
+                    } ui {
+                        // TODO - for testing ... some images show up in form objects and are not discovered using the code above
+                        if (it.isEmpty()) {
+                            println("No images found in $this")
+                            PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
+                        }
+                        selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }
-                } ui {
-                    selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                 }
             }
         }

@@ -22,12 +22,9 @@ package tri.promptfx.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleStringProperty
-import javafx.beans.value.ObservableStringValue
 import javafx.event.EventTarget
 import javafx.scene.layout.HBox
 import tornadofx.*
-import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.PromptFxWorkspace
 
 /**
@@ -38,8 +35,7 @@ fun EventTarget.promptfield(
     promptId: String,
     workspace: Workspace
 ) {
-    val promptText = SimpleStringProperty(AiPromptLibrary.lookupPrompt(promptId).template)
-    promptfield(fieldName, SimpleStringProperty(promptId), listOf(promptId), promptText, workspace)
+    promptfield(fieldName, PromptSelectionModel(promptId), listOf(promptId), workspace)
 }
 
 
@@ -49,15 +45,14 @@ fun EventTarget.promptfield(
  */
 fun EventTarget.promptfield(
     fieldName: String = "Template",
-    promptId: SimpleStringProperty,
+    prompt: PromptSelectionModel,
     promptIdList: List<String>,
-    promptText: ObservableStringValue,
     workspace: Workspace
 ) {
     val promptFieldVisible = SimpleBooleanProperty(false)
     field(fieldName) {
         (inputContainer as? HBox)?.spacing = 5.0
-        combobox(promptId, promptIdList) {
+        combobox(prompt.id, promptIdList + PromptSelectionModel.CUSTOM) {
             maxWidth = 200.0
         }
         togglebutton(text = "") {
@@ -68,15 +63,13 @@ fun EventTarget.promptfield(
         }
         button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
             tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
-            action { (workspace as PromptFxWorkspace).launchTemplateView(promptText.value) }
+            action { (workspace as PromptFxWorkspace).launchTemplateView(prompt.text.value) }
         }
     }
     field(null, forceLabelIndent = true) {
-        text(promptText).apply {
-            wrappingWidth = 300.0
-            promptText.onChange { tooltip(it) }
-        }
+        add(EditableTextArea(prompt.text).root)
         visibleProperty().bindBidirectional(promptFieldVisible)
         managedProperty().bindBidirectional(promptFieldVisible)
     }
 }
+
