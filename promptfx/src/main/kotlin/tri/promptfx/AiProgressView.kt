@@ -60,7 +60,22 @@ class AiProgressView: View(), AiTaskMonitor {
         label.isVisible = false
     }
 
+    init {
+        indicator.managedProperty().bind(indicator.visibleProperty())
+        label.managedProperty().bind(label.visibleProperty())
+    }
+
     //region MONITOR
+
+    /** Start progress bar for a given task. */
+    fun taskStarted(id: String) {
+        taskStarted(task(id) { AiTaskResult.result("") }.lastTask)
+    }
+
+    /** End all tasks and hide progress bar. */
+    fun taskCompleted() {
+        end()
+    }
 
     override fun taskStarted(task: AiTask<*>) {
         PrintMonitor().taskStarted(task)

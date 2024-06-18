@@ -41,6 +41,7 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.*
 import tri.util.ui.*
@@ -186,7 +187,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                     }
                 }
                 fold("Input Preview", expanded = false) {
-                    add(TextChunkListView(inputChunks, hostServices))
+                    add(TextChunkListView(inputChunks))
                 }
             }
         }

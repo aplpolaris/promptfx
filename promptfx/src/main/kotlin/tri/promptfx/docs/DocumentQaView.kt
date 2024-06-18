@@ -44,7 +44,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.promptTraceContextMenu
-import tri.promptfx.tools.TextLibraryInfo
+import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
@@ -116,7 +116,7 @@ class DocumentQaView: AiPlanTaskView(
                     action { exportDocumentSnippets() }
                 }
             }
-            add(TextChunkListView(planner.snippets.matchViewModel(), hostServices))
+            add(TextChunkListView(planner.snippets.matchViewModel()))
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = { planner.reindexAllDocuments() }

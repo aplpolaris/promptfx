@@ -35,10 +35,11 @@ object PdfMetadataGuesser {
     private val PROMPT = AiPromptLibrary.lookupPrompt("document-guess-metadata")
 
     /** Attempt to extract metadata from a PDF file, using up to [pageLimit] pages. Each page is processed by an LLM query, so this may consume a lot of tokens. */
-    suspend fun guessPdfMetadata(model: TextCompletion, file: File, pageLimit: Int): GuessedMetadataObject {
+    suspend fun guessPdfMetadata(model: TextCompletion, file: File, pageLimit: Int, progress: (String) -> Unit): List<GuessedMetadataObject> {
         val text = PdfUtils.pdfPageInfo(file).take(pageLimit)
         val parsedMetadata = text.mapNotNull {
-            info<PdfMetadataGuesser>("Processing page ${it.pageNumber} for $file...")
+            val progressString = "Processing page ${it.pageNumber} for ${file.name}..."
+            progress(progressString)
             val result = model.complete(PROMPT.fill(AiPrompt.INPUT to it.text), tokens = 1000, temperature = 0.2).value!!
             val parsed = result
                 .betweenTripleTicks()
@@ -49,20 +50,24 @@ object PdfMetadataGuesser {
         return parsedMetadata.values.resolveConflicts()
     }
 
-    /** Resolve any conflicting information in metadata. */
-    private fun Collection<GuessedMetadataObject>.resolveConflicts(): GuessedMetadataObject {
+    /** Resolve any conflicting information in metadata. The first result is the attempted deconflicted object. The remaining are the inputs. */
+    private fun Collection<GuessedMetadataObject>.resolveConflicts(): List<GuessedMetadataObject> {
         val title = firstNotNullOfOrNull { it.title }
         val subtitle = firstNotNullOfOrNull { it.subtitle }
         val authors = firstNotNullOfOrNull { it.authors }
         val date = firstNotNullOfOrNull { it.date }
-        val keywords = firstOrNull { it.keywords.isNotEmpty() }?.keywords ?: emptyList()
+        val keywords = firstOrNull { it.keywords?.isNotEmpty() ?: false }?.keywords ?: emptyList()
         val abstract = firstNotNullOfOrNull { it.abstract }
         val executiveSummary = firstNotNullOfOrNull { it.executiveSummary }
-        val sections = flatMap { it.sections }.distinct()
-        val captions = flatMap { it.captions }.distinct()
-        val references = flatMap { it.references }.distinct()
-        val other = flatMap { it.other.entries }.groupBy { it.key }.mapValues { it.value.map { it.value }.distinct() }
-        return GuessedMetadataObject(title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)
+        val sections = flatMap { it.sections ?: listOf() }.distinct()
+        val captions = flatMap { it.captions ?: listOf() }.distinct()
+        val references = flatMap { it.references ?: listOf() }.distinct()
+        val other = flatMap { it.other.entries }.groupBy { it.key }.mapValues {
+            it.value.map { it.value }.distinct().let {
+                if (it.size == 1) it[0] else it
+            }
+        }
+        return listOf(GuessedMetadataObject(title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)) + this
     }
 
     private fun String.betweenTripleTicks() = if ("```" in this) substringAfter("```").substringAfter("\n").substringBefore("```").trim() else trim()
@@ -106,11 +111,11 @@ data class GuessedMetadataObject(
     val subtitle: String?,
     val authors: List<String>?,
     val date: String?,
-    val keywords: List<String>,
+    val keywords: List<String>?,
     val abstract: String?,
     val executiveSummary: String?,
-    val sections: List<String>,
-    val captions: List<String>,
-    val references: List<String>,
+    val sections: List<String>?,
+    val captions: List<String>?,
+    val references: List<String>?,
     val other: Map<String, Any>
 )

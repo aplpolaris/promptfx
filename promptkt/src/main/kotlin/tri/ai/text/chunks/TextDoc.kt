@@ -22,6 +22,7 @@ package tri.ai.text.chunks
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.PDF
 import java.io.File
 import java.net.URI
 import java.time.LocalDate
@@ -53,6 +54,13 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
      */
     fun browsable() =
         metadata.path?.let { BrowsableSource(it) }
+
+    fun pdfFile(): File? {
+        val browsable = browsable() ?: return null
+        val isPdf = browsable.path.substringAfterLast(".") == PDF
+        val file = browsable.file ?: return null
+        return if (isPdf && file.exists()) file else null
+    }
 }
 
 /**

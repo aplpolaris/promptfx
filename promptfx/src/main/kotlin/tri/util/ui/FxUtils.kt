@@ -23,18 +23,14 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
-import javafx.collections.FXCollections
+import javafx.beans.value.WritableValue
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventTarget
-import javafx.scene.control.Hyperlink
-import javafx.scene.control.TextField
-import javafx.scene.control.TextInputControl
+import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.input.DataFormat
 import javafx.scene.input.TransferMode
@@ -270,6 +266,28 @@ fun <X, Y, Z> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>, tr
         }
     }
     return resultList
+}
+
+//endregion
+
+//region ListView BINDINGS
+
+/** Binds a single selected value of a [ListView] to an existing [Property]. */
+fun <X, T> ListView<X>.bindSelectionBidirectional(property: T) where T : WritableValue<X>, T : Property<X> {
+    selectionModel.selectionMode = SelectionMode.SINGLE
+    selectionModel.selectedItemProperty().onChange { property.value = it }
+    property.onChange { if (it == null) selectionModel.clearSelection() else selectionModel.select(it) }
+}
+
+/** Binds multiple selected values of a [ListView] to an existing [ObservableList]. */
+fun <X> ListView<X>.bindSelectionBidirectional(property: ObservableList<X>) {
+    selectionModel.selectionMode = SelectionMode.MULTIPLE
+    selectionModel.selectedItems.onChange { property.setAll(it.list) }
+    property.onChange {
+        selectionModel.clearSelection()
+        val indices = it.list.map { items.indexOf(it) }.toIntArray()
+        selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
+    }
 }
 
 //endregion

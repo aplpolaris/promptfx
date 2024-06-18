@@ -61,7 +61,9 @@ class PdfUtilsTest {
     @Test
     fun testPdfGuesser() {
         runBlocking {
-            val metadata = PdfMetadataGuesser.guessPdfMetadata(TextPlugin.textCompletionModels().first(), file, 2)
+            val metadata = PdfMetadataGuesser.guessPdfMetadata(TextPlugin.textCompletionModels().first(), file, 2) {
+                println(it)
+            }
             println(metadata)
         }
     }

@@ -35,7 +35,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.docs.FormattedPromptTraceResult
 import tri.promptfx.docs.FormattedText
 import tri.promptfx.docs.toFxNodes
-import tri.promptfx.tools.TextLibraryInfo
+import tri.promptfx.library.TextLibraryInfo
 
 /** General-purpose capability for sending inputs to PromptFx views and getting a result. */
 object PromptFxDriver {
@@ -107,7 +107,7 @@ object PromptFxDriver {
     }
 
     /** Apply a collection to a task view. */
-    fun AiTaskView.loadCollection(view: AiTaskView, collection: TextLibraryInfo) {
+    fun UIComponent.loadCollection(view: UIComponent, collection: TextLibraryInfo) {
         (view as? TextLibraryReceiver)?.loadTextLibrary(collection)
         workspace.dock(view)
     }
@@ -197,7 +197,7 @@ fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: Pro
 }
 
 /** Context menu for sending a chunk collection to another view. */
-fun ContextMenu.buildsendcollectionmenu(view: AiTaskView, value: ObservableValue<TextLibraryInfo>) {
+fun ContextMenu.buildsendcollectionmenu(view: UIComponent, value: ObservableValue<TextLibraryInfo>) {
     menu("Load collection in view") {
         disableWhen(value.booleanBinding { it == null })
 
