@@ -10,7 +10,6 @@ import javafx.scene.text.Text
 import javafx.stage.Modality
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPlanner
@@ -21,12 +20,10 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
-import tri.ai.text.chunks.process.PdfMetadataGuesser
 import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.*
 import tri.promptfx.docs.DocumentOpenInViewer
-import tri.promptfx.docs.GuessedMetadataValidatorUi
 import tri.promptfx.tools.TextChunkerWizard
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.DocumentListView.Companion.icon
@@ -134,7 +131,7 @@ class TextLibraryCollectionUi : Fragment() {
                 }
             }
             contextmenu {
-                item("Guess metadata", graphic = FontAwesomeIcon.MAGIC.graphic) {
+                item("Open metadata viewer...") {
                     enableWhen(Bindings.isNotEmpty(docSelection))
                     action {
                         val firstDoc = docSelection.firstOrNull { it.pdfFile() != null }
@@ -147,7 +144,7 @@ class TextLibraryCollectionUi : Fragment() {
                             )
                             return@action
                         } else {
-                            executeMetadataGuess(firstDoc, firstPdf, controller.completionEngine.value, )
+                            openMetadataViewer(firstDoc)
                         }
                     }
                 }
@@ -286,56 +283,49 @@ class TextLibraryCollectionUi : Fragment() {
         alert(Alert.AlertType.INFORMATION, "Extracted metadata from $count files.")
     }
 
-    private fun executeMetadataGuess(doc: TextDoc, pdfFile: File, completion: TextCompletion) {
-        runAsync {
-            val result = runBlocking {
-                PdfMetadataGuesser.guessPdfMetadata(completion, pdfFile, METADATA_GUESS_PAGE_LIMIT) {
-                    this@TextLibraryCollectionUi.progress.taskStarted(it)
-                }
-            }
-            this@TextLibraryCollectionUi.progress.taskCompleted()
-            result
-        } ui {
-            val view = GuessedMetadataValidatorUi(it) {
-                doc.metadata.merge(it.selectedValues())
-                docSelection.setAll()
-                docSelection.setAll(listOf(doc))
-            }
-            view.openModal(
-                modality = Modality.NONE,
-                block = false,
-                resizable = true
-            )
+    private fun openMetadataViewer(doc: TextDoc) {
+        val view = PdfViewerWithMetadataUi(doc) {
+            doc.metadata.merge(it.selectedValues())
+            docSelection.setAll()
+            docSelection.setAll(listOf(doc))
         }
-    }
-
-    private fun TextDocMetadata.merge(other: Map<String, Any>) {
-        other.extract("title", "pdf.title", "doc.title") { title = it }
-        other.extract("author", "pdf.author", "doc.author", "docx.author") { author = it }
-        other.extractDate("date", "pdf.modificationDate", "pdf.creationDate", "doc.editTime", "docx.modified") { dateTime = it }
-        properties.putAll(other)
-    }
-
-    private fun Map<String, Any>.extract(vararg keys: String, setter: (String) -> Unit) {
-        keys.firstNotNullOfOrNull { get(it) }?.let { setter(it.toString()) }
-    }
-
-    private fun Map<String, Any>.extractDate(vararg keys: String, setter: (LocalDateTime) -> Unit) {
-        keys.firstNotNullOfOrNull { get(it) }?.let {
-            when (it) {
-                is LocalDateTime -> setter(it)
-                is LocalDate -> setter(it.atStartOfDay())
-                else -> {
-                    println("Could not parse date from $it, ${it.javaClass}")
-                }
-            }
-        }
+        view.openModal(
+            modality = Modality.NONE,
+            block = false,
+            resizable = true
+        )
     }
 
     //endregion
 
     companion object {
-        private val METADATA_GUESS_PAGE_LIMIT = 2
+        /** Merge metadata from a map into a TextDocMetadata object. */
+        fun TextDocMetadata.merge(other: Map<String, Any>) {
+            other.extract("title", "pdf.title", "doc.title") { title = it }
+            other.extract("author", "pdf.author", "doc.author", "docx.author") { author = it }
+            other.extractDate("date", "pdf.modificationDate", "pdf.creationDate", "doc.editTime", "docx.modified") { dateTime = it }
+            properties.putAll(other)
+        }
+
+        private fun Map<String, Any>.extract(vararg keys: String, setter: (String) -> Unit) {
+            keys.firstNotNullOfOrNull { get(it) }?.let { setter(it.toString()) }
+        }
+
+        private fun Map<String, Any>.extractDate(vararg keys: String, setter: (LocalDateTime) -> Unit) {
+            keys.firstNotNullOfOrNull { get(it) }?.let {
+                when (it) {
+                    is LocalDateTime -> setter(it)
+                    is LocalDate -> setter(it.atStartOfDay())
+                    else -> {
+                        try {
+                            setter(LocalDateTime.parse(it.toString()))
+                        } catch (e: Exception) {
+                            println("Could not parse date from ${it.javaClass} $it")
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }

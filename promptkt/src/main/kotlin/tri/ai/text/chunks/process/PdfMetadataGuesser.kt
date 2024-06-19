@@ -25,7 +25,7 @@ import tri.ai.core.TextCompletion
 import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
-import tri.util.info
+import tri.ai.text.chunks.TextDocMetadata
 import tri.util.pdf.PdfUtils
 import java.io.File
 
@@ -106,6 +106,7 @@ object PdfMetadataGuesser {
 
 }
 
+/** Values obtained by guessing metadata from a text sample. */
 data class GuessedMetadataObject(
     val title: String?,
     val subtitle: String?,
@@ -119,3 +120,25 @@ data class GuessedMetadataObject(
     val references: List<String>?,
     val other: Map<String, Any>
 )
+
+/** Convert [TextDocMetadata] to a [GuessedMetadataObject]. */
+fun TextDocMetadata.toGuessedMetadataObject() = GuessedMetadataObject(
+    title = title,
+    subtitle = properties["subtitle"]?.toString(),
+    authors = author?.attemptParseToList(),
+    date = dateTime?.toString() ?: date?.toString(),
+    keywords = listProperty("keywords"),
+    abstract = properties["abstract"]?.toString(),
+    executiveSummary = properties["executiveSummary"]?.toString(),
+    sections = listProperty("sections"),
+    captions = listProperty("captions"),
+    references = listProperty("references"),
+    other = properties.filterKeys { it !in listOf("title", "subtitle", "author", "date", "keywords", "abstract", "executiveSummary", "sections", "captions", "references") }
+        .filterValues { it != null } as Map<String, Any>
+)
+
+private fun TextDocMetadata.listProperty(key: String) =
+    (properties[key] as? List<String>) ?: properties[key]?.toString()?.attemptParseToList()
+
+private fun String.attemptParseToList() =
+    split(",").map { it.trim() }

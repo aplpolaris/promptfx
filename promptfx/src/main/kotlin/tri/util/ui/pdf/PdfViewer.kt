@@ -48,9 +48,9 @@ import java.net.URLDecoder
 /**
  * This code is adapted from https://github.com/edvin/tornadofx-samples/blob/master/pdf-viewer/src/main/kotlin/pdf/Main.kt.
  */
-class PdfViewer : View("") {
+class PdfViewer : Fragment("") {
 
-    val viewModel: PdfViewModel by inject()
+    val viewModel = PdfViewModel()
 
     init {
         titleProperty.bind(viewModel.documentURIString)

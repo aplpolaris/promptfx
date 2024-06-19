@@ -4,8 +4,6 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
-import javafx.scene.control.MultipleSelectionModel
-import javafx.scene.control.SingleSelectionModel
 import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -14,10 +12,8 @@ import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
-import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
 import tri.util.info
@@ -62,10 +58,8 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
                             .deduplicated()
                     } ui {
-                        // TODO - for testing ... some images show up in form objects and are not discovered using the code above
                         if (it.isEmpty()) {
                             info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
-                            PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
                         }
                         selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }

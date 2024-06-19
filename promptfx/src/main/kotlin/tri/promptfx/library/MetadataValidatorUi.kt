@@ -17,99 +17,60 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.docs
+package tri.promptfx.library
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.BooleanProperty
-import javafx.geometry.Pos
-import javafx.scene.control.ButtonBar
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.process.GuessedMetadataObject
+import tri.ai.text.chunks.process.toGuessedMetadataObject
 import tri.util.ui.graphic
 
-/**
- * UI that shows a series of key-value pairs discovered by a "metadata guesser" and user can accept/reject them.
- */
-class GuessedMetadataValidatorUi(data: List<GuessedMetadataObject>, val onClose: (GuessedMetadataValidatorModel) -> Unit):
-    UIComponent("Confirm Metadata") {
+/** UI that shows a series of key-value pairs discovered by a "metadata guesser" and user can accept/reject them. */
+class MetadataValidatorUi : UIComponent("Confirm Metadata") {
 
     /** Data model for the view, tracking which properties are selected by the user. */
-    val model = GuessedMetadataValidatorModel().apply {
-        initialProps.setAll(data.asGmvPropList())
-    }
+    val model: MetadataValidatorModel by inject()
 
-    override val root = vbox(10) {
-        paddingAll = 20.0
-        prefWidth = 800.0
-        prefHeight = 600.0
-        text("Select which metadata properties to save with the article") {
-            style = "-fx-font-size: 24"
-        }
-        listview(model.initialProps) {
-            vgrow = Priority.ALWAYS
-            cellFormat {
-                graphic = vbox(5) {
+    override val root = scrollpane {
+        vgrow = Priority.ALWAYS
+        isFitToWidth = true
+        vbox(5) {
+            children.bind(model.initialProps) {
+                vbox(5) {
                     maxWidth = 600.0
-                    hbox(5, Pos.CENTER_LEFT) {
+                    toolbar {
                         text(it.key) {
                             style = "-fx-font-weight: bold; -fx-font-size: 16"
-                        }
-                        button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
-                            isDisable = it.valueList.size < 2
-                            action {
-                                it.previousValue()
-                                this@listview.refresh()
-                            }
-                        }
-                        button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
-                            isDisable = it.valueList.size < 2
-                            action {
-                                it.nextValue()
-                                this@listview.refresh()
-                            }
                         }
                         checkbox("Save") {
                             isSelected = model.selectionStatus[it]?.value ?: false
                             model.bindSelection(it, selectedProperty())
                         }
+                        spacer()
+                        button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
+                            isDisable = it.valueList.size < 2
+                            action { it.previousValue() }
+                        }
+                        button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
+                            isDisable = it.valueList.size < 2
+                            action { it.nextValue() }
+                        }
                         button("", FontAwesomeIcon.MINUS_CIRCLE.graphic) {
-                            action {
-                                model.removeEntry(it)
-                                this@listview.selectionModel.clearSelection()
-                            }
+                            action { model.removeEntry(it) }
                         }
                     }
                     textflow {
+                        paddingAll = 5.0
                         vgrow = Priority.ALWAYS
-                        isWrapText = true
                         when (val v = it.value) {
-                            is List<*> ->
-                                v.forEach {
-                                    text(it.toString() + "\n")
-                                }
-                            is Map<*, *> ->
-                                v.forEach { (k, v) ->
-                                    text("$k: $v\n")
-                                }
-                            else ->
-                                text(v.toString())
+                            is List<*> -> v.forEach { text(it.toString() + "\n") }
+                            is Map<*, *> -> v.forEach { (k, v) -> text("$k: $v\n") }
+                            else -> text(v.toString())
                         }
                     }
-                }
-            }
-        }
-        buttonbar {
-            paddingAll = 10.0
-            button("OK", ButtonBar.ButtonData.OK_DONE) {
-                action {
-                    close()
-                    onClose(model)
-                }
-            }
-            button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE) {
-                action {
-                    close()
                 }
             }
         }
@@ -118,7 +79,7 @@ class GuessedMetadataValidatorUi(data: List<GuessedMetadataObject>, val onClose:
 }
 
 /** Model for the metadata validator view. */
-class GuessedMetadataValidatorModel: ScopedInstance, Component() {
+class MetadataValidatorModel: ScopedInstance, Component() {
     val initialProps = observableListOf<GmvProp>()
     val selectionStatus = mutableMapOf<GmvProp, BooleanProperty>()
 
@@ -135,7 +96,6 @@ class GuessedMetadataValidatorModel: ScopedInstance, Component() {
         initialProps.remove(it)
         selectionStatus.remove(it)
     }
-
 }
 
 /** A single GMV property, with three possible value types. */
@@ -165,6 +125,9 @@ class GmvProp(
     }
 }
 
+/** Convert TextDocMetadata to a list of GMVs. */
+fun TextDocMetadata.asGmvPropList() = listOf(toGuessedMetadataObject()).asGmvPropList()
+
 /** Convert GMO to a list of GMVs. */
 fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvProp> {
     val first = first()
@@ -181,8 +144,10 @@ fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvProp> {
         add(GmvProp("captions", null, first.captions, altValues = remaining.mapNotNull { it.captions }.filter { it.isNotEmpty() }))
         add(GmvProp("references", null, first.references, altValues = remaining.mapNotNull { it.references }.filter { it.isNotEmpty() }))
         first.other.forEach { (k, v) ->
-            add(GmvProp(k, v as? String, v as? List<String>, v as? Map<String, String>,
-                altValues = remaining.mapNotNull { it.other[k] }))
+            add(
+                GmvProp(k, v as? String, v as? List<String>, v as? Map<String, String>,
+                altValues = remaining.mapNotNull { it.other[k] })
+            )
         }
         removeIf { it.isNullAndEmpty() }
     }

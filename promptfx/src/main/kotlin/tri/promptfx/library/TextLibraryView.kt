@@ -66,7 +66,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     fold("Images from Document", expanded = false) {
                         add(TextLibraryDocumentImagesUi())
                     }
-                    fold("Details on Selected Chunk(s)", expanded = true) {
+                    fold("Details on Selected Chunk(s)", expanded = false) {
                         vgrow = Priority.ALWAYS
                         add(TextLibraryChunkDetailsUi())
                     }
