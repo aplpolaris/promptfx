@@ -20,6 +20,7 @@ import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.asTextChunkViewModel
+import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.createListBinding
 import java.awt.image.BufferedImage
@@ -63,7 +64,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                     } ui {
                         // TODO - for testing ... some images show up in form objects and are not discovered using the code above
                         if (it.isEmpty()) {
-                            println("No images found in $this")
+                            info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
                             PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
                         }
                         selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })

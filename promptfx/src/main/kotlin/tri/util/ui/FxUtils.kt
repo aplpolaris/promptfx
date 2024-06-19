@@ -276,17 +276,31 @@ fun <X, Y, Z> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>, tr
 fun <X, T> ListView<X>.bindSelectionBidirectional(property: T) where T : WritableValue<X>, T : Property<X> {
     selectionModel.selectionMode = SelectionMode.SINGLE
     selectionModel.selectedItemProperty().onChange { property.value = it }
-    property.onChange { if (it == null) selectionModel.clearSelection() else selectionModel.select(it) }
+    property.onChange {
+        if (it == null)
+            selectionModel.clearSelection()
+        else
+            selectionModel.select(it)
+    }
 }
 
 /** Binds multiple selected values of a [ListView] to an existing [ObservableList]. */
 fun <X> ListView<X>.bindSelectionBidirectional(property: ObservableList<X>) {
     selectionModel.selectionMode = SelectionMode.MULTIPLE
-    selectionModel.selectedItems.onChange { property.setAll(it.list) }
+    var isUpdating = false
+    selectionModel.selectedItems.onChange {
+        isUpdating = true
+        property.setAll(it.list.toList())
+        isUpdating = false
+    }
     property.onChange {
-        selectionModel.clearSelection()
-        val indices = it.list.map { items.indexOf(it) }.toIntArray()
-        selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
+        if (!isUpdating) {
+            val indices = it.list.map { items.indexOf(it) }.toIntArray()
+            if (indices.isEmpty())
+                selectionModel.clearSelection()
+            else
+                selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
+        }
     }
 }
 
