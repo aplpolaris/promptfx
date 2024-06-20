@@ -21,11 +21,12 @@ package tri.promptfx.library
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.BooleanProperty
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.process.GuessedMetadataObject
-import tri.ai.text.chunks.process.toGuessedMetadataObject
+import tri.ai.text.chunks.process.PdfMetadataGuesser.toGuessedMetadataObject
 import tri.util.ui.graphic
 
 /** UI that shows a series of key-value pairs discovered by a "metadata guesser" and user can accept/reject them. */
@@ -40,23 +41,29 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
         vbox(5) {
             children.bind(model.initialProps) {
                 vbox(5) {
-                    maxWidth = 600.0
                     toolbar {
-                        text(it.key) {
+                        text(it.label) {
                             style = "-fx-font-weight: bold; -fx-font-size: 16"
                         }
-                        checkbox("Save") {
-                            isSelected = model.selectionStatus[it]?.value ?: false
-                            model.bindSelection(it, selectedProperty())
-                        }
+//                        checkbox("Save") {
+//                            isSelected = model.selectionStatus[it]?.value ?: false
+//                            model.bindSelection(it, selectedProperty())
+//                        }
                         spacer()
+                        text(it.editingSource) {
+                            style = "-fx-font-style: italic; -fx-text-fill: light-gray"
+                        }
                         button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
-                            isDisable = it.valueList.size < 2
+                            disableWhen(it.supportsValueCycling.not())
                             action { it.previousValue() }
                         }
                         button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
-                            isDisable = it.valueList.size < 2
+                            disableWhen(it.supportsValueCycling.not())
                             action { it.nextValue() }
+                        }
+                        button("", FontAwesomeIcon.SAVE.graphic) {
+                            disableWhen(it.isSaved)
+                            action { it.saveValue() }
                         }
                         button("", FontAwesomeIcon.MINUS_CIRCLE.graphic) {
                             action { model.removeEntry(it) }
@@ -65,11 +72,16 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                     textflow {
                         paddingAll = 5.0
                         vgrow = Priority.ALWAYS
-                        when (val v = it.value) {
-                            is List<*> -> v.forEach { text(it.toString() + "\n") }
-                            is Map<*, *> -> v.forEach { (k, v) -> text("$k: $v\n") }
-                            else -> text(v.toString())
+                        val updater: (Any) -> Unit = { it ->
+                            clear()
+                            when (it) {
+                                is List<*> -> it.map { text(it.toString() + "\n") }.let { it.last().text = it.last().text.trim() }
+                                is Map<*, *> -> it.map { (k, v) -> text("$k: $v\n") }.let { it.last().text = it.last().text.trim() }
+                                else -> text(it.toString().trim())
+                            }
                         }
+                        it.editingValue.onChange { updater(it!!) }
+                        updater(it.editingValue.value!!)
                     }
                 }
             }
@@ -80,75 +92,68 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
 
 /** Model for the metadata validator view. */
 class MetadataValidatorModel: ScopedInstance, Component() {
-    val initialProps = observableListOf<GmvProp>()
-    val selectionStatus = mutableMapOf<GmvProp, BooleanProperty>()
+    val initialProps = observableListOf<GmvEditablePropertyModel<Any?>>()
+    val selectionStatus = mutableMapOf<GmvEditablePropertyModel<Any?>, BooleanProperty>()
 
-    fun selectedValues(): Map<String, Any> = initialProps
-        .filter { selectionStatus[it]?.value == true }
-        .associate { it.key to it.value }
-        .filterValues { it != null } as Map<String, Any>
+    fun editingValues(): Map<String, Any> = initialProps
+        .filter { selectionStatus[it]?.value == true && it.editingValue.value != null }
+        .associate { it.label to it.editingValue.value!! }
 
-    fun bindSelection(it: GmvProp, prop: BooleanProperty) {
+    fun bindSelection(it: GmvEditablePropertyModel<Any?>, prop: BooleanProperty) {
         selectionStatus[it] = prop
     }
 
-    fun removeEntry(it: GmvProp) {
+    fun removeEntry(it: GmvEditablePropertyModel<Any?>) {
         initialProps.remove(it)
         selectionStatus.remove(it)
     }
-}
 
-/** A single GMV property, with three possible value types. */
-class GmvProp(
-    val key: String,
-    val strValue: String? = null,
-    val listValue: List<String>? = null,
-    val mapValue: Map<String, String>? = null,
-    val altValues: List<Any>? = null
-) {
-    var value = strValue ?: listValue ?: mapValue
-    val valueList = (listOf(value) + (altValues ?: listOf())).toSet().toList()
-
-    fun isNullAndEmpty() = strValue == null && listValue.isNullOrEmpty() && mapValue.isNullOrEmpty()
-
-    fun nextValue() {
-        val index = valueList.indexOf(value)
-        value = valueList[(index + 1) % valueList.size]
-    }
-
-    fun previousValue() {
-        val index = valueList.indexOf(value)
-        value = if (index == -1)
-            valueList[0]
-        else
-            valueList[(index - 1 + valueList.size) % valueList.size]
+    /** Merge a secondary model with the current one. Any properties with existing names will be augmenting by adding to the possible list of values. */
+    fun merge(properties: List<GmvEditablePropertyModel<Any?>>) {
+        properties.forEach {
+            val existing = initialProps.find { p -> p.label == it.label }
+            if (existing != null) {
+                existing.addAlternateValues(it.getAlternateValueList())
+            } else {
+                initialProps.add(it)
+                selectionStatus[it] = SimpleBooleanProperty(false)
+            }
+        }
     }
 }
 
 /** Convert TextDocMetadata to a list of GMVs. */
-fun TextDocMetadata.asGmvPropList() = listOf(toGuessedMetadataObject()).asGmvPropList()
+fun TextDocMetadata.asGmvPropList(label: String) = listOf(toGuessedMetadataObject(label)).asGmvPropList()
 
-/** Convert GMO to a list of GMVs. */
-fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvProp> {
+/**
+ * Convert GMO to a list of GMVs. Initial values are set to the first object, and the remaining values are used as alternates.
+ * Properties whose value in the first object is null are not included.
+ */
+fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvEditablePropertyModel<Any?>> {
     val first = first()
-    val remaining = drop(1)
-    return mutableListOf<GmvProp>().apply {
-        add(GmvProp("title", first.title, altValues = remaining.mapNotNull { it.title }))
-        add(GmvProp("subtitle", first.subtitle, altValues = remaining.mapNotNull { it.subtitle }))
-        add(GmvProp("authors", null, first.authors, altValues = remaining.mapNotNull { it.authors }.filter { it.isNotEmpty() }))
-        add(GmvProp("date", first.date, altValues = remaining.mapNotNull { it.subtitle }))
-        add(GmvProp("keywords", null, first.keywords, altValues = remaining.mapNotNull { it.keywords }.filter { it.isNotEmpty() }))
-        add(GmvProp("abstract", first.abstract, altValues = remaining.mapNotNull { it.abstract }))
-        add(GmvProp("executiveSummary", first.executiveSummary, altValues = remaining.mapNotNull { it.executiveSummary }))
-        add(GmvProp("sections", null, first.sections, altValues = remaining.mapNotNull { it.sections }.filter { it.isNotEmpty() }))
-        add(GmvProp("captions", null, first.captions, altValues = remaining.mapNotNull { it.captions }.filter { it.isNotEmpty() }))
-        add(GmvProp("references", null, first.references, altValues = remaining.mapNotNull { it.references }.filter { it.isNotEmpty() }))
-        first.other.forEach { (k, v) ->
-            add(
-                GmvProp(k, v as? String, v as? List<String>, v as? Map<String, String>,
-                altValues = remaining.mapNotNull { it.other[k] })
-            )
+
+    fun labeledValues(op: (GuessedMetadataObject) -> Any?): List<Pair<Any?, String>> =
+        mapNotNull { op(it) to it.label }
+            .filter { it.first != null && it.first.toString().isNotBlank() }
+    fun propertyModel(key: String, op: (GuessedMetadataObject) -> Any?) =
+        GmvEditablePropertyModel(key, op(first), labeledValues(op))
+
+    return mutableListOf<GmvEditablePropertyModel<Any?>>().apply {
+        add(propertyModel("title") { it.title })
+        add(propertyModel("subtitle") { it.subtitle })
+        add(propertyModel("authors") { it.authors })
+        add(propertyModel("date") { it.date })
+        add(propertyModel("keywords") { it.keywords })
+        add(propertyModel("abstract") { it.abstract })
+        add(propertyModel("executiveSummary") { it.executiveSummary })
+        add(propertyModel("sections") { it.sections })
+        add(propertyModel("captions") { it.captions })
+        add(propertyModel("references") { it.references })
+
+        first.other.forEach { (k, _) ->
+            add(propertyModel(k) { it.other[k] })
         }
-        removeIf { it.isNullAndEmpty() }
+    }.filter {
+        it.editingValue.value != null
     }
 }

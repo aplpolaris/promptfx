@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import javafx.application.Platform
+import javafx.beans.property.BooleanProperty
 import javafx.concurrent.Task
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
@@ -59,6 +60,9 @@ class AiProgressView: View(), AiTaskMonitor {
         indicator.isVisible = false
         label.isVisible = false
     }
+
+    /** Observable value for the active/visible state of the progress bar. */
+    val activeProperty: BooleanProperty = indicator.visibleProperty()
 
     init {
         indicator.managedProperty().bind(indicator.visibleProperty())

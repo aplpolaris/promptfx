@@ -32,7 +32,7 @@ class PdfViewerWithMetadataUi(
     private val metadataGuessPageCount = SimpleIntegerProperty(2)
 
     init {
-        metadataModel.initialProps.setAll(doc.metadata.asGmvPropList())
+        metadataModel.initialProps.setAll(doc.metadata.asGmvPropList(""))
     }
 
     override val root = borderpane {
@@ -49,14 +49,17 @@ class PdfViewerWithMetadataUi(
                         style = "-fx-font-size: 24"
                     }
                     toolbar {
-                        button("Find in File", graphic = FontAwesomeIcon.INFO_CIRCLE.graphic) {
+                        text("Calculate/Extract Metadata:")
+                        button("From File", graphic = FontAwesomeIcon.INFO_CIRCLE.graphic) {
                             tooltip("Extract metadata saved with the file (results vary by file type).")
                             action {
-                                action { executeMetadataExtraction() }
+                                executeMetadataExtraction()
                             }
                         }
+                        text("or")
                         button("Guess", graphic = FontAwesomeIcon.MAGIC.graphic) {
                             tooltip("Attempt to automatically find data using an LLM to extract likely metadata from document text.")
+                            disableWhen(progress.activeProperty.or(controller.completionEngine.isNull()))
                             action {
                                 executeMetadataGuess(controller.completionEngine.value)
                             }
@@ -68,6 +71,11 @@ class PdfViewerWithMetadataUi(
                             prefWidth = 50.0
                         }
                         text("pages") { tooltip(ttp) }
+                        progressindicator(progress.indicator.progressProperty()) {
+                            visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                            managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                            setMinSize(20.0, 20.0)
+                        }
                     }
                 }
                 center = MetadataValidatorUi().root
@@ -96,7 +104,7 @@ class PdfViewerWithMetadataUi(
             if (md.isNotEmpty()) {
                 val metadata = TextDocMetadata("")
                 metadata.merge(md)
-                metadataModel.initialProps.addAll(metadata.asGmvPropList())
+                metadataModel.merge(metadata.asGmvPropList("File Metadata"))
             }
         }
     }
@@ -112,7 +120,7 @@ class PdfViewerWithMetadataUi(
             this@PdfViewerWithMetadataUi.progress.taskCompleted()
             result
         } ui {
-            metadataModel.initialProps.addAll(it.asGmvPropList())
+            metadataModel.merge(it.asGmvPropList())
         }
     }
 }

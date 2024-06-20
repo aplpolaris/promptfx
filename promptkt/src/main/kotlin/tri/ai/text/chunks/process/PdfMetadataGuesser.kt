@@ -44,13 +44,36 @@ object PdfMetadataGuesser {
             val parsed = result
                 .betweenTripleTicks()
                 .betweenBraces()
-                .attemptToParse()
+                .attemptToParse(label = "Page ${it.pageNumber}")
             if (parsed == null) null else it to parsed
         }.toMap()
         return parsedMetadata.values.resolveConflicts()
     }
 
-    /** Resolve any conflicting information in metadata. The first result is the attempted deconflicted object. The remaining are the inputs. */
+    /** Convert [TextDocMetadata] to a [GuessedMetadataObject]. */
+    fun TextDocMetadata.toGuessedMetadataObject(label: String) = GuessedMetadataObject(
+        label,
+        title = title,
+        subtitle = properties[SUBTITLE]?.toString(),
+        authors = author?.attemptParseToList(),
+        date = dateTime?.toString() ?: date?.toString(),
+        keywords = listProperty(KEYWORDS),
+        abstract = properties[ABSTRACT]?.toString(),
+        executiveSummary = properties["executiveSummary"]?.toString(),
+        sections = listProperty(SECTIONS),
+        captions = listProperty(CAPTIONS),
+        references = listProperty(REFERENCES),
+        other = properties.filterKeys { it !in listOf(TITLE,
+            SUBTITLE, "author", DATE, KEYWORDS, ABSTRACT, "executiveSummary", SECTIONS, CAPTIONS, REFERENCES
+        ) }.filterValues { it != null } as Map<String, Any>
+    )
+
+    //region HELPERS
+
+    /**
+     * Resolve any conflicting information in metadata. The first result is the attempted deconflicted object. The remaining are the inputs.
+     * Empty results are not included.
+     */
     private fun Collection<GuessedMetadataObject>.resolveConflicts(): List<GuessedMetadataObject> {
         val title = firstNotNullOfOrNull { it.title }
         val subtitle = firstNotNullOfOrNull { it.subtitle }
@@ -67,26 +90,27 @@ object PdfMetadataGuesser {
                 if (it.size == 1) it[0] else it
             }
         }
-        return listOf(GuessedMetadataObject(title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)) + this
+        return listOf(GuessedMetadataObject(COMBINED, title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)) + this
     }
 
     private fun String.betweenTripleTicks() = if ("```" in this) substringAfter("```").substringAfter("\n").substringBefore("```").trim() else trim()
     private fun String.betweenBraces() = "{" + substringAfter("{").substringBeforeLast("}") + "}"
 
-    private fun String.attemptToParse(): GuessedMetadataObject? = try {
+    private fun String.attemptToParse(label: String): GuessedMetadataObject? = try {
         val content = jsonMapper.readValue<Map<String, Any>>(this)
         GuessedMetadataObject(
-            content["title"].string(),
-            content["subtitle"].string(),
-            content["authors"].stringlist(),
-            content["date"].string(),
-            content["keywords"].stringlist(),
-            content["abstract"].string(),
-            content["executive_summary"].string(),
-            content["sections"].stringlist(),
-            content["captions"].stringlist(),
-            content["references"].stringlist(),
-            content["other"] as? Map<String, Any> ?: emptyMap()
+            label,
+            content[TITLE].string(),
+            content[SUBTITLE].string(),
+            content[AUTHORS].stringlist(),
+            content[DATE].string(),
+            content[KEYWORDS].stringlist(),
+            content[ABSTRACT].string(),
+            content[EXECUTIVE_SUMMARY].string(),
+            content[SECTIONS].stringlist(),
+            content[CAPTIONS].stringlist(),
+            content[REFERENCES].stringlist(),
+            content[OTHER] as? Map<String, Any> ?: emptyMap()
         )
     } catch (x: JsonMappingException) {
         println("Failed to parse metadata: $this")
@@ -104,10 +128,30 @@ object PdfMetadataGuesser {
         else -> emptyList()
     }.filter { it != "NONE" }
 
+    //endregion
+
+    //region CONSTANTS
+
+    private const val COMBINED = "Combined"
+    private const val TITLE = "title"
+    private const val SUBTITLE = "subtitle"
+    private const val AUTHORS = "authors"
+    private const val DATE = "date"
+    private const val KEYWORDS = "keywords"
+    private const val ABSTRACT = "abstract"
+    private const val EXECUTIVE_SUMMARY = "executive_summary"
+    private const val SECTIONS = "sections"
+    private const val CAPTIONS = "captions"
+    private const val REFERENCES = "references"
+    private const val OTHER = "other"
+
+    //endregion
+
 }
 
 /** Values obtained by guessing metadata from a text sample. */
 data class GuessedMetadataObject(
+    val label: String,
     val title: String?,
     val subtitle: String?,
     val authors: List<String>?,
@@ -121,21 +165,6 @@ data class GuessedMetadataObject(
     val other: Map<String, Any>
 )
 
-/** Convert [TextDocMetadata] to a [GuessedMetadataObject]. */
-fun TextDocMetadata.toGuessedMetadataObject() = GuessedMetadataObject(
-    title = title,
-    subtitle = properties["subtitle"]?.toString(),
-    authors = author?.attemptParseToList(),
-    date = dateTime?.toString() ?: date?.toString(),
-    keywords = listProperty("keywords"),
-    abstract = properties["abstract"]?.toString(),
-    executiveSummary = properties["executiveSummary"]?.toString(),
-    sections = listProperty("sections"),
-    captions = listProperty("captions"),
-    references = listProperty("references"),
-    other = properties.filterKeys { it !in listOf("title", "subtitle", "author", "date", "keywords", "abstract", "executiveSummary", "sections", "captions", "references") }
-        .filterValues { it != null } as Map<String, Any>
-)
 
 private fun TextDocMetadata.listProperty(key: String) =
     (properties[key] as? List<String>) ?: properties[key]?.toString()?.attemptParseToList()

@@ -27,6 +27,7 @@ import tri.promptfx.docs.DocumentOpenInViewer
 import tri.promptfx.tools.TextChunkerWizard
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.DocumentListView.Companion.icon
+import tri.util.info
 import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
@@ -285,7 +286,7 @@ class TextLibraryCollectionUi : Fragment() {
 
     private fun openMetadataViewer(doc: TextDoc) {
         val view = PdfViewerWithMetadataUi(doc) {
-            doc.metadata.merge(it.selectedValues())
+            doc.metadata.merge(it.editingValues())
             docSelection.setAll()
             docSelection.setAll(listOf(doc))
         }
@@ -320,7 +321,7 @@ class TextLibraryCollectionUi : Fragment() {
                         try {
                             setter(LocalDateTime.parse(it.toString()))
                         } catch (e: Exception) {
-                            println("Could not parse date from ${it.javaClass} $it")
+                            info<TextLibraryCollectionUi>("Could not parse date from ${it.javaClass} $it")
                         }
                     }
                 }
