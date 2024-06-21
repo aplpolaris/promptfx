@@ -22,10 +22,13 @@ package tri.promptfx.library
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.BooleanProperty
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.process.GuessedMetadataObject
+import tri.ai.text.chunks.process.MultipleGuessedMetadataObjects
+import tri.ai.text.chunks.process.PdfMetadataGuesser.COMBINED
 import tri.ai.text.chunks.process.PdfMetadataGuesser.toGuessedMetadataObject
 import tri.util.ui.graphic
 
@@ -45,10 +48,9 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                         text(it.label) {
                             style = "-fx-font-weight: bold; -fx-font-size: 16"
                         }
-//                        checkbox("Save") {
-//                            isSelected = model.selectionStatus[it]?.value ?: false
-//                            model.bindSelection(it, selectedProperty())
-//                        }
+                        text(it.savedLabel) {
+                            style = "-fx-font-style: italic; -fx-text-fill: light-gray"
+                        }
                         spacer()
                         text(it.editingSource) {
                             style = "-fx-font-style: italic; -fx-text-fill: light-gray"
@@ -69,23 +71,36 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                             action { model.removeEntry(it) }
                         }
                     }
-                    textflow {
-                        paddingAll = 5.0
-                        vgrow = Priority.ALWAYS
-                        val updater: (Any) -> Unit = { it ->
-                            clear()
-                            when (it) {
-                                is List<*> -> it.map { text(it.toString() + "\n") }.let { it.last().text = it.last().text.trim() }
-                                is Map<*, *> -> it.map { (k, v) -> text("$k: $v\n") }.let { it.last().text = it.last().text.trim() }
-                                else -> text(it.toString().trim())
-                            }
-                        }
-                        it.editingValue.onChange { updater(it!!) }
-                        updater(it.editingValue.value!!)
-                    }
+                    propertyvalue(it)
                 }
             }
         }
+    }
+
+    private fun EventTarget.propertyvalue(model: GmvEditablePropertyModel<*>) = textflow {
+        paddingAll = 5.0
+        vgrow = Priority.ALWAYS
+        val updater: (Any) -> Unit = { it ->
+            clear()
+            when {
+                it is List<*> -> {
+                    it.dropLast(1).forEach { text(it.toString() + "\n") }
+                    it.lastOrNull()?.let { text(it.toString()) }
+                }
+                it is Map<*, *> -> {
+                    it.entries.dropLast(1).forEach { text("${it.key}: ${it.value}\n") }
+                    it.entries.lastOrNull()?.let { text("${it.key}: ${it.value}") }
+                }
+                it.toString().isBlank() -> {
+                    // do nothing
+                }
+                else -> {
+                    text(it.toString().trim())
+                }
+            }
+        }
+        model.editingValue.onChange { updater(it!!) }
+        updater(model.editingValue.value!!)
     }
 
 }
@@ -115,6 +130,7 @@ class MetadataValidatorModel: ScopedInstance, Component() {
             if (existing != null) {
                 existing.addAlternateValues(it.getAlternateValueList())
             } else {
+                println("${it.label}: ${it.savedValue.value}, ${it.editingValue.value}, ${it.editingSource.value}")
                 initialProps.add(it)
                 selectionStatus[it] = SimpleBooleanProperty(false)
             }
@@ -123,20 +139,27 @@ class MetadataValidatorModel: ScopedInstance, Component() {
 }
 
 /** Convert TextDocMetadata to a list of GMVs. */
-fun TextDocMetadata.asGmvPropList(label: String) = listOf(toGuessedMetadataObject(label)).asGmvPropList()
+fun TextDocMetadata.asGmvPropList(label: String) = MultipleGuessedMetadataObjects(toGuessedMetadataObject(label), listOf()).asGmvPropList()
 
 /**
  * Convert GMO to a list of GMVs. Initial values are set to the first object, and the remaining values are used as alternates.
  * Properties whose value in the first object is null are not included.
  */
-fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvEditablePropertyModel<Any?>> {
-    val first = first()
+fun MultipleGuessedMetadataObjects.asGmvPropList(): List<GmvEditablePropertyModel<Any?>> {
+    fun labeledValues(op: (GuessedMetadataObject) -> Any?): List<Pair<Any?, String>> {
+        val result = mutableListOf<Pair<Any?, String>>()
+        result.add(op(combined) to COMBINED)
+        sources.forEach {
+            val value = op(it)
+            if (value != null && value.toString().isNotBlank()) {
+                result.add(value to it.label)
+            }
+        }
+        return result
+    }
 
-    fun labeledValues(op: (GuessedMetadataObject) -> Any?): List<Pair<Any?, String>> =
-        mapNotNull { op(it) to it.label }
-            .filter { it.first != null && it.first.toString().isNotBlank() }
-    fun propertyModel(key: String, op: (GuessedMetadataObject) -> Any?) =
-        GmvEditablePropertyModel(key, op(first), labeledValues(op))
+    fun propertyModel(key: String, op: (GuessedMetadataObject) -> Any?): GmvEditablePropertyModel<Any?> =
+        GmvEditablePropertyModel(key, op(combined), labeledValues(op))
 
     return mutableListOf<GmvEditablePropertyModel<Any?>>().apply {
         add(propertyModel("title") { it.title })
@@ -150,7 +173,7 @@ fun List<GuessedMetadataObject>.asGmvPropList(): List<GmvEditablePropertyModel<A
         add(propertyModel("captions") { it.captions })
         add(propertyModel("references") { it.references })
 
-        first.other.forEach { (k, _) ->
+        combined.other.forEach { (k, _) ->
             add(propertyModel(k) { it.other[k] })
         }
     }.filter {

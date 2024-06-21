@@ -17,7 +17,7 @@ class TextLibraryDocumentImagesUi : Fragment() {
     private val model by inject<TextLibraryViewModel>()
     private val thumbnailSize = SimpleDoubleProperty(128.0)
 
-    override val root = datagrid(model.selectedDocImages) {
+    override val root = datagrid(model.docSelectionImages) {
         vgrow = Priority.ALWAYS
         prefWidth = 600.0
         prefHeight = 600.0

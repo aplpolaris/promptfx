@@ -13,7 +13,7 @@ import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
 import tri.ai.text.chunks.process.PdfMetadataGuesser
 import tri.promptfx.AiProgressView
 import tri.promptfx.PromptFxController
-import tri.promptfx.library.TextLibraryCollectionUi.Companion.merge
+import tri.promptfx.library.TextLibraryViewModel.Companion.mergeIn
 import tri.util.ui.graphic
 import tri.util.ui.pdf.PdfViewer
 
@@ -103,7 +103,7 @@ class PdfViewerWithMetadataUi(
             val md = pdfFile.extractMetadata()
             if (md.isNotEmpty()) {
                 val metadata = TextDocMetadata("")
-                metadata.merge(md)
+                metadata.mergeIn(md)
                 metadataModel.merge(metadata.asGmvPropList("File Metadata"))
             }
         }

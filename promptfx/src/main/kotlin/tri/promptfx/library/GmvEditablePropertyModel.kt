@@ -25,11 +25,14 @@ class GmvEditablePropertyModel<X>(
     private val alternateValues = observableListOf<Pair<X, String>>()
 
     /** The saved value. */
-    val savedValue = SimpleObjectProperty<X>(initialValue)
+    val savedValue = SimpleObjectProperty<X>(null)
     /** The value currently presented to the user as editing (ready to be saved). */
     val editingValue = SimpleObjectProperty<X>(initialValue)
 
     //region DERIVED PROPERTIES
+
+    /** Label indicating whether value has been saved. */
+    val savedLabel = savedValue.stringBinding { if (it == null) "Unsaved" else "Saved" }
 
     /** Flag indicating whether value cycling is supported. */
     val supportsValueCycling = alternateValues.sizeProperty.ge(2)
@@ -51,7 +54,6 @@ class GmvEditablePropertyModel<X>(
     /** The source of the editing value. */
     val editingSource: ObservableValue<String> = editingIndex.objectBinding(isSaved) { x ->
         when {
-            x == -1 && isSaved.get() -> "Saved"
             x == -1 -> "Custom"
             else -> alternateValues[x!!.toInt()].second
         }
@@ -80,7 +82,7 @@ class GmvEditablePropertyModel<X>(
     fun previousValue() {
         val newIndex = when (editingIndex.value) {
             -1 -> alternateValues.size - 1
-            0 -> alternateValues.size - 1
+            0 -> if (savedValue.value == null) alternateValues.size - 1 else -1
             else -> editingIndex.value - 1
         }
         editingIndex.set(newIndex)
@@ -90,8 +92,7 @@ class GmvEditablePropertyModel<X>(
     /** Move to the next value. */
     fun nextValue() {
         val newIndex = when (editingIndex.value) {
-            -1 -> 0
-            alternateValues.size - 1 -> 0
+            alternateValues.size - 1 -> if (savedValue.value == null) 0 else -1
             else -> editingIndex.value + 1
         }
         editingIndex.set(newIndex)

@@ -65,12 +65,7 @@ class TextLibraryFilterableChunkListView : Fragment() {
                 separator()
                 item("Remove selected chunk(s) from document(s)") {
                     enableWhen(Bindings.isNotEmpty(model.chunkSelection))
-                    action {
-                        val selected = model.chunkSelection.toList()
-                        val selectedChunks = selected.mapNotNull { (it as? TextChunkViewModelImpl)?.chunk }
-                        model.docSelection.forEach { it.chunks.removeAll(selectedChunks) }
-                        model.chunkList.removeAll(selected)
-                    }
+                    action { model.removeSelectedChunks() }
                 }
 
             }

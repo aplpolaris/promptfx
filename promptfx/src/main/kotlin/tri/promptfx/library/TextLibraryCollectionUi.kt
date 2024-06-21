@@ -3,37 +3,21 @@ package tri.promptfx.library
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
-import javafx.scene.text.Text
 import javafx.stage.Modality
-import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.EmbeddingService
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask
-import tri.ai.pips.aggregate
-import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.TextDocMetadata
-import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
-import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
-import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.*
 import tri.promptfx.docs.DocumentOpenInViewer
 import tri.promptfx.tools.TextChunkerWizard
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.DocumentListView.Companion.icon
-import tri.util.info
 import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
-import java.io.File
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 /** View for managing text collections and documents. */
 class TextLibraryCollectionUi : Fragment() {
@@ -41,7 +25,6 @@ class TextLibraryCollectionUi : Fragment() {
     private val model by inject<TextLibraryViewModel>()
     private val progress: AiProgressView by inject()
     private val controller by inject<PromptFxController>()
-    private val embeddingService: EmbeddingService by controller.embeddingService
 
     private val libraryList = model.libraryList
     private val librarySelection = model.librarySelection
@@ -55,43 +38,48 @@ class TextLibraryCollectionUi : Fragment() {
         toolbar {
             // generate chunks
             button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-                tooltip("Create a new text library.")
+                tooltip("Create a new text collection.")
                 action { createLibraryWizard() }
             }
             // load a TextLibrary file
             button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
-                tooltip("Load a text library from a JSON file.")
+                tooltip("Load a text collection from a JSON file.")
                 action { loadLibrary() }
             }
             // save a TextLibrary file
             button("Save...", graphic = FontAwesomeIcon.DOWNLOAD.graphic) {
-                tooltip("Save selected text library to a JSON file.")
+                tooltip("Save any modified collections to a JSON file.")
                 enableWhen(librarySelection.isNotNull)
                 action { saveLibrary() }
             }
             menubutton("Calculate/Extract", graphic = FontAwesomeIcon.COG.graphic) {
                 enableWhen(librarySelection.isNotNull)
-                tooltip("Options to extract or generate information for the selected library.")
+                tooltip("Options to extract or generate information for the selected collection.")
                 item("Metadata", graphic = FontAwesomeIcon.INFO.graphic) {
-                    tooltip("Extract metadata for all files in the selected library. Metadata will be stored in a JSON file adjacent to the source file.")
+                    tooltip("Extract metadata for all files in the selected collection. Metadata will be stored in a JSON file adjacent to the source file.")
                     enableWhen { librarySelection.isNotNull }
                     action { executeMetadataExtraction() }
                 }
                 item("Embeddings", graphic = FontAwesomeIcon.MAP_MARKER.graphic) {
                     textProperty().bind(Bindings.concat("Embeddings (", controller.embeddingService.value.modelId, ")"))
-                    tooltip("Calculate embedding vectors for all chunks in the currently selected library and embedding model.")
+                    tooltip("Calculate embedding vectors for all chunks in the currently selected collection and embedding model.")
                     enableWhen { librarySelection.isNotNull }
                     action { executeEmbeddings() }
                 }
             }
         }
 
-        text("Document Collections")
+        text("Collections")
         libraryListView = listview(model.libraryList) {
             vgrow = Priority.ALWAYS
             bindSelectionBidirectional(librarySelection)
             cellFormat {
-                graphic = Text(it.library.toString())
+                graphic = hbox(5, Pos.CENTER_LEFT) {
+                    label(it.library.toString(), FontAwesomeIcon.BOOK.graphic)
+                    text(model.savedStatusProperty(it)) {
+                        style = "-fx-font-style: italic; -fx-text-fill: light-gray"
+                    }
+                }
             }
             lazyContextmenu {
                 buildsendcollectionmenu(this@TextLibraryCollectionUi, librarySelection)
@@ -110,52 +98,43 @@ class TextLibraryCollectionUi : Fragment() {
                     action { renameSelectedCollection() }
                 }
                 separator()
-                item("Remove selected collection from view") {
+                item("Remove collection from view") {
                     enableWhen(librarySelection.isNotNull)
                     action { librarySelection.value?.let { libraryList.remove(it) } }
                 }
             }
+            model.librariesModified.onChange { refresh() }
         }
 
         text("Documents in Selected Collection(s)")
         docListView = listview(docList) {
             vgrow = Priority.ALWAYS
             bindSelectionBidirectional(docSelection)
-            cellFormat {
-                val browsable = it.browsable()!!
-                graphic = hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
-                    val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
-                    if (thumb != null) {
-                        tooltip { graphic = ImageView(thumb) }
-                    }
-                    action { DocumentOpenInViewer(browsable, hostServices).open() }
-                }
-            }
-            contextmenu {
-                item("Open metadata viewer...") {
-                    enableWhen(Bindings.isNotEmpty(docSelection))
-                    action {
-                        val firstDoc = docSelection.firstOrNull { it.pdfFile() != null }
-                        val firstPdf = firstDoc?.pdfFile()
-                        if (firstPdf == null) {
-                            alert(
-                                Alert.AlertType.ERROR,
-                                "No PDF file found for selected document(s).",
-                                owner = currentWindow
-                            )
-                            return@action
-                        } else {
-                            openMetadataViewer(firstDoc)
+            cellFormat { doc ->
+                val browsable = doc.browsable()!!
+                graphic = hbox(5, Pos.CENTER_LEFT) {
+                    hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
+                        val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
+                        if (thumb != null) {
+                            tooltip { graphic = ImageView(thumb) }
                         }
+                        action { DocumentOpenInViewer(browsable, hostServices).open() }
+                    }
+                    text(model.savedStatusProperty(doc)) {
+                        style = "-fx-font-style: italic; -fx-text-fill: light-gray"
                     }
                 }
-                separator()
-                item("Remove selected document(s) from collection") {
-                    enableWhen(Bindings.isNotEmpty(docSelection))
-                    action {
-                        val selected = docSelection.toList()
-                        librarySelection.value?.library?.docs?.removeAll(selected)
-                        docList.removeAll(selected)
+                lazyContextmenu {
+                    item("Open metadata viewer...") {
+                        isDisable = doc.pdfFile() == null
+                        action { openMetadataViewer(doc) }
+                    }
+                    separator()
+                    item("Remove selected document(s) from collection") {
+                        enableWhen(Bindings.isNotEmpty(docSelection))
+                        action {
+                            model.removeSelectedDocuments()
+                        }
                     }
                 }
             }
@@ -165,16 +144,14 @@ class TextLibraryCollectionUi : Fragment() {
     //region USER ACTIONS
 
     private fun renameSelectedCollection() {
-        TextInputDialog(model.librarySelection.value.library.metadata.id).apply {
+        val lib = model.librarySelection.value
+        TextInputDialog(lib.library.metadata.id).apply {
             initOwner(primaryStage)
             title = "Rename Collection"
             headerText = "Enter a new name for the collection."
             contentText = "Name:"
         }.showAndWait().ifPresent {
-            model.librarySelection.value.library.metadata.id = it
-            saveLibrary()
-            libraryListView.refresh()
-            model.libraryIdChange.set(!model.libraryIdChange.value) // force update of output pane
+            model.renameCollection(lib, it)
         }
     }
 
@@ -200,8 +177,7 @@ class TextLibraryCollectionUi : Fragment() {
                 mode = FileChooserMode.Save
             ) {
                 it.firstOrNull()?.let {
-                    TextLibrary.saveTo(library.library, it)
-                    library.file = it
+                    model.saveLibrary(library, it)
                 }
             }
         }
@@ -239,58 +215,20 @@ class TextLibraryCollectionUi : Fragment() {
         }
     }
 
-    private fun executeEmbeddings() = runAsync {
-        runBlocking {
-            AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), this@TextLibraryCollectionUi.progress)
+    private fun executeEmbeddings() =
+        model.calculateEmbeddingsTask(progress).ui {
+            model.refilterChunkList()
         }
-    } ui {
-        saveLibrary()
-        model.refilterChunkList()
-    }
 
-    private fun calculateEmbeddingsPlan(): AiPlanner {
-        val service = embeddingService
-        val result = mutableMapOf<TextChunk, List<Double>>()
-        return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
-            AiTask.task("calculate-embeddings: " + doc.metadata.id) {
-                service.addEmbeddingInfo(doc)
-                var count = 0
-                doc.chunks.forEach {
-                    val embed = it.getEmbeddingInfo(service.modelId)
-                    if (embed != null) {
-                        result[it] = embed
-                        count++
-                    }
-                }
-                "Calculated $count embeddings for ${doc.metadata.id}."
-            }
-        }.aggregate().task("summarize-results") {
-            "Calculated ${result.size} total embeddings."
-        }.planner
-    }
-
-    private fun executeMetadataExtraction() {
-        var count = 0
-        librarySelection.value.library.docs.forEach {
-            val path = it.metadata.path
-            if (path != null && File(path).exists()) {
-                val md = File(path).extractMetadata()
-                if (md.isNotEmpty()) {
-                    count++
-                    it.metadata.merge(md)
-                }
-            }
+    private fun executeMetadataExtraction() =
+        model.extractMetadataTask().ui {
+            alert(Alert.AlertType.INFORMATION, it, owner = currentWindow)
         }
-        alert(Alert.AlertType.INFORMATION, "Extracted metadata from $count files.")
-    }
 
     private fun openMetadataViewer(doc: TextDoc) {
-        val view = PdfViewerWithMetadataUi(doc) {
-            doc.metadata.merge(it.editingValues())
-            docSelection.setAll()
-            docSelection.setAll(listOf(doc))
-        }
-        view.openModal(
+        PdfViewerWithMetadataUi(doc) {
+            model.updateMetadata(doc, it.editingValues(), isSelect = true)
+        }.openModal(
             modality = Modality.NONE,
             block = false,
             resizable = true
@@ -298,35 +236,5 @@ class TextLibraryCollectionUi : Fragment() {
     }
 
     //endregion
-
-    companion object {
-        /** Merge metadata from a map into a TextDocMetadata object. */
-        fun TextDocMetadata.merge(other: Map<String, Any>) {
-            other.extract("title", "pdf.title", "doc.title") { title = it }
-            other.extract("author", "pdf.author", "doc.author", "docx.author") { author = it }
-            other.extractDate("date", "pdf.modificationDate", "pdf.creationDate", "doc.editTime", "docx.modified") { dateTime = it }
-            properties.putAll(other)
-        }
-
-        private fun Map<String, Any>.extract(vararg keys: String, setter: (String) -> Unit) {
-            keys.firstNotNullOfOrNull { get(it) }?.let { setter(it.toString()) }
-        }
-
-        private fun Map<String, Any>.extractDate(vararg keys: String, setter: (LocalDateTime) -> Unit) {
-            keys.firstNotNullOfOrNull { get(it) }?.let {
-                when (it) {
-                    is LocalDateTime -> setter(it)
-                    is LocalDate -> setter(it.atStartOfDay())
-                    else -> {
-                        try {
-                            setter(LocalDateTime.parse(it.toString()))
-                        } catch (e: Exception) {
-                            info<TextLibraryCollectionUi>("Could not parse date from ${it.javaClass} $it")
-                        }
-                    }
-                }
-            }
-        }
-    }
 
 }

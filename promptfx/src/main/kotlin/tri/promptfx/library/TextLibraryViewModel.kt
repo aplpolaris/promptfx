@@ -1,45 +1,61 @@
 package tri.promptfx.library
 
+import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.value.ObservableStringValue
 import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
+import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
+import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.ui.TextChunkViewModel
+import tri.promptfx.ui.TextChunkViewModelImpl
 import tri.promptfx.ui.asTextChunkViewModel
 import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.createListBinding
 import java.awt.image.BufferedImage
 import java.io.File
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** Model for [TextLibraryView]. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
-    private val embeddingService = controller.embeddingService
+    private val embeddingService
+        get() = controller.embeddingService
 
     val libraryList = observableListOf<TextLibraryInfo>()
     val librarySelection = SimpleObjectProperty<TextLibraryInfo>()
-    val libraryIdChange = SimpleBooleanProperty(false)
+
+    val librariesModified = observableListOf<TextLibraryInfo>()
+    val libraryContentChange = SimpleBooleanProperty() // trigger when library content values change
 
     val docList: ObservableList<TextDoc> = createListBinding(librarySelection) { it?.library?.docs ?: listOf() }
     val docSelection = observableListOf<TextDoc>()
-    val selectedDocImages = observableListOf<Image>()
+    val docSelectionPdf = SimpleObjectProperty<TextDoc>(null)
+    val docSelectionImages = observableListOf<Image>()
+
+    val docsModified = observableListOf<TextDoc>()
+    val documentContentChange = SimpleBooleanProperty() // trigger when document content values change
 
     val chunkFilter = SimpleObjectProperty<(TextChunk) -> Float>(null)
     val isChunkFilterEnabled = SimpleBooleanProperty(false)
 
-    val chunkList: ObservableList<TextChunkViewModel> = observableListOf()
+    val chunkList = observableListOf<TextChunkViewModel>()
     val chunkSelection = observableListOf<TextChunkViewModel>()
 
     init {
@@ -47,12 +63,14 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             refilterChunkList()
         }
 
-        // pull images from selected PDF's
+        // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
-            selectedDocImages.clear()
+            val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
+            docSelectionPdf.set(firstPdf)
+
+            docSelectionImages.clear()
             it.list.forEach {
-                val browsable = it.browsable()
-                val pdfFile = browsable?.file?.let { if (it.extension.lowercase() == "pdf") it else null }
+                val pdfFile = it.pdfFile()
                 if (pdfFile != null && pdfFile.exists()) {
                     runAsync {
                         PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
@@ -61,13 +79,36 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         if (it.isEmpty()) {
                             info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
                         }
-                        selectedDocImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
+                        docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }
                 }
             }
+
             refilterChunkList()
         }
     }
+
+    //region DERIVED PROPERTIES
+
+    /** Get value indicating if the library has been modified. */
+    fun savedStatusProperty(library: TextLibraryInfo): ObservableStringValue {
+        return Bindings.createStringBinding({
+            librariesModified.contains(library).let {
+                if (it) "Modified" else "Saved"
+            }
+        }, librariesModified)
+    }
+
+    /** Get value indicating if the document has been modified. */
+    fun savedStatusProperty(doc: TextDoc): ObservableStringValue {
+        return Bindings.createStringBinding({
+            docsModified.contains(doc).let {
+                if (it) "Metadata Modified" else ""
+            }
+        }, docsModified)
+    }
+
+    //endregion
 
     //region COLLECTION I/O
 
@@ -92,7 +133,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //endregion
 
-    //region MODEL UPDATERS
+    //region VIEW FILTERING
 
     /** Create semantic filtering, by returning the cosine similarity of a chunk to the given argument. */
     internal fun createSemanticFilter(text: String) {
@@ -108,13 +149,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             chunkFilter.value = it
             isChunkFilterEnabled.set(true)
         }
-    }
-
-    /** Get embedding information, as list of calculated embedding models, within a [TextChunk]. */
-    private fun TextChunk.embeddingInfo(): String {
-        val models = getEmbeddingInfo()?.keys ?: listOf()
-        return if (models.isEmpty()) "No embeddings calculated."
-        else models.joinToString(", ") { it }
     }
 
     /** Refilters the chunk list. */
@@ -142,9 +176,150 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //endregion
 
+    //region MUTATORS
+
+    /** Save library to a file. */
+    fun saveLibrary(library: TextLibraryInfo, it: File) {
+        TextLibrary.saveTo(library.library, it)
+        library.file = it
+        markSaved(library)
+    }
+
+    /** Remove selected documents from library and model. */
+    fun removeSelectedDocuments() {
+        val selected = docSelection.toList()
+        librarySelection.value?.library?.docs?.removeAll(selected)
+        docList.removeAll(selected)
+        docsModified.removeAll(selected)
+        markChanged(librarySelection.value)
+    }
+
+    /** Remove selected chunks from document(s). */
+    fun removeSelectedChunks() {
+        val selected = chunkSelection.toList()
+        val selectedChunks = selected.mapNotNull { (it as? TextChunkViewModelImpl)?.chunk }
+        val changedDocs = mutableListOf<TextDoc>()
+        docSelection.forEach {
+            if (it.chunks.removeAll(selectedChunks))
+                changedDocs.add(it)
+        }
+        chunkList.removeAll(selected)
+        changedDocs.forEach { markChanged(it) }
+    }
+
+    /** Rename selected collection. */
+    fun renameCollection(lib: TextLibraryInfo, it: String) {
+        lib.library.metadata.id = it
+        markChanged(lib)
+    }
+
+    /** Calculates embeddings for all selected collections, returning associated task. */
+    fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
+        runBlocking {
+            AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), progress)
+        }
+    }
+
+    /** Extracts metadata from all documents in selected collections, returning associated task. */
+    fun extractMetadataTask() = runAsync {
+        var count = 0
+        librarySelection.value.library.docs.forEach {
+            val path = it.metadata.path
+            if (path != null && File(path).exists()) {
+                val md = File(path).extractMetadata()
+                if (md.isNotEmpty()) {
+                    count++
+                    updateMetadata(it, md, isSelect = false)
+                }
+            }
+        }
+        "Extracted metadata from $count files."
+    }
+
+    /** Copy new metadata values into document and update selection. */
+    fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isSelect: Boolean) {
+        doc.metadata.mergeIn(newMetadataValues)
+        if (isSelect)
+            docSelection.setAll(listOf(doc))
+        markChanged(doc)
+    }
+
+    private fun markChanged(lib: TextLibraryInfo) {
+        librariesModified.add(lib)
+        libraryContentChange.set(!libraryContentChange.get())
+    }
+
+    private fun markSaved(library: TextLibraryInfo) {
+        librariesModified.remove(library)
+        libraryContentChange.set(!libraryContentChange.get())
+        docsModified.removeAll(library.library.docs)
+    }
+
+    private fun markChanged(doc: TextDoc) {
+        docsModified.add(doc)
+        val lib = libraryList.find { it.library.docs.contains(doc) }
+        if (lib != null)
+            markChanged(lib)
+    }
+
+    //endregion
+
+    //region LONG-RUNNING TASKS
+
+    private fun calculateEmbeddingsPlan(): AiPlanner {
+        val service = embeddingService.value
+        val result = mutableMapOf<TextChunk, List<Double>>()
+        return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
+            AiTask.task("calculate-embeddings: " + doc.metadata.id) {
+                service.addEmbeddingInfo(doc)
+                var count = 0
+                doc.chunks.forEach {
+                    val embed = it.getEmbeddingInfo(service.modelId)
+                    if (embed != null) {
+                        result[it] = embed
+                        count++
+                    }
+                }
+                "Calculated $count embeddings for ${doc.metadata.id}."
+            }
+        }.aggregate().task("summarize-results") {
+            "Calculated ${result.size} total embeddings."
+        }.planner
+    }
+
+    //endregion
+
     companion object {
         private const val REFILTER_LIST_MAX_COUNT = 20
         private const val MIN_CHUNK_SIMILARITY = 0.7
+
+        /** Merge metadata from a map into a TextDocMetadata object. */
+        internal fun TextDocMetadata.mergeIn(other: Map<String, Any>) {
+            other.extract("title", "pdf.title", "doc.title") { title = it }
+            other.extract("author", "pdf.author", "doc.author", "docx.author") { author = it }
+            other.extractDate("date", "pdf.modificationDate", "pdf.creationDate", "doc.editTime", "docx.modified") { dateTime = it }
+            properties.putAll(other)
+        }
+
+        private fun Map<String, Any>.extract(vararg keys: String, setter: (String) -> Unit) {
+            keys.firstNotNullOfOrNull { get(it) }?.let { setter(it.toString()) }
+        }
+
+        private fun Map<String, Any>.extractDate(vararg keys: String, setter: (LocalDateTime) -> Unit) {
+            keys.firstNotNullOfOrNull { get(it) }?.let {
+                when (it) {
+                    is LocalDateTime -> setter(it)
+                    is LocalDate -> setter(it.atStartOfDay())
+                    else -> {
+                        try {
+                            setter(LocalDateTime.parse(it.toString()))
+                        } catch (e: Exception) {
+                            info<TextLibraryCollectionUi>("Could not parse date from ${it.javaClass} $it")
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }

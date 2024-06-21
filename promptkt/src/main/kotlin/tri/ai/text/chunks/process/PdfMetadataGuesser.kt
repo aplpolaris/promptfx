@@ -35,7 +35,7 @@ object PdfMetadataGuesser {
     private val PROMPT = AiPromptLibrary.lookupPrompt("document-guess-metadata")
 
     /** Attempt to extract metadata from a PDF file, using up to [pageLimit] pages. Each page is processed by an LLM query, so this may consume a lot of tokens. */
-    suspend fun guessPdfMetadata(model: TextCompletion, file: File, pageLimit: Int, progress: (String) -> Unit): List<GuessedMetadataObject> {
+    suspend fun guessPdfMetadata(model: TextCompletion, file: File, pageLimit: Int, progress: (String) -> Unit): MultipleGuessedMetadataObjects {
         val text = PdfUtils.pdfPageInfo(file).take(pageLimit)
         val parsedMetadata = text.mapNotNull {
             val progressString = "Processing page ${it.pageNumber} for ${file.name}..."
@@ -74,7 +74,7 @@ object PdfMetadataGuesser {
      * Resolve any conflicting information in metadata. The first result is the attempted deconflicted object. The remaining are the inputs.
      * Empty results are not included.
      */
-    private fun Collection<GuessedMetadataObject>.resolveConflicts(): List<GuessedMetadataObject> {
+    private fun Collection<GuessedMetadataObject>.resolveConflicts(): MultipleGuessedMetadataObjects {
         val title = firstNotNullOfOrNull { it.title }
         val subtitle = firstNotNullOfOrNull { it.subtitle }
         val authors = firstNotNullOfOrNull { it.authors }
@@ -90,7 +90,8 @@ object PdfMetadataGuesser {
                 if (it.size == 1) it[0] else it
             }
         }
-        return listOf(GuessedMetadataObject(COMBINED, title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)) + this
+        val combined = GuessedMetadataObject(COMBINED, title, subtitle, authors, date, keywords, abstract, executiveSummary, sections, captions, references, other)
+        return MultipleGuessedMetadataObjects(combined, this.toList())
     }
 
     private fun String.betweenTripleTicks() = if ("```" in this) substringAfter("```").substringAfter("\n").substringBefore("```").trim() else trim()
@@ -132,7 +133,7 @@ object PdfMetadataGuesser {
 
     //region CONSTANTS
 
-    private const val COMBINED = "Combined"
+    const val COMBINED = "Combined"
     private const val TITLE = "title"
     private const val SUBTITLE = "subtitle"
     private const val AUTHORS = "authors"
@@ -165,6 +166,11 @@ data class GuessedMetadataObject(
     val other: Map<String, Any>
 )
 
+/** Collection of multiple guessed objects. Supports a "combined" object and multiple "source" objects. */
+class MultipleGuessedMetadataObjects(
+    val combined: GuessedMetadataObject,
+    val sources: List<GuessedMetadataObject>
+)
 
 private fun TextDocMetadata.listProperty(key: String) =
     (properties[key] as? List<String>) ?: properties[key]?.toString()?.attemptParseToList()
