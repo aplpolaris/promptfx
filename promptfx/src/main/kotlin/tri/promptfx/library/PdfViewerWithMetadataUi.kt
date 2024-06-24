@@ -28,11 +28,12 @@ class PdfViewerWithMetadataUi(
     private val pdfFile = doc.pdfFile()!!
     private val controller: PromptFxController by inject()
     private val progress: AiProgressView by inject()
-    val metadataModel: MetadataValidatorModel by inject()
+    private val metadataModel: MetadataValidatorModel by inject()
     private val metadataGuessPageCount = SimpleIntegerProperty(2)
 
     init {
-        metadataModel.initialProps.setAll(doc.metadata.asGmvPropList(""))
+        val fileProps = doc.metadata.asGmvPropList("", markSaved = true)
+        metadataModel.initialProps.setAll(fileProps)
     }
 
     override val root = borderpane {
@@ -71,10 +72,14 @@ class PdfViewerWithMetadataUi(
                             prefWidth = 50.0
                         }
                         text("pages") { tooltip(ttp) }
-                        progressindicator(progress.indicator.progressProperty()) {
+                        spacer()
+                        progressbar(progress.indicator.progressProperty()) {
                             visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
                             managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
-                            setMinSize(20.0, 20.0)
+                        }
+                        label(progress.label.textProperty()) {
+                            visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                            managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
                         }
                     }
                 }
@@ -104,7 +109,7 @@ class PdfViewerWithMetadataUi(
             if (md.isNotEmpty()) {
                 val metadata = TextDocMetadata("")
                 metadata.mergeIn(md)
-                metadataModel.merge(metadata.asGmvPropList("File Metadata"))
+                metadataModel.merge(metadata.asGmvPropList("File Metadata", markSaved = false), filterUnique = true)
             }
         }
     }
@@ -120,7 +125,7 @@ class PdfViewerWithMetadataUi(
             this@PdfViewerWithMetadataUi.progress.taskCompleted()
             result
         } ui {
-            metadataModel.merge(it.asGmvPropList())
+            metadataModel.merge(it.asGmvPropList(markSaved = false), filterUnique = false)
         }
     }
 }

@@ -26,6 +26,7 @@ import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.TextDocMetadata
+import tri.util.fine
 import tri.util.pdf.PdfUtils
 import java.io.File
 
@@ -74,7 +75,7 @@ object PdfMetadataGuesser {
      * Resolve any conflicting information in metadata. The first result is the attempted deconflicted object. The remaining are the inputs.
      * Empty results are not included.
      */
-    private fun Collection<GuessedMetadataObject>.resolveConflicts(): MultipleGuessedMetadataObjects {
+    fun Collection<GuessedMetadataObject>.resolveConflicts(): MultipleGuessedMetadataObjects {
         val title = firstNotNullOfOrNull { it.title }
         val subtitle = firstNotNullOfOrNull { it.subtitle }
         val authors = firstNotNullOfOrNull { it.authors }
@@ -114,7 +115,7 @@ object PdfMetadataGuesser {
             content[OTHER] as? Map<String, Any> ?: emptyMap()
         )
     } catch (x: JsonMappingException) {
-        println("Failed to parse metadata: $this")
+        fine<PdfMetadataGuesser>("Failed to parse metadata: $this")
         null
     }
 
