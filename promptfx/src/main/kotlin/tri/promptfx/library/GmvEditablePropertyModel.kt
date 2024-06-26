@@ -2,11 +2,10 @@ package tri.promptfx.library
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import javafx.beans.binding.Binding
 import javafx.beans.binding.BooleanBinding
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.value.ObservableValue
 import tornadofx.*
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.process.GuessedMetadataObject
@@ -16,112 +15,149 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * A single GMV property, with three possible value types.
- * Supports notions of a current value, an edited value, and a collection of alternate values.
+ * A key-value property that can be edited and reverted to an original value.
+ * The original value can be "null" indicating the property was added, and the editing value can be "null" indicating the property was deleted.
+ * Any change can be marked "accepted" to indicate it should be saved to the document when the user applies changes.
+ * Also supports cycling through a list of custom alternate values.
  */
 class GmvEditablePropertyModel<X>(
     val name: String,
-    initialValue: X,
+    _originalValue: X?,
+    _editingValue: X?,
+    valueOptions: List<Pair<X, String>>,
     val isEditable: Boolean = true
 ) {
 
-    constructor(label: String, initialValue: X, altValues: List<Pair<X, String>>) : this(label, initialValue, true) {
-        alternateValues.addAll(altValues)
-        editingIndex.set(alternateValues.indexOfFirst { it.first == initialValue })
-    }
-
+    /** The original value. */
+    val originalValue = SimpleObjectProperty<X>(_originalValue)
+    /** A user-provided custom value, if not in provided list of options. */
+    private val customValue = SimpleObjectProperty<X>(if (valueOptions.any { it.first == _editingValue }) null else _editingValue)
     /** An ordered list of alternate values, pairing a value with the source of the value. */
-    private val alternateValues = observableListOf<Pair<X, String>>()
+    private val valueOptionList = observableListOf(valueOptions.toList())
 
-    /** The saved value. */
-    val savedValue = SimpleObjectProperty<X>(null)
-    /** The value currently presented to the user as editing (ready to be saved). */
-    val editingValue = SimpleObjectProperty<X>(initialValue)
+    /** The initial editing value. */
+    private val initialEditingValue = _editingValue ?: _originalValue
+    /** The value currently presented to the user as editing. */
+    val editingValue = SimpleObjectProperty<X>(initialEditingValue)
+
+    /** If possible to mark this property as "deleted". */
+    val isDeletable: BooleanBinding = originalValue.isNotNull and isEditable
+    /** If property has been marked as deleted. */
+    val isDeletePending = SimpleBooleanProperty(false)
+
+    /** If non-deletion edit has been marked as accepted by user. */
+    val isUpdatePending = SimpleBooleanProperty(false)
+    /** If a change of any kind is pending. */
+    val isAnyChangePending: BooleanBinding = isUpdatePending or isDeletePending
 
     //region DERIVED PROPERTIES
 
-    /** Flag indicating whether value cycling is supported. */
-    val supportsValueCycling = alternateValues.sizeProperty.ge(2)
-    /** The index of the editing value in the list of alternate values, or -1 if not present. */
-    val editingIndex = SimpleIntegerProperty(-1).apply {
-        alternateValues.onChange {
-            val valueAtIndex = alternateValues.getOrNull(value)
-            if (valueAtIndex != null && valueAtIndex.first != editingValue.value)
-                set(alternateValues.indexOfFirst { it.first == editingValue.value })
-        }
-        editingValue.onChange {
-            val valueAtIndex = alternateValues.getOrNull(value)
-            if (valueAtIndex != null && valueAtIndex.first != editingValue.value)
-                set(alternateValues.indexOfFirst { it.first == editingValue.value })
-        }
+    /** If editing value is the original value. */
+    val isOriginal = editingValue.isEqualTo(originalValue) and !isDeletePending
+    /** If editing value is the custom value. */
+    val isCustom = editingValue.isEqualTo(customValue) and !isDeletePending
+    /** If editing value is in the list of value options. */
+    val isValueOption = editingValue.booleanBinding(valueOptionList) { value ->
+        valueOptionList.any { it.first == value }
     }
-    /** Flag indicating whether value is saved. */
-    val isSaved: BooleanBinding = savedValue.isNotNull and editingValue.isEqualTo(savedValue)
-    /** The source of the editing value. */
-    val editingSource: ObservableValue<String> = editingIndex.objectBinding(isSaved) { x ->
-        when {
-            x == -1 -> ""
-            else -> alternateValues[x!!.toInt()].second
-        }
-    } as Binding<String>
 
-    /** Label indicating whether value has been saved. */
-    val savedLabel = editingSource.stringBinding(editingIndex) {
-        if (editingIndex.value == -1)
-            "Saved"
-        else
-            "Unsaved - $it"
+    /** List used for cycling values. */
+    private val valueCycleList = observableListOf<Pair<X, String>>().apply {
+        fun update() {
+            val tempList = mutableListOf<Pair<X, String>>()
+            if (originalValue.value != null)
+                tempList.add(originalValue.value to "Original")
+            if (customValue.value != null)
+                tempList.add(customValue.value to "Custom")
+            tempList.addAll(valueOptionList)
+            setAll(tempList)
+        }
+        originalValue.onChange { update() }
+        customValue.onChange { update() }
+        valueOptionList.onChange { update() }
+        update()
     }
+    /** Index of the editing value in the list of value options. When updated, changes the editing value. */
+    private val initialEditIndex = if (editingValue.value == null) 0 else valueCycleList.indexOfFirst { it.first == editingValue.value }
+    internal val editingIndex = SimpleIntegerProperty(initialEditIndex).apply {
+        onChange { editingValue.set(valueCycleList[it]!!.first) }
+        valueCycleList.onChange { set(0) }
+    }
+    /** Flag indicating whether value cycling is supported. */
+    val isValueCyclable = valueCycleList.sizeProperty.ge(2)
+
+    /** Label indicating whether value has been changed. */
+    val changeLabel = editingIndex.stringBinding(valueCycleList, isDeletePending, isOriginal, isUpdatePending) {
+        val label = valueCycleList.getOrNull(editingIndex.value)?.second
+        if (isDeletePending.value)
+            "Marked for Deletion"
+        else if (isUpdatePending.value)
+            "Marked for Update - $label"
+        else if (originalValue.value == null)
+            "New - $label"
+        else if (isOriginal.value && label == "Original")
+            "Original"
+        else if (isOriginal.value)
+            "Unchanged - $label"
+        else
+            "Changed - $label"
+    }
+
+    /** Return true if both the original and editing values are empty or blank. */
+    fun hasNonEmptyValues(): Boolean {
+        val originalEmpty = originalValue.value.let { it == null || (it is String && it.isBlank()) }
+        val editingEmpty = editingValue.value.let { it == null || (it is String && it.isBlank()) }
+        return !originalEmpty || !editingEmpty
+    }
+
+    /** Get list of additional values. */
+    fun getAlternateValueList() =
+        valueOptionList.toList()
 
     //endregion
 
     //region MUTATORS
 
-    /** Get list of additional values. */
-    fun getAlternateValueList() =
-        alternateValues.toList()
+    /** Updates with a custom value. */
+    fun updateCustom(value: X) {
+        customValue.set(value)
+        editingIndex.set(if (originalValue.value == null) 0 else 1)
+    }
+
+    /** Applies changes, replacing the original value with the editing value. */
+    fun applyChanges() {
+        require(editingValue.value != null) { "Changes should only be applied when the editing value is not null." }
+        require(!isDeletePending.value) { "Changes should only be applied when the property is not marked for deletion." }
+        originalValue.set(editingValue.value)
+        editingIndex.set(0)
+        isUpdatePending.set(false)
+    }
+
+    /** Reverts the editing value to the original value. */
+    fun revertChanges() {
+        editingValue.set(initialEditingValue)
+        isUpdatePending.set(false)
+        isDeletePending.set(false)
+    }
 
     /** Adds to list of additional values. */
     fun addAlternateValues(values: List<Pair<X, String>>, filterUnique: Boolean) {
         if (filterUnique) {
-            val curValues = setOfNotNull(savedValue.value) + alternateValues.mapNotNull { it.first }
-            alternateValues.addAll(values.filter { it.first !in curValues })
+            val curValues = setOfNotNull(originalValue.value) + valueOptionList.mapNotNull { it.first }
+            valueOptionList.addAll(values.filter { it.first !in curValues })
         } else {
-            alternateValues.addAll(values)
+            valueOptionList.addAll(values)
         }
-    }
-
-    /** Save the current value. */
-    fun saveValue() {
-        savedValue.set(editingValue.value)
-        editingIndex.set(-1)
     }
 
     /** Move to the previous value. */
     fun previousValue() {
-        val newIndex = when (editingIndex.value) {
-            -1 -> alternateValues.size - 1
-            0 -> if (savedValue.value == null) alternateValues.size - 1 else -1
-            else -> editingIndex.value - 1
-        }
-        updateEditingIndex(newIndex)
+        editingIndex.set((editingIndex.value - 1 + valueCycleList.size) % valueCycleList.size)
     }
 
     /** Move to the next value. */
     fun nextValue() {
-        val newIndex = when (editingIndex.value) {
-            alternateValues.size - 1 -> if (savedValue.value == null) 0 else -1
-            else -> editingIndex.value + 1
-        }
-        updateEditingIndex(newIndex)
-    }
-
-    private fun updateEditingIndex(newIndex: Int) {
-        editingIndex.set(newIndex)
-        if (editingIndex.value == -1)
-            editingValue.set(savedValue.value)
-        else
-            editingValue.set(alternateValues[editingIndex.value].first)
+        editingIndex.set((editingIndex.value + 1) % valueCycleList.size)
     }
 
     //endregion
@@ -129,14 +165,14 @@ class GmvEditablePropertyModel<X>(
 }
 
 /** Convert TextDocMetadata to a list of GMVs. */
-fun TextDocMetadata.asGmvPropList(label: String, markSaved: Boolean) =
-    MultipleGuessedMetadataObjects(toGuessedMetadataObject(label), listOf()).asGmvPropList(markSaved)
+fun TextDocMetadata.asGmvPropList(label: String, isOriginal: Boolean) =
+    MultipleGuessedMetadataObjects(toGuessedMetadataObject(label), listOf()).asGmvPropList(isOriginal)
 
 /**
  * Convert GMO to a list of GMVs. Initial values are set to the first object, and the remaining values are used as alternates.
  * Properties whose value in the first object is null are not included.
  */
-fun MultipleGuessedMetadataObjects.asGmvPropList(markSaved: Boolean): List<GmvEditablePropertyModel<Any?>> {
+fun MultipleGuessedMetadataObjects.asGmvPropList(isOriginal: Boolean): List<GmvEditablePropertyModel<Any?>> {
     // helper function to generate a list of values that are non-empty
     fun labeledValues(op: (GuessedMetadataObject) -> Any?): List<Pair<Any?, String>> {
         val result = mutableListOf<Pair<Any?, String>>()
@@ -154,8 +190,12 @@ fun MultipleGuessedMetadataObjects.asGmvPropList(markSaved: Boolean): List<GmvEd
     }
 
     // helper function to generate a property model
-    fun propertyModel(key: String, op: (GuessedMetadataObject) -> Any?): GmvEditablePropertyModel<Any?> =
-        GmvEditablePropertyModel(key, op(combined), labeledValues(op))
+    fun propertyModel(key: String, op: (GuessedMetadataObject) -> Any?): GmvEditablePropertyModel<Any?> {
+        val comb = op(combined)
+        val original = if (isOriginal) comb else null
+        val editing = if (isOriginal) null else comb
+        return GmvEditablePropertyModel(key, original, editing, labeledValues(op))
+    }
 
     return mutableListOf<GmvEditablePropertyModel<Any?>>().apply {
         add(propertyModel("title") { it.title })
@@ -173,10 +213,7 @@ fun MultipleGuessedMetadataObjects.asGmvPropList(markSaved: Boolean): List<GmvEd
             add(propertyModel(k) { it.other[k].maybeParseDate(k) })
         }
     }.filter {
-        it.editingValue.value != null
-    }.onEach {
-        if (markSaved)
-            it.saveValue()
+        it.hasNonEmptyValues()
     }
 }
 

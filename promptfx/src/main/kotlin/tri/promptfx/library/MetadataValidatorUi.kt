@@ -24,6 +24,7 @@ import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.util.fine
+import tri.util.ui.booleanListBindingOr
 import tri.util.ui.graphic
 
 /** UI that shows a series of key-value pairs discovered by a "metadata guesser" and user can accept/reject them. */
@@ -36,30 +37,35 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
         vgrow = Priority.ALWAYS
         isFitToWidth = true
         vbox(5) {
-            children.bind(model.initialProps) {
+            children.bind(model.props) {
                 vbox(5) {
                     toolbar {
                         text(it.name) {
                             style = "-fx-font-weight: bold; -fx-font-size: 16"
                         }
                         spacer()
-                        text(it.savedLabel) {
+                        text(it.changeLabel) {
                             style = "-fx-font-style: italic; -fx-text-fill: light-gray"
                         }
                         button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
-                            disableWhen(it.supportsValueCycling.not())
+                            disableWhen(it.isValueCyclable.not() or it.isDeletePending)
                             action { it.previousValue() }
                         }
                         button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
-                            disableWhen(it.supportsValueCycling.not())
+                            disableWhen(it.isValueCyclable.not() or it.isDeletePending)
                             action { it.nextValue() }
                         }
-                        button("", FontAwesomeIcon.SAVE.graphic) {
-                            disableWhen(it.isSaved)
-                            action { it.saveValue() }
+                        checkbox("Update", it.isUpdatePending) {
+                            isVisible = it.isEditable
+                            graphic = FontAwesomeIcon.CHECK_CIRCLE_ALT.graphic
+                            isManaged = it.isEditable
+                            disableWhen(it.isOriginal or it.isDeletePending)
                         }
-                        button("", FontAwesomeIcon.MINUS_CIRCLE.graphic) {
-                            action { model.removeEntry(it) }
+                        checkbox("Remove", it.isDeletePending) {
+                            graphic = FontAwesomeIcon.TIMES_CIRCLE_ALT.graphic
+                            visibleWhen(it.isDeletable)
+                            managedWhen(it.isDeletable)
+                            enableWhen(it.isDeletable)
                         }
                     }
                     propertyvalue(it)
@@ -91,35 +97,46 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
             }
         }
         model.editingValue.onChange { updater(it!!) }
-        updater(model.editingValue.value!!)
+        updater(model.editingValue.value ?: model.originalValue.value ?: "no value")
     }
 
 }
 
 /** Model for the metadata validator view. */
 class MetadataValidatorModel: ScopedInstance, Component() {
-    val initialProps = observableListOf<GmvEditablePropertyModel<Any?>>()
+
+    val props = observableListOf<GmvEditablePropertyModel<Any?>>()
+    val isChanged = booleanListBindingOr(props, false, GmvEditablePropertyModel<*>::isAnyChangePending)
 
     /** Return a map of all properties that have been selected and edited. */
-    fun editingValues(): Map<String, Any> = initialProps
-        .filter { it.editingValue.value != null }
-        .associate { it.name to it.editingValue.value!! }
-
-    /** Remove a property from the list of editable properties. */
-    fun removeEntry(it: GmvEditablePropertyModel<Any?>) {
-        initialProps.remove(it)
-    }
+    fun savedValues(): Map<String, Any> = props
+        .associate { it.name to it.originalValue.value }
+        .filter { it.value != null } as Map<String, Any>
 
     /** Merge a secondary model with the current one. Any properties with existing names will be augmenting by adding to the possible list of values. */
     fun merge(properties: List<GmvEditablePropertyModel<Any?>>, filterUnique: Boolean) {
         properties.forEach {
-            val existing = initialProps.find { p -> p.name == it.name }
+            val existing = props.find { p -> p.name == it.name }
             if (existing != null) {
                 existing.addAlternateValues(it.getAlternateValueList(), filterUnique)
             } else {
-                fine<MetadataValidatorModel>("MERGE PROPERTIES FOR ${it.name}: ${it.savedValue.value}, ${it.editingValue.value}, ${it.editingSource.value}")
-                initialProps.add(it)
+                fine<MetadataValidatorModel>("MERGE PROPERTIES FOR ${it.name}: ${it.originalValue}, ${it.editingValue.value}")
+                props.add(it)
             }
         }
+    }
+
+    /** Applies any pending changes, saving them by updating the original value, and removing any elements marked for removal. */
+    fun applyPendingChanges() {
+        props.forEach {
+            if (it.isUpdatePending.value)
+                it.applyChanges()
+        }
+        props.removeIf { it.isDeletePending.value }
+    }
+
+    /** Revert any pending changes. */
+    fun revertPendingChanges() {
+        props.forEach { it.revertChanges() }
     }
 }

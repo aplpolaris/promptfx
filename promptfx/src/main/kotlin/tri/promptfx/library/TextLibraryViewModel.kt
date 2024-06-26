@@ -238,7 +238,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Copy new metadata values into document and update selection. */
     fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isSelect: Boolean) {
-        doc.metadata.mergeIn(newMetadataValues)
+        doc.metadata.replaceAll(newMetadataValues)
         if (isSelect)
             docSelection.setAll(listOf(doc))
         markChanged(doc)

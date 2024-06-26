@@ -125,7 +125,7 @@ class TextLibraryCollectionUi : Fragment() {
                     }
                 }
                 lazyContextmenu {
-                    item("Open metadata viewer...") {
+                    item("Open metadata viewer/editor...") {
                         isDisable = doc.pdfFile() == null
                         action { openMetadataViewer(doc) }
                     }
@@ -227,7 +227,7 @@ class TextLibraryCollectionUi : Fragment() {
 
     private fun openMetadataViewer(doc: TextDoc) {
         PdfViewerWithMetadataUi(doc) {
-            model.updateMetadata(doc, it.editingValues(), isSelect = true)
+            model.updateMetadata(doc, it.savedValues(), isSelect = true)
         }.openModal(
             modality = Modality.NONE,
             block = false,

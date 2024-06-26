@@ -32,8 +32,8 @@ class PdfViewerWithMetadataUi(
     private val metadataGuessPageCount = SimpleIntegerProperty(2)
 
     init {
-        val fileProps = doc.metadata.asGmvPropList("", markSaved = true)
-        metadataModel.initialProps.setAll(fileProps)
+        val fileProps = doc.metadata.asGmvPropList("", isOriginal = true)
+        metadataModel.props.setAll(fileProps)
     }
 
     override val root = borderpane {
@@ -45,7 +45,7 @@ class PdfViewerWithMetadataUi(
                 viewModel.currentPageNumber.value = 0
             })
             borderpane {
-                top = vbox(5) {
+                top = vbox {
                     text("Document Metadata") {
                         style = "-fx-font-size: 24"
                     }
@@ -72,14 +72,23 @@ class PdfViewerWithMetadataUi(
                             prefWidth = 50.0
                         }
                         text("pages") { tooltip(ttp) }
+                    }
+                    toolbar {
+                        visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                        managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
                         spacer()
-                        progressbar(progress.indicator.progressProperty()) {
-                            visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
-                            managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                        progressbar(progress.indicator.progressProperty())
+                        label(progress.label.textProperty())
+                    }
+                    toolbar {
+                        text("Changes:")
+                        button("Apply") {
+                            enableWhen(metadataModel.isChanged)
+                            action { metadataModel.applyPendingChanges() }
                         }
-                        label(progress.label.textProperty()) {
-                            visibleWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
-                            managedWhen(this@PdfViewerWithMetadataUi.progress.activeProperty)
+                        button("Revert") {
+                            enableWhen(metadataModel.isChanged)
+                            action { metadataModel.revertPendingChanges() }
                         }
                     }
                 }
@@ -109,7 +118,7 @@ class PdfViewerWithMetadataUi(
             if (md.isNotEmpty()) {
                 val metadata = TextDocMetadata("")
                 metadata.mergeIn(md)
-                metadataModel.merge(metadata.asGmvPropList("File Metadata", markSaved = false), filterUnique = true)
+                metadataModel.merge(metadata.asGmvPropList("File Metadata", isOriginal = false), filterUnique = true)
             }
         }
     }
@@ -125,7 +134,8 @@ class PdfViewerWithMetadataUi(
             this@PdfViewerWithMetadataUi.progress.taskCompleted()
             result
         } ui {
-            metadataModel.merge(it.asGmvPropList(markSaved = false), filterUnique = false)
+            metadataModel.merge(it.asGmvPropList(isOriginal = false), filterUnique = false)
         }
     }
+
 }

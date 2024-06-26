@@ -8,109 +8,248 @@ import java.time.LocalDate
 
 class GmvEditablePropertyModelTest {
 
+    //region CREATE WITH AN ORIGINAL VALUE AND NO OPTIONS
+
     @Test
     fun testCreate1() {
-        val model = GmvEditablePropertyModel("Test", "Initial Value", listOf())
-        assertFalse(model.isSaved.value)
-        assertEquals(0, model.getAlternateValueList().size)
-        assertEquals(-1, model.editingIndex.value)
-        assertFalse(model.supportsValueCycling.value)
-
-        model.saveValue()
-        assertTrue(model.isSaved.value)
-        assertEquals(-1, model.editingIndex.value)
-        assertFalse(model.supportsValueCycling.value)
+        val model = GmvEditablePropertyModel("Test", "Initial Value", null, listOf())
+        assertTrue(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertFalse(model.isValueOption.value)
+        assertFalse(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(0, model.editingIndex.value)
+        assertEquals("Original", model.changeLabel.value)
     }
+
+    @Test
+    fun testCustomValue() {
+        val model = GmvEditablePropertyModel("Test", "Initial Value", null, listOf())
+        model.updateCustom("Custom user value")
+        assertFalse(model.isOriginal.value)
+        assertTrue(model.isCustom.value)
+        assertFalse(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(1, model.editingIndex.value)
+        assertEquals("Custom user value", model.editingValue.value)
+        assertEquals("Changed - Custom", model.changeLabel.value)
+    }
+
+    @Test
+    fun testRevert() {
+        val model = GmvEditablePropertyModel("Test", "Initial Value", null, listOf())
+        model.editingValue.set("Custom user value")
+        model.revertChanges()
+        assertTrue(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertFalse(model.isValueOption.value)
+        assertFalse(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(0, model.editingIndex.value)
+        assertEquals("Original", model.changeLabel.value)
+    }
+
+    //endregion
+
+    //region CREATE WITH AN ORIGINAL VALUE FROM AN OPTIONS LIST
 
     @Test
     fun testCreate2() {
-        val model = GmvEditablePropertyModel("Test", "A", listOf("A" to "A"))
-        assertFalse(model.isSaved.value)
-        assertEquals(1, model.getAlternateValueList().size)
+        val model = GmvEditablePropertyModel("Test", "A", null, listOf("A" to "label A", "B" to "label B"))
+        assertTrue(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertTrue(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
         assertEquals(0, model.editingIndex.value)
-        assertFalse(model.supportsValueCycling.value)
-
-        model.saveValue()
-        assertTrue(model.isSaved.value)
-        assertEquals(-1, model.editingIndex.value)
-        assertFalse(model.supportsValueCycling.value)
+        assertEquals("Original", model.changeLabel.value)
     }
+
+    @Test
+    fun testCustomValue2() {
+        val model = GmvEditablePropertyModel("Test", "A", null, listOf("A" to "label A", "B" to "label B"))
+        model.updateCustom("Custom user value")
+        assertFalse(model.isOriginal.value)
+        assertTrue(model.isCustom.value)
+        assertFalse(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(1, model.editingIndex.value)
+        assertEquals("Changed - Custom", model.changeLabel.value)
+    }
+
+    @Test
+    fun testRevert2() {
+        val model = GmvEditablePropertyModel("Test", "A", null, listOf("A" to "label A", "B" to "label B"))
+        model.editingValue.set("Custom user value")
+        model.revertChanges()
+        assertTrue(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertTrue(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(0, model.editingIndex.value)
+        assertEquals("Original", model.changeLabel.value)
+    }
+
+    //endregion
+
+    //region CREATE WITH A MISSING ORIGINAL VALUE
+
+    @Test
+    fun testCreate3() {
+        val model = GmvEditablePropertyModel("Test", null, "A", listOf("A" to "label A", "B" to "label B"))
+        assertFalse(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertTrue(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertFalse(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(0, model.editingIndex.value)
+        assertEquals("New - label A", model.changeLabel.value)
+    }
+
+    @Test
+    fun testRevert3() {
+        val model = GmvEditablePropertyModel("Test", null, "A", listOf("A" to "label A", "B" to "label B"))
+        model.editingValue.set("Custom user value")
+        model.revertChanges()
+        assertFalse(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertTrue(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertFalse(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
+        assertEquals(0, model.editingIndex.value)
+        assertEquals("New - label A", model.changeLabel.value)
+    }
+
+    //endregion
+
+    //region MUTATOR TESTS
 
     @Test
     fun testAddAlternateValues() {
-        val model = GmvEditablePropertyModel("Test", "Initial Value", listOf())
-        assertFalse(model.supportsValueCycling.value)
-        model.addAlternateValues(listOf("A" to "A", "B" to "B"), false)
-        assertFalse(model.isSaved.value)
-        assertEquals(2, model.getAlternateValueList().size)
-        assertTrue(model.supportsValueCycling.value)
-        assertEquals(-1, model.editingIndex.value)
+        val model = GmvEditablePropertyModel("Test", "Initial Value", null, listOf())
+        with (model) {
+            assertFalse(isValueCyclable.value)
+
+            model.addAlternateValues(listOf("A" to "A", "B" to "B"), false)
+            assertTrue(isOriginal.value)
+            assertFalse(isCustom.value)
+            assertFalse(isValueOption.value)
+            assertTrue(isValueCyclable.value)
+            assertTrue(isDeletable.value)
+            assertFalse(isDeletePending.value)
+            assertFalse(isUpdatePending.value)
+            assertFalse(isAnyChangePending.value)
+            assertEquals(0, editingIndex.value)
+            assertEquals("Original", changeLabel.value)
+        }
     }
+
+    //endregion
+
+    //region VALUE CYCLING TESTS
 
     @Test
     fun testPreviousValue() {
-        val model = GmvEditablePropertyModel("Test", "Initial Value", listOf("A" to "A", "B" to "B"))
-        assertFalse(model.isSaved.value)
-        assertTrue(model.supportsValueCycling.value)
-        assertEquals(2, model.getAlternateValueList().size)
-        assertEquals(-1, model.editingIndex.value)
-
-        model.previousValue()
-        assertFalse(model.isSaved.value)
+        val model = GmvEditablePropertyModel("Test", "Initial Value", "A", listOf("A" to "label A", "B" to "label B"))
+        assertFalse(model.isOriginal.value)
+        assertFalse(model.isCustom.value)
+        assertTrue(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
         assertEquals(1, model.editingIndex.value)
-        assertEquals("B", model.editingValue.value)
+        assertEquals("Changed - label A", model.changeLabel.value)
 
         model.previousValue()
-        assertFalse(model.isSaved.value)
+        assertTrue(model.isOriginal.value)
         assertEquals(0, model.editingIndex.value)
-        assertEquals("A", model.editingValue.value)
+        assertEquals("Original", model.changeLabel.value)
 
         model.previousValue()
-        assertFalse(model.isSaved.value)
-        assertEquals(1, model.editingIndex.value)
-        assertEquals("B", model.editingValue.value)
+        assertFalse(model.isOriginal.value)
+        assertEquals(2, model.editingIndex.value)
+        assertEquals("Changed - label B", model.changeLabel.value)
 
-        model.saveValue()
-        assertEquals(-1, model.editingIndex.value)
         model.previousValue()
+        assertFalse(model.isOriginal.value)
         assertEquals(1, model.editingIndex.value)
-        model.previousValue()
-        assertEquals(0, model.editingIndex.value)
-        model.previousValue()
-        assertEquals(-1, model.editingIndex.value)
+        assertEquals("Changed - label A", model.changeLabel.value)
     }
 
     @Test
     fun testNextValue() {
-        val model = GmvEditablePropertyModel("Test", "Initial Value", listOf("A" to "A", "B" to "B"))
-        assertFalse(model.isSaved.value)
-        assertTrue(model.supportsValueCycling.value)
-        assertEquals(2, model.getAlternateValueList().size)
-        assertEquals(-1, model.editingIndex.value)
-
-        model.nextValue()
-        assertFalse(model.isSaved.value)
-        assertEquals(0, model.editingIndex.value)
-        assertEquals("A", model.editingValue.value)
-
-        model.nextValue()
-        assertFalse(model.isSaved.value)
+        val model = GmvEditablePropertyModel("Test", "Initial Value", "Custom", listOf("A" to "label A", "B" to "label B"))
+        assertFalse(model.isOriginal.value)
+        assertTrue(model.isCustom.value)
+        assertFalse(model.isValueOption.value)
+        assertTrue(model.isValueCyclable.value)
+        assertTrue(model.isDeletable.value)
+        assertFalse(model.isDeletePending.value)
+        assertFalse(model.isUpdatePending.value)
+        assertFalse(model.isAnyChangePending.value)
         assertEquals(1, model.editingIndex.value)
-        assertEquals("B", model.editingValue.value)
+        assertEquals("Changed - Custom", model.changeLabel.value)
 
         model.nextValue()
-        assertFalse(model.isSaved.value)
-        assertEquals(0, model.editingIndex.value)
-        assertEquals("A", model.editingValue.value)
+        assertFalse(model.isOriginal.value)
+        assertEquals(2, model.editingIndex.value)
+        assertEquals("Changed - label A", model.changeLabel.value)
 
-        model.saveValue()
-        assertEquals(-1, model.editingIndex.value)
         model.nextValue()
+        assertFalse(model.isOriginal.value)
+        assertEquals(3, model.editingIndex.value)
+        assertEquals("Changed - label B", model.changeLabel.value)
+
+        model.nextValue()
+        assertTrue(model.isOriginal.value)
         assertEquals(0, model.editingIndex.value)
-        model.nextValue()
-        assertEquals(1, model.editingIndex.value)
-        model.nextValue()
-        assertEquals(-1, model.editingIndex.value)
+        assertEquals("Original", model.changeLabel.value)
+    }
+
+    //endregion
+
+    @Test
+    fun testMultiModel() {
+        val model = MetadataValidatorModel()
+        assertFalse(model.isChanged.value)
+
+        val prop1 = GmvEditablePropertyModel<Any?>("Test", "Initial Value", "Custom", listOf("A" to "label A", "B" to "label B"))
+        assertFalse(prop1.isAnyChangePending.value)
+
+        model.merge(listOf(prop1), true)
+        assertFalse(model.isChanged.value)
+
+        prop1.isUpdatePending.set(true)
+        assertTrue(model.isChanged.value)
     }
 
     @Test
@@ -124,14 +263,14 @@ class GmvEditablePropertyModelTest {
         assertEquals(listOf("author 1", "author 2"), merged.combined.authors)
         assertEquals(listOf("section", "section B"), merged.combined.sections)
 
-        val gpl = merged.asGmvPropList(markSaved = false)
+        val gpl = merged.asGmvPropList(isOriginal = false)
         assertEquals(11, gpl.size)
         assertEquals("title", gpl[0].editingValue.value)
         assertEquals(0, gpl[0].editingIndex.value)
         assertEquals(3, gpl[0].getAlternateValueList().size)
         assertEquals(listOf("title" to "Combined", "title" to "A", "title B" to "B"), gpl[0].getAlternateValueList())
-        assertFalse(gpl[0].isSaved.value)
-        assertTrue(gpl[0].supportsValueCycling.value)
+        assertFalse(gpl[0].isOriginal.value)
+        assertTrue(gpl[0].isValueCyclable.value)
     }
 
     @Test

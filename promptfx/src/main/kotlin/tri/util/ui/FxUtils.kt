@@ -21,7 +21,9 @@ package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.BooleanExpression
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
@@ -266,6 +268,21 @@ fun <X, Y, Z> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>, tr
         }
     }
     return resultList
+}
+
+fun <T : Any> booleanListBindingOr(list: ObservableList<T>, defaultValue: Boolean = false, itemToBooleanExpr: T.() -> BooleanExpression): BooleanExpression {
+    val facade = SimpleBooleanProperty()
+    fun rebind() {
+        if (list.isEmpty()) {
+            facade.unbind()
+            facade.value = defaultValue
+        } else {
+            facade.cleanBind(list.map(itemToBooleanExpr).reduce { a, b -> a.or(b) })
+        }
+    }
+    list.onChange { rebind() }
+    rebind()
+    return facade
 }
 
 //endregion

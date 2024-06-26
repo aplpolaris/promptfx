@@ -34,7 +34,7 @@ import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
 /** Plugin for the [TextLibraryView]. */
-class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Tools", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextLibraryView::class)
+class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Documents", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextLibraryView::class)
 
 /** A view designed to help you manage collections of documents and text. */
 class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
