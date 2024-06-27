@@ -54,6 +54,10 @@ class GmvEditablePropertyModel<X>(
 
     /** If editing value is the original value. */
     val isOriginal = editingValue.isEqualTo(originalValue) and !isDeletePending
+    /** If editing value is new. */
+    val isNew = originalValue.isNull and !isDeletePending
+    /** If editing value is new and has not been marked for update. */
+    val isNewNotPending = isNew and !isUpdatePending
     /** If editing value is the custom value. */
     val isCustom = editingValue.isEqualTo(customValue) and !isDeletePending
     /** If editing value is in the list of value options. */
@@ -86,22 +90,25 @@ class GmvEditablePropertyModel<X>(
     /** Flag indicating whether value cycling is supported. */
     val isValueCyclable = valueCycleList.sizeProperty.ge(2)
 
+    /** Get label associated with current editing index. */
+    fun editingValueLabel() = valueCycleList.getOrNull(editingIndex.value)?.second
+
     /** Label indicating whether value has been changed. */
     val changeLabel = editingIndex.stringBinding(valueCycleList, isDeletePending, isOriginal, isUpdatePending) {
-        val label = valueCycleList.getOrNull(editingIndex.value)?.second
-        if (isDeletePending.value)
-            "Marked for Deletion"
-        else if (isUpdatePending.value)
-            "Marked for Update - $label"
-        else if (originalValue.value == null)
-            "New - $label"
-        else if (isOriginal.value && label == "Original")
-            "Original"
-        else if (isOriginal.value)
-            "Unchanged - $label"
-        else
-            "Changed - $label"
+        val label = editingValueLabel()
+        when {
+            isDeletePending.value -> "Marked for Deletion"
+            isUpdatePending.value && originalValue.value == null -> "Marked for Creation - $label"
+            isUpdatePending.value -> "Marked for Update - $label"
+            isNew.value -> "New - $label"
+            isOriginal.value && label == "Original" -> "Original"
+            isOriginal.value -> "Unchanged - $label"
+            else -> kotlin.error("Unexpected state")
+        }
     }
+
+    /** Label for update button. */
+    val updateLabel = originalValue.stringBinding { if (it == null) "Keep" else "Update" }
 
     /** Return true if both the original and editing values are empty or blank. */
     fun hasNonEmptyValues(): Boolean {

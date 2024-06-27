@@ -3,7 +3,9 @@ package tri.promptfx.library
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.geometry.Orientation
+import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
+import javafx.scene.control.ButtonType
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.TextCompletion
@@ -30,6 +32,9 @@ class PdfViewerWithMetadataUi(
     private val progress: AiProgressView by inject()
     private val metadataModel: MetadataValidatorModel by inject()
     private val metadataGuessPageCount = SimpleIntegerProperty(2)
+
+    /** Flag tracking whether changes have been made. */
+    private val changesApplied = booleanProperty(false)
 
     init {
         val fileProps = doc.metadata.asGmvPropList("", isOriginal = true)
@@ -81,14 +86,23 @@ class PdfViewerWithMetadataUi(
                         label(progress.label.textProperty())
                     }
                     toolbar {
-                        text("Changes:")
-                        button("Apply") {
+                        visibleWhen(metadataModel.isChanged)
+                        managedWhen(metadataModel.isChanged)
+                        text("Updated Properties:")
+                        button("Apply Changes", FontAwesomeIcon.SAVE.graphic) {
                             enableWhen(metadataModel.isChanged)
-                            action { metadataModel.applyPendingChanges() }
+                            tooltip("Update metadata with any marked changes.")
+                            action { applyPendingChanges() }
                         }
-                        button("Revert") {
+                        button("Reset", FontAwesomeIcon.UNDO.graphic) {
                             enableWhen(metadataModel.isChanged)
-                            action { metadataModel.revertPendingChanges() }
+                            tooltip("Reset any changes that are pending.")
+                            action { revertPendingChanges() }
+                        }
+                        button("Discard Unsaved", FontAwesomeIcon.TRASH.graphic) {
+                            tooltip("Discard any properties from the list below that have not been saved.")
+                            enableWhen(metadataModel.isAnyUnsavedNew)
+                            action { discardUnsavedNew() }
                         }
                     }
                 }
@@ -99,8 +113,11 @@ class PdfViewerWithMetadataUi(
             paddingAll = 10.0
             button("OK", ButtonBar.ButtonData.OK_DONE) {
                 action {
-                    close()
-                    onClose(metadataModel)
+                    val confirm = confirmClose()
+                    if (confirm == ButtonType.OK) {
+                        close()
+                        onClose(metadataModel)
+                    }
                 }
             }
             button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE) {
@@ -109,6 +126,36 @@ class PdfViewerWithMetadataUi(
                 }
             }
         }
+    }
+
+    //region USER ACTIONS
+
+    /** Confirm closing the window if there are unsaved changes. */
+    private fun confirmClose(): ButtonType {
+        var result: ButtonType = ButtonType.CANCEL
+        if (!metadataModel.isChanged.value) {
+            if (changesApplied.value) {
+                alert(
+                    Alert.AlertType.CONFIRMATION, "Confirm Changes", "Save changes made to metadata?",
+                    ButtonType.OK, ButtonType.CANCEL, title = "Confirm Changes", owner = currentWindow
+                ) {
+                    result = it
+                }
+            } else {
+                result = ButtonType.OK
+            }
+        } else {
+            val changeDescription = metadataModel.pendingChangeDescription()
+            alert(
+                Alert.AlertType.CONFIRMATION, "Apply the following changes to the metadata?", changeDescription,
+                ButtonType.OK, ButtonType.CANCEL, title = "Confirm Changes", owner = currentWindow
+            ) {
+                if (it == ButtonType.OK)
+                    metadataModel.applyPendingChanges()
+                result = it
+            }
+        }
+        return result
     }
 
     /** Extract metadata for the given document if possible. */
@@ -137,5 +184,32 @@ class PdfViewerWithMetadataUi(
             metadataModel.merge(it.asGmvPropList(isOriginal = false), filterUnique = false)
         }
     }
+
+    /** Apply any pending changes to the metadata. */
+    private fun applyPendingChanges() {
+        val changeDescription = metadataModel.pendingChangeDescription()
+        confirm(title = "Confirm Changes", header = "Apply the following changes to the metadata?", content = changeDescription, owner = currentWindow) {
+            metadataModel.applyPendingChanges()
+            changesApplied.set(true)
+        }
+    }
+
+    /** Revert any pending changes to the metadata. */
+    private fun revertPendingChanges() {
+        val changeDescription = metadataModel.pendingChangeDescription()
+        confirm(title = "Confirm Revert", header = "Reset the following changes to the metadata?", content = changeDescription, owner = currentWindow) {
+            metadataModel.revertPendingChanges()
+        }
+    }
+
+    /** Remove any unsaved properties from the list. */
+    private fun discardUnsavedNew() {
+        val changeDescription = metadataModel.unsavedNewValuesDescription()
+        confirm(title = "Confirm Remove", header = "Remove the following properties with unsaved changes?", content = changeDescription, owner = currentWindow) {
+            metadataModel.discardUnsavedNew()
+        }
+    }
+
+    //endregion
 
 }

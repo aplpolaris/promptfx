@@ -91,22 +91,20 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region DERIVED PROPERTIES
 
     /** Get value indicating if the library has been modified. */
-    fun savedStatusProperty(library: TextLibraryInfo): ObservableStringValue {
-        return Bindings.createStringBinding({
+    fun savedStatusProperty(library: TextLibraryInfo): ObservableStringValue =
+        Bindings.createStringBinding({
             librariesModified.contains(library).let {
-                if (it) "Modified" else "Saved"
+                if (it) "Modified" else ""
             }
         }, librariesModified)
-    }
 
     /** Get value indicating if the document has been modified. */
-    fun savedStatusProperty(doc: TextDoc): ObservableStringValue {
-        return Bindings.createStringBinding({
+    fun savedStatusProperty(doc: TextDoc): ObservableStringValue =
+        Bindings.createStringBinding({
             docsModified.contains(doc).let {
                 if (it) "Metadata Modified" else ""
             }
         }, docsModified)
-    }
 
     //endregion
 

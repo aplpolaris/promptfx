@@ -45,7 +45,10 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                         }
                         spacer()
                         text(it.changeLabel) {
-                            style = "-fx-font-style: italic; -fx-text-fill: light-gray"
+                            styleProperty().bind(textProperty().stringBinding {
+                                val color = if (it == "Original") "light-gray" else "red"
+                                "-fx-font-style: italic; -fx-text-fill: $color"
+                            })
                         }
                         button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
                             disableWhen(it.isValueCyclable.not() or it.isDeletePending)
@@ -55,7 +58,8 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                             disableWhen(it.isValueCyclable.not() or it.isDeletePending)
                             action { it.nextValue() }
                         }
-                        checkbox("Update", it.isUpdatePending) {
+                        checkbox("", it.isUpdatePending) {
+                            textProperty().bind(it.updateLabel)
                             isVisible = it.isEditable
                             graphic = FontAwesomeIcon.CHECK_CIRCLE_ALT.graphic
                             isManaged = it.isEditable
@@ -66,6 +70,12 @@ class MetadataValidatorUi : UIComponent("Confirm Metadata") {
                             visibleWhen(it.isDeletable)
                             managedWhen(it.isDeletable)
                             enableWhen(it.isDeletable)
+                        }
+                        button("Discard", FontAwesomeIcon.TRASH.graphic) {
+                            visibleWhen(it.isNew)
+                            managedWhen(it.isNew)
+                            enableWhen(it.isNewNotPending)
+                            action { model.discard(it) }
                         }
                     }
                     propertyvalue(it)
@@ -107,6 +117,29 @@ class MetadataValidatorModel: ScopedInstance, Component() {
 
     val props = observableListOf<GmvEditablePropertyModel<Any?>>()
     val isChanged = booleanListBindingOr(props, false, GmvEditablePropertyModel<*>::isAnyChangePending)
+    val isAnyUnsavedNew = booleanListBindingOr(props, false, GmvEditablePropertyModel<*>::isNewNotPending)
+
+    /** Get label summary of pending changes. */
+    fun pendingChangeDescription(): String {
+        val status = props.groupingBy {
+            when {
+                it.isDeletePending.value -> "Marked for Deletion"
+                it.isUpdatePending.value && it.originalValue.value == null -> "Marked for Creation"
+                it.isUpdatePending.value -> "Marked for Update"
+                it.originalValue.value == null -> "Ignored"
+                it.isOriginal.value -> "Unchanged"
+                else -> throw IllegalStateException()
+            }
+        }.eachCount()
+        return status.filter { it.value > 0 }.entries.joinToString(", ") { "${it.value} ${it.key}" }
+    }
+
+    /** Label summary of new values that are not marked for update. */
+    fun unsavedNewValuesDescription(): String {
+        val status = props.filter { it.originalValue.value == null && !it.isAnyChangePending.value }
+            .map { it.name }
+        return status.joinToString(", ")
+    }
 
     /** Return a map of all properties that have been selected and edited. */
     fun savedValues(): Map<String, Any> = props
@@ -138,5 +171,16 @@ class MetadataValidatorModel: ScopedInstance, Component() {
     /** Revert any pending changes. */
     fun revertPendingChanges() {
         props.forEach { it.revertChanges() }
+    }
+
+    /** Discards all new values not marked for update. */
+    fun discardUnsavedNew() {
+        val toRemove = props.filter { it.originalValue.value == null && !it.isUpdatePending.value }
+        props.removeAll(toRemove)
+    }
+
+    /** Discards a property from the list. */
+    fun discard(it: GmvEditablePropertyModel<Any?>) {
+        props.remove(it)
     }
 }
