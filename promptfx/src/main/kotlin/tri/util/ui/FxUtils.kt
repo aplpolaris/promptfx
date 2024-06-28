@@ -21,20 +21,18 @@ package tri.util.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.BooleanExpression
 import javafx.beans.property.Property
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
-import javafx.collections.FXCollections
+import javafx.beans.value.WritableValue
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventTarget
-import javafx.scene.control.Hyperlink
-import javafx.scene.control.TextField
-import javafx.scene.control.TextInputControl
+import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.input.DataFormat
 import javafx.scene.input.TransferMode
@@ -225,7 +223,7 @@ fun UIComponent.showImageDialog(image: Image) {
         }
         padding = insets(0)
         form.padding = insets(1)
-        form.background = Color.BLACK.asBackground()
+        form.background = Color.WHITE.asBackground()
     }
     // center dialog on window (dialog method doesn't do this because it adds content after centering on owner)
     d?.owner?.let {
@@ -270,6 +268,57 @@ fun <X, Y, Z> createListBinding(obj: ObservableValue<X>, op: (X?) -> List<Y>, tr
         }
     }
     return resultList
+}
+
+fun <T : Any> booleanListBindingOr(list: ObservableList<T>, defaultValue: Boolean = false, itemToBooleanExpr: T.() -> BooleanExpression): BooleanExpression {
+    val facade = SimpleBooleanProperty()
+    fun rebind() {
+        if (list.isEmpty()) {
+            facade.unbind()
+            facade.value = defaultValue
+        } else {
+            facade.cleanBind(list.map(itemToBooleanExpr).reduce { a, b -> a.or(b) })
+        }
+    }
+    list.onChange { rebind() }
+    rebind()
+    return facade
+}
+
+//endregion
+
+//region ListView BINDINGS
+
+/** Binds a single selected value of a [ListView] to an existing [Property]. */
+fun <X, T> ListView<X>.bindSelectionBidirectional(property: T) where T : WritableValue<X>, T : Property<X> {
+    selectionModel.selectionMode = SelectionMode.SINGLE
+    selectionModel.selectedItemProperty().onChange { property.value = it }
+    property.onChange {
+        if (it == null)
+            selectionModel.clearSelection()
+        else
+            selectionModel.select(it)
+    }
+}
+
+/** Binds multiple selected values of a [ListView] to an existing [ObservableList]. */
+fun <X> ListView<X>.bindSelectionBidirectional(property: ObservableList<X>) {
+    selectionModel.selectionMode = SelectionMode.MULTIPLE
+    var isUpdating = false
+    selectionModel.selectedItems.onChange {
+        isUpdating = true
+        property.setAll(it.list.toList())
+        isUpdating = false
+    }
+    property.onChange {
+        if (!isUpdating) {
+            val indices = it.list.map { items.indexOf(it) }.toIntArray()
+            if (indices.isEmpty())
+                selectionModel.clearSelection()
+            else
+                selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
+        }
+    }
 }
 
 //endregion

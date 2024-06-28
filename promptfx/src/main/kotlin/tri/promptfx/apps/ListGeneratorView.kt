@@ -30,6 +30,7 @@ import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -50,8 +51,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
     private val itemCategory = SimpleStringProperty("")
     private val sampleItems = SimpleStringProperty("")
 
-    private val promptId = SimpleStringProperty(PROMPT_PREFIX)
-    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+    private val prompt = PromptSelectionModel(PROMPT_PREFIX)
 
     private val output = SimpleObjectProperty<ListPromptResult>()
     private val outputItems = observableListOf<String>()
@@ -67,7 +67,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
                 tooltip("Provide known/existing/sample items in the list, separated by commas.")
                 textfield(sampleItems)
             }
-            promptfield("Prompt", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
+            promptfield("Prompt", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
         }
         addDefaultTextCompletionParameters(common)
     }
@@ -124,7 +124,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             output.set(null)
             outputItems.clear()
         }
-        return completionEngine.templatePlan(promptId.value,
+        return completionEngine.templatePlan(prompt.text.value,
             AiPrompt.INPUT to sourceText.get(),
             "item_category" to itemCategory.get(),
             "known_items" to sampleItems.get().split(",")

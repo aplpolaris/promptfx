@@ -48,9 +48,9 @@ import java.net.URLDecoder
 /**
  * This code is adapted from https://github.com/edvin/tornadofx-samples/blob/master/pdf-viewer/src/main/kotlin/pdf/Main.kt.
  */
-class PdfViewer : View("") {
+class PdfViewer : Fragment("") {
 
-    val viewModel: PdfViewModel by inject()
+    val viewModel = PdfViewModel()
 
     init {
         titleProperty.bind(viewModel.documentURIString)
@@ -151,7 +151,7 @@ class PdfViewModel : ViewModel() {
                 pdfRenderer = PDFRenderer(document)
                 pageCount.value = document?.pages?.count
                 document?.getPage(0)?.let { setScaleFor(it) }
-                openPage(0)
+                openPage(1)
             }
         }
         documentURIString.onChange { documentURI.value = URI(it) }
@@ -162,7 +162,13 @@ class PdfViewModel : ViewModel() {
             }
             documentInputStream.value = input
         }
-        currentPageNumber.onChange { openPage(it) }
+        currentPageNumber.addListener { _, old, nue ->
+            try {
+                openPage(nue.toInt())
+            } catch (x: IndexOutOfBoundsException) {
+                currentPageNumber.set(old.toInt())
+            }
+        }
     }
 
     private fun setScaleFor(page: PDPage) {

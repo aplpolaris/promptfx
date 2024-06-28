@@ -96,3 +96,8 @@ text-simplify-audience:
     ```
     {{{input}}}
     ```
+    
+image-describe-ips:
+  template-name: Get IPs from image
+  template-prompt: |
+    Extract a list of IPs found in the image, as a JSON list. If there are none, return an empty list.

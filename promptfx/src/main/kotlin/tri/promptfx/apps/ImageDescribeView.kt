@@ -20,21 +20,17 @@
 package tri.promptfx.apps
 
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
 import javafx.scene.image.Image
-import tornadofx.combobox
-import tornadofx.field
-import tornadofx.stringBinding
-import tornadofx.tooltip
+import tornadofx.*
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxModels
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.toUri
 import java.net.URI
 
@@ -51,8 +47,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     private val image = SimpleObjectProperty<Image>(null)
     private val model = SimpleObjectProperty(PromptFxModels.visionLanguageModelDefault())
 
-    private val promptId = SimpleStringProperty("$PROMPT_PREFIX-basic")
-    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+    private val prompt = PromptSelectionModel("$PROMPT_PREFIX-basic")
 
     init {
         addInputImageArea(image)
@@ -63,7 +58,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
         }
         parameters("Prompt") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
-            promptfield("Prompt", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
+            promptfield("Prompt", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
         }
         parameters("Model Parameters") {
             with (common) {
@@ -74,7 +69,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     }
 
     override fun plan() = task("Describe Image") {
-        describeImage(promptText.value)
+        describeImage(prompt.text.value)
     }.planner
 
     fun setImage(image: Image) {

@@ -39,7 +39,7 @@ import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.tools.TextLibraryInfo
+import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.TextChunkListView
@@ -106,7 +106,7 @@ class DocumentInsightView: AiPlanTaskView(
                     add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    add(TextChunkListView(snippets.sectionViewModel(embeddingService.modelId), hostServices))
+                    add(TextChunkListView(snippets.sectionViewModel(embeddingService.modelId)))
                 }
             }
         }

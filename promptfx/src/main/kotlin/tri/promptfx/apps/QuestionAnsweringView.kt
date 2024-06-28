@@ -24,6 +24,7 @@ import tornadofx.*
 import tri.ai.openai.instructTextPlan
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -42,8 +43,7 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     private val instruct = SimpleStringProperty("")
     private val input = SimpleStringProperty("")
 
-    private val promptId = SimpleStringProperty(PROMPT_PREFIX)
-    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+    private val prompt = PromptSelectionModel(PROMPT_PREFIX)
 
     init {
         addInputTextArea(instruct) {
@@ -58,13 +58,13 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
         }
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
-            promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
+            promptfield("Template", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
         }
         addDefaultTextCompletionParameters(common)
     }
 
     override fun plan() = completionEngine.instructTextPlan(
-        promptId.value,
+        prompt.text.value,
         instruct = instruct.get(),
         userText = input.get(),
         tokenLimit = common.maxTokens.value!!,

@@ -29,6 +29,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.library.TextManagerPlugin;
 import tri.promptfx.tools.*;
 import tri.util.ui.NavigableWorkspaceView;
 
@@ -84,6 +85,7 @@ module tri.promptfx {
     opens tri.promptfx.docs to tornadofx, com.github.mustachejava;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
+    opens tri.promptfx.library to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
     opens tri.util.ui.starship to com.fasterxml.jackson.databind;
@@ -94,6 +96,7 @@ module tri.promptfx {
     exports tri.promptfx.docs;
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
+    exports tri.promptfx.library;
     exports tri.promptfx.tools;
     exports tri.promptfx.ui;
     exports tri.util.ui;
@@ -113,9 +116,9 @@ module tri.promptfx {
             PromptScriptPlugin,
             PromptTemplatePlugin,
             PromptValidatorPlugin,
-            TextManagerPlugin,
             DocumentQaPlugin,
             DocumentInsightPlugin,
+            TextManagerPlugin,
             EntityExtractionPlugin,
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,

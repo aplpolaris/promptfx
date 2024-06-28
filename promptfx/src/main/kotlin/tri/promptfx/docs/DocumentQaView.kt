@@ -44,7 +44,8 @@ import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.promptTraceContextMenu
-import tri.promptfx.tools.TextLibraryInfo
+import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.TextChunkListView
 import tri.promptfx.ui.matchViewModel
 import tri.promptfx.ui.promptfield
@@ -61,11 +62,8 @@ class DocumentQaView: AiPlanTaskView(
     "Enter question below to respond based on content of documents in a specified folder.",
 ), TextLibraryReceiver {
 
-    private val promptId = SimpleStringProperty("$PROMPT_PREFIX-docs")
-    private val promptText = promptId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
-
-    private val joinerId = SimpleStringProperty("$JOINER_PREFIX-citations")
-    private val joinerText = joinerId.stringBinding { AiPromptLibrary.lookupPrompt(it!!).template }
+    private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
+    private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
 
     val question = SimpleStringProperty("")
 
@@ -118,7 +116,7 @@ class DocumentQaView: AiPlanTaskView(
                     action { exportDocumentSnippets() }
                 }
             }
-            add(TextChunkListView(planner.snippets.matchViewModel(), hostServices))
+            add(TextChunkListView(planner.snippets.matchViewModel()))
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = { planner.reindexAllDocuments() }
@@ -143,8 +141,8 @@ class DocumentQaView: AiPlanTaskView(
         addDefaultTextCompletionParameters(common)
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
-            promptfield("Template", promptId, AiPromptLibrary.withPrefix(PROMPT_PREFIX), promptText, workspace)
-            promptfield("Snippet Joiner", joinerId, AiPromptLibrary.withPrefix(JOINER_PREFIX), joinerText, workspace)
+            promptfield("Template", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
+            promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
         outputPane.clear()
@@ -181,11 +179,11 @@ class DocumentQaView: AiPlanTaskView(
 
     override fun plan() = planner.plan(
         question = question.value,
-        promptId = promptId.value,
+        promptId = prompt.id.value,
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,
-        contextStrategy = GroupingTemplateJoiner(joinerId.value),
+        contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
         maxTokens = common.maxTokens.value,
