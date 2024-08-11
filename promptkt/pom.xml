@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.7.1</version>
+    <version>0.7.2-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM and prompt engineering.</description>
