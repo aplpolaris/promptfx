@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.7.2-SNAPSHOT</version>
+    <version>0.7.1-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM and prompt engineering.</description>
@@ -37,7 +37,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>promptkt-0.7.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
@@ -463,7 +463,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
