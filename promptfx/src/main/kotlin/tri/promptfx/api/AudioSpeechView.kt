@@ -99,7 +99,7 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
                 slider(0.25..4.0) {
                     valueProperty().bindBidirectional(audioSpeed)
                 }
-                label(audioSpeed.asString())
+                label(audioSpeed.asString("%.2f"))
             }
         }
         output {

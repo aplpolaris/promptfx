@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptfx</artifactId>
-    <version>0.7.1-SNAPSHOT</version>
+    <version>0.7.3-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM demo application.</description>
@@ -71,7 +71,7 @@
         <kotlin.version>1.8.22</kotlin.version>
         <kotlin-coroutines-test.version>1.7.3</kotlin-coroutines-test.version>
         <kotlin-dokka.version>1.8.20</kotlin-dokka.version>
-        <tornadofx.version>2.0.2-SNAPSHOT</tornadofx.version>
+        <tornadofx.version>2.0.3</tornadofx.version>
     </properties>
 
     <dependencies>
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt</artifactId>
-            <version>0.7.1-SNAPSHOT</version>
+            <version>0.7.3-SNAPSHOT</version>
         </dependency>
 
         <dependency>

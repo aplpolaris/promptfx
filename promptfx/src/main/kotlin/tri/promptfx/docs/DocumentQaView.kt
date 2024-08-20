@@ -130,7 +130,6 @@ class DocumentQaView: AiPlanTaskView(
             field("Minimum chars") {
                 tooltip("Snippets with a character count below this limit will be ignored")
                 sliderwitheditablelabel(1..1000, minChunkSizeForRelevancy)
-                label(minChunkSizeForRelevancy)
             }
             field("Query snippets") {
                 tooltip("Number of matching snippets to send to the question answering engine")
