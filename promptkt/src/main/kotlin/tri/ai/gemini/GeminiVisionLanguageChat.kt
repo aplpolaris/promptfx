@@ -51,7 +51,9 @@ class GeminiVisionLanguageChat(override val modelId: String, val client: GeminiC
                 "model" -> TextChatRole.Assistant
                 else -> error("Invalid role: ${it.content.role}")
             }
-            AiTaskResult.result(TextChatMessage(role, it.content.parts[0].text))
+            AiTaskResult.results(it.content.parts.map {
+                TextChatMessage(role, it.text)
+            })
         }
     }
 

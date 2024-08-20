@@ -45,7 +45,7 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
     fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiTaskResult<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
             override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-                op(inputs[lastTask.id]!!.value as S)
+                op(inputs[lastTask.id]!!.values as S)
         }
         return AiTaskList(plan, newTask)
     }
@@ -58,11 +58,11 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
  * @throws IllegalArgumentException if there are duplicate task IDs
  */
-inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
+inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<T> {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
-    val finalTask = object : AiTask<List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
+    val finalTask = object : AiTask<T>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.result(inputs.values.map { it.value as T }.toList())
+            AiTaskResult.results((inputs.values as Collection<AiTaskResult<T>>).flatMap { it.values ?: listOf() }.toList())
     }
     return AiTaskList(this, finalTask)
 }

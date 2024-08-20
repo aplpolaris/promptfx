@@ -105,7 +105,7 @@ class DocumentQaPlanner {
                     it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding).toFloat()
                 }
             }
-            response.map {
+            response.mapvalue {
                 QuestionAnswerResult(
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,

@@ -172,7 +172,7 @@ class DocumentInsightView: AiPlanTaskView(
                     reducePromptUi.fill(AiPrompt.INPUT to concat),
                     common.maxTokens.value,
                     common.temp.value
-                ).map { concat to it }
+                ).mapvalue { concat to it }
             }.planner
     }
 

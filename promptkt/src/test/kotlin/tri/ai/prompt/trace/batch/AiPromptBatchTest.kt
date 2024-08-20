@@ -71,7 +71,7 @@ class AiPromptBatchTest {
             )
             val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
-                addTraces(result.results.values.map { it.value as AiPromptTrace })
+                addTraces(result.results.values.map { it.values!![0] as AiPromptTrace })
             }
             val output = jsonWriter.writeValueAsString(db)
             val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)

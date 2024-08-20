@@ -31,7 +31,8 @@ interface TextCompletion {
         text: String,
         tokens: Int? = 150,
         temperature: Double? = null,
-        stop: String? = null
+        stop: String? = null,
+        numResponses: Int? = 1
     ): AiTaskResult<String>
 
 }

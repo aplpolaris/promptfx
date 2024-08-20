@@ -123,7 +123,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
                 TextChatMessage(TextChatRole.System, "You are a chatbot that summarizes key content from prior conversations."),
                 TextChatMessage(TextChatRole.User, query)
             ))
-        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.value!!.content ?: "").trim())
+        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.values!![0].content ?: "").trim())
         chatHistory.add(MemoryItem(summaryMessage))
     }
 

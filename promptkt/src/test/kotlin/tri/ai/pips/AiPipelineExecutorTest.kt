@@ -31,7 +31,7 @@ class AiPipelineExecutorTest {
             listOf(GoTask("pass"), FailTask("fail")),
             PrintMonitor()).results
         assertEquals(2, results.size)
-        assertEquals("go", results["pass"]?.value)
+        assertEquals("go", results["pass"]?.values!![0])
         assertNotNull(results["fail"]?.error)
     }
 
@@ -41,9 +41,9 @@ class AiPipelineExecutorTest {
             listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
             PrintMonitor()).results
         assertEquals(3, results.size)
-        assertEquals("go", results["a"]?.value)
-        assertEquals("go", results["b"]?.value)
-        assertEquals("go", results["c"]?.value)
+        assertEquals("go", results["a"]?.values!![0])
+        assertEquals("go", results["b"]?.values!![0])
+        assertEquals("go", results["c"]?.values!![0])
     }
 
     @Test
@@ -52,9 +52,9 @@ class AiPipelineExecutorTest {
             listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
             PrintMonitor()).results
         assertEquals(2, results.size)
-        assertEquals("go", results["a"]?.value)
+        assertEquals("go", results["a"]?.values!![0])
         assertNotNull(results["b"]?.error)
-        assertNull(results["c"]?.value)
+        assertNull(results["c"]?.values!![0])
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {

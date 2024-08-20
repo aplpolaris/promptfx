@@ -31,13 +31,14 @@ class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val 
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiTaskResult<String> =
         client.completion(CompletionRequest(
             ModelId(modelId),
             text,
             maxTokens = tokens,
             temperature = temperature,
-            stop = stop?.let { listOf(it) }
+            stop = stop?.let { listOf(it) },
+            n = numResponses
         ))
 
 }

@@ -39,7 +39,9 @@ class ModelParameters {
         private const val DEFAULT_PRES_PENALTY = 0.0
         private const val DEFAULT_MAX_TOKENS = 500
         private const val DEFAULT_STOP_SEQUENCES = ""
+        private const val DEFAULT_NUM_RESPONSES = 1
         private const val TOKEN_SLIDER_MAX = 32000
+        private const val NUM_RESPONSES_MAX = 10
     }
 
     internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
@@ -49,6 +51,7 @@ class ModelParameters {
 
     internal val maxTokens = SimpleIntegerProperty(DEFAULT_MAX_TOKENS)
     internal val stopSequences = SimpleStringProperty(DEFAULT_STOP_SEQUENCES)
+    internal val numResponses = SimpleIntegerProperty(DEFAULT_NUM_RESPONSES)
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -96,6 +99,14 @@ class ModelParameters {
         }
     }
 
+    fun EventTarget.numResponses() {
+        field("Number of Responses") {
+            tooltip("Number of responses to generate.")
+            slider(1..NUM_RESPONSES_MAX, numResponses)
+            label(numResponses.asString())
+        }
+    }
+
     /** Generate model parameters object for [AiPromptModelInfo]. */
     fun toModelParams() = listOf(
         AiPromptModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
@@ -103,7 +114,8 @@ class ModelParameters {
         AiPromptModelInfo.FREQUENCY_PENALTY to if (freqPenalty.value == DEFAULT_FREQ_PENALTY) null else freqPenalty.value,
         AiPromptModelInfo.PRESENCE_PENALTY to if (presPenalty.value == DEFAULT_PRES_PENALTY) null else presPenalty.value,
         AiPromptModelInfo.MAX_TOKENS to if (maxTokens.value == DEFAULT_MAX_TOKENS) null else maxTokens.value,
-        AiPromptModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value
+        AiPromptModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value,
+        AiPromptModelInfo.NUM_RESPONSES to if (numResponses.value == DEFAULT_NUM_RESPONSES) null else numResponses.value
     ).filter { it.second != null }
     .toMap() as Map<String, Any>
 
@@ -115,6 +127,7 @@ class ModelParameters {
         (modelParams[AiPromptModelInfo.PRESENCE_PENALTY] as? Double)?.let { presPenalty.set(it) }
         (modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int)?.let { maxTokens.set(it) }
         (modelParams[AiPromptModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
+        (modelParams[AiPromptModelInfo.NUM_RESPONSES] as? Int)?.let { numResponses.set(it) }
     }
 
 }

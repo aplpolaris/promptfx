@@ -28,7 +28,7 @@ import java.time.Duration
  */
 data class AiTaskResult<T>(
     /** Result of the task. */
-    val value: T? = null,
+    val values: List<T>? = null,
     /** Error message, if any. */
     val errorMessage: String? = null,
     /** Error that occurred during execution, if any. */
@@ -43,9 +43,25 @@ data class AiTaskResult<T>(
     val attempts: Int? = null,
 ) {
 
+    constructor(
+        value: T,
+        errorMessage: String? = null,
+        error: Throwable? = null,
+        modelId: String? = null,
+        duration: Duration? = null,
+        durationTotal: Duration? = null,
+        attempts: Int? = null,
+    ) : this(listOf(value), errorMessage, error, modelId, duration, durationTotal, attempts)
+
     /** Applies an operation to the result value, if present. All other values are copied directly. */
-    fun <S> map(function: (T) -> S) = AiTaskResult(
-        value?.let { function(value) },
+    fun <S> mapvalue(function: (T) -> S) = AiTaskResult(
+        values?.let { it.map { function(it) } },
+        errorMessage, error, modelId, duration, durationTotal, attempts
+    )
+
+    /** Applies an operation to the list of result values, if present. All other values are copied directly. */
+    fun <S> maplist(function: (List<T>?) -> S) = AiTaskResult(
+        function(values),
         errorMessage, error, modelId, duration, durationTotal, attempts
     )
 
@@ -55,12 +71,12 @@ data class AiTaskResult<T>(
      */
     fun asPipelineResult(promptInfo: AiPromptInfo? = null, modelInfo: AiPromptModelInfo? = null): AiPipelineResult {
         if (promptInfo != null && modelInfo != null) {
-            return map {
+            return mapvalue {
                 AiPromptTrace(
                     promptInfo,
                     modelInfo,
                     AiPromptExecInfo(errorMessage, responseTimeMillis = durationTotal?.toMillis()),
-                    AiPromptOutputInfo(value?.toString())
+                    AiPromptOutputInfo(values)
                 )
             }.asPipelineResult()
         }
@@ -68,7 +84,11 @@ data class AiTaskResult<T>(
     }
 
     companion object {
-        /** Task with token result. */
+        /** Task with given results. */
+        fun <T> results(values: List<T>, modelId: String? = null) =
+            AiTaskResult(values, modelId = modelId)
+
+        /** Task with given result. */
         fun <T> result(value: T, modelId: String? = null) =
             AiTaskResult(value, modelId = modelId)
 

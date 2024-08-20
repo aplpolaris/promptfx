@@ -49,6 +49,7 @@ import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.OpenAiModelIndex.IMAGE_DALLE2
 import tri.ai.pips.AiTaskResult
 import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.pips.AiTaskResult.Companion.results
 import tri.ai.pips.UsageUnit
 import java.io.File
 import java.time.Duration
@@ -122,7 +123,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
         usage.increment(resp.usage)
         val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
         return AiTaskResult(
-            value = resp.choices[0].text,
+            values = resp.choices.map { it.text },
             modelId = completionRequest.model.id,
             duration = millis,
             durationTotal = millis
@@ -136,7 +137,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
         val resp = client.chatCompletion(completionRequest)
         val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
         return AiTaskResult(
-            value = resp.choices[0].message.content ?: "",
+            values = resp.choices.map { it.message.content ?: "" },
             modelId = completionRequest.model.id,
             duration = millis,
             durationTotal = millis
@@ -148,7 +149,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
         checkApiKey()
         return client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
-            result(it.choices[0].message, completionRequest.model.id)
+            results(it.choices.map { it.message }, completionRequest.model.id)
         }
     }
 
@@ -158,16 +159,16 @@ class OpenAiClient(val settings: OpenAiSettings) {
         checkApiKey()
         return client.edit(request).let {
             usage.increment(it.usage)
-            result(it.choices[0].text, request.model.id)
+            results(it.choices.map { it.text }, request.model.id)
         }
     }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation): AiTaskResult<List<String>> {
+    suspend fun imageURL(imageCreation: ImageCreation): AiTaskResult<String> {
         checkApiKey()
         return client.imageURL(imageCreation).let {
             usage.increment(it.size, UsageUnit.IMAGES)
-            result(it.map { it.url }, IMAGE_DALLE2)
+            results(it.map { it.url }, IMAGE_DALLE2)
         }
     }
 

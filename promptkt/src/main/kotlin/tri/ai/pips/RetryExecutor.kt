@@ -55,8 +55,10 @@ class RetryExecutor(
                     attempts = retries + 1
                 ).also {
                     // TODO - this hard-coded type check is brittle, potentially unexpected side effect behavior
-                    (it.value as? AiPromptTrace)?.execInfo?.error = it.errorMessage
-                    (it.value as? AiPromptTrace)?.execInfo?.responseTimeMillis = it.duration?.toMillis()
+                    (it.values!![0] as? AiPromptTrace)?.execInfo?.let { ei ->
+                        ei.error = it.errorMessage
+                        ei.responseTimeMillis = it.duration?.toMillis()
+                    }
                 }
             } catch (x: Exception) {
                 val t1 = System.currentTimeMillis()

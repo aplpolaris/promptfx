@@ -53,7 +53,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             model = ModelId(this@JsonToolExecutor.model),
             messages = messages,
             tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-        )).value!!
+        )).values!![0]
         messages += response
         var toolCalls = response.toolCalls as? List<ToolCall.Function>
 
@@ -82,7 +82,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
                         model = ModelId(this@JsonToolExecutor.model),
                         messages = messages,
                         tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-                    )).value!!
+                    )).values!![0]
                     messages += response
                     toolCalls = response.toolCalls as? List<ToolCall.Function>
                 } else {

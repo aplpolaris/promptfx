@@ -63,7 +63,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
                 responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
             }
         )
-        return response.map { TextChatMessage(TextChatRole.Assistant, it.content!!) }
+        return response.mapvalue { TextChatMessage(TextChatRole.Assistant, it.content!!) }
     }
 
     private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)

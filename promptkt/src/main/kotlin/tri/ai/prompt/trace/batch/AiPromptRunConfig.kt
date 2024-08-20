@@ -56,7 +56,7 @@ class AiPromptRunConfig(
         modelInfo.modelId = completion.modelId
         val promptText = promptInfo.filled()
         val result = completion.complete(promptText, modelInfo)
-        return result.map {
+        return result.maplist {
             AiPromptTrace(promptInfo, modelInfo,
                 AiPromptExecInfo(result.error?.message, responseTimeMillis = result.duration?.toMillis()),
                 AiPromptOutputInfo(it)
@@ -72,7 +72,8 @@ class AiPromptRunConfig(
             text = text,
             tokens = modelInfo.modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int,
             temperature = modelInfo.modelParams[AiPromptModelInfo.TEMPERATURE] as? Double,
-            stop = modelInfo.modelParams[AiPromptModelInfo.STOP] as? String
+            stop = modelInfo.modelParams[AiPromptModelInfo.STOP] as? String,
+            numResponses = modelInfo.modelParams[AiPromptModelInfo.NUM_RESPONSES] as? Int
         )
 
 }

@@ -34,17 +34,18 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?) =
-        complete(text, tokens, temperature, stop, null)
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?) =
+        complete(text, tokens, temperature, stop, null, numResponses)
 
-    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?): AiTaskResult<String> =
+    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?, numResponses: Int?): AiTaskResult<String> =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             listOf(ChatMessage(ChatRole.User, text)),
             temperature = temperature,
             maxTokens = tokens,
             stop = stop?.let { listOf(it) },
-            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null,
+            n = numResponses
         ))
 
 }

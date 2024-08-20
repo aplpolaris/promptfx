@@ -105,7 +105,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         val resp = AiPrompt(template.value).fill(fieldMap).let {
             completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value)
         }
-        resp.map {
+        resp.mapvalue {
             AiPromptTrace(
                 AiPromptInfo(template.value, fieldMap.toMap()),
                 AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),

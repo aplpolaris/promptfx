@@ -80,14 +80,20 @@ class GeminiClient : Closeable {
         }.body<BatchEmbedContentsResponse>()
     }
 
-    suspend fun generateContent(prompt: String, modelId: String) =
-        generateContent(modelId, GenerateContentRequest(Content.text(prompt)))
+    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null) =
+        generateContent(modelId, GenerateContentRequest(
+            content = Content.text(prompt),
+            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
+        ))
 
-    suspend fun generateContent(prompt: String, image: String, modelId: String): GenerateContentResponse {
-        val request = GenerateContentRequest(Content(listOf(
-            Part(text = prompt),
-            Part(inlineData = Blob(image, "image/jpeg"))
-        )))
+    suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null): GenerateContentResponse {
+        val request = GenerateContentRequest(
+            content = Content(listOf(
+                Part(text = prompt),
+                Part(inlineData = Blob(image, "image/jpeg"))
+            )),
+            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
+        )
         return generateContent(modelId, request)
     }
 

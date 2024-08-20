@@ -81,7 +81,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
         val textCompletion = completionEngine.complete(prompt, stop = "Observation: ")
-            .value!!.trim()
+            .values!![0].trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
 

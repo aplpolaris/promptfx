@@ -29,9 +29,9 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client
 
     override fun toString() = "$modelId (Gemini)"
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
-        client.generateContent(text, modelId).candidates!!.first().let {
-            AiTaskResult.result(it.content.parts[0].text!!)
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiTaskResult<String> =
+        client.generateContent(text, modelId, numResponses).candidates!!.first().let {
+            AiTaskResult.results(it.content.parts.map { it.text!! })
         }
 
 }

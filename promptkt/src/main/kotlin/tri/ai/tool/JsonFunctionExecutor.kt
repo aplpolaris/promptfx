@@ -53,7 +53,7 @@ class JsonFunctionExecutor(val client: OpenAiClient, val model: String, val tool
             model = ModelId(this@JsonFunctionExecutor.model),
             messages = messages,
             functions = this@JsonFunctionExecutor.functions.ifEmpty { null }
-        )).value!!
+        )).values!![0]
         var functionCall = response.functionCall
 
         while (functionCall != null) {
@@ -78,7 +78,7 @@ class JsonFunctionExecutor(val client: OpenAiClient, val model: String, val tool
                     model = ModelId(this@JsonFunctionExecutor.model),
                     messages = messages,
                     functions = this@JsonFunctionExecutor.functions.ifEmpty { null }
-                )).value!!
+                )).values!![0]
                 functionCall = response.functionCall
             } else {
                 functionCall = null

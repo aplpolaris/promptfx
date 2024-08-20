@@ -31,18 +31,18 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
 
     override fun toString() = modelId
 
-    override suspend fun generateImage(text: String, size: ImageSize, prompt: String?): URL {
+    override suspend fun generateImage(text: String, size: ImageSize, prompt: String?, numResponses: Int?): List<URL> {
         val images = client.imageURL(
             ImageCreation(
                 model = ModelId(modelId),
                 prompt = text,
-                n = 1,
+                n = numResponses ?: 1,
                 size = size.openAiSize(),
                 quality = null,
                 style = null
             )
         )
-        return URL(images.value!![0])
+        return images.values!!.map { URL(it) }
     }
 
     private fun ImageSize.openAiSize() = when {

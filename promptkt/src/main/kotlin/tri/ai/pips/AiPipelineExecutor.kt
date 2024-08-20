@@ -47,7 +47,7 @@ object AiPipelineExecutor {
                     monitor.taskStarted(it)
                     val input = it.dependencies.associateWith { completedTasks[it]!! }
                     val result = executor.execute(it, input, monitor)
-                    val resultValue = result.value
+                    val resultValue = result.values
                     val err = result.error ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         monitor.taskFailed(it, err)

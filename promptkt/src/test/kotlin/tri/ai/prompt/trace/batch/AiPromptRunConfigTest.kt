@@ -51,7 +51,7 @@ class AiPromptRunConfigTest {
     fun testExecute() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values!![0]
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
@@ -62,7 +62,7 @@ class AiPromptRunConfigTest {
     fun testExecute2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values!![0]
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

@@ -31,7 +31,8 @@ interface TextChat {
         messages: List<TextChatMessage>,
         tokens: Int? = 1000,
         stop: List<String>? = null,
-        requestJson: Boolean? = null
+        requestJson: Boolean? = null,
+        numResponses: Int? = null
     ): AiTaskResult<TextChatMessage>
 
 }

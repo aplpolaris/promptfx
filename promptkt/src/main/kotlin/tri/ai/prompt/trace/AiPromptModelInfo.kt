@@ -34,5 +34,6 @@ data class AiPromptModelInfo(
         const val TOP_P = "top_p"
         const val FREQUENCY_PENALTY = "frequency_penalty"
         const val PRESENCE_PENALTY = "presence_penalty"
+        const val NUM_RESPONSES = "num_responses"
     }
 }

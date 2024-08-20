@@ -24,5 +24,10 @@ import com.fasterxml.jackson.annotation.JsonInclude
 /** Text inference output info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class AiPromptOutputInfo(
-    var output: String? = null
-)
+    var outputs: List<*>? = null
+) {
+    companion object {
+        /** Create output info with a single output. */
+        fun output(output: Any) = AiPromptOutputInfo(listOf(output))
+    }
+}

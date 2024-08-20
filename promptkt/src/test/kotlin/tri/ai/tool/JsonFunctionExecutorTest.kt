@@ -116,7 +116,7 @@ class JsonFunctionExecutorTest {
             AiPromptLibrary.lookupPrompt("summarization").fill(
                 "input" to input,
                 "instruct" to "Extract the main point and research implications of the text in 1-2 concise sentences."
-            ).let { runBlocking { GPT35.complete(it).value!! } }
+            ).let { runBlocking { GPT35.complete(it).values!![0] } }
         }
         val tool3 = tool("Concepts", "Use this to extract the main concepts from text",
             """{"type":"object","properties":{"text":{"type":"string"}}}""") {
@@ -124,7 +124,7 @@ class JsonFunctionExecutorTest {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a list of concepts",
                 "input" to input
-            ).let { runBlocking { GPT35.complete(it).value!! } }
+            ).let { runBlocking { GPT35.complete(it).values!![0] } }
         }
         val tool4 = tool("Sentiment", "Use this to extract the sentiment from text",
             """{"type":"object","properties":{"text":{"type":"string"}}}""") {
@@ -132,7 +132,7 @@ class JsonFunctionExecutorTest {
             AiPromptLibrary.lookupPrompt("sentiment-classify").fill(
                 "input" to input,
                 "instruct" to "positive, negative, or neutral"
-            ).let { runBlocking { GPT35.complete(it).value!! } }
+            ).let { runBlocking { GPT35.complete(it).values!![0] } }
         }
         val tool5 = tool("CitationFinder", "Use this to extract the citations from text",
             """{"type":"object","properties":{"text":{"type":"string"}}}""") {
@@ -140,7 +140,7 @@ class JsonFunctionExecutorTest {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a list of citations",
                 "input" to input
-            ).let { runBlocking { GPT35.complete(it).value!! } }
+            ).let { runBlocking { GPT35.complete(it).values!![0] } }
         }
         val tool6 = tool("ConceptMap", "Use this to generate a concept map from text",
             """{"type":"object","properties":{"text":{"type":"string"}}}""") {
@@ -148,7 +148,7 @@ class JsonFunctionExecutorTest {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a PlantUML mindmap diagram",
                 "input" to input
-            ).let { runBlocking { GPT35.complete(it).value!! } }
+            ).let { runBlocking { GPT35.complete(it).values!![0] } }
         }
         val tool7 = tool("ReportGenerator", "Use this to write a formal report on the user's question, based on findings from previous responses",
             """{"type":"object","properties":{"text":{"type":"string"},"findings":{"type":"string"}}}""") {

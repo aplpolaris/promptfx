@@ -42,19 +42,19 @@ suspend fun TextCompletion.instructTask(promptId: String, instruct: String, user
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
     val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
     val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
-    val outputInfo = AiPromptOutputInfo(result.value)
+    val outputInfo = AiPromptOutputInfo(result.values)
     return AiTaskResult(AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo))
 }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?): AiTaskResult<AiPromptTrace> {
+suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?, numResponses: Int?): AiTaskResult<AiPromptTrace> {
     val res = AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
         if (this is OpenAiCompletionChat)
-            complete(it, tokenLimit, temp, null, requestJson)
+            complete(it, tokenLimit, temp, null, requestJson, numResponses)
         else
-            complete(it, tokenLimit, temp)
+            complete(it, tokenLimit, temp, null, numResponses)
     }
-    return res.map {
+    return res.maplist {
         AiPromptTrace(
             AiPromptInfo(AiPromptLibrary.lookupPrompt(promptId).template, fields),
             AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp)),
@@ -73,7 +73,7 @@ private fun <X> mapOfNotNull(vararg pairs: Pair<X, Any?>) =
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
 suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?) =
     promptTask(id, input, tokenLimit, temp).let {
-        it.map { jsonMapper.readValue<T>(it.trim()) }
+        it.mapvalue { jsonMapper.readValue<T>(it.trim()) }
     }
 
 //endregion
@@ -91,13 +91,13 @@ fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null) = aitask(promptId) {
-    templateTask(promptId, fields.toMap(), tokenLimit, temp, requestJson)
+fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) = aitask(promptId) {
+    templateTask(promptId, fields.toMap(), tokenLimit, temp, requestJson, numResponses)
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null) = aitask(promptId) {
-    templateTask(promptId, fields, tokenLimit, temp, requestJson)
+fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) = aitask(promptId) {
+    templateTask(promptId, fields, tokenLimit, temp, requestJson, numResponses)
 }.planner
 
 //endregion

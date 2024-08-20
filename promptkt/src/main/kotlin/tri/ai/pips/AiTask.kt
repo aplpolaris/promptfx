@@ -19,19 +19,27 @@
  */
 package tri.ai.pips
 
-/** Task that can be executed by AI or API. */
+/**
+ * Task that can be executed by AI or API.
+ * A task may have an arbitrary number of inputs that must be calculated prior to the task being executable.
+ * The types of these inputs are not specified.
+ */
 abstract class AiTask<T>(
     val id: String,
     val description: String? = null,
     val dependencies: Set<String> = setOf()
 ) {
+    /**
+     * A task that can be executed, using a table of input results indexed by key.
+     * Input types are not specified.
+     */
     abstract suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T>
 
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
-    fun monitor(callback: (T) -> Unit): AiTask<T> = object : AiTask<T>(id) {
+    fun monitor(callback: (List<T>) -> Unit): AiTask<T> = object : AiTask<T>(id) {
         override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T> {
             val res = this@AiTask.execute(inputs, monitor)
-            res.value?.let { callback(it) }
+            res.values?.let { callback(it) }
             return res
         }
     }

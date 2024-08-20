@@ -31,7 +31,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: Gemi
 
     override fun toString() = "$modelId (Gemini)"
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?) =
+    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?, numResponses: Int?) =
         client.generateContent(messages, modelId,
             GenerationConfig(
                 maxOutputTokens = tokens ?: 500,
@@ -44,7 +44,11 @@ class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: Gemi
                 "model" -> TextChatRole.Assistant
                 else -> error("Invalid role: ${it.content.role}")
             }
-            AiTaskResult.result(TextChatMessage(role, it.content.parts[0].text))
+            AiTaskResult.results(
+                it.content.parts.map { part ->
+                    TextChatMessage(role, part.text)
+                }
+            )
         }
 
 }

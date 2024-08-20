@@ -204,7 +204,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
             maxTokens.value,
             stop = listOf("\n")
-        ).map { it.content!! }
+        ).mapvalue { it.content!! }
     }
 
 }

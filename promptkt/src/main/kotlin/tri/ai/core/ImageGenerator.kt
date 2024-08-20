@@ -30,8 +30,9 @@ interface ImageGenerator {
     suspend fun generateImage(
         text: String,
         size: ImageSize,
-        prompt: String? = null
-    ): URL
+        prompt: String? = null,
+        numResponses: Int? = null
+    ): List<URL>
 
 }
 

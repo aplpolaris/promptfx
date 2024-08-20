@@ -51,6 +51,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 frequencyPenalty()
                 presencePenalty()
                 maxTokens()
+                numResponses()
             }
         }
     }
@@ -62,7 +63,8 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
             completionModel.complete(
                 text = input.get(),
                 tokens = common.maxTokens.value,
-                temperature = common.temp.value
+                temperature = common.temp.value,
+                numResponses = common.numResponses.value
             )
         } else {
             val completion = CompletionRequest(
@@ -73,6 +75,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 frequencyPenalty = common.freqPenalty.value,
                 presencePenalty = common.presPenalty.value,
                 maxTokens = common.maxTokens.value,
+                n = common.numResponses.value
             )
             controller.openAiPlugin.client.completion(completion)
         }
