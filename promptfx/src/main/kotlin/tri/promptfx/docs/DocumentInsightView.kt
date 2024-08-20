@@ -47,6 +47,7 @@ import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
@@ -129,8 +130,7 @@ class DocumentInsightView: AiPlanTaskView(
             }
             field("Minimum snippet size (chars)") {
                 tooltip("Minimum size to process")
-                slider(1..5000, minSnippetCharsToProcess)
-                label(minSnippetCharsToProcess)
+                sliderwitheditablelabel(1..5000, minSnippetCharsToProcess)
             }
         }
         addDefaultTextCompletionParameters(common)
