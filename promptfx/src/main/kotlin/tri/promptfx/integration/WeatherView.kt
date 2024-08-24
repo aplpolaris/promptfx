@@ -55,7 +55,7 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
     private suspend fun userInput(): String {
         var text = input.get()
         audio.file.value?.let {
-            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).value!!
+            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).firstValue!!
             input.set(text)
         }
         return text

@@ -45,7 +45,8 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
     fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiTaskResult<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
             override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-                op(inputs[lastTask.id]!!.values as S)
+                // TODO - eventually, add support for multiple outputs from previous task
+                op(inputs[lastTask.id]!!.firstValue as S)
         }
         return AiTaskList(plan, newTask)
     }

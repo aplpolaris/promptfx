@@ -164,9 +164,8 @@ class DocumentInsightView: AiPlanTaskView(
         reduceResult.set("")
 
         return promptBatch().aggregate()
-            .aitask("results-summarize") { list: List<AiPromptTrace> ->
-                val concat = list.mapNotNull { it.outputInfo.output }
-                    .joinToString("\n\n")
+            .aitask("results-summarize") { trace ->
+                val concat = trace.outputInfo.outputs!!.joinToString { "\n\n" }
                 runLater { mapResult.value = concat }
                 completionEngine.complete(
                     reducePromptUi.fill(AiPrompt.INPUT to concat),
@@ -194,9 +193,7 @@ class DocumentInsightView: AiPlanTaskView(
         }.tasks().map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->
-                res.outputInfo.output?.let {
-                    runLater { mapResult.value += "\n\n$it" }
-                }
+                runLater { mapResult.value += "\n\n${res.first().outputInfo.outputs?.getOrNull(0)}" }
             }
         }
     }

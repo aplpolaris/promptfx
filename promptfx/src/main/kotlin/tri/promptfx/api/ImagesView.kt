@@ -216,7 +216,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             )
             AiImageTrace(promptInfo, modelInfo,
                 AiPromptExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiImageOutputInfo(images.value!!)
+                AiImageOutputInfo(images.values ?: listOf())
             )
         } catch (x: OpenAIAPIException) {
             AiImageTrace(promptInfo, modelInfo, AiPromptExecInfo.error(x.message))

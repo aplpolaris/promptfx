@@ -29,7 +29,6 @@ import java.io.File
 import java.io.FileFilter
 
 /** Standalone app for asking questions of documents. */
-
 object DocumentQaRunner {
 
     private val platform by lazy { Platform.startup {  } }
@@ -53,7 +52,7 @@ object DocumentQaRunner {
             val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult
             when (result) {
                 is String -> result
-                is FormattedPromptTraceResult -> result.trace.outputInfo.output
+                is FormattedPromptTraceResult -> result.trace.outputInfo.outputs!![0]?.toString()
                 is FormattedText -> result.toString()
                 null -> "N/A"
                 else -> result.toString()

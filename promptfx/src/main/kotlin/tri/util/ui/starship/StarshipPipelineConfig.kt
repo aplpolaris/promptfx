@@ -34,7 +34,7 @@ class StarshipPipelineConfig(val completion: TextCompletion) {
         override suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult {
             val filledPrompt = prompt.fill(input)
             val response = completion.complete(filledPrompt)
-            return StarshipInterimResult(prompt.prompt.templateName, FormattedText(response.value!!), null, listOf())
+            return StarshipInterimResult(prompt.prompt.templateName, FormattedText(response.values!![0]), null, listOf())
         }
     }
     /** Secondary prompt executors. */

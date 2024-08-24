@@ -38,63 +38,87 @@ import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
 
 /**
- * Text area for displaying a prompt result or other output. Adjusts font size, adds ability to copy/save output to a file.
+ * Text area for displaying a prompt result or other output, with support for cycling outputs if multiple.
+ * Adjusts font size, adds ability to copy/save output to a file.
  */
 class PromptResultArea : Fragment("Prompt Result Area") {
 
-    private val text = SimpleStringProperty("")
+    private val results = observableListOf<String>()
+    private val selected = SimpleStringProperty("")
     val trace = SimpleObjectProperty<AiPromptTrace>(null)
 
-    private val containsCode = text.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
-    private val containsPlantUml = text.booleanBinding { it != null && (
+    private val multiResult = results.sizeProperty.greaterThan(1)
+    private val containsCode = selected.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
+    private val containsPlantUml = selected.booleanBinding { it != null && (
             it.contains("@startuml") && it.contains("@enduml") ||
             it.contains("@startmindmap") && it.contains("@endmindmap")
         )
     }
 
     fun setFinalResult(finalResult: AiPromptTrace) {
-        text.set(finalResult.outputInfo.output ?: "(No result)")
+        val results = finalResult.outputInfo.outputs?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
+        this.results.setAll(results)
+        selected.set(results.first())
         trace.set(finalResult as? AiPromptTrace)
     }
 
-    override val root = textarea(text) {
-        promptText = "Prompt output will be shown here"
-        isEditable = false
-        isWrapText = true
-        font = Font("Segoe UI Emoji", 18.0)
+    override val root = vbox {
         vgrow = Priority.ALWAYS
-
-        promptTraceContextMenu(this@PromptResultArea, trace) {
-            item("Select all") {
-                action { selectAll() }
-            }
-            item("Copy") {
-                action { copy() }
-            }
-            item("Save to file...") {
+        toolbar {
+            visibleWhen(multiResult)
+            managedWhen(multiResult)
+            button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
                 action {
-                    promptFxFileChooser(
-                        dirKey = DIR_KEY_TXT,
-                        title = "Save to File",
-                        filters = arrayOf(FF_TXT, FF_ALL),
-                        mode = FileChooserMode.Save
-                    ) {
-                        it.firstOrNull()?.writeText(selectedText.ifBlank { this@textarea.text })
-                    }
+                    val current = results.indexOf(selected.value)
+                    selected.set(results.getOrNull(current - 1) ?: results.last())
                 }
             }
-            separator()
-            item("Copy code") {
-                enableWhen(containsCode)
-                action { copyCode() }
+            button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
+                action {
+                    val current = results.indexOf(selected.value)
+                    selected.set(results.getOrNull(current + 1) ?: results.first())
+                }
             }
-            item("Browse to PlantUML diagram") {
-                enableWhen(containsPlantUml)
-                action { browseToPlantUml() }
-            }
-            item("Show PlantUML diagram") {
-                enableWhen(containsPlantUml)
-                action { showPlantUmlPopup() }
+        }
+        textarea(selected) {
+            promptText = "Prompt output will be shown here"
+            isEditable = false
+            isWrapText = true
+            font = Font("Segoe UI Emoji", 18.0)
+            vgrow = Priority.ALWAYS
+
+            promptTraceContextMenu(this@PromptResultArea, trace) {
+                item("Select all") {
+                    action { selectAll() }
+                }
+                item("Copy") {
+                    action { copy() }
+                }
+                item("Save to file...") {
+                    action {
+                        promptFxFileChooser(
+                            dirKey = DIR_KEY_TXT,
+                            title = "Save to File",
+                            filters = arrayOf(FF_TXT, FF_ALL),
+                            mode = FileChooserMode.Save
+                        ) {
+                            it.firstOrNull()?.writeText(selectedText.ifBlank { this@textarea.text })
+                        }
+                    }
+                }
+                separator()
+                item("Copy code") {
+                    enableWhen(containsCode)
+                    action { copyCode() }
+                }
+                item("Browse to PlantUML diagram") {
+                    enableWhen(containsPlantUml)
+                    action { browseToPlantUml() }
+                }
+                item("Show PlantUML diagram") {
+                    enableWhen(containsPlantUml)
+                    action { showPlantUmlPopup() }
+                }
             }
         }
     }
@@ -102,14 +126,14 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     //region DETECTED CODE ACTIONS
 
     private fun copyCode() {
-        val code = text.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
+        val code = selected.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
         clipboard.putString(code)
     }
 
-    private fun plantUmlText() = if ("@startuml" in text.value) {
-        "@startuml\n" + text.value.substringAfter("@startuml").substringBefore("@enduml").trim() + "\n@enduml"
+    private fun plantUmlText() = if ("@startuml" in selected.value) {
+        "@startuml\n" + selected.value.substringAfter("@startuml").substringBefore("@enduml").trim() + "\n@enduml"
     } else {
-        "@startmindmap\n" + text.value.substringAfter("@startmindmap").substringBefore("@endmindmap").trim() + "\n@endmindmap"
+        "@startmindmap\n" + selected.value.substringAfter("@startmindmap").substringBefore("@endmindmap").trim() + "\n@endmindmap"
     }
 
     private fun browseToPlantUml() {

@@ -106,7 +106,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
         }
 
         onCompleted {
-            val rawText = (it.finalResult as AiPromptTrace).outputInfo.output!!
+            val rawText = (it.finalResult as AiPromptTrace).outputInfo.outputs!![0].toString()
             val codeText = rawText.substringAfter("```").substringBefore("```").trim()
             try {
                 val parsed1 = MAPPER.readValue<ListPromptResult>(codeText)

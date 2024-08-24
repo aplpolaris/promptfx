@@ -25,6 +25,7 @@ import javafx.beans.value.ObservableStringValue
 import javafx.beans.value.ObservableValue
 import javafx.geometry.Insets
 import javafx.scene.control.ContextMenu
+import javafx.scene.control.Menu
 import javafx.scene.control.TextArea
 import javafx.scene.text.TextFlow
 import kotlinx.coroutines.CompletableDeferred
@@ -162,9 +163,20 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
     }
 }
 
+//region MENU BUILDERS
+
 /** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
 fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTrace>, workspace: PromptFxWorkspace) {
-    buildsendresultmenu(trace.stringBinding { it?.outputInfo?.output }, workspace)
+    val outputs = trace.value.outputInfo.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
+    if (outputs.size == 1) {
+        buildsendresultmenu(outputs.first(), workspace)
+    } else {
+        outputs.forEach {
+            menu(it.take(50)) {
+                buildsendresultmenu(it, workspace)
+            }
+        }
+    }
 }
 
 /** Context menu for sending a string result to a view that accepts a text input. */
@@ -176,17 +188,33 @@ fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspac
 fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
     menu("Send result to view") {
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
+        buildviewsubmenus(value, workspace)
+    }
+}
 
-        workspace.viewsWithInputs.forEach { (group, map) ->
-            if (map.isNotEmpty()) {
-                menu(group) {
-                    map.forEach { (_, info) ->
-                        val view = workspace.find(info.view) as AiTaskView
-                        item(view.title) {
-                            action {
-                                with (PromptFxDriver) {
-                                    workspace.setInputAndRun(view, value.value)
-                                }
+/** Context menu for sending a string result to a view that accepts a text input. */
+fun Menu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(SimpleStringProperty(output), workspace)
+}
+
+/** Context menu for sending result in a string property to a view that accepts a text input. */
+fun Menu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send result to view") {
+        disableWhen(value.booleanBinding { it.isNullOrBlank() })
+        buildviewsubmenus(value, workspace)
+    }
+}
+
+private fun Menu.buildviewsubmenus(value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    workspace.viewsWithInputs.forEach { (group, map) ->
+        if (map.isNotEmpty()) {
+            menu(group) {
+                map.forEach { (_, info) ->
+                    val view = workspace.find(info.view) as AiTaskView
+                    item(view.title) {
+                        action {
+                            with (PromptFxDriver) {
+                                workspace.setInputAndRun(view, value.value)
                             }
                         }
                     }
@@ -222,3 +250,5 @@ fun ContextMenu.buildsendcollectionmenu(view: UIComponent, value: ObservableValu
         }
     }
 }
+
+//endregion

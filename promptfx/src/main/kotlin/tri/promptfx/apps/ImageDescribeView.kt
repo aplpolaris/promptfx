@@ -86,7 +86,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
             null,
             false
         )
-        return res.value!!.content!!
+        return res.firstValue!!.content!!
     }
 
 }

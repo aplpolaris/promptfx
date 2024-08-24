@@ -103,9 +103,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
 
     override fun plan() = aitask("text-completion") {
         val resp = AiPrompt(template.value).fill(fieldMap).let {
-            completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value)
+            completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value, numResponses = common.numResponses.value)
         }
-        resp.mapvalue {
+        resp.maplist {
             AiPromptTrace(
                 AiPromptInfo(template.value, fieldMap.toMap()),
                 AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),

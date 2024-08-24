@@ -39,7 +39,7 @@ class PromptTraceCard : Fragment() {
     private var trace: AiPromptTrace? = null
 
     fun setTrace(trace: AiPromptTrace) {
-        result.value = trace.outputInfo.output
+        result.value = trace.outputInfo.outputs?.get(0)?.toString() ?: "No result"
         this.trace = trace
     }
 
@@ -78,7 +78,7 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
         model.value = trace.modelInfo.modelId
         modelParams.value = trace.modelInfo.modelParams
         exec.value = trace.execInfo
-        result.value = trace.outputInfo.output
+        result.value = trace.outputInfo.outputs?.get(0)?.toString() ?: "No result"
     }
 
     override val root = vbox {

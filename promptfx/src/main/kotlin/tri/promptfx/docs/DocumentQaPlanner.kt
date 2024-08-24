@@ -91,15 +91,16 @@ class DocumentQaPlanner {
             AiTaskResult.result("")
         }.aitask("calculate-embeddings") {
             findRelevantSection(question, chunksToRetrieve).also {
-                runLater { snippets.setAll(it.value) }
+                runLater { snippets.setAll(it.firstValue) }
             }
         }.aitask("question-answer") {
             val queryChunks = it.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
+            val responseText = response.firstValue!!.outputInfo.outputs?.getOrNull(0)?.toString()
             val questionEmbedding = embeddingService.calculateEmbedding(question)
-            val responseEmbedding = response.value?.outputInfo?.output?.let { embeddingService.calculateEmbedding(it) }
+            val responseEmbedding = responseText?.let { embeddingService.calculateEmbedding(it) }
             if (responseEmbedding != null) {
                 snippets.forEach {
                     it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding).toFloat()
@@ -109,7 +110,7 @@ class DocumentQaPlanner {
                 QuestionAnswerResult(
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,
-                    trace = response.value!!,
+                    trace = response.firstValue!!,
                     responseEmbedding = responseEmbedding
                 )
             }
@@ -158,7 +159,7 @@ class DocumentQaPlanner {
 
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
-        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.output ?: "No response."))
+        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.outputs?.joinToString { ", " } ?: "No response."))
         val docs = qaResult.matches.mapNotNull { it.document.browsable() }
             .filter { it.shortNameWithoutExtension.isNotBlank() }
             .toSet()
@@ -225,7 +226,7 @@ class DocumentQaPlanner {
 
 /** Result including the trace and formatted text. */
 class FormattedPromptTraceResult(val trace: AiPromptTrace, val text: FormattedText) {
-    override fun toString() = trace.outputInfo.output ?: "null"
+    override fun toString() = trace.outputInfo.outputs?.joinToString { ", " } ?: "null"
 }
 
 //region DATA OBJECTS DESCRIBING TASK
@@ -237,7 +238,7 @@ data class QuestionAnswerResult(
     val trace: AiPromptTrace,
     val responseEmbedding: List<Double>?
 ) {
-    override fun toString() = trace.outputInfo.output ?: "No response. Question: ${query.query}"
+    override fun toString() = trace.outputInfo.outputs?.joinToString { ", " } ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
     val responseScore

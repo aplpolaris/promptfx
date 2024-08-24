@@ -303,8 +303,11 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             add(result.root)
         }
         onCompleted {
+            // TODO - support for multiple outputs
             val r = it.finalResult
-            if (r is AiPromptTrace) {
+            if (r is List<*> && r.size == 1 && r.all { it is AiPromptTrace }) {
+                result.setFinalResult(r.first() as AiPromptTrace)
+            } else if (r is AiPromptTrace) {
                 result.setFinalResult(r)
             } else {
                 // TODO - views should return a prompt trace object wherever possible
@@ -312,7 +315,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                     AiPromptInfo(""),
                     AiPromptModelInfo(completionEngine.modelId),
                     AiPromptExecInfo(),
-                    AiPromptOutputInfo(r.toString())
+                    AiPromptOutputInfo.output(r.toString())
                 )
                 result.setFinalResult(trace)
             }

@@ -75,7 +75,7 @@ data class AiTaskResult<T>(
      */
     fun asPipelineResult(promptInfo: AiPromptInfo? = null, modelInfo: AiPromptModelInfo? = null): AiPipelineResult {
         if (promptInfo != null && modelInfo != null) {
-            return mapvalue {
+            return maplist {
                 AiPromptTrace(
                     promptInfo,
                     modelInfo,
