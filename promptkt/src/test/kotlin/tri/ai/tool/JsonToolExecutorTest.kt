@@ -21,13 +21,13 @@ package tri.ai.tool
 
 import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.tool.JsonFunctionExecutorTest.Companion.SAMPLE_TOOLS
 
-@Disabled("Requires apikey")
+@Tag("openai")
 class JsonToolExecutorTest {
 
     @Test

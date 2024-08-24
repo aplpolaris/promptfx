@@ -24,7 +24,7 @@ import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.embedding.EmbeddingResponse
 import com.aallam.openai.api.model.ModelId
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
@@ -39,7 +39,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testModels() = runTest {
         val res = client.models()
         println(res)
@@ -52,7 +52,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testChat() = runTest {
         val res = client.chatCompletion(
             ChatCompletionRequest(
@@ -66,7 +66,22 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
+    fun testChatMultiple() = runTest {
+        val res = client.chatCompletion(
+            ChatCompletionRequest(
+                ModelId("gpt-3.5-turbo"),
+                listOf(userMessage {
+                    content = "Give me a haiku about Kotlin."
+                }),
+                n = 2
+            )
+        )
+        println(res.choices)
+    }
+
+    @Test
+    @Tag("openai")
     fun testChatImage() = runTest {
         val res = client.chatCompletion(
             chatCompletionRequest {
@@ -88,7 +103,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testEmbedding() = runTest {
         val res = client.embeddings(
             EmbeddingRequest(

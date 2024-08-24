@@ -22,7 +22,7 @@ package tri.ai.prompt.trace.batch
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonMapper
@@ -51,7 +51,7 @@ class AiPromptBatchTest {
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testExecute() {
         runBlocking {
             AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).results.values.onEach {
@@ -61,7 +61,7 @@ class AiPromptBatchTest {
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testBatchExecuteDatabase() {
         runBlocking {
             val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
@@ -71,7 +71,7 @@ class AiPromptBatchTest {
             )
             val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
-                addTraces(result.results.values.map { it.values!![0] as AiPromptTrace })
+                addTraces(result.results.values.map { it.firstValue!! as AiPromptTrace })
             }
             val output = jsonWriter.writeValueAsString(db)
             val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)

@@ -53,13 +53,13 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             model = ModelId(this@JsonToolExecutor.model),
             messages = messages,
             tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-        )).values!![0]
+        )).firstValue!!
         messages += response
         var toolCalls = response.toolCalls as? List<ToolCall.Function>
 
         while (!toolCalls.isNullOrEmpty()) {
-            if (toolCalls.size != 1)
-                info<JsonToolExecutor>("${ANSI_RED}WARNING: expected a single tool to call, but found ${toolCalls.size}$ANSI_RESET")
+//            if (toolCalls.size != 1)
+//                info<JsonToolExecutor>("${ANSI_RED}WARNING: expected a single tool to call, but found ${toolCalls.size}$ANSI_RESET")
 
             // print interim results
             toolCalls.forEach { call ->
@@ -78,17 +78,16 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
 
                     // add result to message history and call again
                     messages += ChatMessage(ChatRole.Tool, toolCallId = call.id, name = call.function.name, content = result)
-                    response = client.chat(ChatCompletionRequest(
-                        model = ModelId(this@JsonToolExecutor.model),
-                        messages = messages,
-                        tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-                    )).values!![0]
-                    messages += response
-                    toolCalls = response.toolCalls as? List<ToolCall.Function>
-                } else {
-                    toolCalls = listOf()
                 }
             }
+
+            response = client.chat(ChatCompletionRequest(
+                model = ModelId(this@JsonToolExecutor.model),
+                messages = messages,
+                tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
+            )).firstValue!!
+            messages += response
+            toolCalls = response.toolCalls as? List<ToolCall.Function>
         }
 
         info<JsonToolExecutor>("Final Response: $ANSI_GREEN${response.content}$ANSI_RESET")

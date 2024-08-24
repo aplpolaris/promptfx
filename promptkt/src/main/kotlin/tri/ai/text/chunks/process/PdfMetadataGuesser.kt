@@ -41,7 +41,7 @@ object PdfMetadataGuesser {
         val parsedMetadata = text.mapNotNull {
             val progressString = "Processing page ${it.pageNumber} for ${file.name}..."
             progress(progressString)
-            val result = model.complete(PROMPT.fill(AiPrompt.INPUT to it.text), tokens = 1000, temperature = 0.2).values!![0]
+            val result = model.complete(PROMPT.fill(AiPrompt.INPUT to it.text), tokens = 1000, temperature = 0.2).firstValue!!
             val parsed = result
                 .betweenTripleTicks()
                 .betweenBraces()

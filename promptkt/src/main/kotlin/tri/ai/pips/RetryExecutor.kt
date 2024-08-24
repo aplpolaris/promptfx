@@ -55,7 +55,7 @@ class RetryExecutor(
                     attempts = retries + 1
                 ).also {
                     // TODO - this hard-coded type check is brittle, potentially unexpected side effect behavior
-                    (it.values!![0] as? AiPromptTrace)?.execInfo?.let { ei ->
+                    (it.firstValue!! as? AiPromptTrace)?.execInfo?.let { ei ->
                         ei.error = it.errorMessage
                         ei.responseTimeMillis = it.duration?.toMillis()
                     }

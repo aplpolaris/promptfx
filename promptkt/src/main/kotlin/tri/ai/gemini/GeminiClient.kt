@@ -83,7 +83,8 @@ class GeminiClient : Closeable {
     suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null) =
         generateContent(modelId, GenerateContentRequest(
             content = Content.text(prompt),
-            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
+// TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+//            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
         ))
 
     suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null): GenerateContentResponse {
@@ -92,7 +93,8 @@ class GeminiClient : Closeable {
                 Part(text = prompt),
                 Part(inlineData = Blob(image, "image/jpeg"))
             )),
-            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
+// TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+//            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
         )
         return generateContent(modelId, request)
     }
@@ -108,7 +110,7 @@ class GeminiClient : Closeable {
                 }
                 Content(listOf(Part(it.content)), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
+            systemInstruction = system?.let { Content(listOf(Part(it)), "user") },
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -155,7 +157,7 @@ class GeminiSettings {
     companion object {
         const val API_KEY_FILE = "apikey-gemini.txt"
         const val API_KEY_ENV = "GEMINI_API_KEY"
-        const val BASE_URL = " https://generativelanguage.googleapis.com/v1beta/"
+        const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
     }
 
     var baseUrl = BASE_URL
@@ -226,7 +228,7 @@ class GeminiSettings {
 
 //endregion
 
-//region DTO's
+//region DTO's - see https://ai.google.dev/api?lang=web
 
 @Serializable
 data class ModelsResponse(

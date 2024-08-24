@@ -53,6 +53,10 @@ data class AiTaskResult<T>(
         attempts: Int? = null,
     ) : this(listOf(value), errorMessage, error, modelId, duration, durationTotal, attempts)
 
+    /** First return result (or only one if there is a single response). */
+    val firstValue
+        get() = values?.firstOrNull()
+
     /** Applies an operation to the result value, if present. All other values are copied directly. */
     fun <S> mapvalue(function: (T) -> S) = AiTaskResult(
         values?.let { it.map { function(it) } },

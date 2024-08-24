@@ -20,7 +20,7 @@
 package tri.ai.prompt.trace.batch
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
@@ -28,7 +28,6 @@ import tri.ai.pips.PrintMonitor
 import tri.ai.pips.RetryExecutor
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
 
 class AiPromptRunConfigTest {
 
@@ -51,18 +50,18 @@ class AiPromptRunConfigTest {
     fun testExecute() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values!![0]
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testExecute2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values!![0]
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue!!
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
