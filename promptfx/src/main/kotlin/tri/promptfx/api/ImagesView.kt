@@ -185,7 +185,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     init {
         onCompleted {
-            val fr = it.finalResult as AiImageTrace
+            val fr = (it.finalResult as List<AiImageTrace>).first()
             if (fr.execInfo.error != null) {
                 error("Error: ${fr.execInfo.error}")
             } else {

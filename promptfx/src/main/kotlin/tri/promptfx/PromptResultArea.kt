@@ -20,8 +20,8 @@
 package tri.promptfx
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
@@ -44,7 +44,8 @@ import tri.util.ui.showImageDialog
 class PromptResultArea : Fragment("Prompt Result Area") {
 
     private val results = observableListOf<String>()
-    private val selected = SimpleStringProperty("")
+    private val selectedIndex = SimpleIntegerProperty()
+    private val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
     val trace = SimpleObjectProperty<AiPromptTrace>(null)
 
     private val multiResult = results.sizeProperty.greaterThan(1)
@@ -58,7 +59,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     fun setFinalResult(finalResult: AiPromptTrace) {
         val results = finalResult.outputInfo.outputs?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
         this.results.setAll(results)
-        selected.set(results.first())
+        selectedIndex.set(0)
         trace.set(finalResult as? AiPromptTrace)
     }
 
@@ -68,16 +69,12 @@ class PromptResultArea : Fragment("Prompt Result Area") {
             visibleWhen(multiResult)
             managedWhen(multiResult)
             button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
-                action {
-                    val current = results.indexOf(selected.value)
-                    selected.set(results.getOrNull(current - 1) ?: results.last())
-                }
+                enableWhen(selectedIndex.greaterThan(0))
+                action { selectedIndex.set(selectedIndex.value - 1) }
             }
             button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
-                action {
-                    val current = results.indexOf(selected.value)
-                    selected.set(results.getOrNull(current + 1) ?: results.first())
-                }
+                enableWhen(selectedIndex.lessThan(results.sizeProperty.subtract(1)))
+                action { selectedIndex.set(selectedIndex.value + 1) }
             }
         }
         textarea(selected) {

@@ -42,7 +42,9 @@ import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
+import tri.promptfx.api.AiImageTrace
 import tri.util.ui.graphic
+import tri.util.warning
 import java.io.File
 import java.lang.Exception
 
@@ -183,6 +185,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             with (common) {
                 temperature()
                 maxTokens()
+                numResponses()
             }
         }
     }
@@ -303,14 +306,19 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             add(result.root)
         }
         onCompleted {
-            // TODO - support for multiple outputs
             val r = it.finalResult
-            if (r is List<*> && r.size == 1 && r.all { it is AiPromptTrace }) {
+            if (r != null && r.size == 1 && r.all { it is AiPromptTrace }) {
                 result.setFinalResult(r.first() as AiPromptTrace)
-            } else if (r is AiPromptTrace) {
-                result.setFinalResult(r)
+            } else if (r != null && r.size == 1 && r.all { it is AiImageTrace }) {
+                // ignore - this is handled by view
             } else {
                 // TODO - views should return a prompt trace object wherever possible
+                when {
+                    r == null -> warning<AiTaskView>("Unexpected result in task-completion: null")
+                    r.isEmpty() -> warning<AiTaskView>("Unexpected result in task-completion: empty list")
+                    r.size > 1 -> warning<AiTaskView>("Unexpected result in task-completion: multiple results: $r")
+                    else -> warning<AiTaskView>("Unexpected result in task-completion: ${r.first()!!.javaClass} $r")
+                }
                 val trace = AiPromptTrace(
                     AiPromptInfo(""),
                     AiPromptModelInfo(completionEngine.modelId),

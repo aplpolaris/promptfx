@@ -23,7 +23,7 @@ package tri.ai.pips
 class AiPipelineResult(finalTaskId: String, val results: Map<String, AiTaskResult<*>>) {
 
     /** The result of the last task in the pipeline. */
-    val finalResult: Any? = results[finalTaskId]?.values?.map {
+    val finalResult: List<*>? = results[finalTaskId]?.values?.map {
         when (it) {
             is AiPipelineResult -> it.finalResult
             is AiTaskResult<*> -> it.values
