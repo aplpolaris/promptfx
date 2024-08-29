@@ -45,7 +45,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
     private val results = observableListOf<String>()
     private val selectedIndex = SimpleIntegerProperty()
-    private val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
+    val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
     val trace = SimpleObjectProperty<AiPromptTrace>(null)
 
     private val multiResult = results.sizeProperty.greaterThan(1)

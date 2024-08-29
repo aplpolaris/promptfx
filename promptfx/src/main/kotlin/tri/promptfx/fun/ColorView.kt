@@ -1,8 +1,11 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.SimpleStringProperty
+import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
+import tornadofx.*
 import tri.ai.openai.promptPlan
+import tri.ai.prompt.trace.AiPromptOutputInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -40,28 +43,35 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         addInputTextArea(input)
         parameters("Prompt") {
             promptfield(promptId = "example-color", workspace = workspace)
+            with (common) {
+                numResponses()
+            }
         }
-        onCompleted {
-            updateOutputTextAreaColor(it.finalResult.toString())
+
+        resultArea.trace.onChange {
+            updateOutputTextAreaColor(it.toString())
+        }
+        resultArea.selected.onChange {
+            updateOutputTextAreaColor(it.toString())
         }
     }
 
-    private fun updateOutputTextAreaColor(result: String) {
-        val outputEditor = outputPane.lookup(".text-area") as javafx.scene.control.TextArea
+    private fun updateOutputTextAreaColor(color: String) {
+        val outputEditor = outputPane.lookup(".text-area") as TextArea
         try {
-            val text = result.substringAfter("#").trim()
-            val color = Color.web(
+            val text = color.substringAfter("#").trim()
+            val col = Color.web(
                 if (text.length == 5 && text.startsWith("FF"))
                     text.substring(2)
                 else
                     text
             )
-            val fgColor = if (color.brightness > 0.5) "#000000" else "#ffffff"
+            val fgColor = if (col.brightness > 0.5) "#000000" else "#ffffff"
             // update outputEditor foreground and background colors based on this
-            outputEditor.lookup(".content").style = "-fx-background-color: ${color.hex()};"
+            outputEditor.lookup(".content").style = "-fx-background-color: ${col.hex()};"
             outputEditor.style = "-fx-text-fill: $fgColor;"
         } catch (x: IllegalArgumentException) {
-            println("Failed to switch color. Result was $result.")
+            println("Failed to switch color. Result was $color.")
         }
     }
 
@@ -70,9 +80,12 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         input.get(),
         tokenLimit = 6,
         temp = null,
-        stop = ";"
+        stop = ";",
+        numResponses = common.numResponses.value
     )
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"
+
+    private fun AiPromptOutputInfo.firstOutput() = outputs?.getOrNull(0)?.toString()
 
 }

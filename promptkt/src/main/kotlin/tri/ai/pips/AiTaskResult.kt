@@ -57,13 +57,13 @@ data class AiTaskResult<T>(
     val firstValue
         get() = values?.firstOrNull()
 
-    /** Applies an operation to the result value, if present. All other values are copied directly. */
+    /** Applies an operation to the result value, if present. All other parameters are copied directly. */
     fun <S> mapvalue(function: (T) -> S) = AiTaskResult(
         values?.let { it.map { function(it) } },
         errorMessage, error, modelId, duration, durationTotal, attempts
     )
 
-    /** Applies an operation to the list of result values, if present. All other values are copied directly. */
+    /** Applies an operation to the list of result values, if present. All other parameters are copied directly. */
     fun <S> maplist(function: (List<T>?) -> S) = AiTaskResult(
         function(values),
         errorMessage, error, modelId, duration, durationTotal, attempts

@@ -26,6 +26,7 @@ import tri.ai.pips.aitask
 import tri.ai.openai.jsonMapper
 import tri.ai.openai.promptTask
 import tri.ai.openai.instructTask
+import tri.ai.prompt.trace.AiPromptOutputInfo
 import java.net.URL
 import java.net.URLEncoder
 
@@ -35,7 +36,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
         aitask("wikipedia-page-guess") {
             completionEngine.promptTask("wikipedia-page-guess", input, tokenLimit = 100, temp = null)
         }.task("wikipedia-page-search") {
-            firstMatchingPage(it).also {
+            firstMatchingPage(it.outputInfo.firstOutput()!!).also {
                 pageTitle?.value = it
             }
         }.task("retrieve-page-text") {
@@ -66,5 +67,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
         else
             "No content returned"
     }
+
+    private fun AiPromptOutputInfo.firstOutput() = outputs?.getOrNull(0)?.toString()
 
 }

@@ -19,6 +19,7 @@
  */
 package tri.ai.openai
 
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.core.TextCompletion
@@ -29,16 +30,22 @@ import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
 import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 
 /** Generate a task that adds user input to a prompt. */
-suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null) =
-    AiPromptLibrary.lookupPrompt(promptId).prompt(input).let {
-        complete(it, tokenLimit, temp, stop = stop)
-    }
+suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiTaskResult<AiPromptTrace> {
+    val prompt = AiPromptLibrary.lookupPrompt(promptId)
+    val promptParams = prompt.promptParams(input)
+    val result = complete(prompt.fill(promptParams), tokenLimit, temp, stop, numResponses = numResponses)
+    val promptInfo = AiPromptInfo(prompt.template, promptParams)
+    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
+    val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
+    val outputInfo = AiPromptOutputInfo(result.values)
+    return AiTaskResult(AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo))
+}
 
 /** Generate a task that combines a single instruction or question about contextual text. */
-suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?): AiTaskResult<AiPromptTrace> {
+suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiTaskResult<AiPromptTrace> {
     val prompt = AiPromptLibrary.lookupPrompt(promptId)
     val promptParams = prompt.instructParams(instruct = instruct, input = userText)
-    val result = complete(prompt.fill(promptParams), tokenLimit, temp)
+    val result = complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses)
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
     val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
     val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
@@ -71,9 +78,15 @@ private fun <X> mapOfNotNull(vararg pairs: Pair<X, Any?>) =
 //region CONVERTING TASKS
 
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
-suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?) =
-    promptTask(id, input, tokenLimit, temp).let {
-        it.mapvalue { jsonMapper.readValue<T>(it.trim()) }
+suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
+    promptTask(id, input, tokenLimit, temp, stop, numResponses).let {
+        it.mapvalue {
+            try {
+                jsonMapper.readValue<T>(it.outputInfo.outputs!!.first().toString().trim())
+            } catch (x: JsonMappingException) {
+                null
+            }
+        }
     }
 
 //endregion
@@ -81,8 +94,8 @@ suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: 
 //region PLANNERS
 
 /** Planner that generates a plan for a single completion prompt. */
-fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null) = aitask(promptId) {
-    promptTask(promptId, input, tokenLimit, temp, stop)
+fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) = aitask(promptId) {
+    promptTask(promptId, input, tokenLimit, temp, stop, numResponses)
 }.planner
 
 /** Planner that generates a plan for a single instruction or question about user's text. */

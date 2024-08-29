@@ -62,6 +62,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
 
     val controller: PromptFxController by inject()
     val progress: AiProgressView by inject()
+    val resultArea = PromptResultArea()
 
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
@@ -301,14 +302,13 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea() {
-        val result = PromptResultArea()
         output {
-            add(result.root)
+            add(resultArea.root)
         }
         onCompleted {
             val r = it.finalResult
             if (r != null && r.size == 1 && r.all { it is AiPromptTrace }) {
-                result.setFinalResult(r.first() as AiPromptTrace)
+                resultArea.setFinalResult(r.first() as AiPromptTrace)
             } else if (r != null && r.size == 1 && r.all { it is AiImageTrace }) {
                 // ignore - this is handled by view
             } else {
@@ -325,7 +325,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                     AiPromptExecInfo(),
                     AiPromptOutputInfo.output(r.toString())
                 )
-                result.setFinalResult(trace)
+                resultArea.setFinalResult(trace)
             }
         }
     }
