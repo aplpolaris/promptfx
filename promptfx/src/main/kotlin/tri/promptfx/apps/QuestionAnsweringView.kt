@@ -64,11 +64,12 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     }
 
     override fun plan() = completionEngine.instructTextPlan(
-        prompt.text.value,
+        prompt.id.value,
         instruct = instruct.get(),
         userText = input.get(),
         tokenLimit = common.maxTokens.value!!,
         temp = common.temp.value,
+        numResponses = common.numResponses.value
     )
 
 }

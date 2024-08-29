@@ -99,8 +99,8 @@ fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, 
 }.planner
 
 /** Planner that generates a plan for a single instruction or question about user's text. */
-fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?) = aitask(promptId) {
-    instructTask(promptId, instruct, userText, tokenLimit, temp)
+fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null) = aitask(promptId) {
+    instructTask(promptId, instruct, userText, tokenLimit, temp, numResponses)
 }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */

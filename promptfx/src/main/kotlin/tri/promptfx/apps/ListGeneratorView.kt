@@ -106,7 +106,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
         }
 
         onCompleted {
-            val rawText = (it.finalResult as AiPromptTrace).outputInfo.outputs!![0].toString()
+            val rawText = (it.finalResult as List<AiPromptTrace>).first().outputInfo.outputs!![0].toString()
             val codeText = rawText.substringAfter("```").substringBefore("```").trim()
             try {
                 val parsed1 = MAPPER.readValue<ListPromptResult>(codeText)
@@ -124,14 +124,15 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             output.set(null)
             outputItems.clear()
         }
-        return completionEngine.templatePlan(prompt.text.value,
+        return completionEngine.templatePlan(prompt.id.value,
             AiPrompt.INPUT to sourceText.get(),
             "item_category" to itemCategory.get(),
             "known_items" to sampleItems.get().split(",")
                 .joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" },
             tokenLimit = common.maxTokens.value,
             temp = common.temp.value,
-            requestJson = true
+            requestJson = true,
+            numResponses = common.numResponses.value
         )
     }
 
