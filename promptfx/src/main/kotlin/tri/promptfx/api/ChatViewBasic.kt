@@ -48,7 +48,7 @@ class ChatViewBasic :
                 messages = messages,
                 temperature = common.temp.value,
                 topP = common.topP.value,
-                n = null,
+                n = common.numResponses.value,
                 stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
                 maxTokens = common.maxTokens.value,
                 presencePenalty = common.presPenalty.value,

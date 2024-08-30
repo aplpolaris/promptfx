@@ -84,7 +84,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         }
     }
 
-    fun initChatParameters() {
+    private fun initChatParameters() {
         parameters("Chat Model") {
             field("Model") {
                 combobox(model, chatModels)
@@ -122,6 +122,9 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
                     cellFormat { text = it.type }
                 }
             }
+            with (common) {
+                numResponses()
+            }
         }
     }
 
@@ -135,10 +138,11 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
     private fun addChatsToHistory(it: Any) {
-        when (it) {
-            is ChatMessage -> addChat(it)
-            is Content -> addChat(it.toChatMessage())
-            is List<*> -> it.forEach { addChatsToHistory(it!!) }
+        when {
+            it is ChatMessage -> addChat(it)
+            it is Content -> addChat(it.toChatMessage())
+            it is List<*> && it.all { it is ChatMessage } -> addChatChoices(it.map { it as ChatMessage })
+            it is List<*> -> it.forEach { addChatsToHistory(it!!) }
             else -> addChat(ChatMessage(Role.Assistant, it.toString()))
         }
     }
@@ -170,6 +174,22 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         val askTools = chat.toolCalls != null
         if (askTools) {
             chat.toolCalls!!.forEach {
+                // add response placeholder for each tool
+                val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
+                chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
+            }
+        } else {
+            // add blank message for user to follow up
+            chatHistory.components.add(ChatMessageUiModel(Role.User, ""))
+        }
+    }
+
+    /** Adds multiple chat messages as different options for user. */
+    private fun addChatChoices(chat: List<ChatMessage>) {
+        chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
+        val toolCalls = chat.first().toolCalls
+        if (toolCalls != null) {
+            toolCalls.forEach {
                 // add response placeholder for each tool
                 val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))

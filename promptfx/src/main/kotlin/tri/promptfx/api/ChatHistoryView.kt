@@ -80,10 +80,9 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
 }
 
 /** UI for a single chat message. */
-class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
+class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
     override val root = vbox(10.0) {
-        hbox {
-            spacing = 10.0
+        hbox(5.0) {
             // only allow user or assistant per intended API use
             combobox(chat.roleProperty, roles) {
                 cellFormat { text = it.role }
@@ -92,7 +91,6 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 managedWhen(chat.contentImageProperty.isNotNull)
                 visibleWhen(chat.contentImageProperty.isNotNull)
                 padding = insets(5.0, 2.0)
-                style = "-fx-background-color: #f0f0f0;"
                 text("Image:")
                 button(chat.detailImageProperty) {
                     action {
@@ -109,9 +107,7 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                     }
                 }
             }
-            hbox {
-                alignment = Pos.CENTER
-                spacing = 10.0
+            hbox(5.0, Pos.CENTER_LEFT) {
                 managedWhen(chat.roleProperty.isEqualTo(Role.Tool))
                 visibleWhen(chat.roleProperty.isEqualTo(Role.Tool))
                 text("id:")
@@ -124,6 +120,14 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 tooltip("The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content.")
             }
             spacer()
+            if (!chat.modelListEmpty) {
+                button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
+                    action { cycleChatBackward() }
+                }
+                button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
+                    action { cycleChatForward() }
+                }
+            }
             button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
                 action { remove() }
             }
@@ -147,7 +151,7 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 isEditable = false
             }
         }
-        hbox(10.0) {
+        hbox(5.0) {
             textarea(chat.contentProperty) {
                 managedWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
                 visibleWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
@@ -172,6 +176,20 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 it.consume()
             }
         }
+    }
+
+    private fun cycleChatBackward() {
+        val index = chat.modelListIndex
+        chat.modelListIndex = if (index == 0) chat.modelList.size - 1 else index - 1
+        val prevChoice = chat.modelList[chat.modelListIndex]
+        chat.copyFrom(prevChoice)
+    }
+
+    private fun cycleChatForward() {
+        val index = chat.modelListIndex
+        chat.modelListIndex = if (index == chat.modelList.size - 1) 0 else index + 1
+        val nextChoice = chat.modelList[chat.modelListIndex]
+        chat.copyFrom(nextChoice)
     }
 }
 
@@ -201,7 +219,7 @@ class ChatMessageUiModel(
     val role: ChatRole by roleProperty
 
     val contentProperty = SimpleStringProperty(content)
-    var content: String by contentProperty
+    val content: String by contentProperty
 
     val contentImageProperty = SimpleObjectProperty<ImagePart.ImageURL>(contentImage)
     var contentImage: ImagePart.ImageURL? by contentImageProperty
@@ -218,7 +236,25 @@ class ChatMessageUiModel(
     val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id.id })
     val toolCallIdProperty = SimpleStringProperty(_toolCallId?.id)
 
+    var modelList = listOf<ChatMessageUiModel>()
+    val modelListEmpty
+        get() = modelList.isEmpty()
+    var modelListIndex = -1
+
+    /** Copy parameters from second model. */
+    fun copyFrom(other: ChatMessageUiModel) {
+        roleProperty.set(other.role)
+        contentProperty.set(other.content)
+        contentImageProperty.set(other.contentImage)
+        nameProperty.set(other.name)
+        toolCallsNameProperty.set(other.toolCallsNameProperty.value)
+        toolCallsArgsProperty.set(other.toolCallsArgsProperty.value)
+        toolCallsIdProperty.set(other.toolCallsIdProperty.value)
+        toolCallIdProperty.set(other.toolCallIdProperty.value)
+    }
+
     companion object {
+        /** Create UI model from chat message. */
         fun valueOf(it: ChatMessage) =
             ChatMessageUiModel(
                 role = it.role,
@@ -228,6 +264,12 @@ class ChatMessageUiModel(
                 _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>(),
                 _toolCallId = it.toolCallId
             )
+
+        /** Create UI model with multiple chat message options. */
+        fun valueOf(chats: List<ChatMessage>) = valueOf(chats.first()).apply {
+            modelList = chats.map { valueOf(it) }
+            modelListIndex = 0
+        }
 
         /** Find first image content in a message, if present. */
         fun ChatMessage.imageContent() =
