@@ -25,11 +25,11 @@ import java.util.UUID.randomUUID
 /** Details of an executed prompt, including prompt configuration, model configuration, execution metadata, and output. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 class AiPromptTrace(
-    var promptInfo: AiPromptInfo,
-    var modelInfo: AiPromptModelInfo,
-    var execInfo: AiPromptExecInfo = AiPromptExecInfo(),
+    promptInfo: AiPromptInfo,
+    modelInfo: AiPromptModelInfo,
+    execInfo: AiPromptExecInfo = AiPromptExecInfo(),
     var outputInfo: AiPromptOutputInfo = AiPromptOutputInfo(null)
-) {
+) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo) {
 
     /** Unique identifier for this trace. */
     var uuid = randomUUID().toString()
@@ -39,3 +39,9 @@ class AiPromptTrace(
 
 }
 
+/** Common elements of a prompt trace. */
+abstract class AiPromptTraceSupport(
+    var promptInfo: AiPromptInfo,
+    var modelInfo: AiPromptModelInfo,
+    var execInfo: AiPromptExecInfo = AiPromptExecInfo()
+)

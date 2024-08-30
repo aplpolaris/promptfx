@@ -19,12 +19,16 @@
  */
 package tri.promptfx.tools
 
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import tornadofx.*
+import tri.ai.openai.promptTask
 import tri.ai.pips.aitask
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptResultArea
 import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -34,17 +38,17 @@ class PromptValidatorPlugin : NavigableWorkspaceViewImpl<PromptValidatorView>("T
 /** View with a prompt for testing, and a second prompt for validation. */
 class PromptValidatorView : AiPlanTaskView(
     "Prompt Validator",
-    "Validate a prompt against a second prompt",
+    "Validate text completion output using a secondary prompt."
 ) {
 
     val prompt = SimpleStringProperty("")
-    val promptOutput = SimpleStringProperty("")
-    val validatorOutput = SimpleStringProperty("")
+    private val promptOutput = SimpleObjectProperty<AiPromptTrace>()
+    private val validatorOutput = SimpleObjectProperty<AiPromptTrace>()
     private lateinit var validatorPromptUi: EditablePromptUi
 
     init {
         addInputTextArea(prompt) {
-            promptText = "Enter a prompt to validate"
+            promptText = "Enter a prompt whose response you want to validate"
         }
         input {
             validatorPromptUi = EditablePromptUi(PROMPT_VALIDATE_PREFIX, "Prompt to validate the result:")
@@ -54,31 +58,24 @@ class PromptValidatorView : AiPlanTaskView(
 
         outputPane.clear()
         output {
-            textarea(promptOutput) {
-                promptText = "Prompt output will be shown here"
-                isEditable = false
-                isWrapText = true
-                font = Font("Segoe UI Emoji", 18.0)
-                vgrow = Priority.ALWAYS
-            }
-            textarea(validatorOutput) {
-                promptText = "Validator output will be shown here"
-                isEditable = false
-                isWrapText = true
-                font = Font("Segoe UI Emoji", 18.0)
-                vgrow = Priority.ALWAYS
-            }
+            add(PromptResultArea().apply {
+                promptOutput.onChange { setFinalResult(it!!) }
+            })
+            add(PromptResultArea().apply {
+                validatorOutput.onChange { setFinalResult(it!!) }
+            })
         }
         onCompleted {
-            validatorOutput.set(it.finalResult.toString())
+            validatorOutput.set(it.finalResult!!.first() as AiPromptTrace)
         }
     }
 
     override fun plan() = aitask("complete-prompt") {
-        completionEngine.complete(prompt.value, common.maxTokens.value, common.temp.value)
+        completionEngine.promptTask(prompt.value, common.maxTokens.value, common.temp.value)
     }.aitask("validate-result") {
         runLater { promptOutput.value = it }
-        completionEngine.complete(validatorPromptUi.fill("result" to it), common.maxTokens.value, common.temp.value)
+        val validatorPromptText = validatorPromptUi.fill("result" to it.outputInfo.outputs!!.first().toString())
+        completionEngine.promptTask(validatorPromptText, common.maxTokens.value, common.temp.value, numResponses = common.numResponses.value)
     }.planner
 
     companion object {

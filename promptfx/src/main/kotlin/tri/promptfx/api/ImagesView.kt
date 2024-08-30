@@ -44,7 +44,6 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.*
-import java.util.*
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", WorkspaceViewAffordance.INPUT_ONLY, ImagesView::class)
@@ -311,30 +310,3 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     }
 
 }
-
-/**
- * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
- * Not designed for serialization (yet).
- */
-class AiImageTrace(
-    var promptInfo: AiPromptInfo,
-    var modelInfo: AiPromptModelInfo,
-    var execInfo: AiPromptExecInfo = AiPromptExecInfo(),
-    var outputInfo: AiImageOutputInfo = AiImageOutputInfo(listOf())
-) {
-    /** Unique identifier for this trace. */
-    var uuid = UUID.randomUUID().toString()
-
-    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
-
-    /** Splits this image trace into individual images. */
-    fun splitImages(): List<AiImageTrace> =
-        outputInfo.imageUrls.map {
-            AiImageTrace(promptInfo, modelInfo, execInfo, AiImageOutputInfo(listOf(it)))
-        }
-}
-
-/** Output info for an image prompt. */
-class AiImageOutputInfo(
-    var imageUrls: List<String>
-)

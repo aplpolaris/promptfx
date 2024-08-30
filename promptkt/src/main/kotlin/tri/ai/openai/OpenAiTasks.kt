@@ -27,15 +27,25 @@ import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiPromptModelInfo.Companion.MAX_TOKENS
+import tri.ai.prompt.trace.AiPromptModelInfo.Companion.NUM_RESPONSES
 import tri.ai.prompt.trace.AiPromptModelInfo.Companion.TEMPERATURE
 
 /** Generate a task that adds user input to a prompt. */
 suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiTaskResult<AiPromptTrace> {
     val prompt = AiPromptLibrary.lookupPrompt(promptId)
     val promptParams = prompt.promptParams(input)
-    val result = complete(prompt.fill(promptParams), tokenLimit, temp, stop, numResponses = numResponses)
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
-    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
+    return promptTask(promptInfo, tokenLimit, temp, stop, numResponses)
+}
+
+/** Generate a task that completes a prompt. */
+suspend fun TextCompletion.promptTask(promptText: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
+    promptTask(AiPromptInfo(promptText), tokenLimit, temp, stop, numResponses)
+
+/** Generate a task that completes a prompt. */
+suspend fun TextCompletion.promptTask(promptInfo: AiPromptInfo, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiTaskResult<AiPromptTrace> {
+    val result = complete(promptInfo.filled(), tokenLimit, temp, stop, numResponses = numResponses)
+    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp, NUM_RESPONSES to numResponses))
     val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
     val outputInfo = AiPromptOutputInfo(result.values)
     return AiTaskResult(AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo))
@@ -47,7 +57,7 @@ suspend fun TextCompletion.instructTask(promptId: String, instruct: String, user
     val promptParams = prompt.instructParams(instruct = instruct, input = userText)
     val result = complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses)
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
-    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp))
+    val modelInfo = AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp, NUM_RESPONSES to numResponses))
     val execInfo = AiPromptExecInfo(result.errorMessage, responseTimeMillis = result.durationTotal?.toMillis())
     val outputInfo = AiPromptOutputInfo(result.values)
     return AiTaskResult(AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo))
@@ -64,7 +74,7 @@ suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, St
     return res.maplist {
         AiPromptTrace(
             AiPromptInfo(AiPromptLibrary.lookupPrompt(promptId).template, fields),
-            AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp)),
+            AiPromptModelInfo(modelId, mapOfNotNull(MAX_TOKENS to tokenLimit, TEMPERATURE to temp, NUM_RESPONSES to numResponses)),
             AiPromptExecInfo(res.errorMessage, responseTimeMillis = res.durationTotal?.toMillis()),
             AiPromptOutputInfo(it)
         )
