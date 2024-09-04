@@ -19,17 +19,33 @@
  */
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Text inference execution info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class AiPromptExecInfo(
+    /** Error message, if any. */
     var error: String? = null,
+    /** Throwable error, if any. */
+    @JsonIgnore
+    var throwable: Throwable? = null,
+    /** Number of query tokens. */
     var queryTokens: Int? = null,
+    /** Number of response tokens. */
     var responseTokens: Int? = null,
-    var responseTimeMillis: Long? = null
+    /** Response time in milliseconds. */
+    var responseTimeMillis: Long? = null,
+    /** Response time in milliseconds, total duration including retries. */
+    var responseTimeMillisTotal: Long? = null,
+    /** Number of executions attempted. */
+    val attempts: Int? = null,
 ) {
+    /** Return true if the execution succeeded. */
+    fun succeeded() = error == null && throwable == null
+
     companion object {
-        fun error(errorMessage: String?) = AiPromptExecInfo(error = errorMessage)
+        /** Create an execution info with an error. */
+        fun error(errorMessage: String?, throwable: Throwable? = null) = AiPromptExecInfo(error = errorMessage, throwable = throwable)
     }
 }

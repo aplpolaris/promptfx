@@ -17,11 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx
+package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
@@ -32,7 +33,10 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
-import tri.promptfx.ui.PromptTraceDetails
+import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.buildsendresultmenu
+import tri.promptfx.docs.FormattedPromptTraceResult
+import tri.promptfx.promptFxFileChooser
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
@@ -41,14 +45,8 @@ import tri.util.ui.showImageDialog
  * Text area for displaying a prompt result or other output, with support for cycling outputs if multiple.
  * Adjusts font size, adds ability to copy/save output to a file.
  */
-class PromptResultArea : Fragment("Prompt Result Area") {
+class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
 
-    private val results = observableListOf<String>()
-    private val selectedIndex = SimpleIntegerProperty()
-    val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
-    val trace = SimpleObjectProperty<AiPromptTrace>(null)
-
-    private val multiResult = results.sizeProperty.greaterThan(1)
     private val containsCode = selected.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
     private val containsPlantUml = selected.booleanBinding { it != null && (
             it.contains("@startuml") && it.contains("@enduml") ||
@@ -56,27 +54,9 @@ class PromptResultArea : Fragment("Prompt Result Area") {
         )
     }
 
-    fun setFinalResult(finalResult: AiPromptTrace) {
-        val results = finalResult.outputInfo.outputs?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
-        this.results.setAll(results)
-        selectedIndex.set(0)
-        trace.set(finalResult as? AiPromptTrace)
-    }
-
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        toolbar {
-            visibleWhen(multiResult)
-            managedWhen(multiResult)
-            button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
-                enableWhen(selectedIndex.greaterThan(0))
-                action { selectedIndex.set(selectedIndex.value - 1) }
-            }
-            button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
-                enableWhen(selectedIndex.lessThan(results.sizeProperty.subtract(1)))
-                action { selectedIndex.set(selectedIndex.value + 1) }
-            }
-        }
+        addtoolbar()
         textarea(selected) {
             promptText = "Prompt output will be shown here"
             isEditable = false
@@ -149,6 +129,52 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     }
 
     //endregion
+
+}
+
+/** Implementation of a prompt result area with support for displaying a list of results. */
+abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
+
+    val trace = SimpleObjectProperty<AiPromptTrace>(null)
+
+    protected val results = observableListOf<String>()
+    private val multiResult = results.sizeProperty.greaterThan(1)
+
+    private val selectedIndex = SimpleIntegerProperty()
+    val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
+    protected val formattedTrace = SimpleObjectProperty<FormattedPromptTraceResult>(null)
+    protected val htmlResult = SimpleStringProperty("")
+
+    /** Set the final result to display in the result area. */
+    fun setFinalResult(finalResult: AiPromptTrace) {
+        val results = finalResult.outputInfo.outputs?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
+        this.results.setAll(results)
+        selectedIndex.set(0)
+        trace.set(finalResult as? AiPromptTrace)
+    }
+
+    /** Set the final result to display in the result area. */
+    fun setFinalResult(finalResult: FormattedPromptTraceResult) {
+        val list = finalResult.trace.outputInfo.outputs!!
+        htmlResult.set(list.text.toHtml())
+        trace.set(list.trace)
+    }
+
+    /** Adds a toolbar that appears when there are multiple results presented. */
+    protected fun EventTarget.addtoolbar() {
+        toolbar {
+            visibleWhen(multiResult)
+            managedWhen(multiResult)
+            button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
+                enableWhen(selectedIndex.greaterThan(0))
+                action { selectedIndex.set(selectedIndex.value - 1) }
+            }
+            button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
+                enableWhen(selectedIndex.lessThan(results.sizeProperty.subtract(1)))
+                action { selectedIndex.set(selectedIndex.value + 1) }
+            }
+        }
+    }
 
 }
 

@@ -25,6 +25,7 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.IgnoreMonitor
+import tri.promptfx.ui.FormattedText
 import tri.util.warning
 import java.io.File
 import java.io.FileFilter

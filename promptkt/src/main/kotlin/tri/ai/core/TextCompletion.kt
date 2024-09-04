@@ -19,7 +19,7 @@
  */
 package tri.ai.core
 
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Interface for text completion. */
 interface TextCompletion {
@@ -33,6 +33,6 @@ interface TextCompletion {
         temperature: Double? = null,
         stop: String? = null,
         numResponses: Int? = 1
-    ): AiTaskResult<String>
+    ): AiPromptTrace<String>
 
 }

@@ -34,9 +34,9 @@ class AiPromptTraceDatabase() {
     var prompts = mutableSetOf<AiPromptInfo>()
     var models = mutableSetOf<AiPromptModelInfo>()
     var execs = mutableSetOf<AiPromptExecInfo>()
-    var outputs = mutableSetOf<AiPromptOutputInfo>()
+    var outputs = mutableSetOf<AiPromptOutputInfo<*>>()
 
-    constructor(traces: Iterable<AiPromptTrace>) : this() {
+    constructor(traces: Iterable<AiPromptTrace<*>>) : this() {
         addTraces(traces)
     }
 
@@ -52,12 +52,12 @@ class AiPromptTraceDatabase() {
     )
 
     /** Add all provided traces to the database. */
-    fun addTraces(result: Iterable<AiPromptTrace>) {
+    fun addTraces(result: Iterable<AiPromptTrace<*>>) {
         result.forEach { addTrace(it) }
     }
 
     /** Adds the trace to the database, updating object references as needed and returning the object added. */
-    fun addTrace(trace: AiPromptTrace): AiPromptTraceId {
+    fun addTrace(trace: AiPromptTrace<*>): AiPromptTraceId {
         val prompt = addOrGet(prompts, trace.promptInfo)
         val model = addOrGet(models, trace.modelInfo)
         val exec = addOrGet(execs, trace.execInfo)
@@ -74,10 +74,13 @@ class AiPromptTraceDatabase() {
         }
     }
 
-    private fun <T> addOrGet(set: MutableSet<T>, item: T): T {
+    private fun <T> addOrGet(set: MutableSet<T>, item: T?): T? {
         val existing = set.find { it == item }
-        return if (existing != null) existing else {
-            set.add(item)
+        return if (existing != null)
+            existing
+        else {
+            if (item != null)
+                set.add(item)
             item
         }
     }

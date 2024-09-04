@@ -19,52 +19,57 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
+
 /** Pipeline for chaining together collection of tasks to be accomplished by AI or APIs. */
 object AiPipelineExecutor {
 
     /** More robust execution, allowing for retry of failed attempts. */
-    val executor = RetryExecutor()
+    private val executor = RetryExecutor()
 
     /**
      * Execute tasks in order, chaining results from one to another.
      * Returns the table of execution results.
      */
-    suspend fun execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult {
+    suspend fun <T> execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult {
         require(tasks.isNotEmpty())
 
-        val completedTasks = mutableMapOf<String, AiTaskResult<*>>()
-        val failedTasks = mutableMapOf<String, AiTaskResult<*>>()
+        val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
+        val failedTasks = mutableMapOf<String, AiPromptTraceSupport>()
 
         var tasksToDo: List<AiTask<*>>
         do {
             tasksToDo = tasks.filter {
                 it.id !in completedTasks && it.id !in failedTasks
             }.filter {
-                it.dependencies.all { it in completedTasks && completedTasks[it]!!.error == null }
+                it.dependencies.all { it in completedTasks && completedTasks[it]!!.execInfo.succeeded() }
             }
-            tasksToDo.forEach {
+            tasksToDo.forEach { task ->
                 try {
-                    monitor.taskStarted(it)
-                    val input = it.dependencies.associateWith { completedTasks[it]!! }
-                    val result = executor.execute(it, input, monitor)
-                    val resultValue = result.values
-                    val err = result.error ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
+                    monitor.taskStarted(task)
+                    val input = task.dependencies.associateWith { completedTasks[it]!! }
+                    val result = executor.execute(task, input, monitor)
+                    val resultValue = (result as? AiPromptTrace<*>)?.outputInfo?.outputs
+                    val err = result.execInfo.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
-                        monitor.taskFailed(it, err)
-                        failedTasks[it.id] = result
+                        monitor.taskFailed(task, err)
+                        failedTasks[task.id] = result
                     } else {
-                        monitor.taskCompleted(it, resultValue)
-                        completedTasks[it.id] = result
+                        monitor.taskCompleted(task, resultValue)
+                        completedTasks[task.id] = result
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
-                    monitor.taskFailed(it, x)
-                    failedTasks[it.id] = AiTaskResult.error<Any>(x.message!!, x)
+                    monitor.taskFailed(task, x)
+                    failedTasks[task.id] = AiPromptTrace.error<T>(x.message!!, x)
                 }
             }
         } while (tasksToDo.isNotEmpty())
 
-        return AiPipelineResult(tasks.last().id, completedTasks + failedTasks)
+        val allTasks = completedTasks + failedTasks
+        val lastTaskResult = allTasks[tasks.last().id]!!
+        return AiPipelineResult(lastTaskResult, completedTasks + failedTasks)
     }
 
 }

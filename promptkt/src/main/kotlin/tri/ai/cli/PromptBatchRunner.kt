@@ -75,7 +75,7 @@ object PromptBatchRunner {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            batch.plan().execute(IgnoreMonitor).finalResult as List<AiPromptTrace>
+            batch.plan().execute(IgnoreMonitor).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 

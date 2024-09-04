@@ -21,14 +21,12 @@ package tri.promptfx.tools
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.scene.layout.Priority
-import javafx.scene.text.Font
 import tornadofx.*
 import tri.ai.openai.promptTask
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.PromptResultArea
+import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.EditablePromptUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 

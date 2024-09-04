@@ -23,11 +23,19 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Text inference output info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiPromptOutputInfo(
-    var outputs: List<*>? = null
+data class AiPromptOutputInfo<T>(
+    var outputs: List<T>
 ) {
+    /** Convert output using a provided function. */
+    fun <S> map(transform: (T) -> S) =
+        AiPromptOutputInfo(outputs.map(transform))
+
+    /** Convert list of output to a single output. */
+    fun <S> mapList(transform: (List<T>) -> S) =
+        AiPromptOutputInfo(listOf(transform(outputs)))
+
     companion object {
         /** Create output info with a single output. */
-        fun output(output: Any) = AiPromptOutputInfo(listOf(output))
+        fun <T> output(output: T) = AiPromptOutputInfo(listOf(output))
     }
 }

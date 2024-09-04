@@ -29,7 +29,7 @@ class AiPipelineExecutorTest {
     fun testExecute() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("pass"), FailTask("fail")),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(2, results.size)
         assertEquals("go", results["pass"]?.firstValue!!)
         assertNotNull(results["fail"]?.error)
@@ -39,7 +39,7 @@ class AiPipelineExecutorTest {
     fun testExecuteChain() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(3, results.size)
         assertEquals("go", results["a"]?.firstValue!!)
         assertEquals("go", results["b"]?.firstValue!!)
@@ -50,7 +50,7 @@ class AiPipelineExecutorTest {
     fun testExecuteChainWithFailure() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(2, results.size)
         assertEquals("go", results["a"]?.firstValue!!)
         assertNotNull(results["b"]?.error)

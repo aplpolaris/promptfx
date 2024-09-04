@@ -54,7 +54,7 @@ class AiPromptBatchTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).results.values.onEach {
+            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -71,7 +71,7 @@ class AiPromptBatchTest {
             )
             val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
-                addTraces(result.results.values.map { it.firstValue!! as AiPromptTrace })
+                addTraces(result.interimResults.values.map { it.firstValue!! as AiPromptTrace })
             }
             val output = jsonWriter.writeValueAsString(db)
             val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)

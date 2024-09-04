@@ -19,6 +19,9 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
+
 /** Stores a list of tasks that can be executed in order. */
 class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
 
@@ -28,23 +31,23 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
             override fun plan() = plan
         }
 
-    constructor(firstTaskId: String, description: String? = null, op: suspend () -> AiTaskResult<S>): this(listOf(),
+    constructor(firstTaskId: String, description: String? = null, op: suspend () -> AiPromptTrace<S>): this(listOf(),
         object: AiTask<S>(firstTaskId, description) {
-            override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) = op()
+            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
         })
 
     /** Adds a task to the end of the list. */
     fun <T> task(id: String, description: String? = null, op: suspend (S) -> T) =
         aitask(id, description) {
             val res = op(it)
-            if (res is AiTaskResult<*>) throw IllegalArgumentException("Use aitask() for AiTaskResult")
-            AiTaskResult.result(res, modelId = null)
+            if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
+            AiPromptTrace.result(res, modelId = null)
         }
 
     /** Adds a task to the end of the list. */
-    fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiTaskResult<T>): AiTaskList<T> {
+    fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiPromptTrace<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
+            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
                 // TODO - eventually, add support for multiple outputs from previous task
                 op(inputs[lastTask.id]!!.firstValue as S)
         }
@@ -62,8 +65,13 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
 inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<T> {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask<T>("promptBatch", dependencies = map { it.id }.toSet()) {
-        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.results((inputs.values as Collection<AiTaskResult<T>>).flatMap { it.values ?: listOf() }.toList())
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTrace<T> {
+            val aggregateResults = inputs.values.flatMap {
+                (it as? AiPromptTrace<T>)?.outputInfo?.outputs ?: listOf()
+            }
+            // TODO - any other parts of trace to aggregate ??
+            return AiPromptTrace.results(aggregateResults)
+        }
     }
     return AiTaskList(this, finalTask)
 }
@@ -79,12 +87,12 @@ fun <T> aitasklist(tasks: List<AiTask<T>>) =
 fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTaskList<T> =
     aitask(id, description) {
         val res = op()
-        if (res is AiTaskResult<*>) throw IllegalArgumentException("Use aitask() for AiTaskResult")
-        AiTaskResult.result(res, modelId = null)
+        if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiTaskResult")
+        AiPromptTrace.result(res, modelId = null)
     }
 
 /** Creates a sequential task list with a single task. */
-fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiTaskResult<T>): AiTaskList<T> =
+fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiPromptTrace<T>): AiTaskList<T> =
     AiTaskList(id, description, op)
 
 //endregion

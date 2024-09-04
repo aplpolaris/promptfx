@@ -42,6 +42,9 @@ import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
+import tri.promptfx.ui.FormattedText
+import tri.promptfx.ui.FormattedTextNode
+import tri.promptfx.ui.splitOn
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.fine

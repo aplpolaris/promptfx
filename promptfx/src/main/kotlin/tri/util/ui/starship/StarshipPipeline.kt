@@ -29,7 +29,7 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
-import tri.promptfx.docs.FormattedText
+import tri.promptfx.ui.FormattedText
 import tri.util.ui.DocumentThumbnail
 
 /** Pipeline execution for [StarshipUi]. */

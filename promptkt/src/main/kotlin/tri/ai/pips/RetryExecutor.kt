@@ -19,7 +19,9 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.info
 import java.time.Duration
 
@@ -37,10 +39,10 @@ class RetryExecutor(
 ) {
 
     /**
-     * Executes a task with given policy. Adds additional information about the execution to [AiTaskResult]
+     * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
      * related to the number of attempts and total duration.
      */
-    suspend fun <T> execute(task: AiTask<T>, inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor): AiTaskResult<T> {
+    suspend fun <T> execute(task: AiTask<T>, inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
         var retries = 0
         var delay = initialRetryDelay
         val t00 = System.currentTimeMillis()
@@ -50,23 +52,20 @@ class RetryExecutor(
                 val success = task.execute(inputs, monitor)
                 val t1 = System.currentTimeMillis()
                 return success.copy(
-                    duration = Duration.ofMillis(t1 - t0),
-                    durationTotal = Duration.ofMillis(t1 - t00),
-                    attempts = retries + 1
-                ).also {
-                    // TODO - this hard-coded type check is brittle, potentially unexpected side effect behavior
-                    (it.firstValue!! as? AiPromptTrace)?.execInfo?.let { ei ->
-                        ei.error = it.errorMessage
-                        ei.responseTimeMillis = it.duration?.toMillis()
-                    }
-                }
+                    execInfo = success.execInfo.copy(
+                        responseTimeMillis = t1 - t0,
+                        responseTimeMillisTotal = t1 - t00,
+                        attempts = retries + 1
+                    )
+                )
             } catch (x: Exception) {
                 val t1 = System.currentTimeMillis()
                 if (retries++ >= maxRetries)
-                    return AiTaskResult(
-                        error = x,
-                        duration = Duration.ofMillis(t1 - t0),
-                        durationTotal = Duration.ofMillis(t1 - t00),
+                    return AiPromptTrace.error<T>(
+                        message = x.message,
+                        throwable = x,
+                        responseTimeMillis = t1 - t0,
+                        responseTimeMillisTotal = t1 - t00,
                         attempts = retries
                     )
                 info<RetryExecutor>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")

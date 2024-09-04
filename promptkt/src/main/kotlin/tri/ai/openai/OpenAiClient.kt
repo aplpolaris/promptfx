@@ -47,12 +47,10 @@ import okio.Path.Companion.toOkioPath
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.OpenAiModelIndex.IMAGE_DALLE2
-import tri.ai.pips.AiTaskResult
-import tri.ai.pips.AiTaskResult.Companion.result
-import tri.ai.pips.AiTaskResult.Companion.results
 import tri.ai.pips.UsageUnit
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTrace.Companion.results
 import java.io.File
-import java.time.Duration
 import java.util.*
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
@@ -77,13 +75,13 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiPromptTrace<List<List<Double>>> {
         checkApiKey()
         return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace<List<List<Double>>> {
         checkApiKey()
         return client.embeddings(EmbeddingRequest(
             ModelId(modelId),
@@ -91,15 +89,15 @@ class OpenAiClient(val settings: OpenAiSettings) {
             dimensions = outputDimensionality
         )).let { it ->
             usage.increment(it.usage)
-            result(it.embeddings.map { it.embedding }, modelId)
+            AiPromptTrace.result(it.embeddings.map { it.embedding }, modelId)
         }
     }
 
     /** Runs a quick audio transcription for a given file. */
-    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiTaskResult<String> {
+    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace<String> {
         checkApiKey()
         if (!audioFile.isAudioFile())
-            return AiTaskResult.invalidRequest("Audio file not provided.")
+            return AiPromptTrace.invalidRequest("Audio file not provided.")
 
         val request = TranscriptionRequest(
             model = ModelId(modelId),
@@ -107,7 +105,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
         )
         return client.transcription(request).let {
             usage.increment(0, UsageUnit.AUDIO_MINUTES)
-            result(it.text, modelId)
+            AiPromptTrace.result(it.text, modelId)
         }
     }
 
@@ -116,36 +114,32 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    suspend fun completion(completionRequest: CompletionRequest): AiTaskResult<String> {
+    suspend fun completion(completionRequest: CompletionRequest): AiPromptTrace<String> {
         checkApiKey()
         val t0 = System.currentTimeMillis()
         val resp = client.completion(completionRequest)
         usage.increment(resp.usage)
-        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
-        return AiTaskResult(
+        return results(
             values = resp.choices.map { it.text },
             modelId = completionRequest.model.id,
-            duration = millis,
-            durationTotal = millis
+            duration = System.currentTimeMillis() - t0
         )
     }
 
     /** Runs a text completion request using a chat model. */
-    suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiTaskResult<String> {
+    suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiPromptTrace<String> {
         checkApiKey()
         val t0 = System.currentTimeMillis()
         val resp = client.chatCompletion(completionRequest)
-        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
-        return AiTaskResult(
+        return results(
             values = resp.choices.map { it.message.content ?: "" },
             modelId = completionRequest.model.id,
-            duration = millis,
-            durationTotal = millis
+            duration = System.currentTimeMillis() - t0
         )
     }
 
     /** Runs a chat response. */
-    suspend fun chat(completionRequest: ChatCompletionRequest): AiTaskResult<ChatMessage> {
+    suspend fun chat(completionRequest: ChatCompletionRequest): AiPromptTrace<ChatMessage> {
         checkApiKey()
         return client.chatCompletion(completionRequest).let {
             usage.increment(it.usage)
@@ -155,7 +149,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs an edit request (deprecated API). */
     @Suppress("DEPRECATION")
-    suspend fun edit(request: EditsRequest): AiTaskResult<String> {
+    suspend fun edit(request: EditsRequest): AiPromptTrace<String> {
         checkApiKey()
         return client.edit(request).let {
             usage.increment(it.usage)
@@ -164,7 +158,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation): AiTaskResult<String> {
+    suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace<String> {
         checkApiKey()
         return client.imageURL(imageCreation).let {
             usage.increment(it.size, UsageUnit.IMAGES)

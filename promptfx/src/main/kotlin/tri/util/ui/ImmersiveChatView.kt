@@ -24,21 +24,17 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
-import javafx.scene.image.Image
 import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.text.chunks.BrowsableSource
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxDriver.sendInput
 import tri.promptfx.PromptFxModels
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
-import tri.promptfx.docs.FormattedText
-import tri.promptfx.docs.toFxNodes
+import tri.promptfx.ui.FormattedText
 import tri.util.ui.DocumentUtils.documentThumbnail
 
 /** View for a full-screen chat display. */

@@ -23,7 +23,6 @@ import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskMonitor
-import tri.ai.pips.AiTaskResult
 import tri.ai.prompt.trace.*
 
 /** Configuration required for executing a text completion prompt. */
@@ -35,14 +34,14 @@ class AiPromptRunConfig(
         "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"
 
     /** Create task for executing a run config. */
-    fun task(id: String) = object : AiTask<AiPromptTrace>(id) {
+    fun task(id: String) = object : AiTask<String>(id) {
         override suspend fun execute(
-            inputs: Map<String, AiTaskResult<*>>,
+            inputs: Map<String, AiPromptTraceSupport>,
             monitor: AiTaskMonitor
-        ): AiTaskResult<AiPromptTrace> = try {
+        ): AiPromptTrace<String> = try {
             execute(TextPlugin.textCompletionModel(modelInfo.modelId))
         } catch (x: NoSuchElementException) {
-            AiTaskResult.result(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("Model not found: ${modelInfo.modelId}")))
+            AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("Model not found: ${modelInfo.modelId}"))
         }
     }
 
@@ -50,18 +49,12 @@ class AiPromptRunConfig(
      * Executes a text completion with a single configuration.
      * Overwrites the model id in the configuration to match the model.
      * @param completion the text completion model
-     * @return trace of the execution wrapped as [AiTaskResult]
+     * @return trace of the execution
      */
-    private suspend fun execute(completion: TextCompletion): AiTaskResult<AiPromptTrace> {
+    private suspend fun execute(completion: TextCompletion): AiPromptTrace<String> {
         modelInfo.modelId = completion.modelId
         val promptText = promptInfo.filled()
-        val result = completion.complete(promptText, modelInfo)
-        return result.maplist {
-            AiPromptTrace(promptInfo, modelInfo,
-                AiPromptExecInfo(result.error?.message, responseTimeMillis = result.duration?.toMillis()),
-                AiPromptOutputInfo(it)
-            )
-        }
+        return completion.complete(promptText, modelInfo)
     }
 
     /**

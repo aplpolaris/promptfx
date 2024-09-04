@@ -21,8 +21,7 @@ package tri.ai.gemini
 
 import tri.ai.core.TextCompletion
 import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
-import tri.ai.pips.AiTaskResult
-import java.time.Duration
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with Gemini models. */
 class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
@@ -30,17 +29,15 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client
 
     override fun toString() = "$modelId (Gemini)"
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiTaskResult<String> {
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiPromptTrace<String> {
         val t0 = System.currentTimeMillis()
         val resp = client.generateContent(text, modelId, numResponses)
-        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
-        return AiTaskResult(
+        return AiPromptTrace.results(
             values = resp.candidates!!.flatMap {
                 it.content.parts.map { it.text!! }
             },
             modelId = modelId,
-            duration = millis,
-            durationTotal = millis
+            duration = System.currentTimeMillis() - t0
         )
     }
 

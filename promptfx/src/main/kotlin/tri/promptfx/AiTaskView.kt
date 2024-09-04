@@ -44,6 +44,8 @@ import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.promptfx.api.AiImageTrace
 import tri.promptfx.docs.FormattedPromptTraceResult
+import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultArea
 import tri.util.ui.graphic
 import tri.util.warning
 import java.io.File
@@ -64,6 +66,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     val controller: PromptFxController by inject()
     val progress: AiProgressView by inject()
     val resultArea = PromptResultArea()
+    val formattedResultArea = FormattedPromptResultArea()
 
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
@@ -311,7 +314,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             if (r != null && r.size == 1 && r.all { it is AiPromptTrace }) {
                 resultArea.setFinalResult(r.first() as AiPromptTrace)
             } else if (r != null && r.size == 1 && r.all { it is FormattedPromptTraceResult}) {
-                // ignore - this is handled by view
+                formattedResultArea.setFinalResult(r.first() as FormattedPromptTraceResult)
             } else if (r != null && r.size == 1 && r.all { it is AiImageTrace }) {
                 // ignore - this is handled by view
             } else {
@@ -329,6 +332,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                     AiPromptOutputInfo.output(r.toString())
                 )
                 resultArea.setFinalResult(trace)
+                formattedResultArea.setFinalResult(trace)
             }
         }
     }

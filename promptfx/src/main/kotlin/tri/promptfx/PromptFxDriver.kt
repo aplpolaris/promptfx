@@ -34,8 +34,7 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.docs.FormattedPromptTraceResult
-import tri.promptfx.docs.FormattedText
-import tri.promptfx.docs.toFxNodes
+import tri.promptfx.ui.FormattedText
 import tri.promptfx.library.TextLibraryInfo
 
 /** General-purpose capability for sending inputs to PromptFx views and getting a result. */
