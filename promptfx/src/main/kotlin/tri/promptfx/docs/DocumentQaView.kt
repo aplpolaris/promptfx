@@ -168,11 +168,12 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val fr = it.finalResult as FormattedPromptTraceResult
-            htmlResult.set(fr.text.toHtml())
-            resultTrace.set(fr.trace)
+            val frList = it.finalResult as List<FormattedPromptTraceResult>
+            val first = frList.first()
+            htmlResult.set(first.text.toHtml())
+            resultTrace.set(first.trace)
             resultBox.children.clear()
-            resultBox.children.addAll(fr.text.toFxNodes())
+            resultBox.children.addAll(first.text.toFxNodes())
         }
     }
 
@@ -186,7 +187,8 @@ class DocumentQaView: AiPlanTaskView(
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
         maxTokens = common.maxTokens.value,
-        tempParameters = common
+        temp = common.temp.value,
+        numResponses = common.numResponses.value
     )
 
     //region ACTIONS
@@ -219,7 +221,7 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            val ft = (it.finalResult as FormattedPromptTraceResult).text
+            val ft = (it.finalResult?.first() as FormattedPromptTraceResult).text
             ft.hyperlinkOp = { docName ->
                 val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                 if (doc == null) {
@@ -253,7 +255,8 @@ class DocumentQaView: AiPlanTaskView(
                     DocumentBrowseToPage(match.document.browsable()!!, match.chunkText, hostServices).open()
                 } else {
                     info<DocumentQaView>("Browsing to closest match")
-                    DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
+                    // TODO - support for multiple responses
+                    DocumentBrowseToClosestMatch(matches, result.responseEmbeddings[0], hostServices).open()
                 }
             }
         }

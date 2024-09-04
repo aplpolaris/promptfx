@@ -34,6 +34,7 @@ import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.embedding.EmbeddingPrecision
+import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME_LEGACY
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
@@ -41,7 +42,6 @@ import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
-import tri.promptfx.ModelParameters
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.fine
@@ -83,11 +83,15 @@ class DocumentQaPlanner {
         contextChunks: Int,
         completionEngine: TextCompletion,
         maxTokens: Int,
-        tempParameters: ModelParameters
+        temp: Double,
+        numResponses: Int
     ) = aitask("upgrade-existing-embeddings") {
             runLater { snippets.setAll() }
             if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
                 upgradeEmbeddingIndex()
+            AiTaskResult.result("")
+        }.aitask("load-embeddings-file") {
+            embeddingIndex.value!!.findMostSimilar("a", 1)
             AiTaskResult.result("")
         }.aitask("calculate-embeddings") {
             findRelevantSection(question, chunksToRetrieve).also {
@@ -97,13 +101,17 @@ class DocumentQaPlanner {
             val queryChunks = it.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
-            val response = completionEngine.instructTask(promptId, question, context, maxTokens, tempParameters.temp.value)
-            val responseText = response.firstValue!!.outputInfo.outputs?.getOrNull(0)?.toString()
+            val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
+            val trace = response.firstValue!!
             val questionEmbedding = embeddingService.calculateEmbedding(question)
-            val responseEmbedding = responseText?.let { embeddingService.calculateEmbedding(it) }
-            if (responseEmbedding != null) {
+            val responseEmbeddings = (trace.outputInfo.outputs ?: listOf<String>()).map {
+                embeddingService.calculateEmbedding(it.toString())
+            }
+            // TODO - make this support more than one response embedding
+            // add snippet response scores for first response embedding only
+            if (responseEmbeddings.isNotEmpty()) {
                 snippets.forEach {
-                    it.responseScore = cosineSimilarity(responseEmbedding, it.chunkEmbedding).toFloat()
+                    it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
                 }
             }
             response.mapvalue {
@@ -111,7 +119,7 @@ class DocumentQaPlanner {
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,
                     trace = response.firstValue!!,
-                    responseEmbedding = responseEmbedding
+                    responseEmbeddings = responseEmbeddings
                 )
             }
         }.task("process-result") {
@@ -154,12 +162,9 @@ class DocumentQaPlanner {
 
     //region FORMATTING RESULTS OF QA
 
-    private val BOLD_STYLE = "-fx-font-weight: bold;"
-    private val LINK_STYLE = "-fx-fill: #8abccf; -fx-font-weight: bold;"
-
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
-        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.outputs?.joinToString { ", " } ?: "No response."))
+        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.outputs?.joinToString() ?: "No response."))
         val docs = qaResult.matches.mapNotNull { it.document.browsable() }
             .filter { it.shortNameWithoutExtension.isNotBlank() }
             .toSet()
@@ -186,12 +191,13 @@ class DocumentQaPlanner {
     private fun upgradeEmbeddingIndex() {
         val index = embeddingIndex.value as LocalFolderEmbeddingIndex
         val folder = index.rootDir
-        val file = File(folder, "embeddings.json")
-        if (file.exists()) {
-            fine<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $file")
+        val file = index.indexFile
+        val oldFile = File(folder, EMBEDDINGS_FILE_NAME_LEGACY)
+        if (!file.exists() && oldFile.exists()) {
+            fine<DocumentQaPlanner>("Checking legacy embeddings file for embedding vectors: $oldFile")
             try {
                 var changed = false
-                LegacyEmbeddingIndex.loadFrom(file).info.values.map {
+                LegacyEmbeddingIndex.loadFrom(oldFile).info.values.map {
                     val f = LocalFileManager.fixPath(File(it.path), folder)?.originalFile()
                         ?: throw IllegalArgumentException("File not found: ${it.path}")
                     f.createTextDoc().apply {
@@ -210,7 +216,7 @@ class DocumentQaPlanner {
                 if (changed) {
                     info<DocumentQaPlanner>("Upgraded legacy embeddings file to new format.")
                     index.saveIndex()
-                    info<DocumentQaPlanner>("Legacy embeddings file $file can be deleted unless needed for previous versions of PromptFx.")
+                    info<DocumentQaPlanner>("Legacy embeddings file $oldFile can be deleted unless needed for previous versions of PromptFx.")
                 } else {
                     fine<DocumentQaPlanner>("No new embeddings found in legacy embeddings file.")
                 }
@@ -222,11 +228,16 @@ class DocumentQaPlanner {
 
     //endregion
 
+    companion object {
+        private const val BOLD_STYLE = "-fx-font-weight: bold;"
+        private const val LINK_STYLE = "-fx-fill: #8abccf; -fx-font-weight: bold;"
+    }
+
 }
 
 /** Result including the trace and formatted text. */
 class FormattedPromptTraceResult(val trace: AiPromptTrace, val text: FormattedText) {
-    override fun toString() = trace.outputInfo.outputs?.joinToString { ", " } ?: "null"
+    override fun toString() = trace.outputInfo.outputs?.joinToString() ?: "null"
 }
 
 //region DATA OBJECTS DESCRIBING TASK
@@ -236,13 +247,13 @@ data class QuestionAnswerResult(
     val query: SemanticTextQuery,
     val matches: List<EmbeddingMatch>,
     val trace: AiPromptTrace,
-    val responseEmbedding: List<Double>?
+    val responseEmbeddings: List<List<Double>>
 ) {
-    override fun toString() = trace.outputInfo.outputs?.joinToString { ", " } ?: "No response. Question: ${query.query}"
+    override fun toString() = trace.outputInfo.outputs?.joinToString() ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
     val responseScore
-        get() = responseEmbedding?.let { cosineSimilarity(query.embedding, it).toFloat() } ?: 0f
+        get() = responseEmbeddings.map { cosineSimilarity(query.embedding, it).toFloat() } ?: 0f
 }
 
 //endregion

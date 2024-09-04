@@ -43,6 +43,7 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.promptfx.api.AiImageTrace
+import tri.promptfx.docs.FormattedPromptTraceResult
 import tri.util.ui.graphic
 import tri.util.warning
 import java.io.File
@@ -309,6 +310,8 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             val r = it.finalResult
             if (r != null && r.size == 1 && r.all { it is AiPromptTrace }) {
                 resultArea.setFinalResult(r.first() as AiPromptTrace)
+            } else if (r != null && r.size == 1 && r.all { it is FormattedPromptTraceResult}) {
+                // ignore - this is handled by view
             } else if (r != null && r.size == 1 && r.all { it is AiImageTrace }) {
                 // ignore - this is handled by view
             } else {

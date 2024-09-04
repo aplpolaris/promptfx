@@ -81,9 +81,9 @@ object PromptFxDriver {
         } else {
             inputArea.text = input
             val result = taskView.processUserInput()
-            val nodeResult = (result.finalResult as? FormattedPromptTraceResult)?.text
-                ?: result.finalResult as? FormattedText
-                ?: FormattedText(result.finalResult.toString())
+            val nodeResult = (result.finalResult?.first() as? FormattedPromptTraceResult)?.text
+                ?: result.finalResult?.first() as? FormattedText
+                ?: FormattedText(result.finalResult?.first().toString())
             Platform.runLater {
                 if (outputArea is TextArea) {
                     outputArea.text = nodeResult.toString()
