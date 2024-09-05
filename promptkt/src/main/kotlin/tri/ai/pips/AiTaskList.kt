@@ -91,6 +91,21 @@ inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
 }
 
 /**
+ * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
+ * @throws IllegalArgumentException if there are duplicate task IDs
+ */
+inline fun <reified T> List<AiTask<T>>.aggregatetrace(): AiTaskList<AiPromptTraceSupport<T>> {
+    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
+    val finalTask = object : AiTask<AiPromptTraceSupport<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<AiPromptTraceSupport<T>> {
+            val aggregateResults = inputs.values as List<AiPromptTraceSupport<T>>
+            return AiPromptTrace.results(aggregateResults)
+        }
+    }
+    return AiTaskList(this, finalTask)
+}
+
+/**
  * Creates a sequential task list using provided tasks.
  * @throws NoSuchElementException if the list is empty
  */

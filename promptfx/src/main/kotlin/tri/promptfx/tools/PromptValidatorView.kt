@@ -25,6 +25,7 @@ import tornadofx.*
 import tri.ai.openai.promptTask
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.EditablePromptUi
@@ -40,8 +41,8 @@ class PromptValidatorView : AiPlanTaskView(
 ) {
 
     val prompt = SimpleStringProperty("")
-    private val promptOutput = SimpleObjectProperty<AiPromptTrace<*>>()
-    private val validatorOutput = SimpleObjectProperty<AiPromptTrace<*>>()
+    private val promptOutput = SimpleObjectProperty<AiPromptTraceSupport<*>>()
+    private val validatorOutput = SimpleObjectProperty<AiPromptTraceSupport<*>>()
     private lateinit var validatorPromptUi: EditablePromptUi
 
     init {
@@ -70,9 +71,9 @@ class PromptValidatorView : AiPlanTaskView(
 
     override fun plan() = aitask("complete-prompt") {
         completionEngine.promptTask(prompt.value, common.maxTokens.value, common.temp.value)
-    }.aitask("validate-result") {
+    }.aiprompttask("validate-result") {
         runLater { promptOutput.value = it }
-        val validatorPromptText = validatorPromptUi.fill("result" to it.outputInfo.outputs!!.first().toString())
+        val validatorPromptText = validatorPromptUi.fill("result" to it.firstValue)
         completionEngine.promptTask(validatorPromptText, common.maxTokens.value, common.temp.value, numResponses = common.numResponses.value)
     }.planner
 

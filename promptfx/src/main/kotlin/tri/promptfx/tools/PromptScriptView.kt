@@ -31,7 +31,9 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask.Companion.aitask
+import tri.ai.pips.AiTaskList
 import tri.ai.pips.aggregate
+import tri.ai.pips.aggregatetrace
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
@@ -260,9 +262,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
                 it.monitorTrace { runLater { promptTraces.add(it) } }
-            }.aggregate()
+            }.aggregatetrace()
             .aiprompttask("process-results") {
-                postProcess(it.values.toList() as List<AiPromptTraceSupport<String>>, inputs)
+                postProcess(it.values ?: listOf(), inputs)
             }.planner
     }
 
