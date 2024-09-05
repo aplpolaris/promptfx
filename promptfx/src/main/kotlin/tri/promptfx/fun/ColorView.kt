@@ -1,16 +1,3 @@
-package tri.promptfx.`fun`
-
-import javafx.beans.property.SimpleStringProperty
-import javafx.scene.control.TextArea
-import javafx.scene.paint.Color
-import tornadofx.*
-import tri.ai.openai.promptPlan
-import tri.ai.prompt.trace.AiPromptOutputInfo
-import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.promptfield
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
-
 /*-
  * #%L
  * tri.promptfx:promptfx
@@ -20,9 +7,9 @@ import tri.util.ui.WorkspaceViewAffordance
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +17,17 @@ import tri.util.ui.WorkspaceViewAffordance
  * limitations under the License.
  * #L%
  */
+package tri.promptfx.`fun`
+
+import javafx.beans.property.SimpleStringProperty
+import javafx.scene.control.TextArea
+import javafx.scene.paint.Color
+import tornadofx.*
+import tri.ai.openai.promptPlan
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [ColorView]. */
 class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", WorkspaceViewAffordance.INPUT_ONLY, ColorView::class)
@@ -51,7 +49,7 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         resultArea.trace.onChange {
             updateOutputTextAreaColor(it.toString())
         }
-        resultArea.selected.onChange {
+        resultArea.selectionString.onChange {
             updateOutputTextAreaColor(it.toString())
         }
     }
@@ -85,7 +83,5 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
     )
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"
-
-    private fun AiPromptOutputInfo.firstOutput() = outputs?.getOrNull(0)?.toString()
 
 }

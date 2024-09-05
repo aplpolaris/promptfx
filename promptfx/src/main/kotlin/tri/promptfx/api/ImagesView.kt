@@ -35,11 +35,8 @@ import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.openai.OpenAiModelIndex
-import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiPromptExecInfo
-import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
@@ -116,16 +113,16 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 cellWidthProperty.bind(thumbnailSize)
                 cellHeightProperty.bind(thumbnailSize)
                 cellCache {
-                    imageview(it.outputInfo.imageUrls.first()) {
+                    imageview(it.firstValue) {
                         fitWidthProperty().bind(thumbnailSize)
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
                         isPickOnBounds = true // so you can click anywhere on transparent images
                         tooltip { graphic = vbox {
-                            val text = text(it.promptInfo.prompt) {
+                            val text = text(it.promptInfo!!.prompt) {
                                 style = "-fx-fill: white;"
                             }
-                            val image = imageview(it.outputInfo.imageUrls.first())
+                            val image = imageview(it.firstValue)
                             text.wrappingWidthProperty().bind(image.image.widthProperty())
                         } }
                         contextmenu {
@@ -215,18 +212,18 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             )
             AiImageTrace(promptInfo, modelInfo,
                 AiPromptExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiImageOutputInfo(images.values ?: listOf())
+                AiPromptOutputInfo(images.values ?: listOf())
             )
         } catch (x: OpenAIAPIException) {
             AiImageTrace(promptInfo, modelInfo, AiPromptExecInfo.error(x.message))
         }
-        result(result, model.value)
+        result
     }.planner
 
     //region CONTEXT MENU ACTIONS
 
     private fun copyPromptToClipboard(trace: AiImageTrace) {
-        clipboard.putString(trace.promptInfo.prompt)
+        clipboard.putString(trace.promptInfo!!.prompt)
     }
 
     private fun saveAllToFile() {
@@ -237,7 +234,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             var i = 1
             var success = 0
             images.forEach { trace ->
-                trace.outputInfo.imageUrls.forEach {
+                (trace.values ?: listOf()).forEach {
                     val image = Image(it)
                     var file = folder.resolve("image-$i.png")
                     while (file.exists()) {

@@ -32,11 +32,11 @@ object AiPipelineExecutor {
      * Execute tasks in order, chaining results from one to another.
      * Returns the table of execution results.
      */
-    suspend fun execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult {
+    suspend fun execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult<*> {
         require(tasks.isNotEmpty())
 
-        val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
-        val failedTasks = mutableMapOf<String, AiPromptTraceSupport>()
+        val completedTasks = mutableMapOf<String, AiPromptTraceSupport<*>>()
+        val failedTasks = mutableMapOf<String, AiPromptTraceSupport<*>>()
 
         var tasksToDo: List<AiTask<*>>
         do {
@@ -50,7 +50,7 @@ object AiPipelineExecutor {
                     monitor.taskStarted(task)
                     val input = task.dependencies.associateWith { completedTasks[it]!! }
                     val result = executor.execute(task, input, monitor)
-                    val resultValue = (result as? AiPromptTrace<*>)?.outputInfo?.outputs
+                    val resultValue = result?.outputInfo?.outputs
                     val err = result.execInfo.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         monitor.taskFailed(task, err)

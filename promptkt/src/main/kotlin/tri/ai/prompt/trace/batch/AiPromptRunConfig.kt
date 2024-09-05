@@ -36,7 +36,7 @@ class AiPromptRunConfig(
     /** Create task for executing a run config. */
     fun task(id: String) = object : AiTask<String>(id) {
         override suspend fun execute(
-            inputs: Map<String, AiPromptTraceSupport>,
+            inputs: Map<String, AiPromptTraceSupport<*>>,
             monitor: AiTaskMonitor
         ): AiPromptTrace<String> = try {
             execute(TextPlugin.textCompletionModel(modelInfo.modelId))

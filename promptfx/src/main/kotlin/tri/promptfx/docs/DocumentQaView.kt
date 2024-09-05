@@ -136,8 +136,7 @@ class DocumentQaView: AiPlanTaskView(
         outputPane.add(resultBox)
 
         onCompleted {
-            val resultList = it.finalResult as List<FormattedPromptTraceResult>
-            resultBox.setFinalResult(resultList)
+            resultBox.setFinalResult(it.finalResult as FormattedPromptTraceResult)
         }
     }
 
@@ -185,7 +184,7 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            val ft = (it.finalResult?.first() as FormattedPromptTraceResult).text
+            val ft = (it.finalResult as FormattedPromptTraceResult).formattedOutputs
             ft.hyperlinkOp = { docName ->
                 val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                 if (doc == null) {

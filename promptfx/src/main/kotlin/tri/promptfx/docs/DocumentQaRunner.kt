@@ -25,8 +25,7 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.IgnoreMonitor
-import tri.promptfx.ui.FormattedText
-import tri.util.warning
+import tri.promptfx.ui.FormattedPromptTraceResult
 import java.io.File
 import java.io.FileFilter
 
@@ -43,7 +42,7 @@ object DocumentQaRunner {
 
     private fun initPlatform() = platform
 
-    fun ask(input: String, folder: String?): String? {
+    fun ask(input: String, folder: String?): String {
         return runBlocking {
             // initialize toolkit and view
             if (folder != null) {
@@ -51,18 +50,8 @@ object DocumentQaRunner {
             }
             println("Asking a question about documents in ${view.getFolder()}.")
             view.question.set(input)
-            val resultList = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult
-            if (resultList?.size != 2) {
-                warning<DocumentQaRunner>("Unexpected result list size: ${resultList?.size}")
-            }
-            val result = resultList?.firstOrNull()
-            when (result) {
-                is String -> result
-                is FormattedPromptTraceResult -> result.trace.outputInfo.outputs!![0]?.toString()
-                is FormattedText -> result.toString()
-                null -> "N/A"
-                else -> result.toString()
-            }
+            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult as FormattedPromptTraceResult
+            result.firstValue
         }
     }
 

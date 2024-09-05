@@ -17,37 +17,28 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.api
-
-import tri.ai.prompt.trace.AiPromptExecInfo
-import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTraceSupport
-import java.util.*
+package tri.ai.prompt.trace
 
 /**
  * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
  * Not designed for serialization (yet).
  */
 class AiImageTrace(
-    promptInfo: AiPromptInfo,
-    modelInfo: AiPromptModelInfo,
+    promptInfo: AiPromptInfo?,
+    modelInfo: AiPromptModelInfo?,
     execInfo: AiPromptExecInfo = AiPromptExecInfo(),
-    var outputInfo: AiImageOutputInfo = AiImageOutputInfo(listOf())
-) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo) {
-    /** Unique identifier for this trace. */
-    var uuid = UUID.randomUUID().toString()
+    outputInfo: AiPromptOutputInfo<String>? = AiPromptOutputInfo(listOf())
+) : AiPromptTraceSupport<String>(promptInfo, modelInfo, execInfo, outputInfo) {
 
     override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
 
     /** Splits this image trace into individual images. */
     fun splitImages(): List<AiImageTrace> =
-        outputInfo.imageUrls.map {
-            AiImageTrace(promptInfo, modelInfo, execInfo, AiImageOutputInfo(listOf(it)))
+        outputInfo!!.outputs.map {
+            AiImageTrace(promptInfo, modelInfo, execInfo, AiPromptOutputInfo(listOf(it)))
         }
-}
 
-/** Output info for an image prompt. */
-class AiImageOutputInfo(
-    var imageUrls: List<String>
-)
+    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiPromptModelInfo?, execInfo: AiPromptExecInfo) =
+        AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo)
+
+}

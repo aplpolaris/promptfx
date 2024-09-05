@@ -28,13 +28,8 @@ import tri.ai.pips.PrintMonitor
 import tri.ai.pips.RetryExecutor
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class AiPromptRunConfigTest {
-
-    private val AiPromptTraceSupport.values: List<String>? get() = (this as? AiPromptTrace<String>)?.outputInfo?.outputs
-    private val AiPromptTraceSupport.firstValue: String? get() = values?.firstOrNull()
 
     private val defaultTextCompletion = TextPlugin.textCompletionModels().first()
 
@@ -66,7 +61,7 @@ class AiPromptRunConfigTest {
     fun testExecute2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue!!
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

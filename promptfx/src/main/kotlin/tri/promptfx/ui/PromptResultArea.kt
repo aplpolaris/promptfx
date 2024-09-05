@@ -22,20 +22,18 @@ package tri.promptfx.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
-import tri.promptfx.docs.FormattedPromptTraceResult
 import tri.promptfx.promptFxFileChooser
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
@@ -47,8 +45,8 @@ import tri.util.ui.showImageDialog
  */
 class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
 
-    private val containsCode = selected.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
-    private val containsPlantUml = selected.booleanBinding { it != null && (
+    private val containsCode = selectionString.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
+    private val containsPlantUml = selectionString.booleanBinding { it != null && (
             it.contains("@startuml") && it.contains("@enduml") ||
             it.contains("@startmindmap") && it.contains("@endmindmap")
         )
@@ -57,7 +55,7 @@ class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
     override val root = vbox {
         vgrow = Priority.ALWAYS
         addtoolbar()
-        textarea(selected) {
+        textarea(selectionString) {
             promptText = "Prompt output will be shown here"
             isEditable = false
             isWrapText = true
@@ -103,14 +101,14 @@ class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
     //region DETECTED CODE ACTIONS
 
     private fun copyCode() {
-        val code = selected.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
+        val code = selectionString.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
         clipboard.putString(code)
     }
 
-    private fun plantUmlText() = if ("@startuml" in selected.value) {
-        "@startuml\n" + selected.value.substringAfter("@startuml").substringBefore("@enduml").trim() + "\n@enduml"
+    private fun plantUmlText() = if ("@startuml" in selectionString.value) {
+        "@startuml\n" + selectionString.value.substringAfter("@startuml").substringBefore("@enduml").trim() + "\n@enduml"
     } else {
-        "@startmindmap\n" + selected.value.substringAfter("@startmindmap").substringBefore("@endmindmap").trim() + "\n@endmindmap"
+        "@startmindmap\n" + selectionString.value.substringAfter("@startmindmap").substringBefore("@endmindmap").trim() + "\n@endmindmap"
     }
 
     private fun browseToPlantUml() {
@@ -135,29 +133,31 @@ class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
 /** Implementation of a prompt result area with support for displaying a list of results. */
 abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
 
-    val trace = SimpleObjectProperty<AiPromptTrace>(null)
-
+    /** The trace being represented in the result area. */
+    val trace = SimpleObjectProperty<AiPromptTraceSupport<*>>(null)
+    /** List of results to display in the result area. */
     protected val results = observableListOf<String>()
+    /** List of results, as [FormattedText], if present. */
+    protected val resultsFormatted = observableListOf<FormattedText>()
+    /** Whether there are multiple results to display. */
     private val multiResult = results.sizeProperty.greaterThan(1)
 
-    private val selectedIndex = SimpleIntegerProperty()
-    val selected = selectedIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
-    protected val formattedTrace = SimpleObjectProperty<FormattedPromptTraceResult>(null)
-    protected val htmlResult = SimpleStringProperty("")
+    /** Index of the currently selected result. */
+    private val selectionIndex = SimpleIntegerProperty()
+    /** String representation of the currently selected result. */
+    val selectionString = selectionIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
+    /** Formatted representation of the currently selected result. */
+    protected val selectionFormatted = selectionIndex.objectBinding(resultsFormatted) { resultsFormatted.getOrNull(it?.toInt() ?: 0) }
+    /** HTML representation of the currently selected result. */
+    protected val selectionHtml = selectionFormatted.stringBinding { it?.toHtml() ?: "<html>(No result)" }
 
     /** Set the final result to display in the result area. */
-    fun setFinalResult(finalResult: AiPromptTrace) {
-        val results = finalResult.outputInfo.outputs?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
+    fun setFinalResult(finalResult: AiPromptTraceSupport<*>) {
+        val results = finalResult.values?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
         this.results.setAll(results)
-        selectedIndex.set(0)
-        trace.set(finalResult as? AiPromptTrace)
-    }
-
-    /** Set the final result to display in the result area. */
-    fun setFinalResult(finalResult: FormattedPromptTraceResult) {
-        val list = finalResult.trace.outputInfo.outputs!!
-        htmlResult.set(list.text.toHtml())
-        trace.set(list.trace)
+        this.resultsFormatted.setAll((finalResult as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
+        selectionIndex.set(0)
+        trace.set(finalResult)
     }
 
     /** Adds a toolbar that appears when there are multiple results presented. */
@@ -166,12 +166,12 @@ abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
             visibleWhen(multiResult)
             managedWhen(multiResult)
             button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
-                enableWhen(selectedIndex.greaterThan(0))
-                action { selectedIndex.set(selectedIndex.value - 1) }
+                enableWhen(selectionIndex.greaterThan(0))
+                action { selectionIndex.set(selectionIndex.value - 1) }
             }
             button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
-                enableWhen(selectedIndex.lessThan(results.sizeProperty.subtract(1)))
-                action { selectedIndex.set(selectedIndex.value + 1) }
+                enableWhen(selectionIndex.lessThan(results.sizeProperty.subtract(1)))
+                action { selectionIndex.set(selectionIndex.value + 1) }
             }
         }
     }
@@ -179,7 +179,7 @@ abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
 }
 
 /** Set up a context menu with a given prompt trace object. */
-fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObjectProperty<AiPromptTrace>, op: ContextMenu.() -> Unit = {}) =
+fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObjectProperty<AiPromptTraceSupport<*>>, op: ContextMenu.() -> Unit = {}) =
     lazyContextmenu {
         item("Details...") {
             enableWhen { trace.isNotNull }
@@ -191,7 +191,7 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
             }
         }
         item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-            enableWhen(trace.booleanBinding { it != null && it.promptInfo.prompt.isNotBlank() })
+            enableWhen(trace.booleanBinding { it?.promptInfo?.prompt?.isNotBlank() == true })
             action {
                 (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
             }

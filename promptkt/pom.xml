@@ -37,7 +37,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>promptkt-0.7.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
@@ -313,6 +313,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M3</version>
                 <configuration>
+                    <!-- TODO - set up profiles so we can run different test sets from command line -->
+<!--                    <excludedGroups>gemini</excludedGroups>-->
                     <excludedGroups>gemini | openai</excludedGroups>
                 </configuration>
             </plugin>

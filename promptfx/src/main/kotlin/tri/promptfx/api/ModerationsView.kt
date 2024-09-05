@@ -27,9 +27,10 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.prompt.trace.AiPromptTrace.Companion.result
 import tri.promptfx.AiTaskView
 
+/** View for text moderation API. */
 class ModerationsView : AiTaskView("Moderations", "Enter text to generate moderation scores") {
 
     private val input = SimpleStringProperty("")
@@ -46,7 +47,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<String> {
         val request = ModerationRequest(
             input = listOf(input.value),
             model = model.value

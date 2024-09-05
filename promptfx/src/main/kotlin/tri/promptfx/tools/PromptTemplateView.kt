@@ -105,30 +105,25 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         val resp = AiPrompt(template.value).fill(fieldMap).let {
             completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value, numResponses = common.numResponses.value)
         }
-        resp.maplist {
-            AiPromptTrace(
-                AiPromptInfo(template.value, fieldMap.toMap()),
-                AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),
-                AiPromptExecInfo(resp.errorMessage, responseTimeMillis = resp.durationTotal?.toMillis()),
-                AiPromptOutputInfo(it)
-            )
-        }
+        resp.copy(promptInfo = AiPromptInfo(template.value, fieldMap.toMap()))
     }.planner
 
     /**
      * Loads a prompt trace into the view.
      * Will set the prompt, prompt inputs, model, and model parameters associated with the trace.
      */
-    fun importPromptTrace(prompt: AiPromptTrace) {
-        template.set(prompt.promptInfo.prompt)
-        fields.setAll(prompt.promptInfo.promptParams.entries.map { it.key to it.value.toString() })
-        val model = PromptFxModels.textCompletionModels().find { it.modelId == prompt.modelInfo.modelId }
+    fun importPromptTrace(prompt: AiPromptTraceSupport<*>) {
+        val promptInfo = prompt.promptInfo ?: AiPromptInfo("N/A")
+        val modelInfo = prompt.modelInfo ?: AiPromptModelInfo("N/A")
+        template.set(promptInfo.prompt)
+        fields.setAll(promptInfo.promptParams.entries.map { it.key to it.value.toString() })
+        val model = PromptFxModels.textCompletionModels().find { it.modelId == modelInfo.modelId }
         if (model != null) {
             controller.completionEngine.set(model)
         } else {
-            warning<PromptTemplateView>("Model ${prompt.modelInfo.modelId} not found.")
+            warning<PromptTemplateView>("Model ${modelInfo.modelId} not found.")
         }
-        common.importModelParams(prompt.modelInfo.modelParams)
+        common.importModelParams(modelInfo.modelParams)
     }
 
     private fun updateTemplateInputs(template: String) {

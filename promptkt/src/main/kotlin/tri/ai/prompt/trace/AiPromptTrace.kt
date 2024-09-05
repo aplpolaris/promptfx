@@ -21,6 +21,7 @@ package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import tri.ai.pips.AiPipelineResult
 
 /** Details of an executed prompt, including prompt configuration, model configuration, execution metadata, and output. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -28,8 +29,8 @@ class AiPromptTrace<T>(
     promptInfo: AiPromptInfo? = null,
     modelInfo: AiPromptModelInfo? = null,
     execInfo: AiPromptExecInfo = AiPromptExecInfo(),
-    var outputInfo: AiPromptOutputInfo<T>? = null
-) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo) {
+    outputInfo: AiPromptOutputInfo<T>? = null
+) : AiPromptTraceSupport<T>(promptInfo, modelInfo, execInfo, outputInfo) {
 
     override fun toString() =
         "AiPromptTrace(promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
@@ -39,11 +40,6 @@ class AiPromptTrace<T>(
         modelInfo: AiPromptModelInfo?,
         execInfo: AiPromptExecInfo
     ): AiPromptTrace<T> = AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo)
-
-    /** Get the first output value, if it exists, otherwise throw [NoSuchElementException]. */
-    @get:JsonIgnore
-    val firstValue: T
-        get() = outputInfo?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
 
     /** Convert output using a provided function, without modifying any other parts of the response. */
     fun <S> mapOutput(transform: (T) -> S) = AiPromptTrace<S>(

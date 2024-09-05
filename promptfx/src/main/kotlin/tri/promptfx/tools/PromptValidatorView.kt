@@ -40,8 +40,8 @@ class PromptValidatorView : AiPlanTaskView(
 ) {
 
     val prompt = SimpleStringProperty("")
-    private val promptOutput = SimpleObjectProperty<AiPromptTrace>()
-    private val validatorOutput = SimpleObjectProperty<AiPromptTrace>()
+    private val promptOutput = SimpleObjectProperty<AiPromptTrace<*>>()
+    private val validatorOutput = SimpleObjectProperty<AiPromptTrace<*>>()
     private lateinit var validatorPromptUi: EditablePromptUi
 
     init {
@@ -64,7 +64,7 @@ class PromptValidatorView : AiPlanTaskView(
             })
         }
         onCompleted {
-            validatorOutput.set(it.finalResult!!.first() as AiPromptTrace)
+            validatorOutput.set(it.finalResult as AiPromptTrace<*>)
         }
     }
 

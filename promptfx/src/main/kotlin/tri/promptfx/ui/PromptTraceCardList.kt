@@ -28,6 +28,7 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
@@ -36,7 +37,7 @@ import tri.promptfx.promptFxFileChooser
 import tri.util.ui.graphic
 
 /** UI for a list of [AiPromptTrace]s. */
-class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observableListOf()): Fragment() {
+class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<String>> = observableListOf()): Fragment() {
 
     override val root = vbox {
         spacing = 5.0
@@ -67,7 +68,7 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTrace> = observabl
                 }
                 item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                        it != null && it.promptInfo.prompt.isNotBlank()
+                        it?.promptInfo?.prompt?.isNotBlank() == true
                     })
                     action {
                         val selected = selectionModel.selectedItem

@@ -33,7 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.promptfx.docs.FormattedPromptTraceResult
+import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedText
 import tri.promptfx.library.TextLibraryInfo
 
@@ -79,10 +80,9 @@ object PromptFxDriver {
             FormattedText("No view found with name $viewName, or that view does not support input.")
         } else {
             inputArea.text = input
-            val result = taskView.processUserInput()
-            val nodeResult = (result.finalResult?.first() as? FormattedPromptTraceResult)?.text
-                ?: result.finalResult?.first() as? FormattedText
-                ?: FormattedText(result.finalResult?.first().toString())
+            val result = taskView.processUserInput().finalResult
+            val nodeResult = (result as? FormattedPromptTraceResult)?.formattedOutputs?.firstOrNull()
+                ?: FormattedText(result.firstValue.toString())
             Platform.runLater {
                 if (outputArea is TextArea) {
                     outputArea.text = nodeResult.toString()
@@ -165,8 +165,8 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 //region MENU BUILDERS
 
 /** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTrace>, workspace: PromptFxWorkspace) {
-    val outputs = trace.value.outputInfo.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
+fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTraceSupport<*>>, workspace: PromptFxWorkspace) {
+    val outputs = trace.value.outputInfo?.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
     if (outputs.size == 1) {
         buildsendresultmenu(outputs.first(), workspace)
     } else {

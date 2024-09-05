@@ -44,8 +44,8 @@ import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
-import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTrace.Companion.result
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -114,10 +114,10 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<ByteArray> {
         return when {
             input.value.isNullOrBlank() ->
-                AiTaskResult.invalidRequest("No input provided")
+                AiPromptTrace.invalidRequest("No input provided")
             else -> controller.openAiPlugin.client.client.speech(
                 SpeechRequest(
                     model = ModelId(model.value),

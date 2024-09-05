@@ -85,7 +85,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX-basic")
 
     // result list
-    private val promptTraces = observableListOf<AiPromptTrace>()
+    private val promptTraces = observableListOf<AiPromptTraceSupport<String>>()
 
     // result options
     private val showUniqueResults = SimpleBooleanProperty(true)
@@ -257,11 +257,11 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         val tasks = promptBatch(inputs.chunks.map { it.text }).tasks()
         // TODO - not sure what to do here with the view, since the traces probably shouldn't all be aggregated into one batch...
         return tasks.map {
-                it.monitor { runLater { promptTraces.addAll(it) } }
+                it.monitorTrace { runLater { promptTraces.add(it) } }
             }
             .aggregate()
-            .task("process-results") {
-                postProcess(listOf(it), inputs)
+            .aiprompttask("process-results") {
+                postProcess(it, inputs)
             }.planner
     }
 
@@ -334,14 +334,15 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 .let { completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value) }
                 .firstValue
         }
-        return result?.contains("yes", ignoreCase = true) ?: false
+        return result.contains("yes", ignoreCase = true) ?: false
     }
 
-    private suspend fun postProcess(results: List<AiPromptTrace>, inputs: PromptScriptInput): AiPromptTrace {
+    private suspend fun postProcess(results: List<AiPromptTraceSupport<String>>, inputs: PromptScriptInput): AiPromptTrace<String> {
         val resultSets = mutableMapOf<String, String>()
+        val values = results.values ?: emptyList()
 
         if (showUniqueResults.value) {
-            val countEach = results.mapNotNull { it.outputInfo.firstOutput() }
+            val countEach = values.mapNotNull { it.firstOrNull() }
                 .groupingBy { it.cleanedup() }
                 .eachCount()
             val key = "Unique Results: ${countEach.size}"
@@ -349,19 +350,19 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         if (showAllResults.value) {
             val key = "All Results"
-            resultSets[key] = results.joinToString("\n") { it.outputInfo.firstOutput() ?: "(error or no output returned)" }
+            resultSets[key] = values.joinToString("\n") { it.firstOrNull() ?: "(error or no output returned)" }
         }
         if (outputCsv.value) {
             val key = "CSV Output"
             val csvHeader = inputs.headerRow?.let { "$it,output" } ?: "input,output"
-            val csv = results.joinToString("\n") { "${it.promptInfo.promptParams[AiPrompt.INPUT]},${it.outputInfo.firstOutput()}" }
+            val csv = results.joinToString("\n") { "${it.promptInfo!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
         val promptInfo: AiPromptInfo
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerPrompt.fill("matches" to
-                results.map { mapOf("text" to (it.outputInfo.firstOutput() ?: "")) }
+                results.map { mapOf("text" to (it.firstValue ?: "")) }
             )
             val summarizer = summaryPrompt.fill(AiPrompt.INPUT to joined)
             val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
@@ -385,7 +386,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         )
     }
 
-    private fun AiPromptOutputInfo.firstOutput() = outputs?.getOrNull(0)?.toString()
+    private fun AiPromptOutputInfo<*>.firstOutput() = outputs.getOrNull(0)?.toString()
 
     private fun String.cleanedup() = lowercase().removeSuffix(".")
 

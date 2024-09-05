@@ -27,10 +27,6 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class AiPipelineExecutorTest {
 
-    private val AiPromptTraceSupport.values: List<String>? get() = (this as? AiPromptTrace<String>)?.outputInfo?.outputs
-    private val AiPromptTraceSupport.firstValue: String? get() = values?.firstOrNull()
-    private val AiPromptTraceSupport.error: String? get() = (this as? AiPromptTrace<*>)?.execInfo?.error
-
     @Test
     fun testExecute() = runTest {
         val results = AiPipelineExecutor.execute(
@@ -38,7 +34,7 @@ class AiPipelineExecutorTest {
             PrintMonitor()).interimResults
         assertEquals(2, results.size)
         assertEquals("go", results["pass"]?.firstValue!!)
-        assertNotNull(results["fail"]?.error)
+        assertNotNull(results["fail"]?.errorMessage)
     }
 
     @Test
@@ -59,17 +55,17 @@ class AiPipelineExecutorTest {
             PrintMonitor()).interimResults
         assertEquals(2, results.size)
         assertEquals("go", results["a"]?.firstValue!!)
-        assertNotNull(results["b"]?.error)
+        assertNotNull(results["b"]?.errorMessage)
         assertNull(results["c"]?.values)
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
             AiPromptTrace.result("go", modelId = null)
     }
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
             AiPromptTrace.error<String>("fail", Exception("fail"))
     }
 

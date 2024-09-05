@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxModels
@@ -56,7 +55,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<String> {
         val id = model.value!!.modelId
         val completionModel = PromptFxModels.textCompletionModels().firstOrNull { it.modelId == id }
         val response = if (completionModel != null) {
@@ -79,10 +78,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
             )
             controller.openAiPlugin.client.completion(completion)
         }
-        return response.asPipelineResult(
-            promptInfo = AiPromptInfo(input.get()),
-            modelInfo = AiPromptModelInfo(id, common.toModelParams())
-        )
+        return response.asPipelineResult()
     }
 
 }

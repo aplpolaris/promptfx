@@ -37,8 +37,8 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>

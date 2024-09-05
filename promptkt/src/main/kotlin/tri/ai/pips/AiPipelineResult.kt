@@ -19,7 +19,21 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /** Result of a pipeline execution. */
-class AiPipelineResult(val finalResult: AiPromptTraceSupport, val interimResults: Map<String, AiPromptTraceSupport>)
+class AiPipelineResult<T>(val finalResult: AiPromptTraceSupport<T>, val interimResults: Map<String, AiPromptTraceSupport<*>>) {
+
+    companion object {
+        fun error(message: String?, error: Throwable?) : AiPipelineResult<Any> {
+            val trace = AiPromptTrace.error<Any>(message, error)
+            return AiPipelineResult(trace, mapOf("result" to trace))
+        }
+
+        fun todo() = "This pipeline is not yet implemented.".let {
+            error(it, UnsupportedOperationException(it))
+        }
+    }
+
+}

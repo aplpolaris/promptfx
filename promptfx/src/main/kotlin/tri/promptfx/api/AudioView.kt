@@ -33,12 +33,11 @@ import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ui.AudioRecorder
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
 /** Plugin for the [AudioView]. */
@@ -152,9 +151,9 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
         input.value = "Audio file: ${f.name}"
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<String> {
         return when (val f = file.value) {
-            null -> AiTaskResult.invalidRequest("No audio file dropped")
+            null -> AiPromptTrace.invalidRequest("No audio file dropped")
             else -> controller.openAiPlugin.client.quickTranscribe(model.value, f)
                 .also { controller.updateUsage() }
         }.asPipelineResult()

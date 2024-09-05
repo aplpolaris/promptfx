@@ -25,16 +25,14 @@ import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
+import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME_LEGACY
 import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.openai.instructTask
-import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.*
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.embedding.EmbeddingPrecision
-import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME_LEGACY
 import tri.ai.text.chunks.process.LocalFileManager
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
@@ -42,6 +40,7 @@ import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
+import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedText
 import tri.promptfx.ui.FormattedTextNode
 import tri.promptfx.ui.splitOn
@@ -92,10 +91,10 @@ class DocumentQaPlanner {
             runLater { snippets.setAll() }
             if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
                 upgradeEmbeddingIndex()
-            AiTaskResult.result("")
+            AiPromptTrace.result("")
         }.aitask("load-embeddings-file") {
             embeddingIndex.value!!.findMostSimilar("a", 1)
-            AiTaskResult.result("")
+            AiPromptTrace.result("")
         }.aitask("calculate-embeddings") {
             findRelevantSection(question, chunksToRetrieve).also {
                 runLater { snippets.setAll(it.firstValue) }
@@ -105,11 +104,10 @@ class DocumentQaPlanner {
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
-            val trace = response.firstValue!!
             val questionEmbedding = embeddingService.calculateEmbedding(question)
-            val responseEmbeddings = (trace.outputInfo.outputs ?: listOf<String>()).map {
+            val responseEmbeddings = response.values?.map {
                 embeddingService.calculateEmbedding(it.toString())
-            }
+            } ?: listOf()
             // TODO - make this support more than one response embedding
             // add snippet response scores for first response embedding only
             if (responseEmbeddings.isNotEmpty()) {
@@ -117,31 +115,31 @@ class DocumentQaPlanner {
                     it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
                 }
             }
-            response.mapvalue {
+            response.mapOutput {
                 QuestionAnswerResult(
                     query = SemanticTextQuery(question, questionEmbedding, embeddingService.modelId),
                     matches = snippets,
-                    trace = response.firstValue!!,
+                    trace = response,
                     responseEmbeddings = responseEmbeddings
                 )
             }
         }.task("process-result") {
             info<DocumentQaPlanner>("$ANSI_GRAY  Similarity of question to response: ${it.responseScore}$ANSI_RESET")
             lastResult = it
-            FormattedPromptTraceResult(it.trace, formatResult(it))
+            FormattedPromptTraceResult(it.trace, listOf(formatResult(it)))
         }.planner
 
     //region SIMILARITY CALCULATIONS
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
+    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace<List<EmbeddingMatch>> {
         documentLibrary.value?.let { return findRelevantSection(it, query, maxChunks) }
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
-        return AiTaskResult.result(matches)
+        return AiPromptTrace.result(matches)
     }
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiTaskResult<List<EmbeddingMatch>> {
+    private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiPromptTrace<List<EmbeddingMatch>> {
         val embeddingSvc = (embeddingIndex.value as LocalFolderEmbeddingIndex).embeddingService
         val modelId = embeddingSvc.modelId
         val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), modelId)
@@ -154,7 +152,7 @@ class DocumentQaPlanner {
                 )
             }
         }.sortedByDescending { it.queryScore }.take(maxChunks)
-        return AiTaskResult.result(matches)
+        return AiPromptTrace.result(matches)
     }
 
     suspend fun reindexAllDocuments() {
@@ -167,7 +165,7 @@ class DocumentQaPlanner {
 
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
-        val result = mutableListOf(FormattedTextNode(qaResult.trace.outputInfo.outputs?.joinToString() ?: "No response."))
+        val result = mutableListOf(FormattedTextNode(qaResult.trace.values?.joinToString() ?: "No response."))
         val docs = qaResult.matches.mapNotNull { it.document.browsable() }
             .filter { it.shortNameWithoutExtension.isNotBlank() }
             .toSet()
@@ -238,21 +236,16 @@ class DocumentQaPlanner {
 
 }
 
-/** Result including the trace and formatted text. */
-class FormattedPromptTraceResult(val trace: AiPromptTrace, val text: FormattedText) {
-    override fun toString() = trace.outputInfo.outputs?.joinToString() ?: "null"
-}
-
 //region DATA OBJECTS DESCRIBING TASK
 
 /** Result object. */
 data class QuestionAnswerResult(
     val query: SemanticTextQuery,
     val matches: List<EmbeddingMatch>,
-    val trace: AiPromptTrace,
+    val trace: AiPromptTrace<String>,
     val responseEmbeddings: List<List<Double>>
 ) {
-    override fun toString() = trace.outputInfo.outputs?.joinToString() ?: "No response. Question: ${query.query}"
+    override fun toString() = trace.outputInfo?.outputs?.joinToString() ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
     val responseScore

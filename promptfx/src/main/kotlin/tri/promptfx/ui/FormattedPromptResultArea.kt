@@ -27,7 +27,7 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
                     item("Copy output to clipboard") {
                         action {
                             clipboard.setContent(mapOf(
-                                DataFormat.HTML to htmlResult.value,
+                                DataFormat.HTML to selectionHtml.value,
                                 DataFormat.PLAIN_TEXT to plainText()
                             ))
                         }
@@ -38,9 +38,9 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
     }
 
     init {
-        formattedTrace.onChange {
+        selectionFormatted.onChange {
             htmlArea.children.clear()
-            htmlArea.children.addAll(it!!.text.toFxNodes())
+            htmlArea.children.addAll(it!!.toFxNodes())
         }
     }
 

@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
 
@@ -54,13 +54,13 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
         outputEditor.isWrapText = false
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<String> {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
         val ouputDim = if (customOutputDimensionality.value) outputDimensionality.value else null
         return model.value!!.calculateEmbedding(inputs, ouputDim).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
-            AiTaskResult.result(it, model.value!!.modelId).asPipelineResult()
+            AiPromptTrace.result(it, model.value!!.modelId).asPipelineResult()
         }
     }
 

@@ -24,6 +24,7 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.*
 import tri.ai.pips.*
+import tri.ai.prompt.trace.AiPromptTrace
 import java.util.logging.Logger
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
@@ -41,14 +42,14 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingSe
             completionEngine.instructTask("weather-response-formatter", instruct = input, userText = json, tokenLimit = 500, temp = null)
         }.plan
 
-    private suspend fun checkWeatherSimilarity(input: String): AiTaskResult<String> {
+    private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace<String> {
         val embeddings = embeddingService.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
         val similarity = cosineSimilarity(embeddings[0], embeddings[1])
         Logger.getLogger("WeatherAiTaskPlanner").info("Input alignment to weather: $similarity")
         if (similarity < 0.5)
             throw IllegalArgumentException("The input is not about weather.")
 
-        return AiTaskResult.result(input, embeddingService.modelId)
+        return AiPromptTrace.result(input, embeddingService.modelId)
     }
 
 }

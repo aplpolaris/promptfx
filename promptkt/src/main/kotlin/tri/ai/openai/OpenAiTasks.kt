@@ -82,23 +82,27 @@ suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: 
 //region PLANNERS
 
 /** Planner that generates a plan for a single completion prompt. */
-fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) = aitask(promptId) {
-    promptTask(promptId, input, tokenLimit, temp, stop, numResponses)
-}.planner
+fun TextCompletion.promptPlan(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
+    aitask<String>(promptId) {
+        promptTask(promptId, input, tokenLimit, temp, stop, numResponses)
+    }.planner
 
 /** Planner that generates a plan for a single instruction or question about user's text. */
-fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null) = aitask(promptId) {
-    instructTask(promptId, instruct, userText, tokenLimit, temp, numResponses)
-}.planner
+fun TextCompletion.instructTextPlan(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null) =
+    aitask<String>(promptId) {
+        instructTask(promptId, instruct, userText, tokenLimit, temp, numResponses)
+    }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) = aitask<String>(promptId) {
-    templateTask(promptId, fields.toMap(), tokenLimit, temp, requestJson, numResponses)
-}.planner
+fun TextCompletion.templatePlan(promptId: String, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) =
+    aitask<String>(promptId) {
+        templateTask(promptId, fields.toMap(), tokenLimit, temp, requestJson, numResponses)
+    }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) = aitask<String>(promptId) {
-    templateTask(promptId, fields, tokenLimit, temp, requestJson, numResponses)
-}.planner
+fun TextCompletion.templatePlan(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) =
+    aitask<String>(promptId) {
+        templateTask(promptId, fields, tokenLimit, temp, requestJson, numResponses)
+    }.planner
 
 //endregion

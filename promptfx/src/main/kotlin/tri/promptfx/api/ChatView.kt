@@ -147,7 +147,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         }
     }
 
-    private fun Content.toChatMessage() = chatMessage {
+    protected fun Content.toChatMessage() = chatMessage {
         role = when (this@toChatMessage.role) {
             "user" -> Role.User
             "model" -> Role.Assistant

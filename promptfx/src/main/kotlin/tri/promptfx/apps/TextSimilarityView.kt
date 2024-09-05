@@ -23,7 +23,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.text
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.prompt.trace.AiPromptTrace.Companion.result
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -43,7 +43,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         addInputTextArea(secondText)
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<*> {
         val chunks = secondText.get().splitIntoChunks()
         val mod = controller.embeddingService.get()
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)

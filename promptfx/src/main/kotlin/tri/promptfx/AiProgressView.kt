@@ -28,6 +28,8 @@ import javafx.scene.layout.Priority
 import javafx.stage.Popup
 import tornadofx.*
 import tri.ai.pips.*
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /** Global progress bar. */
 class AiProgressView: View(), AiTaskMonitor {
@@ -73,7 +75,7 @@ class AiProgressView: View(), AiTaskMonitor {
 
     /** Start progress bar for a given task. */
     fun taskStarted(id: String) {
-        taskStarted(task(id) { AiTaskResult.result("") }.lastTask)
+        taskStarted(task(id) { AiPromptTrace.result("") }.lastTask)
     }
 
     /** End all tasks and hide progress bar. */
@@ -109,12 +111,12 @@ class AiProgressView: View(), AiTaskMonitor {
         end()
     }
 
-    fun taskStarted(task: Task<AiPipelineResult>, id: String) {
+    fun taskStarted(task: Task<AiPipelineResult<*>>, id: String) {
         taskStarted(object : AiTask<Any>(id) {
             override suspend fun execute(
-                inputs: Map<String, AiTaskResult<*>>,
+                inputs: Map<String, AiPromptTraceSupport<*>>,
                 monitor: AiTaskMonitor
-            ) = task.value as AiTaskResult<Any>
+            ) = task.value as AiPromptTrace<Any>
         })
     }
 
