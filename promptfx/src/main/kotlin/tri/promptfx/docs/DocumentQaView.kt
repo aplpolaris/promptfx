@@ -184,13 +184,14 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            val ft = (it.finalResult as FormattedPromptTraceResult).formattedOutputs
-            ft.hyperlinkOp = { docName ->
-                val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
-                if (doc == null) {
-                    tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
-                } else {
-                    browseToBestSnippet(doc, planner.lastResult, hostServices)
+            (it.finalResult as FormattedPromptTraceResult).formattedOutputs.forEach {
+                it.hyperlinkOp = { docName ->
+                    val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
+                    if (doc == null) {
+                        tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
+                    } else {
+                        browseToBestSnippet(doc, planner.lastResult, hostServices)
+                    }
                 }
             }
         }

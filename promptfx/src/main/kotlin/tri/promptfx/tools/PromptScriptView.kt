@@ -30,6 +30,7 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiPlanner
+import tri.ai.pips.AiTask.Companion.aitask
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
@@ -256,12 +257,12 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         val tasks = promptBatch(inputs.chunks.map { it.text }).tasks()
         // TODO - not sure what to do here with the view, since the traces probably shouldn't all be aggregated into one batch...
+        // TODO - need to include the prompt trace as part of the output
         return tasks.map {
                 it.monitorTrace { runLater { promptTraces.add(it) } }
-            }
-            .aggregate()
+            }.aggregate()
             .aiprompttask("process-results") {
-                postProcess(it, inputs)
+                postProcess(it.values.toList() as List<AiPromptTraceSupport<String>>, inputs)
             }.planner
     }
 
@@ -338,11 +339,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     private suspend fun postProcess(results: List<AiPromptTraceSupport<String>>, inputs: PromptScriptInput): AiPromptTrace<String> {
+        // TODO - for now assuming each trace has a single result
+
         val resultSets = mutableMapOf<String, String>()
-        val values = results.values ?: emptyList()
+        val values = results.map { it.values?.first() }
 
         if (showUniqueResults.value) {
-            val countEach = values.mapNotNull { it.firstOrNull() }
+            val countEach = values.filterNotNull()
                 .groupingBy { it.cleanedup() }
                 .eachCount()
             val key = "Unique Results: ${countEach.size}"
@@ -350,7 +353,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         if (showAllResults.value) {
             val key = "All Results"
-            resultSets[key] = values.joinToString("\n") { it.firstOrNull() ?: "(error or no output returned)" }
+            resultSets[key] = values.joinToString("\n") { it ?: "(error or no output returned)" }
         }
         if (outputCsv.value) {
             val key = "CSV Output"
