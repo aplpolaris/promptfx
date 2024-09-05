@@ -19,24 +19,16 @@
  */
 package tri.ai.gemini
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
-import java.io.File
 import java.net.URI
-import java.util.logging.Logger
 
 /** General purpose client for the Gemini API. */
 class GeminiClient : Closeable {
@@ -147,86 +139,6 @@ class GeminiClient : Closeable {
     }
 
 }
-
-//region API SETTINGS
-
-/** Manages Gemini API key and client. */
-@OptIn(ExperimentalSerializationApi::class)
-class GeminiSettings {
-
-    companion object {
-        const val API_KEY_FILE = "apikey-gemini.txt"
-        const val API_KEY_ENV = "GEMINI_API_KEY"
-        const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
-    }
-
-    var baseUrl = BASE_URL
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var apiKey = readApiKey()
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var timeoutSeconds = 60
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    /** The HTTP client used to make requests. */
-    var client: HttpClient = buildClient()
-
-    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
-    private fun readApiKey(): String {
-        val file = File(API_KEY_FILE)
-
-        val key = if (file.exists()) {
-            file.readText()
-        } else
-            System.getenv(API_KEY_ENV)
-
-        return if (key.isNullOrBlank()) {
-            Logger.getLogger(GeminiSettings::class.java.name).warning(
-                "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
-            )
-            ""
-        } else
-            key
-    }
-
-    @Throws(IllegalStateException::class)
-    private fun buildClient() = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                isLenient = true
-                ignoreUnknownKeys = true
-                explicitNulls = false
-            })
-        }
-        install(Logging) {
-            logger = io.ktor.client.plugins.logging.Logger.SIMPLE
-            level = LogLevel.NONE
-        }
-        install(HttpTimeout) {
-            socketTimeoutMillis = timeoutSeconds * 1000L
-            connectTimeoutMillis = timeoutSeconds * 1000L
-            requestTimeoutMillis = timeoutSeconds * 1000L
-        }
-        defaultRequest {
-            url(baseUrl)
-            url.parameters.append("key", apiKey)
-            contentType(ContentType.Application.Json)
-        }
-    }.also { client = it }
-
-}
-
-//endregion
 
 //region DTO's - see https://ai.google.dev/api?lang=web
 
