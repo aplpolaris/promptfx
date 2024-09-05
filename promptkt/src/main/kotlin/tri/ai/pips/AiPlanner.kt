@@ -25,6 +25,6 @@ interface AiPlanner {
     fun plan(): List<AiTask<*>>
 
     /** Executes the plan with [AiPipelineExecutor]. */
-    suspend fun <T> execute(monitor: AiTaskMonitor) = AiPipelineExecutor.execute<T>(plan(), monitor)
+    suspend fun <T> execute(monitor: AiTaskMonitor) = AiPipelineExecutor.execute(plan(), monitor)
 
 }

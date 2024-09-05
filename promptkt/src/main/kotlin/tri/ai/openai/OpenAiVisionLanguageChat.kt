@@ -28,7 +28,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with OpenAI models. */
 class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiClient = OpenAiClient.INSTANCE) :
@@ -42,7 +42,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
         tokens: Int?,
         stop: List<String>?,
         requestJson: Boolean?
-    ): AiTaskResult<TextChatMessage> {
+    ): AiPromptTrace<TextChatMessage> {
         val response = client.chat(
             chatCompletionRequest {
                 model = ModelId(modelId)
@@ -63,7 +63,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
                 responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
             }
         )
-        return response.mapvalue { TextChatMessage(TextChatRole.Assistant, it.content!!) }
+        return response.mapOutput { TextChatMessage(TextChatRole.Assistant, it.content!!) }
     }
 
     private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)

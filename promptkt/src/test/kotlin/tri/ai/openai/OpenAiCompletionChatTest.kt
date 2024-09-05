@@ -41,7 +41,7 @@ class OpenAiCompletionChatTest {
     @Tag("openai")
     fun testCompleteMultiple() = runTest {
         val res = client.complete("Translate Hello, world! into French.", 100, 0.5, numResponses = 2)
-        assertEquals(2, res.values!!.size)
+        assertEquals(2, res.outputInfo!!.outputs.size)
         println(res)
     }
 

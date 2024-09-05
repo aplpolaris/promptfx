@@ -32,7 +32,7 @@ object AiPipelineExecutor {
      * Execute tasks in order, chaining results from one to another.
      * Returns the table of execution results.
      */
-    suspend fun <T> execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult {
+    suspend fun execute(tasks: List<AiTask<*>>, monitor: AiTaskMonitor): AiPipelineResult {
         require(tasks.isNotEmpty())
 
         val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
@@ -62,13 +62,13 @@ object AiPipelineExecutor {
                 } catch (x: Exception) {
                     x.printStackTrace()
                     monitor.taskFailed(task, x)
-                    failedTasks[task.id] = AiPromptTrace.error<T>(x.message!!, x)
+                    failedTasks[task.id] = AiPromptTrace.error<Any>(x.message!!, x)
                 }
             }
         } while (tasksToDo.isNotEmpty())
 
         val allTasks = completedTasks + failedTasks
-        val lastTaskResult = allTasks[tasks.last().id]!!
+        val lastTaskResult = allTasks[tasks.last().id] ?: AiPromptTrace.error<Any>("Inputs failed.")
         return AiPipelineResult(lastTaskResult, completedTasks + failedTasks)
     }
 

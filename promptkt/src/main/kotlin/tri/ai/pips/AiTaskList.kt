@@ -47,9 +47,11 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
     /** Adds a task to the end of the list. */
     fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiPromptTrace<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
                 // TODO - eventually, add support for multiple outputs from previous task
-                op(inputs[lastTask.id]!!.firstValue as S)
+                val result = inputs[lastTask.id] as? AiPromptTrace<S>
+                return op(result?.firstValue as S)
+            }
         }
         return AiTaskList(plan, newTask)
     }

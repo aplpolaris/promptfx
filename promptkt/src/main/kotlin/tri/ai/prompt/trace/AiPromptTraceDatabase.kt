@@ -19,8 +19,6 @@
  */
 package tri.ai.prompt.trace
 
-import tri.ai.prompt.AiPrompt
-
 /**
  * In-memory database of prompt traces, allowing for reuse of prompt, model, exec, and output objects,
  * and storage of these in separate tables.
@@ -36,7 +34,7 @@ class AiPromptTraceDatabase() {
     var execs = mutableSetOf<AiPromptExecInfo>()
     var outputs = mutableSetOf<AiPromptOutputInfo<*>>()
 
-    constructor(traces: Iterable<AiPromptTrace<*>>) : this() {
+    constructor(traces: Iterable<AiPromptTraceSupport>) : this() {
         addTraces(traces)
     }
 
@@ -52,16 +50,16 @@ class AiPromptTraceDatabase() {
     )
 
     /** Add all provided traces to the database. */
-    fun addTraces(result: Iterable<AiPromptTrace<*>>) {
+    fun addTraces(result: Iterable<AiPromptTraceSupport>) {
         result.forEach { addTrace(it) }
     }
 
     /** Adds the trace to the database, updating object references as needed and returning the object added. */
-    fun addTrace(trace: AiPromptTrace<*>): AiPromptTraceId {
+    fun addTrace(trace: AiPromptTraceSupport): AiPromptTraceId {
         val prompt = addOrGet(prompts, trace.promptInfo)
         val model = addOrGet(models, trace.modelInfo)
         val exec = addOrGet(execs, trace.execInfo)
-        val output = addOrGet(outputs, trace.outputInfo)
+        val output = addOrGet(outputs, (trace as? AiPromptTrace<*>)?.outputInfo)
 
         return AiPromptTraceId(
             trace.uuid,

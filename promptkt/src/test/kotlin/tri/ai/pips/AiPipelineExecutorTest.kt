@@ -22,8 +22,14 @@ package tri.ai.pips
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class AiPipelineExecutorTest {
+
+    private val AiPromptTraceSupport.values: List<String>? get() = (this as? AiPromptTrace<String>)?.outputInfo?.outputs
+    private val AiPromptTraceSupport.firstValue: String? get() = values?.firstOrNull()
+    private val AiPromptTraceSupport.error: String? get() = (this as? AiPromptTrace<*>)?.execInfo?.error
 
     @Test
     fun testExecute() = runTest {
@@ -58,13 +64,13 @@ class AiPipelineExecutorTest {
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.result("go", modelId = null)
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+            AiPromptTrace.result("go", modelId = null)
     }
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.error<String>("fail", Exception("fail"))
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+            AiPromptTrace.error<String>("fail", Exception("fail"))
     }
 
 }

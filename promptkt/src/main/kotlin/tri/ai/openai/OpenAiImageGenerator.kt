@@ -42,7 +42,7 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
                 style = null
             )
         )
-        return images.outputInfo.outputs!!.map { URL(it) }
+        return images.outputInfo!!.outputs.map { URL(it) }
     }
 
     private fun ImageSize.openAiSize() = when {

@@ -19,6 +19,7 @@
  */
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Details of an executed prompt, including prompt configuration, model configuration, execution metadata, and output. */
@@ -38,6 +39,11 @@ class AiPromptTrace<T>(
         modelInfo: AiPromptModelInfo?,
         execInfo: AiPromptExecInfo
     ): AiPromptTrace<T> = AiPromptTrace(promptInfo, modelInfo, execInfo, outputInfo)
+
+    /** Get the first output value, if it exists, otherwise throw [NoSuchElementException]. */
+    @get:JsonIgnore
+    val firstValue: T
+        get() = outputInfo?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
 
     /** Convert output using a provided function, without modifying any other parts of the response. */
     fun <S> mapOutput(transform: (T) -> S) = AiPromptTrace<S>(
@@ -71,7 +77,7 @@ class AiPromptTrace<T>(
         )
 
         /** Create an execution info with an error. */
-        fun <T> error(message: String?, throwable: Throwable, responseTimeMillis: Long? = null, responseTimeMillisTotal: Long? = null, attempts: Int? = null) =
+        fun <T> error(message: String?, throwable: Throwable? = null, responseTimeMillis: Long? = null, responseTimeMillisTotal: Long? = null, attempts: Int? = null) =
             AiPromptTrace<T>(null, null,
                 AiPromptExecInfo(message, throwable, responseTimeMillis = responseTimeMillis, responseTimeMillisTotal = responseTimeMillisTotal, attempts = attempts)
             )
