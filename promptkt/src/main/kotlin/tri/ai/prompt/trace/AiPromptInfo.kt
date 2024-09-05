@@ -31,4 +31,17 @@ data class AiPromptInfo(
 
     /** Fill in the prompt with the parameters. */
     fun filled() = prompt.fill(promptParams)
+
+    companion object {
+        const val INSTRUCTION = "instruction"
+        const val INPUT = "input"
+
+        /** Create prompt info. */
+        fun info(prompt: String, vararg pairs: Pair<String, Any?>) =
+            AiPromptInfo(prompt, mapOfNotNull(*pairs))
+
+        private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
+            mapOf(*pairs).filterValues { it != null } as Map<String, Any>
+    }
+
 }

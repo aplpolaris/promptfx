@@ -119,7 +119,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                         isPreserveRatio = true
                         isPickOnBounds = true // so you can click anywhere on transparent images
                         tooltip { graphic = vbox {
-                            val text = text(it.promptInfo!!.prompt) {
+                            val text = text(it.prompt!!.prompt) {
                                 style = "-fx-fill: white;"
                             }
                             val image = imageview(it.firstValue)
@@ -181,9 +181,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     init {
         onCompleted {
-            val fr = (it.finalResult as List<AiImageTrace>).first()
-            if (fr.execInfo.error != null) {
-                error("Error: ${fr.execInfo.error}")
+            val fr = it.finalResult as AiImageTrace
+            if (fr.exec.error != null) {
+                error("Error: ${fr.exec.error}")
             } else {
                 images.addAll(fr.splitImages())
             }
@@ -193,7 +193,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     override fun plan() = aitask("generate-image") {
         val t0 = System.currentTimeMillis()
         val promptInfo = AiPromptInfo(input.value)
-        val modelInfo = AiPromptModelInfo(model.value, mapOf(
+        val modelInfo = AiModelInfo(model.value, mapOf(
             "n" to numProperty.value,
             "size" to imageSize.value,
             "quality" to quality.value,
@@ -211,11 +211,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 )
             )
             AiImageTrace(promptInfo, modelInfo,
-                AiPromptExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiPromptOutputInfo(images.values ?: listOf())
+                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiOutputInfo(images.values ?: listOf())
             )
         } catch (x: OpenAIAPIException) {
-            AiImageTrace(promptInfo, modelInfo, AiPromptExecInfo.error(x.message))
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
         }
         result
     }.planner
@@ -223,7 +223,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     //region CONTEXT MENU ACTIONS
 
     private fun copyPromptToClipboard(trace: AiImageTrace) {
-        clipboard.putString(trace.promptInfo!!.prompt)
+        clipboard.putString(trace.prompt!!.prompt)
     }
 
     private fun saveAllToFile() {

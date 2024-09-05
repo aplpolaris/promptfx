@@ -25,10 +25,10 @@ import java.util.UUID.randomUUID
 
 /** Common elements of a prompt trace. */
 abstract class AiPromptTraceSupport<T>(
-    var promptInfo: AiPromptInfo?,
-    var modelInfo: AiPromptModelInfo?,
-    var execInfo: AiPromptExecInfo,
-    var outputInfo: AiPromptOutputInfo<T>? = null
+    var prompt: AiPromptInfo?,
+    var model: AiModelInfo?,
+    var exec: AiExecInfo,
+    var output: AiOutputInfo<T>? = null
 ) {
 
     /** Unique identifier for this trace. */
@@ -36,29 +36,29 @@ abstract class AiPromptTraceSupport<T>(
 
     /** Make a copy of this trace with updated information. */
     abstract fun copy(
-        promptInfo: AiPromptInfo? = this.promptInfo,
-        modelInfo: AiPromptModelInfo? = this.modelInfo,
-        execInfo: AiPromptExecInfo = this.execInfo
+        promptInfo: AiPromptInfo? = this.prompt,
+        modelInfo: AiModelInfo? = this.model,
+        execInfo: AiExecInfo = this.exec
     ): AiPromptTraceSupport<T>
 
     /** Get all outputs, if present. */
     @get:JsonIgnore
     val values: List<T>?
-        get() = outputInfo?.outputs
+        get() = output?.outputs
 
     /** Get the first output value, if it exists, otherwise throw [NoSuchElementException]. */
     @get:JsonIgnore
     val firstValue: T
-        get() = outputInfo?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
+        get() = output?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
 
     /** Get error message, if present. */
     @get:JsonIgnore
     val errorMessage: String?
-        get() = execInfo.error ?: execInfo.throwable?.message
+        get() = exec.error ?: exec.throwable?.message
 
     /**
      * Wraps this as a pipeline result.
-     * If [promptInfo] and [modelInfo] are provided, result will also be wrapped in [AiPromptTrace].
+     * If [prompt] and [model] are provided, result will also be wrapped in [AiPromptTrace].
      */
     fun asPipelineResult() = AiPipelineResult(this, mapOf("result" to this))
 

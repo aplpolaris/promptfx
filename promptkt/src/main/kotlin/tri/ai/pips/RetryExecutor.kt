@@ -51,7 +51,7 @@ class RetryExecutor(
                 val success = task.execute(inputs, monitor)
                 val t1 = System.currentTimeMillis()
                 return success.copy(
-                    execInfo = success.execInfo.copy(
+                    execInfo = success.exec.copy(
                         responseTimeMillis = t1 - t0,
                         responseTimeMillisTotal = t1 - t00,
                         attempts = retries + 1
@@ -60,11 +60,12 @@ class RetryExecutor(
             } catch (x: Exception) {
                 val t1 = System.currentTimeMillis()
                 if (retries++ >= maxRetries)
-                    return AiPromptTrace.error<T>(
+                    return AiPromptTrace.error(
+                        modelInfo = null,
                         message = x.message,
                         throwable = x,
-                        responseTimeMillis = t1 - t0,
-                        responseTimeMillisTotal = t1 - t00,
+                        duration = t1 - t0,
+                        durationTotal = t1 - t00,
                         attempts = retries
                     )
                 info<RetryExecutor>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")

@@ -68,7 +68,7 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<Strin
                 }
                 item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                        it?.promptInfo?.prompt?.isNotBlank() == true
+                        it?.prompt?.prompt?.isNotBlank() == true
                     })
                     action {
                         val selected = selectionModel.selectedItem

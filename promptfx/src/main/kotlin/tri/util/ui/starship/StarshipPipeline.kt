@@ -27,7 +27,7 @@ import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.INPUT
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
 import tri.promptfx.ui.FormattedText
 import tri.util.ui.DocumentThumbnail
@@ -46,7 +46,7 @@ object StarshipPipeline {
 
         val runConfig = AiPromptRunConfig(
             AiPromptInfo(config.primaryPrompt.prompt.template, mapOf(INPUT to input) + config.primaryPrompt.params),
-            AiPromptModelInfo(config.completion.modelId)
+            AiModelInfo(config.completion.modelId)
         )
         results.runConfig.set(runConfig)
 
@@ -63,7 +63,7 @@ object StarshipPipeline {
             val secondInput = results.output.value.rawText
             val secondRunConfig = AiPromptRunConfig(
                 AiPromptInfo(it.prompt.template, mapOf(INPUT to secondInput) + it.params),
-                AiPromptModelInfo(config.completion.modelId)
+                AiModelInfo(config.completion.modelId)
             )
             results.secondaryRunConfigs.add(secondRunConfig)
         }

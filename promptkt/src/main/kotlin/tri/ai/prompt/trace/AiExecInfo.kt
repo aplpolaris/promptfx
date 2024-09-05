@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 /** Text inference execution info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiPromptExecInfo(
+data class AiExecInfo(
     /** Error message, if any. */
     var error: String? = null,
     /** Throwable error, if any. */
@@ -45,7 +45,16 @@ data class AiPromptExecInfo(
     fun succeeded() = error == null && throwable == null
 
     companion object {
+        /** Execution from a given time in millis. */
+        fun durationSince(millis: Long, queryTokens: Int? = null, responseTokens: Int? = null) = AiExecInfo(
+            responseTimeMillis = System.currentTimeMillis() - millis,
+            queryTokens = queryTokens,
+            responseTokens = responseTokens
+        )
         /** Create an execution info with an error. */
-        fun error(errorMessage: String?, throwable: Throwable? = null) = AiPromptExecInfo(error = errorMessage, throwable = throwable)
+        fun error(errorMessage: String?, throwable: Throwable? = null) = AiExecInfo(
+            error = errorMessage,
+            throwable = throwable
+        )
     }
 }

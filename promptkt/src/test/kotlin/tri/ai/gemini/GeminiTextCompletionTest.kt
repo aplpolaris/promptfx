@@ -34,14 +34,14 @@ class GeminiTextCompletionTest {
     fun testComplete() = runTest {
         val res = client.complete("Translate Hello, world! into French.", 100, 0.5)
         println(res)
-        assertTrue("monde" in res.firstValue!!.lowercase())
+        assertTrue("monde" in res.firstValue.lowercase())
     }
 
     @Test
     @Tag("gemini")
     fun testCompleteMultiple() = runTest {
         val res = client.complete("Translate Hello, world! into French.", 100, 0.5, numResponses = 2)
-        assertEquals(1, res.outputInfo!!.outputs.size) { "Gemini only supports a single response" }
+        assertEquals(1, res.output!!.outputs.size) { "Gemini only supports a single response" }
         println(res)
     }
 

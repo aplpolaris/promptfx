@@ -358,7 +358,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             processUserInput()
         }
         task.ui {
-            val errors = it.interimResults.values.mapNotNull { it.execInfo.error }
+            val errors = it.interimResults.values.mapNotNull { it.exec.error }
             if (errors.size == 1) {
                 // show error message to user
                 alert(Alert.AlertType.ERROR, "There was an error executing the task.", errors.first(), owner = currentWindow)

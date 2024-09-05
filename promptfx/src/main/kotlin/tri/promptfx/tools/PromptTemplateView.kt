@@ -113,8 +113,8 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
      * Will set the prompt, prompt inputs, model, and model parameters associated with the trace.
      */
     fun importPromptTrace(prompt: AiPromptTraceSupport<*>) {
-        val promptInfo = prompt.promptInfo ?: AiPromptInfo("N/A")
-        val modelInfo = prompt.modelInfo ?: AiPromptModelInfo("N/A")
+        val promptInfo = prompt.prompt ?: AiPromptInfo("N/A")
+        val modelInfo = prompt.model ?: AiModelInfo("N/A")
         template.set(promptInfo.prompt)
         fields.setAll(promptInfo.promptParams.entries.map { it.key to it.value.toString() })
         val model = PromptFxModels.textCompletionModels().find { it.modelId == modelInfo.modelId }

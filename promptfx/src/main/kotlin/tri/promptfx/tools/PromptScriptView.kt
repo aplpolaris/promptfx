@@ -30,9 +30,6 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTask.Companion.aitask
-import tri.ai.pips.AiTaskList
-import tri.ai.pips.aggregate
 import tri.ai.pips.aggregatetrace
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
@@ -360,7 +357,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         if (outputCsv.value) {
             val key = "CSV Output"
             val csvHeader = inputs.headerRow?.let { "$it,output" } ?: "input,output"
-            val csv = results.joinToString("\n") { "${it.promptInfo!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
+            val csv = results.joinToString("\n") { "${it.prompt!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
         val promptInfo: AiPromptInfo
@@ -385,13 +382,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         return AiPromptTrace(
             promptInfo,
-            AiPromptModelInfo(completionEngine.modelId, common.toModelParams()),
-            AiPromptExecInfo(),
-            AiPromptOutputInfo.output(output)
+            AiModelInfo(completionEngine.modelId, common.toModelParams()),
+            AiExecInfo(),
+            AiOutputInfo.output(output)
         )
     }
 
-    private fun AiPromptOutputInfo<*>.firstOutput() = outputs.getOrNull(0)?.toString()
+    private fun AiOutputInfo<*>.firstOutput() = outputs.getOrNull(0)?.toString()
 
     private fun String.cleanedup() = lowercase().removeSuffix(".")
 

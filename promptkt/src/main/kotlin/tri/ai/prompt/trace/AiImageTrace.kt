@@ -25,20 +25,20 @@ package tri.ai.prompt.trace
  */
 class AiImageTrace(
     promptInfo: AiPromptInfo?,
-    modelInfo: AiPromptModelInfo?,
-    execInfo: AiPromptExecInfo = AiPromptExecInfo(),
-    outputInfo: AiPromptOutputInfo<String>? = AiPromptOutputInfo(listOf())
+    modelInfo: AiModelInfo?,
+    execInfo: AiExecInfo = AiExecInfo(),
+    outputInfo: AiOutputInfo<String>? = AiOutputInfo(listOf())
 ) : AiPromptTraceSupport<String>(promptInfo, modelInfo, execInfo, outputInfo) {
 
-    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$promptInfo, modelInfo=$modelInfo, execInfo=$execInfo, outputInfo=$outputInfo)"
+    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
 
     /** Splits this image trace into individual images. */
     fun splitImages(): List<AiImageTrace> =
-        outputInfo!!.outputs.map {
-            AiImageTrace(promptInfo, modelInfo, execInfo, AiPromptOutputInfo(listOf(it)))
+        output!!.outputs.map {
+            AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
         }
 
-    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiPromptModelInfo?, execInfo: AiPromptExecInfo) =
-        AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo)
+    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
+        AiImageTrace(promptInfo, modelInfo, execInfo, output)
 
 }

@@ -29,14 +29,14 @@ class AiPromptTraceDatabaseTest {
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )
-    private val modelInfo = AiPromptModelInfo(
+    private val modelInfo = AiModelInfo(
         "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
-    private val execInfo1 = AiPromptExecInfo()
-    private val execInfo2 = AiPromptExecInfo.error("test error")
-    private val outputInfo1 = AiPromptOutputInfo.output("test output")
-    private val outputInfo2 = AiPromptOutputInfo<String>(listOf())
+    private val execInfo1 = AiExecInfo()
+    private val execInfo2 = AiExecInfo.error("test error")
+    private val outputInfo1 = AiOutputInfo.output("test output")
+    private val outputInfo2 = AiOutputInfo<String>(listOf())
 
     @Test
     fun testSerialize() {

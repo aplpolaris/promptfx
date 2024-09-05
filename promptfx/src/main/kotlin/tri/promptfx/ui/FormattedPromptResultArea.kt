@@ -11,14 +11,15 @@ import tri.util.ui.plainText
  */
 class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Result Area") {
 
-    private lateinit var htmlArea: TextFlow
+    private val htmlArea = TextFlow()
 
     override val root = vbox {
+        vgrow = Priority.ALWAYS
         addtoolbar()
         scrollpane {
             vgrow = Priority.ALWAYS
             isFitToWidth = true
-            htmlArea = textflow {
+            htmlArea.apply {
                 padding = insets(5.0)
                 vgrow = Priority.ALWAYS
                 style = "-fx-font-size: 16px;"
@@ -34,13 +35,15 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
                     }
                 }
             }
+            this += htmlArea
         }
     }
 
     init {
+        root
         selectionFormatted.onChange {
             htmlArea.children.clear()
-            htmlArea.children.addAll(it!!.toFxNodes())
+            htmlArea.children.addAll(it?.toFxNodes() ?: listOf())
         }
     }
 

@@ -55,7 +55,7 @@ class OpenAiChatDriver : ChatDriver() {
     override suspend fun chat(messages: List<ChatEntry>): ChatEntry {
         val inputChats = listOfNotNull(systemMessage) + messages.takeLast(chatHistorySize)
         val response = chatter.chat(inputChats.mapNotNull { it.toTextChatMessage() })
-        val first = response.outputInfo?.outputs?.getOrNull(0)
+        val first = response.output?.outputs?.getOrNull(0)
         return ChatEntry(systemName, first?.content ?: "No response",
             first?.role?.toChatRoleStyle() ?: ChatEntryRole.ERROR)
     }

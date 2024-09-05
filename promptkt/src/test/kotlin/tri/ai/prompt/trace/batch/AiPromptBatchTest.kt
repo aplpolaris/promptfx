@@ -30,8 +30,7 @@ import tri.ai.openai.jsonWriter
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.PrintMonitor
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 
 class AiPromptBatchTest {
@@ -66,7 +65,7 @@ class AiPromptBatchTest {
         runBlocking {
             val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
                 AiPromptInfo("Generate a random number between 1 and 100."),
-                AiPromptModelInfo(defaultTextCompletion.modelId),
+                AiModelInfo(defaultTextCompletion.modelId),
                 4
             )
             val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())

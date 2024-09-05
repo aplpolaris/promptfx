@@ -28,7 +28,7 @@ import tri.ai.prompt.trace.*
 /** Configuration required for executing a text completion prompt. */
 class AiPromptRunConfig(
     val promptInfo: AiPromptInfo,
-    val modelInfo: AiPromptModelInfo
+    val modelInfo: AiModelInfo
 ) {
     override fun toString() =
         "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"
@@ -41,7 +41,7 @@ class AiPromptRunConfig(
         ): AiPromptTrace<String> = try {
             execute(TextPlugin.textCompletionModel(modelInfo.modelId))
         } catch (x: NoSuchElementException) {
-            AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("Model not found: ${modelInfo.modelId}"))
+            AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
         }
     }
 
@@ -60,13 +60,13 @@ class AiPromptRunConfig(
     /**
      * Executes a single text completion query, with model parameters encoded in [modelInfo].
      */
-    private suspend fun TextCompletion.complete(text: String, modelInfo: AiPromptModelInfo) =
+    private suspend fun TextCompletion.complete(text: String, modelInfo: AiModelInfo) =
         complete(
             text = text,
-            tokens = modelInfo.modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int,
-            temperature = modelInfo.modelParams[AiPromptModelInfo.TEMPERATURE] as? Double,
-            stop = modelInfo.modelParams[AiPromptModelInfo.STOP] as? String,
-            numResponses = modelInfo.modelParams[AiPromptModelInfo.NUM_RESPONSES] as? Int
+            tokens = modelInfo.modelParams[AiModelInfo.MAX_TOKENS] as? Int,
+            temperature = modelInfo.modelParams[AiModelInfo.TEMPERATURE] as? Double,
+            stop = modelInfo.modelParams[AiModelInfo.STOP] as? String,
+            numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int
         )
 
 }

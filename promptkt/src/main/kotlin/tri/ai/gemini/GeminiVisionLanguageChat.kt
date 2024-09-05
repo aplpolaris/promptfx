@@ -20,9 +20,10 @@
 package tri.ai.gemini
 
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
+import tri.ai.gemini.GeminiTextChat.Companion.trace
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with Gemini models. */
@@ -38,23 +39,16 @@ class GeminiVisionLanguageChat(override val modelId: String, val client: GeminiC
         stop: List<String>?,
         requestJson: Boolean?
     ): AiPromptTrace<TextChatMessage> {
-        val response = client.generateContentVision(messages, modelId,
+        val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
+        val t0 = System.currentTimeMillis()
+        val resp = client.generateContentVision(messages, modelId,
             GenerationConfig(
                 maxOutputTokens = tokens ?: 500,
                 stopSequences = stop,
                 responseMimeType = if (requestJson == true) "application/json" else null
             )
         )
-        return response.candidates!!.first().let {
-            val role = when (it.content.role) {
-                "user" -> TextChatRole.User
-                "model" -> TextChatRole.Assistant
-                else -> error("Invalid role: ${it.content.role}")
-            }
-            AiPromptTrace.results(it.content.parts.map {
-                TextChatMessage(role, it.text)
-            })
-        }
+        return resp.trace(modelInfo, t0)
     }
 
 }

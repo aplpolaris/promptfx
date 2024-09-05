@@ -6,7 +6,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptExecInfo
+import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.graphic
@@ -20,19 +20,19 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
     val promptParams = SimpleObjectProperty<Map<String, Any>>(null)
     val model = SimpleStringProperty("")
     val modelParams = SimpleObjectProperty<Map<String, Any>>(null)
-    val exec = SimpleObjectProperty<AiPromptExecInfo>(null)
+    val exec = SimpleObjectProperty<AiExecInfo>(null)
     val result = SimpleStringProperty("")
 
     lateinit var paramsField: Fieldset
 
     fun setTrace(trace: AiPromptTraceSupport<*>) {
         this.trace.set(trace)
-        prompt.value = trace.promptInfo?.prompt
-        promptParams.value = trace.promptInfo?.promptParams
-        model.value = trace.modelInfo?.modelId
-        modelParams.value = trace.modelInfo?.modelParams
-        exec.value = trace.execInfo
-        result.value = trace.outputInfo?.outputs?.get(0)?.toString() ?: "No result"
+        prompt.value = trace.prompt?.prompt
+        promptParams.value = trace.prompt?.promptParams
+        model.value = trace.model?.modelId
+        modelParams.value = trace.model?.modelParams
+        exec.value = trace.exec
+        result.value = trace.output?.outputs?.get(0)?.toString() ?: "No result"
     }
 
     override val root = vbox {
@@ -103,7 +103,7 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
 
     private fun Map<String, Any?>?.pretty() =
         this?.entries?.joinToString(", ") { (k, v) -> "$k: ${v.truncated}" } ?: ""
-    private fun AiPromptExecInfo?.pretty() = this?.let {
+    private fun AiExecInfo?.pretty() = this?.let {
         mapOf<String, Any?>(
             "error" to it.error,
             "query_tokens" to it.queryTokens,

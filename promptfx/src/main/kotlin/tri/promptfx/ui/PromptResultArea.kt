@@ -145,9 +145,13 @@ abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
     /** Index of the currently selected result. */
     private val selectionIndex = SimpleIntegerProperty()
     /** String representation of the currently selected result. */
-    val selectionString = selectionIndex.stringBinding(results) { results.getOrNull(it?.toInt() ?: 0) }
+    val selectionString = selectionIndex.stringBinding(results) {
+        results.getOrNull(it?.toInt() ?: 0)
+    }
     /** Formatted representation of the currently selected result. */
-    protected val selectionFormatted = selectionIndex.objectBinding(resultsFormatted) { resultsFormatted.getOrNull(it?.toInt() ?: 0) }
+    protected val selectionFormatted = selectionIndex.objectBinding(resultsFormatted) {
+        resultsFormatted.getOrNull(it?.toInt() ?: 0)
+    }
     /** HTML representation of the currently selected result. */
     protected val selectionHtml = selectionFormatted.stringBinding { it?.toHtml() ?: "<html>(No result)" }
 
@@ -191,7 +195,7 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
             }
         }
         item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-            enableWhen(trace.booleanBinding { it?.promptInfo?.prompt?.isNotBlank() == true })
+            enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
             action {
                 (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
             }

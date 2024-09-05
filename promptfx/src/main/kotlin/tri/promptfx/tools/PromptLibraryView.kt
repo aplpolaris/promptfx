@@ -64,7 +64,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
 
-                button("Send to Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                button("Try in Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                     enableWhen(promptSelection.isNotNull)
                     action { sendToTemplateView() }
                 }

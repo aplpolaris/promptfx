@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 
 class OpenAiTest {
 
@@ -70,7 +71,7 @@ class OpenAiTest {
     fun testChatMultiple() = runTest {
         val res = client.chatCompletion(
             ChatCompletionRequest(
-                ModelId("gpt-3.5-turbo"),
+                ModelId(GPT35_TURBO_ID),
                 listOf(userMessage {
                     content = "Give me a haiku about Kotlin."
                 }),
@@ -85,7 +86,7 @@ class OpenAiTest {
     fun testChatImage() = runTest {
         val res = client.chatCompletion(
             chatCompletionRequest {
-                model = ModelId("gpt-4-vision-preview")
+                model = ModelId("gpt-4-turbo")
                 maxTokens = 2000
                 messages {
                     user {

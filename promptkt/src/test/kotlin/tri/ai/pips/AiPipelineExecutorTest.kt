@@ -22,6 +22,7 @@ package tri.ai.pips
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -61,12 +62,12 @@ class AiPipelineExecutorTest {
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
-            AiPromptTrace.result("go", modelId = null)
+            AiPromptTrace(outputInfo = AiOutputInfo(listOf("go")))
     }
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
-            AiPromptTrace.error<String>("fail", Exception("fail"))
+            AiPromptTrace.error<String>(null, "fail", Exception("fail"))
     }
 
 }

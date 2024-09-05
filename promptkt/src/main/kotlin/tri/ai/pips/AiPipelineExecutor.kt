@@ -43,15 +43,15 @@ object AiPipelineExecutor {
             tasksToDo = tasks.filter {
                 it.id !in completedTasks && it.id !in failedTasks
             }.filter {
-                it.dependencies.all { it in completedTasks && completedTasks[it]!!.execInfo.succeeded() }
+                it.dependencies.all { it in completedTasks && completedTasks[it]!!.exec.succeeded() }
             }
             tasksToDo.forEach { task ->
                 try {
                     monitor.taskStarted(task)
                     val input = task.dependencies.associateWith { completedTasks[it]!! }
                     val result = executor.execute(task, input, monitor)
-                    val resultValue = result?.outputInfo?.outputs
-                    val err = result.execInfo.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
+                    val resultValue = result.output?.outputs
+                    val err = result.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         monitor.taskFailed(task, err)
                         failedTasks[task.id] = result
@@ -62,13 +62,13 @@ object AiPipelineExecutor {
                 } catch (x: Exception) {
                     x.printStackTrace()
                     monitor.taskFailed(task, x)
-                    failedTasks[task.id] = AiPromptTrace.error<Any>(x.message!!, x)
+                    failedTasks[task.id] = AiPromptTrace.error<Any>(null, x.message!!, x)
                 }
             }
         } while (tasksToDo.isNotEmpty())
 
         val allTasks = completedTasks + failedTasks
-        val lastTaskResult = allTasks[tasks.last().id] ?: AiPromptTrace.error<Any>("Inputs failed.")
+        val lastTaskResult = allTasks[tasks.last().id] ?: AiPromptTrace.error<Any>(null, "Inputs failed.")
         return AiPipelineResult(lastTaskResult, completedTasks + failedTasks)
     }
 

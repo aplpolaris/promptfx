@@ -73,7 +73,8 @@ class DocumentQaPlanner {
      * @param contextChunks how many of the retrieved chunks to use for constructing the context
      * @param completionEngine completion engine to use
      * @param maxTokens maximum number of tokens to generate
-     * @param tempParameters temperature/randomness parameters
+     * @param temp temperature for sampling
+     * @param numResponses number of responses to generate
      */
     fun plan(
         question: String,
@@ -123,10 +124,10 @@ class DocumentQaPlanner {
                     responseEmbeddings = responseEmbeddings
                 )
             }
-        }.task("process-result") {
+        }.aitask("process-result") {
             info<DocumentQaPlanner>("$ANSI_GRAY  Similarity of question to response: ${it.responseScore}$ANSI_RESET")
             lastResult = it
-            FormattedPromptTraceResult(it.trace, listOf(formatResult(it)))
+            FormattedPromptTraceResult(it.trace, it.splitQaResults().map { formatResult(it) })
         }.planner
 
     //region SIMILARITY CALCULATIONS
@@ -162,6 +163,15 @@ class DocumentQaPlanner {
     //endregion
 
     //region FORMATTING RESULTS OF QA
+
+    /** Split a QA result into multiple QA results, one per output. */
+    private fun QuestionAnswerResult.splitQaResults(): List<QuestionAnswerResult> {
+        return trace.values?.map { output ->
+            val trace2 = trace.copy()
+            trace2.output = AiOutputInfo(listOf(output))
+            QuestionAnswerResult(query, matches, trace2, responseEmbeddings)
+        } ?: listOf(this)
+    }
 
     /** Formats the result of the QA task. */
     private fun formatResult(qaResult: QuestionAnswerResult): FormattedText {
@@ -245,7 +255,7 @@ data class QuestionAnswerResult(
     val trace: AiPromptTrace<String>,
     val responseEmbeddings: List<List<Double>>
 ) {
-    override fun toString() = trace.outputInfo?.outputs?.joinToString() ?: "No response. Question: ${query.query}"
+    override fun toString() = trace.output?.outputs?.joinToString() ?: "No response. Question: ${query.query}"
 
     /** Calculates the similarity between the question and response. */
     val responseScore

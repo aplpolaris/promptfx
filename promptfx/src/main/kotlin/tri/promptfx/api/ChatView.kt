@@ -130,19 +130,18 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun initChatResponse() {
         onCompleted {
-            it.finalResult?.let {
-                addChatsToHistory(it)
-            }
+            addChatsToHistory(it.finalResult.firstValue)
         }
     }
 
     /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
-    private fun addChatsToHistory(it: Any) {
+    private fun addChatsToHistory(it: Any?) {
         when {
             it is ChatMessage -> addChat(it)
             it is Content -> addChat(it.toChatMessage())
             it is List<*> && it.all { it is ChatMessage } -> addChatChoices(it.map { it as ChatMessage })
             it is List<*> -> it.forEach { addChatsToHistory(it!!) }
+            it == null -> { } // do nothing
             else -> addChat(ChatMessage(Role.Assistant, it.toString()))
         }
     }

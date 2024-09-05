@@ -27,7 +27,7 @@ import tri.ai.openai.jsonWriter
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.RetryExecutor
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiModelInfo
 
 class AiPromptRunConfigTest {
 
@@ -37,11 +37,11 @@ class AiPromptRunConfigTest {
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )
-    private val modelInfo = AiPromptModelInfo(
+    private val modelInfo = AiModelInfo(
         "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
-    private val modelInfo2 = AiPromptModelInfo(
+    private val modelInfo2 = AiModelInfo(
         defaultTextCompletion.modelId,
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )

@@ -21,6 +21,9 @@ package tri.ai.gemini
 
 import tri.ai.core.TextCompletion
 import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with Gemini models. */
@@ -30,15 +33,28 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client
     override fun toString() = "$modelId (Gemini)"
 
     override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiPromptTrace<String> {
+        val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop?.let { listOf(it) }, numResponses = numResponses)
         val t0 = System.currentTimeMillis()
         val resp = client.generateContent(text, modelId, numResponses)
-        return AiPromptTrace.results(
-            values = resp.candidates!!.flatMap {
-                it.content.parts.map { it.text!! }
-            },
-            modelId = modelId,
-            duration = System.currentTimeMillis() - t0
-        )
+        return resp.trace(modelInfo, t0)
+    }
+
+    companion object {
+        /** Create trace for chat message response, with given model info and start query time. */
+        internal fun GenerateContentResponse.trace(modelInfo: AiModelInfo, t0: Long): AiPromptTrace<String> {
+            val err = error
+            return if (err != null) {
+                AiPromptTrace.error(modelInfo, err.message, duration = System.currentTimeMillis() - t0)
+            } else {
+                val respText = candidates?.flatMap { it.content.parts.map { it.text } }?.filterNotNull()
+                return AiPromptTrace(
+                    null,
+                    modelInfo,
+                    AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                    AiOutputInfo(respText ?: listOf())
+                )
+            }
+        }
     }
 
 }

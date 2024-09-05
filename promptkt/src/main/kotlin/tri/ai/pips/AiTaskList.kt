@@ -19,6 +19,8 @@
  */
 package tri.ai.pips
 
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -39,9 +41,10 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
     /** Adds a task to the end of the list. */
     fun <T> task(id: String, description: String? = null, op: suspend (S) -> T) =
         aitask(id, description) {
+            val t0 = System.currentTimeMillis()
             val res = op(it)
             if (res is AiPromptTraceSupport<*>) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
-            AiPromptTrace.result(res, modelId = null)
+            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
         }
 
     /** Adds a task to the end of the list. */
@@ -81,10 +84,10 @@ inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
     val finalTask = object : AiTask<List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<List<T>> {
             val aggregateResults = inputs.values.map {
-                (it.outputInfo?.outputs ?: listOf<T>()) as List<T>
+                (it.output?.outputs ?: listOf<T>()) as List<T>
             }
-            // TODO - any other parts of trace to aggregate ??
-            return AiPromptTrace.results(aggregateResults)
+            // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
+            return AiPromptTrace(outputInfo = AiOutputInfo(aggregateResults))
         }
     }
     return AiTaskList(this, finalTask)
@@ -99,7 +102,7 @@ inline fun <reified T> List<AiTask<T>>.aggregatetrace(): AiTaskList<AiPromptTrac
     val finalTask = object : AiTask<AiPromptTraceSupport<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<AiPromptTraceSupport<T>> {
             val aggregateResults = inputs.values as List<AiPromptTraceSupport<T>>
-            return AiPromptTrace.results(aggregateResults)
+            return AiPromptTrace(outputInfo = AiOutputInfo(aggregateResults))
         }
     }
     return AiTaskList(this, finalTask)
@@ -115,9 +118,10 @@ fun <T> aitasklist(tasks: List<AiTask<T>>) =
 /** Creates a sequential task list with a single task. */
 fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTaskList<T> =
     aitask(id, description) {
+        val t0 = System.currentTimeMillis()
         val res = op()
         if (res is AiPromptTraceSupport<*>) throw IllegalArgumentException("Use aitask() for AiTaskResult")
-        AiPromptTrace.result(res, modelId = null)
+        AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
     }
 
 /** Creates a sequential task list with a single task. */
