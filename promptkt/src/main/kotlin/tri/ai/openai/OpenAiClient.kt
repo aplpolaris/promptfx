@@ -19,6 +19,7 @@
  */
 package tri.ai.openai
 
+import com.aallam.openai.api.audio.SpeechRequest
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -186,6 +187,21 @@ class OpenAiClient(val settings: OpenAiSettings) {
         )
     }
 
+    /** Runs a speech request. */
+    suspend fun speech(request: SpeechRequest): AiPromptTraceSupport<ByteArray> {
+        checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.speech(request)
+
+        return AiPromptTrace(
+            null,
+            request.toModelInfo(),
+            AiExecInfo.durationSince(t0),
+            AiOutputInfo.output(resp)
+        )
+    }
+
     //endregion
 
     //region PARAMETER CONVERSIONS
@@ -244,6 +260,12 @@ class OpenAiClient(val settings: OpenAiSettings) {
         AiModelInfo.USER to user,
         AiModelInfo.QUALITY to quality?.value,
         AiModelInfo.STYLE to style?.value
+    )
+
+    private fun SpeechRequest.toModelInfo() = AiModelInfo.info(model.id,
+        AiModelInfo.VOICE to voice?.value,
+        AiModelInfo.RESPONSE_FORMAT to responseFormat?.value,
+        AiModelInfo.SPEED to speed
     )
 
     //endregion

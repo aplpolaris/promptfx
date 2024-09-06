@@ -110,7 +110,7 @@ class ChatViewAdvanced : ChatView(
             )
             return controller.openAiPlugin.client.chat(completion).asPipelineResult()
         } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>("This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
         }
     }
 

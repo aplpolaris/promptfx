@@ -27,6 +27,9 @@ import tri.ai.gemini.*
 import tri.ai.gemini.Content
 import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /**
@@ -64,8 +67,7 @@ class ChatViewBasic :
                 logprobs = null,
                 topLogprobs = null
             )
-            val response = m.client.chat(completion)
-            return response.asPipelineResult()
+            return m.client.chat(completion).asPipelineResult()
         } else if (m is GeminiTextChat) {
             val response = m.client.generateContent(
                 m.modelId,
@@ -90,11 +92,16 @@ class ChatViewBasic :
                 )
             )
             return if (response.error != null)
-                AiPromptTrace.invalidRequest<ChatMessage>(response.error!!.message).asPipelineResult()
+                AiPromptTrace.invalidRequest<ChatMessage>(model.value, response.error!!.message).asPipelineResult()
             else
-                AiPromptTrace.result(response.candidates!!.first().content.toChatMessage(), m.modelId).asPipelineResult()
+                AiPromptTrace(
+                    null,
+                    AiModelInfo(m.modelId),
+                    AiExecInfo(),
+                    AiOutputInfo.output(response.candidates!!.first().content.toChatMessage())
+                ).asPipelineResult()
         } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>("This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
         }
     }
 

@@ -29,6 +29,7 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME
 import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.openai.instructTask
 import tri.ai.pips.aitask
+import tri.ai.pips.task
 import tri.ai.prompt.trace.*
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
@@ -88,19 +89,17 @@ class DocumentQaPlanner {
         maxTokens: Int,
         temp: Double,
         numResponses: Int
-    ) = aitask("upgrade-existing-embeddings") {
+    ) = task("upgrade-existing-embeddings") {
             runLater { snippets.setAll() }
             if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
                 upgradeEmbeddingIndex()
-            AiPromptTrace.result("")
-        }.aitask("load-embeddings-file") {
+        }.task("load-embeddings-file") {
             embeddingIndex.value!!.findMostSimilar("a", 1)
-            AiPromptTrace.result("")
         }.aitask("calculate-embeddings") {
             findRelevantSection(question, chunksToRetrieve).also {
                 runLater { snippets.setAll(it.firstValue) }
             }
-        }.aitask("question-answer") {
+        }.aitasklist("question-answer") {
             val queryChunks = it.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
@@ -133,14 +132,18 @@ class DocumentQaPlanner {
     //region SIMILARITY CALCULATIONS
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace<List<EmbeddingMatch>> {
+    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace<EmbeddingMatch> {
         documentLibrary.value?.let { return findRelevantSection(it, query, maxChunks) }
         val matches = embeddingIndex.value!!.findMostSimilar(query, maxChunks)
-        return AiPromptTrace.result(matches)
+        val modelId = (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.embeddingService?.modelId
+        return AiPromptTrace(
+            modelInfo = modelId?.let { AiModelInfo(it) },
+            outputInfo = AiOutputInfo(matches)
+        )
     }
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiPromptTrace<List<EmbeddingMatch>> {
+    private suspend fun findRelevantSection(library: TextLibrary, query: String, maxChunks: Int): AiPromptTrace<EmbeddingMatch> {
         val embeddingSvc = (embeddingIndex.value as LocalFolderEmbeddingIndex).embeddingService
         val modelId = embeddingSvc.modelId
         val semanticTextQuery = SemanticTextQuery(query, embeddingSvc.calculateEmbedding(query), modelId)
@@ -153,7 +156,10 @@ class DocumentQaPlanner {
                 )
             }
         }.sortedByDescending { it.queryScore }.take(maxChunks)
-        return AiPromptTrace.result(matches)
+        return AiPromptTrace(
+            modelInfo = AiModelInfo(modelId),
+            outputInfo = AiOutputInfo(matches)
+        )
     }
 
     suspend fun reindexAllDocuments() {

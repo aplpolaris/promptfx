@@ -48,6 +48,8 @@ data class AiModelInfo(
         const val SIZE = "size"
         const val QUALITY = "quality"
         const val STYLE = "style"
+        const val VOICE = "voice"
+        const val SPEED = "speed"
 
         /** Create model info. */
         fun info(modelId: String, vararg pairs: Pair<String, Any?>) =

@@ -317,6 +317,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                 is AiImageTrace -> {
                     // ignore - this is handled by view
                 }
+                else -> throw IllegalStateException("Unexpected result type: $r")
             }
         }
     }
@@ -381,7 +382,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                 block()
             } catch (x: Exception) {
                 x.printStackTrace()
-                AiPipelineResult(AiPromptTrace.error<Any>(x.message ?: "Unknown error", x), mapOf())
+                AiPipelineResult(AiPromptTrace.error<Any>(null, x.message ?: "Unknown error", x), mapOf())
             }
         }
     }

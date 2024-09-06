@@ -75,7 +75,7 @@ class AiProgressView: View(), AiTaskMonitor {
 
     /** Start progress bar for a given task. */
     fun taskStarted(id: String) {
-        taskStarted(task(id) { AiPromptTrace.result("") }.lastTask)
+        taskStarted(task(id) { "" }.lastTask)
     }
 
     /** End all tasks and hide progress bar. */

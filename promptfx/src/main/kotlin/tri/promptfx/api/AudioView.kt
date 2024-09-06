@@ -153,7 +153,7 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
 
     override suspend fun processUserInput(): AiPipelineResult<String> {
         return when (val f = file.value) {
-            null -> AiPromptTrace.invalidRequest("No audio file dropped")
+            null -> AiPromptTrace.invalidRequest(model.value, "No audio file dropped")
             else -> controller.openAiPlugin.client.quickTranscribe(model.value, f)
                 .also { controller.updateUsage() }
         }.asPipelineResult()

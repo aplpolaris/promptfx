@@ -27,7 +27,10 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.AiPromptTrace.Companion.result
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 
 /** View for text moderation API. */
@@ -54,7 +57,12 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         )
         val response = controller.openAiPlugin.client.client.moderations(request)
         val responseText = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response)
-        return result(responseText, model.value.model).asPipelineResult()
+        return AiPromptTrace(
+            null,
+            AiModelInfo(model.value.model),
+            AiExecInfo(),
+            AiOutputInfo.output(responseText)
+        ).asPipelineResult()
     }
 
 }
