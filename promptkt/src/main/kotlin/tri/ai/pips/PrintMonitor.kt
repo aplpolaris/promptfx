@@ -36,9 +36,11 @@ class PrintMonitor: AiTaskMonitor {
 
     override fun taskCompleted(task: AiTask<*>, result: Any?) {
         val value = (result as? AiPromptTrace<*>)?.output?.outputs ?: result
-        if (value is Iterable<*>) {
+        if (value is Iterable<*> && value.count() > 1) {
             printGray("  result:")
             value.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
+        } else if (value is Iterable<*>) {
+            printGray("  result: \u001B[1m${value.first().pretty()}")
         } else {
             printGray("  result: \u001B[1m${value.pretty()}")
         }
@@ -47,6 +49,7 @@ class PrintMonitor: AiTaskMonitor {
 
     private fun Any?.pretty(): String = when (this) {
         null -> "null"
+        is Unit -> "✓"
         is AiPromptTrace<*> -> output?.outputs?.let { if (it.size == 1) it[0].pretty() else it.joinToString(", ") { it.pretty() } } ?: "null"
         else -> toString()
     }

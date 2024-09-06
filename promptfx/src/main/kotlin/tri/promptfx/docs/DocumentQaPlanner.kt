@@ -89,13 +89,13 @@ class DocumentQaPlanner {
         maxTokens: Int,
         temp: Double,
         numResponses: Int
-    ) = task("upgrade-existing-embeddings") {
+    ) = task("upgrade-embeddings-file") {
             runLater { snippets.setAll() }
             if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
                 upgradeEmbeddingIndex()
-        }.task("load-embeddings-file") {
+        }.task("load-embeddings-file-and-calculate") {
             embeddingIndex.value!!.findMostSimilar("a", 1)
-        }.aitask("calculate-embeddings") {
+        }.aitask("find-relevant-sections") {
             findRelevantSection(question, chunksToRetrieve).also {
                 runLater { snippets.setAll(it.firstValue) }
             }
@@ -106,7 +106,7 @@ class DocumentQaPlanner {
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
             val questionEmbedding = embeddingService.calculateEmbedding(question)
             val responseEmbeddings = response.values?.map {
-                embeddingService.calculateEmbedding(it.toString())
+                embeddingService.calculateEmbedding(it)
             } ?: listOf()
             // TODO - make this support more than one response embedding
             // add snippet response scores for first response embedding only
