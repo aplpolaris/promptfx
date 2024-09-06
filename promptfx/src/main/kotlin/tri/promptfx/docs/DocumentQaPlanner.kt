@@ -97,7 +97,7 @@ class DocumentQaPlanner {
             embeddingIndex.value!!.findMostSimilar("a", 1)
         }.aitask("find-relevant-sections") {
             findRelevantSection(question, chunksToRetrieve).also {
-                runLater { snippets.setAll(it.firstValue) }
+                runLater { snippets.setAll(it.values) }
             }
         }.aitasklist("question-answer") {
             val queryChunks = it.filter { it.chunkSize >= minChunkSize }
