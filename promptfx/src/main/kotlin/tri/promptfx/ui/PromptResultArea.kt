@@ -169,11 +169,11 @@ abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
         toolbar {
             visibleWhen(multiResult)
             managedWhen(multiResult)
-            button("", FontAwesomeIcon.ARROW_LEFT.graphic) {
+            button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
                 enableWhen(selectionIndex.greaterThan(0))
                 action { selectionIndex.set(selectionIndex.value - 1) }
             }
-            button("", FontAwesomeIcon.ARROW_RIGHT.graphic) {
+            button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
                 enableWhen(selectionIndex.lessThan(results.sizeProperty.subtract(1)))
                 action { selectionIndex.set(selectionIndex.value + 1) }
             }

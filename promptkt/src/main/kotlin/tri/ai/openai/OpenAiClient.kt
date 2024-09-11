@@ -21,8 +21,7 @@ package tri.ai.openai
 
 import com.aallam.openai.api.audio.SpeechRequest
 import com.aallam.openai.api.audio.TranscriptionRequest
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
+import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.core.Usage
 import com.aallam.openai.api.edits.EditsRequest
@@ -143,11 +142,20 @@ class OpenAiClient(val settings: OpenAiSettings) {
         checkApiKey()
 
         val t0 = System.currentTimeMillis()
+        val userInputOnly = completionRequest.messages.size == 1 && completionRequest.messages.first().role == ChatRole.User
+        val prompt = if (!userInputOnly) null else
+            completionRequest.messages.first().messageContent?.let {
+                when {
+                    it is TextContent -> it.content
+                    it is ListContent && it.content.size == 1 && it.content[0] is TextPart -> (it.content[0] as TextPart).text
+                    else -> null
+                }
+            }
         val resp = client.chatCompletion(completionRequest)
         usage.increment(resp.usage)
 
         return AiPromptTrace(
-            null,
+            prompt?.let { AiPromptInfo(it) },
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
             AiOutputInfo(resp.choices.map { it.message })

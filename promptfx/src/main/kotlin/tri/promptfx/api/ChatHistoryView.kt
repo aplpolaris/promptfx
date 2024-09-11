@@ -23,6 +23,7 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Role
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
@@ -48,6 +49,7 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
         listview(components) {
             vgrow = Priority.ALWAYS
             isFillWidth = true
+            selectionModel = null
             cellFormat {
                 graphic = ChatHistoryItem(it, roles, remove = { components.remove(it) }).root
             }
@@ -120,12 +122,14 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
                 tooltip("The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content.")
             }
             spacer()
-            if (!chat.modelListEmpty) {
+            if (chat.messageList.sizeProperty.greaterThan(1).value) {
                 button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
-                    action { cycleChatBackward() }
+                    enableWhen(chat.messageListIndex.greaterThan(0))
+                    action { previousChat() }
                 }
                 button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
-                    action { cycleChatForward() }
+                    enableWhen(chat.messageListIndex.lessThan(chat.messageList.sizeProperty.subtract(1)))
+                    action { nextChat() }
                 }
             }
             button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
@@ -178,18 +182,14 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
         }
     }
 
-    private fun cycleChatBackward() {
-        val index = chat.modelListIndex
-        chat.modelListIndex = if (index == 0) chat.modelList.size - 1 else index - 1
-        val prevChoice = chat.modelList[chat.modelListIndex]
-        chat.copyFrom(prevChoice)
+    private fun previousChat() {
+        chat.messageListIndex.minusAssign(1)
+        chat.copyFrom(chat.messageList[chat.messageListIndex.value])
     }
 
-    private fun cycleChatForward() {
-        val index = chat.modelListIndex
-        chat.modelListIndex = if (index == chat.modelList.size - 1) 0 else index + 1
-        val nextChoice = chat.modelList[chat.modelListIndex]
-        chat.copyFrom(nextChoice)
+    private fun nextChat() {
+        chat.messageListIndex.plusAssign(1)
+        chat.copyFrom(chat.messageList[chat.messageListIndex.value])
     }
 }
 
@@ -236,10 +236,9 @@ class ChatMessageUiModel(
     val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id.id })
     val toolCallIdProperty = SimpleStringProperty(_toolCallId?.id)
 
-    var modelList = listOf<ChatMessageUiModel>()
-    val modelListEmpty
-        get() = modelList.isEmpty()
-    var modelListIndex = -1
+    var messageList = observableListOf<ChatMessageUiModel>()
+    val messageListEmpty = messageList.sizeProperty.isEqualTo(0)
+    var messageListIndex = SimpleIntegerProperty(-1)
 
     /** Copy parameters from second model. */
     fun copyFrom(other: ChatMessageUiModel) {
@@ -267,8 +266,8 @@ class ChatMessageUiModel(
 
         /** Create UI model with multiple chat message options. */
         fun valueOf(chats: List<ChatMessage>) = valueOf(chats.first()).apply {
-            modelList = chats.map { valueOf(it) }
-            modelListIndex = 0
+            messageList.setAll(chats.map { valueOf(it) })
+            messageListIndex.set(0)
         }
 
         /** Find first image content in a message, if present. */

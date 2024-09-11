@@ -32,6 +32,7 @@ import tornadofx.*
 import tri.ai.gemini.Content
 import tri.ai.gemini.GeminiModelIndex
 import tri.ai.openai.OpenAiModelIndex
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 
@@ -130,19 +131,20 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun initChatResponse() {
         onCompleted {
-            addChatsToHistory(it.finalResult.firstValue)
+            addChatsToHistory(it.finalResult)
         }
     }
 
     /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
-    private fun addChatsToHistory(it: Any?) {
+    private fun addChatsToHistory(response: AiPromptTraceSupport<*>) {
+        val result = response.output?.outputs ?: listOf()
+        val types = result.mapNotNull { it?.javaClass }.toSet()
         when {
-            it is ChatMessage -> addChat(it)
-            it is Content -> addChat(it.toChatMessage())
-            it is List<*> && it.all { it is ChatMessage } -> addChatChoices(it.map { it as ChatMessage })
-            it is List<*> -> it.forEach { addChatsToHistory(it!!) }
-            it == null -> { } // do nothing
-            else -> addChat(ChatMessage(Role.Assistant, it.toString()))
+            types == setOf(ChatMessage::class.java) -> addChatChoices(result as List<ChatMessage>)
+            types == setOf(Content::class.java) -> (result as List<Content>).map { it.toChatMessage() }.forEach { addChat(it) }
+            types == setOf(String::class.java) -> result.map { ChatMessage(Role.Assistant, it.toString()) }.forEach { addChat(it) }
+            types.isEmpty() -> tri.util.warning<ChatView>("No chat responses found in output.")
+            else -> throw IllegalArgumentException("Unsupported chat response type: $types")
         }
     }
 
