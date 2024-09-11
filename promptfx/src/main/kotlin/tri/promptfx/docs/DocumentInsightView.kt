@@ -153,7 +153,7 @@ class DocumentInsightView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val pairResult = it.finalResult as Pair<*, *>
+            val pairResult = it.finalResult.firstValue as Pair<*, *>
             mapResult.value = pairResult.first.toString()
             reduceResult.value = pairResult.second.toString()
         }
@@ -164,9 +164,8 @@ class DocumentInsightView: AiPlanTaskView(
         reduceResult.set("")
 
         return promptBatch().aggregate()
-            .aitask("results-summarize") { values ->
-                val concat = values.joinToString { "\n\n" }
-                runLater { mapResult.value = concat }
+            .aitask("results-summarize") { _ ->
+                val concat = mapResult.value
                 completionEngine.complete(
                     reducePromptUi.fill(AiPrompt.INPUT to concat),
                     common.maxTokens.value,

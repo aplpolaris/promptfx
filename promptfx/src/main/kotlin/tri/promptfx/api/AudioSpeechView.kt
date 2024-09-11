@@ -123,6 +123,10 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
                     speed = audioSpeed.value
                 )
                 controller.openAiPlugin.client.speech(request)
+                    .also {
+                        controller.updateUsage()
+                        file.set(it.firstValue)
+                    }
             }
         }
         return trace.asPipelineResult()

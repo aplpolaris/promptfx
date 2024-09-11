@@ -40,28 +40,31 @@ suspend fun TextCompletion.promptTask(promptText: String, tokenLimit: Int, temp:
 
 /** Generate a task that completes a prompt. */
 suspend fun TextCompletion.promptTask(promptInfo: AiPromptInfo, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
-    complete(promptInfo.filled(), tokenLimit, temp, stop, numResponses = numResponses)
+    complete(promptInfo.filled(), tokenLimit, temp, stop, numResponses = numResponses).copy(
+        promptInfo = promptInfo
+    )
 
 /** Generate a task that combines a single instruction or question about contextual text. */
 suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> {
     val prompt = AiPromptLibrary.lookupPrompt(promptId)
     val promptParams = prompt.instructParams(instruct = instruct, input = userText)
-    return complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses)
+    return complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses).copy(
+        promptInfo = AiPromptInfo(prompt.template, promptParams)
+    )
 }
 
 /** Generate a task that fills inputs into a prompt. */
 suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean?, numResponses: Int?): AiPromptTrace<String> {
-    return AiPromptLibrary.lookupPrompt(promptId).fill(fields).let {
+    val prompt = AiPromptLibrary.lookupPrompt(promptId)
+    return prompt.fill(fields).let {
         if (this is OpenAiCompletionChat)
             complete(it, tokenLimit, temp, null, requestJson, numResponses)
         else
             complete(it, tokenLimit, temp, null, numResponses)
-    }
+    }.copy(
+        promptInfo = AiPromptInfo(prompt.template, fields)
+    )
 }
-
-private fun <X> mapOfNotNull(vararg pairs: Pair<X, Any?>) =
-    pairs.filter { it.second != null }
-        .associate { it.first to it.second!! }
 
 //region CONVERTING TASKS
 

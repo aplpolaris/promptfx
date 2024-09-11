@@ -158,7 +158,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
 
     init {
         onCompleted {
-            val response = it.finalResult.toString()
+            val response = it.finalResult.firstValue.toString()
             val person = peopleList.firstOrNull { response.startsWith("$it:") }
             if (person != null) {
                 val message = response.substringAfter(":").trim()
