@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptfx</artifactId>
-    <version>0.7.3-SNAPSHOT</version>
+    <version>0.8.0-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM demo application.</description>
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt</artifactId>
-            <version>0.7.3-SNAPSHOT</version>
+            <version>0.8.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

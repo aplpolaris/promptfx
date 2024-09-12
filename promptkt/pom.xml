@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.7.3-SNAPSHOT</version>
+    <version>0.8.0-SNAPSHOT</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM and prompt engineering.</description>
@@ -69,7 +69,7 @@
         <ktor.version>2.3.9</ktor.version> <!-- match version in openai-client -->
         <mustache.version>0.9.13</mustache.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <openai-kotlin.version>3.7.2</openai-kotlin.version>
+        <openai-kotlin.version>3.8.2</openai-kotlin.version>
         <pdfbox.version>3.0.2</pdfbox.version>
         <poi.version>5.2.5</poi.version>
         <slf4j.version>1.7.35</slf4j.version> <!-- match version in io.ktor -->
