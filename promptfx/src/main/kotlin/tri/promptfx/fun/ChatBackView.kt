@@ -28,9 +28,9 @@ import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.pips.AiPlanner
-import tri.ai.pips.AiTaskResult
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
@@ -158,7 +158,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
 
     init {
         onCompleted {
-            val response = it.finalResult.toString()
+            val response = it.finalResult.firstValue.toString()
             val person = peopleList.firstOrNull { response.startsWith("$it:") }
             if (person != null) {
                 val message = response.substringAfter(":").trim()
@@ -190,7 +190,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         chatHistory.setAll(history.conversations)
     }
 
-    private suspend fun chatBack(): AiTaskResult<String> {
+    private suspend fun chatBack(): AiPromptTrace<String> {
         val systemMessage = AiPromptLibrary.lookupPrompt("chat-back")
             .fill("person" to nextPerson,
                 "other persons" to otherPersons,
@@ -204,7 +204,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
             maxTokens.value,
             stop = listOf("\n")
-        ).map { it.content!! }
+        ).mapOutput { it.content!! }
     }
 
 }

@@ -23,7 +23,7 @@ import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_INSTRUCT
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with OpenAI models. */
 class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val client: OpenAiClient = OpenAiClient.INSTANCE) :
@@ -31,13 +31,14 @@ class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val 
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?): AiTaskResult<String> =
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?): AiPromptTrace<String> =
         client.completion(CompletionRequest(
             ModelId(modelId),
             text,
             maxTokens = tokens,
             temperature = temperature,
-            stop = stop?.let { listOf(it) }
+            stop = stop?.let { listOf(it) },
+            n = numResponses
         ))
 
 }

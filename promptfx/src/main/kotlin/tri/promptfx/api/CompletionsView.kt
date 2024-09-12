@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxModels
@@ -51,18 +50,20 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 frequencyPenalty()
                 presencePenalty()
                 maxTokens()
+                numResponses()
             }
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<String> {
         val id = model.value!!.modelId
         val completionModel = PromptFxModels.textCompletionModels().firstOrNull { it.modelId == id }
         val response = if (completionModel != null) {
             completionModel.complete(
                 text = input.get(),
                 tokens = common.maxTokens.value,
-                temperature = common.temp.value
+                temperature = common.temp.value,
+                numResponses = common.numResponses.value
             )
         } else {
             val completion = CompletionRequest(
@@ -73,13 +74,11 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
                 frequencyPenalty = common.freqPenalty.value,
                 presencePenalty = common.presPenalty.value,
                 maxTokens = common.maxTokens.value,
+                n = common.numResponses.value
             )
             controller.openAiPlugin.client.completion(completion)
         }
-        return response.asPipelineResult(
-            promptInfo = AiPromptInfo(input.get()),
-            modelInfo = AiPromptModelInfo(id, common.toModelParams())
-        )
+        return response.asPipelineResult()
     }
 
 }

@@ -24,7 +24,10 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.*
 import tri.ai.pips.*
-import java.util.logging.Logger
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
 class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingService: EmbeddingService, val input: String) : AiPlanner {
@@ -35,20 +38,23 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingSe
         }.aitask("weather-api-request") {
             completionEngine.jsonPromptTask<WeatherRequest>("weather-api-request", input, tokenLimit = 500, temp = null)
         }.task("weather-api") {
-            weatherService.getWeather(it)
+            weatherService.getWeather(it!!)
         }.aitask("weather-response-formatter") {
             val json = jsonMapper.writeValueAsString(it)
             completionEngine.instructTask("weather-response-formatter", instruct = input, userText = json, tokenLimit = 500, temp = null)
         }.plan
 
-    private suspend fun checkWeatherSimilarity(input: String): AiTaskResult<String> {
+    private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace<String> {
         val embeddings = embeddingService.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
         val similarity = cosineSimilarity(embeddings[0], embeddings[1])
-        Logger.getLogger("WeatherAiTaskPlanner").info("Input alignment to weather: $similarity")
+        info<WeatherAiTaskPlanner>("Input alignment to weather: $similarity")
         if (similarity < 0.5)
             throw IllegalArgumentException("The input is not about weather.")
 
-        return AiTaskResult.result(input, embeddingService.modelId)
+        return AiPromptTrace(
+            modelInfo = AiModelInfo(embeddingService.modelId),
+            outputInfo = AiOutputInfo.output(input)
+        )
     }
 
 }

@@ -65,3 +65,4 @@ emoji:
   promptConfig:
     id: example-emoji
   isShowModelParameters: false
+  isShowMultipleResponseOption: true

@@ -44,8 +44,7 @@ class WikipediaAiTaskPlannerTest {
     fun testExecute() = runTest {
         val tasks = WikipediaAiTaskPlanner(engine, null, "How big is Texas?").plan()
         val result = AiPipelineExecutor.execute(tasks, PrintMonitor())
-        val resultId = tasks.last().id
-        assertEquals(4, result.results.size)
+        assertEquals(4, result.interimResults.size)
         println(result.finalResult)
     }
 

@@ -24,10 +24,11 @@ import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.embedding.EmbeddingResponse
 import com.aallam.openai.api.model.ModelId
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 
 class OpenAiTest {
 
@@ -39,7 +40,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testModels() = runTest {
         val res = client.models()
         println(res)
@@ -52,7 +53,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testChat() = runTest {
         val res = client.chatCompletion(
             ChatCompletionRequest(
@@ -66,11 +67,26 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
+    fun testChatMultiple() = runTest {
+        val res = client.chatCompletion(
+            ChatCompletionRequest(
+                ModelId(GPT35_TURBO_ID),
+                listOf(userMessage {
+                    content = "Give me a haiku about Kotlin."
+                }),
+                n = 2
+            )
+        )
+        println(res.choices)
+    }
+
+    @Test
+    @Tag("openai")
     fun testChatImage() = runTest {
         val res = client.chatCompletion(
             chatCompletionRequest {
-                model = ModelId("gpt-4-vision-preview")
+                model = ModelId("gpt-4-turbo")
                 maxTokens = 2000
                 messages {
                     user {
@@ -88,7 +104,7 @@ class OpenAiTest {
     }
 
     @Test
-    @Disabled("Requires apikey")
+    @Tag("openai")
     fun testEmbedding() = runTest {
         val res = client.embeddings(
             EmbeddingRequest(

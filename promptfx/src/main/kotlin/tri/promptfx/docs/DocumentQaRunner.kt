@@ -25,11 +25,11 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.IgnoreMonitor
+import tri.promptfx.ui.FormattedPromptTraceResult
 import java.io.File
 import java.io.FileFilter
 
 /** Standalone app for asking questions of documents. */
-
 object DocumentQaRunner {
 
     private val platform by lazy { Platform.startup {  } }
@@ -42,7 +42,7 @@ object DocumentQaRunner {
 
     private fun initPlatform() = platform
 
-    fun ask(input: String, folder: String?): String? {
+    fun ask(input: String, folder: String?): String {
         return runBlocking {
             // initialize toolkit and view
             if (folder != null) {
@@ -50,14 +50,8 @@ object DocumentQaRunner {
             }
             println("Asking a question about documents in ${view.getFolder()}.")
             view.question.set(input)
-            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult
-            when (result) {
-                is String -> result
-                is FormattedPromptTraceResult -> result.trace.outputInfo.output
-                is FormattedText -> result.toString()
-                null -> "N/A"
-                else -> result.toString()
-            }
+            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult as FormattedPromptTraceResult
+            result.firstValue
         }
     }
 

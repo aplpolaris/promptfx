@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.openai.jsonMapper
 import tri.ai.openai.yamlMapper
-import tri.ai.pips.AiTask
-import tri.ai.pips.aggregate
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiModelInfo
 
 /**
  * Provides a series of prompt/model pairings for execution.
@@ -51,7 +49,7 @@ class AiPromptBatchCyclic(id: String) : AiPromptBatch(id) {
             AiPromptInfo(
                 prompt.configIndex(i) as String,
                 promptParams.entries.associate { it.key to it.value.configIndex(i) }
-            ), AiPromptModelInfo(
+            ), AiModelInfo(
                 model.configIndex(i) as String,
                 modelParams.entries.associate { it.key to it.value.configIndex(i) }
             )
@@ -67,7 +65,7 @@ class AiPromptBatchCyclic(id: String) : AiPromptBatch(id) {
 
     companion object {
         /** Get a batch to repeat the same prompt/model pairings for a number of runs. */
-        fun repeat(batchId: String, prompt: AiPromptInfo, model: AiPromptModelInfo, runs: Int) = AiPromptBatchCyclic(batchId).apply {
+        fun repeat(batchId: String, prompt: AiPromptInfo, model: AiModelInfo, runs: Int) = AiPromptBatchCyclic(batchId).apply {
             this.prompt = prompt.prompt
             this.promptParams = prompt.promptParams
             this.model = model.modelId

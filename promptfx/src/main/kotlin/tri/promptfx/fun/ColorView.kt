@@ -1,13 +1,3 @@
-package tri.promptfx.`fun`
-
-import javafx.beans.property.SimpleStringProperty
-import javafx.scene.paint.Color
-import tri.ai.openai.promptPlan
-import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.promptfield
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
-
 /*-
  * #%L
  * tri.promptfx:promptfx
@@ -17,9 +7,9 @@ import tri.util.ui.WorkspaceViewAffordance
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +17,17 @@ import tri.util.ui.WorkspaceViewAffordance
  * limitations under the License.
  * #L%
  */
+package tri.promptfx.`fun`
+
+import javafx.beans.property.SimpleStringProperty
+import javafx.scene.control.TextArea
+import javafx.scene.paint.Color
+import tornadofx.*
+import tri.ai.openai.promptPlan
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.promptfield
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [ColorView]. */
 class ColorPlugin : NavigableWorkspaceViewImpl<ColorView>("Fun", "Text-to-Color", WorkspaceViewAffordance.INPUT_ONLY, ColorView::class)
@@ -40,28 +41,35 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         addInputTextArea(input)
         parameters("Prompt") {
             promptfield(promptId = "example-color", workspace = workspace)
+            with (common) {
+                numResponses()
+            }
         }
-        onCompleted {
-            updateOutputTextAreaColor(it.finalResult.toString())
+
+        resultArea.trace.onChange {
+            updateOutputTextAreaColor(it.toString())
+        }
+        resultArea.selectionString.onChange {
+            updateOutputTextAreaColor(it.toString())
         }
     }
 
-    private fun updateOutputTextAreaColor(result: String) {
-        val outputEditor = outputPane.lookup(".text-area") as javafx.scene.control.TextArea
+    private fun updateOutputTextAreaColor(color: String) {
+        val outputEditor = outputPane.lookup(".text-area") as TextArea
         try {
-            val text = result.substringAfter("#").trim()
-            val color = Color.web(
+            val text = color.substringAfter("#").trim()
+            val col = Color.web(
                 if (text.length == 5 && text.startsWith("FF"))
                     text.substring(2)
                 else
                     text
             )
-            val fgColor = if (color.brightness > 0.5) "#000000" else "#ffffff"
+            val fgColor = if (col.brightness > 0.5) "#000000" else "#ffffff"
             // update outputEditor foreground and background colors based on this
-            outputEditor.lookup(".content").style = "-fx-background-color: ${color.hex()};"
+            outputEditor.lookup(".content").style = "-fx-background-color: ${col.hex()};"
             outputEditor.style = "-fx-text-fill: $fgColor;"
         } catch (x: IllegalArgumentException) {
-            println("Failed to switch color. Result was $result.")
+            println("Failed to switch color. Result was $color.")
         }
     }
 
@@ -70,7 +78,8 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         input.get(),
         tokenLimit = 6,
         temp = null,
-        stop = ";"
+        stop = ";",
+        numResponses = common.numResponses.value
     )
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"

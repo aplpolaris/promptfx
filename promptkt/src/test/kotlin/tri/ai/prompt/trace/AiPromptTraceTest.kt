@@ -28,7 +28,7 @@ class AiPromptTraceTest {
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )
-    private val modelInfo = AiPromptModelInfo(
+    private val modelInfo = AiModelInfo(
         "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
@@ -40,8 +40,8 @@ class AiPromptTraceTest {
 
     @Test
     fun testSerializeTrace() {
-        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo(), AiPromptOutputInfo("test output"))))
-        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiPromptExecInfo.error("test error"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiExecInfo(), AiOutputInfo.output("test output"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace<String>(promptInfo, modelInfo, AiExecInfo.error("test error"))))
     }
 
 }

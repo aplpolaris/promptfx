@@ -26,29 +26,19 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
-import javafx.scene.input.DataFormat
-import javafx.scene.layout.Priority
-import javafx.scene.text.TextFlow
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
-import tri.promptfx.AiPlanTaskView
+import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
-import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.promptFxFileChooser
-import tri.promptfx.promptTraceContextMenu
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.ui.PromptSelectionModel
-import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.matchViewModel
-import tri.promptfx.ui.promptfield
+import tri.promptfx.ui.*
 import tri.util.info
 import tri.util.ui.*
 import java.io.File
@@ -85,10 +75,7 @@ class DocumentQaView: AiPlanTaskView(
     val snippets
         get() = planner.snippets
 
-    private val htmlResult = SimpleStringProperty("")
-    private val resultTrace = SimpleObjectProperty<AiPromptTrace>()
-
-    private lateinit var resultBox: TextFlow
+    private val resultBox: FormattedPromptResultArea
 
     init {
         preferences(PREF_APP) {
@@ -130,7 +117,6 @@ class DocumentQaView: AiPlanTaskView(
             field("Minimum chars") {
                 tooltip("Snippets with a character count below this limit will be ignored")
                 sliderwitheditablelabel(1..1000, minChunkSizeForRelevancy)
-                label(minChunkSizeForRelevancy)
             }
             field("Query snippets") {
                 tooltip("Number of matching snippets to send to the question answering engine")
@@ -145,35 +131,12 @@ class DocumentQaView: AiPlanTaskView(
             promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
+        resultBox = FormattedPromptResultArea()
         outputPane.clear()
-        output {
-            scrollpane {
-                vgrow = Priority.ALWAYS
-                isFitToWidth = true
-                resultBox = textflow {
-                    padding = insets(5.0)
-                    vgrow = Priority.ALWAYS
-                    style = "-fx-font-size: 16px;"
+        outputPane.add(resultBox)
 
-                    promptTraceContextMenu(this@DocumentQaView, resultTrace) {
-                        item("Copy output to clipboard") {
-                            action {
-                                clipboard.setContent(mapOf(
-                                    DataFormat.HTML to htmlResult.value,
-                                    DataFormat.PLAIN_TEXT to plainText()
-                                ))
-                            }
-                        }
-                    }
-                }
-            }
-        }
         onCompleted {
-            val fr = it.finalResult as FormattedPromptTraceResult
-            htmlResult.set(fr.text.toHtml())
-            resultTrace.set(fr.trace)
-            resultBox.children.clear()
-            resultBox.children.addAll(fr.text.toFxNodes())
+            resultBox.setFinalResult(it.finalResult as FormattedPromptTraceResult)
         }
     }
 
@@ -187,7 +150,8 @@ class DocumentQaView: AiPlanTaskView(
         contextChunks = chunksToSendWithQuery.value,
         completionEngine = controller.completionEngine.value,
         maxTokens = common.maxTokens.value,
-        tempParameters = common
+        temp = common.temp.value,
+        numResponses = common.numResponses.value
     )
 
     //region ACTIONS
@@ -220,13 +184,14 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            val ft = (it.finalResult as FormattedPromptTraceResult).text
-            ft.hyperlinkOp = { docName ->
-                val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
-                if (doc == null) {
-                    tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
-                } else {
-                    browseToBestSnippet(doc, planner.lastResult, hostServices)
+            (it.finalResult as FormattedPromptTraceResult).formattedOutputs.forEach {
+                it.hyperlinkOp = { docName ->
+                    val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
+                    if (doc == null) {
+                        tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
+                    } else {
+                        browseToBestSnippet(doc, planner.lastResult, hostServices)
+                    }
                 }
             }
         }
@@ -254,7 +219,8 @@ class DocumentQaView: AiPlanTaskView(
                     DocumentBrowseToPage(match.document.browsable()!!, match.chunkText, hostServices).open()
                 } else {
                     info<DocumentQaView>("Browsing to closest match")
-                    DocumentBrowseToClosestMatch(matches, result.responseEmbedding, hostServices).open()
+                    // TODO - support for multiple responses
+                    DocumentBrowseToClosestMatch(matches, result.responseEmbeddings[0], hostServices).open()
                 }
             }
         }

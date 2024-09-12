@@ -42,6 +42,10 @@ import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiImageTrace
+import tri.promptfx.ui.FormattedPromptTraceResult
+import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultArea
 import tri.util.ui.graphic
 import java.io.File
 import java.lang.Exception
@@ -60,9 +64,11 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
 
     val controller: PromptFxController by inject()
     val progress: AiProgressView by inject()
+    val resultArea = PromptResultArea()
+    val formattedResultArea = FormattedPromptResultArea()
 
     val runTooltip = SimpleStringProperty("")
-    val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
+    val onCompleted: MutableList<(AiPipelineResult<*>) -> Unit> = mutableListOf()
 
     val completionEngine: TextCompletion
         get() = controller.completionEngine.value
@@ -183,6 +189,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             with (common) {
                 temperature()
                 maxTokens()
+                numResponses()
             }
         }
     }
@@ -298,23 +305,19 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
 
     /** Adds a default output area to the view. By default, updates with text result of the task. */
     fun addOutputTextArea() {
-        val result = PromptResultArea()
         output {
-            add(result.root)
+            add(resultArea.root)
         }
         onCompleted {
-            val r = it.finalResult
-            if (r is AiPromptTrace) {
-                result.setFinalResult(r)
-            } else {
-                // TODO - views should return a prompt trace object wherever possible
-                val trace = AiPromptTrace(
-                    AiPromptInfo(""),
-                    AiPromptModelInfo(completionEngine.modelId),
-                    AiPromptExecInfo(),
-                    AiPromptOutputInfo(r.toString())
-                )
-                result.setFinalResult(trace)
+            when (val r = it.finalResult) {
+                is AiPromptTrace<*> ->
+                    resultArea.setFinalResult(r)
+                is FormattedPromptTraceResult ->
+                    formattedResultArea.setFinalResult(r)
+                is AiImageTrace -> {
+                    // ignore - this is handled by view
+                }
+                else -> throw IllegalStateException("Unexpected result type: $r")
             }
         }
     }
@@ -340,15 +343,15 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     }
 
     /** Processes whatever input user has provided. */
-    abstract suspend fun processUserInput(): AiPipelineResult
+    abstract suspend fun processUserInput(): AiPipelineResult<*>
 
     /** Adds a hook to be called when the task has completed. */
-    fun onCompleted(op: (AiPipelineResult) -> Unit) {
+    fun onCompleted(op: (AiPipelineResult<*>) -> Unit) {
         onCompleted.add(op)
     }
 
     /** Called when the task has completed. */
-    private fun taskCompleted(message: AiPipelineResult) = onCompleted.forEach { it(message) }
+    private fun taskCompleted(message: AiPipelineResult<*>) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
     internal fun runTask() {
@@ -356,10 +359,13 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             processUserInput()
         }
         task.ui {
-            val errors = it.results.values.mapNotNull { it.error }
-            if (errors.isNotEmpty()) {
+            val errors = it.interimResults.values.mapNotNull { it.exec.error }
+            if (errors.size == 1) {
                 // show error message to user
-                alert(Alert.AlertType.ERROR, "There was an error executing the task.", errors.first().message, owner = currentWindow)
+                alert(Alert.AlertType.ERROR, "There was an error executing the task.", errors.first(), owner = currentWindow)
+            } else if (errors.isNotEmpty()) {
+                // show multiple errors to user
+                alert(Alert.AlertType.ERROR, "There were multiple errors executing the task.", errors.joinToString("\n"), owner = currentWindow)
             } else {
                 taskCompleted(it)
             }
@@ -370,13 +376,13 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     }
 
     /** Run task on a background thread. */
-    private fun executeTask(block: suspend () -> AiPipelineResult) = runAsync {
+    private fun executeTask(block: suspend () -> AiPipelineResult<*>) = runAsync {
         runBlocking {
             try {
                 block()
             } catch (x: Exception) {
                 x.printStackTrace()
-                AiPipelineResult.error(x.message ?: "Unknown error", x)
+                AiPipelineResult(AiPromptTrace.error<Any>(null, x.message ?: "Unknown error", x), mapOf())
             }
         }
     }

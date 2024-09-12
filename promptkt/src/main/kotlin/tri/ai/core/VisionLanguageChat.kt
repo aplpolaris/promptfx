@@ -19,9 +19,8 @@
  */
 package tri.ai.core
 
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 import java.net.URI
-import java.net.URL
 
 /**
  * An interface for completing vision-language chats.
@@ -37,7 +36,7 @@ interface VisionLanguageChat {
         tokens: Int? = 1000,
         stop: List<String>? = null,
         requestJson: Boolean? = null
-    ): AiTaskResult<TextChatMessage>
+    ): AiPromptTrace<TextChatMessage>
 
 }
 

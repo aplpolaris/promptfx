@@ -32,6 +32,9 @@ import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import kotlin.system.exitProcess
 
+/**
+ * Command-line executable for chatting with GPT-3.5 Turbo.
+ */
 object OpenAiSimpleChat {
     @JvmStatic
     fun main(args: Array<String>) {

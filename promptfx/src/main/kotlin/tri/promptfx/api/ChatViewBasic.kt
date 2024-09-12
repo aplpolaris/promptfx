@@ -27,7 +27,10 @@ import tri.ai.gemini.*
 import tri.ai.gemini.Content
 import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
 
 /**
  * Basic version of chat through API.
@@ -36,7 +39,7 @@ import tri.ai.pips.AiTaskResult
 class ChatViewBasic :
     ChatView("Chat", "Testing AI Assistant chat.", listOf(Role.User, Role.Assistant), showInput = false) {
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<ChatMessage> {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(ChatMessage(ChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
@@ -48,7 +51,7 @@ class ChatViewBasic :
                 messages = messages,
                 temperature = common.temp.value,
                 topP = common.topP.value,
-                n = null,
+                n = common.numResponses.value,
                 stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
                 maxTokens = common.maxTokens.value,
                 presencePenalty = common.presPenalty.value,
@@ -64,8 +67,7 @@ class ChatViewBasic :
                 logprobs = null,
                 topLogprobs = null
             )
-            val response = m.client.chat(completion)
-            return response.asPipelineResult()
+            return m.client.chat(completion).asPipelineResult()
         } else if (m is GeminiTextChat) {
             val response = m.client.generateContent(
                 m.modelId,
@@ -90,11 +92,16 @@ class ChatViewBasic :
                 )
             )
             return if (response.error != null)
-                AiTaskResult.invalidRequest<Any>(response.error!!.message).asPipelineResult()
+                AiPromptTrace.invalidRequest<ChatMessage>(model.value, response.error!!.message).asPipelineResult()
             else
-                AiTaskResult.result(response.candidates!!.first().content, m.modelId).asPipelineResult()
+                AiPromptTrace(
+                    null,
+                    AiModelInfo(m.modelId),
+                    AiExecInfo(),
+                    AiOutputInfo.output(response.candidates!!.first().content.toChatMessage())
+                ).asPipelineResult()
         } else {
-            return AiTaskResult.invalidRequest<Any>("This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
         }
     }
 

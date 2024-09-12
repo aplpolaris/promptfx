@@ -19,25 +19,23 @@
  */
 package tri.ai.pips
 
-/** Result of a pipeline execution. */
-class AiPipelineResult(finalTaskId: String, val results: Map<String, AiTaskResult<*>>) {
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 
-    /** The result of the last task in the pipeline. */
-    val finalResult: Any? = results[finalTaskId]?.value?.let {
-        when (it) {
-            is AiPipelineResult -> it.finalResult
-            is AiTaskResult<*> -> it.value
-            else -> it
-        }
-    }
+/** Result of a pipeline execution. */
+class AiPipelineResult<T>(val finalResult: AiPromptTraceSupport<T>, val interimResults: Map<String, AiPromptTraceSupport<*>>) {
 
     companion object {
-        fun error(message: String, error: Throwable) = AiPipelineResult(
-            "error",
-            mapOf("error" to AiTaskResult.error<Any>(message, error))
-        )
+        /** Return a result object indicating an error was thrown during execution. */
+        fun error(message: String?, error: Throwable?) : AiPipelineResult<Any> {
+            val trace = AiPromptTrace.error<Any>(null, message, error)
+            return AiPipelineResult(trace, mapOf("result" to trace))
+        }
 
-        fun todo() = error("This pipeline is not yet implemented.", UnsupportedOperationException())
+        /** Return a result object indicating the pipeline has not been implemented. */
+        fun todo() = "This pipeline is not yet implemented.".let {
+            error(it, UnsupportedOperationException(it))
+        }
     }
 
 }

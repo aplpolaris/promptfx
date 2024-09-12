@@ -23,7 +23,9 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.text
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -43,7 +45,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         addInputTextArea(secondText)
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<*> {
         val chunks = secondText.get().splitIntoChunks()
         val mod = controller.embeddingService.get()
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
@@ -52,7 +54,10 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         val scoreText = "Overall similarity: %.2f%%".format(score * 100)
 
         return if (chunks.size == 1) {
-            result(scoreText, mod.modelId).asPipelineResult()
+            AiPromptTrace(
+                modelInfo = AiModelInfo(mod.modelId),
+                outputInfo = AiOutputInfo.output(scoreText)
+            )
         } else {
             val scores = chunks.mapIndexed { index, line ->
                 val similarity = cosineSimilarity(embedList[0], embedList[index + 2])
@@ -62,8 +67,11 @@ class TextSimilarityView: AiTaskView("Text Similarity",
             val secondText =
                 "${"Second closest paragraph match: %.2f%%\n".format(scores[1].second * 100)}${scores[1].first}"
 
-            result("$scoreText\n\n$highestText\n\n$secondText", mod.modelId).asPipelineResult()
-        }
+            AiPromptTrace(
+                modelInfo = AiModelInfo(mod.modelId),
+                outputInfo = AiOutputInfo.output("$scoreText\n\n$highestText\n\n$secondText")
+            )
+        }.asPipelineResult()
     }
 
 }

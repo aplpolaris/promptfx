@@ -19,7 +19,7 @@
  */
 package tri.ai.core
 
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Interface for chat completion. */
 interface TextChat {
@@ -31,8 +31,9 @@ interface TextChat {
         messages: List<TextChatMessage>,
         tokens: Int? = 1000,
         stop: List<String>? = null,
-        requestJson: Boolean? = null
-    ): AiTaskResult<TextChatMessage>
+        requestJson: Boolean? = null,
+        numResponses: Int? = null
+    ): AiPromptTrace<TextChatMessage>
 
 }
 

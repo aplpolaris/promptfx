@@ -46,6 +46,11 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
             if (promptConfig.isVisible) {
                 promptfield(promptId = promptConfig.id, workspace = workspace)
             }
+            if (config.isShowMultipleResponseOption && !config.isShowModelParameters) {
+                with(common) {
+                    numResponses()
+                }
+            }
         }
         if (config.isShowModelParameters)
             addDefaultTextCompletionParameters(common)
@@ -57,6 +62,7 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
                 + mapOf(AiPrompt.INPUT to input.get()),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
+        numResponses = common.numResponses.value
     )
 
     /** Mode config with property indicating current selection. */
@@ -77,7 +83,8 @@ class RuntimePromptViewConfig(
     val description: String,
     val modeOptions: List<ModeConfig>,
     val promptConfig: PromptConfig,
-    val isShowModelParameters: Boolean
+    val isShowModelParameters: Boolean,
+    val isShowMultipleResponseOption: Boolean = false
 )
 
 /** Reference mode [id] in configuration file, associated [templateId] for use in prompt, [label] for UI. */

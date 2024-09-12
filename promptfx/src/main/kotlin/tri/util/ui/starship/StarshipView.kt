@@ -37,8 +37,7 @@ import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxDriver.sendInput
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
-import tri.promptfx.docs.FormattedText
-import tri.promptfx.docs.toFxNodes
+import tri.promptfx.ui.FormattedText
 import tri.util.info
 import tri.util.ui.*
 import tri.util.ui.AnimatingThumbnailBox

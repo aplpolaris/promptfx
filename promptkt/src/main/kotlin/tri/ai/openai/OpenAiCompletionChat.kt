@@ -26,7 +26,7 @@ import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextCompletion
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with OpenAI chat models. */
 class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) :
@@ -34,17 +34,18 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?) =
-        complete(text, tokens, temperature, stop, null)
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?) =
+        complete(text, tokens, temperature, stop, null, numResponses)
 
-    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?): AiTaskResult<String> =
+    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?, numResponses: Int?): AiPromptTrace<String> =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             listOf(ChatMessage(ChatRole.User, text)),
             temperature = temperature,
             maxTokens = tokens,
             stop = stop?.let { listOf(it) },
-            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null,
+            n = numResponses
         ))
 
 }

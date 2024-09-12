@@ -22,7 +22,7 @@ package tri.ai.prompt.trace.batch
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonMapper
@@ -30,8 +30,7 @@ import tri.ai.openai.jsonWriter
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.PrintMonitor
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 
 class AiPromptBatchTest {
@@ -51,27 +50,27 @@ class AiPromptBatchTest {
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).results.values.onEach {
+            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testBatchExecuteDatabase() {
         runBlocking {
             val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
                 AiPromptInfo("Generate a random number between 1 and 100."),
-                AiPromptModelInfo(defaultTextCompletion.modelId),
+                AiModelInfo(defaultTextCompletion.modelId),
                 4
             )
             val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
-                addTraces(result.results.values.map { it.value as AiPromptTrace })
+                addTraces(result.interimResults.values)
             }
             val output = jsonWriter.writeValueAsString(db)
             val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)

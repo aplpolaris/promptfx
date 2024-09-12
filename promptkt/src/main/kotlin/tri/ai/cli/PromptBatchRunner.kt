@@ -75,12 +75,12 @@ object PromptBatchRunner {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            batch.plan().execute(IgnoreMonitor).finalResult as List<AiPromptTrace>
+            batch.plan().execute<String>(IgnoreMonitor).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         val writer = if (jsonOut) jsonWriter else yamlWriter
-        val outputObject: Any = if (database) AiPromptTraceDatabase(result) else result
+        val outputObject: Any = if (database) AiPromptTraceDatabase(listOf(result)) else result
         writer.writeValue(outputFile, outputObject)
 
         println("${ANSI_CYAN}Output written to $output.$ANSI_RESET")

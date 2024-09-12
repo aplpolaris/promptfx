@@ -85,8 +85,8 @@ object StarshipContentConfig {
     /** Generate a random question based on the current configuration. */
     suspend fun randomQuestion(): String {
         val index = randomQuestionTopic.indices.random()
-        val topic = randomQuestionTopic[index]!!
-        val example = randomQuestionExample[index % randomQuestionExample.size]!!
+        val topic = randomQuestionTopic[index]
+        val example = randomQuestionExample[index % randomQuestionExample.size]
         val prompt = AiPrompt(randomQuestionTemplate.fill("topic" to topic, "example" to example))
         val fields = prompt.fields().associateWith {
             val rand = if (":" in it) {
@@ -97,7 +97,7 @@ object StarshipContentConfig {
             }
             randomQuestionLists[rand.first]!!.random(rand.second)
         }
-        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).value!!
+        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue!!
     }
 
     private fun List<String>.random(n: Int) = when (n) {

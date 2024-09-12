@@ -80,7 +80,8 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
         "example" to sampleOutput.get(),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
-        requestJson = if (requestJson.value) true else null
+        requestJson = if (requestJson.value) true else null,
+        numResponses = common.numResponses.value
     )
 
 }

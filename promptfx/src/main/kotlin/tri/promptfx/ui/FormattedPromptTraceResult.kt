@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptkt
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,12 +17,17 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.trace
+package tri.promptfx.ui
 
-import com.fasterxml.jackson.annotation.JsonInclude
+import tri.ai.prompt.trace.*
 
-/** Text inference output info. */
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiPromptOutputInfo(
-    var output: String? = null
-)
+/** Result including the trace and formatted text. */
+class FormattedPromptTraceResult(val trace: AiPromptTrace<String>, val formattedOutputs: List<FormattedText>)
+    : AiPromptTraceSupport<String>(trace.prompt, trace.model, trace.exec, trace.output) {
+
+    override fun toString() = trace.output?.outputs?.joinToString() ?: "null"
+
+    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
+        FormattedPromptTraceResult(AiPromptTrace(promptInfo, modelInfo, execInfo, output), formattedOutputs)
+
+}

@@ -23,9 +23,8 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
-import javafx.scene.control.TextField
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptModelInfo
+import tri.ai.prompt.trace.AiModelInfo
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
 
@@ -39,7 +38,9 @@ class ModelParameters {
         private const val DEFAULT_PRES_PENALTY = 0.0
         private const val DEFAULT_MAX_TOKENS = 500
         private const val DEFAULT_STOP_SEQUENCES = ""
+        private const val DEFAULT_NUM_RESPONSES = 1
         private const val TOKEN_SLIDER_MAX = 32000
+        private const val NUM_RESPONSES_MAX = 10
     }
 
     internal val temp = SimpleDoubleProperty(DEFAULT_TEMP)
@@ -49,6 +50,7 @@ class ModelParameters {
 
     internal val maxTokens = SimpleIntegerProperty(DEFAULT_MAX_TOKENS)
     internal val stopSequences = SimpleStringProperty(DEFAULT_STOP_SEQUENCES)
+    internal val numResponses = SimpleIntegerProperty(DEFAULT_NUM_RESPONSES)
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -96,25 +98,35 @@ class ModelParameters {
         }
     }
 
-    /** Generate model parameters object for [AiPromptModelInfo]. */
+    fun EventTarget.numResponses() {
+        field("Number of Responses") {
+            tooltip("Number of responses to generate.")
+            slider(1..NUM_RESPONSES_MAX, numResponses)
+            label(numResponses.asString())
+        }
+    }
+
+    /** Generate model parameters object for [AiModelInfo]. */
     fun toModelParams() = listOf(
-        AiPromptModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
-        AiPromptModelInfo.TOP_P to if (topP.value == DEFAULT_TOP_P) null else topP.value,
-        AiPromptModelInfo.FREQUENCY_PENALTY to if (freqPenalty.value == DEFAULT_FREQ_PENALTY) null else freqPenalty.value,
-        AiPromptModelInfo.PRESENCE_PENALTY to if (presPenalty.value == DEFAULT_PRES_PENALTY) null else presPenalty.value,
-        AiPromptModelInfo.MAX_TOKENS to if (maxTokens.value == DEFAULT_MAX_TOKENS) null else maxTokens.value,
-        AiPromptModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value
+        AiModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
+        AiModelInfo.TOP_P to if (topP.value == DEFAULT_TOP_P) null else topP.value,
+        AiModelInfo.FREQUENCY_PENALTY to if (freqPenalty.value == DEFAULT_FREQ_PENALTY) null else freqPenalty.value,
+        AiModelInfo.PRESENCE_PENALTY to if (presPenalty.value == DEFAULT_PRES_PENALTY) null else presPenalty.value,
+        AiModelInfo.MAX_TOKENS to if (maxTokens.value == DEFAULT_MAX_TOKENS) null else maxTokens.value,
+        AiModelInfo.STOP to if (stopSequences.value == DEFAULT_STOP_SEQUENCES) null else stopSequences.value,
+        AiModelInfo.NUM_RESPONSES to if (numResponses.value == DEFAULT_NUM_RESPONSES) null else numResponses.value
     ).filter { it.second != null }
     .toMap() as Map<String, Any>
 
     /** Import model parameters from a map. */
     fun importModelParams(modelParams: Map<String, Any>) {
-        (modelParams[AiPromptModelInfo.TEMPERATURE] as? Double)?.let { temp.set(it) }
-        (modelParams[AiPromptModelInfo.TOP_P] as? Double)?.let { topP.set(it) }
-        (modelParams[AiPromptModelInfo.FREQUENCY_PENALTY] as? Double)?.let { freqPenalty.set(it) }
-        (modelParams[AiPromptModelInfo.PRESENCE_PENALTY] as? Double)?.let { presPenalty.set(it) }
-        (modelParams[AiPromptModelInfo.MAX_TOKENS] as? Int)?.let { maxTokens.set(it) }
-        (modelParams[AiPromptModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
+        (modelParams[AiModelInfo.TEMPERATURE] as? Double)?.let { temp.set(it) }
+        (modelParams[AiModelInfo.TOP_P] as? Double)?.let { topP.set(it) }
+        (modelParams[AiModelInfo.FREQUENCY_PENALTY] as? Double)?.let { freqPenalty.set(it) }
+        (modelParams[AiModelInfo.PRESENCE_PENALTY] as? Double)?.let { presPenalty.set(it) }
+        (modelParams[AiModelInfo.MAX_TOKENS] as? Int)?.let { maxTokens.set(it) }
+        (modelParams[AiModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
+        (modelParams[AiModelInfo.NUM_RESPONSES] as? Int)?.let { numResponses.set(it) }
     }
 
 }

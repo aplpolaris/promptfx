@@ -49,13 +49,13 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
     override fun plan() = task("audio-transcribe") {
         userInput()
     }.task("weather") {
-        WeatherAiTaskPlanner(completionEngine, embeddingService, it).execute(progress)
+        WeatherAiTaskPlanner(completionEngine, embeddingService, it).execute<String>(progress)
     }.planner
 
     private suspend fun userInput(): String {
         var text = input.get()
         audio.file.value?.let {
-            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).value!!
+            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).firstValue!!
             input.set(text)
         }
         return text

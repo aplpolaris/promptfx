@@ -32,6 +32,7 @@ import tornadofx.*
 import tri.ai.gemini.Content
 import tri.ai.gemini.GeminiModelIndex
 import tri.ai.openai.OpenAiModelIndex
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 
@@ -84,7 +85,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         }
     }
 
-    fun initChatParameters() {
+    private fun initChatParameters() {
         parameters("Chat Model") {
             field("Model") {
                 combobox(model, chatModels)
@@ -122,28 +123,32 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
                     cellFormat { text = it.type }
                 }
             }
+            with (common) {
+                numResponses()
+            }
         }
     }
 
     private fun initChatResponse() {
         onCompleted {
-            it.finalResult?.let {
-                addChatsToHistory(it)
-            }
+            addChatsToHistory(it.finalResult)
         }
     }
 
     /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
-    private fun addChatsToHistory(it: Any) {
-        when (it) {
-            is ChatMessage -> addChat(it)
-            is Content -> addChat(it.toChatMessage())
-            is List<*> -> it.forEach { addChatsToHistory(it!!) }
-            else -> addChat(ChatMessage(Role.Assistant, it.toString()))
+    private fun addChatsToHistory(response: AiPromptTraceSupport<*>) {
+        val result = response.output?.outputs ?: listOf()
+        val types = result.mapNotNull { it?.javaClass }.toSet()
+        when {
+            types == setOf(ChatMessage::class.java) -> addChatChoices(result as List<ChatMessage>)
+            types == setOf(Content::class.java) -> (result as List<Content>).map { it.toChatMessage() }.forEach { addChat(it) }
+            types == setOf(String::class.java) -> result.map { ChatMessage(Role.Assistant, it.toString()) }.forEach { addChat(it) }
+            types.isEmpty() -> tri.util.warning<ChatView>("No chat responses found in output.")
+            else -> throw IllegalArgumentException("Unsupported chat response type: $types")
         }
     }
 
-    private fun Content.toChatMessage() = chatMessage {
+    protected fun Content.toChatMessage() = chatMessage {
         role = when (this@toChatMessage.role) {
             "user" -> Role.User
             "model" -> Role.Assistant
@@ -170,6 +175,22 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         val askTools = chat.toolCalls != null
         if (askTools) {
             chat.toolCalls!!.forEach {
+                // add response placeholder for each tool
+                val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
+                chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
+            }
+        } else {
+            // add blank message for user to follow up
+            chatHistory.components.add(ChatMessageUiModel(Role.User, ""))
+        }
+    }
+
+    /** Adds multiple chat messages as different options for user. */
+    private fun addChatChoices(chat: List<ChatMessage>) {
+        chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
+        val toolCalls = chat.first().toolCalls
+        if (toolCalls != null) {
+            toolCalls.forEach {
                 // add response placeholder for each tool
                 val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))

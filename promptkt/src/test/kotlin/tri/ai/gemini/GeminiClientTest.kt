@@ -20,17 +20,15 @@
 package tri.ai.gemini
 
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.gemini.GeminiModelIndex.EMBED1
+import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
 
-@Disabled("Requires apikey")
+@Tag("gemini")
 class GeminiClientTest {
 
     companion object {
@@ -92,10 +90,11 @@ class GeminiClientTest {
             val response = client.generateContent(listOf(
                 TextChatMessage(TextChatRole.System, "You are a wizard that always responds as if you are casting a spell."),
                 TextChatMessage(TextChatRole.User, "What should I have for dinner?")
-            ), "gemini-1.5-pro-latest")
+            ), GEMINI_15_FLASH)
             assertNotNull(response)
-            assert(response.error == null)
             println(response)
+            println(response.error)
+            assert(response.error == null)
         }
     }
 

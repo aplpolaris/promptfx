@@ -22,6 +22,9 @@ package tri.ai.pips
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class AiPipelineExecutorTest {
 
@@ -29,42 +32,42 @@ class AiPipelineExecutorTest {
     fun testExecute() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("pass"), FailTask("fail")),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(2, results.size)
-        assertEquals("go", results["pass"]?.value)
-        assertNotNull(results["fail"]?.error)
+        assertEquals("go", results["pass"]?.firstValue!!)
+        assertNotNull(results["fail"]?.errorMessage)
     }
 
     @Test
     fun testExecuteChain() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(3, results.size)
-        assertEquals("go", results["a"]?.value)
-        assertEquals("go", results["b"]?.value)
-        assertEquals("go", results["c"]?.value)
+        assertEquals("go", results["a"]?.firstValue!!)
+        assertEquals("go", results["b"]?.firstValue!!)
+        assertEquals("go", results["c"]?.firstValue!!)
     }
 
     @Test
     fun testExecuteChainWithFailure() = runTest {
         val results = AiPipelineExecutor.execute(
             listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).results
+            PrintMonitor()).interimResults
         assertEquals(2, results.size)
-        assertEquals("go", results["a"]?.value)
-        assertNotNull(results["b"]?.error)
-        assertNull(results["c"]?.value)
+        assertEquals("go", results["a"]?.firstValue!!)
+        assertNotNull(results["b"]?.errorMessage)
+        assertNull(results["c"]?.values)
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.result("go", modelId = null)
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
+            AiPromptTrace(outputInfo = AiOutputInfo(listOf("go")))
     }
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiTaskResult<*>>, monitor: AiTaskMonitor) =
-            AiTaskResult.error<String>("fail", Exception("fail"))
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
+            AiPromptTrace.error<String>(null, "fail", Exception("fail"))
     }
 
 }

@@ -21,15 +21,21 @@ package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonInclude
 
-/** Text inference execution info. */
+/** Text inference output info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiPromptExecInfo(
-    var error: String? = null,
-    var queryTokens: Int? = null,
-    var responseTokens: Int? = null,
-    var responseTimeMillis: Long? = null
+data class AiOutputInfo<T>(
+    var outputs: List<T>
 ) {
+    /** Convert output using a provided function. */
+    fun <S> map(transform: (T) -> S) =
+        AiOutputInfo(outputs.map(transform))
+
+    /** Convert list of output to a single output. */
+    fun <S> mapList(transform: (List<T>) -> S) =
+        AiOutputInfo(listOf(transform(outputs)))
+
     companion object {
-        fun error(errorMessage: String?) = AiPromptExecInfo(error = errorMessage)
+        /** Create output info with a single output. */
+        fun <T> output(output: T) = AiOutputInfo(listOf(output))
     }
 }

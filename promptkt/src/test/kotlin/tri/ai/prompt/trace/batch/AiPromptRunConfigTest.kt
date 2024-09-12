@@ -20,15 +20,14 @@
 package tri.ai.prompt.trace.batch
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.RetryExecutor
 import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiModelInfo
 
 class AiPromptRunConfigTest {
 
@@ -38,11 +37,11 @@ class AiPromptRunConfigTest {
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )
-    private val modelInfo = AiPromptModelInfo(
+    private val modelInfo = AiModelInfo(
         "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
-    private val modelInfo2 = AiPromptModelInfo(
+    private val modelInfo2 = AiModelInfo(
         defaultTextCompletion.modelId,
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
@@ -51,18 +50,18 @@ class AiPromptRunConfigTest {
     fun testExecute() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
     }
 
     @Test
-    @Disabled("Requires OpenAI API key")
+    @Tag("openai")
     fun testExecute2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).value as AiPromptTrace
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

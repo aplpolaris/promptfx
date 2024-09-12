@@ -47,6 +47,7 @@ import tri.promptfx.ui.sectionViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
@@ -129,8 +130,7 @@ class DocumentInsightView: AiPlanTaskView(
             }
             field("Minimum snippet size (chars)") {
                 tooltip("Minimum size to process")
-                slider(1..5000, minSnippetCharsToProcess)
-                label(minSnippetCharsToProcess)
+                sliderwitheditablelabel(1..5000, minSnippetCharsToProcess)
             }
         }
         addDefaultTextCompletionParameters(common)
@@ -153,7 +153,7 @@ class DocumentInsightView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val pairResult = it.finalResult as Pair<*, *>
+            val pairResult = it.finalResult.firstValue as Pair<*, *>
             mapResult.value = pairResult.first.toString()
             reduceResult.value = pairResult.second.toString()
         }
@@ -164,19 +164,17 @@ class DocumentInsightView: AiPlanTaskView(
         reduceResult.set("")
 
         return promptBatch().aggregate()
-            .aitask("results-summarize") { list: List<AiPromptTrace> ->
-                val concat = list.mapNotNull { it.outputInfo.output }
-                    .joinToString("\n\n")
-                runLater { mapResult.value = concat }
+            .aitask("results-summarize") { _ ->
+                val concat = mapResult.value
                 completionEngine.complete(
                     reducePromptUi.fill(AiPrompt.INPUT to concat),
                     common.maxTokens.value,
                     common.temp.value
-                ).map { concat to it }
+                ).mapOutput { concat to it }
             }.planner
     }
 
-    private fun promptBatch(): List<AiTask<AiPromptTrace>> {
+    private fun promptBatch(): List<AiTask<String>> {
         val snippets = updateDocs()
         val limitedSnippets = snippets.groupBy { it.first }
             .mapValues { it.value.take(chunksToProcess.value) }
@@ -194,9 +192,7 @@ class DocumentInsightView: AiPlanTaskView(
         }.tasks().map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->
-                res.outputInfo.output?.let {
-                    runLater { mapResult.value += "\n\n$it" }
-                }
+                runLater { mapResult.value += "\n\n${res.first()}" }
             }
         }
     }

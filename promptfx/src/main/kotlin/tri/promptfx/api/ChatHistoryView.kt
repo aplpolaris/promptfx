@@ -23,6 +23,7 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Role
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
@@ -48,6 +49,7 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
         listview(components) {
             vgrow = Priority.ALWAYS
             isFillWidth = true
+            selectionModel = null
             cellFormat {
                 graphic = ChatHistoryItem(it, roles, remove = { components.remove(it) }).root
             }
@@ -80,10 +82,9 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
 }
 
 /** UI for a single chat message. */
-class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
+class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
     override val root = vbox(10.0) {
-        hbox {
-            spacing = 10.0
+        hbox(5.0) {
             // only allow user or assistant per intended API use
             combobox(chat.roleProperty, roles) {
                 cellFormat { text = it.role }
@@ -92,7 +93,6 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 managedWhen(chat.contentImageProperty.isNotNull)
                 visibleWhen(chat.contentImageProperty.isNotNull)
                 padding = insets(5.0, 2.0)
-                style = "-fx-background-color: #f0f0f0;"
                 text("Image:")
                 button(chat.detailImageProperty) {
                     action {
@@ -109,9 +109,7 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                     }
                 }
             }
-            hbox {
-                alignment = Pos.CENTER
-                spacing = 10.0
+            hbox(5.0, Pos.CENTER_LEFT) {
                 managedWhen(chat.roleProperty.isEqualTo(Role.Tool))
                 visibleWhen(chat.roleProperty.isEqualTo(Role.Tool))
                 text("id:")
@@ -124,6 +122,16 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 tooltip("The name of the author of this message. name is required if role is function, and it should be the name of the function whose response is in the content.")
             }
             spacer()
+            if (chat.messageList.sizeProperty.greaterThan(1).value) {
+                button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
+                    enableWhen(chat.messageListIndex.greaterThan(0))
+                    action { previousChat() }
+                }
+                button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
+                    enableWhen(chat.messageListIndex.lessThan(chat.messageList.sizeProperty.subtract(1)))
+                    action { nextChat() }
+                }
+            }
             button("", FontAwesomeIconView(FontAwesomeIcon.MINUS_CIRCLE)) {
                 action { remove() }
             }
@@ -147,7 +155,7 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 isEditable = false
             }
         }
-        hbox(10.0) {
+        hbox(5.0) {
             textarea(chat.contentProperty) {
                 managedWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
                 visibleWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
@@ -172,6 +180,16 @@ class ChatHistoryItem(chat: ChatMessageUiModel, roles: List<Role>, remove: () ->
                 it.consume()
             }
         }
+    }
+
+    private fun previousChat() {
+        chat.messageListIndex.minusAssign(1)
+        chat.copyFrom(chat.messageList[chat.messageListIndex.value])
+    }
+
+    private fun nextChat() {
+        chat.messageListIndex.plusAssign(1)
+        chat.copyFrom(chat.messageList[chat.messageListIndex.value])
     }
 }
 
@@ -201,7 +219,7 @@ class ChatMessageUiModel(
     val role: ChatRole by roleProperty
 
     val contentProperty = SimpleStringProperty(content)
-    var content: String by contentProperty
+    val content: String by contentProperty
 
     val contentImageProperty = SimpleObjectProperty<ImagePart.ImageURL>(contentImage)
     var contentImage: ImagePart.ImageURL? by contentImageProperty
@@ -218,7 +236,24 @@ class ChatMessageUiModel(
     val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id.id })
     val toolCallIdProperty = SimpleStringProperty(_toolCallId?.id)
 
+    var messageList = observableListOf<ChatMessageUiModel>()
+    val messageListEmpty = messageList.sizeProperty.isEqualTo(0)
+    var messageListIndex = SimpleIntegerProperty(-1)
+
+    /** Copy parameters from second model. */
+    fun copyFrom(other: ChatMessageUiModel) {
+        roleProperty.set(other.role)
+        contentProperty.set(other.content)
+        contentImageProperty.set(other.contentImage)
+        nameProperty.set(other.name)
+        toolCallsNameProperty.set(other.toolCallsNameProperty.value)
+        toolCallsArgsProperty.set(other.toolCallsArgsProperty.value)
+        toolCallsIdProperty.set(other.toolCallsIdProperty.value)
+        toolCallIdProperty.set(other.toolCallIdProperty.value)
+    }
+
     companion object {
+        /** Create UI model from chat message. */
         fun valueOf(it: ChatMessage) =
             ChatMessageUiModel(
                 role = it.role,
@@ -228,6 +263,12 @@ class ChatMessageUiModel(
                 _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>(),
                 _toolCallId = it.toolCallId
             )
+
+        /** Create UI model with multiple chat message options. */
+        fun valueOf(chats: List<ChatMessage>) = valueOf(chats.first()).apply {
+            messageList.setAll(chats.map { valueOf(it) })
+            messageListIndex.set(0)
+        }
 
         /** Find first image content in a message, if present. */
         fun ChatMessage.imageContent() =

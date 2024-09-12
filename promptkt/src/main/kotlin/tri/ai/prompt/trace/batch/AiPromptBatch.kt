@@ -20,7 +20,6 @@
 package tri.ai.prompt.trace.batch
 
 import tri.ai.pips.*
-import tri.ai.prompt.trace.AiPromptTrace
 
 /** Provides a series of prompt/model pairings for execution. */
 abstract class AiPromptBatch(val id: String) {
@@ -32,7 +31,7 @@ abstract class AiPromptBatch(val id: String) {
      * Generate executable list of tasks for a prompt batch.
      * These can be passed to [AiPipelineExecutor] for execution.
      */
-    fun tasks(): List<AiTask<AiPromptTrace>> =
+    fun tasks(): List<AiTask<String>> =
         runConfigs().mapIndexed { i, v -> v.task("$id $i") }
 
     /** Get an [AiPlanner] for executing this batch of prompts. */

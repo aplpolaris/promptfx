@@ -44,18 +44,14 @@ import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
-import tri.ai.pips.AiTaskResult.Companion.result
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 import java.io.FileOutputStream
-
 import java.io.IOException
-
-
-
 
 /** Plugin for the [AudioSpeechView]. */
 class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", WorkspaceViewAffordance.INPUT_ONLY, AudioSpeechView::class)
@@ -99,7 +95,7 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
                 slider(0.25..4.0) {
                     valueProperty().bindBidirectional(audioSpeed)
                 }
-                label(audioSpeed.asString())
+                label(audioSpeed.asString("%.2f"))
             }
         }
         output {
@@ -114,25 +110,26 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
-        return when {
+    override suspend fun processUserInput(): AiPipelineResult<ByteArray> {
+        val trace: AiPromptTraceSupport<ByteArray> = when {
             input.value.isNullOrBlank() ->
-                AiTaskResult.invalidRequest("No input provided")
-            else -> controller.openAiPlugin.client.client.speech(
-                SpeechRequest(
+                AiPromptTrace.invalidRequest(model.value, "No input provided")
+            else -> {
+                val request = SpeechRequest(
                     model = ModelId(model.value),
                     input = input.value,
                     voice = voice.value,
                     responseFormat = format.value,
                     speed = audioSpeed.value
                 )
-            )
-            .also { controller.updateUsage() }
-            .let {
-                file.set(it)
-                result(it, model.value)
+                controller.openAiPlugin.client.speech(request)
+                    .also {
+                        controller.updateUsage()
+                        file.set(it.firstValue)
+                    }
             }
-        }.asPipelineResult()
+        }
+        return trace.asPipelineResult()
     }
 
     fun playButtonPress() {

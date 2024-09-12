@@ -21,7 +21,7 @@ package tri.util.pdf
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
 import tri.ai.text.chunks.process.PdfMetadataGuesser
@@ -57,7 +57,7 @@ class PdfUtilsTest {
         assertEquals("Microsoft® Word LTSC", metadata["pdf.creator"])
     }
 
-    @Disabled("This test requires an OpenAI API key")
+    @Tag("openai")
     @Test
     fun testPdfGuesser() {
         runBlocking {

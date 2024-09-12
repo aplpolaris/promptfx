@@ -36,7 +36,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
 
     var maxChunkSize: Int = 1000
 
-    private val indexFile by lazy { File(rootDir, "embeddings2.json") }
+    val indexFile by lazy { File(rootDir, EMBEDDINGS_FILE_NAME) }
 
     private val library: TextLibrary by lazy {
         try {
@@ -142,6 +142,11 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
     suspend fun calculateAndGetDocs(): List<TextDoc> {
         reindexNew()
         return library.docs.toList()
+    }
+
+    companion object {
+        const val EMBEDDINGS_FILE_NAME = "embeddings2.json"
+        const val EMBEDDINGS_FILE_NAME_LEGACY = "embeddings.json"
     }
 
 }

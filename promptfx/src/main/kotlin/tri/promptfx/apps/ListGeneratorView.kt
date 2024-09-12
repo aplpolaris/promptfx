@@ -29,6 +29,7 @@ import tri.ai.pips.AiPlanner
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
@@ -106,7 +107,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
         }
 
         onCompleted {
-            val rawText = (it.finalResult as AiPromptTrace).outputInfo.output!!
+            val rawText = it.finalResult.firstValue.toString()
             val codeText = rawText.substringAfter("```").substringBefore("```").trim()
             try {
                 val parsed1 = MAPPER.readValue<ListPromptResult>(codeText)
@@ -124,14 +125,15 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             output.set(null)
             outputItems.clear()
         }
-        return completionEngine.templatePlan(prompt.text.value,
+        return completionEngine.templatePlan(prompt.id.value,
             AiPrompt.INPUT to sourceText.get(),
             "item_category" to itemCategory.get(),
             "known_items" to sampleItems.get().split(",")
                 .joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" },
             tokenLimit = common.maxTokens.value,
             temp = common.temp.value,
-            requestJson = true
+            requestJson = true,
+            numResponses = common.numResponses.value
         )
     }
 

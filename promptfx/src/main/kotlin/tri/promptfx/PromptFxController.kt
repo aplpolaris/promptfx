@@ -47,7 +47,7 @@ class PromptFxController : Controller() {
     /** Update usage stats for the OpenAI endpoint. */
     fun updateUsage() {
         tokensUsed.value = openAiPlugin.client.usage[UsageUnit.TOKENS] ?: 0
-        audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_MINUTES] ?: 0
+        audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_SECONDS] ?: 0
         imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
     }
 

@@ -19,22 +19,16 @@
  */
 package tri.ai.openai
 
+import com.aallam.openai.api.audio.SpeechRequest
 import com.aallam.openai.api.audio.TranscriptionRequest
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
+import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.core.Usage
 import com.aallam.openai.api.edits.EditsRequest
 import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.file.FileSource
-import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.image.ImageCreation
-import com.aallam.openai.api.logging.LogLevel
 import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.LoggingConfig
-import com.aallam.openai.client.OpenAI
-import com.aallam.openai.client.OpenAIConfig
-import com.aallam.openai.client.OpenAIHost
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
@@ -45,16 +39,13 @@ import io.ktor.http.*
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
+import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.OpenAiModelIndex.IMAGE_DALLE2
-import tri.ai.pips.AiTaskResult
-import tri.ai.pips.AiTaskResult.Companion.result
 import tri.ai.pips.UsageUnit
+import tri.ai.prompt.trace.*
 import java.io.File
-import java.time.Duration
 import java.util.*
-import java.util.logging.Logger
-import kotlin.time.Duration.Companion.seconds
 
 /** OpenAI API client with built-in usage tracking. */
 class OpenAiClient(val settings: OpenAiSettings) {
@@ -76,38 +67,50 @@ class OpenAiClient(val settings: OpenAiSettings) {
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiPromptTrace<List<List<Double>>> {
         checkApiKey()
         return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiTaskResult<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace<List<List<Double>>> {
         checkApiKey()
-        return client.embeddings(EmbeddingRequest(
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.embeddings(EmbeddingRequest(
             ModelId(modelId),
             inputs.toList(),
             dimensions = outputDimensionality
-        )).let { it ->
-            usage.increment(it.usage)
-            result(it.embeddings.map { it.embedding }, modelId)
-        }
+        ))
+        usage.increment(resp.usage)
+
+        return AiPromptTrace(null,
+            AiModelInfo.embedding(modelId, outputDimensionality),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            AiOutputInfo.output(resp.embeddings.map { it.embedding })
+        )
     }
 
     /** Runs a quick audio transcription for a given file. */
-    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiTaskResult<String> {
+    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace<String> {
         checkApiKey()
         if (!audioFile.isAudioFile())
-            return AiTaskResult.invalidRequest("Audio file not provided.")
+            return AiPromptTrace.invalidRequest(modelId, "Audio file not provided.")
 
-        val request = TranscriptionRequest(
+        val t0 = System.currentTimeMillis()
+        val resp = client.transcription(TranscriptionRequest(
             model = ModelId(modelId),
             audio = FileSource(audioFile.toOkioPath(), FileSystem.SYSTEM)
-        )
-        return client.transcription(request).let {
-            usage.increment(0, UsageUnit.AUDIO_MINUTES)
-            result(it.text, modelId)
+        ))
+        resp.duration?.let {
+            usage.increment(it.toInt(), UsageUnit.AUDIO_SECONDS)
         }
+
+        return AiPromptTrace(null,
+            AiModelInfo(modelId),
+            AiExecInfo.durationSince(t0),
+            AiOutputInfo.output(resp.text)
+        )
     }
 
     //endregion
@@ -115,61 +118,163 @@ class OpenAiClient(val settings: OpenAiSettings) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    suspend fun completion(completionRequest: CompletionRequest): AiTaskResult<String> {
+    suspend fun completion(completionRequest: CompletionRequest): AiPromptTrace<String> {
         checkApiKey()
+
         val t0 = System.currentTimeMillis()
         val resp = client.completion(completionRequest)
         usage.increment(resp.usage)
-        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
-        return AiTaskResult(
-            value = resp.choices[0].text,
-            modelId = completionRequest.model.id,
-            duration = millis,
-            durationTotal = millis
+
+        return AiPromptTrace(
+            completionRequest.prompt?.let { AiPromptInfo(it) },
+            completionRequest.toModelInfo(),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            AiOutputInfo(resp.choices.map { it.text })
         )
     }
 
     /** Runs a text completion request using a chat model. */
-    suspend fun chatCompletion(completionRequest: ChatCompletionRequest): AiTaskResult<String> {
-        checkApiKey()
-        val t0 = System.currentTimeMillis()
-        val resp = client.chatCompletion(completionRequest)
-        val millis = Duration.ofMillis(System.currentTimeMillis() - t0)
-        return AiTaskResult(
-            value = resp.choices[0].message.content ?: "",
-            modelId = completionRequest.model.id,
-            duration = millis,
-            durationTotal = millis
-        )
-    }
+    suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
+        chat(completionRequest).mapOutput { it.content ?: "(no response)" }
 
     /** Runs a chat response. */
-    suspend fun chat(completionRequest: ChatCompletionRequest): AiTaskResult<ChatMessage> {
+    suspend fun chat(completionRequest: ChatCompletionRequest): AiPromptTrace<ChatMessage> {
         checkApiKey()
-        return client.chatCompletion(completionRequest).let {
-            usage.increment(it.usage)
-            result(it.choices[0].message, completionRequest.model.id)
-        }
+
+        val t0 = System.currentTimeMillis()
+        val userInputOnly = completionRequest.messages.size == 1 && completionRequest.messages.first().role == ChatRole.User
+        val prompt = if (!userInputOnly) null else
+            completionRequest.messages.first().messageContent?.let {
+                when {
+                    it is TextContent -> it.content
+                    it is ListContent && it.content.size == 1 && it.content[0] is TextPart -> (it.content[0] as TextPart).text
+                    else -> null
+                }
+            }
+        val resp = client.chatCompletion(completionRequest)
+        usage.increment(resp.usage)
+
+        return AiPromptTrace(
+            prompt?.let { AiPromptInfo(it) },
+            completionRequest.toModelInfo(),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            AiOutputInfo(resp.choices.map { it.message })
+        )
     }
 
     /** Runs an edit request (deprecated API). */
     @Suppress("DEPRECATION")
-    suspend fun edit(request: EditsRequest): AiTaskResult<String> {
+    suspend fun edit(request: EditsRequest): AiPromptTrace<String> {
         checkApiKey()
-        return client.edit(request).let {
-            usage.increment(it.usage)
-            result(it.choices[0].text, request.model.id)
-        }
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.edit(request)
+        usage.increment(resp.usage)
+
+        return AiPromptTrace(
+            request.toPromptInfo(),
+            request.toModelInfo(),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            AiOutputInfo(resp.choices.map { it.text })
+        )
     }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation): AiTaskResult<List<String>> {
+    suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace<String> {
         checkApiKey()
-        return client.imageURL(imageCreation).let {
-            usage.increment(it.size, UsageUnit.IMAGES)
-            result(it.map { it.url }, IMAGE_DALLE2)
-        }
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.imageURL(imageCreation)
+        usage.increment(resp.size, UsageUnit.IMAGES)
+
+        return AiPromptTrace(
+            null,
+            imageCreation.toModelInfo(),
+            AiExecInfo.durationSince(t0),
+            AiOutputInfo(resp.map { it.url })
+        )
     }
+
+    /** Runs a speech request. */
+    suspend fun speech(request: SpeechRequest): AiPromptTraceSupport<ByteArray> {
+        checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.speech(request)
+
+        return AiPromptTrace(
+            null,
+            request.toModelInfo(),
+            AiExecInfo.durationSince(t0),
+            AiOutputInfo.output(resp)
+        )
+    }
+
+    //endregion
+
+    //region PARAMETER CONVERSIONS
+
+    private fun CompletionRequest.toModelInfo() = AiModelInfo.info(model.id,
+        AiModelInfo.MAX_TOKENS to maxTokens,
+        AiModelInfo.TEMPERATURE to temperature,
+        AiModelInfo.TOP_P to topP,
+        AiModelInfo.NUM_RESPONSES to n,
+        AiModelInfo.LOG_PROBS to logprobs,
+        AiModelInfo.ECHO to echo,
+        AiModelInfo.STOP to stop,
+        AiModelInfo.PRESENCE_PENALTY to presencePenalty,
+        AiModelInfo.FREQUENCY_PENALTY to frequencyPenalty,
+        AiModelInfo.BEST_OF to bestOf,
+        AiModelInfo.LOGIT_BIAS to logitBias,
+        AiModelInfo.USER to user,
+        AiModelInfo.SUFFIX to suffix
+    )
+
+    private fun ChatCompletionRequest.toModelInfo() = AiModelInfo.info(model.id,
+        AiModelInfo.MAX_TOKENS to maxTokens,
+        AiModelInfo.TEMPERATURE to temperature,
+        AiModelInfo.TOP_P to topP,
+        AiModelInfo.NUM_RESPONSES to n,
+        AiModelInfo.LOG_PROBS to logprobs,
+        AiModelInfo.TOP_LOG_PROBS to topLogprobs,
+        AiModelInfo.STOP to stop,
+        AiModelInfo.PRESENCE_PENALTY to presencePenalty,
+        AiModelInfo.FREQUENCY_PENALTY to frequencyPenalty,
+        AiModelInfo.LOGIT_BIAS to logitBias,
+        AiModelInfo.USER to user,
+// TODO - what is appropriate serialization within parameter map?
+//        AiModelInfo.FUNCTIONS to functions.map { it.toString() },
+//        AiModelInfo.FUNCTION_CALL to functionCall?.toString(),
+//        AiModelInfo.TOOLS to tools?.map { it.toString() },
+//        AiModelInfo.TOOL_CHOICE to toolChoice?.toString(),
+        AiModelInfo.RESPONSE_FORMAT to responseFormat?.type,
+// TODO - seed is beta
+//        AiModelInfo.SEED to seed
+    )
+
+    private fun EditsRequest.toModelInfo() = AiModelInfo.info(model.id,
+        AiModelInfo.TEMPERATURE to temperature,
+        AiModelInfo.TOP_P to topP
+    )
+
+    private fun EditsRequest.toPromptInfo() = AiPromptInfo.info(instruction,
+        AiPromptInfo.INSTRUCTION to instruction,
+        AiPromptInfo.INPUT to input
+    )
+
+    private fun ImageCreation.toModelInfo() = AiModelInfo.info(model?.id ?: DALLE2_ID,
+        AiModelInfo.NUM_RESPONSES to n,
+        AiModelInfo.SIZE to size?.size,
+        AiModelInfo.USER to user,
+        AiModelInfo.QUALITY to quality?.value,
+        AiModelInfo.STYLE to style?.value
+    )
+
+    private fun SpeechRequest.toModelInfo() = AiModelInfo.info(model.id,
+        AiModelInfo.VOICE to voice?.value,
+        AiModelInfo.RESPONSE_FORMAT to responseFormat?.value,
+        AiModelInfo.SPEED to speed
+    )
 
     //endregion
 
@@ -189,78 +294,6 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     companion object {
         val INSTANCE by lazy { OpenAiClient(OpenAiSettings()) }
-    }
-
-}
-
-/** Manages OpenAI API key and client. */
-class OpenAiSettings {
-
-    companion object {
-        const val API_KEY_FILE = "apikey.txt"
-        const val API_KEY_ENV = "OPENAI_API_KEY"
-    }
-
-    var baseUrl: String? = null
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var apiKey = readApiKey()
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var logLevel = LogLevel.Info
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var timeoutSeconds = 60
-        set(value) {
-            field = value
-            buildClient()
-        }
-
-    var client: OpenAI
-        private set
-
-    init {
-        client = buildClient()
-    }
-
-    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
-    private fun readApiKey(): String {
-        val file = File(API_KEY_FILE)
-
-        val key = if (file.exists()) {
-            file.readText()
-        } else
-            System.getenv(API_KEY_ENV)
-
-        return if (key.isNullOrBlank()) {
-            Logger.getLogger(OpenAiSettings::class.java.name).warning(
-                "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
-            )
-            ""
-        } else
-            key
-    }
-
-    @Throws(IllegalStateException::class)
-    private fun buildClient(): OpenAI {
-        client = OpenAI(
-            OpenAIConfig(
-                host = if (baseUrl == null) OpenAIHost.OpenAI else OpenAIHost(baseUrl!!),
-                token = apiKey,
-                logging = LoggingConfig(LogLevel.None),
-                timeout = Timeout(socket = timeoutSeconds.seconds)
-            )
-        )
-        return client
     }
 
 }

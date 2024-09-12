@@ -32,14 +32,15 @@ import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) : TextChat {
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?) =
+    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?, numResponses: Int?) =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
             messages.map { it.openAiMessage() },
             maxTokens = tokens ?: 500,
             stop = stop,
-            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
-        )).map { TextChatMessage(TextChatRole.Assistant, it) }
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null,
+            n = numResponses
+        )).mapOutput { TextChatMessage(TextChatRole.Assistant, it) }
 
     private fun TextChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)
 

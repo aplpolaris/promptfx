@@ -30,7 +30,7 @@ import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskResult
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ifNotBlank
 
 /**
@@ -68,7 +68,7 @@ class ChatViewAdvanced : ChatView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiPipelineResult<ChatMessage> {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(ChatMessage(ChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
@@ -92,7 +92,7 @@ class ChatViewAdvanced : ChatView(
                 messages = messages,
                 temperature = common.temp.value,
                 topP = common.topP.value,
-                n = null,
+                n = common.numResponses.value,
                 stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
                 maxTokens = common.maxTokens.value,
                 presencePenalty = common.presPenalty.value,
@@ -110,7 +110,7 @@ class ChatViewAdvanced : ChatView(
             )
             return controller.openAiPlugin.client.chat(completion).asPipelineResult()
         } else {
-            return AiTaskResult.invalidRequest<Any>("This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
         }
     }
 
