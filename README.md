@@ -12,26 +12,29 @@ See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-a
 
 ## API Key
 
-PromptFx requires an OpenAI API key. To set the API key, you may click on the key in the toolbar. Alternately, you may save your key in an `apikey.txt` file, or in a system registry variable `OPENAI_API_KEY`.
+PromptFx currently supports OpenAI and Google Gemini models, though more can be added as plugins.
+
+- To set the OpenAI API key, click on the key button in the toolbar. Alternately, save your key in an `apikey.txt` file in the same folder you use to run PromptFx, or in a system registry variable `OPENAI_API_KEY`.
+- To set the Gemini API key, save your key in a `apikey-gemini.txt` file in the same folder you use to run PromptFx.
 
 ## PromptFx UI Features
 
 PromptFx has views for testing AI/ML models and for a number of basic applications. These views are organized into tabs on the left side of the UI. Briefly:
 
-- The [API tab](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) contains views for testing [OpenAI API](https://platform.openai.com/docs/api-reference) functionality.
+- The [API tab](https://github.com/aplpolaris/promptfx/wiki/API-Tab) contains views for browsing models and testing API functionality.
 - The [Tools tab](https://github.com/aplpolaris/promptfx/wiki/Tools) contains views for testing prompts, scripting prompts, working with text collections, and more.
 - The [Documents tab](https://github.com/aplpolaris/promptfx/wiki/Documents) contains views for working with documents, including document Q&A and other tasks.
 - The [Text tab](https://github.com/aplpolaris/promptfx/wiki/Text) contains views for natural language processing (NLP) and basic text processing (e.g. summarization, translation, sentiment analysis, etc.)
 - The [Fun tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Fun) contains views that may be less useful, but still fun! (like converting text to emoji, or having the AI chat with itself)
-- The [Audio tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Audio) contains a view for speech-to-text (using OpenAI's Whisper model)
-- The [Vision tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Vision) contains a view for speech-to-image (using OpenAI's DALL-E mdoel)
+- The [Audio tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Audio) contains views for working with speech-to-text and text-to-speech models
+- The [Vision tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Vision) contains views for generating and describing images (using multimodal models)
 - The [Integrations tab (beta)](https://github.com/aplpolaris/promptfx/wiki/Integrations) contains experimental views that combine NLP tasks with API calls.
 
-Most of these panels have configuration panels (at right) for adjusting settings. For the views under the `OpenAI API` tab, this can be used to select the model used for the API call. For most other views, the panel will use the app's default completion model and/or embedding model. These defaults can be selected from the top toolbar.
+Most of these panels have configuration panels (at right) for adjusting settings. For the views under the `API` tab, this can be used to select the model used for the API call. For most other views, the panel will use the app's default completion model and/or embedding model. These defaults can be selected from the top toolbar.
 
 ## Document Q&A View
 
-The `Document Q&A` tab is the default view. This lets you "ask questions" of a folder of local documents on your system, using OpenAI's Ada embedding model to retrieve relevant document chunks, and using context-augmented prompting to answer questions. In the view below, a question is being asked on a collection of research papers.
+The `Document Q&A` tab is the default view. This lets you "ask questions" of a folder of local documents on your system, using OpenAI's Ada embedding model to retrieve relevant document chunks, and using [retrieval-augmented generation (RAG)](https://en.wikipedia.org/wiki/Retrieval-augmented_generation) to answer questions. In the view below, a question is being asked on a collection of research papers.
 
 ![image](https://github.com/aplpolaris/promptfx/assets/13057929/f5d6d17c-335f-4074-848a-87d0ea7c2aaa)
 
@@ -45,13 +48,15 @@ In "full screen mode" (see button on toolbar), PromptFx provides a more elegant 
 
 ![image](https://github.com/aplpolaris/promptfx/assets/13057929/a063f5b3-59be-4b87-b0ef-76d5d22a9fa6)
 
+This tab also contains a `Text Manager` view for creating and working with collections of text.
+
 See [Documents](https://github.com/aplpolaris/promptfx/wiki/Documents) for more information.
 
 ## API Views
 
 The `API` tab contains a number of views designed for exercising the OpenAI API (or a compatible API), including `completions/`, `chat/`, `images/`, `embeddings/`, `audio/`, and more. These are similar to the API playground at https://platform.openai.com/playground, and should be self-explanatory.
 
-See [OpenAI-API](https://github.com/aplpolaris/promptfx/wiki/OpenAI-API) for more information.
+See [API-Tab](https://github.com/aplpolaris/promptfx/wiki/API-Tab) for more information.
 
 ## Tools Views
 
@@ -64,7 +69,6 @@ Under `Tools`, PromptFx provides:
 
 * a `Prompt Scripting` view for executing batches of scripts
 * a `Prompt Validator` view for experimenting with automatic validation methods
-* a `Text Manager` view for creating and working with collections of text
 
 See [Tools](https://github.com/aplpolaris/promptfx/wiki/Tools) for more information.
 
@@ -108,12 +112,10 @@ OpenAI Client Library:
 - PromptKt/PromptFx use the `openai-kotlin` API client library from https://github.com/aallam/openai-kotlin.
 
 To build the project:
-- Run `mvn clean install -DskipTests` from the `promptkt` directory.
-- Run `mvn clean install -DskipTests` from the `promptfx` directory.
+- Run `mvn clean install` from the `promptkt` directory.
+- Run `mvn clean install` from the `promptfx` directory.
 
-Note that you can run tests as part of the build, but many of these require an `apikey.txt` file and use the OpenAI API. We anticipate migrating these to a separate profile and making them available as optional integration tests.
-
-See https://github.com/aplpolaris/promptfx/wiki for additional build/run troubleshooting.
+The libraries also contain separate integration tests requiring `OpenAI` or `Gemini` API keys. See [the wiki](https://github.com/aplpolaris/promptfx/wiki) for how to execute those tests and additional build/run troubleshooting.
 
 ## Running PromptFx
 
