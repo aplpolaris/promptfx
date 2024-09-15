@@ -117,7 +117,7 @@ class DocumentInsightView: AiPlanTaskView(
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = { embeddingIndex.value!!.reindexAll() }
         )
-        parameters("Document Snippet Processing") {
+        parameters("Document Snippet Aggregation") {
             field("Limit documents to") {
                 tooltip("Max number of documents to process")
                 slider(1..50, docsToProcess)

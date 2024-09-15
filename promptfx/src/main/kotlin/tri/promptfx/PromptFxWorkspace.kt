@@ -112,10 +112,16 @@ class PromptFxWorkspace : Workspace() {
                 hyperlinkview<ModerationsView>("API", "Moderations")
                 separator { }
                 label("Documentation/Links")
+                browsehyperlink("PromptFx Wiki", "https://github.com/aplpolaris/promptfx/wiki")
+                separator { }
                 browsehyperlink("OpenAI API Reference", "https://platform.openai.com/docs/api-reference")
                 browsehyperlink("OpenAI API Playground", "https://platform.openai.com/playground")
                 browsehyperlink("OpenAI API Pricing", "https://openai.com/pricing")
                 browsehyperlink("OpenAI Blog", "https://openai.com/blog")
+                separator { }
+                browsehyperlink("Gemini API Reference", "https://ai.google.dev/api/generate-content")
+                separator { }
+                browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
             }
             group("Tools", FontAwesomeIcon.WRENCH.graphic.forestGreen) {
                 // configured via [NavigableWorkspaceView] plugins
@@ -282,7 +288,7 @@ class PromptFxWorkspace : Workspace() {
     }
 
     private fun EventTarget.browsehyperlink(label: String, url: String) {
-        hyperlink(label) {
+        hyperlink(label, graphic = FontAwesomeIcon.EXTERNAL_LINK.graphic) {
             action { hostServices.showDocument(url) }
         }
     }
