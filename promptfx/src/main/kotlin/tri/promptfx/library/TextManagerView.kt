@@ -33,11 +33,11 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
-/** Plugin for the [TextLibraryView]. */
-class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Documents", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextLibraryView::class)
+/** Plugin for the [TextManagerView]. */
+class TextManagerPlugin : NavigableWorkspaceViewImpl<TextManagerView>("Documents", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextManagerView::class)
 
 /** A view designed to help you manage collections of documents and text. */
-class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
+class TextManagerView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
 
     val model by inject<TextLibraryViewModel>()
 
@@ -46,9 +46,12 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
         runButton.isManaged = false
         hideParameters()
 
-        input(5) {
-            add(TextLibraryCollectionUi())
-            add(TextLibraryFilterableChunkListView())
+        input {
+            splitpane {
+                add(TextLibraryCollectionListUi())
+                add(TextLibraryDocumentListUi())
+                add(TextLibraryFilterableChunkListView())
+            }
         }
 
         with (outputPane) {
@@ -59,7 +62,7 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                     fold("Details on Selected Collection", expanded = true) {
                         add(TextLibraryCollectionDetailsUi())
                     }
-                    fold("Details on Selected Document", expanded = true) {
+                    fold("Details on Selected Document(s)", expanded = true) {
                         isFitToWidth = true
                         add(TextLibraryDocumentDetailsUi())
                     }

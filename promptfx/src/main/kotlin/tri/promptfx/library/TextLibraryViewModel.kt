@@ -28,7 +28,6 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
@@ -41,7 +40,6 @@ import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.ui.TextChunkViewModel
 import tri.promptfx.ui.TextChunkViewModelImpl
-import tri.promptfx.ui.asTextChunkViewModel
 import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.createListBinding
@@ -50,7 +48,7 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-/** Model for [TextLibraryView]. */
+/** Model for [TextManagerView]. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
@@ -71,16 +69,15 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     val docsModified = observableListOf<TextDoc>()
     val documentContentChange = SimpleBooleanProperty() // trigger when document content values change
 
-    val chunkFilter = SimpleObjectProperty<(TextChunk) -> Float>(null)
-    val isChunkFilterEnabled = SimpleBooleanProperty(false)
-
     val chunkList = observableListOf<TextChunkViewModel>()
+    val chunkFilter: TextChunkFilterModel by inject()
+    val filteredChunkList = observableListOf<TextChunkViewModel>()
+
     val chunkSelection = observableListOf<TextChunkViewModel>()
 
     init {
-        chunkFilter.onChange {
-            refilterChunkList()
-        }
+        chunkList.onChange { refilter() }
+        chunkFilter.model.onChange { refilter() }
 
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
@@ -103,7 +100,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
             }
 
-            refilterChunkList()
+            refilter()
         }
     }
 
@@ -152,40 +149,10 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //region VIEW FILTERING
 
-    /** Create semantic filtering, by returning the cosine similarity of a chunk to the given argument. */
-    internal fun createSemanticFilter(text: String) {
-        runAsync {
-            val model = embeddingService.value
-            val embedding = runBlocking { model.calculateEmbedding(text) }
-            val filter: (TextChunk) -> Float = { chunk ->
-                val chunkEmbedding = chunk.getEmbeddingInfo(model.modelId)
-                if (chunkEmbedding == null) 0f else cosineSimilarity(embedding, chunkEmbedding).toFloat()
-            }
-            filter
-        } ui {
-            chunkFilter.value = it
-            isChunkFilterEnabled.set(true)
-        }
-    }
-
-    /** Refilters the chunk list. */
-    fun refilterChunkList() {
-        chunkList.clear()
-        val filter = chunkFilter.value
-        val chunksWithScores = docSelection.flatMap { doc -> doc.chunks.map { doc to it } }.let {
-            if (filter == null)
-                it.associateWith { null }
-            else {
-                it.associateWith { filter(it.second) }.entries
-                    .sortedByDescending { it.value }
-                    .take(REFILTER_LIST_MAX_COUNT)
-                    .filter { it.value >= MIN_CHUNK_SIMILARITY }
-                    .associate { it.key to it.value }
-            }
-        }
-        chunkList.addAll(chunksWithScores.map {
-            it.key.second.asTextChunkViewModel(it.key.first, controller.embeddingService.value.modelId, score = it.value)
-        })
+    /** Refilter chunks by applying the current chunk filter. */
+    fun refilter() {
+        val filter = chunkFilter.model.value!!
+        filteredChunkList.setAll(chunkList.filter(filter))
     }
 
     private fun List<BufferedImage>.deduplicated() =
@@ -307,9 +274,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //endregion
 
     companion object {
-        private const val REFILTER_LIST_MAX_COUNT = 20
-        private const val MIN_CHUNK_SIMILARITY = 0.7
-
         /** Merge metadata from a map into a TextDocMetadata object. */
         internal fun TextDocMetadata.mergeIn(other: Map<String, Any>) {
             other.extract("title", "pdf.title", "doc.title") { title = it }
@@ -331,7 +295,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         try {
                             setter(LocalDateTime.parse(it.toString()))
                         } catch (e: Exception) {
-                            info<TextLibraryCollectionUi>("Could not parse date from ${it.javaClass} $it")
+                            info<TextLibraryCollectionListUi>("Could not parse date from ${it.javaClass} $it")
                         }
                     }
                 }

@@ -188,7 +188,7 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
         item("Details...") {
             enableWhen { trace.isNotNull }
             action {
-                find<PromptTraceDetails>().apply {
+                find<PromptTraceDetailsUi>().apply {
                     setTrace(trace.value)
                     openModal()
                 }

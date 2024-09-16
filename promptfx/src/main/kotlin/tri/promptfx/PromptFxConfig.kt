@@ -21,7 +21,7 @@ package tri.promptfx
 
 import javafx.stage.FileChooser
 import tornadofx.*
-import tri.promptfx.library.TextLibraryView
+import tri.promptfx.library.TextManagerView
 import tri.util.loggerFor
 import java.io.File
 import java.net.URI
@@ -79,7 +79,7 @@ class PromptFxConfig: Component(), ScopedInstance {
 
     /** Save configuration options before closing application. */
     fun save() {
-        val libs = find<TextLibraryView>().model.libraryList
+        val libs = find<TextManagerView>().model.libraryList
         config[TEXTLIB_FILES] = libs.mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
         config.save()
     }

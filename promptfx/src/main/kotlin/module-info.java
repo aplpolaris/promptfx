@@ -29,6 +29,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.library.TextClusterPlugin;
 import tri.promptfx.library.TextManagerPlugin;
 import tri.promptfx.tools.*;
 import tri.util.ui.NavigableWorkspaceView;
@@ -119,6 +120,7 @@ module tri.promptfx {
             DocumentQaPlugin,
             DocumentInsightPlugin,
             TextManagerPlugin,
+            TextClusterPlugin,
             EntityExtractionPlugin,
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,

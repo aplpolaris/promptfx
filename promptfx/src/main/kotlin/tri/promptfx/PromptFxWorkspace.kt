@@ -27,13 +27,12 @@ import javafx.scene.control.Label
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.PromptTemplateView
-import tri.promptfx.library.TextLibraryView
+import tri.promptfx.library.TextManagerView
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -190,7 +189,7 @@ class PromptFxWorkspace : Workspace() {
 
     /** Launches the text manager view with the given library. */
     fun launchTextManagerView(library: TextLibrary) {
-        val view = find<TextLibraryView>()
+        val view = find<TextManagerView>()
         view.loadTextLibrary(TextLibraryInfo(library, null))
         workspace.dock(view)
     }

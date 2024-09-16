@@ -27,6 +27,7 @@ import tri.promptfx.buildsendresultmenu
 class TextLibraryChunkDetailsUi : Fragment() {
 
     val model by inject<TextLibraryViewModel>()
+    val filter by inject<TextChunkFilterUi>()
 
     override val root = form {
         fieldset("") { }
@@ -37,7 +38,7 @@ class TextLibraryChunkDetailsUi : Fragment() {
                     fieldifnotblank("Text", text) {
                         contextmenu {
                             item("Find similar chunks") {
-                                action { model.createSemanticFilter(text) }
+                                action { filter.createSemanticFilter(text) }
                             }
                             buildsendresultmenu(text, workspace as PromptFxWorkspace)
                         }

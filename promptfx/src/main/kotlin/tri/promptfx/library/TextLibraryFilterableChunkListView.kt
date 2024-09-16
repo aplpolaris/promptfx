@@ -22,14 +22,12 @@ package tri.promptfx.library
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
-import javafx.geometry.Pos
 import javafx.scene.control.SelectionMode
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.TextChunkViewModelImpl
 import tri.util.ui.bindSelectionBidirectional
 
 /** View for filtering and viewing text chunks. */
@@ -39,15 +37,9 @@ class TextLibraryFilterableChunkListView : Fragment() {
 
     private lateinit var chunkListView: TextChunkListView
 
-    override val root = vbox(5) {
-        hbox(alignment = Pos.CENTER_LEFT) {
-            val label = model.isChunkFilterEnabled.stringBinding {
-                if (it == true)
-                    "Filtering/Ranking by Semantic Search"
-                else
-                    "Text Chunks in Selected Document(s)"
-            }
-            text(label)
+    override val root = vbox {
+        toolbar {
+            text("Text Chunks")
             spacer()
             togglebutton(text = "", selectFirst = false) {
                 graphic = FontAwesomeIconView(FontAwesomeIcon.FILTER)

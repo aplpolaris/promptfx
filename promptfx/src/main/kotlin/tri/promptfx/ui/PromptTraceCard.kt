@@ -43,7 +43,7 @@ class PromptTraceCard : Fragment() {
 
         onLeftClick {
             trace?.let {
-                find<PromptTraceDetails>().apply {
+                find<PromptTraceDetailsUi>().apply {
                     setTrace(it)
                     openModal()
                 }

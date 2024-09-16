@@ -24,22 +24,15 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.control.*
-import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
-import javafx.stage.Modality
 import tornadofx.*
-import tri.ai.text.chunks.TextDoc
 import tri.promptfx.*
-import tri.promptfx.docs.DocumentOpenInViewer
 import tri.promptfx.tools.TextChunkerWizard
-import tri.promptfx.ui.DocumentListView
-import tri.promptfx.ui.DocumentListView.Companion.icon
-import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
 
 /** View for managing text collections and documents. */
-class TextLibraryCollectionUi : Fragment() {
+class TextLibraryCollectionListUi : Fragment() {
 
     private val model by inject<TextLibraryViewModel>()
     private val progress: AiProgressView by inject()
@@ -47,14 +40,13 @@ class TextLibraryCollectionUi : Fragment() {
 
     private val libraryList = model.libraryList
     private val librarySelection = model.librarySelection
-    private val docList = model.docList
-    private val docSelection = model.docSelection
 
     private lateinit var libraryListView: ListView<TextLibraryInfo>
-    private lateinit var docListView: ListView<TextDoc>
 
-    override val root = vbox(5) {
+    override val root = vbox {
         toolbar {
+            text("Collections")
+            spacer()
             // generate chunks
             button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
                 tooltip("Create a new text collection.")
@@ -87,8 +79,6 @@ class TextLibraryCollectionUi : Fragment() {
                 }
             }
         }
-
-        text("Collections")
         libraryListView = listview(model.libraryList) {
             vgrow = Priority.ALWAYS
             bindSelectionBidirectional(librarySelection)
@@ -101,7 +91,7 @@ class TextLibraryCollectionUi : Fragment() {
                 }
             }
             lazyContextmenu {
-                buildsendcollectionmenu(this@TextLibraryCollectionUi, librarySelection)
+                buildsendcollectionmenu(this@TextLibraryCollectionListUi, librarySelection)
                 separator()
                 item("Open collection file in system viewer") {
                     enableWhen(librarySelection.isNotNull)
@@ -123,40 +113,6 @@ class TextLibraryCollectionUi : Fragment() {
                 }
             }
             model.librariesModified.onChange { refresh() }
-        }
-
-        text("Documents in Selected Collection(s)")
-        docListView = listview(docList) {
-            vgrow = Priority.ALWAYS
-            bindSelectionBidirectional(docSelection)
-            cellFormat { doc ->
-                val browsable = doc.browsable()!!
-                graphic = hbox(5, Pos.CENTER_LEFT) {
-                    hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
-                        val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
-                        if (thumb != null) {
-                            tooltip { graphic = ImageView(thumb) }
-                        }
-                        action { DocumentOpenInViewer(browsable, hostServices).open() }
-                    }
-                    text(model.savedStatusProperty(doc)) {
-                        style = "-fx-font-style: italic; -fx-text-fill: light-gray"
-                    }
-                }
-                lazyContextmenu {
-                    item("Open metadata viewer/editor...") {
-                        isDisable = doc.pdfFile() == null
-                        action { openMetadataViewer(doc) }
-                    }
-                    separator()
-                    item("Remove selected document(s) from collection") {
-                        enableWhen(Bindings.isNotEmpty(docSelection))
-                        action {
-                            model.removeSelectedDocuments()
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -223,9 +179,9 @@ class TextLibraryCollectionUi : Fragment() {
                     progressDialog.close()
                     if (it != null) {
                         val libInfo = TextLibraryInfo(it, null)
-                        this@TextLibraryCollectionUi.model.libraryList.add(libInfo)
-                        libraryListView.selectionModel.select(libInfo)
-                        docListView.selectionModel.select(it.docs.first())
+                        this@TextLibraryCollectionListUi.model.libraryList.add(libInfo)
+                        this@TextLibraryCollectionListUi.model.librarySelection.set(libInfo)
+                        this@TextLibraryCollectionListUi.model.docSelection.setAll(it.docs.first())
                     }
                 }
                 progressDialog.showAndWait()
@@ -236,7 +192,7 @@ class TextLibraryCollectionUi : Fragment() {
 
     private fun executeEmbeddings() =
         model.calculateEmbeddingsTask(progress).ui {
-            model.refilterChunkList()
+            model.refilter()
         }
 
     private fun executeMetadataExtraction() =
@@ -244,16 +200,7 @@ class TextLibraryCollectionUi : Fragment() {
             alert(Alert.AlertType.INFORMATION, it, owner = currentWindow)
         }
 
-    private fun openMetadataViewer(doc: TextDoc) {
-        PdfViewerWithMetadataUi(doc) {
-            model.updateMetadata(doc, it.savedValues(), isSelect = true)
-        }.openModal(
-            modality = Modality.NONE,
-            block = false,
-            resizable = true
-        )
-    }
-
     //endregion
 
 }
+
