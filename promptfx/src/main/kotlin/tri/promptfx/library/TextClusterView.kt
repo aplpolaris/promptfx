@@ -1,5 +1,6 @@
 package tri.promptfx.library
 
+import javafx.geometry.Orientation
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
@@ -17,7 +18,7 @@ class TextClusterView : AiTaskView("Text Clustering", "Cluster documents and tex
 
     init {
         input {
-            splitpane {
+            splitpane(Orientation.VERTICAL) {
                 add(TextLibraryCollectionListUi())
                 add(TextLibraryDocumentListUi())
                 add(TextLibraryFilterableChunkListView())

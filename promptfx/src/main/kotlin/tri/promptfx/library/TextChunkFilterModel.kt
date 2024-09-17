@@ -19,7 +19,12 @@ class TextChunkFilterModel : Component(), ScopedInstance {
     /** Model for filtering. */
     val model = SimpleObjectProperty<(TextChunkViewModel) -> Boolean> { false }
 
-    /** Update filter of given type. */
+    /**
+     * Update filter of given type.
+     * @param type type of filter
+     * @param filterText text to filter by
+     * @param chunkList list of chunks, used when filtering by embeddings to generate minimum match score
+     */
     fun updateFilter(type: FilterType, filterText: String, chunkList: List<TextChunkViewModel>) {
         when (type) {
             FilterType.NONE -> {
@@ -55,6 +60,10 @@ class TextChunkFilterModel : Component(), ScopedInstance {
         val nthScore = scores.take(EMBEDDING_FILTER_MIN_CHUNKS).last()
         val minScoreToKeep = nthScore - (topScore - nthScore) * EMBEDDING_FILTER_LATITUDE
         return { cosineSimilarity(vector, it.embedding!!) >= minScoreToKeep }
+    }
+
+    fun disableFilter() {
+        updateFilter(FilterType.NONE, "", emptyList())
     }
 
     companion object {

@@ -22,8 +22,8 @@ package tri.promptfx.library
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.control.SelectionMode
-import javafx.scene.control.TextInputDialog
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
@@ -34,35 +34,26 @@ import tri.util.ui.bindSelectionBidirectional
 class TextLibraryFilterableChunkListView : Fragment() {
 
     val model by inject<TextLibraryViewModel>()
+    private val filterModel = model.chunkFilter
+    private val filterUiVisible = SimpleBooleanProperty(false)
 
     private lateinit var chunkListView: TextChunkListView
 
     override val root = vbox {
         toolbar {
-            text("Text Chunks")
+            text("Text Chunks")JL
             spacer()
             togglebutton(text = "", selectFirst = false) {
                 graphic = FontAwesomeIconView(FontAwesomeIcon.FILTER)
-                tooltip("Filter chunks by semantic text matching.")
-                action {
-                    if (isSelected)
-                        TextInputDialog("").apply {
-                            initOwner(primaryStage)
-                            title = "Semantic Text for Chunk Search"
-                            headerText = "Enter text to find similar text chunks."
-                            contentText = "Semantic Text:"
-                        }.showAndWait().ifPresent {
-                            if (it.isNotBlank())
-                                model.createSemanticFilter(it)
-                        }
-                    else {
-                        model.chunkFilter.value = null
-                        model.isChunkFilterEnabled.set(false)
-                    }
-                }
+                tooltip("Show/hide filter UI")
+                selectedProperty().bindBidirectional(filterUiVisible)
             }
         }
-        chunkListView = TextChunkListView(model.chunkList).apply {
+//        add(find<TextChunkFilterUi> {
+//            visibleWhen(filterUiVisible)
+//            managedWhen(filterUiVisible)
+//        })
+        chunkListView = TextChunkListView(model.filteredChunkList).apply {
             root.selectionModel.selectionMode = SelectionMode.MULTIPLE
             root.bindSelectionBidirectional(model.chunkSelection)
             root.contextmenu {
@@ -70,7 +61,9 @@ class TextLibraryFilterableChunkListView : Fragment() {
                     Bindings.createStringBinding({ model.chunkSelection.joinToString("\n\n") { it.text } }, model.chunkSelection)
                 item("Find similar chunks") {
                     enableWhen(selectionString.isNotBlank())
-                    action { model.createSemanticFilter(selectionString.value) }
+                    action {
+                        filterModel.updateFilter(FilterType.EMBEDDING, selectionString.value, model.chunkList)
+                    }
                 }
                 buildsendresultmenu(selectionString, workspace as PromptFxWorkspace)
                 separator()

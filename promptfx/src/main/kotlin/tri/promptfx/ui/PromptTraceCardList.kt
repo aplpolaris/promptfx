@@ -39,14 +39,13 @@ import tri.util.ui.graphic
 class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<String>> = observableListOf()): Fragment() {
 
     override val root = vbox {
-        spacing = 5.0
-        paddingAll = 5.0
         vgrow = Priority.ALWAYS
         val header = toolbar {
             text("Results:")
             spacer()
         }
         val list = listview(prompts) {
+            vgrow = Priority.ALWAYS
             cellFormat {
                 graphic = PromptTraceCard().apply { setTrace(it) }.root
             }

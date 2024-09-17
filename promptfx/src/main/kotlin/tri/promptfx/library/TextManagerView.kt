@@ -21,6 +21,7 @@ package tri.promptfx.library
 
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
+import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -47,7 +48,8 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
         hideParameters()
 
         input {
-            splitpane {
+            splitpane(Orientation.VERTICAL) {
+                vgrow = Priority.ALWAYS
                 add(TextLibraryCollectionListUi())
                 add(TextLibraryDocumentListUi())
                 add(TextLibraryFilterableChunkListView())
