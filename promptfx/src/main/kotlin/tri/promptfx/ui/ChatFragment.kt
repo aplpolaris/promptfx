@@ -32,7 +32,7 @@ import tornadofx.*
 /** A view with a chat panel and an entry text box. */
 class ChatFragment: Fragment() {
 
-    private val viewScope = Scope()
+    private val viewScope = Scope(workspace)
     private val panel = find<ChatPanel>(viewScope)
     private val chats = panel.chats
     private val chatHistoryEmpty = Bindings.createBooleanBinding({ chats.isEmpty() }, chats)

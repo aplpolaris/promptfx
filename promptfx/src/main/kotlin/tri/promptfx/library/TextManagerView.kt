@@ -42,7 +42,7 @@ class TextManagerPlugin : NavigableWorkspaceViewImpl<TextManagerView>("Documents
 /** A view designed to help you manage collections of documents and text. */
 class TextManagerView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
 
-    private val viewScope = Scope()
+    private val viewScope = Scope(workspace)
     val model by inject<TextLibraryViewModel>(viewScope)
 
     init {

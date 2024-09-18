@@ -187,7 +187,7 @@ fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspac
 fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
     menu("Send result to view") {
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
-        setOnShown { buildviewsubmenus(value, workspace) }
+        buildviewsubmenus(value, workspace)
     }
 }
 
@@ -209,7 +209,7 @@ private fun Menu.buildviewsubmenus(value: ObservableStringValue, workspace: Prom
         if (map.isNotEmpty()) {
             menu(group) {
                 map.forEach { (_, info) ->
-                    val view = workspace.find(info.view) as AiTaskView
+                    val view = workspace.find(info.view, scope = workspace.scope) as AiTaskView
                     item(view.title) {
                         action {
                             with (PromptFxDriver) {

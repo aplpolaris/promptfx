@@ -57,6 +57,7 @@ class DocumentInsightView: AiPlanTaskView(
     "Use a template to extract information from a collection of documents",
 ), TextLibraryReceiver {
 
+    private val viewScope = Scope(workspace)
     private lateinit var mapPromptUi: EditablePromptUi
     private lateinit var reducePromptUi: EditablePromptUi
 
@@ -70,7 +71,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
     private val docs = observableListOf<BrowsableSource>()
-    private val chunkListModel: TextChunkListModel by inject(Scope())
+    private val chunkListModel: TextChunkListModel by inject(Scope(workspace))
 
     // for processing chunks to generate results
     private val docsToProcess = SimpleIntegerProperty(2)
@@ -105,7 +106,9 @@ class DocumentInsightView: AiPlanTaskView(
                     add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    add(TextChunkListView("Document Snippets"))
+                    add(find<TextChunkListView>(viewScope).apply {
+                        label.set("Document Snippets")
+                    })
                 }
             }
         }

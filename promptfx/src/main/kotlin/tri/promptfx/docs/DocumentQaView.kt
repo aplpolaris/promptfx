@@ -53,7 +53,7 @@ class DocumentQaView: AiPlanTaskView(
     "Enter question below to respond based on content of documents in a specified folder.",
 ), TextLibraryReceiver {
 
-    private val viewScope = Scope()
+    private val viewScope = Scope(workspace)
     private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
     private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
 

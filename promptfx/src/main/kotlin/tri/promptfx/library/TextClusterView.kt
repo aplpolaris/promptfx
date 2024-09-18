@@ -1,6 +1,7 @@
 package tri.promptfx.library
 
 import javafx.geometry.Orientation
+import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
@@ -15,14 +16,16 @@ class TextClusterPlugin : NavigableWorkspaceViewImpl<TextClusterView>("Documents
 /** View designed to create clusters of selected text chunks. */
 class TextClusterView : AiTaskView("Text Clustering", "Cluster documents and text."), TextLibraryReceiver {
 
-    val model by inject<TextLibraryViewModel>()
+    val viewScope = Scope(workspace)
+    val model by inject<TextLibraryViewModel>(viewScope)
 
     init {
         input {
             splitpane(Orientation.VERTICAL) {
-                add(TextLibraryListUi())
-                add(TextDocListUi())
-                add(TextChunkListView())
+                vgrow = Priority.ALWAYS
+                add(find<TextLibraryListUi>(viewScope))
+                add(find<TextDocListUi>(viewScope))
+                add(find<TextChunkListView>(viewScope))
             }
         }
     }
