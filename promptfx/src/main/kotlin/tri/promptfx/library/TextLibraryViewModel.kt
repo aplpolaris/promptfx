@@ -27,7 +27,10 @@ import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
-import tornadofx.*
+import tornadofx.Component
+import tornadofx.ScopedInstance
+import tornadofx.observableListOf
+import tornadofx.onChange
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
@@ -38,8 +41,8 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.TextChunkViewModelImpl
+import tri.promptfx.ui.chunk.TextChunkListModel
+import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.createListBinding
@@ -47,6 +50,22 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.associateBy
+import kotlin.collections.find
+import kotlin.collections.firstNotNullOfOrNull
+import kotlin.collections.firstOrNull
+import kotlin.collections.flatMap
+import kotlin.collections.forEach
+import kotlin.collections.isNotEmpty
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
+import kotlin.collections.toList
 
 /** Model for [TextManagerView]. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
@@ -69,16 +88,9 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     val docsModified = observableListOf<TextDoc>()
     val documentContentChange = SimpleBooleanProperty() // trigger when document content values change
 
-    val chunkList = observableListOf<TextChunkViewModel>()
-    val chunkFilter: TextChunkFilterModel by inject()
-    val filteredChunkList = observableListOf<TextChunkViewModel>()
-
-    val chunkSelection = observableListOf<TextChunkViewModel>()
+    val chunkListModel: TextChunkListModel by inject()
 
     init {
-        chunkList.onChange { refilter() }
-        chunkFilter.model.onChange { refilter() }
-
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
@@ -100,7 +112,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
             }
 
-            refilter()
+            updateChunkList()
         }
     }
 
@@ -145,18 +157,16 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         }
     }
 
+    private fun List<BufferedImage>.deduplicated() =
+        associateBy { it.hashCode() }.values.toList()
+
     //endregion
 
     //region VIEW FILTERING
 
-    /** Refilter chunks by applying the current chunk filter. */
-    fun refilter() {
-        val filter = chunkFilter.model.value!!
-        filteredChunkList.setAll(chunkList.filter(filter))
+    private fun updateChunkList() {
+        chunkListModel.setChunkList(docSelection.flatMap { doc -> doc.chunks.map { it to doc } })
     }
-
-    private fun List<BufferedImage>.deduplicated() =
-        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 
@@ -180,14 +190,14 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Remove selected chunks from document(s). */
     fun removeSelectedChunks() {
-        val selected = chunkSelection.toList()
+        val selected = chunkListModel.chunkSelection.toList()
         val selectedChunks = selected.mapNotNull { (it as? TextChunkViewModelImpl)?.chunk }
         val changedDocs = mutableListOf<TextDoc>()
         docSelection.forEach {
             if (it.chunks.removeAll(selectedChunks))
                 changedDocs.add(it)
         }
-        chunkList.removeAll(selected)
+        updateChunkList()
         changedDocs.forEach { markChanged(it) }
     }
 
@@ -295,7 +305,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         try {
                             setter(LocalDateTime.parse(it.toString()))
                         } catch (e: Exception) {
-                            info<TextLibraryCollectionListUi>("Could not parse date from ${it.javaClass} $it")
+                            info<TextLibraryListUi>("Could not parse date from ${it.javaClass} $it")
                         }
                     }
                 }
@@ -304,3 +314,4 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     }
 
 }
+

@@ -19,6 +19,7 @@
  */
 package tri.promptfx.library
 
+import javafx.collections.ObservableList
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextDoc
@@ -28,11 +29,7 @@ import tri.promptfx.ui.DocumentListView
 import tri.util.ui.DocumentUtils
 
 /** View for document details, for 1 or more selected documents. */
-class TextLibraryDocumentDetailsUi : Fragment() {
-
-    val model by inject<TextLibraryViewModel>()
-
-    private val selectedItems = model.docSelection
+class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fragment() {
 
     override val root = vbox(10) {
         hgrow = Priority.ALWAYS

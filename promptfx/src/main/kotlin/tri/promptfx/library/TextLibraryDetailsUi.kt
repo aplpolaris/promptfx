@@ -22,7 +22,7 @@ package tri.promptfx.library
 import tornadofx.*
 
 /** View for collection details. */
-class TextLibraryCollectionDetailsUi : Fragment() {
+class TextLibraryDetailsUi : Fragment() {
 
     val model by inject<TextLibraryViewModel>()
 

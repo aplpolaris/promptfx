@@ -29,7 +29,7 @@ import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.TextChunkListView
+import tri.promptfx.ui.chunk.TextChunkListView
 import tri.util.ui.slider
 
 /** Wizard for generating a set of [TextChunk]s from user input. */
@@ -262,7 +262,9 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
         vbox(5) {
             prefWidth = 800.0
             label("Preview of chunks:")
-            chunkPreview = TextChunkListView(model.previewChunks)
+            chunkPreview = TextChunkListView().apply {
+                this@TextChunkerWizardMethod.model.previewChunks.onChange { model.chunkList.setAll(it.list) }
+            }
             add(chunkPreview)
         }
     }

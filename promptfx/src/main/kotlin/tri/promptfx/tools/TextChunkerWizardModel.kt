@@ -35,12 +35,11 @@ import tri.ai.text.chunks.process.LocalFileManager.fileToText
 import tri.ai.text.chunks.process.LocalFileManager.fileWithTextContentFilter
 import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.promptfx.PromptFxController
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.asTextChunkViewModel
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
 import java.io.File
 import java.net.URL
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.regex.PatternSyntaxException

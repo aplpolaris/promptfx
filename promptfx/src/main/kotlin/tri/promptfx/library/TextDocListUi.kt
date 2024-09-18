@@ -14,8 +14,8 @@ import tri.promptfx.ui.DocumentListView.Companion.icon
 import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
 
-/** View for managing text collections and documents. */
-class TextLibraryDocumentListUi : Fragment() {
+/** View list of documents with controls. */
+class TextDocListUi : Fragment() {
 
     private val model by inject<TextLibraryViewModel>()
 

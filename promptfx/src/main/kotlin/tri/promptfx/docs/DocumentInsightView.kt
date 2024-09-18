@@ -31,19 +31,17 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.aggregate
 import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.TextChunk
-import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
-import tri.promptfx.ui.TextChunkListView
-import tri.promptfx.ui.sectionViewModel
+import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.chunk.TextChunkListModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
@@ -72,7 +70,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
     private val docs = observableListOf<BrowsableSource>()
-    private val snippets = observableListOf<Pair<TextDoc, TextChunk>>()
+    private val chunkListModel: TextChunkListModel by inject(Scope())
 
     // for processing chunks to generate results
     private val docsToProcess = SimpleIntegerProperty(2)
@@ -107,7 +105,7 @@ class DocumentInsightView: AiPlanTaskView(
                     add(DocumentListView(docs, hostServices))
                 }
                 fold("Snippets", expanded = true) {
-                    add(TextChunkListView(snippets.sectionViewModel(embeddingService.modelId)))
+                    add(TextChunkListView("Document Snippets"))
                 }
             }
         }
@@ -182,8 +180,8 @@ class DocumentInsightView: AiPlanTaskView(
 
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
-            val names = limitedSnippets.map { "${it.first.browsable()!!.shortName} ${i++}" }
-            val inputs = limitedSnippets.map { it.second.text(it.first.all) }
+            val names = limitedSnippets.map { "${it.second.browsable()!!.shortName} ${i++}" }
+            val inputs = limitedSnippets.map { it.first.text(it.second.all) }
             model = completionEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPromptUi.templateText.value
@@ -208,11 +206,11 @@ class DocumentInsightView: AiPlanTaskView(
             embeddingIndex.value!!.calculateAndGetDocs()
         val docList = sourceDocs.take(docsToProcess.value)
         val chunkList = docList.flatMap { doc ->
-            doc.chunks.take(chunksToProcess.value).map { doc to it }
+            doc.chunks.take(chunksToProcess.value).map { it to doc }
         }
         runLater {
             docs.setAll(docList.map { it.browsable() })
-            snippets.setAll(chunkList)
+            chunkListModel.chunkList.setAll(chunkList.map { it.asTextChunkViewModel(controller.embeddingService.value.modelId) })
         }
         chunkList
     }

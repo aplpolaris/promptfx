@@ -30,6 +30,8 @@ import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.ui.chunk.TextChunkDetailsUi
+import tri.promptfx.ui.chunk.TextChunkListView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
@@ -40,7 +42,8 @@ class TextManagerPlugin : NavigableWorkspaceViewImpl<TextManagerView>("Documents
 /** A view designed to help you manage collections of documents and text. */
 class TextManagerView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
 
-    val model by inject<TextLibraryViewModel>()
+    private val viewScope = Scope()
+    val model by inject<TextLibraryViewModel>(viewScope)
 
     init {
         runButton.isVisible = false
@@ -50,9 +53,9 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
         input {
             splitpane(Orientation.VERTICAL) {
                 vgrow = Priority.ALWAYS
-                add(TextLibraryCollectionListUi())
-                add(TextLibraryDocumentListUi())
-                add(TextLibraryFilterableChunkListView())
+                add(find<TextLibraryListUi>(viewScope))
+                add(find<TextDocListUi>(viewScope))
+                add(find<TextChunkListView>(viewScope))
             }
         }
 
@@ -62,18 +65,18 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
                 squeezebox(multiselect = true) {
                     vgrow = Priority.ALWAYS
                     fold("Details on Selected Collection", expanded = true) {
-                        add(TextLibraryCollectionDetailsUi())
+                        add(find<TextLibraryDetailsUi>(viewScope))
                     }
                     fold("Details on Selected Document(s)", expanded = true) {
                         isFitToWidth = true
-                        add(TextLibraryDocumentDetailsUi())
+                        add(TextDocDetailsUi(model.docSelection))
                     }
                     fold("Images from Document", expanded = false) {
-                        add(TextLibraryDocumentImagesUi())
+                        add(TextDocImageUi(model.docSelectionImages))
                     }
                     fold("Details on Selected Chunk(s)", expanded = false) {
                         vgrow = Priority.ALWAYS
-                        add(TextLibraryChunkDetailsUi())
+                        add(find<TextChunkDetailsUi>(viewScope))
                     }
                 }
             }

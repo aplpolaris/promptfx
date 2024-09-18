@@ -100,6 +100,8 @@ module tri.promptfx {
     exports tri.promptfx.library;
     exports tri.promptfx.tools;
     exports tri.promptfx.ui;
+    exports tri.promptfx.ui.chunk;
+    exports tri.promptfx.ui.trace;
     exports tri.util.ui;
     exports tri.util.ui.pdf;
     exports tri.util.ui.starship;

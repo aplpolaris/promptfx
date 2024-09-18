@@ -5,6 +5,7 @@ import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.ui.chunk.TextChunkListView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
@@ -19,9 +20,9 @@ class TextClusterView : AiTaskView("Text Clustering", "Cluster documents and tex
     init {
         input {
             splitpane(Orientation.VERTICAL) {
-                add(TextLibraryCollectionListUi())
-                add(TextLibraryDocumentListUi())
-                add(TextLibraryFilterableChunkListView())
+                add(TextLibraryListUi())
+                add(TextDocListUi())
+                add(TextChunkListView())
             }
         }
     }

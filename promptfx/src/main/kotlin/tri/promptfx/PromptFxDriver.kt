@@ -187,7 +187,7 @@ fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspac
 fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
     menu("Send result to view") {
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
-        buildviewsubmenus(value, workspace)
+        setOnShown { buildviewsubmenus(value, workspace) }
     }
 }
 

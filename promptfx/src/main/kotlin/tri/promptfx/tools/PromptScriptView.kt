@@ -44,6 +44,10 @@ import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.*
+import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
+import tri.promptfx.ui.trace.PromptTraceCardList
 import tri.util.ui.*
 import java.util.regex.PatternSyntaxException
 
@@ -187,7 +191,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                     }
                 }
                 fold("Input Preview", expanded = false) {
-                    add(TextChunkListView(inputChunks))
+                    add(TextChunkListView().apply {
+                        inputChunks.onChange { model.chunkList.setAll(it.list) }
+                    })
                 }
             }
         }

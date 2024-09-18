@@ -32,7 +32,7 @@ import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
 
 /** View for managing text collections and documents. */
-class TextLibraryCollectionListUi : Fragment() {
+class TextLibraryListUi : Fragment() {
 
     private val model by inject<TextLibraryViewModel>()
     private val progress: AiProgressView by inject()
@@ -91,7 +91,7 @@ class TextLibraryCollectionListUi : Fragment() {
                 }
             }
             lazyContextmenu {
-                buildsendcollectionmenu(this@TextLibraryCollectionListUi, librarySelection)
+                buildsendcollectionmenu(this@TextLibraryListUi, librarySelection)
                 separator()
                 item("Open collection file in system viewer") {
                     enableWhen(librarySelection.isNotNull)
@@ -179,9 +179,9 @@ class TextLibraryCollectionListUi : Fragment() {
                     progressDialog.close()
                     if (it != null) {
                         val libInfo = TextLibraryInfo(it, null)
-                        this@TextLibraryCollectionListUi.model.libraryList.add(libInfo)
-                        this@TextLibraryCollectionListUi.model.librarySelection.set(libInfo)
-                        this@TextLibraryCollectionListUi.model.docSelection.setAll(it.docs.first())
+                        this@TextLibraryListUi.model.libraryList.add(libInfo)
+                        this@TextLibraryListUi.model.librarySelection.set(libInfo)
+                        this@TextLibraryListUi.model.docSelection.setAll(it.docs.first())
                     }
                 }
                 progressDialog.showAndWait()
@@ -192,7 +192,7 @@ class TextLibraryCollectionListUi : Fragment() {
 
     private fun executeEmbeddings() =
         model.calculateEmbeddingsTask(progress).ui {
-            model.refilter()
+            model.chunkListModel.refilter()
         }
 
     private fun executeMetadataExtraction() =
