@@ -26,7 +26,8 @@ class TextChunkListModel : Component(), ScopedInstance {
     /** Refilter chunks by applying the current chunk filter. */
     fun refilter() {
         val filter = filterModel.filter.value!!
-        filteredChunkList.setAll(chunkList.filter(filter))
+        val filtered = chunkList.filter(filter).sortedByDescending { it.score ?: -1f }
+        filteredChunkList.setAll(filtered)
     }
 
     fun setChunkList(chunks: List<Pair<TextChunk, TextDoc>>) {

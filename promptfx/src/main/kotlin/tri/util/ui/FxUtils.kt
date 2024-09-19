@@ -152,7 +152,7 @@ val FontAwesomeIconView.forestGreen
  */
 fun EventTarget.templatemenubutton(template: SimpleStringProperty, promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean = { true }) =
     listmenubutton(
-        items = { AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys },
+        items = { AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys.sorted() },
         action = { template.set(AiPromptLibrary.lookupPrompt(it).template) }
     )
 

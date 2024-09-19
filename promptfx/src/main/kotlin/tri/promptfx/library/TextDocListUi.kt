@@ -25,6 +25,7 @@ class TextDocListUi : Fragment() {
     private lateinit var docListView: ListView<TextDoc>
 
     override val root = vbox {
+        vgrow = Priority.SOMETIMES
         toolbar {
             text("Documents in Selected Collection(s)")
         }

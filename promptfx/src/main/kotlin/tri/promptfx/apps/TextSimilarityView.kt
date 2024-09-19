@@ -20,7 +20,7 @@
 package tri.promptfx.apps
 
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.text
+import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.AiModelInfo
@@ -41,7 +41,11 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
     init {
         addInputTextArea(firstText)
-        input { text("Second Text:") }
+        input {
+            toolbar {
+                text("Second Text:")
+            }
+        }
         addInputTextArea(secondText)
     }
 

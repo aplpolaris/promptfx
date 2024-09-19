@@ -85,11 +85,11 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
 
     init {
         val filesToRestore = find<PromptFxConfig>().libraryFiles()
-        filesToRestore.forEach { model.loadLibraryFrom(it) }
+        filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        model.loadTextLibrary(library)
+        model.loadTextLibrary(library, replace = false, selectAllDocs = false)
     }
 
     override suspend fun processUserInput() = AiPipelineResult.todo()

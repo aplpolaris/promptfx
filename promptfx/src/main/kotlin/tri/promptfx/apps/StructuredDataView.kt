@@ -49,7 +49,9 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
     init {
         addInputTextArea(sourceText)
         input {
-            label("Sample JSON (YAML, XML, CSV, ...):")
+            toolbar {
+                text("Sample JSON (YAML, XML, CSV, ...):")
+            }
             textarea(sampleOutput) {
                 isWrapText = true
             }

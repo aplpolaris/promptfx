@@ -139,22 +139,33 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region COLLECTION I/O
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        if (library !in libraryList) {
-            libraryList.add(library)
-            librarySelection.set(library)
-        }
+        loadTextLibrary(library, replace = true, selectAllDocs = true)
     }
 
-    internal fun loadLibraryFrom(file: File) {
+    /** Load a library from a file, with options to replace existing libraries and select all documents. */
+    internal fun loadLibraryFrom(file: File, replace: Boolean, selectAllDocs: Boolean) {
         runAsync {
             val lib = TextLibrary.loadFrom(file)
             if (lib.metadata.id.isBlank())
                 lib.metadata.id = file.name
             TextLibraryInfo(lib, file)
         } ui {
-            libraryList.add(it)
-            librarySelection.set(it)
+            loadTextLibrary(it, replace, selectAllDocs)
         }
+    }
+
+    /** Load a library from a library object, with options to replace existing libraries and select all documents. */
+    fun loadTextLibrary(library: TextLibraryInfo, replace: Boolean, selectAllDocs: Boolean) {
+        if (replace)
+            libraryList.setAll(library)
+        else if (library !in libraryList) {
+            libraryList.add(library)
+        }
+        librarySelection.set(library)
+        if (selectAllDocs)
+            docSelection.setAll(library.library.docs)
+        else
+            docSelection.setAll(library.library.docs.first())
     }
 
     private fun List<BufferedImage>.deduplicated() =

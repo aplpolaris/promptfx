@@ -8,8 +8,10 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.Component
 import tornadofx.ScopedInstance
 import tornadofx.onChange
+import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
+import tri.ai.prompt.AiPrompt
 import tri.promptfx.tools.PromptScriptView
 import java.util.regex.PatternSyntaxException
 
@@ -40,8 +42,8 @@ class TextChunkFilterModel : Component(), ScopedInstance {
     }
 
     /** Disable filtering. */
-    fun disableFilter() {
-        updateFilter(TextFilterType.NONE, "", emptyList(), null)
+    fun disableFilter(chunkList: List<TextChunkViewModel>) {
+        updateFilter(TextFilterType.NONE, "", chunkList, null)
     }
 
     /**
@@ -59,14 +61,20 @@ class TextChunkFilterModel : Component(), ScopedInstance {
     /** Update filter with current text and type. */
     fun updateFilter(chunkList: List<TextChunkViewModel>, embeddingService: EmbeddingService?) {
         val text = filterText.value
-        when (filterType.value) {
+        if (text.isBlank()) {
+            resetChunkScores(chunkList)
+            filter.set { true }
+        } else when (filterType.value) {
             TextFilterType.NONE -> {
+                resetChunkScores(chunkList)
                 filter.set { true }
             }
             TextFilterType.SEARCH -> {
+                resetChunkScores(chunkList)
                 filter.set { text.lowercase() in it.text.lowercase() }
             }
             TextFilterType.REGEX -> {
+                resetChunkScores(chunkList)
                 try {
                     val regex = text.toRegex(RegexOption.IGNORE_CASE)
                     filter.set { regex.find(it.text) != null }
@@ -76,24 +84,52 @@ class TextChunkFilterModel : Component(), ScopedInstance {
                 }
             }
             TextFilterType.EMBEDDING -> {
-                val predicate = predicateFromTopEmbeddingMatches(text, chunkList, embeddingService!!)
+                updateChunkScores(text, chunkList, embeddingService!!)
+                val predicate = predicateFromTopScores(chunkList)
                 filter.set { predicate(it) }
+            }
+            TextFilterType.PROMPT -> {
+                error("Not supported yet")
             }
             else -> error("Unexpected filter")
         }
         isFilterUnapplied.set(false)
     }
 
-    /** Gets embedding vector of user text for ranking. */
-    private fun predicateFromTopEmbeddingMatches(text: String, collection: List<TextChunkViewModel>, model: EmbeddingService): (TextChunkViewModel) -> Boolean {
+    /** Resets chunk scores, setting all to null. */
+    private fun resetChunkScores(chunkList: List<TextChunkViewModel>) {
+        chunkList.forEach { it.score = null }
+    }
+
+
+    /** Updates scores of chunks using an embedding cosine similarity. */
+    private fun updateChunkScores(text: String, chunkList: List<TextChunkViewModel>, model: EmbeddingService) {
         val vector = runBlocking { model.calculateEmbedding(text) }
-        val scores = collection.map {
-            cosineSimilarity(vector, it.embedding!!)
-        }.sortedDescending()
+        chunkList.forEach {
+            it.score = cosineSimilarity(vector, it.embedding!!).toFloat()
+        }
+    }
+
+    /** Gets embedding vector of user text for ranking. */
+    private fun predicateFromTopScores(collection: List<TextChunkViewModel>): (TextChunkViewModel) -> Boolean {
+        val scores = collection.mapNotNull { it.score }.sortedDescending()
         val topScore = scores.first()
         val nthScore = scores.take(EMBEDDING_FILTER_MIN_CHUNKS).last()
         val minScoreToKeep = nthScore - (topScore - nthScore) * EMBEDDING_FILTER_LATITUDE
-        return { cosineSimilarity(vector, it.embedding!!) >= minScoreToKeep }
+        return { (it.score ?: -1f) >= minScoreToKeep }
+    }
+
+    /**
+     * Attempt to filter an input based on a given prompt.
+     * Returns true if the response contains "yes" (case-insensitive) anywhere.
+     */
+    private fun llmFilter(completionEngine: TextCompletion, prompt: String, input: String, maxTokens: Int, temp: Double): Boolean {
+        val result = runBlocking {
+            AiPrompt(prompt).fill(AiPrompt.INPUT to input)
+                .let { completionEngine.complete(it, tokens = maxTokens, temperature = temp) }
+                .firstValue
+        }
+        return result.contains("yes", ignoreCase = true)
     }
 
     //endregion

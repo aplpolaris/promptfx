@@ -50,7 +50,9 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
             promptText = "Provide the question here. This will replace {{{instruct}}} in the prompt."
         }
         input {
-            label("Source Text:")
+            toolbar {
+                text("Source Text:")
+            }
             textarea(input) {
                 promptText = "Provide the text here. This will replace {{{input}}} in the prompt."
                 isWrapText = true

@@ -44,6 +44,11 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
     @get:JsonIgnore
     var all: TextChunkRaw? = _all
 
+    /** Optional header string associated with the doc (e.g. for CSV files). */
+    var dataHeader: String?
+        get() = attributes["header"] as? String
+        set(value) { attributes["header"] = value }
+
     /** Construct a [TextDoc] with a given text string. */
     constructor(id: String, text: String) : this(id, TextChunkRaw(text))
 

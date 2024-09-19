@@ -35,6 +35,6 @@ class TextClusterView : AiTaskView("Text Clustering", "Cluster documents and tex
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        model.loadTextLibrary(library)
+        model.loadTextLibrary(library, replace = false, selectAllDocs = true)
     }
 }

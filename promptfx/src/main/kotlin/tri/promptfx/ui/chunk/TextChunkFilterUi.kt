@@ -47,7 +47,7 @@ class TextChunkFilterUi : Fragment(), ScopedInstance {
                 enableWhen(filterModel.filterType.isNotEqualTo(TextFilterType.NONE))
                 tooltip("Clear text filter and rankings")
                 action {
-                    filterModel.disableFilter()
+                    filterModel.disableFilter(listModel.chunkList)
                 }
             }
         }

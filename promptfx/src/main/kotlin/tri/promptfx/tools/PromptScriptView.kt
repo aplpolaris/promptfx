@@ -19,15 +19,9 @@
  */
 package tri.promptfx.tools
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
 import javafx.scene.layout.Priority
-import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregatetrace
@@ -35,21 +29,16 @@ import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
-import tri.ai.text.chunks.TextChunkRaw
-import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.PromptFxConfig
-import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.promptFxFileChooser
+import tri.promptfx.library.TextLibraryToolbar
+import tri.promptfx.library.TextLibraryViewModel
 import tri.promptfx.ui.*
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkViewModel
-import tri.promptfx.ui.chunk.asTextChunkViewModel
 import tri.promptfx.ui.trace.PromptTraceCardList
 import tri.util.ui.*
-import java.util.regex.PatternSyntaxException
 
 /** Plugin for the [PromptScriptView]. */
 class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", WorkspaceViewAffordance.COLLECTION_ONLY, PromptScriptView::class)
@@ -59,24 +48,11 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     "Configure a prompt to run on a series of inputs or a CSV file."
 ), TextLibraryReceiver {
 
+    private val viewScope = Scope(workspace)
+
     // inputs
-    private val chunkBy = SimpleStringProperty("\\n")
-    private val csvHeader = SimpleBooleanProperty(false)
-    private val inputText = SimpleStringProperty("")
-    private val inputLibrary = SimpleObjectProperty<TextLibrary>()
-
-    // inputs as chunks
-    private val inputChunks = observableListOf<TextChunkViewModel>()
-
-    // pre-processing
-    private val filter = SimpleStringProperty("")
-    private val filterTypeText = filter.stringBinding {
-        when {
-            it.isNullOrBlank() -> "None"
-            "{{input}}" in it -> "LLM Filter"
-            else -> "Regex Match"
-        }
-    }
+    private val libraryModel: TextLibraryViewModel = find(viewScope)
+    private val listModel = libraryModel.chunkListModel
 
     // batch processing
     private val chunkLimit = SimpleIntegerProperty(10)
@@ -100,123 +76,22 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     // input views
     init {
         input {
-            squeezebox {
-                fold("Prompt Settings", expanded = true) {
-                    promptUi = EditablePromptUi(
-                        promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
-                        instruction = "Prompt to Execute:"
-                    )
-                    add(promptUi)
-                }
-                fold("Select Inputs", expanded = true) {
-                    vbox(5) {
-                        vgrow = Priority.ALWAYS
-                        hbox(5, Pos.CENTER_LEFT) {
-                            text("Inputs:")
-                            spacer()
-                            button("", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
-                                tooltip("Load text library file. This will hide any current input text.")
-                                action {
-                                    promptFxFileChooser(
-                                        dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
-                                        title = "Load Text Library",
-                                        filters = arrayOf(PromptFxConfig.FF_JSON, FF_ALL),
-                                        mode = FileChooserMode.Single
-                                    ) {
-                                        it.firstOrNull()?.let {
-                                            val lib = TextLibrary.loadFrom(it)
-                                            inputLibrary.set(lib)
-                                        }
-                                    }
-                                }
-                            }
-                            button("", FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT)) {
-                                tooltip("Load text from file. This will clear any text library that has been previously loaded.")
-                                action {
-                                    inputLibrary.set(null)
-                                    promptFxFileChooser(
-                                        title = "Select a file to load",
-                                        filters = arrayOf(FF_ALL)
-                                    ) {
-                                        it.firstOrNull()?.readText()?.let {
-                                            inputText.set(it)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        label(inputLibrary.stringBinding {
-                            if (it == null)
-                                "No library loaded"
-                            else
-                                "Library: ${it.metadata.id.ifBlank { it.metadata.path }}, ${it.docs.size} documents, ${it.docs.sumOf { it.chunks.size }} chunks"
-                        }) {
-                            visibleWhen { inputLibrary.isNotNull }
-                            managedWhen { inputLibrary.isNotNull }
-                        }
-                        textarea(inputText) {
-                            visibleWhen { inputLibrary.isNull }
-                            managedWhen { inputLibrary.isNull }
-                            promptText = "Enter a list of inputs to fill in the prompt (separated by line)."
-                            hgrow = Priority.ALWAYS
-                            vgrow = Priority.ALWAYS
-                            isWrapText = true
-                            prefWidth = 0.0
-                            enableDroppingFileContent()
-                        }
-                    }
-                    vbox(5) {
-                        hbox(5, Pos.CENTER_LEFT) {
-                            text("Filter:")
-                            spacer()
-                            text(filterTypeText) {
-                                style {
-                                    fontStyle = javafx.scene.text.FontPosture.ITALIC
-                                }
-                            }
-                            button("", FontAwesomeIcon.FILTER.graphic) {
-                                disableWhen { filterTypeText.isEqualTo("None") }
-                                tooltip("Apply filter")
-                                action { runLater { inputChunks.setAll(inputs().chunks) } }
-                            }
-                        }
-                        textarea(filter) {
-                            promptText =
-                                "(Optional) Enter a regular expression to filter content (faster), or provide a prompt with {{input}} returning yes/no (slower). If blank, empty lines will be skipped."
-                            hgrow = Priority.ALWAYS
-                            prefRowCount = 5
-                            isWrapText = true
-                            prefWidth = 0.0
-                        }
-                    }
-                }
-                fold("Input Preview", expanded = false) {
-                    add(TextChunkListView().apply {
-                        inputChunks.onChange { model.chunkList.setAll(it.list) }
-                    })
-                }
-            }
+            promptUi = editablepromptui(
+                promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
+                instruction = "Prompt to Execute:"
+            )
+            add(find<TextLibraryToolbar>(viewScope))
+            add(find<TextChunkListView>(viewScope))
         }
     }
 
     // parameter views
     init {
-        parameters("Data Import") {
-            tooltip("These settings control how input is divided into separate chunks of text for further processing.")
-            field("Chunk Input by") {
-                tooltip("Character(s) separating chunks of input, e.g. \\n for new lines or \\n\\n for paragraphs")
-                textfield(chunkBy)
-            }
-            field("Input Format") {
-                checkbox("Input has Header Row", csvHeader)
-            }
-        }
-        parameters("Filtering") { }
         parameters("Batch Processing") {
             tooltip("These settings control the batch processing of inputs.")
             field("Limit") {
                 tooltip("Maximum number of chunks to process")
-                slider(1..1000, chunkLimit)
+                sliderwitheditablelabel(1..1000, chunkLimit)
                 label(chunkLimit.asString())
             }
         }
@@ -255,24 +130,25 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     override fun plan(): AiPlanner {
-        val inputs = inputs()
-        runLater {
-            promptTraces.setAll()
-            inputChunks.setAll(inputs.chunks)
+        val inputs = listModel.filteredChunkList.take(chunkLimit.value)
+        val docInputs = libraryModel.docSelection.map { doc ->
+            val docChunks = doc.chunks.map { it.text(doc.all) }.toSet()
+            ChunksWithHeader(doc.dataHeader, doc.metadata.title, inputs.filter { it.text in docChunks })
         }
-        val tasks = promptBatch(inputs.chunks.map { it.text }).tasks()
+        runLater { promptTraces.setAll() }
+        val tasks = promptBatch(inputs.map { it.text }).tasks()
         // TODO - not sure what to do here with the view, since the traces probably shouldn't all be aggregated into one batch...
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
-                it.monitorTrace { runLater { promptTraces.add(it) } }
-            }.aggregatetrace()
-            .aiprompttask("process-results") {
-                postProcess(it.values ?: listOf(), inputs)
-            }.planner
+            it.monitorTrace { runLater { promptTraces.add(it) } }
+        }.aggregatetrace()
+        .aiprompttask("process-results") {
+            postProcess(it.values ?: listOf(), docInputs)
+        }.planner
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        inputLibrary.set(library.library)
+        libraryModel.loadTextLibrary(library)
     }
 
     private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {
@@ -283,67 +159,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         runs = inputs.size
     }
 
-    /** Get the first chunk (if has header) and the rest of the chunks. */
-    private fun inputs(): PromptScriptInput {
-        val filter = filter()
-        if (inputLibrary.value != null) {
-            val chunks = inputLibrary.value!!.docs.flatMap {
-                doc -> doc.chunks.map { it.asTextChunkViewModel(doc, embeddingService.modelId) }
-            }.asSequence()
-                .filter { filter(it.text) }
-                .take(chunkLimit.value)
-            return PromptScriptInput(null, chunks.toList())
-        } else {
-            var splitChar = chunkBy.value
-            splitChar = if (splitChar.isEmpty())
-                "\n"
-            else
-                splitChar.replace("\\n", "\n").replace("\\t", "\t")
-            val split = inputText.value.split(splitChar).map { TextChunkRaw(it) }
-            val header = if (csvHeader.value) split.first().text else null
-            val chunks = split.asSequence()
-                .filter { filter(it.text) }
-                .drop(if (csvHeader.value) 1 else 0)
-                .take(chunkLimit.value)
-                .map { it.asTextChunkViewModel(null, embeddingService.modelId) }
-                .toList()
-            return PromptScriptInput(header, chunks)
-        }
-    }
-
-    private fun filter(): (String) -> Boolean {
-        val filter = filter.value
-        when {
-            filter.isBlank() ->
-                return { it.isNotBlank() }
-            "{{input}}" in filter ->
-                return { llmFilter(filter, it) }
-            else -> {
-                try {
-                    val regex = filter.toRegex()
-                    return { regex.find(it) != null }
-                } catch (x: PatternSyntaxException) {
-                    tri.util.warning<PromptScriptView>("Invalid regex: ${x.message}")
-                    return { false }
-                }
-            }
-        }
-    }
-
-    /**
-     * Attempt to filter an input based on a given prompt.
-     * Returns true if the response contains "yes" (case-insensitive) anywhere.
-     */
-    private fun llmFilter(prompt: String, input: String): Boolean {
-        val result = runBlocking {
-            AiPrompt(prompt).fill(AiPrompt.INPUT to input)
-                .let { completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value) }
-                .firstValue
-        }
-        return result.contains("yes", ignoreCase = true) ?: false
-    }
-
-    private suspend fun postProcess(results: List<AiPromptTraceSupport<String>>, inputs: PromptScriptInput): AiPromptTrace<String> {
+    private suspend fun postProcess(results: List<AiPromptTraceSupport<String>>, inputs: List<ChunksWithHeader>): AiPromptTrace<String> {
         // TODO - for now assuming each trace has a single result
 
         val resultSets = mutableMapOf<String, String>()
@@ -361,8 +177,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             resultSets[key] = values.joinToString("\n") { it ?: "(error or no output returned)" }
         }
         if (outputCsv.value) {
+            // TODO - how to handle multiple docs with varying headers??
             val key = "CSV Output"
-            val csvHeader = inputs.headerRow?.let { "$it,output" } ?: "input,output"
+            val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
             val csv = results.joinToString("\n") { "${it.prompt!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
             resultSets[key] = "$csvHeader\n$csv".trim()
         }
@@ -370,11 +187,11 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerPrompt.fill("matches" to
-                results.map { mapOf("text" to (it.firstValue ?: "")) }
+                results.map { mapOf("text" to it.firstValue) }
             )
             val summarizer = summaryPrompt.fill(AiPrompt.INPUT to joined)
             val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
-            resultSets[key] = summarizerResult.firstValue ?: "(error or no output returned)"
+            resultSets[key] = summarizerResult.firstValue
             promptInfo = AiPromptInfo(summaryPrompt.text.value, mapOf(AiPrompt.INPUT to joined))
         } else {
             promptInfo = AiPromptInfo("")
@@ -394,18 +211,16 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         )
     }
 
-    private fun AiOutputInfo<*>.firstOutput() = outputs.getOrNull(0)?.toString()
-
-    private fun String.cleanedup() = lowercase().removeSuffix(".")
-
     companion object {
         private const val TEXT_SUMMARIZER_PREFIX = "document-reduce"
         private const val TEXT_JOINER_PREFIX = "text-joiner"
+
+        private fun String.cleanedup() = lowercase().removeSuffix(".")
     }
 }
 
-/** Inputs for executing prompt script. */
-private class PromptScriptInput(
+private class ChunksWithHeader(
+    val docName: String?,
     val headerRow: String?,
     val chunks: List<TextChunkViewModel>
 )

@@ -88,11 +88,8 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
 
     init {
         input {
-            padding = insets(5.0)
-            spacing = 5.0
             style { fontSize = 14.px }
-            hbox {
-                style { alignment = Pos.CENTER_LEFT }
+            toolbar {
                 text("Chat as ")
                 combobox(userPerson, peopleList) {
                     peopleOptions.onChange {
@@ -104,10 +101,9 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             textarea(userInput) {
                 isWrapText = true
             }
-            hbox {
-                style { alignment = Pos.CENTER_LEFT }
+            toolbar {
                 text("Chat History:")
-                region { hgrow = Priority.ALWAYS }
+                spacer()
                 button("", FontAwesomeIcon.TRASH.graphic) {
                     action {
                         history.clear()

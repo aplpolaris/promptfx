@@ -23,7 +23,9 @@ import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.collections.ObservableList
 import tornadofx.*
+import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.BrowsableSource
@@ -35,7 +37,7 @@ import tri.promptfx.ui.FormattedPromptResultArea
 import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
-import tri.promptfx.ui.chunk.matchViewModel
+import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -62,7 +64,7 @@ class DocumentQaView: AiPlanTaskView(
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(1000)
-    private val chunksToRetrieve = SimpleIntegerProperty(10)
+    private val chunksToRetrieve = SimpleIntegerProperty(50)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
 
@@ -201,4 +203,20 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
     }
+}
+
+/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
+internal fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
+    val result = observableListOf(map { it.asTextChunkViewModel()})
+    onChange { result.setAll(map { it.asTextChunkViewModel() }) }
+    return result
+}
+
+/** Wrap [EmbeddingMatch] as a view model. */
+internal fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
+    override var score: Float? = this@asTextChunkViewModel.queryScore
+    override val embedding = chunkEmbedding
+    override val embeddingsAvailable = listOf(embeddingModel)
+    override val browsable = document.browsable()
+    override val text = chunkText
 }

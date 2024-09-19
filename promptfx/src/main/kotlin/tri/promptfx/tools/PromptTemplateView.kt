@@ -51,8 +51,8 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
     }
 
     init {
-        input(5, 5, Priority.ALWAYS) {
-            hbox(5, Pos.CENTER_LEFT) {
+        input(vgrow = Priority.ALWAYS) {
+            toolbar {
                 text("Template:")
                 spacer()
                 templatemenubutton(template)
@@ -64,9 +64,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 isWrapText = true
                 prefWidth = 0.0
             }
-        }
-        input(10, 10) {
-            text("Inputs:")
+            toolbar {
+                text("Inputs:")
+            }
             listview(fields) {
                 vgrow = Priority.ALWAYS
                 cellFormat { field ->

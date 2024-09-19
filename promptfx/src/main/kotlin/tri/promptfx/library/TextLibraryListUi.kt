@@ -34,28 +34,29 @@ import tri.util.ui.graphic
 /** View for managing text collections and documents. */
 class TextLibraryListUi : Fragment() {
 
-    private val model by inject<TextLibraryViewModel>()
+    private val libraryModel by inject<TextLibraryViewModel>()
     private val progress: AiProgressView by inject()
     private val controller by inject<PromptFxController>()
 
-    private val libraryList = model.libraryList
-    private val librarySelection = model.librarySelection
+    private val libraryList = libraryModel.libraryList
+    private val librarySelection = libraryModel.librarySelection
 
     private lateinit var libraryListView: ListView<TextLibraryInfo>
 
     override val root = vbox {
+        vgrow = Priority.SOMETIMES
         toolbar {
             text("Collections")
             spacer()
             // generate chunks
             button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
                 tooltip("Create a new text collection.")
-                action { createLibraryWizard() }
+                action { createLibraryWizard(libraryModel, replace = false, selectAllDocs = false) }
             }
             // load a TextLibrary file
             button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
                 tooltip("Load a text collection from a JSON file.")
-                action { loadLibrary() }
+                action { loadLibrary(libraryModel, replace = false, selectAllDocs = false) }
             }
             // save a TextLibrary file
             button("Save...", graphic = FontAwesomeIcon.DOWNLOAD.graphic) {
@@ -79,13 +80,14 @@ class TextLibraryListUi : Fragment() {
                 }
             }
         }
-        libraryListView = listview(model.libraryList) {
+        libraryListView = listview(libraryModel.libraryList) {
             vgrow = Priority.ALWAYS
+            prefHeight = 100.0
             bindSelectionBidirectional(librarySelection)
             cellFormat {
                 graphic = hbox(5, Pos.CENTER_LEFT) {
                     label(it.library.toString(), FontAwesomeIcon.BOOK.graphic)
-                    text(model.savedStatusProperty(it)) {
+                    text(libraryModel.savedStatusProperty(it)) {
                         style = "-fx-font-style: italic; -fx-text-fill: light-gray"
                     }
                 }
@@ -112,39 +114,26 @@ class TextLibraryListUi : Fragment() {
                     action { librarySelection.value?.let { libraryList.remove(it) } }
                 }
             }
-            model.librariesModified.onChange { refresh() }
+            libraryModel.librariesModified.onChange { refresh() }
         }
     }
 
     //region USER ACTIONS
 
     private fun renameSelectedCollection() {
-        val lib = model.librarySelection.value
+        val lib = libraryModel.librarySelection.value
         TextInputDialog(lib.library.metadata.id).apply {
             initOwner(primaryStage)
             title = "Rename Collection"
             headerText = "Enter a new name for the collection."
             contentText = "Name:"
         }.showAndWait().ifPresent {
-            model.renameCollection(lib, it)
-        }
-    }
-
-    private fun loadLibrary() {
-        promptFxFileChooser(
-            dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
-            title = "Load Text Library",
-            filters = arrayOf(PromptFxConfig.FF_JSON, PromptFxConfig.FF_ALL),
-            mode = FileChooserMode.Single
-        ) {
-            it.firstOrNull()?.let {
-                model.loadLibraryFrom(it)
-            }
+            libraryModel.renameCollection(lib, it)
         }
     }
 
     private fun saveLibrary() {
-        model.librarySelection.value?.let { library ->
+        libraryModel.librarySelection.value?.let { library ->
             promptFxFileChooser(
                 dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
                 title = "Save Text Library",
@@ -152,55 +141,72 @@ class TextLibraryListUi : Fragment() {
                 mode = FileChooserMode.Save
             ) {
                 it.firstOrNull()?.let {
-                    model.saveLibrary(library, it)
+                    libraryModel.saveLibrary(library, it)
                 }
             }
-        }
-    }
-
-    private fun createLibraryWizard() {
-        TextChunkerWizard().apply {
-            onComplete {
-                // show an indefinite progress indicator dialog while importing text in background
-                val progressDialog = Dialog<ButtonType>().apply {
-                    graphic = ProgressIndicator(-1.0)
-                    title = "Creating Text Library"
-                    isResizable = false
-                    initOwner(currentWindow)
-                    result = ButtonType.OK
-                }
-                runAsync {
-                    println("Creating library from user settings")
-                    model.finalLibrary {
-                        runLater { progressDialog.contentText = it }
-                    }
-                } ui {
-                    println("Created library: $it")
-                    progressDialog.close()
-                    if (it != null) {
-                        val libInfo = TextLibraryInfo(it, null)
-                        this@TextLibraryListUi.model.libraryList.add(libInfo)
-                        this@TextLibraryListUi.model.librarySelection.set(libInfo)
-                        this@TextLibraryListUi.model.docSelection.setAll(it.docs.first())
-                    }
-                }
-                progressDialog.showAndWait()
-            }
-            openModal()
         }
     }
 
     private fun executeEmbeddings() =
-        model.calculateEmbeddingsTask(progress).ui {
-            model.chunkListModel.refilter()
+        libraryModel.calculateEmbeddingsTask(progress).ui {
+            libraryModel.chunkListModel.refilter()
         }
 
     private fun executeMetadataExtraction() =
-        model.extractMetadataTask().ui {
+        libraryModel.extractMetadataTask().ui {
             alert(Alert.AlertType.INFORMATION, it, owner = currentWindow)
         }
 
     //endregion
 
 }
+
+//region USER ACTIONS
+
+/** UI action to create a new text library. */
+internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel, replace: Boolean, selectAllDocs: Boolean) {
+    TextChunkerWizard().apply {
+        onComplete {
+            // show an indefinite progress indicator dialog while importing text in background
+            val progressDialog = Dialog<ButtonType>().apply {
+                graphic = ProgressIndicator(-1.0)
+                title = "Creating Text Library"
+                isResizable = false
+                initOwner(this@createLibraryWizard.currentWindow)
+                result = ButtonType.OK
+            }
+            runAsync {
+                println("Creating library from user settings")
+                model.finalLibrary {
+                    runLater { progressDialog.contentText = it }
+                }
+            } ui {
+                println("Created library: $it")
+                progressDialog.close()
+                if (it != null) {
+                    val libInfo = TextLibraryInfo(it, null)
+                    libraryModel.loadTextLibrary(libInfo, replace, selectAllDocs)
+                }
+            }
+            progressDialog.showAndWait()
+        }
+        openModal()
+    }
+}
+
+/** UI action to load a text library from a JSON file. */
+internal fun UIComponent.loadLibrary(libraryModel: TextLibraryViewModel, replace: Boolean, selectAllDocs: Boolean) {
+    promptFxFileChooser(
+        dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
+        title = "Load Text Library",
+        filters = arrayOf(PromptFxConfig.FF_JSON, PromptFxConfig.FF_ALL),
+        mode = FileChooserMode.Single
+    ) {
+        it.firstOrNull()?.let {
+            libraryModel.loadLibraryFrom(it, replace, selectAllDocs)
+        }
+    }
+}
+
+//endregion
 

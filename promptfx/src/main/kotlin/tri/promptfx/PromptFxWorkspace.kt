@@ -106,8 +106,8 @@ class PromptFxWorkspace : Workspace() {
                 separator { }
                 label("Advanced APIs")
                 hyperlinkview<EmbeddingsView>("API", "Embeddings")
-                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
-                hyperlinkview<FilesView>("API", "Files")
+//                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
+//                hyperlinkview<FilesView>("API", "Files")
                 hyperlinkview<ModerationsView>("API", "Moderations")
                 separator { }
                 label("Documentation/Links")

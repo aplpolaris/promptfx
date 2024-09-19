@@ -42,6 +42,7 @@ import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.asTextChunkViewModel
+import tri.promptfx.ui.editablepromptui
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
@@ -70,8 +71,9 @@ class DocumentInsightView: AiPlanTaskView(
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
     }, controller.embeddingService, documentFolder, maxChunkSize)
+
     private val docs = observableListOf<BrowsableSource>()
-    private val chunkListModel: TextChunkListModel by inject(Scope(workspace))
+    private val chunkListModel: TextChunkListModel by inject(viewScope)
 
     // for processing chunks to generate results
     private val docsToProcess = SimpleIntegerProperty(2)
@@ -93,24 +95,12 @@ class DocumentInsightView: AiPlanTaskView(
 
     init {
         input {
-            squeezebox {
-                fold("Prompts", expanded = true) {
-                    vbox {
-                        mapPromptUi = EditablePromptUi(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
-                        reducePromptUi = EditablePromptUi(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
-                        add(mapPromptUi)
-                        add(reducePromptUi)
-                    }
-                }
-                fold("Documents", expanded = true) {
-                    add(DocumentListView(docs, hostServices))
-                }
-                fold("Snippets", expanded = true) {
-                    add(find<TextChunkListView>(viewScope).apply {
-                        label.set("Document Snippets")
-                    })
-                }
-            }
+            mapPromptUi = editablepromptui(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
+            reducePromptUi = editablepromptui(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
+            add(DocumentListView(docs, hostServices))
+            add(find<TextChunkListView>(viewScope).apply {
+                label.set("Document Snippets")
+            })
         }
     }
 

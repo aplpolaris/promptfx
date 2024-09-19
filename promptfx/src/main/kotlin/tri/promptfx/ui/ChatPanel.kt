@@ -40,7 +40,6 @@ class ChatPanel: Fragment() {
     var randomColors: Boolean = true
 
     override val root = scrollpane(fitToWidth = true) {
-        maxWidth = 500.0
         vgrow = Priority.ALWAYS
         hgrow = Priority.ALWAYS
         vbox {

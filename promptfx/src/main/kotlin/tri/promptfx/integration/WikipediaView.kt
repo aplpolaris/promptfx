@@ -36,10 +36,12 @@ class WikipediaView: AiPlanTaskView("Wikipedia", "Enter a question to ask Wikipe
 
     init {
         addInputTextArea(input)
-        inputPane.add(Text("Wikipedia Page Source:"))
-        inputPane.add(textarea(pageTitle) {
-            isWrapText = true
-        })
+        input {
+            toolbar {
+                text("Wikipedia Page Source:")
+            }
+        }
+        addInputTextArea(pageTitle)
     }
 
     override fun plan() = WikipediaAiTaskPlanner(completionEngine, pageTitle, input.get())

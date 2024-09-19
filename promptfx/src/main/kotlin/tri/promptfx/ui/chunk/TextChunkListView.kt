@@ -60,6 +60,7 @@ class TextChunkListView(_label: String? = "Text Chunks"): Fragment() {
     private lateinit var chunkListView: ListView<TextChunkViewModel>
 
     override val root = vbox {
+        vgrow = Priority.ALWAYS
         toolbar {
             text(label)
             spacer()
@@ -81,6 +82,7 @@ class TextChunkListView(_label: String? = "Text Chunks"): Fragment() {
         })
         chunkListView = listview(model.filteredChunkList) {
             vgrow = Priority.ALWAYS
+            prefHeight = 300.0
             cellFormat {
                 graphic = TextChunkView(it, hostServices)
             }
@@ -116,7 +118,7 @@ class TextChunkListView(_label: String? = "Text Chunks"): Fragment() {
             if (it.isNotEmpty()) {
                 runAsync {
                     runBlocking {
-                        // TODO - export scored chunks instead of this object
+                        // TODO - can we export library with scored chunks instead of this object??
                         jsonMapper.writerWithDefaultPrettyPrinter()
                             .writeValue(it.first(), model.filteredChunkList)
                     }
@@ -124,7 +126,6 @@ class TextChunkListView(_label: String? = "Text Chunks"): Fragment() {
             }
         }
     }
-
 
 //    private fun exportDocumentSnippets() {
 //        promptFxFileChooser(
