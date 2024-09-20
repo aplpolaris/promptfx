@@ -21,7 +21,6 @@ package tri.promptfx.ui.chunk
 
 import javafx.collections.ObservableList
 import tornadofx.*
-import tri.ai.embedding.EmbeddingMatch
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
@@ -30,7 +29,7 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 
 /** View model for document chunks. */
 interface TextChunkViewModel {
-    val embedding: List<Double>?
+    var embedding: List<Double>?
     val embeddingsAvailable: List<String>
     var score: Float?
     val browsable: BrowsableSource?
@@ -58,7 +57,7 @@ class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddin
     constructor(text: String) : this(null, TextChunkRaw(text), null)
 
     override val browsable = parentDoc?.browsable()
-    override val embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
+    override var embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
     override val embeddingsAvailable = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val text = chunk.text(parentDoc?.all)
 }

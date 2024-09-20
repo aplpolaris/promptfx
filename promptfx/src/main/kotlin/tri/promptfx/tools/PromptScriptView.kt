@@ -21,6 +21,7 @@ package tri.promptfx.tools
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.AiPlanner
@@ -80,7 +81,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
                 instruction = "Prompt to Execute:"
             )
-            add(find<TextLibraryToolbar>(viewScope))
+            add(find<TextLibraryToolbar>(viewScope).apply {
+                titleText.set("Input")
+                showButtonText.set(false)
+            })
             add(find<TextChunkListView>(viewScope))
         }
     }
@@ -92,7 +96,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             field("Limit") {
                 tooltip("Maximum number of chunks to process")
                 sliderwitheditablelabel(1..1000, chunkLimit)
-                label(chunkLimit.asString())
             }
         }
         addDefaultTextCompletionParameters(common)
@@ -123,10 +126,16 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     init {
         outputPane.clear()
         output {
-            add(PromptTraceCardList(promptTraces))
+            splitpane(Orientation.VERTICAL) {
+                add(PromptTraceCardList(promptTraces))
+                add(resultArea.root)
+                resultArea.root.vgrow = Priority.ALWAYS
+                vgrow = Priority.ALWAYS
+            }
         }
-        addOutputTextArea()
-        outputPane.children.last().vgrow = Priority.ALWAYS
+        onCompleted {
+            resultArea.setFinalResult(it.finalResult)
+        }
     }
 
     override fun plan(): AiPlanner {
@@ -179,9 +188,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         if (outputCsv.value) {
             // TODO - how to handle multiple docs with varying headers??
             val key = "CSV Output"
-            val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
-            val csv = results.joinToString("\n") { "${it.prompt!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
-            resultSets[key] = "$csvHeader\n$csv".trim()
+            resultSets[key] = generateCsvOutput(inputs, results)
         }
         val promptInfo: AiPromptInfo
         if (summarizeResults.value) {
@@ -209,6 +216,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             AiExecInfo(),
             AiOutputInfo.output(output)
         )
+    }
+
+    /** Generate CSV output (first input object only. */
+    private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiPromptTraceSupport<String>>): String {
+        val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
+        val csv = results.joinToString("\n") { "${it.prompt!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
+        return "$csvHeader\n$csv".trim()
     }
 
     companion object {

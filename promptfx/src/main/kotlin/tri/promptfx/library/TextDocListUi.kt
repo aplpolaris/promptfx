@@ -1,5 +1,6 @@
 package tri.promptfx.library
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
@@ -13,6 +14,7 @@ import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.DocumentListView.Companion.icon
 import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
+import tri.util.ui.graphic
 
 /** View list of documents with controls. */
 class TextDocListUi : Fragment() {
@@ -33,14 +35,20 @@ class TextDocListUi : Fragment() {
             vgrow = Priority.ALWAYS
             bindSelectionBidirectional(docSelection)
             cellFormat { doc ->
-                val browsable = doc.browsable()!!
+                val browsable = doc.browsable()
                 graphic = hbox(5, Pos.CENTER_LEFT) {
-                    hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
-                        val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
-                        if (thumb != null) {
-                            tooltip { graphic = ImageView(thumb) }
+                    if (browsable != null) {
+                        hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
+                            val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
+                            if (thumb != null) {
+                                tooltip { graphic = ImageView(thumb) }
+                            }
+                            action { DocumentOpenInViewer(browsable, hostServices).open() }
                         }
-                        action { DocumentOpenInViewer(browsable, hostServices).open() }
+                    } else {
+                        text(doc.metadata.id.substringAfterLast("/")) {
+                            graphic = FontAwesomeIcon.FILE_TEXT_ALT.graphic
+                        }
                     }
                     text(model.savedStatusProperty(doc)) {
                         style = "-fx-font-style: italic; -fx-text-fill: light-gray"

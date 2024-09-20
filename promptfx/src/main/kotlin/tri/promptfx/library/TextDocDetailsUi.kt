@@ -34,11 +34,9 @@ class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fra
     override val root = vbox(10) {
         hgrow = Priority.ALWAYS
         bindChildren(selectedItems) { doc ->
-            val thumb =
-                DocumentUtils.documentThumbnail(
-                    doc.browsable()!!,
-                    DocumentListView.DOC_THUMBNAIL_SIZE
-                )
+            val thumb = doc.browsable()?.let {
+                DocumentUtils.documentThumbnail(it, DocumentListView.DOC_THUMBNAIL_SIZE)
+            }
             hbox(10) {
                 if (thumb != null) {
                     imageview(thumb) {

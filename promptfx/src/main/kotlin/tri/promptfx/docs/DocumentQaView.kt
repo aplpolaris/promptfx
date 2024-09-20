@@ -215,7 +215,7 @@ internal fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<Tex
 /** Wrap [EmbeddingMatch] as a view model. */
 internal fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
     override var score: Float? = this@asTextChunkViewModel.queryScore
-    override val embedding = chunkEmbedding
+    override var embedding: List<Double>? = chunkEmbedding
     override val embeddingsAvailable = listOf(embeddingModel)
     override val browsable = document.browsable()
     override val text = chunkText

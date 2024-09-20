@@ -134,6 +134,7 @@ class TextChunkerWizardSelectData: View("Select Source") {
                     prefColumnCount = 80
                     prefRowCount = 10
                     promptText = "Enter or paste text to chunk here..."
+                    vgrow = Priority.ALWAYS
                 }
                 vgrow = Priority.ALWAYS
             }

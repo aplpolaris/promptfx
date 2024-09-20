@@ -5,15 +5,14 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.ToggleButton
 import kotlinx.coroutines.runBlocking
-import tornadofx.Component
-import tornadofx.ScopedInstance
-import tornadofx.onChange
+import tornadofx.*
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.prompt.AiPrompt
 import tri.promptfx.tools.PromptScriptView
 import java.util.regex.PatternSyntaxException
+import kotlin.error
 
 /** Component for filtering text chunks. */
 class TextChunkFilterModel : Component(), ScopedInstance {
@@ -84,9 +83,11 @@ class TextChunkFilterModel : Component(), ScopedInstance {
                 }
             }
             TextFilterType.EMBEDDING -> {
-                updateChunkScores(text, chunkList, embeddingService!!)
-                val predicate = predicateFromTopScores(chunkList)
-                filter.set { predicate(it) }
+                updateChunkScores(text, chunkList, embeddingService!!) {
+                    // generate predicate after score calculation, which takes place in background due to API calls
+                    val predicate = predicateFromTopScores(chunkList)
+                    filter.set { predicate(it) }
+                }
             }
             TextFilterType.PROMPT -> {
                 error("Not supported yet")
@@ -103,10 +104,23 @@ class TextChunkFilterModel : Component(), ScopedInstance {
 
 
     /** Updates scores of chunks using an embedding cosine similarity. */
-    private fun updateChunkScores(text: String, chunkList: List<TextChunkViewModel>, model: EmbeddingService) {
-        val vector = runBlocking { model.calculateEmbedding(text) }
-        chunkList.forEach {
-            it.score = cosineSimilarity(vector, it.embedding!!).toFloat()
+    private fun updateChunkScores(text: String, chunkList: List<TextChunkViewModel>, model: EmbeddingService, onComplete: () -> Unit) {
+        var vector: List<Double>?
+        val chunkVectors = mutableMapOf<TextChunkViewModel, Pair<List<Double>?, Float>>()
+        runBlocking {
+            vector = model.calculateEmbedding(text)
+            chunkList.forEach {
+                val embed = it.embedding ?: model.calculateEmbedding(it.text)
+                val score = cosineSimilarity(vector!!, embed).toFloat()
+                chunkVectors[it] = Pair(embed, score)
+            }
+        }
+        runLater {
+            chunkVectors.forEach { (chunk, pair) ->
+                chunk.embedding = pair.first
+                chunk.score = pair.second
+            }
+            onComplete()
         }
     }
 
