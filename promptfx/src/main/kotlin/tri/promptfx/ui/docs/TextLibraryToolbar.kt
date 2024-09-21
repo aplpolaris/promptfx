@@ -12,9 +12,8 @@ import tri.util.ui.graphic
 class TextLibraryToolbar : Fragment() {
 
     private val libraryModel by inject<TextLibraryViewModel>()
-    val separateLibraryLabel: Boolean by param(false)
+    private val separateLibraryLabel: Boolean by param(false)
     val titleText = SimpleStringProperty("Collection")
-    val showButtonText = SimpleBooleanProperty(false)
     private val libraryName = libraryModel.librarySelection.stringBinding {
         it?.library?.metadata?.id ?: "No collection selected"
     }
@@ -29,12 +28,12 @@ class TextLibraryToolbar : Fragment() {
                 }
             }
             // open wizard to create a new TextLibrary
-            button(textIf("Create...", showButtonText), FontAwesomeIcon.PLUS_CIRCLE.graphic) {
+            button("", FontAwesomeIcon.PLUS_CIRCLE.graphic) {
                 tooltip("Create a new text collection.")
                 action { createLibraryWizard(libraryModel, replace = true, selectAllDocs = true) }
             }
             // load a TextLibrary file
-            button(textIf("Load...", showButtonText), FontAwesomeIcon.FOLDER_OPEN.graphic) {
+            button("", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                 tooltip("Load a text collection from a JSON file.")
                 action { loadLibrary(libraryModel, replace = true, selectAllDocs = true) }
             }
@@ -53,7 +52,5 @@ class TextLibraryToolbar : Fragment() {
             }
         }
     }
-
-    private fun textIf(text: String, show: SimpleBooleanProperty) = Bindings.`when`(show).then(text).otherwise("")
 
 }

@@ -28,7 +28,6 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.promptfx.*
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.tools.TextChunkerWizard
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
 

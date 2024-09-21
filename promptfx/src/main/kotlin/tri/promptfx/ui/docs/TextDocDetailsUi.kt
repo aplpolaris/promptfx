@@ -56,16 +56,18 @@ class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fra
                             "Date",
                             doc.metadata.dateTime?.toString() ?: doc.metadata.date?.toString()
                         )
-                        field("Path") {
-                            hyperlink(doc.metadata.path.toString()) {
-                                action {
-                                    DocumentOpenInViewer(
-                                        doc.browsable()!!,
-                                        hostServices
-                                    ).open()
+                        doc.metadata.path?.let {
+                            field("Path") {
+                                hyperlink(it.toString()) {
+                                    action {
+                                        DocumentOpenInViewer(
+                                            doc.browsable()!!,
+                                            hostServices
+                                        ).open()
+                                    }
                                 }
+                                it.toString()
                             }
-                            doc.metadata.path?.toString()
                         }
                         fieldifnotblank("Relative Path", doc.metadata.relativePath)
                         doc.metadata.properties.forEach { (key, value) ->

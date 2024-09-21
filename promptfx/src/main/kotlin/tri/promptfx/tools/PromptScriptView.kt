@@ -78,7 +78,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         input {
             add(find<TextLibraryToolbar>(viewScope).apply {
                 titleText.set("Input")
-                showButtonText.set(false)
             })
             promptUi = editablepromptui(
                 promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
@@ -149,7 +148,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             return task("") { "(no input provided)" }.planner
         val docInputs = libraryModel.docSelection.map { doc ->
             val docChunks = doc.chunks.map { it.text(doc.all) }.toSet()
-            ChunksWithHeader(doc.dataHeader, doc.metadata.title, inputs.filter { it.text in docChunks })
+            ChunksWithHeader(doc.metadata.title, doc.dataHeader, inputs.filter { it.text in docChunks })
         }
         runLater { promptTraces.setAll() }
         val tasks = promptBatch(inputs.map { it.text }).tasks()

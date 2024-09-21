@@ -21,8 +21,8 @@ package tri.promptfx.docs
 
 import javafx.geometry.Insets
 import tornadofx.*
-import tri.promptfx.tools.WebScrapeFragment
-import tri.promptfx.tools.WebScrapeViewModel
+import tri.promptfx.ui.docs.WebScrapeFragment
+import tri.promptfx.ui.docs.WebScrapeViewModel
 
 /** Dialog for choosing web scraper settings. */
 class TextCrawlDialog: Fragment("Web Crawler Settings") {
