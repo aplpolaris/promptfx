@@ -43,7 +43,7 @@ class TextChunkDetailsUi : Fragment() {
                                     listModel.applyEmbeddingFilter(text)
                                 }
                             }
-                            buildsendresultmenu(text, workspace as PromptFxWorkspace)
+                            buildsendresultmenu("chunk text", text, workspace as PromptFxWorkspace)
                         }
                     }
                     fieldifnotblank("Score", chunk.score?.toString())

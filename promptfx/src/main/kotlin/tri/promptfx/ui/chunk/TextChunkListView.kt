@@ -96,7 +96,7 @@ class TextChunkListView(_label: String? = "Text Chunks"): Fragment() {
                         model.applyEmbeddingFilter(selectionString)
                     }
                 }
-                buildsendresultmenu(selectionString, workspace as PromptFxWorkspace)
+                buildsendresultmenu("chunk text", selectionString, workspace as PromptFxWorkspace)
                 separator()
                 item("Remove selected chunk(s) from document(s)") {
                     enableWhen(Bindings.isNotEmpty(chunkSelection))

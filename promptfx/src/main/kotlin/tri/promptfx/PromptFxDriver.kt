@@ -170,24 +170,24 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTraceSupport<*>>, workspace: PromptFxWorkspace) {
     val outputs = trace.value?.output?.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
     if (outputs.size == 1) {
-        buildsendresultmenu(outputs.first(), workspace)
+        buildsendresultmenu("result", outputs.first(), workspace)
     } else {
         outputs.forEach {
             menu(it.take(50)) {
-                buildsendresultmenu(it, workspace)
+                buildsendresultmenu("result", it, workspace)
             }
         }
     }
 }
 
 /** Context menu for sending a string result to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
-    buildsendresultmenu(SimpleStringProperty(output), workspace)
+fun ContextMenu.buildsendresultmenu(itemName: String, output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(itemName, SimpleStringProperty(output), workspace)
 }
 
 /** Context menu for sending result in a string property to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
-    menu("Send result to view") {
+fun ContextMenu.buildsendresultmenu(itemName: String, value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send $itemName to view") {
         graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)
@@ -195,13 +195,13 @@ fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: Pro
 }
 
 /** Context menu for sending a string result to a view that accepts a text input. */
-fun Menu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
-    buildsendresultmenu(SimpleStringProperty(output), workspace)
+fun Menu.buildsendresultmenu(itemName: String, output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(itemName, SimpleStringProperty(output), workspace)
 }
 
 /** Context menu for sending result in a string property to a view that accepts a text input. */
-fun Menu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
-    menu("Send result to view") {
+fun Menu.buildsendresultmenu(itemName: String, value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send $itemName to view") {
         graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)

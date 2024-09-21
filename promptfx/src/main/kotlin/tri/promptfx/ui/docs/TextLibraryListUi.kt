@@ -49,17 +49,17 @@ class TextLibraryListUi : Fragment() {
             text("Collections")
             spacer()
             // generate chunks
-            button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+            button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS_CIRCLE)) {
                 tooltip("Create a new text collection.")
                 action { createLibraryWizard(libraryModel, replace = false, selectAllDocs = false) }
             }
             // load a TextLibrary file
-            button("Load...", FontAwesomeIconView(FontAwesomeIcon.UPLOAD)) {
-                tooltip("Load a text collection from a JSON file.")
+            button("Open...", FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN)) {
+                tooltip("Open an existing text collection from a JSON file.")
                 action { loadLibrary(libraryModel, replace = false, selectAllDocs = false) }
             }
             // save a TextLibrary file
-            button("Save...", graphic = FontAwesomeIcon.DOWNLOAD.graphic) {
+            button("Save...", graphic = FontAwesomeIcon.SAVE.graphic) {
                 tooltip("Save any modified collections to a JSON file.")
                 enableWhen(librarySelection.isNotNull)
                 action { saveLibrary() }
