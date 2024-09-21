@@ -19,6 +19,7 @@
  */
 package tri.promptfx
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.application.Platform
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
@@ -37,6 +38,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedText
 import tri.promptfx.library.TextLibraryInfo
+import tri.util.ui.graphic
 
 /** General-purpose capability for sending inputs to PromptFx views and getting a result. */
 object PromptFxDriver {
@@ -186,6 +188,7 @@ fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspac
 /** Context menu for sending result in a string property to a view that accepts a text input. */
 fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
     menu("Send result to view") {
+        graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)
     }
@@ -199,6 +202,7 @@ fun Menu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
 /** Context menu for sending result in a string property to a view that accepts a text input. */
 fun Menu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
     menu("Send result to view") {
+        graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)
     }

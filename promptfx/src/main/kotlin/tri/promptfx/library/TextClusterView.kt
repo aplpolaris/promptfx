@@ -7,6 +7,9 @@ import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.docs.TextDocListUi
+import tri.promptfx.ui.docs.TextLibraryListUi
+import tri.promptfx.ui.docs.TextLibraryViewModel
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 

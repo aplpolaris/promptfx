@@ -24,8 +24,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aggregatetrace
+import tri.ai.pips.*
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
@@ -33,8 +32,8 @@ import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.library.TextLibraryToolbar
-import tri.promptfx.library.TextLibraryViewModel
+import tri.promptfx.ui.docs.TextLibraryToolbar
+import tri.promptfx.ui.docs.TextLibraryViewModel
 import tri.promptfx.ui.*
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkViewModel
@@ -46,7 +45,7 @@ class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools",
 
 /** A view designed to help you test prompt templates. */
 class PromptScriptView : AiPlanTaskView("Prompt Scripting",
-    "Configure a prompt to run on a series of inputs or a CSV file."
+    "Configure a prompt to run on selected input (text collection, CSV file, etc.), and a second prompt to aggregate the results.",
 ), TextLibraryReceiver {
 
     private val viewScope = Scope(workspace)
@@ -77,14 +76,14 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     // input views
     init {
         input {
-            promptUi = editablepromptui(
-                promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
-                instruction = "Prompt to Execute:"
-            )
             add(find<TextLibraryToolbar>(viewScope).apply {
                 titleText.set("Input")
                 showButtonText.set(false)
             })
+            promptUi = editablepromptui(
+                promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
+                instruction = "Prompt to Execute:"
+            )
             add(find<TextChunkListView>(viewScope))
         }
     }
@@ -99,7 +98,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             }
         }
         addDefaultTextCompletionParameters(common)
-        parameters("Output Options") {
+        parameters("Aggregation Types") {
             tooltip("These settings control how the results are displayed.")
             field("Display") {
                 checkbox("Unique Results", showUniqueResults)
@@ -114,7 +113,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 checkbox("As CSV", outputCsv)
             }
         }
-        parameters("Result Summarization Template") {
+        parameters("LLM Aggregation Options") {
             enableWhen(summarizeResults)
             tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
             promptfield("Text Joiner", joinerPrompt, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), workspace)
@@ -128,8 +127,14 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         output {
             splitpane(Orientation.VERTICAL) {
                 add(PromptTraceCardList(promptTraces))
-                add(resultArea.root)
-                resultArea.root.vgrow = Priority.ALWAYS
+                vbox {
+                    toolbar {
+                        text("Aggregated Result")
+                    }
+                    add(resultArea.root)
+                    resultArea.root.vgrow = Priority.ALWAYS
+                    vgrow = Priority.ALWAYS
+                }
                 vgrow = Priority.ALWAYS
             }
         }
@@ -140,6 +145,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
 
     override fun plan(): AiPlanner {
         val inputs = listModel.filteredChunkList.take(chunkLimit.value)
+        if (inputs.isEmpty())
+            return task("") { "(no input provided)" }.planner
         val docInputs = libraryModel.docSelection.map { doc ->
             val docChunks = doc.chunks.map { it.text(doc.all) }.toSet()
             ChunksWithHeader(doc.dataHeader, doc.metadata.title, inputs.filter { it.text in docChunks })

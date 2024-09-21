@@ -35,7 +35,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
-import tri.promptfx.library.TextLibraryViewModel
+import tri.promptfx.ui.docs.TextLibraryViewModel
 import tri.promptfx.promptFxFileChooser
 import tri.util.ui.bindSelectionBidirectional
 

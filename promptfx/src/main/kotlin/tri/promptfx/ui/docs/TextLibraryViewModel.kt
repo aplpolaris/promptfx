@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
@@ -41,6 +41,7 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info

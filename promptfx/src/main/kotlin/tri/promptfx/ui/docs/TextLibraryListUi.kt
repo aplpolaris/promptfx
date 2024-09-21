@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -27,6 +27,7 @@ import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.promptfx.*
+import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.TextChunkerWizard
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic

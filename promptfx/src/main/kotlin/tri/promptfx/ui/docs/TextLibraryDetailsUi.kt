@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import tornadofx.*
 

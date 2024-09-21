@@ -32,6 +32,7 @@ import tri.promptfx.PromptFxConfig
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.ui.chunk.TextChunkDetailsUi
 import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.docs.*
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File

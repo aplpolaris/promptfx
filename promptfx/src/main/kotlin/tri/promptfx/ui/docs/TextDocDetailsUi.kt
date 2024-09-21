@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import javafx.collections.ObservableList
 import javafx.scene.layout.Priority
@@ -25,6 +25,7 @@ import tornadofx.*
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.DocumentOpenInViewer
+import tri.promptfx.library.fieldifnotblank
 import tri.promptfx.ui.DocumentListView
 import tri.util.ui.DocumentUtils
 
