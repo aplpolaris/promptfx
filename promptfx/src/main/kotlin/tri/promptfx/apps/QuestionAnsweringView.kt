@@ -21,7 +21,7 @@ package tri.promptfx.apps
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.openai.instructTextPlan
+import tri.ai.pips.instructTextPlan
 import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.PromptSelectionModel

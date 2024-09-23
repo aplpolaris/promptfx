@@ -23,7 +23,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
 import tornadofx.*
-import tri.ai.openai.promptPlan
+import tri.ai.pips.promptPlan
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl

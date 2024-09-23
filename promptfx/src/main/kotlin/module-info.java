@@ -80,6 +80,10 @@ module tri.promptfx {
     requires com.github.mustachejava;
     requires org.apache.commons.logging;
 
+    // clustering tools
+    requires com.clust4j;
+    requires commons.math3;
+
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps to com.fasterxml.jackson.databind;

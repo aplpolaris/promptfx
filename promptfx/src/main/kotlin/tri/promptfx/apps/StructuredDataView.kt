@@ -22,7 +22,7 @@ package tri.promptfx.apps
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.openai.templatePlan
+import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs

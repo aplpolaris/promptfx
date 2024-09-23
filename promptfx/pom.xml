@@ -93,6 +93,24 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <!-- TODO - this dependency needs to be pushed to maven central -->
+        <dependency>
+            <groupId>clust4j</groupId>
+            <artifactId>clust4j</artifactId>
+            <version>2024.09.13</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>com.googlecode.blaisemath.tornado</groupId>
             <artifactId>tornadofx-fx21k18</artifactId>
             <version>${tornadofx.version}</version>

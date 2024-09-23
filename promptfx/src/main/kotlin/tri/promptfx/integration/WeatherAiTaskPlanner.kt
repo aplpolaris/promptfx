@@ -20,6 +20,8 @@
 package tri.promptfx.integration
 
 import tri.ai.core.TextCompletion
+import tri.ai.core.instructTask
+import tri.ai.core.jsonPromptTask
 import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.*

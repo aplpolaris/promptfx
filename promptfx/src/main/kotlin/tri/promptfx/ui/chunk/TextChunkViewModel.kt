@@ -21,11 +21,13 @@ package tri.promptfx.ui.chunk
 
 import javafx.collections.ObservableList
 import tornadofx.*
+import tri.ai.embedding.EmbeddingPrecision
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 
 /** View model for document chunks. */
 interface TextChunkViewModel {
@@ -52,12 +54,17 @@ fun TextChunk.asTextChunkViewModel(parentDoc: TextDoc?, embeddingModelId: String
     TextChunkViewModelImpl(parentDoc, this, embeddingModelId, score)
 
 /** Wrap [TextChunk] as a view model. */
-class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddingModelId: String?, override var score: Float? = null) :
+class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, val embeddingModelId: String?, override var score: Float? = null) :
     TextChunkViewModel {
     constructor(text: String) : this(null, TextChunkRaw(text), null)
 
     override val browsable = parentDoc?.browsable()
-    override var embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
-    override val embeddingsAvailable = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
+    override var embedding: List<Double>?
+        get() = chunk.getEmbeddingInfo(embeddingModelId ?: "")
+        set(value) {
+            if (value != null) chunk.putEmbeddingInfo(embeddingModelId ?: "", value, EmbeddingPrecision.FULL)
+        }
+    override val embeddingsAvailable
+        get() = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val text = chunk.text(parentDoc?.all)
 }

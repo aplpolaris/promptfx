@@ -22,7 +22,7 @@ package tri.promptfx.tools
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.openai.promptTask
+import tri.ai.core.promptTask
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
