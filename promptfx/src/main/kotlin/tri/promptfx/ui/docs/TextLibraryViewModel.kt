@@ -272,7 +272,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //region LONG-RUNNING TASKS
 
-    private fun calculateEmbeddingsPlan(): AiPlanner {
+    fun calculateEmbeddingsPlan(): AiPlanner {
         val service = embeddingService.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->

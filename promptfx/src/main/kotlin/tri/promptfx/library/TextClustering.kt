@@ -17,6 +17,7 @@ object TextClustering {
      */
     suspend fun ClusterService.generateClusterHierarchy(
         input: List<TextChunkViewModel>,
+        summaryType: ClusterSummaryType,
         itemType: String,
         categories: List<String>,
         sampleTheme: String,
@@ -24,18 +25,24 @@ object TextClustering {
         embeddingService: EmbeddingService,
         minForRegroup: Int = 20,
         attempts: Int = 3,
-        progressPercent: (Double) -> Unit
+        progress: (String, Double) -> Unit
     ): List<EmbeddingCluster> {
         var i = 1
         var clusters = input.map {
             EmbeddingCluster("Chunk ${i++}", ClusterDescription(it.text), listOf(), it, it.embedding!!)
         }
+        var n = 1
         do {
-            clusters = generateClusters(clusters, itemType, categories, sampleTheme, completionEngine, attempts, progressPercent)
-            clusters.forEach {
-                it.embedding = embeddingService.calculateEmbedding(it.description.theme!!)
+            val prompt = ClusteringPrompt(summaryType, itemType, categories, sampleTheme)
+            clusters = generateClusters(clusters, prompt, completionEngine, attempts) { msg, pct ->
+                progress("Level $n", pct)
             }
-        } while (clusters.size > minForRegroup)
+            progress("Level $n Cluster Embedding Calculations", 0.0)
+            clusters.forEach {
+                it.embedding = it.description.theme?.let { embeddingService.calculateEmbedding(it) }
+            }
+            n++
+        } while (clusters.all { it.description.theme != null } && clusters.size > minForRegroup)
         return clusters
     }
 
@@ -46,23 +53,26 @@ object TextClustering {
      */
     suspend fun ClusterService.generateClusters(
         input: List<EmbeddingCluster>,
-        itemType: String,
-        categories: List<String>,
-        sampleTheme: String,
+        prompt: ClusteringPrompt,
         completionEngine: TextCompletion,
         attempts: Int,
-        progressPercent: (Double) -> Unit
+        progress: (String, Double) -> Unit
     ): List<EmbeddingCluster> {
         var pct = 0.0
+        progress("Computing clusters", pct)
         val clustered = cluster(input) { it.embedding!! }
+        progress("Computing cluster summaries", pct)
         val clusterCount = clustered.size
         val result = clustered.mapIndexed { i, matches ->
-            val description = generateClusterSummary(matches, itemType, categories, sampleTheme, completionEngine, attempts)
+            val description = if (prompt.summaryType == ClusterSummaryType.NONE)
+                ClusterDescription()
+            else
+                generateClusterSummary(matches, prompt, completionEngine, attempts)
             pct += 1.0/clusterCount
-            progressPercent(pct)
+            progress("Computing cluster summaries", pct)
             EmbeddingCluster("Cluster ${i+1}", description, matches, null, null)
         }
-        progressPercent(1.0)
+        progress("Computing clusters completed", 1.0)
         return result
     }
 
@@ -73,21 +83,19 @@ object TextClustering {
      */
     suspend fun generateClusterSummary(
         cluster: List<EmbeddingCluster>,
-        itemType: String,
-        categories: List<String>,
-        sampleTheme: String,
+        prompt: ClusteringPrompt,
         completionEngine: TextCompletion,
         attempts: Int
     ): ClusterDescription {
         val inputText = cluster.joinToString("\n") { it.description.theme!! }
         val responses = (1..attempts).map {
             completionEngine.templateTask(
-                "generate-categories-and-theme",
+                prompt.summaryType.promptId,
                 INPUT to inputText,
-                "item_type" to itemType,
-                "categories" to categories.joinToString("\n") { " - $it" },
-                "sample_category" to categories.first(),
-                "sample_theme" to sampleTheme,
+                "item_type" to prompt.itemType,
+                "categories" to prompt.categories.joinToString("\n") { " - $it" },
+                "sample_category" to prompt.categories.first(),
+                "sample_theme" to prompt.sampleTheme,
                 tokenLimit = 2000,
                 temp = 0.5
             )
@@ -114,6 +122,20 @@ object TextClustering {
         trim().removePrefix("[").removeSuffix("]").trim()
             .split(",", "/").map { it.trim() }
 
+}
+
+class ClusteringPrompt(
+    val summaryType: ClusterSummaryType,
+    val itemType: String,
+    val categories: List<String>,
+    val sampleTheme: String,
+)
+
+enum class ClusterSummaryType(val promptId: String) {
+    CATEGORIES_AND_THEME("generate-categories-and-theme"),
+    THEME_ONLY("generate-categories-theme-only"),
+    CATEGORIES_ONLY("generate-categories"),
+    NONE("")
 }
 
 /** Consolidates information about a cluster. */

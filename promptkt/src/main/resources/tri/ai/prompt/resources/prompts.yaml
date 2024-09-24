@@ -56,7 +56,7 @@ generate-categories: |
   ```
 
 generate-categories-and-theme: |
-  Generate a category (or categories) and theme for the following list of {{item_type}}.
+  Generate a {{#categories}}category (or categories) {{/categories}}and summarizing theme for the following list of {{item_type}}.
 
   Categories should be one of the following:
   {{{categories}}}
@@ -66,6 +66,19 @@ generate-categories-and-theme: |
   Sample output:
   ```
   Category: [ {{sample_category}} ]
+  Theme: {{sample_theme}}
+  ```
+  
+  {{item_type}}:
+  ```
+  {{{input}}}
+  ```
+
+generate-categories-theme-only: |
+  Generate a summarizing theme for the following list of {{item_type}}.
+  
+  Sample output:
+  ```
   Theme: {{sample_theme}}
   ```
   
