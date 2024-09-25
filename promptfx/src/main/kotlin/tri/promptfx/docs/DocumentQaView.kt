@@ -79,8 +79,6 @@ class DocumentQaView: AiPlanTaskView(
     val snippets
         get() = planner.snippets
 
-    private val resultBox: FormattedPromptResultArea
-
     init {
         preferences(PREF_APP) {
             documentFolder.value = File(get(PREF_DOCS_FOLDER, "docs/"))
@@ -128,7 +126,7 @@ class DocumentQaView: AiPlanTaskView(
             promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
-        resultBox = FormattedPromptResultArea()
+        val resultBox = FormattedPromptResultArea()
         outputPane.clear()
         outputPane.add(resultBox)
 

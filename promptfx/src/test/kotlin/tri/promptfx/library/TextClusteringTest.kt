@@ -29,12 +29,13 @@ class TextClusteringTest {
         val clusters = runBlocking {
             clusterService.generateClusterHierarchy(
                 input,
+                ClusterSummaryType.CATEGORIES_AND_THEME,
                 itemType = "Animals",
                 categories = listOf("Land", "Sea", "Air", "Other"),
                 sampleTheme = "Animals commonly found in the rainforest and known to climb trees.",
                 textCompletion,
                 embeddingService
-            ) { }
+            ) { _, _ -> }
         }
         println(clusters)
     }
@@ -46,12 +47,15 @@ class TextClusteringTest {
         val clusters = runBlocking {
             clusterService.generateClusters(
                 input.map { EmbeddingCluster(it) },
-                itemType = "Animals",
-                categories = listOf("Land", "Sea", "Air", "Other"),
-                sampleTheme = "Animals commonly found in the rainforest and known to climb trees.",
+                ClusteringPrompt(
+                    ClusterSummaryType.CATEGORIES_AND_THEME,
+                    itemType = "Animals",
+                    categories = listOf("Land", "Sea", "Air", "Other"),
+                    sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
+                ),
                 textCompletion,
                 attempts = 2
-            ) {
+            ) { _, it ->
                 info<TextClustering>("Progress: ${"%.1f".format(it*100)}%")
             }
         }
@@ -68,9 +72,12 @@ class TextClusteringTest {
         val description = runBlocking {
             generateClusterSummary(
                 input,
-                itemType = "Animals",
-                categories = listOf("Land", "Sea", "Air", "Other"),
-                sampleTheme = "Animals commonly found in the rainforest and known to climb trees.",
+                ClusteringPrompt(
+                    ClusterSummaryType.CATEGORIES_AND_THEME,
+                    itemType = "Animals",
+                    categories = listOf("Land", "Sea", "Air", "Other"),
+                    sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
+                ),
                 textCompletion,
                 attempts = 2
             )

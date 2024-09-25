@@ -222,7 +222,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     /** Calculates embeddings for all selected collections, returning associated task. */
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
-            AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), progress)
+            AiPipelineExecutor.execute(calculateEmbeddings().plan, progress)
         }
     }
 
@@ -272,12 +272,14 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //region LONG-RUNNING TASKS
 
-    fun calculateEmbeddingsPlan(): AiPlanner {
+    /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
+    fun calculateEmbeddings(): AiTaskList<String> {
         val service = embeddingService.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {
-                service.addEmbeddingInfo(doc)
+                if (doc.chunks.any { it.getEmbeddingInfo(service.modelId) == null })
+                    service.addEmbeddingInfo(doc)
                 var count = 0
                 doc.chunks.forEach {
                     val embed = it.getEmbeddingInfo(service.modelId)
@@ -290,7 +292,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             }
         }.aggregate().task("summarize-results") {
             "Calculated ${result.size} total embeddings."
-        }.planner
+        }
     }
 
     //endregion

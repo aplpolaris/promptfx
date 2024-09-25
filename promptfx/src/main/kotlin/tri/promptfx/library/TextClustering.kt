@@ -43,7 +43,19 @@ object TextClustering {
             }
             n++
         } while (clusters.all { it.description.theme != null } && clusters.size > minForRegroup)
+
+        // add prefixes to hierarchy of clusters
+        clusters.forEachIndexed { i, it -> addHierarchyPrefixes(it, i+1) }
+
         return clusters
+    }
+
+    private fun addHierarchyPrefixes(cluster: EmbeddingCluster, n: Int, prefix: String = "") {
+        val subprefix = if (prefix.isBlank()) "$n." else "$prefix.$n."
+        cluster.items.forEachIndexed { i, it ->
+            addHierarchyPrefixes(it, i+1, subprefix)
+        }
+        cluster.name = "Cluster $prefix${cluster.name}"
     }
 
     /**
@@ -70,7 +82,7 @@ object TextClustering {
                 generateClusterSummary(matches, prompt, completionEngine, attempts)
             pct += 1.0/clusterCount
             progress("Computing cluster summaries", pct)
-            EmbeddingCluster("Cluster ${i+1}", description, matches, null, null)
+            EmbeddingCluster("${i+1}", description, matches, null, null)
         }
         progress("Computing clusters completed", 1.0)
         return result
@@ -148,7 +160,7 @@ data class EmbeddingCluster(
 ) {
     constructor(it: TextChunkViewModel) : this("", ClusterDescription(it.text), listOf(), it, it.embedding!!)
 
-    override fun toString() = "$name ${description.categories} | Theme: ${description.theme}\n  Matches: ${items.map { it.name.ifBlank { it.description.theme } }}"
+    override fun toString() = "$name ${description.categories} | Theme: ${description.theme}\n  Items: ${items.map { it.name.ifBlank { it.description.theme } }}"
 }
 
 /** Description of a cluster. */
