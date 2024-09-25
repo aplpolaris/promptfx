@@ -51,17 +51,17 @@ object TextClustering {
     }
 
     private fun addHierarchyPrefixes(cluster: EmbeddingCluster, n: Int, prefix: String = "") {
-        val subprefix = if (prefix.isBlank()) "$n." else "$prefix.$n."
+        val subprefix = if (prefix.isBlank()) "$n" else "$prefix.$n"
         cluster.items.forEachIndexed { i, it ->
-            addHierarchyPrefixes(it, i+1, subprefix)
+            addHierarchyPrefixes(it, i+1, "$subprefix")
         }
-        cluster.name = "Cluster $prefix${cluster.name}"
+        cluster.name = "Cluster $subprefix"
     }
 
     /**
      * Generate cluster for given list of chunks.
      * Uses the [ClusterService] to collect chunks into clusters, and then uses [TextCompletion] to provide a theme and categories for each cluster.
-     * The [progressPercent] callback is called with a value between 0.0 and 1.0 to indicate progress.
+     * The [progress] callback is called with a value between 0.0 and 1.0 to indicate progress.
      */
     suspend fun ClusterService.generateClusters(
         input: List<EmbeddingCluster>,

@@ -8,13 +8,12 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.openai.jsonMapper
-import tri.ai.pips.*
+import tri.ai.pips.AiTask
+import tri.ai.pips.aitasklist
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
@@ -38,7 +37,7 @@ import tri.util.ui.sliderwitheditablelabel
 class TextClusterPlugin : NavigableWorkspaceViewImpl<TextClusterView>("Documents", "Text Clustering", WorkspaceViewAffordance.COLLECTION_ONLY, TextClusterView::class)
 
 /** View designed to create clusters of selected text chunks. */
-class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and text."), TextLibraryReceiver {
+class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and text, optionally adding descriptions and categories to clusters."), TextLibraryReceiver {
 
     val viewScope = Scope(workspace)
     val model by inject<TextLibraryViewModel>(viewScope)
@@ -70,7 +69,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
         output {
             vbox {
                 toolbar {
-                    button("Export") {
+                    button("Export...") {
                         enableWhen(hasResultClusters)
                         action { exportClusters() }
                     }
@@ -158,6 +157,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
             AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.output(hierarchy))
         }
         .aitask("formatting-results") {
+            runLater { resultClusters.setAll(it) }
             val ft = FormattedText(it.map { printCluster(it, "\n") }.flatten())
             FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.output("")), listOf(ft))
         }.planner
@@ -173,7 +173,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
             cluster.items.forEach {
                 result.add(FormattedTextNode(prefix + "  - " + it.baseChunk!!.text.trim(), style = CLUSTER_CHUNK_STYLE))
             }
-            result.add(FormattedTextNode("\n"))
+            result.add(FormattedTextNode("\n", style = CLUSTER_CHUNK_STYLE))
         } else if (cluster.items.any { it.baseChunk != null }) {
             throw IllegalStateException("Cluster contains both base chunks and sub-clusters")
         } else {
