@@ -21,8 +21,12 @@ package tri.promptfx.library
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Orientation
+import javafx.geometry.Pos
+import javafx.scene.control.ToggleGroup
+import javafx.scene.control.TreeItem
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -51,6 +55,7 @@ import tri.util.ml.AffinityClusterService
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.sliderwitheditablelabel
+import javax.swing.ButtonGroup
 
 /** Plugin for the [TextClusterView]. */
 class TextClusterPlugin : NavigableWorkspaceViewImpl<TextClusterView>("Documents", "Text Clustering", WorkspaceViewAffordance.COLLECTION_ONLY, TextClusterView::class)
@@ -69,9 +74,20 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
     private val inputType = SimpleStringProperty("text snippets")
     private val minForRegroup = SimpleIntegerProperty(20)
     private val attempts = SimpleIntegerProperty(1)
+    private val viewPlain = SimpleBooleanProperty(true)
+    private val viewList = SimpleBooleanProperty(false)
+    private val viewTree = SimpleBooleanProperty(false)
 
     private val resultClusters = observableListOf<EmbeddingCluster>()
     private val hasResultClusters = resultClusters.sizeProperty.greaterThan(0)
+    private val resultTreeItem = SimpleObjectProperty<TreeItem<EmbeddingCluster>>()
+
+    init {
+        resultClusters.onChange {
+            val rootCluster = EmbeddingCluster("Clusters", ClusterDescription(), it.list.toList(), null, null)
+            resultTreeItem.set(rootCluster.asTree())
+        }
+    }
 
     init {
         input {
@@ -86,20 +102,108 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
         val resultBox = FormattedPromptResultArea()
         outputPane.clear()
         output {
-            vbox {
-                toolbar {
-                    button("Export...") {
-                        enableWhen(hasResultClusters)
-                        action { exportClusters() }
+            borderpane {
+                vgrow = Priority.ALWAYS
+                top {
+                    toolbar {
+                        button("Export...") {
+                            enableWhen(hasResultClusters)
+                            action { exportClusters() }
+                        }
+                        separator()
+                        val bg = ToggleGroup()
+                        label("View as")
+                        radiobutton("Text", bg) {
+                            selectedProperty().bindBidirectional(viewPlain)
+                        }
+                        radiobutton("List", bg) {
+                            selectedProperty().bindBidirectional(viewList)
+                        }
+                        radiobutton("Tree", bg) {
+                            selectedProperty().bindBidirectional(viewTree)
+                        }
                     }
                 }
-                add(resultBox)
+                center {
+                    vbox {
+                        vgrow = Priority.ALWAYS
+                        add(resultBox)
+                        resultBox.root.visibleWhen(viewPlain)
+                        resultBox.root.managedWhen(viewPlain)
+                        listview(resultClusters) {
+                            vgrow = Priority.ALWAYS
+                            visibleWhen(viewList)
+                            managedWhen(viewList)
+                            cellFormat {
+                                graphic = vbox {
+                                    hbox(5.0, Pos.CENTER_LEFT) {
+                                        text(it.name) {
+                                            style = CLUSTER_NAME_STYLE
+                                        }
+                                        if (it.items.isNotEmpty()) {
+                                            text("- ${it.items.size} items") {
+                                                style = CLUSTER_CATEGORIES_STYLE
+                                            }
+                                        }
+                                        text(it.description.categories?.joinToString(",") ?: "") {
+                                            style = CLUSTER_CATEGORIES_STYLE
+                                        }
+                                    }
+                                    hbox(5.0, Pos.CENTER_LEFT) {
+                                        text(it.description.theme) {
+                                            style = CLUSTER_THEME_STYLE
+                                            wrappingWidthProperty().bind(widthProperty().subtract(10))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        treeview(resultTreeItem.value) {
+                            resultTreeItem.onChange { root = it }
+                            vgrow = Priority.ALWAYS
+                            visibleWhen(viewTree)
+                            managedWhen(viewTree)
+                            cellFormat {
+                                graphic = vbox {
+                                    hbox(5.0, Pos.CENTER_LEFT) {
+                                        text(it.name) {
+                                            style = CLUSTER_NAME_STYLE
+                                        }
+                                        text("- ${it.items.size} items") {
+                                            style = CLUSTER_CATEGORIES_STYLE
+                                        }
+                                        text(it.description.categories?.joinToString(",") ?: "") {
+                                            style = CLUSTER_CATEGORIES_STYLE
+                                        }
+                                    }
+                                    hbox(5.0, Pos.CENTER_LEFT) {
+                                        if (it.baseChunk == null) {
+                                            text(it.description.theme) {
+                                                style = CLUSTER_THEME_STYLE
+                                                wrappingWidthProperty().bind(widthProperty().subtract(60))
+                                            }
+                                        } else {
+                                            // limit chunk to first 6 lines and first 500 characters
+                                            val text = it.baseChunk.text.lines().take(6).joinToString("\n").take(500)
+                                            text(text) {
+                                                style = CLUSTER_CHUNK_STYLE
+                                                wrappingWidthProperty().bind(widthProperty().subtract(60))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         onCompleted {
             resultBox.setFinalResult(it.finalResult as FormattedPromptTraceResult)
         }
+    }
 
+    init {
         parameters("Clustering Parameters") {
             field("Max # Chunks to Cluster") {
                 tooltip("Number of text chunks to use for clustering")
@@ -225,6 +329,14 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
         model.loadTextLibrary(library, replace = false, selectAllDocs = true)
+    }
+
+    private fun EmbeddingCluster.asTree(): TreeItem<EmbeddingCluster> {
+        val result = TreeItem(this)
+        items.forEach {
+            result.children.add(it.asTree())
+        }
+        return result
     }
 
     companion object {

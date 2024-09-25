@@ -74,7 +74,10 @@ object TextClustering {
         cluster.items.forEachIndexed { i, it ->
             addHierarchyPrefixes(it, i+1, "$subprefix")
         }
-        cluster.name = "Cluster $subprefix"
+        if (cluster.baseChunk != null)
+            cluster.name = "Chunk $subprefix"
+        else
+            cluster.name = "Cluster $subprefix"
     }
 
     /**
