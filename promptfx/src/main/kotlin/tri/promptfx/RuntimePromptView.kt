@@ -22,7 +22,7 @@ package tri.promptfx
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.openai.templatePlan
+import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
 import tri.promptfx.ui.promptfield
 

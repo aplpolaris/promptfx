@@ -29,6 +29,7 @@ import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
+import tri.promptfx.library.TextClusterPlugin;
 import tri.promptfx.library.TextManagerPlugin;
 import tri.promptfx.tools.*;
 import tri.util.ui.NavigableWorkspaceView;
@@ -79,6 +80,10 @@ module tri.promptfx {
     requires com.github.mustachejava;
     requires org.apache.commons.logging;
 
+    // clustering tools
+    requires commons.math3;
+    requires clust4j;
+
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.apps to com.fasterxml.jackson.databind;
@@ -88,6 +93,7 @@ module tri.promptfx {
     opens tri.promptfx.library to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
+    opens tri.promptfx.ui.docs to com.fasterxml.jackson.databind;
     opens tri.util.ui.starship to com.fasterxml.jackson.databind;
 
     exports tri.promptfx;
@@ -99,6 +105,9 @@ module tri.promptfx {
     exports tri.promptfx.library;
     exports tri.promptfx.tools;
     exports tri.promptfx.ui;
+    exports tri.promptfx.ui.chunk;
+    exports tri.promptfx.ui.docs;
+    exports tri.promptfx.ui.trace;
     exports tri.util.ui;
     exports tri.util.ui.pdf;
     exports tri.util.ui.starship;
@@ -119,6 +128,7 @@ module tri.promptfx {
             DocumentQaPlugin,
             DocumentInsightPlugin,
             TextManagerPlugin,
+            TextClusterPlugin,
             EntityExtractionPlugin,
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,

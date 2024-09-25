@@ -21,6 +21,7 @@ package tri.promptfx.library
 
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
+import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -29,26 +30,34 @@ import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.TextLibraryReceiver
+import tri.promptfx.ui.chunk.TextChunkDetailsUi
+import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.docs.*
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
-/** Plugin for the [TextLibraryView]. */
-class TextManagerPlugin : NavigableWorkspaceViewImpl<TextLibraryView>("Documents", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextLibraryView::class)
+/** Plugin for the [TextManagerView]. */
+class TextManagerPlugin : NavigableWorkspaceViewImpl<TextManagerView>("Documents", "Text Manager", WorkspaceViewAffordance.COLLECTION_ONLY, TextManagerView::class)
 
 /** A view designed to help you manage collections of documents and text. */
-class TextLibraryView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
+class TextManagerView : AiTaskView("Text Manager", "Manage collections of documents and text."), TextLibraryReceiver {
 
-    val model by inject<TextLibraryViewModel>()
+    private val viewScope = Scope(workspace)
+    val model by inject<TextLibraryViewModel>(viewScope)
 
     init {
         runButton.isVisible = false
         runButton.isManaged = false
         hideParameters()
 
-        input(5) {
-            add(TextLibraryCollectionUi())
-            add(TextLibraryFilterableChunkListView())
+        input {
+            splitpane(Orientation.VERTICAL) {
+                vgrow = Priority.ALWAYS
+                add(find<TextLibraryListUi>(viewScope))
+                add(find<TextDocListUi>(viewScope))
+                add(find<TextChunkListView>(viewScope))
+            }
         }
 
         with (outputPane) {
@@ -57,18 +66,18 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
                 squeezebox(multiselect = true) {
                     vgrow = Priority.ALWAYS
                     fold("Details on Selected Collection", expanded = true) {
-                        add(TextLibraryCollectionDetailsUi())
+                        add(find<TextLibraryDetailsUi>(viewScope))
                     }
-                    fold("Details on Selected Document", expanded = true) {
+                    fold("Details on Selected Document(s)", expanded = true) {
                         isFitToWidth = true
-                        add(TextLibraryDocumentDetailsUi())
+                        add(TextDocDetailsUi(model.docSelection))
                     }
                     fold("Images from Document", expanded = false) {
-                        add(TextLibraryDocumentImagesUi())
+                        add(TextDocImageUi(model.docSelectionImages))
                     }
                     fold("Details on Selected Chunk(s)", expanded = false) {
                         vgrow = Priority.ALWAYS
-                        add(TextLibraryChunkDetailsUi())
+                        add(find<TextChunkDetailsUi>(viewScope))
                     }
                 }
             }
@@ -77,11 +86,11 @@ class TextLibraryView : AiTaskView("Text Manager", "Manage collections of docume
 
     init {
         val filesToRestore = find<PromptFxConfig>().libraryFiles()
-        filesToRestore.forEach { model.loadLibraryFrom(it) }
+        filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        model.loadTextLibrary(library)
+        model.loadTextLibrary(library, replace = false, selectAllDocs = false)
     }
 
     override suspend fun processUserInput() = AiPipelineResult.todo()

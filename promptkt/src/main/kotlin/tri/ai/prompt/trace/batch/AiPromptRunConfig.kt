@@ -54,7 +54,8 @@ class AiPromptRunConfig(
     private suspend fun execute(completion: TextCompletion): AiPromptTrace<String> {
         modelInfo.modelId = completion.modelId
         val promptText = promptInfo.filled()
-        return completion.complete(promptText, modelInfo)
+        val result = completion.complete(promptText, modelInfo)
+        return result.copy(promptInfo = promptInfo)
     }
 
     /**

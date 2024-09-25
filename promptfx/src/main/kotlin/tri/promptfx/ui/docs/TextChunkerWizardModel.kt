@@ -1,4 +1,4 @@
-package tri.promptfx.tools
+package tri.promptfx.ui.docs
 
 
 /*-
@@ -25,24 +25,14 @@ import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import tornadofx.*
 import tri.ai.text.chunks.TextChunk
-import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.process.*
-import tri.ai.text.chunks.process.LocalFileManager.TXT
-import tri.ai.text.chunks.process.LocalFileManager.extractTextContent
-import tri.ai.text.chunks.process.LocalFileManager.fileToText
-import tri.ai.text.chunks.process.LocalFileManager.fileWithTextContentFilter
-import tri.ai.text.chunks.process.LocalFileManager.originalFile
 import tri.promptfx.PromptFxController
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.asTextChunkViewModel
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
 import java.io.File
 import java.net.URL
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.regex.PatternSyntaxException
 
 /** Model for the [TextChunkerWizard]. */
@@ -51,26 +41,26 @@ class TextChunkerWizardModel: ViewModel() {
     val controller: PromptFxController by inject()
 
     // inputs
-    var sourceToggleSelection: ObjectProperty<String> = SimpleObjectProperty(TcwSourceMode.FILE.uiName)
-    val sourceMode = sourceToggleSelection.objectBinding { TcwSourceMode.valueOfUiName(it) }
+    var sourceToggleSelection: ObjectProperty<String> = SimpleObjectProperty(TextChunkerSourceMode.FILE.uiName)
+    val sourceMode = sourceToggleSelection.objectBinding { TextChunkerSourceMode.valueOfUiName(it) }
 
-    var isFileMode = sourceToggleSelection.isEqualTo(TcwSourceMode.FILE.uiName)!!
+    var isFileMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FILE.uiName)!!
     val file = SimpleObjectProperty<File>()
     val fileName = file.stringBinding { it?.name ?: "None" }
 
-    val isFolderMode = sourceToggleSelection.isEqualTo(TcwSourceMode.FOLDER.uiName)!!
+    val isFolderMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FOLDER.uiName)!!
     val folder = SimpleObjectProperty<File>()
     val folderName = folder.stringBinding { it?.name ?: "None" }
     val folderIncludeSubfolders = SimpleObjectProperty(false)
     val folderExtractText = SimpleObjectProperty(true)
 
-    val isUserInputMode = sourceToggleSelection.isEqualTo(TcwSourceMode.USER_INPUT.uiName)!!
+    val isUserInputMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.USER_INPUT.uiName)!!
     val userText = SimpleStringProperty()
 
-    val isWebScrapeMode = sourceToggleSelection.isEqualTo(TcwSourceMode.WEB_SCRAPING.uiName)!!
+    val isWebScrapeMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.WEB_SCRAPING.uiName)!!
     val webScrapeModel = WebScrapeViewModel()
 
-    val isRssMode = sourceToggleSelection.isEqualTo(TcwSourceMode.RSS_FEED.uiName)!!
+    val isRssMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.RSS_FEED.uiName)!!
     val rssFeed = SimpleObjectProperty<URL>()
 
     // whether source has been properly selected
@@ -86,6 +76,7 @@ class TextChunkerWizardModel: ViewModel() {
         .or(isRssMode.and(rssFeed.isNotNull))!!
 
     // chunking options
+    val isHeaderRow = SimpleBooleanProperty(false)
     var chunkMethodSelection: ObjectProperty<String> = SimpleObjectProperty(TextChunkerWizardMethod.CHUNK_AUTO)
     val isCleanUpWhiteSpace = SimpleBooleanProperty(true)
     val isChunkAutomatic = chunkMethodSelection.isEqualTo(TextChunkerWizardMethod.CHUNK_AUTO)!!
@@ -108,6 +99,7 @@ class TextChunkerWizardModel: ViewModel() {
 
     init {
         maxChunkSize.onChange { updatePreview() }
+        isHeaderRow.onChange { updatePreview() }
         isCleanUpWhiteSpace.onChange { updatePreview() }
         chunkMethodSelection.onChange { updatePreview() }
         chunkDelimiter.onChange { updatePreview() }
@@ -116,23 +108,44 @@ class TextChunkerWizardModel: ViewModel() {
     }
 
     /** Get sample of input text based on current settings. */
-    private fun inputTextSample() =
-        sourceMode.value!!.inputTextSample(this)
+    private fun inputTextSample(): String {
+        val sample = sourceMode.value!!.inputTextSample(this)
+        return if (isHeaderRow.value)
+            sample.substringAfter("\n").trim()
+        else
+            sample
+    }
 
     /** Get all text based on current settings, with multiple strings returned if multiple files. */
     private fun inputDocs(progressUpdate: (String) -> Unit) =
         sourceMode.value!!.allInputText(this, progressUpdate)
 
-    /** Update the preview of chunks based on the current settings. */
-    internal fun updatePreview() {
-        val MAX_PREVIEW_CHUNKS = 100
+    /** Get input chunks. */
+    private fun inputChunks(): Pair<TextDoc, List<TextChunk>> {
         val inputTextSample = inputTextSample()
         val chunker = chunker()
         val doc = TextDoc("", inputTextSample)
-        val chunks = chunker.chunk(doc.all!!)
+        return doc to chunker.chunk(doc.all!!)
+    }
+
+    /** Initializes chunking options based on input docs. */
+    internal fun initChunkingOptions() {
+        val (doc, chunks) = inputChunks()
+        val maxLength = chunks.maxOfOrNull { it.text(doc.all).length } ?: 1
+        if (maxLength < 100) {
+            chunkMethodSelection.set(TextChunkerWizardMethod.CHUNK_BY_DELIMITER)
+            chunkFilterMinSize.set(1)
+        }
+    }
+
+    /** Update the preview of chunks based on the current settings. */
+    internal fun updatePreview() {
+        val MAX_PREVIEW_CHUNKS = 100
+        val (doc, chunks) = inputChunks()
+        val useChunks = chunks
             .filter(chunkFilter(doc.all!!))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(chunks.map { it.asTextChunkViewModel(doc, controller.embeddingService.value?.modelId, null) })
+        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingService.value?.modelId, null) })
     }
 
     /** Chunker based on current settings. */
@@ -199,94 +212,6 @@ class TextChunkerWizardModel: ViewModel() {
             metadata.path = sourceInfo
             docs.addAll(finalDocs)
         }
-    }
-
-}
-
-/** Modes for the chunker wizard. */
-enum class TcwSourceMode(val uiName: String) {
-    FILE("File") {
-        override fun inputTextSample(model: TextChunkerWizardModel) =
-            model.file.value?.fileToText(true) ?: ""
-        override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit) =
-            listOf(model.file.value!!.asTextDoc())
-    },
-
-    FOLDER("Folder") {
-        override fun inputTextSample(model: TextChunkerWizardModel) =
-            model.folder.value?.walkTopDown()
-                ?.filter(fileWithTextContentFilter::accept)
-                ?.firstOrNull()
-                ?.fileToText(true) ?: ""
-
-        override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> {
-            val folder = model.folder.value!!
-            folder.walkTopDown()
-                .filter { it.isDirectory }
-                .forEach {
-                    progressUpdate("Extracting text from files in ${it.absolutePath}...")
-                    it.extractTextContent(reprocessAll = true)
-                }
-            return folder.walkTopDown()
-                .filter { it.extension.lowercase() == TXT }
-                .map {
-                    it.originalFile()!!.asTextDoc()
-                }.toList()
-        }
-
-    },
-
-    USER_INPUT("User Input") {
-        override fun inputTextSample(model: TextChunkerWizardModel) =
-            model.userText.value
-        override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> {
-            val t0 = LocalDateTime.now()
-            return listOf(TextDoc("User Input $t0", TextChunkRaw(model.userText.value)).apply {
-                metadata.title = "User Input $t0"
-                metadata.author = System.getProperty("user.name")
-                metadata.dateTime = t0
-            })
-        }
-    },
-
-    WEB_SCRAPING("Web Scraping") {
-        override fun inputTextSample(model: TextChunkerWizardModel) =
-            model.webScrapeModel.mainUrlText()
-        override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> =
-            model.webScrapeModel.scrapeWebsite(progressUpdate).map {
-                TextDoc(it.key.toString(), TextChunkRaw(it.value)).apply {
-                    metadata.title = it.key.toString()
-                    metadata.dateTime = LocalDateTime.now()
-                    metadata.path = it.key
-                }
-            }
-    },
-
-    RSS_FEED("RSS Feed") {
-        override fun inputTextSample(model: TextChunkerWizardModel) = "" // TODO
-        override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> = listOf() // TODO
-    };
-
-    internal fun File.asTextDoc(): TextDoc {
-        val uri = toURI()
-        val raw = TextChunkRaw(fileToText(useCache = true))
-        return TextDoc(uri.toString(), raw).apply {
-            metadata.title = nameWithoutExtension // TODO - can we be smarter about this?
-            // TODO metadata.author =
-            metadata.dateTime = lastModified().let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
-            metadata.path = uri
-            metadata.relativePath = relativeTo(File(parent)).path
-        }
-    }
-
-    /** Get sample of input text based on current settings. */
-    abstract fun inputTextSample(model: TextChunkerWizardModel): String
-
-    /** Get all input text based on current settings, organized as [TextDoc]s. */
-    abstract fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc>
-
-    companion object {
-        fun valueOfUiName(name: String?) = values().firstOrNull { it.uiName == name }
     }
 
 }

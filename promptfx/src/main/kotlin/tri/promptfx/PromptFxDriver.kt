@@ -19,6 +19,7 @@
  */
 package tri.promptfx
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.application.Platform
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableStringValue
@@ -37,6 +38,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedText
 import tri.promptfx.library.TextLibraryInfo
+import tri.util.ui.graphic
 
 /** General-purpose capability for sending inputs to PromptFx views and getting a result. */
 object PromptFxDriver {
@@ -168,37 +170,39 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 fun ContextMenu.buildsendresultmenu(trace: ObservableValue<AiPromptTraceSupport<*>>, workspace: PromptFxWorkspace) {
     val outputs = trace.value?.output?.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
     if (outputs.size == 1) {
-        buildsendresultmenu(outputs.first(), workspace)
+        buildsendresultmenu("result", outputs.first(), workspace)
     } else {
         outputs.forEach {
             menu(it.take(50)) {
-                buildsendresultmenu(it, workspace)
+                buildsendresultmenu("result", it, workspace)
             }
         }
     }
 }
 
 /** Context menu for sending a string result to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
-    buildsendresultmenu(SimpleStringProperty(output), workspace)
+fun ContextMenu.buildsendresultmenu(itemName: String, output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(itemName, SimpleStringProperty(output), workspace)
 }
 
 /** Context menu for sending result in a string property to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
-    menu("Send result to view") {
+fun ContextMenu.buildsendresultmenu(itemName: String, value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send $itemName to view") {
+        graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)
     }
 }
 
 /** Context menu for sending a string result to a view that accepts a text input. */
-fun Menu.buildsendresultmenu(output: String?, workspace: PromptFxWorkspace) {
-    buildsendresultmenu(SimpleStringProperty(output), workspace)
+fun Menu.buildsendresultmenu(itemName: String, output: String?, workspace: PromptFxWorkspace) {
+    buildsendresultmenu(itemName, SimpleStringProperty(output), workspace)
 }
 
 /** Context menu for sending result in a string property to a view that accepts a text input. */
-fun Menu.buildsendresultmenu(value: ObservableStringValue, workspace: PromptFxWorkspace) {
-    menu("Send result to view") {
+fun Menu.buildsendresultmenu(itemName: String, value: ObservableStringValue, workspace: PromptFxWorkspace) {
+    menu("Send $itemName to view") {
+        graphic = FontAwesomeIcon.SHARE_ALT.graphic
         disableWhen(value.booleanBinding { it.isNullOrBlank() })
         buildviewsubmenus(value, workspace)
     }
@@ -209,7 +213,7 @@ private fun Menu.buildviewsubmenus(value: ObservableStringValue, workspace: Prom
         if (map.isNotEmpty()) {
             menu(group) {
                 map.forEach { (_, info) ->
-                    val view = workspace.find(info.view) as AiTaskView
+                    val view = workspace.find(info.view, scope = workspace.scope) as AiTaskView
                     item(view.title) {
                         action {
                             with (PromptFxDriver) {

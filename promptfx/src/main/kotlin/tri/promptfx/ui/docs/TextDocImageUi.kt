@@ -17,10 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleDoubleProperty
+import javafx.collections.ObservableList
+import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
@@ -31,12 +33,11 @@ import tri.util.ui.saveToFile
 import tri.util.ui.showImageDialog
 
 /** View showing image contents for selected set of documents. */
-class TextLibraryDocumentImagesUi : Fragment() {
+class TextDocImageUi(val images: ObservableList<Image>): Fragment() {
 
-    private val model by inject<TextLibraryViewModel>()
     private val thumbnailSize = SimpleDoubleProperty(128.0)
 
-    override val root = datagrid(model.docSelectionImages) {
+    override val root = datagrid(images) {
         vgrow = Priority.ALWAYS
         prefWidth = 600.0
         prefHeight = 600.0

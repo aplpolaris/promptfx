@@ -17,13 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui
+package tri.promptfx.ui.trace
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.collections.ObservableList
-import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -40,16 +39,13 @@ import tri.util.ui.graphic
 class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<String>> = observableListOf()): Fragment() {
 
     override val root = vbox {
-        spacing = 5.0
-        paddingAll = 5.0
         vgrow = Priority.ALWAYS
-        val header = hbox {
-            alignment = Pos.CENTER_LEFT
-            spacing = 5.0
+        val header = toolbar {
             text("Results:")
             spacer()
         }
         val list = listview(prompts) {
+            vgrow = Priority.ALWAYS
             cellFormat {
                 graphic = PromptTraceCard().apply { setTrace(it) }.root
             }
@@ -60,7 +56,7 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<Strin
                     action {
                         val selected = selectionModel.selectedItem
                         if (selected != null)
-                            find<PromptTraceDetails>().apply {
+                            find<PromptTraceDetailsUi>().apply {
                                 setTrace(selected)
                                 openModal()
                             }

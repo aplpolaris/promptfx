@@ -17,31 +17,27 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
+import javafx.collections.ObservableList
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.DocumentOpenInViewer
+import tri.promptfx.library.fieldifnotblank
 import tri.promptfx.ui.DocumentListView
 import tri.util.ui.DocumentUtils
 
 /** View for document details, for 1 or more selected documents. */
-class TextLibraryDocumentDetailsUi : Fragment() {
-
-    val model by inject<TextLibraryViewModel>()
-
-    private val selectedItems = model.docSelection
+class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fragment() {
 
     override val root = vbox(10) {
         hgrow = Priority.ALWAYS
         bindChildren(selectedItems) { doc ->
-            val thumb =
-                DocumentUtils.documentThumbnail(
-                    doc.browsable()!!,
-                    DocumentListView.DOC_THUMBNAIL_SIZE
-                )
+            val thumb = doc.browsable()?.let {
+                DocumentUtils.documentThumbnail(it, DocumentListView.DOC_THUMBNAIL_SIZE)
+            }
             hbox(10) {
                 if (thumb != null) {
                     imageview(thumb) {
@@ -60,16 +56,18 @@ class TextLibraryDocumentDetailsUi : Fragment() {
                             "Date",
                             doc.metadata.dateTime?.toString() ?: doc.metadata.date?.toString()
                         )
-                        field("Path") {
-                            hyperlink(doc.metadata.path.toString()) {
-                                action {
-                                    DocumentOpenInViewer(
-                                        doc.browsable()!!,
-                                        hostServices
-                                    ).open()
+                        doc.metadata.path?.let {
+                            field("Path") {
+                                hyperlink(it.toString()) {
+                                    action {
+                                        DocumentOpenInViewer(
+                                            doc.browsable()!!,
+                                            hostServices
+                                        ).open()
+                                    }
                                 }
+                                it.toString()
                             }
-                            doc.metadata.path?.toString()
                         }
                         fieldifnotblank("Relative Path", doc.metadata.relativePath)
                         doc.metadata.properties.forEach { (key, value) ->

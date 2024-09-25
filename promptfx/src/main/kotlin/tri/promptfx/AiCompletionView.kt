@@ -20,7 +20,7 @@
 package tri.promptfx
 
 import javafx.beans.property.SimpleStringProperty
-import tri.ai.openai.promptPlan
+import tri.ai.pips.promptPlan
 
 /** View that provides a single input box and combines that with a prompt from the prompt library. */
 open class AiCompletionView(

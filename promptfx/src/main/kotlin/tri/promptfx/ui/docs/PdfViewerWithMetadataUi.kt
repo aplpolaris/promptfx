@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
@@ -34,7 +34,7 @@ import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
 import tri.ai.text.chunks.process.PdfMetadataGuesser
 import tri.promptfx.AiProgressView
 import tri.promptfx.PromptFxController
-import tri.promptfx.library.TextLibraryViewModel.Companion.mergeIn
+import tri.promptfx.ui.docs.TextLibraryViewModel.Companion.mergeIn
 import tri.util.ui.graphic
 import tri.util.ui.pdf.PdfViewer
 

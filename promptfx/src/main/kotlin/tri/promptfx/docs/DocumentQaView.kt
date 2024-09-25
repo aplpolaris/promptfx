@@ -19,28 +19,31 @@
  */
 package tri.promptfx.docs
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.HostServices
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
-import kotlinx.coroutines.runBlocking
+import javafx.collections.ObservableList
 import tornadofx.*
+import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.openai.jsonMapper
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
-import tri.promptfx.*
-import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
-import tri.promptfx.PromptFxConfig.Companion.FF_ALL
-import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.ui.*
+import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.FormattedPromptTraceResult
+import tri.promptfx.ui.PromptSelectionModel
+import tri.promptfx.ui.chunk.TextChunkListView
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.promptfield
 import tri.util.info
-import tri.util.ui.*
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 import java.io.File
 
 /** Plugin for the [DocumentQaView]. */
@@ -52,6 +55,7 @@ class DocumentQaView: AiPlanTaskView(
     "Enter question below to respond based on content of documents in a specified folder.",
 ), TextLibraryReceiver {
 
+    private val viewScope = Scope(workspace)
     private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
     private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
 
@@ -60,7 +64,7 @@ class DocumentQaView: AiPlanTaskView(
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(1000)
-    private val chunksToRetrieve = SimpleIntegerProperty(10)
+    private val chunksToRetrieve = SimpleIntegerProperty(50)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
 
@@ -74,8 +78,6 @@ class DocumentQaView: AiPlanTaskView(
     }
     val snippets
         get() = planner.snippets
-
-    private val resultBox: FormattedPromptResultArea
 
     init {
         preferences(PREF_APP) {
@@ -91,19 +93,12 @@ class DocumentQaView: AiPlanTaskView(
             style = "-fx-font-size: 18px;"
         }
         input {
-            hbox {
-                alignment = Pos.CENTER_LEFT
-                spacing = 5.0
-                paddingAll = 5.0
-                text("Document Snippets:")
-                spacer()
-                // export JSON with matches
-                button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
-                    disableWhen(planner.snippets.sizeProperty.isEqualTo(0))
-                    action { exportDocumentSnippets() }
+            add(find<TextChunkListView>(viewScope).apply {
+                label.set("Document Snippets")
+                planner.snippets.matchViewModel().onChange {
+                    model.chunkList.setAll(it.list)
                 }
-            }
-            add(TextChunkListView(planner.snippets.matchViewModel()))
+            })
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = { planner.reindexAllDocuments() }
@@ -131,7 +126,7 @@ class DocumentQaView: AiPlanTaskView(
             promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
-        resultBox = FormattedPromptResultArea()
+        val resultBox = FormattedPromptResultArea()
         outputPane.clear()
         outputPane.add(resultBox)
 
@@ -158,25 +153,6 @@ class DocumentQaView: AiPlanTaskView(
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
         documentLibrary.set(library.library)
-    }
-
-    private fun exportDocumentSnippets() {
-        promptFxFileChooser(
-            dirKey = DIR_KEY_TEXTLIB,
-            title = "Export Document Snippets as JSON",
-            filters = arrayOf(FF_JSON, FF_ALL),
-            mode = FileChooserMode.Save
-        ) {
-            if (it.isNotEmpty()) {
-                runAsync {
-                    runBlocking {
-                        jsonMapper
-                            .writerWithDefaultPrettyPrinter()
-                            .writeValue(it.first(), planner.lastResult)
-                    }
-                }
-            }
-        }
     }
 
     //endregion
@@ -225,4 +201,20 @@ class DocumentQaView: AiPlanTaskView(
             }
         }
     }
+}
+
+/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
+internal fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
+    val result = observableListOf(map { it.asTextChunkViewModel()})
+    onChange { result.setAll(map { it.asTextChunkViewModel() }) }
+    return result
+}
+
+/** Wrap [EmbeddingMatch] as a view model. */
+internal fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
+    override var score: Float? = this@asTextChunkViewModel.queryScore
+    override var embedding: List<Double>? = chunkEmbedding
+    override val embeddingsAvailable = listOf(embeddingModel)
+    override val browsable = document.browsable()
+    override val text = chunkText
 }

@@ -24,12 +24,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.openai.templatePlan
+import tri.ai.pips.templatePlan
 import tri.ai.pips.AiPlanner
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield

@@ -95,9 +95,13 @@ class AiProgressView: View(), AiTaskMonitor {
 
     override fun taskUpdate(task: AiTask<*>, progress: Double) {
         PrintMonitor().taskUpdate(task, progress)
+        progressUpdate(task.id, progress)
+    }
+
+    fun progressUpdate(message: String, progress: Double) {
         Platform.runLater {
             indicator.progress = progress
-            label.text = task.id
+            label.text = message
         }
     }
 

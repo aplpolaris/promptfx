@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui
+package tri.promptfx.ui.trace
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.Fragment
@@ -43,7 +43,7 @@ class PromptTraceCard : Fragment() {
 
         onLeftClick {
             trace?.let {
-                find<PromptTraceDetails>().apply {
+                find<PromptTraceDetailsUi>().apply {
                     setTrace(it)
                     openModal()
                 }

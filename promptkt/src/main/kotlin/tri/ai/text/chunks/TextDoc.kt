@@ -44,6 +44,12 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
     @get:JsonIgnore
     var all: TextChunkRaw? = _all
 
+    /** Optional header string associated with the doc (e.g. for CSV files). */
+    @get:JsonIgnore
+    var dataHeader: String?
+        get() = attributes[DATA_HEADER_ATTRIBUTE] as? String
+        set(value) { attributes[DATA_HEADER_ATTRIBUTE] = value }
+
     /** Construct a [TextDoc] with a given text string. */
     constructor(id: String, text: String) : this(id, TextChunkRaw(text))
 
@@ -60,6 +66,10 @@ class TextDoc(id: String? = null, _all: TextChunkRaw? = null) {
         val isPdf = browsable.path.substringAfterLast(".") == PDF
         val file = browsable.file ?: return null
         return if (isPdf && file.exists()) file else null
+    }
+
+    companion object {
+        const val DATA_HEADER_ATTRIBUTE = "data_header"
     }
 }
 

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -29,20 +29,22 @@ import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.TextChunkListView
+import tri.promptfx.ui.chunk.TextChunkListView
 import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 
 /** Wizard for generating a set of [TextChunk]s from user input. */
 class TextChunkerWizard: Wizard("Create Text Library", "Generate a library of text content from user input or selected source.") {
 
-    val model: TextChunkerWizardModel by inject()
+    private val wizardScope = Scope(workspace)
+    val model: TextChunkerWizardModel by inject(wizardScope)
 
     override val canGoNext = currentPageComplete
     override val canFinish = allPagesComplete
 
     init {
-        add(TextChunkerWizardSelectData::class)
-        add(TextChunkerWizardMethod::class)
+        add(find<TextChunkerWizardSelectData>(wizardScope))
+        add(find<TextChunkerWizardMethod>(wizardScope))
     }
 }
 
@@ -59,24 +61,24 @@ class TextChunkerWizardSelectData: View("Select Source") {
             label("Select source for data:")
             toolbar {
                 togglegroup {
-                    radiobutton(TcwSourceMode.FILE.uiName) {
+                    radiobutton(TextChunkerSourceMode.FILE.uiName) {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT)
                     }
-                    radiobutton(TcwSourceMode.FOLDER.uiName) {
+                    radiobutton(TextChunkerSourceMode.FOLDER.uiName) {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN)
                     }
-                    radiobutton(TcwSourceMode.USER_INPUT.uiName) {
+                    radiobutton(TextChunkerSourceMode.USER_INPUT.uiName) {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.KEYBOARD_ALT)
                     }
-                    radiobutton(TcwSourceMode.WEB_SCRAPING.uiName) {
+                    radiobutton(TextChunkerSourceMode.WEB_SCRAPING.uiName) {
                         graphic = FontAwesomeIconView(FontAwesomeIcon.GLOBE)
                     }
-                    radiobutton(TcwSourceMode.RSS_FEED.uiName) {
+                    radiobutton(TextChunkerSourceMode.RSS_FEED.uiName) {
                         isDisable = true
                         graphic = FontAwesomeIconView(FontAwesomeIcon.RSS)
                     }
                     model.sourceToggleSelection.bindBidirectional(selectedValueProperty())
-                    model.sourceToggleSelection.set(TcwSourceMode.FILE.uiName)
+                    model.sourceToggleSelection.set(TextChunkerSourceMode.FILE.uiName)
                 }
             }
         }
@@ -132,8 +134,9 @@ class TextChunkerWizardSelectData: View("Select Source") {
                 managedWhen(model.isUserInputMode)
                 textarea(model.userText) {
                     prefColumnCount = 80
-                    prefRowCount = 10
+                    prefRowCount = 20
                     promptText = "Enter or paste text to chunk here..."
+                    vgrow = Priority.ALWAYS
                 }
                 vgrow = Priority.ALWAYS
             }
@@ -164,6 +167,7 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
 
     override fun onDock() {
         super.onDock()
+        model.initChunkingOptions()
         model.updatePreview()
     }
 
@@ -198,6 +202,14 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
 
         // detailed options for chunking
         form {
+            // common pre-processing options
+            fieldset("Pre-Processing Options") {
+                checkbox("Header row", model.isHeaderRow) {
+                    tooltip("Skip the first row of input text.")
+                }
+            }
+
+            // variable options (based on chunking method)
             fieldset("Automatic Chunking Options") {
                 visibleWhen(model.isChunkAutomatic)
                 managedWhen(model.isChunkAutomatic)
@@ -248,8 +260,7 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
             // filter options
             fieldset("Filtering Options") {
                 field("Minimum chunk size") {
-                    slider(1..1000, model.chunkFilterMinSize)
-                    label(model.chunkFilterMinSize)
+                    sliderwitheditablelabel(1..1000, model.chunkFilterMinSize)
                 }
                 field("Duplicates") {
                     checkbox("Remove duplicates", model.chunkFilterRemoveDuplicates)
@@ -262,7 +273,9 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
         vbox(5) {
             prefWidth = 800.0
             label("Preview of chunks:")
-            chunkPreview = TextChunkListView(model.previewChunks)
+            chunkPreview = find<TextChunkListView>().apply {
+                this@TextChunkerWizardMethod.model.previewChunks.onChange { model.chunkList.setAll(it.list) }
+            }
             add(chunkPreview)
         }
     }

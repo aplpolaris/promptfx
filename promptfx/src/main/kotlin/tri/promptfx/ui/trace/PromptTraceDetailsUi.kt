@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui
+package tri.promptfx.ui.trace
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
@@ -31,7 +31,7 @@ import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.graphic
 
 /** View showing all details of a prompt trace. */
-class PromptTraceDetails : Fragment("Prompt Trace") {
+class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     var trace = SimpleObjectProperty<AiPromptTraceSupport<*>>()
 
@@ -81,7 +81,9 @@ class PromptTraceDetails : Fragment("Prompt Trace") {
                     }
                     field("Prompt") {
                         labelContainer.alignment = Pos.TOP_LEFT
-                        text(prompt)
+                        text(prompt) {
+                            wrappingWidth = 400.0
+                        }
                     }
                 }
                 paramsField = fieldset("Prompt Parameters")

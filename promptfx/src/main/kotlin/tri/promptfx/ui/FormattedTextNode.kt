@@ -25,7 +25,7 @@ import javafx.scene.text.Text
 import tornadofx.*
 
 /** A text node within [FormattedText]. */
-class FormattedTextNode(
+data class FormattedTextNode(
     val text: String,
     val style: String? = null,
     val hyperlink: String? = null

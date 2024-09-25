@@ -52,8 +52,6 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     val controller: PromptFxController by inject()
     val input = SimpleStringProperty("")
 
-    private val DOC_THUMBNAIL_SIZE = 240
-
     private lateinit var inputField: TextField
     private lateinit var output: AnimatingTextFlow
     private lateinit var thumbnails: AnimatingThumbnailBox
@@ -65,6 +63,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             val base = baseComponent as DocumentQaView
             base.snippets.onChange {
                 val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
+                    .take(MAX_THUMBNAILS_FOR_IMMERSIVE_CHAT_VIEW)
                     .map { DocumentThumbnail(it, documentThumbnail(it, DOC_THUMBNAIL_SIZE, false)) }
                 thumbnails.animateThumbs(thumbs)
             }
@@ -166,6 +165,12 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
     }
 
     //endregion
+
+    companion object {
+        private const val DOC_THUMBNAIL_SIZE = 240
+        private const val MAX_THUMBNAILS_FOR_IMMERSIVE_CHAT_VIEW = 8
+    }
+
 }
 
 /** Add a box associated with the global model access policy. */

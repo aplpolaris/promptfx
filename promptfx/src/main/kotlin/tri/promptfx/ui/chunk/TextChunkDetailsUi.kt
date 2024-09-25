@@ -17,29 +17,33 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.chunk
 
+import javafx.event.EventTarget
+import javafx.geometry.Pos
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 
 /** View for showing details of selected chunks. */
-class TextLibraryChunkDetailsUi : Fragment() {
+class TextChunkDetailsUi : Fragment() {
 
-    val model by inject<TextLibraryViewModel>()
+    private val listModel: TextChunkListModel by inject()
 
     override val root = form {
         fieldset("") { }
         vbox {
-            bindChildren(model.chunkSelection) { chunk ->
+            bindChildren(listModel.chunkSelection) { chunk ->
                 fieldset("") {
                     val text = chunk.text.trim()
                     fieldifnotblank("Text", text) {
                         contextmenu {
                             item("Find similar chunks") {
-                                action { model.createSemanticFilter(text) }
+                                action {
+                                    listModel.applyEmbeddingFilter(text)
+                                }
                             }
-                            buildsendresultmenu(text, workspace as PromptFxWorkspace)
+                            buildsendresultmenu("chunk text", text, workspace as PromptFxWorkspace)
                         }
                     }
                     fieldifnotblank("Score", chunk.score?.toString())
@@ -49,4 +53,13 @@ class TextLibraryChunkDetailsUi : Fragment() {
         }
     }
 
+}
+
+internal fun EventTarget.fieldifnotblank(label: String, text: String?, op: Field.() -> Unit = { }) {
+    if (!text.isNullOrBlank())
+        field(label) {
+            labelContainer.alignment = Pos.TOP_LEFT
+            text(text)
+            op()
+        }
 }

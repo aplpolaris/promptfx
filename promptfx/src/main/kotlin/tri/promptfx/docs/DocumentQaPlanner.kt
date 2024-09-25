@@ -27,8 +27,7 @@ import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME_LEGACY
 import tri.ai.openai.OpenAiModelIndex.ADA_ID
-import tri.ai.openai.instructTask
-import tri.ai.pips.aitask
+import tri.ai.core.instructTask
 import tri.ai.pips.task
 import tri.ai.prompt.trace.*
 import tri.ai.text.chunks.TextChunkInDoc

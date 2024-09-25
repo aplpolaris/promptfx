@@ -37,6 +37,56 @@ example-emoji: |
   Text: {{input}}
   Emoji:
 
+generate-categories: |
+  Generate a category (or categories) for the following list of {{item_type}}.
+
+  Categories should be one of the following:
+  {{{categories}}}
+  
+  Prefer selecting a single category, but multiple categories are allowed if necessary.
+  
+  Sample output:
+  ```
+  Category: [ {{sample_category}} ]
+  ```
+  
+  {{item_type}}:
+  ```
+  {{{input}}}
+  ```
+
+generate-categories-and-theme: |
+  Generate a {{#categories}}category (or categories) {{/categories}}and summarizing theme for the following list of {{item_type}}.
+
+  Categories should be one of the following:
+  {{{categories}}}
+  
+  Prefer selecting a single category, but multiple categories are allowed if necessary.
+  
+  Sample output:
+  ```
+  Category: [ {{sample_category}} ]
+  Theme: {{sample_theme}}
+  ```
+  
+  {{item_type}}:
+  ```
+  {{{input}}}
+  ```
+
+generate-categories-theme-only: |
+  Generate a summarizing theme for the following list of {{item_type}}.
+  
+  Sample output:
+  ```
+  Theme: {{sample_theme}}
+  ```
+  
+  {{item_type}}:
+  ```
+  {{{input}}}
+  ```
+
 generate-list: |
   Generate a list from the input text based on the provided list, as a JSON with four parts:
     1. "item_category": copy the category provided
@@ -72,7 +122,6 @@ generate-list: |
   item_category: {{item_category}}
   known_items: {{known_items}}
   output:
-
 generate-list-basic: |
   Generate a list from the input text based on the provided list, as a JSON with two parts:
     1. "item_category": copy the category provided
@@ -104,13 +153,9 @@ generate-list-basic: |
   output:
 
 image-describe-basic: Describe the image.
-
 image-describe-caption: Generate a caption for the image.
-
 image-describe-detailed: Describe everything you see in this image. Provide a detailed list of contents.
-
 image-describe-json: Convert the image into a JSON object describing its contents.
-
 image-describe-json-graph: |
   Convert the image into a JSON object describing its contents and relationships.
   Example:
@@ -120,16 +165,13 @@ image-describe-json-graph: |
     "relationships": [ ... ]
   }
   ```
-
 image-describe-outline: Create a markdown outline of the image contents.
-
 
 prompt-validate: |
   Determine whether the following is true or false. If it is false, provide a corrected version.
   ```
   {{{result}}}
   ```
-
 prompt-validate-json: |
   Determine if the result is valid json. Respond simply "valid" or "invalid".
   ```
@@ -349,7 +391,6 @@ text-joiner-bullets: |
   {{#matches}} 
   - {{#prefix}}({{prefix}}) {{/prefix}}{{{text}}}  
   {{/matches}}
-  
 
 ############################
 # SNIPPET CONCATENATIONS

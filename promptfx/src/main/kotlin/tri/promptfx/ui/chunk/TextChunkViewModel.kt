@@ -17,68 +17,54 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui
+package tri.promptfx.ui.chunk
 
 import javafx.collections.ObservableList
 import tornadofx.*
-import tri.ai.embedding.EmbeddingMatch
+import tri.ai.embedding.EmbeddingPrecision
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
 
 /** View model for document chunks. */
 interface TextChunkViewModel {
-    val embedding: List<Double>?
+    var embedding: List<Double>?
     val embeddingsAvailable: List<String>
-    val score: Float?
+    var score: Float?
     val browsable: BrowsableSource?
     val text: String
 }
 
-/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
-fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
-    val result = observableListOf(map { it.asTextChunkViewModel()})
-    onChange { result.setAll(map { it.asTextChunkViewModel() }) }
-    return result
-}
-
 /** Convert an observable list of [Pair<TextDoc, TextChunk>] to a list of [TextChunkViewModel]. */
-fun ObservableList<Pair<TextDoc, TextChunk>>.sectionViewModel(embeddingModelId: String): ObservableList<TextChunkViewModel> {
+fun ObservableList<Pair<TextChunk, TextDoc>>.sectionViewModel(embeddingModelId: String): ObservableList<out TextChunkViewModel> {
     val result = observableListOf(map { it.asTextChunkViewModel(embeddingModelId) })
     onChange { result.setAll(map { it.asTextChunkViewModel(embeddingModelId) }) }
     return result
 }
 
-/** Wrap [EmbeddingMatch] as a view model. */
-fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
-    override val score = this@asTextChunkViewModel.queryScore
-    override val embedding = chunkEmbedding
-    override val embeddingsAvailable = listOf(embeddingModel)
-    override val browsable = document.browsable()
-    override val text = chunkText
-}
-
 /** Wrap [Pair<TextDoc, TextChunk>] as a view model. */
-fun Pair<TextDoc, TextChunk>.asTextChunkViewModel(embeddingModelId: String) = object : TextChunkViewModel {
-    override val score = null
-    override val embedding = second.getEmbeddingInfo(embeddingModelId)
-    override val embeddingsAvailable = second.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
-    override val browsable = first.browsable()
-    override val text = second.text(first.all)
-}
+fun Pair<TextChunk, TextDoc>.asTextChunkViewModel(embeddingModelId: String?, score: Float? = null) =
+    TextChunkViewModelImpl(second, first, embeddingModelId, score)
 
 /** Wrap [TextChunk] as a view model. */
 fun TextChunk.asTextChunkViewModel(parentDoc: TextDoc?, embeddingModelId: String?, score: Float? = null) =
     TextChunkViewModelImpl(parentDoc, this, embeddingModelId, score)
 
 /** Wrap [TextChunk] as a view model. */
-class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, embeddingModelId: String?, override val score: Float? = null) : TextChunkViewModel {
+class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, val embeddingModelId: String?, override var score: Float? = null) :
+    TextChunkViewModel {
     constructor(text: String) : this(null, TextChunkRaw(text), null)
 
     override val browsable = parentDoc?.browsable()
-    override val embedding = chunk.getEmbeddingInfo(embeddingModelId ?: "")
-    override val embeddingsAvailable = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
+    override var embedding: List<Double>?
+        get() = chunk.getEmbeddingInfo(embeddingModelId ?: "")
+        set(value) {
+            if (value != null) chunk.putEmbeddingInfo(embeddingModelId ?: "", value, EmbeddingPrecision.FULL)
+        }
+    override val embeddingsAvailable
+        get() = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val text = chunk.text(parentDoc?.all)
 }

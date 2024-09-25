@@ -17,12 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import tornadofx.*
 
 /** View for collection details. */
-class TextLibraryCollectionDetailsUi : Fragment() {
+class TextLibraryDetailsUi : Fragment() {
 
     val model by inject<TextLibraryViewModel>()
 

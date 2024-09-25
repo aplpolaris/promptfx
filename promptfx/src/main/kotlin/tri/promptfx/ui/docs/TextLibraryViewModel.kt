@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.library
+package tri.promptfx.ui.docs
 
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
@@ -27,8 +27,10 @@ import javafx.collections.ObservableList
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.runBlocking
-import tornadofx.*
-import tri.ai.embedding.cosineSimilarity
+import tornadofx.Component
+import tornadofx.ScopedInstance
+import tornadofx.observableListOf
+import tornadofx.onChange
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
@@ -39,9 +41,9 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.ui.TextChunkViewModel
-import tri.promptfx.ui.TextChunkViewModelImpl
-import tri.promptfx.ui.asTextChunkViewModel
+import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.ui.chunk.TextChunkListModel
+import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info
 import tri.util.pdf.PdfUtils
 import tri.util.ui.createListBinding
@@ -49,8 +51,24 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.associateBy
+import kotlin.collections.find
+import kotlin.collections.firstNotNullOfOrNull
+import kotlin.collections.firstOrNull
+import kotlin.collections.flatMap
+import kotlin.collections.forEach
+import kotlin.collections.isNotEmpty
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
+import kotlin.collections.toList
 
-/** Model for [TextLibraryView]. */
+/** Model for [TextManagerView]. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
@@ -71,17 +89,9 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     val docsModified = observableListOf<TextDoc>()
     val documentContentChange = SimpleBooleanProperty() // trigger when document content values change
 
-    val chunkFilter = SimpleObjectProperty<(TextChunk) -> Float>(null)
-    val isChunkFilterEnabled = SimpleBooleanProperty(false)
-
-    val chunkList = observableListOf<TextChunkViewModel>()
-    val chunkSelection = observableListOf<TextChunkViewModel>()
+    val chunkListModel: TextChunkListModel by inject()
 
     init {
-        chunkFilter.onChange {
-            refilterChunkList()
-        }
-
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
@@ -103,7 +113,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
             }
 
-            refilterChunkList()
+            updateChunkList()
         }
     }
 
@@ -130,66 +140,45 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region COLLECTION I/O
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        if (library !in libraryList) {
-            libraryList.add(library)
-            librarySelection.set(library)
-        }
+        loadTextLibrary(library, replace = true, selectAllDocs = true)
     }
 
-    internal fun loadLibraryFrom(file: File) {
+    /** Load a library from a file, with options to replace existing libraries and select all documents. */
+    internal fun loadLibraryFrom(file: File, replace: Boolean, selectAllDocs: Boolean) {
         runAsync {
             val lib = TextLibrary.loadFrom(file)
             if (lib.metadata.id.isBlank())
                 lib.metadata.id = file.name
             TextLibraryInfo(lib, file)
         } ui {
-            libraryList.add(it)
-            librarySelection.set(it)
+            loadTextLibrary(it, replace, selectAllDocs)
         }
     }
+
+    /** Load a library from a library object, with options to replace existing libraries and select all documents. */
+    fun loadTextLibrary(library: TextLibraryInfo, replace: Boolean, selectAllDocs: Boolean) {
+        if (replace)
+            libraryList.setAll(library)
+        else if (library !in libraryList) {
+            libraryList.add(library)
+        }
+        librarySelection.set(library)
+        if (selectAllDocs)
+            docSelection.setAll(library.library.docs)
+        else
+            docSelection.setAll(library.library.docs.first())
+    }
+
+    private fun List<BufferedImage>.deduplicated() =
+        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 
     //region VIEW FILTERING
 
-    /** Create semantic filtering, by returning the cosine similarity of a chunk to the given argument. */
-    internal fun createSemanticFilter(text: String) {
-        runAsync {
-            val model = embeddingService.value
-            val embedding = runBlocking { model.calculateEmbedding(text) }
-            val filter: (TextChunk) -> Float = { chunk ->
-                val chunkEmbedding = chunk.getEmbeddingInfo(model.modelId)
-                if (chunkEmbedding == null) 0f else cosineSimilarity(embedding, chunkEmbedding).toFloat()
-            }
-            filter
-        } ui {
-            chunkFilter.value = it
-            isChunkFilterEnabled.set(true)
-        }
+    private fun updateChunkList() {
+        chunkListModel.setChunkList(docSelection.flatMap { doc -> doc.chunks.map { it to doc } })
     }
-
-    /** Refilters the chunk list. */
-    fun refilterChunkList() {
-        chunkList.clear()
-        val filter = chunkFilter.value
-        val chunksWithScores = docSelection.flatMap { doc -> doc.chunks.map { doc to it } }.let {
-            if (filter == null)
-                it.associateWith { null }
-            else {
-                it.associateWith { filter(it.second) }.entries
-                    .sortedByDescending { it.value }
-                    .take(REFILTER_LIST_MAX_COUNT)
-                    .filter { it.value >= MIN_CHUNK_SIMILARITY }
-                    .associate { it.key to it.value }
-            }
-        }
-        chunkList.addAll(chunksWithScores.map {
-            it.key.second.asTextChunkViewModel(it.key.first, controller.embeddingService.value.modelId, score = it.value)
-        })
-    }
-
-    private fun List<BufferedImage>.deduplicated() =
-        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 
@@ -213,14 +202,14 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Remove selected chunks from document(s). */
     fun removeSelectedChunks() {
-        val selected = chunkSelection.toList()
+        val selected = chunkListModel.chunkSelection.toList()
         val selectedChunks = selected.mapNotNull { (it as? TextChunkViewModelImpl)?.chunk }
         val changedDocs = mutableListOf<TextDoc>()
         docSelection.forEach {
             if (it.chunks.removeAll(selectedChunks))
                 changedDocs.add(it)
         }
-        chunkList.removeAll(selected)
+        updateChunkList()
         changedDocs.forEach { markChanged(it) }
     }
 
@@ -233,7 +222,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     /** Calculates embeddings for all selected collections, returning associated task. */
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
-            AiPipelineExecutor.execute(calculateEmbeddingsPlan().plan(), progress)
+            AiPipelineExecutor.execute(calculateEmbeddings().plan, progress)
         }
     }
 
@@ -283,12 +272,14 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     //region LONG-RUNNING TASKS
 
-    private fun calculateEmbeddingsPlan(): AiPlanner {
+    /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
+    fun calculateEmbeddings(): AiTaskList<String> {
         val service = embeddingService.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {
-                service.addEmbeddingInfo(doc)
+                if (doc.chunks.any { it.getEmbeddingInfo(service.modelId) == null })
+                    service.addEmbeddingInfo(doc)
                 var count = 0
                 doc.chunks.forEach {
                     val embed = it.getEmbeddingInfo(service.modelId)
@@ -301,15 +292,12 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             }
         }.aggregate().task("summarize-results") {
             "Calculated ${result.size} total embeddings."
-        }.planner
+        }
     }
 
     //endregion
 
     companion object {
-        private const val REFILTER_LIST_MAX_COUNT = 20
-        private const val MIN_CHUNK_SIMILARITY = 0.7
-
         /** Merge metadata from a map into a TextDocMetadata object. */
         internal fun TextDocMetadata.mergeIn(other: Map<String, Any>) {
             other.extract("title", "pdf.title", "doc.title") { title = it }
@@ -331,7 +319,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         try {
                             setter(LocalDateTime.parse(it.toString()))
                         } catch (e: Exception) {
-                            info<TextLibraryCollectionUi>("Could not parse date from ${it.javaClass} $it")
+                            info<TextLibraryListUi>("Could not parse date from ${it.javaClass} $it")
                         }
                     }
                 }
@@ -340,3 +328,4 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     }
 
 }
+

@@ -38,6 +38,7 @@ import tri.util.ui.graphic
 class DocumentListView(docs: ObservableList<BrowsableSource>, hostServices: HostServices) : Fragment("Document List") {
     override val root = listview(docs) {
         vgrow = Priority.ALWAYS
+        prefHeight = 200.0
         cellFormat {
             graphic = hyperlink(it.shortNameWithoutExtension, graphic = it.icon()) {
                 val thumb = DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE)

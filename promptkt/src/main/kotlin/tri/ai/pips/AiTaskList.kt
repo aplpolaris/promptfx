@@ -112,7 +112,7 @@ inline fun <reified T> List<AiTask<T>>.aggregatetrace(): AiTaskList<AiPromptTrac
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask<AiPromptTraceSupport<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<AiPromptTraceSupport<T>> {
-            val aggregateResults = inputs.values as List<AiPromptTraceSupport<T>>
+            val aggregateResults = inputs.values.toList() as List<AiPromptTraceSupport<T>>
             return AiPromptTrace(outputInfo = AiOutputInfo(aggregateResults))
         }
     }

@@ -22,7 +22,7 @@ package tri.promptfx.ui
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
+import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.AiPrompt
@@ -51,8 +51,7 @@ class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -
     fun fill(vararg values: Pair<String, Any>) = templateText.value.fill(*values)
 
     override val root = vbox {
-        hbox(5, Pos.CENTER_LEFT) {
-            padding = insets(5.0, 0.0, 5.0, 0.0)
+        toolbar {
             text(instruction)
             spacer()
             templatemenubutton(templateText, promptFilter)
@@ -69,4 +68,18 @@ class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -
         }
     }
 
+}
+
+/** Add a prompt field to the UI. */
+fun EventTarget.editablepromptui(promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean, instruction: String): EditablePromptUi {
+    val ui = EditablePromptUi(promptFilter, instruction)
+    plusAssign(ui)
+    return ui
+}
+
+/** Add a prompt field to the UI. */
+fun EventTarget.editablepromptui(prefix: String, instruction: String): EditablePromptUi {
+    val ui = EditablePromptUi(prefix, instruction)
+    plusAssign(ui)
+    return ui
 }

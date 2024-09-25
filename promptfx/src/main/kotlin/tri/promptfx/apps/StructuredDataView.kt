@@ -22,7 +22,7 @@ package tri.promptfx.apps
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.openai.templatePlan
+import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
@@ -49,7 +49,9 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
     init {
         addInputTextArea(sourceText)
         input {
-            label("Sample JSON (YAML, XML, CSV, ...):")
+            toolbar {
+                text("Sample JSON (YAML, XML, CSV, ...):")
+            }
             textarea(sampleOutput) {
                 isWrapText = true
             }

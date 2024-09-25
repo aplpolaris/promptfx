@@ -35,6 +35,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
+import tri.promptfx.ui.trace.PromptTraceDetailsUi
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
@@ -188,7 +189,7 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
         item("Details...") {
             enableWhen { trace.isNotNull }
             action {
-                find<PromptTraceDetails>().apply {
+                find<PromptTraceDetailsUi>().apply {
                     setTrace(trace.value)
                     openModal()
                 }

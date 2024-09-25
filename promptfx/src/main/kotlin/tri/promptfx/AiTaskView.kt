@@ -138,6 +138,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     /** Adds content to the button bar of the view. */
     private fun EventTarget.buttonBar() = hbox(10) {
         runButton = button("Run") {
+            shortcut("Ctrl+R")
             runTooltip.onChange {
                 if (tooltip == null)
                     tooltip = Tooltip(text)

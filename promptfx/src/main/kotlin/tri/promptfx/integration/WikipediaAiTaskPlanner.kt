@@ -24,8 +24,8 @@ import tri.ai.pips.AiPlanner
 import tri.ai.core.TextCompletion
 import tri.ai.pips.aitask
 import tri.ai.openai.jsonMapper
-import tri.ai.openai.promptTask
-import tri.ai.openai.instructTask
+import tri.ai.core.promptTask
+import tri.ai.core.instructTask
 import java.net.URL
 import java.net.URLEncoder
 
