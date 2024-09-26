@@ -20,14 +20,18 @@
 package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.*
 import tri.promptfx.library.TextLibraryInfo
+import tri.util.info
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
 
@@ -49,12 +53,19 @@ class TextLibraryListUi : Fragment() {
             text("Collections")
             spacer()
             // generate chunks
-            button("Create...", FontAwesomeIconView(FontAwesomeIcon.PLUS_CIRCLE)) {
+            menubutton("Create", FontAwesomeIcon.PLUS_CIRCLE.graphic) {
                 tooltip("Create a new text collection.")
-                action { createLibraryWizard(libraryModel, replace = false, selectAllDocs = false) }
+                item("Using Wizard...", graphic = FontAwesomeIcon.MAGIC.graphic) {
+                    tooltip("Create a new text collection from a single text file.")
+                    action { createLibraryWizard(libraryModel, replace = false, selectAllDocs = true) }
+                }
+                item("From Lines of Text...", graphic = FontAwesomeIcon.FILE_TEXT_ALT.graphic) {
+                    tooltip("Create a new text collection from lines of text.")
+                    action { createLibraryLines(libraryModel, replace = false, selectAllDocs = false) }
+                }
             }
             // load a TextLibrary file
-            button("Open...", FontAwesomeIconView(FontAwesomeIcon.FOLDER_OPEN)) {
+            button("Open...", FontAwesomeIcon.FOLDER_OPEN.graphic) {
                 tooltip("Open an existing text collection from a JSON file.")
                 action { loadLibrary(libraryModel, replace = false, selectAllDocs = false) }
             }
@@ -163,6 +174,48 @@ class TextLibraryListUi : Fragment() {
 
 //region USER ACTIONS
 
+/** UI action to create a library from lines user pastes into a dialog. */
+fun UIComponent.createLibraryLines(libraryModel: TextLibraryViewModel, replace: Boolean, selectAllDocs: Boolean) {
+    val dialog = find<PasteTextLibraryDialog>()
+    dialog.openModal(block = true)
+    if (dialog.lines.isNotEmpty()) {
+        val library = TextLibrary("User Input").apply {
+            docs.add(TextDoc("User Input").apply {
+                chunks.addAll(dialog.lines.map { TextChunkRaw(it) })
+            })
+        }
+        libraryModel.loadTextLibrary(TextLibraryInfo(library, null), replace, selectAllDocs)
+    }
+}
+
+/** UI for pasting text into a dialog. */
+class PasteTextLibraryDialog: Fragment("Paste Text Library") {
+    val userText = SimpleStringProperty()
+    val lines = mutableListOf<String>()
+
+    override val root = vbox {
+        paddingAll = 10.0
+        text("Paste lines of text into the box below to create a new collection of text chunks.")
+        textarea(userText) {
+            prefRowCount = 30
+            prefColumnCount = 80
+            promptText = "Paste lines of text here..."
+        }
+        buttonbar {
+            paddingTop = 10
+            button("OK", ButtonBar.ButtonData.OK_DONE) {
+                action {
+                    lines.addAll(userText.value.lines().filter { it.isNotBlank() }.distinct())
+                    close()
+                }
+            }
+            button("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE) {
+                action { close() }
+            }
+        }
+    }
+}
+
 /** UI action to create a new text library. */
 internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel, replace: Boolean, selectAllDocs: Boolean) {
     TextChunkerWizard().apply {
@@ -176,12 +229,12 @@ internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel,
                 result = ButtonType.OK
             }
             runAsync {
-                println("Creating library from user settings")
+                info<TextLibraryListUi>("Creating library based on user selection")
                 model.finalLibrary {
                     runLater { progressDialog.contentText = it }
                 }
             } ui {
-                println("Created library: $it")
+                info<TextLibraryListUi>("Created library: $it")
                 progressDialog.close()
                 if (it != null) {
                     val libInfo = TextLibraryInfo(it, null)
