@@ -151,7 +151,7 @@ class PdfViewModel : ViewModel() {
                 pdfRenderer = PDFRenderer(document)
                 pageCount.value = document?.pages?.count
                 document?.getPage(0)?.let { setScaleFor(it) }
-                openPage(1)
+                openPage(0)
             }
         }
         documentURIString.onChange { documentURI.value = URI(it) }

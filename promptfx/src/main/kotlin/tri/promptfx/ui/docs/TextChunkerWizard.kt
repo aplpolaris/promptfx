@@ -191,6 +191,7 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
                         tooltip = tooltip("Split text into chunks based on a regular expression.")
                     }
                     radiobutton(CHUNK_BY_FIELD) {
+                        isDisable = true
                         graphic = FontAwesomeIconView(FontAwesomeIcon.FILE_CODE_ALT)
                         tooltip = tooltip("Select a field in a CSV or JSON file to use as the source of text chunks.")
                     }
