@@ -21,6 +21,7 @@ package tri.promptfx
 
 import javafx.stage.FileChooser
 import tornadofx.*
+import tri.promptfx.library.TextClusterView
 import tri.promptfx.library.TextManagerView
 import tri.util.loggerFor
 import java.io.File
@@ -68,19 +69,36 @@ class PromptFxConfig: Component(), ScopedInstance {
     }
 
     /** Get library files from configuration. */
-    fun libraryFiles(): List<File> = try {
-        (config.getProperty(TEXTLIB_FILES) ?: "").split(",")
-            .map { URI.create(it) }
-            .map { File(it) }
-    } catch (x: IllegalArgumentException) {
-        loggerFor<PromptFxConfig>().warning("Error loading text library files: ${x.message}")
-        listOf()
+    fun textManagerFiles(): List<File> = loadLibrary(TEXTLIB_FILES)
+    /** Get cluster files from configuration. */
+    fun textClusterFiles(): List<File> = loadLibrary(CLUSTERLIB_FILES)
+
+    private fun loadLibrary(key: String): List<File> {
+        val value = (config.getProperty(key) ?: "").trim()
+        if (value.isNotBlank()) {
+            try {
+                return (config.getProperty(key) ?: "").split(",")
+                    .map { URI.create(it) }
+                    .map { File(it) }
+            } catch (x: IllegalArgumentException) {
+                loggerFor<PromptFxConfig>().warning("Error loading text library files: ${x.message}. Value was $value")
+            }
+        }
+        return listOf()
     }
 
     /** Save configuration options before closing application. */
     fun save() {
-        val libs = find<TextManagerView>().model.libraryList
-        config[TEXTLIB_FILES] = libs.mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
+        find<TextManagerView>().model.libraryList
+            .mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
+            .let {
+                if (it.isNotBlank()) config[TEXTLIB_FILES] = it
+            }
+        find<TextClusterView>().model.libraryList
+            .mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
+            .let {
+                if (it.isNotBlank()) config[CLUSTERLIB_FILES] = it
+            }
         config.save()
     }
 
@@ -89,6 +107,7 @@ class PromptFxConfig: Component(), ScopedInstance {
         private const val DIR_FILE_PREFIX = "dir_file."
 
         const val TEXTLIB_FILES = "textlib.files"
+        const val CLUSTERLIB_FILES = "clusterlib.files"
 
         const val DIR_KEY_TEXTLIB = "textlib"
         const val DIR_KEY_TXT = "txt"

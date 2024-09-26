@@ -37,6 +37,7 @@ import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
@@ -249,6 +250,11 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                 enableWhen(generateCategories)
             }
         }
+    }
+
+    init {
+        val filesToRestore = find<PromptFxConfig>().textClusterFiles()
+        filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
     }
 
     override fun plan() =
