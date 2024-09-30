@@ -93,6 +93,7 @@ class DocumentQaPlanner {
             if (documentLibrary.value == null && embeddingIndex.value is LocalFolderEmbeddingIndex)
                 upgradeEmbeddingIndex()
         }.task("load-embeddings-file-and-calculate") {
+            // trigger loading of embeddings file using a similarity query
             embeddingIndex.value!!.findMostSimilar("a", 1)
         }.aitask("find-relevant-sections") {
             findRelevantSection(question, chunksToRetrieve).also {

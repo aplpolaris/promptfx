@@ -65,7 +65,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX-basic")
 
     // result list
-    private val promptTraces = observableListOf<AiPromptTraceSupport<String>>()
+    private val promptTraces = observableListOf<AiPromptTraceSupport<*>>()
 
     // result options
     private val showUniqueResults = SimpleBooleanProperty(true)
@@ -125,7 +125,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         outputPane.clear()
         output {
             splitpane(Orientation.VERTICAL) {
-                add(PromptTraceCardList(promptTraces))
+                add(find<PromptTraceCardList>("prompts" to promptTraces))
                 vbox {
                     toolbar {
                         text("Aggregated Result")

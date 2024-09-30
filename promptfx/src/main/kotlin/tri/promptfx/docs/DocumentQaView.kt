@@ -131,7 +131,7 @@ class DocumentQaView: AiPlanTaskView(
         outputPane.add(resultBox)
 
         onCompleted {
-            resultBox.setFinalResult(it.finalResult as FormattedPromptTraceResult)
+            resultBox.setFinalResult(it.finalResult)
         }
     }
 

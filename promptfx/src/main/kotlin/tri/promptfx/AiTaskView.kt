@@ -310,16 +310,20 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
             add(resultArea.root)
         }
         onCompleted {
-            when (val r = it.finalResult) {
-                is AiPromptTrace<*> ->
-                    resultArea.setFinalResult(r)
-                is FormattedPromptTraceResult ->
-                    formattedResultArea.setFinalResult(r)
-                is AiImageTrace -> {
-                    // ignore - this is handled by view
-                }
-                else -> throw IllegalStateException("Unexpected result type: $r")
+            setFinalResult(it.finalResult)
+        }
+    }
+
+    protected fun setFinalResult(result: AiPromptTraceSupport<*>) {
+        when (result) {
+            is AiPromptTrace<*> ->
+                resultArea.setFinalResult(result)
+            is FormattedPromptTraceResult ->
+                formattedResultArea.setFinalResult(result)
+            is AiImageTrace -> {
+                // ignore - this is handled by view
             }
+            else -> throw IllegalStateException("Unexpected result type: $result")
         }
     }
 
@@ -371,6 +375,7 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
                 taskCompleted(it)
             }
             controller.updateUsage()
+            controller.addPromptTraces(title, it)
             progress.taskCompleted(title)
         }
         progress.taskStarted(task, title)

@@ -26,7 +26,9 @@ import tri.ai.core.TextChat
 import tri.ai.embedding.EmbeddingService
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
+import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.UsageUnit
+import tri.promptfx.tools.PromptTraceHistoryModel
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
@@ -40,9 +42,23 @@ class PromptFxController : Controller() {
     val embeddingService: SimpleObjectProperty<EmbeddingService> =
         SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
 
+    val promptHistory = find<PromptTraceHistoryModel>()
+
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)
     val imagesUsed = SimpleIntegerProperty(0)
+
+    //region UPDATERS
+
+    /** Adds a pipeline execution result to history. */
+    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult<*>) {
+        val interim = (traces.interimResults.values - traces.finalResult).map {
+            it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
+        }
+        promptHistory.prompts.addAll(interim)
+        val final = traces.finalResult.let { it.copy(execInfo = it.exec.copy(intermediateResult = false, viewId = viewTitle)) }
+        promptHistory.prompts.add(final)
+    }
 
     /** Update usage stats for the OpenAI endpoint. */
     fun updateUsage() {
@@ -50,6 +66,8 @@ class PromptFxController : Controller() {
         audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_SECONDS] ?: 0
         imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
     }
+
+    //endregion
 
     /** Called to release resources when the application is closed. */
     fun close() {

@@ -51,18 +51,29 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
         model.value = trace.model?.modelId
         modelParams.value = trace.model?.modelParams
         exec.value = trace.exec
-        result.value = trace.output?.outputs?.get(0)?.toString() ?: "No result"
+        result.value = trace.output?.outputs?.joinToString("\n\n") ?: "No result"
     }
 
     override val root = vbox {
         toolbar {
             // add button to close dialog and open trace in template view
             button("Open in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                enableWhen(trace.isNotNull)
+                enableWhen(trace.isNotNull.and(prompt.isNotBlank()))
                 tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
                 action {
-                    close()
+                    if (currentWindow != workspace.currentWindow)
+                        close()
                     (workspace as PromptFxWorkspace).launchTemplateView(trace.value!!)
+                }
+            }
+            // add button to close dialog and open trace in template view
+            button("Open in history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+                enableWhen(trace.isNotNull.and(exec.isNotNull))
+                tooltip("Open this prompt in the prompt history view (if available).")
+                action {
+                    if (currentWindow != workspace.currentWindow)
+                        close()
+                    (workspace as PromptFxWorkspace).launchHistoryView(trace.value!!)
                 }
             }
         }
@@ -103,7 +114,6 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
             promptParams.onChange { updateParamsField() }
         }
     }
-
 
     private fun updateParamsField() {
         with (paramsField) {

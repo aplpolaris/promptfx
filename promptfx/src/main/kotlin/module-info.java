@@ -125,6 +125,7 @@ module tri.promptfx {
             PromptScriptPlugin,
             PromptTemplatePlugin,
             PromptValidatorPlugin,
+            PromptTraceHistoryPlugin,
             DocumentQaPlugin,
             DocumentInsightPlugin,
             TextManagerPlugin,

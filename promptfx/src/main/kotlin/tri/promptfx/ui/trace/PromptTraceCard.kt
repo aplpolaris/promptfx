@@ -19,6 +19,7 @@
  */
 package tri.promptfx.ui.trace
 
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.Fragment
 import tornadofx.label
@@ -29,11 +30,11 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 /** A card that displays the trace of a prompt. */
 class PromptTraceCard : Fragment() {
 
-    val result = SimpleStringProperty("")
+    val result = SimpleObjectProperty<Any>("")
 
-    private var trace: AiPromptTraceSupport<String>? = null
+    private var trace: AiPromptTraceSupport<*>? = null
 
-    fun setTrace(trace: AiPromptTraceSupport<String>) {
+    fun setTrace(trace: AiPromptTraceSupport<*>) {
         result.value = trace.values?.firstOrNull() ?: "No result"
         this.trace = trace
     }

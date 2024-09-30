@@ -85,7 +85,8 @@ object TextDocEmbeddings {
         val chunksToCalculate = chunks.filter { it.getEmbeddingInfo(id) == null }
         if (chunksToCalculate.isNotEmpty()) {
             chunksToCalculate.chunked(MAX_EMBEDDING_BATCH_SIZE).forEach { batch ->
-                embeddingService.calculateEmbedding(batch.map { it.text(all) }).forEachIndexed { i, embedding ->
+                val inputs = batch.map { it.text(all) }
+                embeddingService.calculateEmbedding(inputs).forEachIndexed { i, embedding ->
                     batch[i].putEmbeddingInfo(id, embedding, embeddingService.precision)
                 }
             }

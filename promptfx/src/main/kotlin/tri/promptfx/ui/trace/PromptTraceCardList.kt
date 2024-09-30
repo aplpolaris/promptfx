@@ -19,38 +19,78 @@
  */
 package tri.promptfx.ui.trace
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
+import javafx.event.EventTarget
+import javafx.scene.control.MultipleSelectionModel
+import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
+import tri.promptfx.tools.PromptTraceFilter
 import tri.util.ui.graphic
 
 /** UI for a list of [AiPromptTrace]s. */
-class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<String>> = observableListOf()): Fragment() {
+class PromptTraceCardList: Fragment() {
+
+    private val isRemovable: Boolean by param(false)
+    private val isShowFilter: Boolean by param(false)
+    private val toolbarLabel: String by param("Results:")
+    val prompts: ObservableList<AiPromptTraceSupport<*>> by param()
+
+    private val controller: PromptFxController by inject()
+    private val isGlobalHistoryView = controller.promptHistory.prompts === prompts
+    private val filteredPrompts = observableListOf<AiPromptTraceSupport<*>>()
+    private val promptFilter: PromptTraceFilter = find<PromptTraceFilter>()
+    private lateinit var promptSelectionModel: MultipleSelectionModel<AiPromptTraceSupport<*>>
+    val selectedPrompt = SimpleObjectProperty<AiPromptTraceSupport<*>>()
+
+    init {
+        prompts.onChange {
+            promptFilter.updateFilterOptions(it.list)
+            refilter()
+        }
+        promptFilter.filter.onChange { refilter() }
+        promptFilter.updateFilterOptions(prompts)
+        refilter()
+    }
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
         val header = toolbar {
-            text("Results:")
+            text(toolbarLabel)
             spacer()
         }
-        val list = listview(prompts) {
+        if (isShowFilter) {
+            toolbar {
+                label("Filter by:")
+                checklistmenu("view", promptFilter.viewFilters)
+                checklistmenu("model", promptFilter.modelFilters)
+                checklistmenu("status", promptFilter.statusFilters)
+                checklistmenu("type", promptFilter.typeFilters)
+            }
+        }
+        val list = listview(filteredPrompts) {
             vgrow = Priority.ALWAYS
+            promptSelectionModel = selectionModel
+            selectedPrompt.bind(selectionModel.selectedItemProperty())
             cellFormat {
                 graphic = PromptTraceCard().apply { setTrace(it) }.root
             }
             // add context menu
-            contextmenu {
+            lazyContextmenu {
                 item("Details...") {
                     enableWhen(selectionModel.selectedItemProperty().isNotNull)
                     action {
@@ -72,10 +112,23 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<Strin
                             (workspace as PromptFxWorkspace).launchTemplateView(selected)
                     }
                 }
+                if (!isGlobalHistoryView) {
+                    item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+                        enableWhen(selectionModel.selectedItemProperty().booleanBinding {
+                            it?.prompt?.prompt?.isNotBlank() == true
+                        })
+                        action {
+                            val selected = selectionModel.selectedItem
+                            if (selected != null)
+                                (workspace as PromptFxWorkspace).launchHistoryView(selected)
+                        }
+                    }
+                }
+                buildsendresultmenu("result", selectedPrompt.value?.firstValue?.toString(), find<PromptFxWorkspace>())
             }
         }
         with (header) {
-            button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+            button("", FontAwesomeIcon.SEND.graphic) {
                 tooltip("Try out the selected prompt and inputs in the Prompt Template view.")
                 enableWhen(list.selectionModel.selectedItemProperty().isNotNull)
                 action {
@@ -84,30 +137,117 @@ class PromptTraceCardList(val prompts: ObservableList<AiPromptTraceSupport<Strin
                         (workspace as PromptFxWorkspace).launchTemplateView(selected)
                 }
             }
-            // add save icon
-            button("", FontAwesomeIconView(FontAwesomeIcon.DOWNLOAD)) {
+            if (isRemovable) {
+                button("", FontAwesomeIcon.REMOVE.graphic) {
+                    tooltip("Remove selected prompt traces.")
+                    enableWhen(list.selectionModel.selectedItemProperty().isNotNull)
+                    action {
+                        confirm(
+                            "Remove traces?",
+                            "Are you sure you want to remove selected prompt traces?",
+                            owner = currentWindow
+                        ) {
+                            val selection = list.selectionModel.selectedItems.toList()
+                            prompts.removeAll(selection)
+                            list.selectionModel.clearSelection()
+                        }
+                    }
+                }
+            }
+            button("", FontAwesomeIcon.DOWNLOAD.graphic) {
+                tooltip("Export prompt traces as JSON.")
                 enableWhen(prompts.sizeProperty.greaterThan(0))
                 action {
-                    val promptTraces = prompts.toList()
-                    val file = promptFxFileChooser(
-                        dirKey = DIR_KEY_TRACE,
-                        title = "Export Prompt Traces as JSON",
-                        filters = arrayOf(FF_JSON, FF_ALL),
-                        mode = FileChooserMode.Save
-                    ) { file ->
-                        if (file.isNotEmpty()) {
-                            runAsync {
-                                runBlocking {
-                                    ObjectMapper()
-                                        .writerWithDefaultPrettyPrinter()
-                                        .writeValue(file.first(), promptTraces)
-                                }
+                    exportPromptTraceList()
+                }
+            }
+            if (isRemovable) {
+                button("", FontAwesomeIcon.TRASH.graphic) {
+                    enableWhen(prompts.sizeProperty.greaterThan(0))
+                    action {
+                        confirm("Clear all prompt traces?", "Are you sure you want to clear all prompt traces?", owner = currentWindow) {
+                            prompts.clear()
+                            list.selectionModel.clearSelection()
+                        }
+                    }
+                }
+            }
+
+            // settings enabled for global history only
+            if (isGlobalHistoryView) {
+                button("", FontAwesomeIcon.GEARS.graphic) {
+                    tooltip("Adjust prompt history settings.")
+                    action {
+                        TextInputDialog(controller.promptHistory.maxHistorySize.value.toString()).apply {
+                            initOwner(currentWindow)
+                            title = "Adjust Prompt History Settings"
+                            headerText = "Enter max # of prompt traces to keep in history."
+                            contentText = "Max Entries:"
+                            showAndWait().ifPresent {
+                                it.toIntOrNull()?.let { controller.promptHistory.maxHistorySize.set(it) }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun exportPromptTraceList() {
+        val promptTraces = filteredPrompts.toList()
+        promptFxFileChooser(
+            dirKey = DIR_KEY_TRACE,
+            title = "Export Prompt Traces as JSON",
+            filters = arrayOf(FF_JSON, FF_ALL),
+            mode = FileChooserMode.Save
+        ) { file ->
+            file.firstOrNull()?.let {
+                runAsync {
+                    runBlocking {
+                        jsonWriter.writeValue(it, promptTraces)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun EventTarget.checklistmenu(label: String, itemList: ObservableList<Pair<String, SimpleBooleanProperty>>) {
+        menubutton(label) {
+            fun updateMenu() {
+                items.clear()
+                itemList.forEach { (key, prop) ->
+                    checkmenuitem(key, selected = prop) { action { refilter() } }
+                }
+                separator()
+                item("Select All") {
+                    action {
+                        itemList.forEach { it.second.set(true) }
+                        refilter()
+                    }
+                }
+                item("Select None") {
+                    action {
+                        itemList.forEach { it.second.set(false) }
+                        refilter()
+                    }
+                }
+            }
+            itemList.onChange { updateMenu() }
+            updateMenu()
+        }
+    }
+
+    private fun refilter() {
+        if (isShowFilter) {
+            val filter = promptFilter.filter.value
+            filteredPrompts.setAll(prompts.toList().filter(filter))
+        } else {
+            filteredPrompts.setAll(prompts.toList())
+        }
+    }
+
+    fun selectPromptTrace(prompt: AiPromptTraceSupport<*>) {
+        promptSelectionModel.select(prompt)
     }
 
 }

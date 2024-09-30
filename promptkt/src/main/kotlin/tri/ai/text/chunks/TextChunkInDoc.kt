@@ -37,7 +37,8 @@ class TextChunkInDoc(
     constructor(range: IntRange): this(range.first, range.last)
 
     override fun text(doc: TextChunk?) =
-        doc!!.text(null).substring(first..last)
+        doc?.text(null)?.substring(first..last)
+            ?: throw IllegalStateException("Attempt to extract chunk as range in document without text.")
 
     @get:JsonIgnore
     val range

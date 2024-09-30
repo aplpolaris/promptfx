@@ -40,6 +40,10 @@ data class AiExecInfo(
     var responseTimeMillisTotal: Long? = null,
     /** Number of executions attempted. */
     val attempts: Int? = null,
+    /** Flag indicating whether this is an intermediate result. */
+    val intermediateResult: Boolean? = null,
+    /** Id of view that initiated the execution. */
+    val viewId: String? = null
 ) {
     /** Return true if the execution succeeded. */
     fun succeeded() = error == null && throwable == null

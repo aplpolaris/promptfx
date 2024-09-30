@@ -201,6 +201,12 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
                 (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
             }
         }
+        item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+            enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+            action {
+                (component.workspace as PromptFxWorkspace).launchHistoryView(trace.value)
+            }
+        }
         buildsendresultmenu(trace, component.workspace as PromptFxWorkspace)
         separator()
         op()

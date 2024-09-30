@@ -19,6 +19,7 @@
  */
 package tri.promptfx.ui
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.scene.Node
 
 /** A result that contains plain text and links. */
@@ -26,6 +27,7 @@ class FormattedText(val nodes: List<FormattedTextNode>) {
 
     constructor(text: String) : this(listOf(FormattedTextNode(text)))
 
+    @get:JsonIgnore
     var hyperlinkOp: (String) -> Unit = { }
 
     override fun toString() = nodes.joinToString("") { it.text }

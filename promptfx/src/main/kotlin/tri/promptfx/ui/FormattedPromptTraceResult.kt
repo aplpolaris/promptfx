@@ -19,6 +19,7 @@
  */
 package tri.promptfx.ui
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.prompt.trace.*
 
 /** Result including the trace and formatted text. */

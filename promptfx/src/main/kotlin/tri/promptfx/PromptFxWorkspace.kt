@@ -33,6 +33,7 @@ import tri.promptfx.api.*
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.PromptTemplateView
 import tri.promptfx.library.TextManagerView
+import tri.promptfx.tools.PromptTraceHistoryView
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -171,6 +172,13 @@ class PromptFxWorkspace : Workspace() {
     fun findTaskView(name: String): AiTaskView? {
         return views.values.map { it.entries }.flatten()
             .find { it.key == name }?.let { find(it.value.view) } as? AiTaskView
+    }
+
+    /** Launches the template view with the given prompt trace. */
+    fun launchHistoryView(prompt: AiPromptTraceSupport<*>) {
+        val view = find<PromptTraceHistoryView>()
+        view.selectPromptTrace(prompt)
+        workspace.dock(view)
     }
 
     /** Launches the template view with the given prompt trace. */
