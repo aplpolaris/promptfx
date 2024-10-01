@@ -85,7 +85,7 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
     }
 
     init {
-        val filesToRestore = find<PromptFxConfig>().libraryFiles()
+        val filesToRestore = find<PromptFxConfig>().textManagerFiles()
         filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
     }
 
