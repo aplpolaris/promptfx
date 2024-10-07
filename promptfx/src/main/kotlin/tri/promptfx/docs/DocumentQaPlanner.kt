@@ -64,7 +64,7 @@ class DocumentQaPlanner {
 
     /**
      * Asynchronous tasks to execute for answering the given question.
-     * @param question question to answer
+     * @param question list of questions to answer
      * @param promptId prompt to use for answering the question
      * @param embeddingService embedding service to use
      * @param chunksToRetrieve number of chunks to retrieve
@@ -77,7 +77,7 @@ class DocumentQaPlanner {
      * @param numResponses number of responses to generate
      */
     fun plan(
-        question: String,
+        questions: List<String>,
         promptId: String,
         embeddingService: EmbeddingService,
         chunksToRetrieve: Int,
@@ -95,12 +95,14 @@ class DocumentQaPlanner {
         }.task("load-embeddings-file-and-calculate") {
             // trigger loading of embeddings file using a similarity query
             embeddingIndex.value!!.findMostSimilar("a", 1)
-        }.aitask("find-relevant-sections") {
-            findRelevantSection(question, chunksToRetrieve).also {
+        }.aitaskmap("find-relevant-sections", taskInputs = questions) { _, _, q ->
+            // for each question, generate a list of relevant chunks
+            findRelevantSection(q, chunksToRetrieve).also {
                 runLater { snippets.setAll(it.values) }
             }
-        }.aitasklist("question-answer") {
-            val queryChunks = it.filter { it.chunkSize >= minChunkSize }
+        }.aitaskmap("question-answer", taskInputs = questions) { it, i, question ->
+            val (_, embedding) = it[i]
+            val queryChunks = embedding.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
             val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
@@ -123,10 +125,12 @@ class DocumentQaPlanner {
                     responseEmbeddings = responseEmbeddings
                 )
             }
-        }.aitask("process-result") {
-            info<DocumentQaPlanner>("$ANSI_GRAY  Similarity of question to response: ${it.responseScore}$ANSI_RESET")
-            lastResult = it
-            FormattedPromptTraceResult(it.trace, it.splitQaResults().map { formatResult(it) })
+        }.aitaskmap("process-result", taskInputs = questions) { it, i, _ ->
+            val (_, qaResult) = it[i]
+            val firstResult = qaResult[0]
+            info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${firstResult.responseScore}$ANSI_RESET")
+            lastResult = firstResult
+            FormattedPromptTraceResult(firstResult.trace, firstResult.splitQaResults().map { formatResult(it) })
         }.planner
 
     //region SIMILARITY CALCULATIONS

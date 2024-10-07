@@ -38,7 +38,14 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
             override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) = op()
         })
 
-    /** Adds a task to the end of the list. */
+    //region BUILDER METHODS
+
+    /**
+     * Adds a task to the end of the list, where invoking the task performs the given operation.
+     * The input to the task is the first output from the final task in this [AiTaskList]. (Use [taskonlist] to apply to the full output list.)
+     * The result will be wrapped in an [AiPromptTrace] object with a single result.
+     * @throws IllegalArgumentException if the result is an [AiPromptTraceSupport] object, instead use [aitask]
+     */
     fun <T> task(id: String, description: String? = null, op: suspend (S) -> T) =
         aitask(id, description) {
             val t0 = System.currentTimeMillis()
@@ -47,11 +54,28 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
             AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
         }
 
-    /** Adds a task to the end of the list. */
+    /**
+     * Adds a task to the end of the list, where invoking the task performs the given operation.
+     * The input to the task is the first output from the final task in this [AiTaskList].
+     * The result will be wrapped in an [AiPromptTrace] object with a single result.
+     * @throws IllegalArgumentException if the result is an [AiPromptTraceSupport] object, instead use [aitask]
+     */
+    fun <T> taskonlist(id: String, description: String? = null, op: suspend (List<S>) -> T) =
+        aitaskonlist(id, description) {
+            val t0 = System.currentTimeMillis()
+            val res = op(it)
+            if (res is AiPromptTraceSupport<*>) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
+            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
+        }
+
+    /**
+     * Adds an AI task to the end of the list, where invoking the task performs the given operation.
+     * The input to the task is the first output from the final task in this [AiTaskList]. (Use [aitaskonlist] to apply to the full output list.)
+     * The result is expected to be a [AiPromptTraceSupport] object with details about model, execution time, etc.
+     */
     fun <T> aitask(id: String, description: String? = null, op: suspend (S) -> AiPromptTraceSupport<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
             override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
-                // TODO - eventually, add support for multiple outputs from previous task
                 val result = inputs[lastTask.id] as AiPromptTraceSupport<S>
                 return op(result.firstValue)
             }
@@ -59,8 +83,11 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
         return AiTaskList(plan, newTask)
     }
 
-    /** Adds a task to the end of the list. */
-    fun <T> aitasklist(id: String, description: String? = null, op: suspend (List<S>) -> AiPromptTraceSupport<T>): AiTaskList<T> {
+    /**
+     * Adds a task to the end of the list, where invoking the task performs the given operation.
+     * The input to the task is the full list of outputs from the final task in this [AiTaskList].
+     */
+    fun <T> aitaskonlist(id: String, description: String? = null, op: suspend (List<S>) -> AiPromptTraceSupport<T>): AiTaskList<T> {
         val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
             override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
                 val result = inputs[lastTask.id] as AiPromptTraceSupport<S>
@@ -70,54 +97,34 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
         return AiTaskList(plan, newTask)
     }
 
-    /** Adds a task to the end of the list. */
-    fun <T> aiprompttask(id: String, description: String? = null, op: suspend (AiPromptTraceSupport<S>) -> AiPromptTraceSupport<T>): AiTaskList<T> {
-        val newTask = object : AiTask<T>(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
-                // TODO - eventually, add support for multiple outputs from previous task
-                val result = inputs[lastTask.id] as AiPromptTraceSupport<S>
-                return op(result)
+    /**
+     * Adds multiple tasks, one for each provided input, to the list.
+     */
+    fun <T, X> aitaskmap(id: String, description: String? = null, taskInputs: List<T>, op: suspend (List<S>, Int, T) -> AiPromptTraceSupport<X>): AiTaskList<Pair<T, List<X>>> {
+        val tasks = taskInputs.mapIndexed { i, input ->
+            object : AiTask<X>("$id-$i", description, setOf(lastTask.id)) {
+                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<X> {
+                    val lastResult = inputs[lastTask.id]?.values ?: listOf()
+                    return op(lastResult as List<S>, i, input)
+                }
             }
         }
-        return AiTaskList(plan, newTask)
+        // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
+        val aggregatorTask = object : AiTask<Pair<T, List<X>>>(id, description, tasks.map { it.id }.toSet()) {
+            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<Pair<T, List<X>>> {
+                val results = tasks.map { it.id }.map { inputs[it] as AiPromptTraceSupport<X> }
+                val zipResult = taskInputs.zip(results.map { it.values ?: listOf() })
+                return AiPromptTrace.output(zipResult)
+            }
+        }
+        return AiTaskList(plan + tasks, aggregatorTask)
     }
+
+    //endregion
 
 }
 
 //region BUILDER METHODS
-
-/**
- * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
- * @throws IllegalArgumentException if there are duplicate task IDs
- */
-inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
-    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
-    val finalTask = object : AiTask<List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<List<T>> {
-            val aggregateResults = inputs.values.map {
-                (it.output?.outputs ?: listOf<T>()) as List<T>
-            }
-            // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
-            return AiPromptTrace(outputInfo = AiOutputInfo(aggregateResults))
-        }
-    }
-    return AiTaskList(this, finalTask)
-}
-
-/**
- * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
- * @throws IllegalArgumentException if there are duplicate task IDs
- */
-inline fun <reified T> List<AiTask<T>>.aggregatetrace(): AiTaskList<AiPromptTraceSupport<T>> {
-    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
-    val finalTask = object : AiTask<AiPromptTraceSupport<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<AiPromptTraceSupport<T>> {
-            val aggregateResults = inputs.values.toList() as List<AiPromptTraceSupport<T>>
-            return AiPromptTrace(outputInfo = AiOutputInfo(aggregateResults))
-        }
-    }
-    return AiTaskList(this, finalTask)
-}
 
 /**
  * Creates a sequential task list using provided tasks.
@@ -138,5 +145,38 @@ fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTa
 /** Creates a sequential task list with a single task. */
 fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport<T>): AiTaskList<T> =
     AiTaskList(id, description, op)
+
+/**
+ * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
+ * @throws IllegalArgumentException if there are duplicate task IDs
+ */
+inline fun <reified T> List<AiTask<T>>.aggregate(): AiTaskList<List<T>> {
+    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
+    val finalTask = object : AiTask<List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<List<T>> {
+            val aggregateResults = inputs.values.map {
+                (it.output?.outputs ?: listOf<T>()) as List<T>
+            }
+            // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
+            return AiPromptTrace.output(aggregateResults)
+        }
+    }
+    return AiTaskList(this, finalTask)
+}
+
+/**
+ * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
+ * @throws IllegalArgumentException if there are duplicate task IDs
+ */
+inline fun <reified T> List<AiTask<T>>.aggregatetrace(): AiTaskList<AiPromptTraceSupport<T>> {
+    require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
+    val finalTask = object : AiTask<AiPromptTraceSupport<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTrace<AiPromptTraceSupport<T>> {
+            val aggregateResults = inputs.values.toList() as List<AiPromptTraceSupport<T>>
+            return AiPromptTrace.output(aggregateResults)
+        }
+    }
+    return AiTaskList(this, finalTask)
+}
 
 //endregion

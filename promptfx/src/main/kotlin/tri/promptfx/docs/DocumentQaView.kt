@@ -136,7 +136,7 @@ class DocumentQaView: AiPlanTaskView(
     }
 
     override fun plan() = planner.plan(
-        question = question.value,
+        questions = listOf(question.value),
         promptId = prompt.id.value,
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
@@ -160,7 +160,8 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            (it.finalResult as FormattedPromptTraceResult).formattedOutputs.forEach {
+            val final = it.finalResult
+            (final as FormattedPromptTraceResult).formattedOutputs.forEach {
                 it.hyperlinkOp = { docName ->
                     val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
                     if (doc == null) {
