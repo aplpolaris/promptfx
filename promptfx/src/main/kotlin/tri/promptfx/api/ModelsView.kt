@@ -204,7 +204,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
 
     private fun refresh() {
         runAsync {
-            TextPlugin.modelInfo()
+            PromptFxModels.policy.modelInfo()
         } ui {
             models.setAll(it)
             modelSort.value = ModelInfoSort.ID_ASC
