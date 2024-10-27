@@ -59,7 +59,50 @@ class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
         }
 }
 
+/** A joiner with content of each chunk grouped by document, along with document metadata. */
+class BulletedTemplateJoiner(_id: String) : SnippetJoiner(_id) {
+    override fun constructContext(matches: List<EmbeddingMatch>) =
+        constructContextDetailed(matches).context
+
+    /** Detailed response, including a lookup table of chunks by dynamically-generated key. */
+    fun constructContextDetailed(matches: List<EmbeddingMatch>): ContextChunkInfo {
+        var char = 'A'
+        val usedChars = mutableSetOf<Char>()
+        val chunkIndex = mutableListOf<ChunkInfo>()
+        val fillContent = matches.groupBy { it.shortDocName }.entries.mapIndexed { i, en ->
+            val doc = en.value.first().document
+            val docChar = if (en.key.length == 1 && en.key[0] !in usedChars) {
+                usedChars.add(en.key[0])
+                en.key[0]
+            } else {
+                while (char in usedChars)
+                    char++
+                usedChars.add(char)
+                char
+            }
+            var num = 1
+            val joinedInThisDoc = en.value.joinToString("\n") {
+                val key = "$docChar${num++}"
+                val chunkText = it.chunkText.trim()
+                chunkIndex += ChunkInfo(key, chunkText)
+                " - ($key) $chunkText"
+            }.trim()
+            val docPrefix = doc.attributes[TEXT_DOC_ATTRIBUTE_CONTEXT_PREFIX] as? String ?: ""
+            char += 1
+            NameText(i + 1, en.key, docPrefix, joinedInThisDoc)
+        }
+        val filledPrompt = AiPromptLibrary.lookupPrompt(id).fill(MATCHES_TEMPLATE to fillContent)
+        return ContextChunkInfo(filledPrompt, chunkIndex)
+    }
+}
+
 /** Utility class for holding the name and text of a match. This is used when filling in joiner templates with Mustache templates. */
 private class NameText(val number: Int, val name: String, val prefix: String, val text: String) {
     constructor(index: Int, match: EmbeddingMatch) : this(index, match.document.browsable()!!.shortNameWithoutExtension, "", match.chunkText.trim())
 }
+
+/** Utility class for holding collection of chunks related to a context. */
+class ContextChunkInfo(val context: String, val chunkIndex: List<ChunkInfo>)
+
+/** Utility class for holding a single chunk. */
+class ChunkInfo(val key: String, val text: String)
