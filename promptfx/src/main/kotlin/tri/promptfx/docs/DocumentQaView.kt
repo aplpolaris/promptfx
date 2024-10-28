@@ -138,7 +138,7 @@ class DocumentQaView: AiPlanTaskView(
 
     override fun plan() = planner.plan(
         question = question.value,
-        promptId = prompt.id.value,
+        prompt = prompt.prompt.value,
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,

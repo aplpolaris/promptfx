@@ -34,6 +34,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
@@ -148,7 +149,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 }
                 label(maxTokens.asString())
             }
-            promptfield(promptId = "chat-back", workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("chat-back"), workspace = workspace)
         }
     }
 

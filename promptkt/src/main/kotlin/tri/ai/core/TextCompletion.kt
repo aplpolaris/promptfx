@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.jsonMapper
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.AiPromptInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
@@ -46,9 +46,8 @@ interface TextCompletion {
 //region ALTERNATE EXECUTIONS
 
 /** Generate a task that adds user input to a prompt. */
-suspend fun TextCompletion.promptTask(promptId: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiPromptTrace<String> {
-    val prompt = AiPromptLibrary.lookupPrompt(promptId)
-    val promptParams = prompt.promptParams(input)
+suspend fun TextCompletion.promptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiPromptTrace<String> {
+    val promptParams = AiPrompt.inputParams(input)
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
     return promptTask(promptInfo, tokenLimit, temp, stop, numResponses)
 }
@@ -64,17 +63,15 @@ suspend fun TextCompletion.promptTask(promptInfo: AiPromptInfo, tokenLimit: Int,
     )
 
 /** Generate a task that combines a single instruction or question about contextual text. */
-suspend fun TextCompletion.instructTask(promptId: String, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> {
-    val prompt = AiPromptLibrary.lookupPrompt(promptId)
-    val promptParams = prompt.instructParams(instruct = instruct, input = userText)
+suspend fun TextCompletion.instructTask(prompt: AiPrompt, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> {
+    val promptParams = AiPrompt.instructParams(instruct = instruct, input = userText)
     return complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses).copy(
         promptInfo = AiPromptInfo(prompt.template, promptParams)
     )
 }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> {
-    val prompt = AiPromptLibrary.lookupPrompt(promptId)
+suspend fun TextCompletion.templateTask(prompt: AiPrompt, fields: Map<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> {
     return prompt.fill(fields).let {
         if (this is OpenAiCompletionChat)
             complete(it, tokenLimit, temp, null, requestJson, numResponses)
@@ -86,12 +83,12 @@ suspend fun TextCompletion.templateTask(promptId: String, fields: Map<String, An
 }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(promptId: String, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> =
-    templateTask(promptId, mapOf(*fields), tokenLimit, temp, requestJson, numResponses)
+suspend fun TextCompletion.templateTask(prompt: AiPrompt, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> =
+    templateTask(prompt, mapOf(*fields), tokenLimit, temp, requestJson, numResponses)
 
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
-suspend inline fun <reified T> TextCompletion.jsonPromptTask(id: String, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
-    promptTask(id, input, tokenLimit, temp, stop, numResponses).let {
+suspend inline fun <reified T> TextCompletion.jsonPromptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
+    promptTask(prompt, input, tokenLimit, temp, stop, numResponses).let {
         it.mapOutput {
             try {
                 jsonMapper.readValue<T>(it.trim())

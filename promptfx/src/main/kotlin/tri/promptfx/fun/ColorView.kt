@@ -24,7 +24,9 @@ import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
 import tornadofx.*
 import tri.ai.pips.promptPlan
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -40,7 +42,7 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
     init {
         addInputTextArea(input)
         parameters("Prompt") {
-            promptfield(promptId = "example-color", workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("example-color"), workspace = workspace)
             with (common) {
                 numResponses()
             }
@@ -74,7 +76,7 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
     }
 
     override fun plan() = completionEngine.promptPlan(
-        "example-color",
+        AiPromptLibrary.lookupPrompt("example-color"),
         input.get(),
         tokenLimit = 6,
         temp = null,
