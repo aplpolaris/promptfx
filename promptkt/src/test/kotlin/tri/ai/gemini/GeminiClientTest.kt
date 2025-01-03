@@ -36,13 +36,13 @@ class GeminiClientTest {
 
         @JvmStatic
         @BeforeAll
-        fun setUp(): Unit {
+        fun setUp() {
             client = GeminiClient()
         }
 
         @JvmStatic
         @AfterAll
-        fun tearDown(): Unit {
+        fun tearDown() {
             client.close()
         }
     }

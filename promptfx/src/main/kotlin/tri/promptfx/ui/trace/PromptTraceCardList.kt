@@ -52,8 +52,8 @@ class PromptTraceCardList: Fragment() {
 
     private val controller: PromptFxController by inject()
     private val isGlobalHistoryView = controller.promptHistory.prompts === prompts
-    private val filteredPrompts = observableListOf<AiPromptTraceSupport<*>>()
     private val promptFilter: PromptTraceFilter = find<PromptTraceFilter>()
+    private val filteredPrompts = observableListOf<AiPromptTraceSupport<*>>()
     private lateinit var promptSelectionModel: MultipleSelectionModel<AiPromptTraceSupport<*>>
     val selectedPrompt = SimpleObjectProperty<AiPromptTraceSupport<*>>()
 

@@ -2,12 +2,10 @@
 # Leave a list blank to use the defaults.
 ---
 audio: [ ]
-chat: [
-  gpt-3.5-turbo, gpt-4o, gpt-4-turbo, gpt-4, gpt-4-turbo-preview
-]
+chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4, gpt-4-turbo-preview ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ ]
 moderation: [ ]
 tts: [ ]
 image_generator: [ ]
-vision_language: [ ]
+vision_language: [ gpt-4o ]

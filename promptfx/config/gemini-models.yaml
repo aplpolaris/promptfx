@@ -1,13 +1,13 @@
 # Library of Gemini Models
+# See https://ai.google.dev/gemini-api/docs/models/gemini
 # See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versioning
 ---
 
 audio: [ ]
-chat: [ gemini-pro, gemini-pro-vision, gemini-1.0-pro, gemini-1.5-flash, gemini-1.5-pro ]
-completion: [ gemini-pro, gemini-1.0-pro, gemini-1.5-flash, gemini-1.5-pro ]
-embeddings: [ embedding-001, text-embedding-004 ]
+chat: [ gemini-pro, gemini-1.0-pro ]
+completion: [  ]
+embeddings: [ embedding-001, text-embedding-004, text-embedding-005 ]
 moderation: [ ]
 tts: [ ]
 image_generator: [ ]
-vision_language: [ gemini-pro-vision ]
-
+vision_language: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]

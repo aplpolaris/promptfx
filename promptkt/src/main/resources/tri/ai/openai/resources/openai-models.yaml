@@ -34,15 +34,6 @@ models:
       totalTokenLimit: 128000
       snapshots: [ '2024-05-13' ]
 
-    - id: gpt-4-vision-preview
-      name: GPT-4 Turbo with Vision Preview
-      type: TEXT_VISION_CHAT
-      source: OpenAI
-      description: |
-        GPT-4 with ability to understand images.
-        Returns a maximum of 4,096 output tokens.
-      totalTokenLimit: 128000
-
   GPT-3.5:
 
     - id: gpt-3.5-turbo
@@ -174,13 +165,10 @@ models:
       description: Canary Whisper
 
 audio: [ whisper-1 ]
-chat: [
-  gpt-3.5-turbo, gpt-4o, gpt-4-turbo, gpt-4
-]
+chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4 ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]
 moderation: [ text-moderation-latest, text-moderation-stable ]
 tts: [ tts-1, tts-1-hd ]
 image_generator: [ dall-e-2, dall-e-3 ]
-vision_language: [ gpt-4-vision-preview, gpt-4o ]
-
+vision_language: [ gpt-4o ]

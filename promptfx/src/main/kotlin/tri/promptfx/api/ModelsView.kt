@@ -20,30 +20,39 @@
 package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
+import javafx.collections.ObservableList
+import javafx.scene.control.MenuButton
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
-import tri.ai.core.TextPlugin
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
 import tri.util.ui.graphic
-import java.util.function.Predicate
 
 class ModelsView : AiTaskView("Models", "List all models from API call, sorted by creation date", showInput = false) {
 
     private val models = observableListOf<ModelInfo>()
-    private val sortedModels = models.sorted(compareBy { it.id })
-    private val filteredModels = sortedModels.filtered { true }
-    private val selectedModel = SimpleObjectProperty<ModelInfo>()
 
-    private val modelFilter = SimpleObjectProperty(ModelInfoFilter.ALL).apply {
-        onChange { nue -> filteredModels.predicate = Predicate { nue!!.filter.invoke(it) } }
-    }
+    private val modelsFilter: ModelsFilter = find<ModelsFilter>()
+    private val filteredModels = observableListOf<ModelInfo>()
+
     private val modelSort = SimpleObjectProperty(ModelInfoSort.ID_ASC).apply {
         onChange { nue -> sortedModels.comparator = nue!!.comparator }
+    }
+    private val sortedModels = filteredModels.sorted(compareBy { it.id })
+
+    private val selectedModel = SimpleObjectProperty<ModelInfo>()
+
+    init {
+        models.onChange {
+            modelsFilter.updateFilterOptions(it.list)
+            refilter()
+        }
+        modelsFilter.filter.onChange { refilter() }
     }
 
     init {
@@ -54,7 +63,6 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
     }
 
     private val sortToggle = ToggleGroup()
-    private val filterToggle = ToggleGroup()
 
     init {
         output {
@@ -101,32 +109,14 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                             }
                         }
                         menubutton("", FontAwesomeIcon.FILTER.graphic) {
-                            menu("Filter by Source") {
-                                TextPlugin.sources().forEach { source ->
-                                    radiomenuitem(source, filterToggle) {
-                                        if (source == "Gemini")
-                                            graphic = FontAwesomeIcon.GOOGLE.graphic
-                                        action { modelFilter.value = ModelInfoFilter.ofSource(source) }
-                                    }
-                                }
-                            }
-                            menu("Filter by Type") {
-                                ModelType.values().forEach { type ->
-                                    radiomenuitem(type.name, filterToggle) {
-                                        graphic = type.graphic()
-                                        isMnemonicParsing = false
-                                        action { modelFilter.value = ModelInfoFilter.ofType(type) }
-                                    }
-                                }
-                            }
-                            radiomenuitem("No Filter", filterToggle) {
+                            label("Filter by:")
+                            checklistmenu("Source", modelsFilter.sourceFilters)
+                            checklistmenu("Type", modelsFilter.typeFilters)
+                            checklistmenu("Lifecycle", modelsFilter.lifecycleFilters)
+                            checkmenuitem("Show All") {
                                 isSelected = true
-                                action { modelFilter.value = ModelInfoFilter.ALL }
-                                // listen to changes in modelFilter because this can be selected by reset button
-                                modelFilter.onChange {
-                                    if (it == ModelInfoFilter.ALL)
-                                        isSelected = true
-                                }
+                                action { modelsFilter.selectAll() }
+                                modelsFilter.filter.onChange { isSelected = modelsFilter.isAllSelected() }
                             }
                         }
                     }
@@ -145,55 +135,8 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         bindSelected(selectedModel)
                     }
                 }
-                vbox {
-                    vgrow = Priority.ALWAYS
 
-                    scrollpane {
-                        vgrow = Priority.ALWAYS
-
-                        form {
-                            visibleWhen { selectedModel.isNotNull }
-                            managedWhen { selectedModel.isNotNull }
-
-                            fun Fieldset.modelfield(text: String, op: (ModelInfo) -> Any?) {
-                                field(text) {
-                                    val prop = selectedModel.stringBinding { it?.let { op(it) }?.toString() }
-                                    text(prop) {
-                                        visibleWhen(prop.isNotNull)
-                                        wrappingWidth = 300.0
-                                    }
-                                }
-                            }
-
-                            fieldset("Model Info") {
-                                modelfield("Id") { it.id }
-                                modelfield("Name") { it.name }
-                                modelfield("Type") { it.type }
-                                modelfield("Description") { it.description }
-                            }
-                            fieldset("Model Version") {
-                                modelfield("Created") { it.created }
-                                modelfield("Source") { it.source }
-                                modelfield("Version") { it.version }
-                            }
-                            fieldset("Model Limits") {
-                                modelfield("Input Token Limit") { it.inputTokenLimit }
-                                modelfield("Output Token Limit") { it.outputTokenLimit }
-                                modelfield("Total Token Limit") { it.totalTokenLimit }
-                                modelfield("Output Dimension") { it.outputDimension }
-                            }
-                            fieldset("Other Properties") {
-                                field("Params") {
-                                    text(selectedModel.stringBinding {
-                                        it?.params?.entries?.joinToString("\n") { (k, v) -> "$k: $v" }
-                                    }) {
-                                        wrappingWidth = 300.0
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                add(ModelInfoCard(selectedModel).root)
             }
         }
     }
@@ -202,13 +145,45 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
         refresh()
     }
 
+    //region FILTER HELPERS
+
+    private fun <X> MenuButton.checklistmenu(label: String, itemList: ObservableList<Pair<X, SimpleBooleanProperty>>) {
+        menu(label) {
+            fun updateMenu() {
+                items.clear()
+                itemList.forEach { (key, prop) ->
+                    checkmenuitem(key.toString(), selected = prop) { action { refilter() } }
+                }
+                separator()
+                item("Select All") {
+                    action {
+                        itemList.forEach { it.second.set(true) }
+                        refilter()
+                    }
+                }
+                item("Select None") {
+                    action {
+                        itemList.forEach { it.second.set(false) }
+                        refilter()
+                    }
+                }
+            }
+            itemList.onChange { updateMenu() }
+            updateMenu()
+        }
+    }
+
+    private fun refilter() {
+        val filter = modelsFilter.filter.value
+        filteredModels.setAll(models.toList().filter(filter))
+    }
+
     private fun refresh() {
         runAsync {
             PromptFxModels.policy.modelInfo()
         } ui {
             models.setAll(it)
             modelSort.value = ModelInfoSort.ID_ASC
-            modelFilter.value = ModelInfoFilter.ALL
             if (it.isEmpty()) {
                 error("No models found", "No models were returned, possibly due to a missing API key. Check the logs for more information.")
             }
@@ -228,40 +203,8 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
         ModelType.UNKNOWN -> FontAwesomeIcon.CUBE.graphic
     }
 
+    //endregion
+
     override suspend fun processUserInput() = TODO()
 
-}
-
-/** Sort options for models. */
-enum class ModelInfoSort(val comparator: Comparator<ModelInfo>) {
-    ID_ASC(compareBy { it.id }),
-    ID_DESC(compareByDescending { it.id }),
-    CREATED_ASC(compareBy { it.created }),
-    CREATED_DESC(compareByDescending { it.created }),
-    SOURCE_ASC(compareBy { it.source }),
-    SOURCE_DESC(compareByDescending { it.source }),
-    TYPE_ASC(compareBy { it.type }),
-    TYPE_DESC(compareByDescending { it.type });
-}
-
-/** Filter options for models. */
-enum class ModelInfoFilter(val filter: (ModelInfo) -> Boolean) {
-    SOURCE_OPENAI({ it.source == "OpenAI" }),
-    SOURCE_GEMINI({ it.source == "Gemini" }),
-    TYPE_TEXT_COMPLETION({ it.type == ModelType.TEXT_COMPLETION }),
-    TYPE_TEXT_CHAT({ it.type == ModelType.TEXT_CHAT }),
-    TYPE_TEXT_VISION_CHAT({ it.type == ModelType.TEXT_VISION_CHAT }),
-    TYPE_TEXT_EMBEDDING({ it.type == ModelType.TEXT_EMBEDDING }),
-    TYPE_IMAGE_GENERATOR({ it.type == ModelType.IMAGE_GENERATOR }),
-    TYPE_TEXT_TO_SPEECH({ it.type == ModelType.TEXT_TO_SPEECH }),
-    TYPE_SPEECH_TO_TEXT({ it.type == ModelType.SPEECH_TO_TEXT }),
-    TYPE_MODERATION({ it.type == ModelType.MODERATION }),
-    TYPE_QUESTION_ANSWER({ it.type == ModelType.QUESTION_ANSWER }),
-    TYPE_UNKNOWN({ it.type == ModelType.UNKNOWN }),
-    ALL({ true });
-
-    companion object {
-        fun ofType(type: ModelType) = valueOf("TYPE_${type.name}")
-        fun ofSource(source: String) = valueOf("SOURCE_${source.uppercase()}")
-    }
 }
