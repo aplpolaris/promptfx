@@ -1,8 +1,8 @@
 package tri.util.ui
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.ObservableList
-import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.control.MenuButton
 import javafx.scene.control.MenuItem
@@ -54,5 +54,17 @@ private fun <X> MenuItem.actionselectnone(itemList: ObservableList<Pair<X, Simpl
     action {
         itemList.forEach { it.second.set(false) }
         refilter()
+    }
+}
+
+/** Adds a menu with sort options. */
+fun <X, Y> MenuButton.sortmenu(label: String, model: FilterSortModel<X>, attribute: (X) -> Y) {
+    menu(label) {
+        item("Ascending", graphic = FontAwesomeIcon.SORT_ALPHA_ASC.graphic) {
+            action { model.sortBy(label, attribute, true) }
+        }
+        item("Descending", graphic = FontAwesomeIcon.SORT_ALPHA_DESC.graphic) {
+            action { model.sortBy(label, attribute, false) }
+        }
     }
 }

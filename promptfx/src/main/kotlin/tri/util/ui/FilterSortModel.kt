@@ -15,10 +15,18 @@ abstract class FilterSortModel<X> {
     val filters = mutableMapOf<String, AttributeFilter<X, *>>()
     /** Tracks combined filter for all attributes. */
     val filter = SimpleObjectProperty<(X) -> Boolean> { true }
+    /** Attribute sort operations, from most significant to least. */
+    val sortOps = mutableListOf<AttributeComparator<X, *>>()
+    /** Tracks compound sort order for the list. */
+    val sort = SimpleObjectProperty<Comparator<X>>(compareBy { it.toString() })
 
-    protected fun <Y> addFilter(key: String, flagExtractor: (X) -> Y) {
-        filters[key] = AttributeFilter(flagExtractor)
+    //region INITIALIZERS FOR SUB-CLASSES
+
+    protected fun <Y> addFilter(key: String, attribute: (X) -> Y) {
+        filters[key] = AttributeFilter(attribute)
     }
+
+    //endregion
 
     /** Update filter options based on given list of objects. */
     fun updateFilterOptions(list: List<X>) {
@@ -32,6 +40,26 @@ abstract class FilterSortModel<X> {
     fun updateFilter() {
         val flagFilters = filters.map { (_, value) -> value.createFilter() }
         filter.set { x -> flagFilters.all { it(x) } }
+    }
+
+    fun <Y> sortBy(key: String, attribute: (X) -> Y, sortAscend: Boolean) {
+        sortOps.removeIf { it.key == key }
+        sortOps.add(0, AttributeComparator(key, attribute, sortAscend))
+        updateSort()
+    }
+
+    /** Reset the sort operation. */
+    fun resetSort() {
+        sortOps.clear()
+        updateSort()
+    }
+
+    /** Update sort operation based on current sortOps. */
+    private fun updateSort() {
+        if (sortOps.isEmpty())
+            sort.set(compareBy { it.toString() })
+        else
+            sort.set(sortOps.map { it.comparator() }.reduce { acc, c -> acc.thenComparing(c) })
     }
 
     fun selectAll() = filters.values.forEach { it.selectAll() }
@@ -72,4 +100,14 @@ class AttributeFilter<X, Y>(val attribute: (X) -> Y) {
     fun selectNone() { values.forEach { it.second.value = false } }
     fun isAllSelected() = values.all { it.second.value }
     fun isNoneSelected() = values.none { it.second.value }
+}
+
+/**
+ * An attribute sort operation.
+ */
+class AttributeComparator<X, Y>(val key: String, val attribute: (X) -> Y, val sortAscend: Boolean) {
+    fun comparator(): Comparator<X> = when {
+        sortAscend -> compareBy { attribute(it)?.let { it as? Comparable<*> ?: it.toString() } }
+        else -> compareByDescending { attribute(it)?.let { it as? Comparable<*> ?: it.toString() } }
+    }
 }

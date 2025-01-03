@@ -22,7 +22,6 @@ package tri.promptfx.api
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.Node
-import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.ModelInfo
@@ -31,28 +30,24 @@ import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
+import tri.util.ui.sortmenu
 
 /** API view showing model information. */
 class ModelsView : AiTaskView("Models", "List all models from API call, sorted by creation date", showInput = false) {
 
     private val models = observableListOf<ModelInfo>()
-
-    private val modelsFilter: ModelsFilter = find<ModelsFilter>()
+    private val filter: ModelsFilter = find<ModelsFilter>()
     private val filteredModels = observableListOf<ModelInfo>()
-
-    private val modelSort = SimpleObjectProperty(ModelInfoSort.ID_ASC).apply {
-        onChange { nue -> sortedModels.comparator = nue!!.comparator }
-    }
-    private val sortedModels = filteredModels.sorted(compareBy { it.id })
-
+    private val sortedModels = filteredModels.sorted(filter.model.sort.value)
     private val selectedModel = SimpleObjectProperty<ModelInfo>()
 
     init {
         models.onChange {
-            modelsFilter.model.updateFilterOptions(it.list)
+            filter.model.updateFilterOptions(it.list)
             refilter()
         }
-        modelsFilter.model.filter.onChange { refilter() }
+        filter.model.filter.onChange { refilter() }
+        filter.model.sort.onChange { sortedModels.setComparator(it) }
     }
 
     init {
@@ -61,8 +56,6 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
         runButton.isVisible = false
         runButton.isManaged = false
     }
-
-    private val sortToggle = ToggleGroup()
 
     init {
         output {
@@ -74,54 +67,30 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         button("", FontAwesomeIcon.REFRESH.graphic) {
                             action { refresh() }
                         }
-                        menubutton("", FontAwesomeIcon.SORT_ALPHA_ASC.graphic) {
-                            radiomenuitem("Sort by Id", sortToggle) {
-                                isSelected = true
-                                action { modelSort.value = ModelInfoSort.ID_ASC }
-                                // listen to changes in modelSort because this can be selected by reset button
-                                modelSort.onChange {
-                                    if (it == ModelInfoSort.ID_ASC)
-                                        isSelected = true
-                                }
-                            }
-                            radiomenuitem("Sort by Created", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.CREATED_ASC }
-                            }
-                            radiomenuitem("Sort by Source", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.SOURCE_ASC }
-                            }
-                            radiomenuitem("Sort by Type", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.TYPE_ASC }
+                        menubutton("Sort by:", FontAwesomeIcon.SORT.graphic) {
+                            sortmenu("Id", filter.model) { it.id }
+                            sortmenu("Name", filter.model) { it.name }
+                            sortmenu("Created Date", filter.model) { it.created }
+                            sortmenu("Source", filter.model) { it.source }
+                            sortmenu("Type", filter.model) { it.type }
+                            sortmenu("Lifecycle", filter.model) { it.lifecycle }
+                            item("Reset", graphic = FontAwesomeIcon.UNDO.graphic) {
+                                action { filter.model.resetSort() }
                             }
                         }
-                        menubutton("", FontAwesomeIcon.SORT_ALPHA_DESC.graphic) {
-                            radiomenuitem("Sort by Id (descending)", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.ID_DESC }
-                            }
-                            radiomenuitem("Sort by Created (descending)", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.CREATED_DESC }
-                            }
-                            radiomenuitem("Sort by Source (descending)", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.SOURCE_DESC }
-                            }
-                            radiomenuitem("Sort by Type (descending)", sortToggle) {
-                                action { modelSort.value = ModelInfoSort.TYPE_DESC }
-                            }
-                        }
-                        menubutton("", FontAwesomeIcon.FILTER.graphic) {
-                            label("Filter by:")
-                            checklistmenu("Source", modelsFilter.sourceFilters) { refilter() }
-                            checklistmenu("Type", modelsFilter.typeFilters, ::graphic) { refilter() }
-                            checklistmenu("Lifecycle", modelsFilter.lifecycleFilters) { refilter() }
+                        menubutton("Filter by:", FontAwesomeIcon.FILTER.graphic) {
+                            checklistmenu("Source", filter.sourceFilters) { refilter() }
+                            checklistmenu("Type", filter.typeFilters, ::graphic) { refilter() }
+                            checklistmenu("Lifecycle", filter.lifecycleFilters) { refilter() }
                             checkmenuitem("Show All") {
                                 isSelected = true
-                                action { modelsFilter.model.selectAll() }
-                                modelsFilter.model.filter.onChange { isSelected = modelsFilter.model.isAllSelected() }
+                                action { filter.model.selectAll() }
+                                filter.model.filter.onChange { isSelected = filter.model.isAllSelected() }
                             }
                         }
                     }
 
-                    listview(filteredModels) {
+                    listview(sortedModels) {
                         vgrow = Priority.ALWAYS
                         cellFormat {
                             text = "${it.id} (${it.source})"
@@ -152,7 +121,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
             PromptFxModels.policy.modelInfo()
         } ui {
             models.setAll(it)
-            modelSort.value = ModelInfoSort.ID_ASC
+            filter.model.resetSort()
             if (it.isEmpty()) {
                 error("No models found", "No models were returned, possibly due to a missing API key or failed connection. Check the logs for more information.")
             }
@@ -160,7 +129,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
     }
 
     private fun refilter() {
-        val filter = modelsFilter.model.filter.value
+        val filter = filter.model.filter.value
         filteredModels.setAll(models.toList().filter(filter))
     }
 
