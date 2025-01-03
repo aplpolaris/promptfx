@@ -30,11 +30,12 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.gemini.Content
-import tri.ai.gemini.GeminiModelIndex
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
+import tri.ai.openai.OpenAiClient.Companion.toOpenAiRole
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
+import tri.promptfx.PromptFxModels
 
 /**
  * Common functionality for chat API views.
@@ -42,12 +43,11 @@ import tri.promptfx.ModelParameters
  */
 abstract class ChatView(title: String, instruction: String, private val roles: List<Role>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
 
-    private val chatModels = OpenAiModelIndex.chatModels(includeSnapshots = true) +
-            GeminiModelIndex.chatModels(includeSnapshots = true)
+    private val chatModels = PromptFxModels.policy.chatModels()
 
     protected val system = SimpleStringProperty("")
 
-    protected val model = SimpleStringProperty(chatModels.first())
+    protected val model = SimpleObjectProperty(PromptFxModels.policy.chatModelDefault())
     protected val messageHistory = SimpleIntegerProperty(10)
 
     protected val seedActive = SimpleBooleanProperty(false)
@@ -149,11 +149,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
     }
 
     protected fun Content.toChatMessage() = chatMessage {
-        role = when (this@toChatMessage.role) {
-            "user" -> Role.User
-            "model" -> Role.Assistant
-            else -> throw IllegalArgumentException("Unsupported role: $role")
-        }
+        role = this@toChatMessage.role.fromGeminiRole().toOpenAiRole()
         if (parts.size == 1 && parts[0].text != null && parts[0].inlineData == null) {
             content = parts[0].text!!
         } else {

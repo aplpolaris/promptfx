@@ -95,14 +95,10 @@ class GeminiClient : Closeable {
         val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
         val request = GenerateContentRequest(
             messages.filter { it.role != TextChatRole.System }.map {
-                val role = when (it.role) {
-                    TextChatRole.User -> "user"
-                    TextChatRole.Assistant -> "model"
-                    else -> error("Invalid role: ${it.role}")
-                }
+                val role = it.role.toGeminiRole()
                 Content(listOf(Part(it.content)), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), "user") },
+            systemInstruction = system?.let { Content(listOf(Part(it)), GEMINI_ROLE_USER) },
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -112,17 +108,13 @@ class GeminiClient : Closeable {
         val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
         val request = GenerateContentRequest(
             messages.filter { it.role != TextChatRole.System }.map {
-                val role = when (it.role) {
-                    TextChatRole.User -> "user"
-                    TextChatRole.Assistant -> "model"
-                    else -> error("Invalid role: ${it.role}")
-                }
+                val role = it.role.toGeminiRole()
                 Content(listOf(
                     Part(it.content),
                     Part(null, Blob.image(it.image))
                 ), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), "system") },
+            systemInstruction = system?.let { Content(listOf(Part(it)), GEMINI_ROLE_USER) }, // TODO - support for system messages
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -136,6 +128,20 @@ class GeminiClient : Closeable {
 
     companion object {
         val INSTANCE by lazy { GeminiClient() }
+
+        /** Convert from [TextChatRole] to string representing Gemini role. */
+        fun TextChatRole.toGeminiRole() = when (this) {
+            TextChatRole.User -> GEMINI_ROLE_USER
+            TextChatRole.Assistant -> GEMINI_ROLE_MODEL
+            else -> error("Invalid role: $this")
+        }
+
+        /** Convert from string representing Gemini role to [TextChatRole]. */
+        fun String?.fromGeminiRole() = when (this) {
+            GEMINI_ROLE_USER -> TextChatRole.User
+            GEMINI_ROLE_MODEL -> TextChatRole.Assistant
+            else -> error("Invalid role: $this")
+        }
     }
 
 }
@@ -201,16 +207,21 @@ data class GenerateContentRequest(
             this(listOf(content), systemInstruction, generationConfig)
 }
 
+private const val GEMINI_ROLE_USER = "user"
+private const val GEMINI_ROLE_MODEL = "model"
+
 @Serializable
 data class Content(
     val parts: List<Part>,
     val role: String? = null
 ) {
-    init { require(role in listOf(null, "user", "model")) { "Invalid role: $role" } }
+    init { require(role in listOf(null, GEMINI_ROLE_USER, GEMINI_ROLE_MODEL)) { "Invalid role: $role" } }
 
     companion object {
         /** Content with a single text part. */
-        fun text(text: String) = Content(listOf(Part(text)), "user")
+        fun text(text: String) = Content(listOf(Part(text)), GEMINI_ROLE_USER)
+        /** Content with a system message. */
+        fun systemMessage(text: String) = text(text) // TODO - support for system messages if Gemini supports it
     }
 }
 

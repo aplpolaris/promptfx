@@ -22,10 +22,13 @@ package tri.promptfx.api
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Role
 import com.aallam.openai.api.model.ModelId
-import tri.ai.core.TextPlugin
+import tri.ai.core.TextChatMessage
 import tri.ai.gemini.*
 import tri.ai.gemini.Content
+import tri.ai.gemini.GeminiClient.Companion.toGeminiRole
 import tri.ai.openai.OpenAiChat
+import tri.ai.openai.OpenAiClient.Companion.fromOpenAiRole
+import tri.ai.openai.OpenAiClient.Companion.toOpenAiRole
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
@@ -44,10 +47,10 @@ class ChatViewBasic :
             listOf(ChatMessage(ChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
 
-        val m = TextPlugin.chatModel(model.value)
+        val m = model.value
         if (m is OpenAiChat) {
             val completion = ChatCompletionRequest(
-                model = ModelId(model.value),
+                model = ModelId(m.modelId),
                 messages = messages,
                 temperature = common.temp.value,
                 topP = common.topP.value,
@@ -72,7 +75,7 @@ class ChatViewBasic :
             val response = m.client.generateContent(
                 m.modelId,
                 GenerateContentRequest(
-                    messages.filter { it.role in setOf(ChatRole.User, ChatRole.Assistant) }.map { it.geminiContent() },
+                    messages.filter { it.role in setOf(ChatRole.User, ChatRole.Assistant) }.map { it.fromOpenAiMessageToGeminiContent() },
                     systemInstruction = messages.firstOrNull { it.role == ChatRole.System }?.geminiSystemMessage(),
                     GenerationConfig(
                         stopSequences = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
@@ -92,7 +95,7 @@ class ChatViewBasic :
                 )
             )
             return if (response.error != null)
-                AiPromptTrace.invalidRequest<ChatMessage>(model.value, response.error!!.message).asPipelineResult()
+                AiPromptTrace.invalidRequest<ChatMessage>(m.modelId, response.error!!.message).asPipelineResult()
             else
                 AiPromptTrace(
                     null,
@@ -100,21 +103,43 @@ class ChatViewBasic :
                     AiExecInfo(),
                     AiOutputInfo.output(response.candidates!!.first().content.toChatMessage())
                 ).asPipelineResult()
+        } else if (m != null) {
+            return m.chat(
+                messages = messages.map { it.fromOpenAiMessage() },
+                tokens = common.maxTokens.value,
+                stop = if (common.stopSequences.value.isBlank()) null else listOf(common.stopSequences.value),
+                requestJson = responseFormat.value == ChatResponseFormat.JsonObject,
+                numResponses = common.numResponses.value
+            ).mapOutput {
+                it.toOpenAiMessage()
+            }.asPipelineResult()
         } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(null, "No model selected in the Chat API view.").asPipelineResult()
         }
     }
+
+    //region API ADAPTERS AND CONVERSIONS
+
+    private fun ChatMessage.fromOpenAiMessage(): TextChatMessage {
+        val mc = messageContent
+        val usePrompt = when {
+            mc is TextContent -> mc.content
+            mc is ListContent && mc.content.size == 1 && mc.content[0] is TextPart -> (mc.content[0] as TextPart).text
+            else -> null
+        }
+        return TextChatMessage(role.fromOpenAiRole(), usePrompt)
+    }
+
+    private fun TextChatMessage.toOpenAiMessage() =
+        ChatMessage(role.toOpenAiRole(), content)
 
     private fun ChatMessage.geminiSystemMessage() =
         Content.text(content!!)
 
-    private fun ChatMessage.geminiContent() =
+
+    private fun ChatMessage.fromOpenAiMessageToGeminiContent() =
         Content(
-            role = when (role) {
-                ChatRole.User -> "user"
-                ChatRole.Assistant -> "model"
-                else -> throw UnsupportedOperationException("Unsupported role: $role")
-            },
+            role = role.fromOpenAiRole().toGeminiRole(),
             parts = when (val m = messageContent) {
                 is TextContent -> listOf(Part(m.content))
                 is ListContent -> m.content.map {
@@ -127,6 +152,8 @@ class ChatViewBasic :
                 else -> throw UnsupportedOperationException("Unsupported content type: $m")
             }
         )
+
+    //endregion
 
 }
 

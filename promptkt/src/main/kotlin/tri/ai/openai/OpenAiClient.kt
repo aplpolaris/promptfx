@@ -35,13 +35,12 @@ import com.fasterxml.jackson.databind.ObjectWriter
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.http.*
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
+import tri.ai.core.TextChatRole
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
-import tri.ai.openai.OpenAiModelIndex.IMAGE_DALLE2
 import tri.ai.pips.UsageUnit
 import tri.ai.prompt.trace.*
 import java.io.File
@@ -294,6 +293,22 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     companion object {
         val INSTANCE by lazy { OpenAiClient(OpenAiSettings()) }
+
+        /** Convert from [TextChatRole] to OpenAI [ChatRole]. */
+        fun TextChatRole.toOpenAiRole() = when (this) {
+            TextChatRole.System -> ChatRole.System
+            TextChatRole.User -> ChatRole.User
+            TextChatRole.Assistant -> ChatRole.Assistant
+            else -> error("Invalid role: $this")
+        }
+
+        /** Convert from OpenAI [ChatRole] to [TextChatRole]. */
+        fun ChatRole.fromOpenAiRole() = when (this) {
+            ChatRole.System -> TextChatRole.System
+            ChatRole.User -> TextChatRole.User
+            ChatRole.Assistant -> TextChatRole.Assistant
+            else -> error("Invalid role: $this")
+        }
     }
 
 }

@@ -27,6 +27,6 @@ class ChatEntry(val user: String, val message: String, val style: ChatEntryRole 
 }
 
 /** Convert a [ChatEntry] to a [TextChatMessage]. */
-fun ChatEntry.toTextChatMessage() = style.toTextChatRole()?.let {
+fun ChatEntry.toTextChatMessage() = style.role?.let {
     TextChatMessage(it, message)
 }

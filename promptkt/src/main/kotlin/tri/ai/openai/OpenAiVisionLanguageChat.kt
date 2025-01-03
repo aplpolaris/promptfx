@@ -21,13 +21,13 @@ package tri.ai.openai
 
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
-import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.chat.chatCompletionRequest
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
+import tri.ai.openai.OpenAiClient.Companion.toOpenAiRole
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with OpenAI models. */
@@ -52,7 +52,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
                 messages {
                     messages.forEach { m ->
                         message {
-                            role = m.role.openAiRole()
+                            role = m.role.toOpenAiRole()
                             content {
                                 text(m.content)
                                 image(m.image.toString())
@@ -66,12 +66,6 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
         return response.mapOutput { TextChatMessage(TextChatRole.Assistant, it.content!!) }
     }
 
-    private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.openAiRole(), content)
-
-    private fun TextChatRole.openAiRole() = when (this) {
-        TextChatRole.System -> ChatRole.System
-        TextChatRole.User -> ChatRole.User
-        TextChatRole.Assistant -> ChatRole.Assistant
-    }
+    private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.toOpenAiRole(), content)
 
 }
