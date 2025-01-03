@@ -21,7 +21,7 @@ package tri.ai.gemini
 
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
 import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
@@ -56,11 +56,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: Gemi
                 AiPromptTrace.error(modelInfo, err.message, duration = System.currentTimeMillis() - t0)
             } else {
                 val firstCandidate = candidates!!.first()
-                val role = when (firstCandidate.content.role) {
-                    "user" -> TextChatRole.User
-                    "model" -> TextChatRole.Assistant
-                    else -> error("Invalid role: ${firstCandidate.content.role}")
-                }
+                val role = firstCandidate.content.role.fromGeminiRole()
                 val msgs = firstCandidate.content.parts.map { TextChatMessage(role, it.text) }
                 AiPromptTrace(
                     null,

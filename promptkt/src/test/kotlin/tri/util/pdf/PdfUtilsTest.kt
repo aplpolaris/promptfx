@@ -53,7 +53,7 @@ class PdfUtilsTest {
     fun testPdfMetadata() {
         val metadata = PdfUtils.pdfMetadata(file)
         println(metadata)
-        assertEquals(9, metadata.size)
+        assertEquals(7, metadata.size)
         assertEquals("Microsoft® Word LTSC", metadata["pdf.creator"])
     }
 

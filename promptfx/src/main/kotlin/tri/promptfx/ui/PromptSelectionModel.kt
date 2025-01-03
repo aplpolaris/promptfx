@@ -34,13 +34,18 @@ class PromptSelectionModel(_id: String) {
 
     init {
         id.onChange {
-            if (it != CUSTOM)
+            if (it == CUSTOM) {
+                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
+            } else {
                 prompt.set(AiPromptLibrary.lookupPrompt(it!!))
+                text.set(prompt.value.template)
+            }
         }
         text.onChange {
-            if (id.value != CUSTOM && it != AiPromptLibrary.lookupPrompt(id.value).template) {
+            val currentTemplate = if (id.value == CUSTOM) null else AiPromptLibrary.lookupPrompt(id.value).template
+            if (it != currentTemplate) {
                 id.set(CUSTOM)
-                prompt.set(AiPrompt(text.value))
+                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
             }
         }
     }

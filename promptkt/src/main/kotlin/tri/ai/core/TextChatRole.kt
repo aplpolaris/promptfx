@@ -19,24 +19,7 @@
  */
 package tri.ai.core
 
-import tri.ai.prompt.trace.AiPromptTrace
-
-/** Interface for chat completion. */
-interface TextChat {
-
-    val modelId: String
-
-    /** Completes user text. */
-    suspend fun chat(
-        messages: List<TextChatMessage>,
-        tokens: Int? = 1000,
-        stop: List<String>? = null,
-        requestJson: Boolean? = null,
-        numResponses: Int? = null
-    ): AiPromptTrace<TextChatMessage>
-
+/** The role of a chat message. */
+enum class TextChatRole {
+    System, User, Assistant
 }
-
-/** A single message in a chat. */
-class TextChatMessage(val role: TextChatRole, val content: String?)
-

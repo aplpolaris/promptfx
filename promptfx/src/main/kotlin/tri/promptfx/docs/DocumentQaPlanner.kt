@@ -29,6 +29,7 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME
 import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.core.instructTask
 import tri.ai.pips.task
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.*
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
@@ -78,7 +79,7 @@ class DocumentQaPlanner {
      */
     fun plan(
         question: String,
-        promptId: String,
+        prompt: AiPrompt,
         embeddingService: EmbeddingService,
         chunksToRetrieve: Int,
         minChunkSize: Int,
@@ -103,7 +104,7 @@ class DocumentQaPlanner {
             val queryChunks = it.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
-            val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
+            val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses)
             val questionEmbedding = embeddingService.calculateEmbedding(question)
             val responseEmbeddings = response.values?.map {
                 embeddingService.calculateEmbedding(it)

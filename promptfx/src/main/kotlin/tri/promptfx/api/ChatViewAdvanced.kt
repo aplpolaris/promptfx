@@ -27,9 +27,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiChat
 import tri.ai.pips.AiPipelineResult
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ifNotBlank
 
@@ -85,10 +85,10 @@ class ChatViewAdvanced : ChatView(
             toolView.tools().ifEmpty { null }
         }
 
-        val m = TextPlugin.chatModel(model.value)
+        val m = model.value
         if (m is OpenAiChat) {
             val completion = ChatCompletionRequest(
-                model = ModelId(model.value),
+                model = ModelId(m.modelId),
                 messages = messages,
                 temperature = common.temp.value,
                 topP = common.topP.value,
@@ -110,7 +110,10 @@ class ChatViewAdvanced : ChatView(
             )
             return controller.openAiPlugin.client.chat(completion).asPipelineResult()
         } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>(model.value, "This model/plugin is not supported in the Advanced Chat API view: $m").asPipelineResult()
+            return AiPromptTrace.invalidRequest<ChatMessage>(
+                m?.modelId?.let { AiModelInfo(it) },
+                "This model/plugin is not supported in the Advanced Chat API view: $m"
+            ).asPipelineResult()
         }
     }
 

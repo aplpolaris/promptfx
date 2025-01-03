@@ -28,6 +28,7 @@ import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
@@ -137,7 +138,7 @@ class DocumentQaView: AiPlanTaskView(
 
     override fun plan() = planner.plan(
         question = question.value,
-        promptId = prompt.id.value,
+        prompt = prompt.prompt.value,
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,
@@ -160,15 +161,23 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            (it.finalResult as FormattedPromptTraceResult).formattedOutputs.forEach {
-                it.hyperlinkOp = { docName ->
-                    val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
-                    if (doc == null) {
-                        tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
-                    } else {
-                        browseToBestSnippet(doc, planner.lastResult, hostServices)
+            when (val res = it.finalResult) {
+                is FormattedPromptTraceResult -> {
+                    res.formattedOutputs.forEach {
+                        it.hyperlinkOp = { docName ->
+                            val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
+                            if (doc == null) {
+                                tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
+                            } else {
+                                browseToBestSnippet(doc, planner.lastResult, hostServices)
+                            }
+                        }
                     }
                 }
+                is AiPromptTrace<*> -> {
+                    // expected when there is an error
+                }
+                else -> throw IllegalStateException("Unexpected result type: $res")
             }
         }
 

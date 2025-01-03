@@ -21,12 +21,13 @@ package tri.promptfx
 
 import javafx.beans.property.SimpleStringProperty
 import tri.ai.pips.promptPlan
+import tri.ai.prompt.AiPrompt
 
 /** View that provides a single input box and combines that with a prompt from the prompt library. */
 open class AiCompletionView(
     title: String,
     description: String,
-    val promptId: String,
+    val prompt: AiPrompt,
     val tokenLimit: Int,
     val temp: Double?,
     val stop: String? = null
@@ -38,6 +39,6 @@ open class AiCompletionView(
         addInputTextArea(input)
     }
 
-    override fun plan() = completionEngine.promptPlan(promptId, input.get(), tokenLimit, temp, stop)
+    override fun plan() = completionEngine.promptPlan(prompt, input.get(), tokenLimit, temp, stop)
 
 }
