@@ -20,10 +20,8 @@
 package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.ObservableList
-import javafx.scene.control.MenuButton
+import javafx.scene.Node
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -31,8 +29,10 @@ import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
+import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 
+/** API view showing model information. */
 class ModelsView : AiTaskView("Models", "List all models from API call, sorted by creation date", showInput = false) {
 
     private val models = observableListOf<ModelInfo>()
@@ -49,10 +49,10 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
 
     init {
         models.onChange {
-            modelsFilter.updateFilterOptions(it.list)
+            modelsFilter.model.updateFilterOptions(it.list)
             refilter()
         }
-        modelsFilter.filter.onChange { refilter() }
+        modelsFilter.model.filter.onChange { refilter() }
     }
 
     init {
@@ -110,13 +110,13 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         }
                         menubutton("", FontAwesomeIcon.FILTER.graphic) {
                             label("Filter by:")
-                            checklistmenu("Source", modelsFilter.sourceFilters)
-                            checklistmenu("Type", modelsFilter.typeFilters)
-                            checklistmenu("Lifecycle", modelsFilter.lifecycleFilters)
+                            checklistmenu("Source", modelsFilter.sourceFilters) { refilter() }
+                            checklistmenu("Type", modelsFilter.typeFilters, ::graphic) { refilter() }
+                            checklistmenu("Lifecycle", modelsFilter.lifecycleFilters) { refilter() }
                             checkmenuitem("Show All") {
                                 isSelected = true
-                                action { modelsFilter.selectAll() }
-                                modelsFilter.filter.onChange { isSelected = modelsFilter.isAllSelected() }
+                                action { modelsFilter.model.selectAll() }
+                                modelsFilter.model.filter.onChange { isSelected = modelsFilter.model.isAllSelected() }
                             }
                         }
                     }
@@ -125,7 +125,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         vgrow = Priority.ALWAYS
                         cellFormat {
                             text = "${it.id} (${it.source})"
-                            graphic = it.type.graphic()
+                            graphic = graphic(it.type)
                             val inPolicy = it.id in PromptFxModels.modelIds()
                             style = when {
                                 inPolicy -> ""
@@ -147,37 +147,6 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
 
     //region FILTER HELPERS
 
-    private fun <X> MenuButton.checklistmenu(label: String, itemList: ObservableList<Pair<X, SimpleBooleanProperty>>) {
-        menu(label) {
-            fun updateMenu() {
-                items.clear()
-                itemList.forEach { (key, prop) ->
-                    checkmenuitem(key.toString(), selected = prop) { action { refilter() } }
-                }
-                separator()
-                item("Select All") {
-                    action {
-                        itemList.forEach { it.second.set(true) }
-                        refilter()
-                    }
-                }
-                item("Select None") {
-                    action {
-                        itemList.forEach { it.second.set(false) }
-                        refilter()
-                    }
-                }
-            }
-            itemList.onChange { updateMenu() }
-            updateMenu()
-        }
-    }
-
-    private fun refilter() {
-        val filter = modelsFilter.filter.value
-        filteredModels.setAll(models.toList().filter(filter))
-    }
-
     private fun refresh() {
         runAsync {
             PromptFxModels.policy.modelInfo()
@@ -185,26 +154,31 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
             models.setAll(it)
             modelSort.value = ModelInfoSort.ID_ASC
             if (it.isEmpty()) {
-                error("No models found", "No models were returned, possibly due to a missing API key. Check the logs for more information.")
+                error("No models found", "No models were returned, possibly due to a missing API key or failed connection. Check the logs for more information.")
             }
         }
     }
 
-    private fun ModelType.graphic() = when (this) {
-        ModelType.TEXT_COMPLETION -> FontAwesomeIcon.KEYBOARD_ALT.graphic
-        ModelType.TEXT_CHAT -> FontAwesomeIcon.COMMENTS.graphic
-        ModelType.TEXT_VISION_CHAT -> FontAwesomeIcon.IMAGE.graphic
-        ModelType.TEXT_EMBEDDING -> FontAwesomeIcon.FONT.graphic
-        ModelType.IMAGE_GENERATOR -> FontAwesomeIcon.CAMERA.graphic
-        ModelType.TEXT_TO_SPEECH -> FontAwesomeIcon.VOLUME_UP.graphic
-        ModelType.SPEECH_TO_TEXT -> FontAwesomeIcon.MICROPHONE.graphic
-        ModelType.MODERATION -> FontAwesomeIcon.EYE_SLASH.graphic
-        ModelType.QUESTION_ANSWER -> FontAwesomeIcon.QUESTION_CIRCLE.graphic
-        ModelType.UNKNOWN -> FontAwesomeIcon.CUBE.graphic
+    private fun refilter() {
+        val filter = modelsFilter.model.filter.value
+        filteredModels.setAll(models.toList().filter(filter))
     }
 
     //endregion
 
     override suspend fun processUserInput() = TODO()
 
+}
+
+fun graphic(type: ModelType): Node? = when (type) {
+    ModelType.TEXT_COMPLETION -> FontAwesomeIcon.KEYBOARD_ALT.graphic
+    ModelType.TEXT_CHAT -> FontAwesomeIcon.COMMENTS.graphic
+    ModelType.TEXT_VISION_CHAT -> FontAwesomeIcon.IMAGE.graphic
+    ModelType.TEXT_EMBEDDING -> FontAwesomeIcon.FONT.graphic
+    ModelType.IMAGE_GENERATOR -> FontAwesomeIcon.CAMERA.graphic
+    ModelType.TEXT_TO_SPEECH -> FontAwesomeIcon.VOLUME_UP.graphic
+    ModelType.SPEECH_TO_TEXT -> FontAwesomeIcon.MICROPHONE.graphic
+    ModelType.MODERATION -> FontAwesomeIcon.EYE_SLASH.graphic
+    ModelType.QUESTION_ANSWER -> FontAwesomeIcon.QUESTION_CIRCLE.graphic
+    ModelType.UNKNOWN -> FontAwesomeIcon.CUBE.graphic
 }

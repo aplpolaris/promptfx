@@ -34,7 +34,12 @@ class GeminiAiPlugin : TextPlugin {
 
     override fun modelInfo() = if (client.isConfigured())
         runBlocking {
-            client.listModels().models.map { it.toCoreModelInfo() }
+            try {
+                client.listModels().models.map { it.toCoreModelInfo() }
+            } catch (x: Exception) {
+                x.printStackTrace()
+                emptyList()
+            }
         }
     else listOf()
 

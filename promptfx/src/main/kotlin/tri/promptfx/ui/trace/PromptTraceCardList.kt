@@ -40,6 +40,7 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.tools.PromptTraceFilter
+import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 
 /** UI for a list of [AiPromptTrace]s. */
@@ -76,10 +77,10 @@ class PromptTraceCardList: Fragment() {
         if (isShowFilter) {
             toolbar {
                 label("Filter by:")
-                checklistmenu("view", promptFilter.viewFilters)
-                checklistmenu("model", promptFilter.modelFilters)
-                checklistmenu("status", promptFilter.statusFilters)
-                checklistmenu("type", promptFilter.typeFilters)
+                checklistmenu("view", promptFilter.viewFilters) { refilter() }
+                checklistmenu("model", promptFilter.modelFilters) { refilter() }
+                checklistmenu("status", promptFilter.statusFilters) { refilter() }
+                checklistmenu("type", promptFilter.typeFilters) { refilter() }
             }
         }
         val list = listview(filteredPrompts) {
@@ -208,32 +209,6 @@ class PromptTraceCardList: Fragment() {
                     }
                 }
             }
-        }
-    }
-
-    private fun EventTarget.checklistmenu(label: String, itemList: ObservableList<Pair<String, SimpleBooleanProperty>>) {
-        menubutton(label) {
-            fun updateMenu() {
-                items.clear()
-                itemList.forEach { (key, prop) ->
-                    checkmenuitem(key, selected = prop) { action { refilter() } }
-                }
-                separator()
-                item("Select All") {
-                    action {
-                        itemList.forEach { it.second.set(true) }
-                        refilter()
-                    }
-                }
-                item("Select None") {
-                    action {
-                        itemList.forEach { it.second.set(false) }
-                        refilter()
-                    }
-                }
-            }
-            itemList.onChange { updateMenu() }
-            updateMenu()
         }
     }
 

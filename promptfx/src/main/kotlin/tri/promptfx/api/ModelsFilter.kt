@@ -1,71 +1,38 @@
 package tri.promptfx.api
 
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
 import tornadofx.Component
-import tornadofx.observableListOf
-import tornadofx.onChange
 import tri.ai.core.ModelInfo
-import tri.ai.core.ModelLifecycle
 import tri.ai.core.ModelType
+import tri.util.ui.FilterSortModel
 
 /** Model for filtering models. */
 class ModelsFilter : Component() {
-    val sourceFilters = observableListOf<Pair<String, SimpleBooleanProperty>>()
-    val typeFilters = observableListOf<Pair<ModelType, SimpleBooleanProperty>>()
-    val lifecycleFilters = observableListOf<Pair<ModelLifecycle, SimpleBooleanProperty>>()
-    val filter = SimpleObjectProperty<(ModelInfo) -> Boolean> { true }
 
-    /** Update filter options based on given list of traces. */
-    fun updateFilterOptions(list: List<ModelInfo>) {
-        updateFilterFlags(sourceFilters, list.map { it.source }.distinct().sorted())
-        updateFilterFlags(typeFilters, list.map { it.type }.distinct())
-        updateFilterFlags(lifecycleFilters, list.map { it.lifecycle }.distinct())
-        updateFilter()
+    val model = object : FilterSortModel<ModelInfo>() {
+        init {
+            addFilter("source") { it.source }
+            addFilter("type") { it.type }
+            addFilter("lifecycle") { it.lifecycle }
+        }
     }
 
     /** Update and return the current filter. */
     fun filter(): (ModelInfo) -> Boolean {
-        updateFilter()
-        return filter.value!!
+        model.updateFilter()
+        return model.filter.value!!
     }
 
-    //region FILTER UPDATERS
-
-    private fun <X> updateFilterFlags(flags: ObservableList<Pair<X, SimpleBooleanProperty>>, values: List<X>) {
-        (flags.map { it.first } - values.toSet()).toList().forEach { k ->
-            flags.removeIf { it.first == k }
-        }
-        (values - flags.map { it.first }.toSet()).forEach {
-            val newProp = SimpleBooleanProperty(true)
-            newProp.onChange { updateFilter() }
-            flags.add(it to newProp)
-        }
-    }
-
-    private fun updateFilter() {
-        val filterSource = createFilter(sourceFilters) { it.source }
-        val filterType = createFilter(typeFilters) { it.type }
-        val filterLifecycle = createFilter(lifecycleFilters) { it.lifecycle }
-        filter.set { filterSource(it) && filterType(it) && filterLifecycle(it) }
-    }
-
-    private fun <X> createFilter(flags: ObservableList<Pair<X, SimpleBooleanProperty>>, keyExtractor: (ModelInfo) -> X): (ModelInfo) -> Boolean {
-        val selectedKeys = flags.filter { it.second.value }.map { it.first }.toSet()
-        return { selectedKeys.contains(keyExtractor(it)) }
-    }
-
-    fun selectAll() {
-        sourceFilters.forEach { it.second.value = true }
-        typeFilters.forEach { it.second.value = true }
-        lifecycleFilters.forEach { it.second.value = true }
-    }
-
-    fun isAllSelected() =
-        sourceFilters.all { it.second.value } && typeFilters.all { it.second.value } && lifecycleFilters.all { it.second.value }
-
-    //endregion
+    @Suppress("UNCHECKED_CAST")
+    val sourceFilters: ObservableList<Pair<String, SimpleBooleanProperty>>
+        get() = model.filters["source"]!!.values as ObservableList<Pair<String, SimpleBooleanProperty>>
+    @Suppress("UNCHECKED_CAST")
+    val typeFilters
+        get() = model.filters["type"]!!.values as ObservableList<Pair<ModelType, SimpleBooleanProperty>>
+    @Suppress("UNCHECKED_CAST")
+    val lifecycleFilters
+        get() = model.filters["lifecycle"]!!.values as ObservableList<Pair<String, SimpleBooleanProperty>>
 }
 
 /** Sort options for models. */
