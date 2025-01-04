@@ -29,8 +29,11 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     var created: LocalDate? = null
     var version: String? = null
     var deprecation: String? = null
+    var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
     var snapshots: List<String> = listOf()
 
+    var inputs: List<DataModality>? = null
+    var outputs: List<DataModality>? = null
     var inputTokenLimit: Int? = null
     var outputTokenLimit: Int? = null
     var totalTokenLimit: Int? = null
@@ -41,6 +44,14 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
 
     override fun toString() =
         "id ($type $source)"
+
+    /** Sets non-null parameters based on provided list of key-value pairs. */
+    fun params(vararg pairs: Pair<String, Any?>) {
+        pairs.forEach {
+            if (it.second != null)
+                params[it.first] = it.second!!
+        }
+    }
 
     /** Get id's of models, including snapshots. */
     fun ids(includeSnapshots: Boolean) =
@@ -64,6 +75,11 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     }
 }
 
+/** Data modality for inputs and outputs. */
+enum class DataModality {
+    text, audio, image, video, embedding, moderation
+}
+
 /** Model types. */
 enum class ModelType {
     TEXT_COMPLETION,
@@ -73,8 +89,29 @@ enum class ModelType {
     IMAGE_GENERATOR,
     TEXT_TO_SPEECH,
     SPEECH_TO_TEXT,
+    AUDIO_CHAT,
+    REALTIME_CHAT,
     MODERATION,
     QUESTION_ANSWER,
     UNKNOWN
 }
 
+/** Stages of model lifecycle. */
+enum class ModelLifecycle {
+    /** Model is in development. */
+    EXPERIMENTAL,
+    /** Model is in production. */
+    PRODUCTION,
+    /** Model is an alias for a production model. */
+    PRODUCTION_ALIAS,
+    /** Legacy model. */
+    LEGACY,
+    /** Model is planned for deprecation. */
+    DEPRECATION_PLANNED,
+    /** Model is deprecated. */
+    DEPRECATED,
+    /** Model has been discontinued. */
+    DISCONTINUED,
+    /** Lifecycle is unknown. */
+    UNKNOWN
+}

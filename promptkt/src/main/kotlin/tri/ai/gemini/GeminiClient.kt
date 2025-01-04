@@ -30,7 +30,10 @@ import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 import java.net.URI
 
-/** General purpose client for the Gemini API. */
+/**
+ * General purpose client for the Gemini API.
+ * See https://ai.google.dev/api?lang=web
+ */
 class GeminiClient : Closeable {
 
     private val settings = GeminiSettings()
@@ -156,7 +159,7 @@ data class ModelsResponse(
 @Serializable
 data class ModelInfo(
     val name: String,
-    val baseModelId: String? = null,
+    val baseModelId: String? = null, // though marked as required, not returned by API
     val version: String,
     val displayName: String,
     val description: String,
@@ -164,6 +167,7 @@ data class ModelInfo(
     val outputTokenLimit: Int,
     val supportedGenerationMethods: List<String>,
     val temperature: Double? = null,
+    val maxTemperature: Double? = null,
     val topP: Double? = null,
     val topK: Int? = null
 )
