@@ -60,7 +60,11 @@ abstract class ModelIndex(val modelFileName: String) {
     /** [ModelInfo] by id, where config in runtime overrides preconfigured info. */
     internal val MODEL_INFO_INDEX = MODELS.modelInfoIndex() + RUNTIME_MODELS.modelInfoIndex()
 
+    /** Get chat models, including vision-language models which have the same API. */
+    fun chatModelsInclusive(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots) + models(ModelLibrary::vision_language, includeSnapshots)
+    /** Get chat models without vision-language models. */
     fun chatModels(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots)
+
     fun completionModels(includeSnapshots: Boolean = false) = models(ModelLibrary::completion, includeSnapshots)
     fun embeddingModels(includeSnapshots: Boolean = false) = models(ModelLibrary::embeddings, includeSnapshots)
     fun moderationModels(includeSnapshots: Boolean = false) = models(ModelLibrary::moderation, includeSnapshots)

@@ -1,6 +1,8 @@
 package tri.promptfx.api
 
 import javafx.beans.property.SimpleObjectProperty
+import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.ModelInfo
@@ -17,22 +19,13 @@ class ModelInfoCard(val selectedModel: SimpleObjectProperty<ModelInfo>) : View()
                 visibleWhen { selectedModel.isNotNull }
                 managedWhen { selectedModel.isNotNull }
 
-                fun Fieldset.modelfield(text: String, op: (ModelInfo) -> Any?) {
-                    field(text) {
-                        val prop = selectedModel.stringBinding { it?.let { op(it) }?.toString() }
-                        visibleWhen(prop.isNotBlank())
-                        managedWhen(prop.isNotBlank())
-                        text(prop) {
-                            wrappingWidth = 300.0
-                        }
-                    }
-                }
-
                 fieldset("Model Info") {
                     modelfield("Id") { it.id }
                     modelfield("Name") { it.name }
-                    modelfield("Type") { it.type }
+                    modelfield("Type", { listOf(graphic(it.type)) }) { it.type }
                     modelfield("Description") { it.description }
+                    modelfield("Inputs", { graphics(it.inputs) }) { it.inputs }
+                    modelfield("Outputs", { graphics(it.outputs) }) { it.outputs }
                 }
                 fieldset("Model Version") {
                     modelfield("Source") { it.source }
@@ -55,6 +48,25 @@ class ModelInfoCard(val selectedModel: SimpleObjectProperty<ModelInfo>) : View()
                             wrappingWidth = 300.0
                         }
                     }
+                }
+            }
+        }
+    }
+
+    fun Fieldset.modelfield(text: String, iconOp: (ModelInfo) -> List<Node> = { listOf() }, op: (ModelInfo) -> Any?) {
+        field(text) {
+            val prop = selectedModel.stringBinding { it?.let { op(it) }?.toString() }
+            visibleWhen(prop.isNotBlank())
+            managedWhen(prop.isNotBlank())
+            hbox(5, Pos.CENTER_LEFT) {
+                hbox(5, Pos.CENTER_LEFT) {
+                    selectedModel.onChange {
+                        children.setAll(it?.let { iconOp(it) } ?: listOf())
+                    }
+                    managedWhen(children.sizeProperty.greaterThan(0))
+                }
+                text(prop) {
+                    wrappingWidth = 300.0
                 }
             }
         }

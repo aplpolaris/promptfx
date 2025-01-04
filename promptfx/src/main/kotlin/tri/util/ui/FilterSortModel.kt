@@ -42,7 +42,7 @@ abstract class FilterSortModel<X> {
         filter.set { x -> flagFilters.all { it(x) } }
     }
 
-    fun <Y> sortBy(key: String, attribute: (X) -> Y, sortAscend: Boolean) {
+    fun <Y> sortBy(key: String, attribute: (X) -> Y, sortAscend: Boolean = true) {
         sortOps.removeIf { it.key == key }
         sortOps.add(0, AttributeComparator(key, attribute, sortAscend))
         updateSort()

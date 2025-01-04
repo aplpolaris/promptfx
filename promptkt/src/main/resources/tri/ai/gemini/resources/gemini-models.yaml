@@ -6,7 +6,7 @@
 audio: [ ]
 chat: [ gemini-pro, gemini-1.0-pro ]
 completion: [  ]
-embeddings: [ embedding-001, text-embedding-004, text-embedding-005 ]
+embeddings: [ embedding-001, text-embedding-004 ]
 moderation: [ ]
 tts: [ ]
 image_generator: [ ]

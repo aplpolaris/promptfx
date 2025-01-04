@@ -21,9 +21,9 @@ package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
-import javafx.scene.Node
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
 import tri.promptfx.AiTaskView
@@ -121,7 +121,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
             PromptFxModels.policy.modelInfo()
         } ui {
             models.setAll(it)
-            filter.model.resetSort()
+            filter.model.sortBy("Id", { it.id })
             if (it.isEmpty()) {
                 error("No models found", "No models were returned, possibly due to a missing API key or failed connection. Check the logs for more information.")
             }
@@ -139,15 +139,28 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
 
 }
 
-fun graphic(type: ModelType): Node? = when (type) {
+fun graphic(type: ModelType) = when (type) {
     ModelType.TEXT_COMPLETION -> FontAwesomeIcon.KEYBOARD_ALT.graphic
-    ModelType.TEXT_CHAT -> FontAwesomeIcon.COMMENTS.graphic
+    ModelType.TEXT_CHAT -> FontAwesomeIcon.COMMENT.graphic
     ModelType.TEXT_VISION_CHAT -> FontAwesomeIcon.IMAGE.graphic
-    ModelType.TEXT_EMBEDDING -> FontAwesomeIcon.FONT.graphic
+    ModelType.TEXT_EMBEDDING -> FontAwesomeIcon.CUBE.graphic
     ModelType.IMAGE_GENERATOR -> FontAwesomeIcon.CAMERA.graphic
     ModelType.TEXT_TO_SPEECH -> FontAwesomeIcon.VOLUME_UP.graphic
     ModelType.SPEECH_TO_TEXT -> FontAwesomeIcon.MICROPHONE.graphic
+    ModelType.AUDIO_CHAT -> FontAwesomeIcon.MUSIC.graphic
+    ModelType.REALTIME_CHAT -> FontAwesomeIcon.COMMENTS.graphic
     ModelType.MODERATION -> FontAwesomeIcon.EYE_SLASH.graphic
     ModelType.QUESTION_ANSWER -> FontAwesomeIcon.QUESTION_CIRCLE.graphic
-    ModelType.UNKNOWN -> FontAwesomeIcon.CUBE.graphic
+    ModelType.UNKNOWN -> FontAwesomeIcon.QQ.graphic
 }
+
+fun graphics(modality: List<DataModality>?) = modality?.map {
+    when (it) {
+        DataModality.text -> FontAwesomeIcon.FONT.graphic
+        DataModality.audio -> FontAwesomeIcon.MUSIC.graphic
+        DataModality.image -> FontAwesomeIcon.IMAGE.graphic
+        DataModality.video -> FontAwesomeIcon.FILM.graphic
+        DataModality.embedding -> FontAwesomeIcon.CUBE.graphic
+        DataModality.moderation -> FontAwesomeIcon.EYE_SLASH.graphic
+    }
+} ?: listOf()

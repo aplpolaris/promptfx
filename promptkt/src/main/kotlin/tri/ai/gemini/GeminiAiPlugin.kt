@@ -46,10 +46,10 @@ class GeminiAiPlugin : TextPlugin {
     override fun embeddingModels() = models(GeminiModelIndex.embeddingModels()) { GeminiEmbeddingService(it, client) }
 
     override fun chatModels() =
-        models(GeminiModelIndex.chatModels() + GeminiModelIndex.visionLanguageModels()) { GeminiTextChat(it, client) }
+        models(GeminiModelIndex.chatModelsInclusive()) { GeminiTextChat(it, client) }
 
     override fun textCompletionModels() =
-        models(GeminiModelIndex.completionModels() + GeminiModelIndex.chatModels() + GeminiModelIndex.visionLanguageModels()) {
+        models(GeminiModelIndex.completionModels() + GeminiModelIndex.chatModelsInclusive()) {
             GeminiTextCompletion(it, client)
         }
 
@@ -83,6 +83,20 @@ class GeminiAiPlugin : TextPlugin {
             it.deprecation = findDeprecation(description)
             it.lifecycle = findLifecycle(it.id, description)
             it.type = findType(it.id, supportedGenerationMethods.toSet())
+            it.inputs = when (it.type) {
+                ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
+                ModelType.TEXT_EMBEDDING -> listOf(DataModality.text)
+                ModelType.TEXT_CHAT -> listOf(DataModality.text)
+                ModelType.TEXT_VISION_CHAT -> listOf(DataModality.text, DataModality.image, DataModality.audio, DataModality.video)
+                else -> null
+            }
+            it.outputs = when (it.type) {
+                ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
+                ModelType.TEXT_EMBEDDING -> listOf(DataModality.embedding)
+                ModelType.TEXT_CHAT -> listOf(DataModality.text)
+                ModelType.TEXT_VISION_CHAT -> listOf(DataModality.text)
+                else -> null
+            }
 
             it.params(
                 "supportedGenerationMethods" to supportedGenerationMethods,
@@ -157,21 +171,25 @@ class GeminiAiPlugin : TextPlugin {
      * See https://ai.google.dev/gemini-api/docs/models/gemini#model-variations for inputs supported.
      */
     private fun findType(id: String, methods: Set<String>): ModelType {
+        val ANSWER = "generateAnswer"
+        val BIDI_GENERATE = "bidiGenerateContent"
+        val CACHED = "createCachedContent"
+        val COUNT = "countTokens"
         val EMBED = "embedContent"
         val GENERATE = "generateContent"
-        val GENERATE2 = "generateMessage"
-        val GENERATE3 = "generateText"
-        val CACHED = "createCachedContent"
-        val BIDI_GENERATE = "bidiGenerateContent"
-        val COUNT = "countTokens"
-        val COUNT2 = "countMessageTokens"
-        val COUNT3 = "countTextTokens"
         val TUNED = "createTunedModel"
+
+        val GENERATE2 = "generateMessage"
+        val COUNT2 = "countMessageTokens"
+
+        val COUNT3 = "countTextTokens"
+        val EMBED3 = "embedText"
+        val GENERATE3 = "generateText"
         val TUNED3 = "createTunedTextModel"
-        val ANSWER = "generateAnswer"
 
         var type = when (methods) {
             setOf(EMBED) -> ModelType.TEXT_EMBEDDING
+            setOf(EMBED3, COUNT3) -> ModelType.TEXT_EMBEDDING
             setOf(GENERATE) -> ModelType.TEXT_CHAT
             setOf(GENERATE, COUNT) -> ModelType.TEXT_CHAT
             setOf(GENERATE, COUNT, TUNED) -> ModelType.TEXT_CHAT

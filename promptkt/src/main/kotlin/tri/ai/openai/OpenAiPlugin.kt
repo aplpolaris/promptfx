@@ -21,9 +21,11 @@ package tri.ai.openai
 
 import com.aallam.openai.api.model.Model
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
 import tri.ai.core.TextPlugin
+import tri.util.fine
 import java.time.Instant
 import java.time.ZoneId
 
@@ -52,6 +54,32 @@ class OpenAiPlugin : TextPlugin {
         created?.let {
             info.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
         }
+
+        if (info.type == ModelType.UNKNOWN) {
+            when {
+                "moderation" in id.id -> info.type = ModelType.MODERATION
+                "-realtime-" in id.id -> {
+                    info.type = ModelType.REALTIME_CHAT
+                    info.inputs = listOf(DataModality.text, DataModality.audio)
+                    info.outputs = listOf(DataModality.text, DataModality.audio)
+                }
+                "-audio-" in id.id -> {
+                    info.type = ModelType.AUDIO_CHAT
+                    info.inputs = listOf(DataModality.audio)
+                    info.outputs = listOf(DataModality.audio)
+                }
+                else -> {
+                    // attempt to assign type for tagged models based on a "parent type"
+                    var possibleTypeId = id.id
+                    while (OpenAiModelIndex.MODEL_INFO_INDEX[possibleTypeId]?.type in listOf(null, ModelType.UNKNOWN)) {
+                        possibleTypeId = possibleTypeId.substringBeforeLast("-")
+                        if ("-" !in possibleTypeId) break
+                    }
+                    info.type = OpenAiModelIndex.MODEL_INFO_INDEX[possibleTypeId]?.type ?: ModelType.UNKNOWN
+                }
+            }
+        }
+
         return info
     }
 
@@ -59,11 +87,11 @@ class OpenAiPlugin : TextPlugin {
         OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingService(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModelIndex.chatModels(false).map { OpenAiCompletionChat(it, client) } +
+        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
         OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModelIndex.chatModels(false).map { OpenAiChat(it, client) }
+        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
 
     override fun visionLanguageModels() =
         OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }

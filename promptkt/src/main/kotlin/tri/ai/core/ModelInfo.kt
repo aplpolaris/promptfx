@@ -32,6 +32,8 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
     var snapshots: List<String> = listOf()
 
+    var inputs: List<DataModality>? = null
+    var outputs: List<DataModality>? = null
     var inputTokenLimit: Int? = null
     var outputTokenLimit: Int? = null
     var totalTokenLimit: Int? = null
@@ -73,6 +75,11 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     }
 }
 
+/** Data modality for inputs and outputs. */
+enum class DataModality {
+    text, audio, image, video, embedding, moderation
+}
+
 /** Model types. */
 enum class ModelType {
     TEXT_COMPLETION,
@@ -82,6 +89,8 @@ enum class ModelType {
     IMAGE_GENERATOR,
     TEXT_TO_SPEECH,
     SPEECH_TO_TEXT,
+    AUDIO_CHAT,
+    REALTIME_CHAT,
     MODERATION,
     QUESTION_ANSWER,
     UNKNOWN
