@@ -19,16 +19,13 @@
  */
 package tri.ai.gemini
 
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import io.ktor.client.call.*
+import io.ktor.client.request.*
 import kotlinx.serialization.Serializable
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
-import java.net.URI
 
 /**
  * General purpose client for the Gemini API.
@@ -86,7 +83,7 @@ class GeminiClient : Closeable {
         val request = GenerateContentRequest(
             content = Content(listOf(
                 Part(text = prompt),
-                Part(inlineData = Blob(image, "image/jpeg"))
+                Part(inlineData = Blob(image, MIME_TYPE_JPEG))
             )),
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
@@ -170,122 +167,6 @@ data class ModelInfo(
     val maxTemperature: Double? = null,
     val topP: Double? = null,
     val topK: Int? = null
-)
-
-@Serializable
-data class BatchEmbedContentRequest(
-    val requests: List<EmbedContentRequest>
-)
-
-@Serializable
-data class BatchEmbedContentsResponse(
-    val embeddings: List<ContentEmbedding>
-)
-
-@Serializable
-data class EmbedContentRequest(
-    val content: Content,
-    val model: String? = null,
-    val title: String? = null,
-    val outputDimensionality: Int? = null
-)
-
-@Serializable
-data class EmbedContentResponse(
-    val embedding: ContentEmbedding
-)
-
-@Serializable
-data class ContentEmbedding(
-    val values: List<Float>
-)
-
-@Serializable
-data class GenerateContentRequest(
-    val contents: List<Content>,
-//    val safetySettings: SafetySetting? = null,
-    val systemInstruction: Content? = null, // this is a beta feature
-    val generationConfig: GenerationConfig? = null,
-) {
-    constructor(content: Content, systemInstruction: Content? = null, generationConfig: GenerationConfig? = null) :
-            this(listOf(content), systemInstruction, generationConfig)
-}
-
-private const val GEMINI_ROLE_USER = "user"
-private const val GEMINI_ROLE_MODEL = "model"
-
-@Serializable
-data class Content(
-    val parts: List<Part>,
-    val role: String? = null
-) {
-    init { require(role in listOf(null, GEMINI_ROLE_USER, GEMINI_ROLE_MODEL)) { "Invalid role: $role" } }
-
-    companion object {
-        /** Content with a single text part. */
-        fun text(text: String) = Content(listOf(Part(text)), GEMINI_ROLE_USER)
-        /** Content with a system message. */
-        fun systemMessage(text: String) = text(text) // TODO - support for system messages if Gemini supports it
-    }
-}
-
-@Serializable
-data class Part(
-    val text: String? = null,
-    val inlineData: Blob? = null
-)
-
-@Serializable
-data class Blob(
-    val mimeType: String,
-    val data: String
-) {
-    companion object {
-        /** Generate blob from image URL. */
-        fun image(url: URI) = image(url.toASCIIString())
-
-        /** Generate blob from image URL. */
-        fun image(urlStr: String): Blob {
-            if (urlStr.startsWith("data:image/")) {
-                val mimeType = urlStr.substringBefore(";base64,").substringAfter("data:")
-                val base64 = urlStr.substringAfter(";base64,")
-                return Blob(mimeType, base64)
-            } else {
-                throw UnsupportedOperationException("Only data URLs are supported for images.")
-            }
-        }
-    }
-}
-
-@Serializable
-data class GenerationConfig(
-    val stopSequences: List<String>? = null,
-    val responseMimeType: String? = null,
-    val candidateCount: Int? = null,
-    val maxOutputTokens: Int? = null,
-    val temperature: Double? = null,
-    val topP: Double? = null,
-    val topK: Int? = null
-) {
-    init {
-        require(responseMimeType in listOf(null, "text/plain", "application/json")) { "Invalid responseMimeType: $responseMimeType" }
-    }
-}
-
-@Serializable
-data class GenerateContentResponse(
-    var error: Error? = null,
-    var candidates: List<Candidate>? = null
-)
-
-@Serializable
-data class Candidate(
-    val content: Content
-)
-
-@Serializable
-data class Error(
-    val message: String
 )
 
 //endregion
