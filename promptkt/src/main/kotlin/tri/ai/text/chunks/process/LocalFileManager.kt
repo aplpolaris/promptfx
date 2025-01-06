@@ -147,7 +147,7 @@ object LocalFileManager {
             DOC -> WordDocUtils.readDocMetadata(this)
             DOCX -> WordDocUtils.readDocxMetadata(this)
             else -> emptyMap()
-        }.filterValues { it != null && (it !is String || it.isNotBlank()) }
+        }.filterValues { it !is String || it.isNotBlank() }
         if (props.isNotEmpty())
             ObjectMapper()
                 .registerModule(JavaTimeModule())

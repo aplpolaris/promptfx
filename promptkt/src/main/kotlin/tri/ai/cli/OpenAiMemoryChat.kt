@@ -48,7 +48,7 @@ class OpenAiMemoryChat {
         memory.addChat(userItem)
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(TextChatRole.System, persona.getSystemMessage()))
-        val response = chatService.chat(personaMessage + contextualHistory).firstValue!!
+        val response = chatService.chat(personaMessage + contextualHistory).firstValue
         memory.addChat(MemoryItem(response))
         memory.saveMemory(interimSave = true)
         return response

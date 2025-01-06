@@ -77,7 +77,7 @@ class ChatViewBasic :
                 GenerateContentRequest(
                     messages.filter { it.role in setOf(ChatRole.User, ChatRole.Assistant) }.map { it.fromOpenAiMessageToGeminiContent() },
                     systemInstruction = messages.firstOrNull { it.role == ChatRole.System }?.geminiSystemMessage(),
-                    GenerationConfig(
+                    generationConfig = GenerationConfig(
                         stopSequences = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
                         responseMimeType = responseFormat.value?.let {
                             when (it) {
@@ -94,8 +94,8 @@ class ChatViewBasic :
                     )
                 )
             )
-            return if (response.error != null)
-                AiPromptTrace.invalidRequest<ChatMessage>(m.modelId, response.error!!.message).asPipelineResult()
+            return if (response.promptFeedback != null)
+                AiPromptTrace.invalidRequest<ChatMessage>(m.modelId, response.promptFeedback.toString()).asPipelineResult()
             else
                 AiPromptTrace(
                     null,
@@ -145,7 +145,7 @@ class ChatViewBasic :
                 is ListContent -> m.content.map {
                     when (it) {
                         is TextPart -> Part(it.text)
-                        is ImagePart -> Part(null, Blob.image(it.imageUrl.url))
+                        is ImagePart -> Part(null, Blob.fromDataUrl(it.imageUrl.url))
                         else -> throw UnsupportedOperationException("Unsupported content type: $it")
                     }
                 }

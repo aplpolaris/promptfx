@@ -34,7 +34,7 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.promptfx.hasImageFile
 import tri.util.ui.graphic
-import tri.util.ui.toUri
+import tri.util.ui.imageUri
 
 /** Fragment showing a history of chat messages. */
 class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : Fragment() {
@@ -172,9 +172,9 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
             }
             setOnDragDropped { it
                 if (it.dragboard.hasImage()) {
-                    chat.contentImageProperty.set(ImagePart.ImageURL(it.dragboard.image.toUri()))
+                    chat.contentImageProperty.set(ImagePart.ImageURL(it.dragboard.image.imageUri()))
                 } else if (it.dragboard.hasImageFile()) {
-                    chat.contentImageProperty.set(ImagePart.ImageURL(Image(it.dragboard.files.first().toURI().toString()).toUri()))
+                    chat.contentImageProperty.set(ImagePart.ImageURL(Image(it.dragboard.files.first().toURI().toString()).imageUri()))
                 }
                 it.isDropCompleted = true
                 it.consume()

@@ -31,7 +31,7 @@ import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.toUri
+import tri.util.ui.imageUri
 import java.net.URI
 
 /** Plugin for the [ImageDescribeView]. */
@@ -79,7 +79,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     private suspend fun describeImage(prompt: String): String? {
         val res = model.value.chat(
             listOf(
-                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create(image.value.toUri()))
+                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create(image.value.imageUri()))
             ),
             common.temp.value,
             common.maxTokens.value,
