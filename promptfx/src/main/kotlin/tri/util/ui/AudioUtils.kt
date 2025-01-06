@@ -20,8 +20,22 @@
 
 package tri.util.ui
 
+import javafx.scene.media.Media
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.*
 
 /** Encode audio within URL. */
 fun File.audioUri(formatName: String = "wav"): String = "data:audio/$formatName;base64,${Base64.getEncoder().encodeToString(readBytes())}"
+
+/** Load audio data encoded as [ByteArray] as a playable [Media] object. */
+@Throws(IOException::class)
+fun loadAudio(audioBytes: ByteArray): Media {
+    val tempFile = File.createTempFile("audio", null)
+    tempFile.deleteOnExit()
+    FileOutputStream(tempFile).use {
+        it.write(audioBytes)
+    }
+    return Media(tempFile.toURI().toString())
+}

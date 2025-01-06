@@ -38,7 +38,6 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.Button
 import javafx.scene.layout.Priority
-import javafx.scene.media.Media
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
@@ -47,11 +46,9 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
+import tri.util.ui.loadAudio
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 
 /** Plugin for the [AudioSpeechView]. */
 class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Audio", "Text-to-Speech", WorkspaceViewAffordance.INPUT_ONLY, AudioSpeechView::class)
@@ -156,15 +153,5 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         } catch (x: MediaException) {
             error("Error playing audio", "Error playing audio: ${x.message}")
         }
-    }
-
-    @Throws(IOException::class)
-    private fun loadAudio(audioBytes: ByteArray): Media {
-        val tempFile = File.createTempFile("audio", null)
-        tempFile.deleteOnExit()
-        FileOutputStream(tempFile).use {
-            it.write(audioBytes)
-        }
-        return Media(tempFile.toURI().toString())
     }
 }
