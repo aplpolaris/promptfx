@@ -34,6 +34,7 @@ import tri.ai.openai.OpenAiModelIndex
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.*
+import tri.promptfx.tools.PromptTraceHistoryView
 import tri.util.ui.graphic
 import tri.util.ui.loadAudio
 
@@ -83,7 +84,8 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
             }
             // add button to close dialog and open trace in template view
             button("Open in history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
-                enableWhen(trace.isNotNull.and(exec.isNotNull))
+                val isHistoryDocked = workspace.dockedComponentProperty.booleanBinding { it is PromptTraceHistoryView }
+                enableWhen(trace.isNotNull.and(exec.isNotNull).and(isHistoryDocked.not()))
                 tooltip("Open this prompt in the prompt history view (if available).")
                 action {
                     if (currentWindow != workspace.currentWindow)
