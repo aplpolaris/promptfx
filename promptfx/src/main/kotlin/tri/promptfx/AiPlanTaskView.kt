@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiPlanner
 
 /**
@@ -30,7 +31,7 @@ abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(t
 
     protected val common = ModelParameters()
 
-    override suspend fun processUserInput() =
+    override suspend fun processUserInput(): AiPipelineResult<*> =
         AiPipelineExecutor.execute(plan().plan(), progress)
 
     abstract fun plan(): AiPlanner

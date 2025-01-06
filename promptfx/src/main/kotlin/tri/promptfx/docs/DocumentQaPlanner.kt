@@ -65,8 +65,8 @@ class DocumentQaPlanner {
 
     /**
      * Asynchronous tasks to execute for answering the given question.
-     * @param question list of questions to answer
-     * @param promptId prompt to use for answering the question
+     * @param question question to answer
+     * @param prompt prompt to use for answering the question
      * @param embeddingService embedding service to use
      * @param chunksToRetrieve number of chunks to retrieve
      * @param minChunkSize minimum size of a chunk for use in a prompt
@@ -77,8 +77,8 @@ class DocumentQaPlanner {
      * @param temp temperature for sampling
      * @param numResponses number of responses to generate
      */
-    fun plan(
-        questions: List<String>,
+    fun taskList(
+        question: String,
         prompt: AiPrompt,
         embeddingService: EmbeddingService,
         chunksToRetrieve: Int,
@@ -96,14 +96,13 @@ class DocumentQaPlanner {
         }.task("load-embeddings-file-and-calculate") {
             // trigger loading of embeddings file using a similarity query
             embeddingIndex.value!!.findMostSimilar("a", 1)
-        }.aitaskmap("find-relevant-sections", taskInputs = questions) { _, _, q ->
+        }.aitask("find-relevant-sections") {
             // for each question, generate a list of relevant chunks
-            findRelevantSection(q, chunksToRetrieve).also {
+            findRelevantSection(question, chunksToRetrieve).also {
                 runLater { snippets.setAll(it.values) }
             }
-        }.aitaskmap("question-answer", taskInputs = questions) { it, i, question ->
-            val (_, embedding) = it[i]
-            val queryChunks = embedding.filter { it.chunkSize >= minChunkSize }
+        }.aitaskonlist("question-answer") {
+            val queryChunks = it.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
             val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses)
@@ -126,13 +125,11 @@ class DocumentQaPlanner {
                     responseEmbeddings = responseEmbeddings
                 )
             }
-        }.aitaskmap("process-result", taskInputs = questions) { it, i, _ ->
-            val (_, qaResult) = it[i]
-            val firstResult = qaResult[0]
-            info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${firstResult.responseScore}$ANSI_RESET")
-            lastResult = firstResult
-            FormattedPromptTraceResult(firstResult.trace, firstResult.splitQaResults().map { formatResult(it) })
-        }.planner
+        }.aitask("process-result") {
+            info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${it.responseScore}$ANSI_RESET")
+            lastResult = it
+            FormattedPromptTraceResult(it.trace, it.splitQaResults().map { formatResult(it) })
+        }
 
     //region SIMILARITY CALCULATIONS
 
@@ -270,7 +267,7 @@ data class QuestionAnswerResult(
 
     /** Calculates the similarity between the question and response. */
     val responseScore
-        get() = responseEmbeddings.map { cosineSimilarity(query.embedding, it).toFloat() } ?: 0f
+        get() = responseEmbeddings.map { cosineSimilarity(query.embedding, it).toFloat() }
 }
 
 //endregion

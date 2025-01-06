@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class AiTaskListTest {
         val plan = task("first") {
             listOf("go", "stop")
         }.aitaskonlist("second") {
-            AiPromptTrace.output(it.joinToString())
+            AiPromptTrace.output(it)
         }.planner
         val result = AiPipelineExecutor.execute(plan.plan(), PrintMonitor())
         assertEquals(listOf("go", "stop"), result.finalResult.firstValue)
@@ -53,7 +53,7 @@ class AiTaskListTest {
             AiPromptTrace.output(it.joinToString())
         }.planner
         val result2 = AiPipelineExecutor.execute(plan2.plan(), PrintMonitor())
-        assertEquals("gostop", result2.finalResult.firstValue)
+        assertEquals("go, stop", result2.finalResult.firstValue)
     }
 
 }

@@ -27,4 +27,11 @@ interface AiPlanner {
     /** Executes the plan with [AiPipelineExecutor]. */
     suspend fun execute(monitor: AiTaskMonitor) = AiPipelineExecutor.execute(plan(), monitor)
 
+    companion object {
+        /** Consolidates all planners into a single planner. */
+        fun batchPlan(planners: List<AiTaskList<String>>) = object : AiPlanner {
+            override fun plan() = planners.flatMap { it.plan }
+        }
+    }
+
 }

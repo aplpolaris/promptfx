@@ -20,13 +20,18 @@
 package tri.promptfx.docs
 
 import javafx.application.HostServices
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
+import javafx.scene.control.ToggleGroup
+import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
@@ -60,6 +65,9 @@ class DocumentQaView: AiPlanTaskView(
     private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
     private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
 
+    private val inputToggleGroup = ToggleGroup()
+    private val singleInput = SimpleBooleanProperty(true)
+    private val multiInput = SimpleBooleanProperty(false)
     val question = SimpleStringProperty("")
 
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
@@ -90,8 +98,22 @@ class DocumentQaView: AiPlanTaskView(
     }
 
     init {
-        addInputTextArea(question) {
-            style = "-fx-font-size: 18px;"
+        input {
+            vbox {
+                toolbar {
+                    radiobutton("Single input", inputToggleGroup) {
+                        selectedProperty().bindBidirectional(singleInput)
+                    }
+                    radiobutton("Batch input", inputToggleGroup) {
+                        selectedProperty().bindBidirectional(multiInput)
+                    }
+                }
+                textarea(question) {
+                    vgrow = Priority.ALWAYS
+                    isWrapText = true
+                    style = "-fx-font-size: 18px;"
+                }
+            }
         }
         input {
             add(find<TextChunkListView>(viewScope).apply {
@@ -136,19 +158,38 @@ class DocumentQaView: AiPlanTaskView(
         }
     }
 
-    override fun plan() = planner.plan(
-        questions = listOf(question.value),
-        prompt = prompt.prompt.value,
-        embeddingService = controller.embeddingService.value,
-        chunksToRetrieve = chunksToRetrieve.value,
-        minChunkSize = minChunkSizeForRelevancy.value,
-        contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
-        contextChunks = chunksToSendWithQuery.value,
-        completionEngine = controller.completionEngine.value,
-        maxTokens = common.maxTokens.value,
-        temp = common.temp.value,
-        numResponses = common.numResponses.value
-    )
+    /** Executes task on a background thread and updates progress info. */
+    override fun runTask(op: suspend () -> AiPipelineResult<*>) {
+        val questionInput = question.value
+        val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
+            .filter { it.isNotBlank() }
+        if (questions.isEmpty()) {
+            error("No questions found.")
+            return
+        }
+        questions.forEach {
+            question.set(it)
+            super.runTask { AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress) }
+        }
+        question.set(questionInput)
+    }
+
+    override fun plan() = questionTaskList(question.value).planner
+
+    private fun questionTaskList(question: String) =
+        planner.taskList(
+            question = question,
+            prompt = prompt.prompt.value,
+            embeddingService = controller.embeddingService.value,
+            chunksToRetrieve = chunksToRetrieve.value,
+            minChunkSize = minChunkSizeForRelevancy.value,
+            contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
+            contextChunks = chunksToSendWithQuery.value,
+            completionEngine = controller.completionEngine.value,
+            maxTokens = common.maxTokens.value,
+            temp = common.temp.value,
+            numResponses = common.numResponses.value
+        )
 
     //region ACTIONS
 

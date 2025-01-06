@@ -97,29 +97,6 @@ class AiTaskList<S>(tasks: List<AiTask<*>>, val lastTask: AiTask<S>) {
         return AiTaskList(plan, newTask)
     }
 
-    /**
-     * Adds multiple tasks, one for each provided input, to the list.
-     */
-    fun <T, X> aitaskmap(id: String, description: String? = null, taskInputs: List<T>, op: suspend (List<S>, Int, T) -> AiPromptTraceSupport<X>): AiTaskList<Pair<T, List<X>>> {
-        val tasks = taskInputs.mapIndexed { i, input ->
-            object : AiTask<X>("$id-$i", description, setOf(lastTask.id)) {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<X> {
-                    val lastResult = inputs[lastTask.id]?.values ?: listOf()
-                    return op(lastResult as List<S>, i, input)
-                }
-            }
-        }
-        // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
-        val aggregatorTask = object : AiTask<Pair<T, List<X>>>(id, description, tasks.map { it.id }.toSet()) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<Pair<T, List<X>>> {
-                val results = tasks.map { it.id }.map { inputs[it] as AiPromptTraceSupport<X> }
-                val zipResult = taskInputs.zip(results.map { it.values ?: listOf() })
-                return AiPromptTrace.output(zipResult)
-            }
-        }
-        return AiTaskList(plan + tasks, aggregatorTask)
-    }
-
     //endregion
 
 }
