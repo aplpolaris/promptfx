@@ -27,6 +27,7 @@ import tri.ai.core.TextChatRole
 import tri.ai.gemini.GeminiModelIndex.EMBED1
 import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
+import tri.util.BASE64_AUDIO_SAMPLE
 
 @Tag("gemini")
 class GeminiClientTest {
@@ -52,7 +53,7 @@ class GeminiClientTest {
         runBlocking {
             val models = client.listModels().models
             assertTrue(models.isNotEmpty())
-            println(models.joinToString("\n") { "$it" }) //"${it.name} - ${it.displayName}" })
+            println(models.joinToString("\n") { "${it.name} - ${it.displayName} - $it" })
         }
     }
 
@@ -79,8 +80,28 @@ class GeminiClientTest {
         runBlocking {
             val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_PRO)
             assertNotNull(response)
-            assert(response.error == null)
             println(response)
+            with (response.candidates) {
+                assert(this != null)
+                assert(this!!.size == 1)
+                val first = this[0]
+                with (first) {
+                    assert(content.role == ContentRole.model)
+                    assert(content.parts.size == 1)
+                    assert(content.parts[0].text != null)
+                    assert(finishReason == FinishReason.STOP)
+                    assert(safetyRatings!!.size == 4)
+                    assert(safetyRatings!!.all { it.probability == HarmProbability.NEGLIGIBLE })
+                }
+            }
+            assert(response.promptFeedback == null)
+            with (response.usageMetadata) {
+                assert(this != null)
+                assert(this!!.promptTokenCount == 11)
+                assert(candidatesTokenCount > 10)
+                assert(totalTokenCount > 20)
+            }
+            assert(response.usageMetadata != null)
         }
     }
 
@@ -92,9 +113,23 @@ class GeminiClientTest {
                 TextChatMessage(TextChatRole.User, "What should I have for dinner?")
             ), GEMINI_15_FLASH)
             assertNotNull(response)
+            assert(response.promptFeedback?.blockReason == null)
+        }
+    }
+
+    @Test
+    fun testGenerateContentAudio() {
+        runBlocking {
+            val request = GenerateContentRequest(Content(
+                listOf(
+                    Part("Transcribe this audio"),
+                    Part(null, Blob.fromDataUrl(BASE64_AUDIO_SAMPLE))
+                ), ContentRole.user
+            ))
+            val response = client.generateContent(GEMINI_15_FLASH, request)
             println(response)
-            println(response.error)
-            assert(response.error == null)
+            assertNotNull(response)
+            assert(response.candidates!![0].content.parts[0].text != null)
         }
     }
 

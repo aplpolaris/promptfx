@@ -98,7 +98,7 @@ class GeminiClient : Closeable {
                 val role = it.role.toGeminiRole()
                 Content(listOf(Part(it.content)), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), GEMINI_ROLE_USER) },
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -111,10 +111,10 @@ class GeminiClient : Closeable {
                 val role = it.role.toGeminiRole()
                 Content(listOf(
                     Part(it.content),
-                    Part(null, Blob.image(it.image))
+                    Part(null, Blob.fromDataUrl(it.image))
                 ), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), GEMINI_ROLE_USER) }, // TODO - support for system messages
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) }, // TODO - support for system messages
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -131,15 +131,15 @@ class GeminiClient : Closeable {
 
         /** Convert from [TextChatRole] to string representing Gemini role. */
         fun TextChatRole.toGeminiRole() = when (this) {
-            TextChatRole.User -> GEMINI_ROLE_USER
-            TextChatRole.Assistant -> GEMINI_ROLE_MODEL
+            TextChatRole.User -> ContentRole.user
+            TextChatRole.Assistant -> ContentRole.model
             else -> error("Invalid role: $this")
         }
 
         /** Convert from string representing Gemini role to [TextChatRole]. */
-        fun String?.fromGeminiRole() = when (this) {
-            GEMINI_ROLE_USER -> TextChatRole.User
-            GEMINI_ROLE_MODEL -> TextChatRole.Assistant
+        fun ContentRole?.fromGeminiRole() = when (this) {
+            ContentRole.user -> TextChatRole.User
+            ContentRole.model -> TextChatRole.Assistant
             else -> error("Invalid role: $this")
         }
     }
