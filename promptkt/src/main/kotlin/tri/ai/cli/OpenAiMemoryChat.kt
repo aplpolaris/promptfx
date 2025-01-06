@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class OpenAiMemoryChat {
         memory.addChat(userItem)
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(TextChatRole.System, persona.getSystemMessage()))
-        val response = chatService.chat(personaMessage + contextualHistory).firstValue!!
+        val response = chatService.chat(personaMessage + contextualHistory).firstValue
         memory.addChat(MemoryItem(response))
         memory.saveMemory(interimSave = true)
         return response

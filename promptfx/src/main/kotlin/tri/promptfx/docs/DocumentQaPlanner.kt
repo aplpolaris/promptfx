@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME
 import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.core.instructTask
 import tri.ai.pips.task
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.*
 import tri.ai.text.chunks.TextChunkInDoc
 import tri.ai.text.chunks.TextChunkRaw
@@ -78,7 +79,7 @@ class DocumentQaPlanner {
      */
     fun plan(
         questions: List<String>,
-        promptId: String,
+        prompt: AiPrompt,
         embeddingService: EmbeddingService,
         chunksToRetrieve: Int,
         minChunkSize: Int,
@@ -105,7 +106,7 @@ class DocumentQaPlanner {
             val queryChunks = embedding.filter { it.chunkSize >= minChunkSize }
                 .take(contextChunks)
             val context = contextStrategy.constructContext(queryChunks)
-            val response = completionEngine.instructTask(promptId, question, context, maxTokens, temp, numResponses)
+            val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses)
             val questionEmbedding = embeddingService.calculateEmbedding(question)
             val responseEmbeddings = response.values?.map {
                 embeddingService.calculateEmbedding(it)

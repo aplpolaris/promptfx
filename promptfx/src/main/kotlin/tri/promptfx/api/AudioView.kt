@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import io.ktor.util.*
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventHandler
@@ -31,22 +32,25 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
+import tri.ai.gemini.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.*
 import tri.util.ui.AudioRecorder
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.audioUri
 import java.io.File
+import java.util.*
 
 /** Plugin for the [AudioView]. */
 class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to-Text", type = AudioView::class)
 
-/** View for the OpenAI API's [Whisper](https://platform.openai.com/docs/api-reference/audio) endpoint. */
-class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {
+/** View for audio transcription. */
+class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {
 
-    private val AUDIO_MODELS = OpenAiModelIndex.audioModels()
+    private val AUDIO_MODELS = OpenAiModelIndex.audioModels() + GeminiModelIndex.audioModels()
 
     private val input = SimpleStringProperty("")
     private val file = SimpleObjectProperty<File?>(null)
@@ -154,9 +158,38 @@ class AudioView : AiTaskView("Whisper", "Drop audio file below to transcribe (mp
     override suspend fun processUserInput(): AiPipelineResult<String> {
         return when (val f = file.value) {
             null -> AiPromptTrace.invalidRequest(model.value, "No audio file dropped")
-            else -> controller.openAiPlugin.client.quickTranscribe(model.value, f)
-                .also { controller.updateUsage() }
+            else -> processAudio(model.value, f)
         }.asPipelineResult()
+    }
+
+    private val GEMINI_PROMPT = "Transcribe this audio"
+
+    private suspend fun processAudio(modelId: String, f: File): AiPromptTrace<String> {
+        return when (modelId) {
+            in OpenAiModelIndex.audioModels() -> {
+                controller.openAiPlugin.client.quickTranscribe(modelId, f)
+                    .also { controller.updateUsage() }
+            }
+            in GeminiModelIndex.audioModels() -> {
+                val fileBytes = file.value!!.audioUri("wav")
+                val request = GenerateContentRequest(Content(
+                    listOf(
+                        Part(GEMINI_PROMPT),
+                        Part(null, Blob.fromDataUrl(fileBytes))
+                    ), ContentRole.user
+                ))
+                val response = GeminiClient().use {
+                    it.generateContent(modelId, request)
+                }
+                AiPromptTrace(
+                    AiPromptInfo(GEMINI_PROMPT),
+                    AiModelInfo(modelId),
+                    AiExecInfo(),
+                    AiOutputInfo.output(response.candidates!![0].content.parts[0].text!!)
+                )
+            }
+            else -> return AiPromptTrace.invalidRequest(modelId, "Unknown audio model")
+        }
     }
 
 }

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -64,7 +66,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
             field("Format as") {
                 combobox(formatMode, formatModeOptions.keys.toList()) { isEditable = true }
             }
-            promptfield(promptId = "text-to-json", workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("text-to-json"), workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
         parameters("Response") {
@@ -75,7 +77,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
         }
     }
 
-    override fun plan() = completionEngine.templatePlan("text-to-json",
+    override fun plan() = completionEngine.templatePlan(AiPromptLibrary.lookupPrompt("text-to-json"),
         AiPrompt.INPUT to sourceText.get(),
         "guidance" to guidance.get(),
         "format" to (formatModeOptions[formatMode.value] ?: formatMode.value),

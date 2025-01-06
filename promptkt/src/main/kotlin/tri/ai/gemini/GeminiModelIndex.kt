@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,10 @@ object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
 
     const val EMBED1 = "embedding-001"
     const val EMBED4 = "text-embedding-004"
+    const val EMBED5 = "text-embedding-005"
 
     const val GEMINI_PRO = "gemini-pro"
-    const val GEMINI_PRO_VISION = "gemini-pro-vision"
+    const val GEMINI_PRO_VISION = "gemini-1.0-pro-vision"
     const val GEMINI_15_FLASH = "gemini-1.5-flash"
     const val GEMINI_15_PRO = "gemini-1.5-prop"
 

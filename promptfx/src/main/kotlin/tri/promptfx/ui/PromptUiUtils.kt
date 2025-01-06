@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,25 +28,13 @@ import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
 
 /**
- * Shows a combobox for viewing a prompt, with a single option so it's not editable.
- */
-fun EventTarget.promptfield(
-    fieldName: String = "Template",
-    promptId: String,
-    workspace: Workspace
-) {
-    promptfield(fieldName, PromptSelectionModel(promptId), listOf(promptId), workspace)
-}
-
-
-/**
  * Adds a combobox for selecting a prompt, a text for seeing the prompt,
  * and an option to send the prompt to the template view.
  */
 fun EventTarget.promptfield(
     fieldName: String = "Template",
     prompt: PromptSelectionModel,
-    promptIdList: List<String>,
+    promptIdList: List<String> = listOf(prompt.id.value),
     workspace: Workspace
 ) {
     val promptFieldVisible = SimpleBooleanProperty(false)

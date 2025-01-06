@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,6 @@ class ChatEntry(val user: String, val message: String, val style: ChatEntryRole 
 }
 
 /** Convert a [ChatEntry] to a [TextChatMessage]. */
-fun ChatEntry.toTextChatMessage() = style.toTextChatRole()?.let {
+fun ChatEntry.toTextChatMessage() = style.role?.let {
     TextChatMessage(it, message)
 }

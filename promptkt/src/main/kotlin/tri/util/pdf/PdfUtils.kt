@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-
+import java.util.*
 
 /** Utilities for working with PDF files. */
 object PdfUtils {
@@ -40,22 +40,16 @@ object PdfUtils {
     /** Extract metadata from PDF. */
     fun pdfMetadata(file: File) = Loader.loadPDF(file).use {
         it.documentInformation.let {
-            mapOf(
+            mapOfNonNullValues(
                 "pdf.title" to it.title,
                 "pdf.author" to it.author,
                 "pdf.subject" to it.subject,
                 "pdf.keywords" to it.keywords,
                 "pdf.creator" to it.creator,
                 "pdf.producer" to it.producer,
-                "pdf.creationDate" to LocalDateTime.ofInstant(it.creationDate.toInstant(), ZoneId.systemDefault()),
-                "pdf.modificationDate" to LocalDateTime.ofInstant(
-                    it.modificationDate.toInstant(),
-                    ZoneId.systemDefault()
-                ),
-                "file.modificationDate" to LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(file.lastModified()),
-                    ZoneId.systemDefault()
-                )
+                "pdf.creationDate" to it.creationDate?.toLocalDateTime(),
+                "pdf.modificationDate" to it.modificationDate?.toLocalDateTime(),
+                "file.modificationDate" to file.lastModifiedDateTime()
             )
         }
     }
@@ -68,6 +62,18 @@ object PdfUtils {
     fun pdfPageInfo(file: File) = Loader.loadPDF(file).use { doc ->
         (1..doc.numberOfPages).map { doc.pageInfo(it) }
     }
+
+    //region GENERAL UTILS
+
+    private fun Calendar.toLocalDateTime() =
+        LocalDateTime.ofInstant(toInstant(), ZoneId.systemDefault())
+    private fun File.lastModifiedDateTime() =
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(lastModified()), ZoneId.systemDefault())
+    @Suppress("UNCHECKED_CAST")
+    private fun mapOfNonNullValues(vararg pairs: Pair<String, Any?>) =
+        pairs.filter { it.second != null }.toMap() as Map<String, Any>
+
+    //endregion
 
     //region PAGE UTILS
 

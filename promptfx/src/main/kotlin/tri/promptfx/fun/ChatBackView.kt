@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
@@ -148,7 +149,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 }
                 label(maxTokens.asString())
             }
-            promptfield(promptId = "chat-back", workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("chat-back"), workspace = workspace)
         }
     }
 

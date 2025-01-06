@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,18 @@ class PromptSelectionModel(_id: String) {
 
     init {
         id.onChange {
-            if (it != CUSTOM)
+            if (it == CUSTOM) {
+                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
+            } else {
                 prompt.set(AiPromptLibrary.lookupPrompt(it!!))
+                text.set(prompt.value.template)
+            }
         }
         text.onChange {
-            if (id.value != CUSTOM && it != AiPromptLibrary.lookupPrompt(id.value).template) {
+            val currentTemplate = if (id.value == CUSTOM) null else AiPromptLibrary.lookupPrompt(id.value).template
+            if (it != currentTemplate) {
                 id.set(CUSTOM)
-                prompt.set(AiPrompt(text.value))
+                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
             }
         }
     }

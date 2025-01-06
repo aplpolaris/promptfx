@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             model = ModelId(this@JsonToolExecutor.model),
             messages = messages,
             tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-        )).firstValue!!
+        )).firstValue
         messages += response
         var toolCalls = response.toolCalls as? List<ToolCall.Function>
 
@@ -85,7 +85,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
                 model = ModelId(this@JsonToolExecutor.model),
                 messages = messages,
                 tools = this@JsonToolExecutor.chatTools.ifEmpty { null }
-            )).firstValue!!
+            )).firstValue
             messages += response
             toolCalls = response.toolCalls as? List<ToolCall.Function>
         }

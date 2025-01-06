@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             output.set(null)
             outputItems.clear()
         }
-        return completionEngine.templatePlan(prompt.id.value,
+        return completionEngine.templatePlan(prompt.prompt.value,
             AiPrompt.INPUT to sourceText.get(),
             "item_category" to itemCategory.get(),
             "known_items" to sampleItems.get().split(",")

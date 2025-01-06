@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     }
 
     override fun plan() = completionEngine.instructTextPlan(
-        prompt.id.value,
+        prompt.prompt.value,
         instruct = instruct.get(),
         userText = input.get(),
         tokenLimit = common.maxTokens.value!!,

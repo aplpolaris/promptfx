@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
  */
 package tri.ai.embedding
 
+import org.apache.poi.UnsupportedFileFormatException
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
@@ -28,7 +29,9 @@ import tri.ai.text.chunks.process.TextDocEmbeddings.calculateMissingEmbeddings
 import tri.ai.text.chunks.process.TextDocEmbeddings.chunkedEmbedding
 import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.util.loggerFor
+import tri.util.warning
 import java.io.File
+import java.io.IOException
 import java.net.URI
 
 /** An embedding index that loads the documents from the local file system. */
@@ -74,7 +77,13 @@ class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: Embeddi
         // add new documents from file system that were not in library
         val newDocs = allPaths - library.docs.mapNotNull { it.metadata.path }.toSet()
         newDocs.forEach {
-            library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
+            try {
+                library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
+            } catch (x: IOException) {
+                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+            } catch (x: UnsupportedFileFormatException) {
+                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+            }
         }
 
         if (newDocs.isNotEmpty() || docsNeedingEmbeddings.isNotEmpty())

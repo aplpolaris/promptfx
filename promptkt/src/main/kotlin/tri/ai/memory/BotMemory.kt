@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
                 TextChatMessage(TextChatRole.System, "You are a chatbot that summarizes key content from prior conversations."),
                 TextChatMessage(TextChatRole.User, query)
             ))
-        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.firstValue!!.content ?: "").trim())
+        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.firstValue.content ?: "").trim())
         chatHistory.add(MemoryItem(summaryMessage))
     }
 

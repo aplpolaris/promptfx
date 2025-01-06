@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ object LocalFileManager {
             DOC -> WordDocUtils.readDocMetadata(this)
             DOCX -> WordDocUtils.readDocxMetadata(this)
             else -> emptyMap()
-        }.filterValues { it != null && (it !is String || it.isNotBlank()) }
+        }.filterValues { it !is String || it.isNotBlank() }
         if (props.isNotEmpty())
             ObjectMapper()
                 .registerModule(JavaTimeModule())

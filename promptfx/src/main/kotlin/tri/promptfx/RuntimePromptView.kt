@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 
 /**
@@ -33,6 +34,7 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
 
     private val modeConfigs = config.modeOptions.map { ModeViewConfig(it) }
     private val promptConfig = config.promptConfig
+    private lateinit var promptModel: PromptSelectionModel
     private val input = SimpleStringProperty("")
 
     init {
@@ -44,7 +46,8 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
                 }
             }
             if (promptConfig.isVisible) {
-                promptfield(promptId = promptConfig.id, workspace = workspace)
+                promptModel = PromptSelectionModel(promptConfig.id)
+                promptfield(prompt = promptModel, workspace = workspace)
             }
             if (config.isShowMultipleResponseOption && !config.isShowModelParameters) {
                 with(common) {
@@ -57,7 +60,7 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
     }
 
     override fun plan() = completionEngine.templatePlan(
-        promptId = promptConfig.id,
+        prompt = promptModel.prompt.value,
         fields = modeConfigs.associate { it.idInTemplate to RuntimePromptViewConfigs.modeTemplateValue(it.id, it.mode.get()) }
                 + mapOf(AiPrompt.INPUT to input.get()),
         tokenLimit = common.maxTokens.value,

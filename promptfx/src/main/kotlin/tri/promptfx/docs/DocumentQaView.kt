@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
@@ -137,7 +138,7 @@ class DocumentQaView: AiPlanTaskView(
 
     override fun plan() = planner.plan(
         questions = listOf(question.value),
-        promptId = prompt.id.value,
+        prompt = prompt.prompt.value,
         embeddingService = controller.embeddingService.value,
         chunksToRetrieve = chunksToRetrieve.value,
         minChunkSize = minChunkSizeForRelevancy.value,
@@ -160,16 +161,21 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            val final = it.finalResult
-            (final as FormattedPromptTraceResult).formattedOutputs.forEach {
-                it.hyperlinkOp = { docName ->
-                    val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
-                    if (doc == null) {
-                        tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
-                    } else {
-                        browseToBestSnippet(doc, planner.lastResult, hostServices)
+            when (val final = it.finalResult) {
+                is FormattedPromptTraceResult -> final.formattedOutputs.forEach {
+                    it.hyperlinkOp = { docName ->
+                        val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
+                        if (doc == null) {
+                            tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
+                        } else {
+                            browseToBestSnippet(doc, planner.lastResult, hostServices)
+                        }
                     }
                 }
+                is AiPromptTrace<*> -> {
+                    // expected when there is an error
+                }
+                else -> throw IllegalStateException("Unexpected result type: $final")
             }
         }
 

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,23 @@
 package tri.promptfx.ui.trace
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.control.Button
 import javafx.scene.layout.Priority
+import javafx.scene.media.MediaException
+import javafx.scene.media.MediaPlayer
 import tornadofx.*
+import tri.ai.openai.OpenAiModelIndex
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
-import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.*
+import tri.promptfx.tools.PromptTraceHistoryView
 import tri.util.ui.graphic
+import tri.util.ui.loadAudio
 
 /** View showing all details of a prompt trace. */
 class PromptTraceDetailsUi : Fragment("Prompt Trace") {
@@ -40,9 +48,13 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     val model = SimpleStringProperty("")
     val modelParams = SimpleObjectProperty<Map<String, Any>>(null)
     val exec = SimpleObjectProperty<AiExecInfo>(null)
-    val result = SimpleStringProperty("")
+    val result = SimpleObjectProperty<Any>("")
 
     lateinit var paramsField: Fieldset
+
+    private val thumbnailSize = SimpleDoubleProperty(128.0)
+    lateinit var playButton: Button
+    private var player: MediaPlayer? = null
 
     fun setTrace(trace: AiPromptTraceSupport<*>) {
         this.trace.set(trace)
@@ -51,7 +63,11 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
         model.value = trace.model?.modelId
         modelParams.value = trace.model?.modelParams
         exec.value = trace.exec
-        result.value = trace.output?.outputs?.joinToString("\n\n") ?: "No result"
+        val outputs = trace.output?.outputs ?: listOf("No result")
+        if (outputs.size == 1)
+            result.value = outputs[0] ?: "No result"
+        else
+            result.value = trace.output?.outputs?.joinToString("\n\n") ?: "No result"
     }
 
     override val root = vbox {
@@ -68,7 +84,8 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
             }
             // add button to close dialog and open trace in template view
             button("Open in history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
-                enableWhen(trace.isNotNull.and(exec.isNotNull))
+                val isHistoryDocked = workspace.dockedComponentProperty.booleanBinding { it is PromptTraceHistoryView }
+                enableWhen(trace.isNotNull.and(exec.isNotNull).and(isHistoryDocked.not()))
                 tooltip("Open this prompt in the prompt history view (if available).")
                 action {
                     if (currentWindow != workspace.currentWindow)
@@ -104,8 +121,37 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                     }
                     field("Result") {
                         labelContainer.alignment = Pos.TOP_LEFT
-                        text(result) {
-                            wrappingWidth = 400.0
+                        val box = hbox {
+                            text("TBD")
+                        }
+                        result.onChange {
+                            box.children.clear()
+                            if (result.value.toString()
+                                    .startsWith("https:") && model.value in PromptFxModels.imageModels()
+                                    .map { it.modelId }
+                            ) {
+                                val imageUrl = result.value.toString()
+                                box.imageview(imageUrl) {
+                                    fitWidthProperty().bind(thumbnailSize)
+                                    fitHeightProperty().bind(thumbnailSize)
+                                    isPreserveRatio = true
+                                    tooltip { graphic = vbox {
+                                        val text = text(prompt) {
+                                            style = "-fx-fill: white;"
+                                        }
+                                        val image = imageview(imageUrl)
+                                        text.wrappingWidthProperty().bind(image.image.widthProperty())
+                                    } }
+                                }
+                            } else if (result.value is ByteArray && model.value in OpenAiModelIndex.ttsModels()) { // TODO general support for audio models
+                                playButton = box.button("Play", graphic = FontAwesomeIcon.PLAY.graphic) {
+                                    action { playButtonPress(result.value as ByteArray) }
+                                }
+                            } else {
+                                box.text(result.value.toString()) {
+                                    wrappingWidth = 400.0
+                                }
+                            }
                         }
                     }
                 }
@@ -147,4 +193,29 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     private val Any?.truncated
         get() = toString().let { if (it.length > 400) it.substring(0, 397) + "..." else it }
 
+    fun playButtonPress(audioBytes: ByteArray) {
+        player?.let {
+            it.stop()
+            playButton.text = "Play"
+            playButton.graphic = FontAwesomeIcon.PLAY.graphic
+            player = null
+            it.dispose()
+            return
+        }
+        try {
+            val media = loadAudio(audioBytes)
+            playButton.text = "Stop"
+            playButton.graphic = FontAwesomeIcon.STOP.graphic
+            player = MediaPlayer(media).apply {
+                onEndOfMedia = Runnable {
+                    playButton.text = "Play"
+                    playButton.graphic = FontAwesomeIcon.PLAY.graphic
+                    player = null
+                }
+                play()
+            }
+        } catch (x: MediaException) {
+            error("Error playing audio", "Error playing audio: ${x.message}")
+        }
+    }
 }

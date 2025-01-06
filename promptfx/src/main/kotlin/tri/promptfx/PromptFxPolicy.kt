@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import tri.ai.openai.OpenAiPlugin
 
 /** Policy for determining which models are available within PromptFx. */
 abstract class PromptFxPolicy {
+
+    abstract fun modelInfo(): List<ModelInfo>
 
     abstract fun embeddingModels(): List<EmbeddingService>
     open fun embeddingModelDefault() = embeddingModels().first()
@@ -63,17 +65,21 @@ data class PromptFxPolicyBar(
     val fgColorDark: Color = fgColor
 )
 
-/** OpenAI-only policy, as managed by [OpenAiPlugin]. */
-object PromptFxPolicyOpenAi : PromptFxPolicy() {
-    override val isShowUsage = true
-    override val isShowBanner = true
-    override val isShowApiKeyButton = true
-    private val plugin = OpenAiPlugin()
+/** Policy based on a provided plugin. */
+abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
+    override fun modelInfo() = plugin.modelInfo()
     override fun embeddingModels() = plugin.embeddingModels()
     override fun textCompletionModels() = plugin.textCompletionModels()
     override fun chatModels() = plugin.chatModels()
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
+}
+
+/** OpenAI-only policy, as managed by [OpenAiPlugin]. */
+object PromptFxPolicyOpenAi : PromptFxPolicyPlugin(OpenAiPlugin()) {
+    override val isShowUsage = true
+    override val isShowBanner = true
+    override val isShowApiKeyButton = true
     override val bar = PromptFxPolicyBar("OpenAI", Color.web("#74AA9C"), Color.WHITE)
     override fun supportsView(simpleName: String) = true
 }
@@ -83,6 +89,7 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override val isShowUsage = true
     override val isShowBanner = false
     override val isShowApiKeyButton = true
+    override fun modelInfo() = TextPlugin.modelInfo()
     override fun embeddingModels() = TextPlugin.embeddingModels()
     override fun textCompletionModels() = TextPlugin.textCompletionModels()
     override fun chatModels() = TextPlugin.chatModels()

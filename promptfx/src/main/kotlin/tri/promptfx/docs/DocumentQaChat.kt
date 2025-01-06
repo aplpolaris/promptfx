@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.io.File
 import java.io.FileFilter
 
 /** Standalone app for asking questions of documents. */
-object DocumentQaRunner {
+object DocumentQaChat {
 
     private val platform by lazy { Platform.startup {  } }
     private val view by lazy {
@@ -41,19 +41,6 @@ object DocumentQaRunner {
     val folders by lazy { view.getFolders() }
 
     private fun initPlatform() = platform
-
-    fun ask(input: String, folder: String?): String {
-        return runBlocking {
-            // initialize toolkit and view
-            if (folder != null) {
-                view.setFolder(folder)
-            }
-            println("Asking a question about documents in ${view.getFolder()}.")
-            view.question.set(input)
-            val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult as FormattedPromptTraceResult
-            result.firstValue
-        }
-    }
 
     private fun DocumentQaView.getFolder() =
         documentFolder.get().name
@@ -79,7 +66,7 @@ object DocumentQaRunner {
 
         runBlocking {
             println("Using completion engine ${view.controller.completionEngine.value}")
-            println("You can use any of these folders: ${view.getFolders()}")
+            println("You can use any of these folders: $folders")
 
             // initialize toolkit and view
             println("Asking a question about documents in ${view.getFolder()}. Say 'bye' to exit, or 'switch x' to switch to a different folder.")
@@ -91,7 +78,7 @@ object DocumentQaRunner {
                     if (view.setFolder(folder)) {
                         println("Asking a question about documents in ${view.getFolder()}. Say 'bye' to exit, or 'switch x' to switch to a different folder.")
                     } else {
-                        println("Invalid folder $folder. You can use any of these folders: ${view.getFolders()}")
+                        println("Invalid folder $folder. You can use any of these folders: $folders")
                     }
                 } else {
                     view.question.set(input)

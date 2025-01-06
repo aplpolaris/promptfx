@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,5 @@ interface TextChat {
 }
 
 /** A single message in a chat. */
-class TextChatMessage(val role: TextChatRole, val content: String?)
-
-/** The role of a chat message. */
-enum class TextChatRole {
-    System, User, Assistant
-}
+data class TextChatMessage(val role: TextChatRole, val content: String?)
 

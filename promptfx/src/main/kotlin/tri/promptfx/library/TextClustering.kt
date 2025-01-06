@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ package tri.promptfx.library
 import tri.ai.core.TextCompletion
 import tri.ai.core.templateTask
 import tri.ai.embedding.EmbeddingService
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.INPUT
+import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.util.fine
 import tri.util.ml.ClusterService
@@ -124,7 +126,7 @@ object TextClustering {
         val inputText = cluster.joinToString("\n") { it.description.theme!! }
         val responses = (1..attempts).map {
             completionEngine.templateTask(
-                prompt.summaryType.promptId,
+                prompt.summaryType.prompt,
                 INPUT to inputText,
                 "item_type" to prompt.itemType,
                 "categories" to prompt.categories.joinToString("\n") { " - $it" },
@@ -158,6 +160,7 @@ object TextClustering {
 
 }
 
+/** Prompt for generating a cluster summary. */
 class ClusteringPrompt(
     val summaryType: ClusterSummaryType,
     val itemType: String,
@@ -165,11 +168,15 @@ class ClusteringPrompt(
     val sampleTheme: String,
 )
 
+/** Types of summaries that can be generated for a cluster. */
 enum class ClusterSummaryType(val promptId: String) {
     CATEGORIES_AND_THEME("generate-categories-and-theme"),
     THEME_ONLY("generate-categories-theme-only"),
     CATEGORIES_ONLY("generate-categories"),
-    NONE("")
+    NONE("");
+
+    val prompt: AiPrompt
+        get() = AiPromptLibrary.lookupPrompt(promptId)
 }
 
 /** Consolidates information about a cluster. */

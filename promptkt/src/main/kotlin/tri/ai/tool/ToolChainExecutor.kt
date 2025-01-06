@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2024 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
         val textCompletion = completionEngine.complete(prompt, stop = "Observation: ")
-            .firstValue!!.trim()
+            .firstValue.trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
 
