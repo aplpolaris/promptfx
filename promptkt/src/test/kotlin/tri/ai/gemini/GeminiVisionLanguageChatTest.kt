@@ -20,6 +20,8 @@
 package tri.ai.gemini
 
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextChatRole
@@ -30,7 +32,21 @@ import java.net.URI
 
 class GeminiVisionLanguageChatTest {
 
-    val client = GeminiVisionLanguageChat(modelId = GEMINI_15_FLASH)
+    companion object {
+        lateinit var client: GeminiVisionLanguageChat
+
+        @JvmStatic
+        @BeforeAll
+        fun setUp() {
+            client = GeminiVisionLanguageChat(modelId = GEMINI_15_FLASH)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearDown() {
+            client.client.close()
+        }
+    }
 
     @Test
     @Tag("gemini")
