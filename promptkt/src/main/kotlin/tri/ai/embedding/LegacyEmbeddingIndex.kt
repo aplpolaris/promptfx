@@ -20,7 +20,18 @@
 package tri.ai.embedding
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.embedding.LocalFolderEmbeddingIndex.Companion.EMBEDDINGS_FILE_NAME_LEGACY
+import tri.ai.openai.OpenAiModelIndex.ADA_ID
 import tri.ai.openai.jsonMapper
+import tri.ai.text.chunks.TextChunkInDoc
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.process.LocalFileManager
+import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.ai.text.chunks.process.LocalFileManager.textCacheFile
+import tri.ai.text.chunks.process.LocalTextDocIndex.Companion.createTextDoc
+import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
+import tri.util.fine
+import tri.util.info
 import java.io.File
 
 /**
@@ -51,6 +62,48 @@ class LegacyEmbeddingSectionInfo {
     var embedding: List<Double> = listOf()
     var start: Int = 0
     var end: Int = 0
+}
+
+//endregion
+
+//region WORKING WITH LEGACY DATA
+
+/** Upgrades a legacy format embeddings file. Only supports upgrading from OpenAI embeddings file, `embeddings.json`. */
+fun LocalFolderEmbeddingIndex.upgradeEmbeddingIndex() {
+    val folder = rootDir
+    val file = indexFile
+    val oldFile = File(folder, EMBEDDINGS_FILE_NAME_LEGACY)
+    if (!file.exists() && oldFile.exists()) {
+        fine<LegacyEmbeddingIndex>("Checking legacy embeddings file for embedding vectors: $oldFile")
+        try {
+            var changed = false
+            LegacyEmbeddingIndex.loadFrom(oldFile).info.values.map {
+                val f = LocalFileManager.fixPath(File(it.path), folder)?.originalFile()
+                    ?: throw IllegalArgumentException("File not found: ${it.path}")
+                f.createTextDoc().apply {
+                    all = TextChunkRaw(f.textCacheFile().readText())
+                    chunks.addAll(it.sections.map {
+                        TextChunkInDoc(it.start, it.end).apply {
+                            if (it.embedding.isNotEmpty())
+                                putEmbeddingInfo(ADA_ID, it.embedding, EmbeddingPrecision.FIRST_EIGHT)
+                        }
+                    })
+                }
+            }.forEach {
+                if (addIfNotPresent(it))
+                    changed = true
+            }
+            if (changed) {
+                info<LegacyEmbeddingIndex>("Upgraded legacy embeddings file to new format.")
+                saveIndex()
+                info<LegacyEmbeddingIndex>("Legacy embeddings file $oldFile can be deleted unless needed for previous versions of PromptFx.")
+            } else {
+                fine<LegacyEmbeddingIndex>("No new embeddings found in legacy embeddings file.")
+            }
+        } catch (x: Exception) {
+            info<LegacyEmbeddingIndex>("Failed to load legacy embeddings file: ${x.message}")
+        }
+    }
 }
 
 //endregion

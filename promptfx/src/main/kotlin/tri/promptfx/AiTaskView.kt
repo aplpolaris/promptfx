@@ -43,7 +43,7 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
-import tri.promptfx.ui.FormattedPromptTraceResult
+import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedPromptResultArea
 import tri.promptfx.ui.PromptResultArea
 import tri.util.ui.graphic

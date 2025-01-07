@@ -17,20 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.docs
+package tri.ai.text.docs
 
 import com.aallam.openai.api.logging.LogLevel
-import javafx.application.Platform
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.IgnoreMonitor
-import tri.promptfx.PromptFxModels
-import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.util.*
 import java.io.File
 import java.util.logging.Level
-import java.util.logging.Logger
 
 /** Command-line app with parameters for asking questions of documents. */
 object DocumentQaScript {
@@ -40,17 +34,8 @@ object DocumentQaScript {
     private const val PARAM_COMPLETION_MODEL = "--completion-model"
     private const val PARAM_EMBEDDING_MODEL = "--embedding-model"
 
-    private val platform by lazy { Platform.startup {  } }
-    private fun initPlatform() = platform
-    private val view by lazy {
-        initPlatform()
-        DocumentQaView()
-    }
-
     @JvmStatic
     fun main(args: Array<String>) {
-        Logger.getLogger("com.sun.javafx.application.PlatformImpl").setLevel(Level.OFF)
-
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
 
@@ -77,12 +62,12 @@ object DocumentQaScript {
         }
 
         runBlocking {
-            val response = ask(folder, question, completionModel, embeddingModel)
-            println(response)
+            val driver = createDriver(File(""), folder, completionModel, embeddingModel)
+            info<DocumentQaScript>("  question: $question")
+            val response = driver.answerQuestion(question)
+            println(response.finalResult.firstValue)
+            driver.close()
         }
-
-        OpenAiClient.INSTANCE.client.close()
-        Platform.exit()
     }
 
     //region PARSE ARGS
@@ -106,47 +91,23 @@ object DocumentQaScript {
 
     //endregion
 
-    //region DocumentQaView ACCESSORS
-
-    private fun DocumentQaView.getFolder() =
-        documentFolder.get().name
-
-    private fun DocumentQaView.setFolder(folder: String): Boolean {
-        val folderFile = File(documentFolder.get().parentFile, folder)
-        return if (folderFile.exists()) {
-            documentFolder.set(folderFile)
-            true
+    /** Creates driver from provided settings. */
+    fun createDriver(root: File, folder: String?, completionModel: String?, embeddingModel: String?) = LocalDocumentQaDriver(root).apply {
+        if (folder != null) {
+            this.folder = folder
         } else {
-            false
+            this.folder = folders.first()
         }
-    }
-
-    //endregion
-
-    /** Ask a question of a document folder. */
-    fun ask(
-        folder: String,
-        question: String,
-        modelId: String?,
-        embeddingModelId: String?,
-    ) = runBlocking {
-        info<DocumentQaScript>("Asking question about $folder: $question")
-        if (modelId != null) {
-            info<DocumentQaScript>("Using completion engine ${view.controller.completionEngine.value}")
-            view.controller.completionEngine.set(
-                PromptFxModels.policy.textCompletionModels().find { it.modelId == modelId }!!
-            )
+        info<DocumentQaScript>("Asking question about documents in ${this.folder}")
+        if (completionModel != null) {
+            this.completionModel = completionModel
         }
-        if (embeddingModelId != null) {
-            info<DocumentQaScript>("Using embedding model ${view.controller.embeddingService.value}")
-            view.controller.embeddingService.set(
-                PromptFxModels.policy.embeddingModels().find { it.modelId == embeddingModelId }!!
-            )
+        info<DocumentQaScript>("  using completion engine ${this.completionModel}")
+        if (embeddingModel != null) {
+            this.embeddingModel = embeddingModel
         }
-        view.setFolder(folder)
-        view.question.set(question)
-        val result = AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor).finalResult as FormattedPromptTraceResult
-        result.firstValue
+        info<DocumentQaScript>("  using embedding model ${this.embeddingModel}")
+        initialize()
     }
 
 }

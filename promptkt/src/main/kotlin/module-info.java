@@ -40,6 +40,7 @@ module tri.promptkt {
     requires org.apache.poi.ooxml;
     requires org.apache.poi.scratchpad;
 
+    requires org.jsoup;
     requires com.github.mustachejava;
 
     requires com.fasterxml.jackson.annotation;
@@ -66,7 +67,7 @@ module tri.promptkt {
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
-    opens tri.ai.text.chunks to com.fasterxml.jackson.databind;
+    opens tri.ai.text.chunks to com.fasterxml.jackson.databind, com.github.mustachejava;
 
     exports tri.ai.core;
     exports tri.ai.embedding;
@@ -79,6 +80,7 @@ module tri.promptkt {
     exports tri.ai.prompt.trace.batch;
     exports tri.ai.text.chunks;
     exports tri.ai.text.chunks.process;
+    exports tri.ai.text.docs;
     exports tri.ai.tool;
     exports tri.util;
     exports tri.util.pdf;

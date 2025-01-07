@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui
+package tri.ai.text.docs
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.prompt.trace.*
