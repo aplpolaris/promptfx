@@ -30,6 +30,7 @@ import tri.promptfx.ui.FormattedPromptTraceResult
 import tri.util.*
 import java.io.File
 import java.util.logging.Level
+import java.util.logging.Logger
 
 /** Command-line app with parameters for asking questions of documents. */
 object DocumentQaScript {
@@ -48,6 +49,8 @@ object DocumentQaScript {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        Logger.getLogger("com.sun.javafx.application.PlatformImpl").setLevel(Level.OFF)
+
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
 
@@ -78,6 +81,7 @@ object DocumentQaScript {
             println(response)
         }
 
+        OpenAiClient.INSTANCE.client.close()
         Platform.exit()
     }
 
