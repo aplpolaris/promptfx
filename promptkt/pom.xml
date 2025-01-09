@@ -61,6 +61,7 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
 
+        <clikt.version>4.4.0</clikt.version>
         <jackson.version>2.17.1</jackson.version>
         <jsoup.version>1.17.2</jsoup.version>
         <junit.version>5.10.2</junit.version>
@@ -154,6 +155,11 @@
             <version>${okhttp.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.ajalt.clikt</groupId>
+            <artifactId>clikt-jvm</artifactId>
+            <version>${clikt.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>

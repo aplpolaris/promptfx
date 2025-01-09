@@ -17,24 +17,33 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.text.docs
+package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.OpenAiClient
 import tri.util.MIN_LEVEL_TO_LOG
-import java.io.File
 import java.util.logging.Level
+import kotlin.io.path.Path
 
 /** Standalone app for asking questions of documents. */
-object DocumentQaChat {
+class DocumentQaChat : CliktCommand() {
 
-    @JvmStatic
-    fun main(args: Array<String>) {
+    private val root by option(help = "Root path containing folders.")
+        .path(mustExist = true)
+        .default(Path("."))
+    private val folder by option(help = "Initial folder containing documents to search.")
+    private val completionModel by option(help = "Completion model to use.")
+    private val embeddingModel by option(help = "Embedding model to use.")
+
+    override fun run() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
-        MIN_LEVEL_TO_LOG = Level.INFO
-
-        val driver = DocumentQaScript.createDriver(File("."), null, null, null)
+        MIN_LEVEL_TO_LOG = Level.WARNING
+        val driver = createQaDriver(root.toFile(), folder, completionModel, embeddingModel)
 
         runBlocking {
             println("Using completion engine ${driver.completionModel}")
@@ -68,3 +77,5 @@ object DocumentQaChat {
     }
 
 }
+
+fun main(args: Array<String>) = DocumentQaChat().main(args)

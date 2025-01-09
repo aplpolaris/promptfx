@@ -36,12 +36,12 @@ module tri.promptkt {
     requires okhttp3;
     requires okio;
 
+    requires clikt.jvm;
+    requires com.github.mustachejava;
     requires org.apache.pdfbox;
     requires org.apache.poi.ooxml;
     requires org.apache.poi.scratchpad;
-
     requires org.jsoup;
-    requires com.github.mustachejava;
 
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.databind;
