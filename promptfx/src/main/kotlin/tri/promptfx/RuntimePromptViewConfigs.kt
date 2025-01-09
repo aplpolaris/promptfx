@@ -64,8 +64,8 @@ object RuntimePromptViewConfigs {
 
     /**
      * Get value of a mode id for use in prompts.
-     * If [valueId] is not present for given mode, returns [valueId].
      * If [modeId] is not present in index, throws an error.
+     * If [valueId] is not present for given mode, returns [valueId].
      */
     fun modeTemplateValue(modeId: String, valueId: String) =
         (runtimeModes[modeId] ?: modes[modeId])?.getOrDefault(valueId, valueId) ?: error("Mode $modeId not found in index.")

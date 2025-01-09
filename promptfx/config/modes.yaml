@@ -1,11 +1,5 @@
 # Library of modes for use in other views
 ---
-date-formats:
-  - ISO8601 Date
-  - MMM dd, yyyy
-  - yyyy/MM/dd
-  - the 12th of February
-
 translation:
   - Spanish
   - French

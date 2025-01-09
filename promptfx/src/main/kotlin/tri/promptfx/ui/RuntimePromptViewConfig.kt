@@ -5,14 +5,17 @@ class RuntimePromptViewConfig(
     val category: String,
     val title: String,
     val description: String,
-    val modeOptions: List<ModeConfig>,
     val promptConfig: PromptConfig,
-    val isShowModelParameters: Boolean,
+    val modeOptions: List<ModeConfig> = listOf(),
+    val isShowModelParameters: Boolean = false,
     val isShowMultipleResponseOption: Boolean = false
 )
 
-/** Reference mode [id] in configuration file, associated [templateId] for use in prompt, [label] for UI. */
-class ModeConfig(val id: String, val templateId: String, val label: String)
+/**
+ * Reference mode [id] in `modes.yaml` configuration file, associated [templateId] for use in prompt, [label] for UI.
+ * Either [values] or [id] must be present.
+ */
+class ModeConfig(val id: String? = null, val templateId: String, val label: String, val values: List<String>? = null)
 
 /** Prompt config for view. */
 class PromptConfig(val id: String, val isVisible: Boolean = true)

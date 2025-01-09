@@ -63,19 +63,22 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
 
     override fun plan() = completionEngine.templatePlan(
         prompt = promptModel.prompt.value,
-        fields = modeConfigs.associate { it.idInTemplate to RuntimePromptViewConfigs.modeTemplateValue(it.id, it.mode.get()) } +
+        fields = modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) } +
                 mapOf(AiPrompt.INPUT to input.get()),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
         numResponses = common.numResponses.value
     )
 
+    fun modeTemplateValue(id: String?, valueOrValueId: String) =
+        if (id == null) valueOrValueId else RuntimePromptViewConfigs.modeTemplateValue(id, valueOrValueId)
+
     /** Mode config with property indicating current selection. */
     inner class ModeViewConfig(config: ModeConfig) {
         val id = config.id
-        val idInTemplate = config.templateId
+        val templateId = config.templateId
         val label = config.label
-        val options: List<String> = RuntimePromptViewConfigs.modeOptionList(id)
+        val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
         val mode = SimpleStringProperty(options[0])
     }
 
