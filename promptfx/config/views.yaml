@@ -1,5 +1,18 @@
 # Library of view configurations
 ---
+date-extraction:
+  category: Text
+  title: Date Extraction
+  description: Extract all dates from input text and provide as a list.
+  modeOptions:
+    - id: date-formats
+      templateId: DATE_FORMAT
+      label: Date Format
+  promptConfig:
+    id: date-extraction
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
 entity-extraction:
   category: Text
   title: Entity Extraction

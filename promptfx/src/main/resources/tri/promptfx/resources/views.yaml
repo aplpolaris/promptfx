@@ -29,7 +29,7 @@ sentiment-analysis:
 
 summarization:
   category: Text
-  title: Summarize
+  title: Summarization
   description: Summarize text.
   modeOptions:
     - id: summarization-audience

@@ -19,9 +19,7 @@
  */
 package tri.util.ui
 
-import tornadofx.UIComponent
-import tornadofx.Workspace
-import tornadofx.find
+import tornadofx.*
 import kotlin.reflect.KClass
 
 /** Partial implementation of [NavigableWorkspaceView]. */
@@ -37,3 +35,4 @@ abstract class NavigableWorkspaceViewImpl<T : UIComponent>(
     }
 
 }
+

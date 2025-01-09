@@ -19,7 +19,7 @@
  */
 package tri.promptfx.apps
 
-import tri.promptfx.RuntimePromptView
+import tri.promptfx.ui.RuntimePromptView
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
