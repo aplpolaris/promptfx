@@ -21,6 +21,7 @@ package tri.promptfx.ui.chunk
 
 import javafx.collections.ObservableList
 import tornadofx.*
+import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.EmbeddingPrecision
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextChunk
@@ -67,4 +68,20 @@ class TextChunkViewModelImpl(parentDoc: TextDoc?, val chunk: TextChunk, val embe
     override val embeddingsAvailable
         get() = chunk.getEmbeddingInfo()?.keys?.toList() ?: emptyList()
     override val text = chunk.text(parentDoc?.all)
+}
+
+/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
+internal fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
+    val result = observableListOf(map { it.asTextChunkViewModel()})
+    onChange { result.setAll(map { it.asTextChunkViewModel() }) }
+    return result
+}
+
+/** Wrap [EmbeddingMatch] as a view model. */
+internal fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
+    override var score: Float? = this@asTextChunkViewModel.queryScore
+    override var embedding: List<Double>? = chunkEmbedding
+    override val embeddingsAvailable = listOf(embeddingModel)
+    override val browsable = document.browsable()
+    override val text = chunkText
 }

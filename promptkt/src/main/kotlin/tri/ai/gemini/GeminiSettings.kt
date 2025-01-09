@@ -31,8 +31,8 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import tri.util.info
 import java.io.File
-import java.util.logging.Logger
 
 /** Manages Gemini API key and client. */
 @OptIn(ExperimentalSerializationApi::class)
@@ -75,9 +75,7 @@ class GeminiSettings {
             System.getenv(API_KEY_ENV)
 
         return if (key.isNullOrBlank()) {
-            Logger.getLogger(GeminiSettings::class.java.name).warning(
-                "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
-            )
+            info<GeminiSettings>("Gemini API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
             ""
         } else
             key

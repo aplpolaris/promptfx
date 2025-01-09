@@ -35,7 +35,7 @@ import java.io.IOException
 import java.net.URI
 
 /** An embedding index that loads the documents from the local file system. */
-class LocalFolderEmbeddingIndex(val rootDir: File, val embeddingService: EmbeddingService) : EmbeddingIndex {
+class LocalFolderEmbeddingIndex(val rootDir: File, embeddingService: EmbeddingService) : EmbeddingIndex(embeddingService) {
 
     var maxChunkSize: Int = 1000
 

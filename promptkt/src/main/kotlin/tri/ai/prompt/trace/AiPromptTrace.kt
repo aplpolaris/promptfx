@@ -61,6 +61,13 @@ class AiPromptTrace<T>(
         /** Task not attempted because input was invalid. */
         fun <T> invalidRequest(modelInfo: AiModelInfo?, message: String) =
             error<T>(modelInfo, message, IllegalArgumentException(message))
+
+        /** Generate trace for given output. */
+        fun <T> output(output: T) = AiPromptTrace(outputInfo = AiOutputInfo(listOf(output)))
+
+        /** Generate trace for given list of outputs. */
+        fun <T> output(output: List<T>) = AiPromptTrace(outputInfo = AiOutputInfo(output))
+
     }
 
 }

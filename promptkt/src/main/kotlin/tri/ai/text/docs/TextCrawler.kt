@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.docs
+package tri.ai.text.docs
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

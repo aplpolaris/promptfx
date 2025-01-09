@@ -70,10 +70,11 @@ class PromptValidatorView : AiPlanTaskView(
     }
 
     override fun plan() = aitask("complete-prompt") {
-        completionEngine.promptTask(prompt.value, common.maxTokens.value, common.temp.value)
-    }.aiprompttask("validate-result") {
-        runLater { promptOutput.value = it }
-        val validatorPromptText = validatorPromptUi.fill("result" to it.firstValue)
+        completionEngine.promptTask(prompt.value, common.maxTokens.value, common.temp.value).also {
+            runLater { promptOutput.value = it }
+        }
+    }.aitask("validate-result") {
+        val validatorPromptText = validatorPromptUi.fill("result" to it)
         completionEngine.promptTask(validatorPromptText, common.maxTokens.value, common.temp.value, numResponses = common.numResponses.value)
     }.planner
 

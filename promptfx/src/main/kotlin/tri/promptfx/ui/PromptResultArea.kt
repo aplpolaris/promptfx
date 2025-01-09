@@ -29,6 +29,9 @@ import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.toHtml
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT

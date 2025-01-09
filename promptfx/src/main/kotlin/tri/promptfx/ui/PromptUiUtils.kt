@@ -24,7 +24,12 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.EventTarget
 import javafx.scene.layout.HBox
+import javafx.scene.Node
+import javafx.scene.control.Hyperlink
+import javafx.scene.text.Text
 import tornadofx.*
+import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.FormattedTextNode
 import tri.promptfx.PromptFxWorkspace
 
 /**
@@ -61,3 +66,18 @@ fun EventTarget.promptfield(
     }
 }
 
+/** Convert a [FormattedText] to JavaFx [Node]s. */
+fun FormattedText.toFxNodes() =
+    nodes.map { it.toFxNode(hyperlinkOp) }
+
+/** Convert a [FormattedTextNode] to an FX [Node]. */
+fun FormattedTextNode.toFxNode(hyperlinkOp: (String) -> Unit): Node =
+    when (hyperlink) {
+        null -> Text(text).also {
+            it.style = style
+        }
+        else -> Hyperlink(text).also {
+            it.style = style
+            it.action { hyperlinkOp(text) }
+        }
+    }

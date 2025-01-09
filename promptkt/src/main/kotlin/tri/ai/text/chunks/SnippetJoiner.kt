@@ -17,11 +17,10 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.docs
+package tri.ai.text.chunks
 
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.prompt.AiPromptLibrary
-import tri.ai.text.chunks.TextDoc
 
 /** Name used in snippet joiner template for matching text. */
 const val MATCHES_TEMPLATE = "matches"
@@ -98,7 +97,7 @@ class BulletedTemplateJoiner(_id: String) : SnippetJoiner(_id) {
 
 /** Utility class for holding the name and text of a match. This is used when filling in joiner templates with Mustache templates. */
 private class NameText(val number: Int, val name: String, val prefix: String, val text: String) {
-    constructor(index: Int, match: EmbeddingMatch) : this(index, match.document.browsable()!!.shortNameWithoutExtension, "", match.chunkText.trim())
+    constructor(index: Int, match: EmbeddingMatch) : this(index, match.document.browsable()?.shortNameWithoutExtension ?: match.document.metadata.id, "", match.chunkText.trim())
 }
 
 /** Utility class for holding collection of chunks related to a context. */

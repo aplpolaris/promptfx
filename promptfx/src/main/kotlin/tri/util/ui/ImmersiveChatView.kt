@@ -34,7 +34,8 @@ import tri.promptfx.PromptFxModels
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
-import tri.promptfx.ui.FormattedText
+import tri.ai.text.docs.FormattedText
+import tri.promptfx.ui.toFxNodes
 import tri.util.ui.DocumentUtils.documentThumbnail
 
 /** View for a full-screen chat display. */

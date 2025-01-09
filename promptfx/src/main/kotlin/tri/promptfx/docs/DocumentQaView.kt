@@ -20,25 +20,40 @@
 package tri.promptfx.docs
 
 import javafx.application.HostServices
+import javafx.application.Platform
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.collections.ObservableList
+import javafx.beans.value.ObservableValue
+import javafx.scene.control.ToggleGroup
+import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.embedding.EmbeddingMatch
-import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.core.TextCompletion
+import tri.ai.embedding.*
+import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiTaskList
+import tri.ai.pips.IgnoreMonitor
+import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.text.chunks.BrowsableSource
+import tri.ai.text.chunks.GroupingTemplateJoiner
 import tri.ai.text.chunks.TextLibrary
+import tri.ai.text.docs.DocumentQaDriver
+import tri.ai.text.docs.DocumentQaPlanner
+import tri.ai.text.docs.QuestionAnswerResult
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.FormattedPromptResultArea
-import tri.promptfx.ui.FormattedPromptTraceResult
+import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -46,6 +61,7 @@ import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
 import java.io.File
+import java.io.FileFilter
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentQaPlugin : NavigableWorkspaceViewImpl<DocumentQaView>("Documents", "Document Q&A", WorkspaceViewAffordance.INPUT_AND_COLLECTION, DocumentQaView::class)
@@ -60,6 +76,9 @@ class DocumentQaView: AiPlanTaskView(
     private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
     private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
 
+    private val inputToggleGroup = ToggleGroup()
+    private val singleInput = SimpleBooleanProperty(true)
+    private val multiInput = SimpleBooleanProperty(false)
     val question = SimpleStringProperty("")
 
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
@@ -69,7 +88,7 @@ class DocumentQaView: AiPlanTaskView(
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
 
-    val planner = DocumentQaPlanner().apply {
+    val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
         embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
             LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
@@ -90,8 +109,22 @@ class DocumentQaView: AiPlanTaskView(
     }
 
     init {
-        addInputTextArea(question) {
-            style = "-fx-font-size: 18px;"
+        input {
+            vbox {
+                toolbar {
+                    radiobutton("Single input", inputToggleGroup) {
+                        selectedProperty().bindBidirectional(singleInput)
+                    }
+                    radiobutton("Batch input", inputToggleGroup) {
+                        selectedProperty().bindBidirectional(multiInput)
+                    }
+                }
+                textarea(question) {
+                    vgrow = Priority.ALWAYS
+                    isWrapText = true
+                    style = "-fx-font-size: 18px;"
+                }
+            }
         }
         input {
             add(find<TextChunkListView>(viewScope).apply {
@@ -136,19 +169,37 @@ class DocumentQaView: AiPlanTaskView(
         }
     }
 
-    override fun plan() = planner.plan(
-        question = question.value,
-        prompt = prompt.prompt.value,
-        embeddingService = controller.embeddingService.value,
-        chunksToRetrieve = chunksToRetrieve.value,
-        minChunkSize = minChunkSizeForRelevancy.value,
-        contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
-        contextChunks = chunksToSendWithQuery.value,
-        completionEngine = controller.completionEngine.value,
-        maxTokens = common.maxTokens.value,
-        temp = common.temp.value,
-        numResponses = common.numResponses.value
-    )
+    /** Executes task on a background thread and updates progress info. */
+    override fun runTask(op: suspend () -> AiPipelineResult<*>) {
+        val questionInput = question.value
+        val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
+            .filter { it.isNotBlank() }
+        if (questions.isEmpty()) {
+            error("No questions found.")
+            return
+        }
+        questions.forEach {
+            question.set(it)
+            super.runTask { AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress) }
+        }
+        question.set(questionInput)
+    }
+
+    override fun plan() = questionTaskList(question.value).planner
+
+    private fun questionTaskList(question: String) =
+        planner.taskList(
+            question = question,
+            prompt = prompt.prompt.value,
+            chunksToRetrieve = chunksToRetrieve.value,
+            minChunkSize = minChunkSizeForRelevancy.value,
+            contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
+            contextChunks = chunksToSendWithQuery.value,
+            completionEngine = controller.completionEngine.value,
+            maxTokens = common.maxTokens.value,
+            temp = common.temp.value,
+            numResponses = common.numResponses.value
+        )
 
     //region ACTIONS
 
@@ -161,23 +212,21 @@ class DocumentQaView: AiPlanTaskView(
     // override the user input with post-processing for hyperlinks
     override suspend fun processUserInput() =
         super.processUserInput().also {
-            when (val res = it.finalResult) {
-                is FormattedPromptTraceResult -> {
-                    res.formattedOutputs.forEach {
-                        it.hyperlinkOp = { docName ->
-                            val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
-                            if (doc == null) {
-                                tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
-                            } else {
-                                browseToBestSnippet(doc, planner.lastResult, hostServices)
-                            }
+            when (val final = it.finalResult) {
+                is FormattedPromptTraceResult -> final.formattedOutputs.forEach {
+                    it.hyperlinkOp = { docName ->
+                        val doc = snippets.firstOrNull { it.shortDocName == docName }?.document?.browsable()
+                        if (doc == null) {
+                            tri.util.warning<DocumentQaView>("Unable to find document $docName in snippets.")
+                        } else {
+                            browseToBestSnippet(doc, planner.lastResult, hostServices)
                         }
                     }
                 }
                 is AiPromptTrace<*> -> {
                     // expected when there is an error
                 }
-                else -> throw IllegalStateException("Unexpected result type: $res")
+                else -> throw IllegalStateException("Unexpected result type: $final")
             }
         }
 
@@ -212,18 +261,90 @@ class DocumentQaView: AiPlanTaskView(
     }
 }
 
-/** Convert an observable list of [EmbeddingMatch] to a list of [TextChunkViewModel]. */
-internal fun ObservableList<EmbeddingMatch>.matchViewModel(): ObservableList<TextChunkViewModel> {
-    val result = observableListOf(map { it.asTextChunkViewModel()})
-    onChange { result.setAll(map { it.asTextChunkViewModel() }) }
-    return result
+/** JavaFx component for managing documents. */
+class DocumentQaPlannerFx {
+    /** A document library to use for chunks, if available. */
+    var documentLibrary = SimpleObjectProperty<TextLibrary>(null)
+    /** The embedding index. */
+    var embeddingIndex: ObservableValue<out EmbeddingIndex?> = SimpleObjectProperty(NoOpEmbeddingIndex)
+    /** The retrieved relevant snippets. */
+    val snippets = observableListOf<EmbeddingMatch>()
+    /** The most recent result of the QA task. */
+    var lastResult: QuestionAnswerResult? = null
+
+    /** Reindexes all documents in the current [EmbeddingIndex] (if applicable). */
+    suspend fun reindexAllDocuments() {
+        (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.reindexAll()
+    }
+
+    fun taskList(
+        question: String,
+        prompt: AiPrompt?,
+        chunksToRetrieve: Int?,
+        minChunkSize: Int?,
+        contextStrategy: GroupingTemplateJoiner,
+        contextChunks: Int?,
+        completionEngine: TextCompletion?,
+        maxTokens: Int?,
+        temp: Double?,
+        numResponses: Int?
+    ): AiTaskList<String> {
+        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!)
+        return p.plan(
+            question = question,
+            prompt = prompt!!,
+            chunksToRetrieve = chunksToRetrieve!!,
+            minChunkSize = minChunkSize!!,
+            contextStrategy = contextStrategy,
+            contextChunks = contextChunks!!,
+            maxTokens = maxTokens!!,
+            temp = temp!!,
+            numResponses = numResponses!!,
+            snippetCallback = { runLater { snippets.setAll(it) } }
+        )
+    }
 }
 
-/** Wrap [EmbeddingMatch] as a view model. */
-internal fun EmbeddingMatch.asTextChunkViewModel() = object : TextChunkViewModel {
-    override var score: Float? = this@asTextChunkViewModel.queryScore
-    override var embedding: List<Double>? = chunkEmbedding
-    override val embeddingsAvailable = listOf(embeddingModel)
-    override val browsable = document.browsable()
-    override val text = chunkText
+/** Document Q&A driver that leverages [DocumentQaView]. */
+class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
+
+    override val folders
+        get() = view.documentFolder.value.parentFile
+            .listFiles(FileFilter { it.isDirectory })!!
+            .map { it.name }
+    override var folder: String
+        get() = view.documentFolder.value.name
+        set(value) {
+            val folderFile = File(view.documentFolder.value.parentFile, value)
+            if (folderFile.exists())
+                view.documentFolder.set(folderFile)
+        }
+    override var completionModel: String
+        get() = view.controller.completionEngine.value.modelId
+        set(value) {
+            view.controller.completionEngine.set(
+                PromptFxModels.policy.textCompletionModels().find { it.modelId == value }!!
+            )
+        }
+    override var embeddingModel: String
+        get() = view.controller.embeddingService.value.modelId
+        set(value) {
+            view.controller.embeddingService.set(
+                PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!
+            )
+        }
+
+    override fun initialize() {
+        Platform.startup { }
+    }
+
+    override fun close() {
+        Platform.exit()
+    }
+
+    override suspend fun answerQuestion(input: String): AiPipelineResult<String> {
+        view.question.set(input)
+        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult<String>
+    }
+
 }
