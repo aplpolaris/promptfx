@@ -26,7 +26,6 @@ import tri.promptfx.docs.DocumentInsightPlugin;
 import tri.promptfx.docs.DocumentQaPlugin;
 import tri.promptfx.fun.ChatBackPlugin;
 import tri.promptfx.fun.ColorPlugin;
-import tri.promptfx.fun.EmojiPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
 import tri.promptfx.library.TextClusterPlugin;
@@ -130,17 +129,12 @@ module tri.promptfx {
             DocumentInsightPlugin,
             TextManagerPlugin,
             TextClusterPlugin,
-            EntityExtractionPlugin,
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,
-            SentimentAnalysisPlugin,
             StructuredDataPlugin,
-            SummarizationPlugin,
             TextSimilarityPlugin,
-            TranslationPlugin,
             ChatBackPlugin,
             ColorPlugin,
-            EmojiPlugin,
             WeatherViewPlugin,
             WikipediaViewPlugin
     ;

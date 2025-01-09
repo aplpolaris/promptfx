@@ -41,7 +41,10 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
         parameters("Prompt") {
             modeConfigs.forEach {
                 field(it.label) {
-                    combobox(it.mode, it.options) { isEditable = true }
+                    combobox(it.mode, it.options) {
+                        maxWidth = 200.0
+                        isEditable = true
+                    }
                 }
             }
             if (promptConfig.isVisible) {
@@ -60,12 +63,8 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
 
     override fun plan() = completionEngine.templatePlan(
         prompt = promptModel.prompt.value,
-        fields = modeConfigs.associate { it.idInTemplate to RuntimePromptViewConfigs.modeTemplateValue(
-            it.id,
-            it.mode.get()
-        )
-        }
-                + mapOf(AiPrompt.INPUT to input.get()),
+        fields = modeConfigs.associate { it.idInTemplate to RuntimePromptViewConfigs.modeTemplateValue(it.id, it.mode.get()) } +
+                mapOf(AiPrompt.INPUT to input.get()),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
         numResponses = common.numResponses.value
