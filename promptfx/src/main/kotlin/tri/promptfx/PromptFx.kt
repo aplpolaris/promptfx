@@ -36,9 +36,6 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     override fun init() {
         promptFxConfig.isStarshipEnabled = parameters.raw.contains("starship")
     }
-    override fun onBeforeShow(view: UIComponent) {
-        workspace.dock<DocumentQaView>()
-    }
     override fun stop() {
         workspace.find<PromptFxController>().close()
         promptFxConfig.save()

@@ -1,5 +1,7 @@
 package tri.promptfx.ui
 
+import tri.util.ui.WorkspaceViewAffordance
+
 /** Configuration for a [RuntimePromptView]. */
 class RuntimePromptViewConfig(
     val category: String,
@@ -8,7 +10,8 @@ class RuntimePromptViewConfig(
     val promptConfig: PromptConfig,
     val modeOptions: List<ModeConfig> = listOf(),
     val isShowModelParameters: Boolean = false,
-    val isShowMultipleResponseOption: Boolean = false
+    val isShowMultipleResponseOption: Boolean = false,
+    val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.INPUT_ONLY
 )
 
 /**

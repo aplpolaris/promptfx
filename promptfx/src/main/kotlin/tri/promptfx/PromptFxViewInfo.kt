@@ -26,6 +26,7 @@ import tri.util.ui.WorkspaceViewAffordance
 data class PromptFxViewInfo(
     val group: String,
     val name: String,
-    val view: Class<out UIComponent>,
+    val view: Class<out UIComponent>? = null,
+    val viewComponent: AiTaskView? = null,
     val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.NONE
 )

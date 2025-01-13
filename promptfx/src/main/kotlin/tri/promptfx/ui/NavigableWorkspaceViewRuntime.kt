@@ -12,9 +12,12 @@ class NavigableWorkspaceViewRuntime(val config: RuntimePromptViewConfig) : Navig
         get() = config.title
     override val affordances: WorkspaceViewAffordance
         get() = WorkspaceViewAffordance.INPUT_ONLY // TODO - should this be added into runtime configs??
+    val view by lazy {
+        viewCache.getOrPut(config) { RuntimePromptView(config) }
+    }
 
     override fun dock(workspace: Workspace) {
-        val view = viewCache.getOrPut(config) { RuntimePromptView(config) }
+        view.scope.workspace = workspace
         workspace.dock(view)
     }
 

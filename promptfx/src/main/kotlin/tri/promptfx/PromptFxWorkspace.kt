@@ -30,6 +30,7 @@ import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
+import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.PromptTemplateView
 import tri.promptfx.library.TextManagerView
@@ -142,12 +143,16 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
+    override fun onBeforeShow() {
+        dock<DocumentQaView>()
+    }
+
     //region HOOKS FOR SPECIFIC VIEWS
 
     /** Looks up a view by name. */
     fun findTaskView(name: String): AiTaskView? {
         return views.values.map { it.entries }.flatten()
-            .find { it.key == name }?.let { find(it.value.view) } as? AiTaskView
+            .find { it.key == name }?.let { it.value.viewComponent ?: find(it.value.view!!) } as? AiTaskView
     }
 
     /** Launches the template view with the given prompt trace. */
@@ -233,11 +238,13 @@ class PromptFxWorkspace : Workspace() {
             val viewsById = NavigableWorkspaceView.viewPlugins.filter { it.category == category }
                 .associateBy { it.name }
                 .toSortedMap()
-            val additionalViews = RuntimePromptViewConfigs.configs(category)
+            val viewsDefinedAtRuntime = RuntimePromptViewConfigs.configs(category)
                 .filter { it.title !in viewsById }
                 .associate { it.title to NavigableWorkspaceViewRuntime(it) }
-            viewsById.putAll(additionalViews)
-            viewsById.values.forEach { hyperlinkview(category, it) }
+            viewsById.putAll(viewsDefinedAtRuntime)
+            viewsById.values.forEach {
+                hyperlinkview(category, it)
+            }
         }.apply {
             if (children.isEmpty()) {
                 removeFromParent()
@@ -259,11 +266,32 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
+//    private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
+//        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
+//            if (view is NavigableWorkspaceViewImpl<*>) {
+//                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
+//                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
+//                }
+//            }
+//            hyperlink(view.name) {
+//                action {
+//                    isVisited = false
+//                    view.dock(this@PromptFxWorkspace)
+//                }
+//            }
+//        }
+//    }
+
     private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
-        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
+        val viewSimpleName = (view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: view.name
+        if (PromptFxModels.policy.supportsView(viewSimpleName)) {
             if (view is NavigableWorkspaceViewImpl<*>) {
                 views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
-                    PromptFxViewInfo(viewGroup, view.name, view.type.java, view.affordances)
+                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
+                }
+            } else if (view is NavigableWorkspaceViewRuntime) {
+                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
+                    PromptFxViewInfo(viewGroup, view.name, viewComponent = view.view, affordances = view.affordances)
                 }
             }
             hyperlink(view.name) {
