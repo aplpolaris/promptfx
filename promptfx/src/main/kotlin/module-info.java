@@ -24,6 +24,7 @@ import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
 import tri.promptfx.docs.DocumentInsightPlugin;
 import tri.promptfx.docs.DocumentQaPlugin;
+import tri.promptfx.fun.AgenticPlugin;
 import tri.promptfx.fun.ChatBackPlugin;
 import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
@@ -82,6 +83,7 @@ module tri.promptfx {
     // clustering tools
     requires commons.math3;
     requires clust4j;
+    requires kotlinx.serialization.json;
 
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
@@ -116,6 +118,7 @@ module tri.promptfx {
     uses NavigableWorkspaceView;
 
     provides NavigableWorkspaceView with
+            AgenticPlugin,
             AudioApiPlugin,
             AudioSpeechApiPlugin,
             ImagesApiPlugin,

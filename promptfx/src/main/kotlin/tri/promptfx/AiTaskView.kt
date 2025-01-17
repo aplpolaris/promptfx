@@ -54,7 +54,7 @@ import java.lang.Exception
  * A view that executes a task and displays the result. Provides placeholders for input, output, and parameters.
  * Provides a general framework for testing out API calls with basic user input/output.
  */
-abstract class AiTaskView(title: String, instruction: String, val showInput: Boolean = true): View(title) {
+abstract class AiTaskView(title: String, val instruction: String, val showInput: Boolean = true): View(title) {
 
     lateinit var inputPane: VBox
     lateinit var outputPane: VBox

@@ -42,7 +42,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
         }
     }
 
-    suspend fun execute(query: String) {
+    suspend fun execute(query: String): String {
         info<JsonToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
         val messages = mutableListOf(
             ChatMessage(ChatRole.System, SYSTEM_MESSAGE_1),
@@ -91,6 +91,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
         }
 
         info<JsonToolExecutor>("Final Response: $ANSI_GREEN${response.content}$ANSI_RESET")
+        return response.content!!
     }
 
     companion object {
