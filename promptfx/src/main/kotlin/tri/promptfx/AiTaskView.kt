@@ -43,7 +43,7 @@ import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
-import tri.promptfx.ui.FormattedPromptTraceResult
+import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.promptfx.ui.FormattedPromptResultArea
 import tri.promptfx.ui.PromptResultArea
 import tri.util.ui.graphic
@@ -359,9 +359,9 @@ abstract class AiTaskView(title: String, instruction: String, val showInput: Boo
     private fun taskCompleted(message: AiPipelineResult<*>) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
-    internal fun runTask() {
+    internal open fun runTask(op: suspend () -> AiPipelineResult<*> = ::processUserInput) {
         val task = executeTask {
-            processUserInput()
+            op()
         }
         task.ui {
             val errors = it.interimResults.values.mapNotNull { it.exec.error }

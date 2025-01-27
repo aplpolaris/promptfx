@@ -19,14 +19,23 @@
  */
 package tri.ai.embedding
 
+import tri.ai.text.chunks.TextChunk
+
 /** An interface for an embedding index. */
-interface EmbeddingIndex {
+abstract class EmbeddingIndex(val embeddingService: EmbeddingService) {
     /** Find the most similar section to the query. */
-    suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
+    abstract suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
 }
 
 /** A no-op version of the embedding index. */
-object NoOpEmbeddingIndex : EmbeddingIndex {
+object NoOpEmbeddingIndex : EmbeddingIndex(NoOpEmbeddingService) {
     override suspend fun findMostSimilar(query: String, n: Int) = listOf<EmbeddingMatch>()
+}
+
+/** A no-op version of the embedding service. */
+object NoOpEmbeddingService : EmbeddingService {
+    override val modelId = "NONE"
+    override fun chunkTextBySections(text: String, maxChunkSize: Int) = listOf<TextChunk>()
+    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) = text.map { listOf<Double>(0.0) }
 }
 

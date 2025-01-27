@@ -21,7 +21,7 @@ package tri.util.ui.starship
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
-import tri.promptfx.ui.FormattedText
+import tri.ai.text.docs.FormattedText
 
 /** Pipeline config for [StarshipUi]. */
 class StarshipPipelineConfig(val completion: TextCompletion) {
