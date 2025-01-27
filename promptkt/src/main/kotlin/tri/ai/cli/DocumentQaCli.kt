@@ -25,7 +25,6 @@ import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.*
-import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
@@ -44,22 +43,19 @@ import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
     DocumentQaCli()
-        .subcommands(DocumentQaChat(), DocumentQaScript(), DocumentQaEmbeddings())
+        .subcommands(DocumentQaChat(), DocumentQaScript(), DocumentQaEmbeddings(), DocumentQaChunker())
         .main(args)
 
 /** Base command for document QA. */
 class DocumentQaCli: CliktCommand(name = "document-qa") {
-    private val root by option(help = "Root path containing folders.")
+    private val root by option(help = "Root path containing folders or documents ")
         .path(mustExist = true)
         .default(Path("."))
         .validate {
             require(it.toFile().isDirectory) { "Root path must be a directory." }
-            require(it.toFile().listFiles()?.any { it.isDirectory } == true) { "Root path must contain folders." }
         }
-    private val folder by option(help = "Initial folder containing documents to search.")
-        .defaultLazy {
-            root.toFile().listFiles()!!.firstOrNull { it.isDirectory }!!.name.toString()
-        }
+    private val folder by option(help = "Folder containing documents (relative to root path)")
+        .default("")
     private val completionModel by option("--completionModel", help = "Completion model to use.")
     private val embeddingModel by option("--embeddingModel", help = "Embedding model to use.")
 
@@ -139,23 +135,23 @@ class DocumentQaEmbeddings: CliktCommand(name = "embeddings", help = "Generate/u
     private val config by requireObject<DocumentQaConfig>()
     private val reindexAll by option(help = "Reindex all documents in the folder.")
         .flag(default = false)
-    private val reindexNew by option(help = "Reindex new documents in the folder.")
+    private val reindexNew by option(help = "Reindex new documents in the folder (default).")
         .flag(default = true)
     private val maxChunkSize by option(help = "Maximum chunk size for embeddings.")
         .int()
         .default(1000)
 
     override fun run() {
-        val docFolder = File(config.root.toFile(), config.folder)
+        val docsFolder = config.docsFolder
         val embeddingService = OpenAiEmbeddingService()
-        val index = LocalFolderEmbeddingIndex(docFolder, embeddingService)
+        val index = LocalFolderEmbeddingIndex(docsFolder, embeddingService)
         index.maxChunkSize = maxChunkSize
         runBlocking {
             if (reindexAll) {
-                println("Reindexing all documents in $docFolder...")
+                println("Reindexing all documents in $docsFolder...")
                 index.reindexAll() // this triggers the reindex, and saves the library
             } else {
-                println("Reindexing new documents in $docFolder...")
+                println("Reindexing new documents in $docsFolder...")
                 index.reindexNew() // this triggers the reindex, and saves the library
             }
             println("Reindexing complete.")
@@ -165,11 +161,11 @@ class DocumentQaEmbeddings: CliktCommand(name = "embeddings", help = "Generate/u
 }
 
 /** Command-line app for chunking documents into text, without generating embeddings. */
-class DocumentQaChunker: CliktCommand(name = "chunker", help = "Chunk documents into smaller pieces") {
+class DocumentQaChunker: CliktCommand(name = "chunk", help = "Chunk documents into smaller pieces") {
     private val config by requireObject<DocumentQaConfig>()
     private val reindexAll by option(help = "Reindex all documents in the folder.")
         .flag(default = false)
-    private val reindexNew by option(help = "Reindex new documents in the folder.")
+    private val reindexNew by option(help = "Reindex new documents in the folder (default).")
         .flag(default = true)
     private val maxChunkSize by option(help = "Maximum chunk size for embeddings.")
         .int()
@@ -178,11 +174,11 @@ class DocumentQaChunker: CliktCommand(name = "chunker", help = "Chunk documents 
         .default("docs.json")
 
     override fun run() {
-        val docFolder = File(config.root.toFile(), config.folder)
-        val indexFile = File(docFolder, indexFile)
+        val docsFolder = config.docsFolder
+        val indexFile = File(docsFolder, indexFile)
 
-        println("${ANSI_CYAN}Refreshing file text in $docFolder...$ANSI_RESET")
-        val docs = LocalTextDocIndex(docFolder, indexFile)
+        println("${ANSI_CYAN}Refreshing file text in $docsFolder...$ANSI_RESET")
+        val docs = LocalTextDocIndex(docsFolder, indexFile)
         docs.loadIndex()
         docs.processDocuments(reindexAll)
 
@@ -199,11 +195,12 @@ class DocumentQaChunker: CliktCommand(name = "chunker", help = "Chunk documents 
 }
 
 /** Shared config object for document QA. */
-class DocumentQaConfig(val root: Path, val folder: String?, val completionModel: String?, val embeddingModel: String?)
+class DocumentQaConfig(val root: Path, val folder: String, val completionModel: String?, val embeddingModel: String?) {
+    val docsFolder: File = if (folder == "") root.toFile() else File(root.toFile(), folder)
+}
 
 /** Creates driver from provided settings. */
 fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root.toFile()).apply {
-    folder = config.folder ?: folders.first()
     info<DocumentQaScript>("Asking question about documents in $folder")
     if (config.completionModel != null) {
         completionModel = config.completionModel
