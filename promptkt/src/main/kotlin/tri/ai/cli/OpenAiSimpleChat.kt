@@ -19,45 +19,59 @@
  */
 package tri.ai.cli
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.logging.LogLevel
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.LoggingConfig
-import com.aallam.openai.client.OpenAI
-import com.aallam.openai.client.OpenAIConfig
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.TextChatMessage
+import tri.ai.core.TextChatRole
+import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex
+import tri.util.MIN_LEVEL_TO_LOG
+import java.util.logging.Level
 import kotlin.system.exitProcess
+
+fun main(args: Array<String>) =
+    OpenAiSimpleChat().main(args)
 
 /**
  * Command-line executable for chatting with GPT-3.5 Turbo.
  */
-object OpenAiSimpleChat {
-    @JvmStatic
-    fun main(args: Array<String>) {
+class OpenAiSimpleChat: CliktCommand(name = "openai-chat") {
+    private val completionModel by option("--completionModel", help = "Completion model to use.")
+        .default(OpenAiModelIndex.GPT35_TURBO_ID)
+    private val historySize by option("--historySize", help = "Maximum chat history size.")
+        .int()
+        .default(10)
+
+    private val completionModelInst
+        get() = TextPlugin.chatModels().first { it.modelId == completionModel }
+
+
+    override fun run() {
+        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        MIN_LEVEL_TO_LOG = Level.WARNING
+
         runBlocking {
             // chat with the user until they say "bye"
-            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
-            val client = OpenAI(OpenAIConfig(OpenAiClient.INSTANCE.settings.apiKey, LoggingConfig(LogLevel.None)))
-            val model = GPT35_TURBO
-            val historyLimit = 10
-            val chatHistory = mutableListOf<ChatMessage>()
+//            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+//            val client = OpenAI(OpenAIConfig(OpenAiClient.INSTANCE.settings.apiKey, LoggingConfig(LogLevel.None)))
+//            val model = GPT35_TURBO
+            val chatHistory = mutableListOf<TextChatMessage>()
 
-            println("You are chatting with GPT-3.5 Turbo. Say 'bye' to exit.")
+            println("You are chatting with $completionModel. Say 'bye' to exit.")
             print("> ")
             var input = readln()
             while (input != "bye") {
-                chatHistory.add(ChatMessage(ChatRole.User, input))
-                val response = client.chatCompletion(
-                    ChatCompletionRequest(ModelId(model), chatHistory)
-                )
-                val message = response.choices[0].message.content!!.trim()
-                println(message)
-                chatHistory.add(ChatMessage(ChatRole.Assistant, message))
-                while (chatHistory.size > historyLimit) {
+                chatHistory.add(TextChatMessage(TextChatRole.User, input))
+                val response = completionModelInst.chat(chatHistory)
+                val message = response.firstValue
+                println(message.content)
+                chatHistory.add(TextChatMessage(TextChatRole.Assistant, message.content))
+                while (chatHistory.size > historySize) {
                     chatHistory.removeAt(0)
                 }
                 print("> ")
