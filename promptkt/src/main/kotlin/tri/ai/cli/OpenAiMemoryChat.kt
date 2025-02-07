@@ -20,35 +20,79 @@
 package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
+import tri.ai.core.TextPlugin
 import tri.ai.memory.*
 import tri.ai.openai.*
-import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.util.MIN_LEVEL_TO_LOG
+import java.util.logging.Level
 import kotlin.system.exitProcess
 
+fun main(args: Array<String>) =
+    OpenAiMemoryChat().main(args)
+
 /** Example of a chat that has a memory of previous conversations. */
-class OpenAiMemoryChat {
+class OpenAiMemoryChat: CliktCommand(name = "openai-chat-memory") {
+    private val model by option("--model", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
+        .default(GPT35_TURBO_ID)
+    private val embedding by option("--embedding", help = "Embedding model to use (default $EMBEDDING_ADA)")
+        .default(EMBEDDING_ADA)
+    private val verbose by option("--verbose", help = "Verbose logging").flag()
 
-    val greeting = "You are chatting with GPT-3.5 Turbo (with memory). Say 'bye' to exit."
-    val model = GPT35_TURBO
-    val chatService = OpenAiChat(modelId = model)
+    private val greeting
+        get() = "You are chatting with $model (with memory). Say 'bye' to exit."
+    private val chatModelInst
+        get() = TextPlugin.chatModels().first { it.modelId == model }
+    private val embeddingModelInst
+        get() = TextPlugin.embeddingModels().first { it.modelId == embedding }
 
-    val persona: BotPersona = HelperPersona("Jack")
-    val memory: MemoryService = BotMemory(persona, OpenAiChat(), OpenAiEmbeddingService())
+    private val persona: BotPersona = HelperPersona("Jack")
+    private val memory: MemoryService by lazy { BotMemory(persona, chatModelInst, embeddingModelInst) }
+
+    override fun run() {
+        if (verbose) {
+            println("Verbose logging enabled.")
+            MIN_LEVEL_TO_LOG = Level.FINE
+        } else {
+            MIN_LEVEL_TO_LOG = Level.WARNING
+            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        }
+
+        println(greeting)
+        memory.initMemory()
+
+        runBlocking {
+            var input = readUserInput()
+            while (input != "bye") {
+                val chat = doChat(input)
+                showChat(chat)
+                input = readUserInput()
+            }
+            memory.saveMemory(interimSave = false)
+        }
+        println("Goodbye!")
+        exitProcess(0)
+    }
 
     /**
      * Completes a chat from the user.
      * The primary task is to send the chat history to the chat API and print the result.
      * The secondary task is to process and store a "memory" of the conversation.
      */
-    suspend fun doChat(userInput: String): TextChatMessage {
+    private suspend fun doChat(userInput: String): TextChatMessage {
         val userItem = MemoryItem(TextChatRole.User, userInput)
         memory.addChat(userItem)
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(TextChatRole.System, persona.getSystemMessage()))
-        val response = chatService.chat(personaMessage + contextualHistory).firstValue
+        val response = chatModelInst.chat(personaMessage + contextualHistory).firstValue
         memory.addChat(MemoryItem(response))
         memory.saveMemory(interimSave = true)
         return response
@@ -57,39 +101,16 @@ class OpenAiMemoryChat {
     //region INPUT/OUTPUT
 
     /** Prints the chat message to the console. */
-    fun showChat(message: TextChatMessage) {
+    private fun showChat(message: TextChatMessage) {
         println(message.content)
     }
 
     /** Reads a line of input from the console. */
-    fun readUserInput(): String {
+    private fun readUserInput(): String {
         print("> ")
         return readln()
     }
 
     //endregion
-
-    companion object {
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
-            val chatbot = OpenAiMemoryChat()
-            runBlocking {
-                println(chatbot.greeting)
-                chatbot.memory.initMemory()
-                var input = chatbot.readUserInput()
-                while (input != "bye") {
-                    val chat = chatbot.doChat(input)
-                    chatbot.showChat(chat)
-                    input = chatbot.readUserInput()
-                }
-                chatbot.memory.saveMemory(interimSave = false)
-            }
-            println("Goodbye!")
-            exitProcess(0)
-        }
-
-    }
 }
 

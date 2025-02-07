@@ -92,7 +92,7 @@ class OpenAiSettings {
             OpenAIConfig(
                 host = if (baseUrl == null) OpenAIHost.OpenAI else OpenAIHost(baseUrl!!),
                 token = apiKey,
-                logging = LoggingConfig(LogLevel.None),
+                logging = LoggingConfig(logLevel),
                 timeout = Timeout(socket = timeoutSeconds.seconds)
             )
         )
