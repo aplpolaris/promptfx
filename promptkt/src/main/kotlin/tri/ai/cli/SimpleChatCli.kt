@@ -30,19 +30,18 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChatRole
 import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModelIndex
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
-    OpenAiSimpleChat().main(args)
+    SimpleChatCli().main(args)
 
 /**
  * Command-line executable for chatting with GPT-3.5 Turbo.
  */
-class OpenAiSimpleChat: CliktCommand(name = "openai-chat") {
+class SimpleChatCli : CliktCommand(name = "chat-simple") {
     private val model by option("--model", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
         .default(GPT35_TURBO_ID)
     private val historySize by option("--historySize", help = "Maximum chat history size (default 10)")

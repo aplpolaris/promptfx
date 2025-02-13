@@ -19,6 +19,12 @@
  */
 package tri.ai.cli
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.validate
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.runBlocking
 import tri.ai.openai.jsonWriter
 import tri.ai.openai.yamlWriter
@@ -29,38 +35,23 @@ import tri.util.*
 import java.io.File
 import kotlin.system.exitProcess
 
+fun main(args: Array<String>) =
+    PromptBatchRunner().main(args)
+
 /** Command-line runner for executing a batch of prompt runs. */
-object PromptBatchRunner {
-    @JvmStatic
-    fun main(args: Array<String>) {
-//        val args = arrayOf("D:\\data\\chatgpt\\prompt_batch_test.json", "D:\\data\\chatgpt\\prompt_batch_test_result.yaml", "--database")
-        val useArgs = args
-        println("""
-                $ANSI_GREEN
-                Arguments expected:
-                  <input file> <output file> <options>
-                Options:
-                  --database
-                $ANSI_RESET
-            """.trimIndent())
+class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
+    private val inputFile by argument(help = "input file")
+        .file(mustExist = true, canBeDir = false)
+        .validate { checkExtension(it, "json", "yaml", "yml") }
+    private val outputFile by argument(help = "output file")
+        .file(mustExist = false, canBeDir = false)
+        .validate { checkExtension(it, "json", "yaml", "yml") }
+    private val database by option("--database", help = "Output as database format")
+        .flag()
 
-        if (useArgs.size < 2)
-            exitProcess(0)
-
-        val input = useArgs[0]
-        val inputFile = File(input)
-
-        val output = useArgs[1]
-        val outputFile = File(output)
-
-        if (!checkExtension(inputFile, "json", "yaml", "yml") ||
-            !checkExtension(outputFile, "json", "yaml", "yml")
-        )
-            exitProcess(0)
-
+    override fun run() {
         val jsonIn = inputFile.extension == "json"
         val jsonOut = outputFile.extension == "json"
-        val database = useArgs.contains("--database")
 
         println("${ANSI_CYAN}Reading prompt batch from ${inputFile}...$ANSI_RESET")
         val batch = try {
@@ -75,16 +66,17 @@ object PromptBatchRunner {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            batch.plan().execute(IgnoreMonitor).finalResult
+            batch.tasks().map {
+                it.execute(mapOf(), IgnoreMonitor)
+            }
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         val writer = if (jsonOut) jsonWriter else yamlWriter
-        val outputObject: Any = if (database) AiPromptTraceDatabase(listOf(result)) else result
+        val outputObject: Any = if (database) AiPromptTraceDatabase(result) else result
         writer.writeValue(outputFile, outputObject)
 
-        println("${ANSI_CYAN}Output written to $output.$ANSI_RESET")
-        exitProcess(0)
+        println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
     }
 
     private fun checkExtension(file: File, vararg extensions: String): Boolean {

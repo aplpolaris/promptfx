@@ -37,10 +37,10 @@ import java.util.logging.Level
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
-    OpenAiMemoryChat().main(args)
+    MemoryChatCli().main(args)
 
 /** Example of a chat that has a memory of previous conversations. */
-class OpenAiMemoryChat: CliktCommand(name = "openai-chat-memory") {
+class MemoryChatCli : CliktCommand(name = "chat-memory") {
     private val model by option("--model", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
         .default(GPT35_TURBO_ID)
     private val embedding by option("--embedding", help = "Embedding model to use (default $EMBEDDING_ADA)")

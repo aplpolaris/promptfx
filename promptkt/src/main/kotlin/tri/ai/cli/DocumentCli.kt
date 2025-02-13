@@ -42,13 +42,13 @@ import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
-    DocumentQaCli()
-        .subcommands(DocumentQaChat(), DocumentQaScript(), DocumentQaEmbeddings(), DocumentQaChunker())
+    DocumentCli()
+        .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
         .main(args)
 
 /** Base command for document QA. */
-class DocumentQaCli: CliktCommand(name = "document-qa") {
-    private val root by option(help = "Root path containing folders or documents ")
+class DocumentCli : CliktCommand(name = "document") {
+    private val root by option(help = "Root path containing folders or documents")
         .path(mustExist = true)
         .default(Path("."))
         .validate {
@@ -56,16 +56,16 @@ class DocumentQaCli: CliktCommand(name = "document-qa") {
         }
     private val folder by option(help = "Folder containing documents (relative to root path)")
         .default("")
-    private val completionModel by option("--completionModel", help = "Completion model to use.")
-    private val embeddingModel by option("--embeddingModel", help = "Embedding model to use.")
+    private val model by option(help = "Chat/completion model to use")
+    private val embedding by option(help = "Embedding model to use")
 
     override fun run() {
-        currentContext.obj = DocumentQaConfig(root, folder, completionModel, embeddingModel)
+        currentContext.obj = DocumentQaConfig(root, folder, model, embedding)
     }
 }
 
 /** Command-line app for asking questions of documents. */
-class DocumentQaChat : CliktCommand(name = "chat", help = "Ask questions and switch between folders until done") {
+class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switch between folders until done") {
     private val config by requireObject<DocumentQaConfig>()
 
     override fun run() {
@@ -110,16 +110,16 @@ class DocumentQaChat : CliktCommand(name = "chat", help = "Ask questions and swi
 }
 
 /** Command-line app for generating a response using a folder of documents. */
-class DocumentQaScript: CliktCommand(name = "question", help = "Ask a single question") {
+class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
     private val config by requireObject<DocumentQaConfig>()
-    private val question by argument(help = "Question to ask about the documents.")
+    private val question by argument(help = "Question to ask about the documents")
 
     override fun run() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
         val driver = createQaDriver(config)
 
-        info<DocumentQaScript>("  question: $question")
+        info<DocumentQa>("  question: $question")
         val response = runBlocking {
             driver.answerQuestion(question)
         }
@@ -131,13 +131,13 @@ class DocumentQaScript: CliktCommand(name = "question", help = "Ask a single que
 }
 
 /** Command-line app for working with embedding files for a folder of documents. */
-class DocumentQaEmbeddings: CliktCommand(name = "embeddings", help = "Generate/update local embeddings file for a given folder") {
+class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/update local embeddings file for a given folder") {
     private val config by requireObject<DocumentQaConfig>()
-    private val reindexAll by option(help = "Reindex all documents in the folder.")
+    private val reindexAll by option(help = "Reindex all documents in the folder")
         .flag(default = false)
-    private val reindexNew by option(help = "Reindex new documents in the folder (default).")
+    private val reindexNew by option(help = "Reindex new documents in the folder (default)")
         .flag(default = true)
-    private val maxChunkSize by option(help = "Maximum chunk size for embeddings.")
+    private val maxChunkSize by option(help = "Maximum chunk size for embeddings")
         .int()
         .default(1000)
 
@@ -161,16 +161,16 @@ class DocumentQaEmbeddings: CliktCommand(name = "embeddings", help = "Generate/u
 }
 
 /** Command-line app for chunking documents into text, without generating embeddings. */
-class DocumentQaChunker: CliktCommand(name = "chunk", help = "Chunk documents into smaller pieces") {
+class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into smaller pieces") {
     private val config by requireObject<DocumentQaConfig>()
-    private val reindexAll by option(help = "Reindex all documents in the folder.")
+    private val reindexAll by option(help = "Reindex all documents in the folder")
         .flag(default = false)
-    private val reindexNew by option(help = "Reindex new documents in the folder (default).")
+    private val reindexNew by option(help = "Reindex new documents in the folder (default)")
         .flag(default = true)
-    private val maxChunkSize by option(help = "Maximum chunk size for embeddings.")
+    private val maxChunkSize by option(help = "Maximum chunk size for embeddings")
         .int()
         .default(1000)
-    private val indexFile by option(help = "Index file name for the documents.")
+    private val indexFile by option(help = "Index file name for the documents (default docs.json)")
         .default("docs.json")
 
     override fun run() {
@@ -201,14 +201,14 @@ class DocumentQaConfig(val root: Path, val folder: String, val completionModel: 
 
 /** Creates driver from provided settings. */
 fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root.toFile()).apply {
-    info<DocumentQaScript>("Asking question about documents in $folder")
+    info<DocumentQa>("Asking question about documents in $folder")
     if (config.completionModel != null) {
         completionModel = config.completionModel
     }
-    info<DocumentQaScript>("  using completion engine $completionModel")
+    info<DocumentQa>("  using completion engine $completionModel")
     if (config.embeddingModel != null) {
         embeddingModel = config.embeddingModel
     }
-    info<DocumentQaScript>("  using embedding model $embeddingModel")
+    info<DocumentQa>("  using embedding model $embeddingModel")
     initialize()
 }
