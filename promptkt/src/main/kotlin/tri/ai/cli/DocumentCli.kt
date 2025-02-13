@@ -24,13 +24,16 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.validate
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.TextPlugin
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiEmbeddingService
+import tri.ai.openai.OpenAiModelIndex
 import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.ai.text.chunks.process.SmartTextChunker
 import tri.ai.text.docs.LocalDocumentQaDriver
@@ -56,8 +59,16 @@ class DocumentCli : CliktCommand(name = "document") {
         }
     private val folder by option(help = "Folder containing documents (relative to root path)")
         .default("")
-    private val model by option(help = "Chat/completion model to use")
-    private val embedding by option(help = "Embedding model to use")
+    private val model by option(help = "Chat/completion model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
+        .default(OpenAiModelIndex.GPT35_TURBO_ID)
+        .validate {
+            require(it in TextPlugin.textCompletionModels().map { it.modelId }) { "Invalid model $it" }
+        }
+    private val embedding by option(help = "Embedding model to use (default ${OpenAiModelIndex.EMBEDDING_ADA})")
+        .default(OpenAiModelIndex.EMBEDDING_ADA)
+        .validate {
+            require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
+        }
 
     override fun run() {
         currentContext.obj = DocumentQaConfig(root, folder, model, embedding)
@@ -113,6 +124,9 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
 class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
     private val config by requireObject<DocumentQaConfig>()
     private val question by argument(help = "Question to ask about the documents")
+        .validate {
+            require(it.isNotBlank()) { "Question must not be blank." }
+        }
 
     override fun run() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
@@ -143,7 +157,7 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
 
     override fun run() {
         val docsFolder = config.docsFolder
-        val embeddingService = OpenAiEmbeddingService()
+        val embeddingService = TextPlugin.embeddingModel(config.embeddingModel!!)
         val index = LocalFolderEmbeddingIndex(docsFolder, embeddingService)
         index.maxChunkSize = maxChunkSize
         runBlocking {
@@ -156,7 +170,6 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
             }
             println("Reindexing complete.")
         }
-        exitProcess(0)
     }
 }
 
@@ -190,7 +203,6 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
         docs.saveIndex()
 
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
-        exitProcess(0)
     }
 }
 
@@ -203,11 +215,19 @@ class DocumentQaConfig(val root: Path, val folder: String, val completionModel: 
 fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root.toFile()).apply {
     info<DocumentQa>("Asking question about documents in $folder")
     if (config.completionModel != null) {
-        completionModel = config.completionModel
+        try {
+            completionModel = config.completionModel
+        } catch (x: NoSuchElementException) {
+            error("Completion model ${config.completionModel} not found.")
+        }
     }
     info<DocumentQa>("  using completion engine $completionModel")
     if (config.embeddingModel != null) {
-        embeddingModel = config.embeddingModel
+        try {
+            embeddingModel = config.embeddingModel
+        } catch (x: NoSuchElementException) {
+            error("Embedding model ${config.embeddingModel} not found.")
+        }
     }
     info<DocumentQa>("  using embedding model $embeddingModel")
     initialize()
