@@ -76,8 +76,6 @@ module tri.promptfx {
     requires de.jensd.fx.glyphs.commons;
     requires de.jensd.fx.glyphs.fontawesome;
     requires org.controlsfx.controls;
-    requires org.jsoup;
-    requires com.github.mustachejava;
     requires org.apache.commons.logging;
 
     // clustering tools

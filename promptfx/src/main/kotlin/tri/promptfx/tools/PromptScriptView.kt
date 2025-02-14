@@ -157,8 +157,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
         }.aggregatetrace()
-        .aiprompttask("process-results") {
-            postProcess(it.values ?: listOf(), docInputs)
+        .aitaskonlist("process-results") {
+            postProcess(it, docInputs)
         }.planner
     }
 

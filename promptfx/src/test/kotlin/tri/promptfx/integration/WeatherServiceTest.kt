@@ -23,6 +23,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import tri.ai.openai.jsonMapper
+import java.time.LocalDate
 
 class WeatherServiceTest {
 
@@ -79,6 +80,22 @@ class WeatherServiceTest {
         Assertions.assertEquals(52.11, response.main.temp)
         Assertions.assertEquals(75, response.clouds!!.all)
         Assertions.assertEquals(24.16, response.wind!!.speed)
+    }
+
+    @Test
+    fun testWeatherService() {
+        val city = "New York" // Replace with your desired city
+
+        val result = weatherService.getWeather(WeatherRequest(city))
+        if (result == null)
+            println("Invalid request or no API key found.")
+        else {
+            println("Today's forecast for $city: ${result.description}, temperature: ${result.temperature}°F")
+
+            val yesterday = LocalDate.now().minusDays(1)
+            val result2 = weatherService.getWeather(WeatherRequest(city, yesterday))!!
+            println("Yesterday's forecast for $city: ${result2.description}, temperature: ${result2.temperature}°F")
+        }
     }
 
 }

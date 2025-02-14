@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,24 +17,30 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx
+package tri.ai.text.docs
 
-import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiPlanner
 
-/**
- * View that gets result from a planned set of tasks from an [AiPlanner] object.
- * These tasks can be monitored while executing.
- */
-abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
+/** Provides access to necessary components for document Q&A. */
+interface DocumentQaDriver {
 
-    protected val common = ModelParameters()
+    /** Set of folders, or document sets, to work with. */
+    val folders: List<String>
+    /** The currently selected folder, or document set. */
+    var folder: String
 
-    override suspend fun processUserInput(): AiPipelineResult<*> =
-        AiPipelineExecutor.execute(plan().plan(), progress)
+    /** The text completion model (by id). */
+    var completionModel: String
+    /** The text embedding model (by id). */
+    var embeddingModel: String
 
-    abstract fun plan(): AiPlanner
+    /** Initialize the driver. */
+    fun initialize()
+    /** Close the driver. */
+    fun close()
+
+    /** Answer a question using documents in the current folder. */
+    suspend fun answerQuestion(input: String): AiPipelineResult<String>
 
 }
 

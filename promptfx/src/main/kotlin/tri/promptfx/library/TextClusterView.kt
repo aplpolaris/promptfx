@@ -44,9 +44,9 @@ import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextClustering.generateClusterHierarchy
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.FormattedPromptResultArea
-import tri.promptfx.ui.FormattedPromptTraceResult
-import tri.promptfx.ui.FormattedText
-import tri.promptfx.ui.FormattedTextNode
+import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.FormattedTextNode
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.docs.TextDocListUi
 import tri.promptfx.ui.docs.TextLibraryListUi
@@ -56,7 +56,6 @@ import tri.util.ml.AffinityClusterService
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.sliderwitheditablelabel
-import javax.swing.ButtonGroup
 
 /** Plugin for the [TextClusterView]. */
 class TextClusterPlugin : NavigableWorkspaceViewImpl<TextClusterView>("Documents", "Text Clustering", WorkspaceViewAffordance.COLLECTION_ONLY, TextClusterView::class)

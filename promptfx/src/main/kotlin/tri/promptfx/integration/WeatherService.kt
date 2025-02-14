@@ -34,9 +34,7 @@ interface WeatherService {
     fun getWeather(request: WeatherRequest): WeatherResult?
 }
 
-private val today = LocalDate.now()
-
-data class WeatherRequest(val city: String, val date: LocalDate = today, val historical: Boolean = date != today)
+data class WeatherRequest(val city: String, val date: LocalDate = LocalDate.now(), val historical: Boolean = date != LocalDate.now())
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class WeatherResult(
     val request: WeatherRequest,
@@ -51,7 +49,7 @@ data class WeatherResult(
 )
 
 class OpenWeatherMapService(private val apiKey: String) : WeatherService {
-    val baseUrl = "http://api.openweathermap.org/data/2.5"
+    private val baseUrl = "http://api.openweathermap.org/data/2.5"
     override fun getWeather(request: WeatherRequest): WeatherResult? {
         try {
             val endpoint = if (request.historical) "history" else "weather"
@@ -79,7 +77,7 @@ class OpenWeatherMapService(private val apiKey: String) : WeatherService {
         }
         return null
     }
-    fun Int.epochSecondsToLocalDateTime(): LocalDateTime =
+    private fun Int.epochSecondsToLocalDateTime(): LocalDateTime =
         LocalDateTime.ofInstant(Instant.ofEpochSecond(this.toLong()), java.time.ZoneId.systemDefault())
 }
 
@@ -101,18 +99,3 @@ data class WeatherResponseSys(val sunrise: Int? = null, val sunset: Int? = null)
 
 private val apiKey = File("apikey-weather.txt").let { if (it.exists()) it.readText() else "" }
 val weatherService = OpenWeatherMapService(apiKey)
-
-fun main() {
-    val city = "New York" // Replace with your desired city
-
-    val result = weatherService.getWeather(WeatherRequest(city))
-    if (result == null)
-        println("Invalid request or no API key found.")
-    else {
-        println("Today's forecast for $city: ${result.description}, temperature: ${result.temperature}°F")
-
-        val yesterday = today.minusDays(1)
-        val result2 = weatherService.getWeather(WeatherRequest(city, yesterday))!!
-        println("Yesterday's forecast for $city: ${result2.description}, temperature: ${result2.temperature}°F")
-    }
-}
