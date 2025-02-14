@@ -34,6 +34,4 @@ abstract class AiPromptBatch(val id: String) {
     fun tasks(): List<AiTask<String>> =
         runConfigs().mapIndexed { i, v -> v.task("$id $i") }
 
-    /** Get an [AiPlanner] for executing this batch of prompts. */
-    fun plan() = tasks().aggregate().planner
 }
