@@ -72,6 +72,9 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         }
         val result = ToolChainExecutor(controller.completionEngine.value)
             .executeChain(task, tools)
+        runLater {
+            pfxWorkspace.dock(this)
+        }
         return AiPromptTrace(outputInfo = AiOutputInfo.output(result))
     }
 
@@ -100,12 +103,16 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     fun executeTask(view: AiTaskView, input: String): String {
         val result = CompletableDeferred<String>()
+        runLater {
+            pfxWorkspace.dock(view)
+        }
         runBlocking {
             runLater {
                 view.inputArea()?.text = input
                 val task = runBlocking {
                     view.processUserInput()
                 }
+                view.taskCompleted(task)
                 task.finalResult.let {
                     result.complete(it.firstValue.toString())
                 }
