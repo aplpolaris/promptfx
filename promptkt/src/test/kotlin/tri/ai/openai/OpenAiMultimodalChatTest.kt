@@ -58,6 +58,7 @@ class OpenAiMultimodalChatTest {
     }
 
     @Test
+    @Tag("openai")
     fun testChat_Roles() = runTest {
         val request = listOf(
             chatMessage {
