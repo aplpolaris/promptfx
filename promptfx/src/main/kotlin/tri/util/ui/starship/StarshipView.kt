@@ -291,7 +291,7 @@ class StarshipView : Fragment("Starship") {
             config.promptExec = object : AiPromptExecutor {
                 override suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult {
                     var text: FormattedText? = null
-                    (workspace as PromptFxWorkspace).sendInput(baseComponentTitle!!, input) { text = it }
+                    find<PromptFxWorkspace>().sendInput(baseComponentTitle!!, input) { text = it }
                     return StarshipInterimResult(baseComponentTitle!!, text!!, null, emptyList())
                 }
             }

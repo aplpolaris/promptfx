@@ -110,7 +110,7 @@ class PromptTraceCardList: Fragment() {
                     action {
                         val selected = selectionModel.selectedItem
                         if (selected != null)
-                            (workspace as PromptFxWorkspace).launchTemplateView(selected)
+                            find<PromptFxWorkspace>().launchTemplateView(selected)
                     }
                 }
                 if (!isGlobalHistoryView) {
@@ -121,7 +121,7 @@ class PromptTraceCardList: Fragment() {
                         action {
                             val selected = selectionModel.selectedItem
                             if (selected != null)
-                                (workspace as PromptFxWorkspace).launchHistoryView(selected)
+                                find<PromptFxWorkspace>().launchHistoryView(selected)
                         }
                     }
                 }
@@ -135,7 +135,7 @@ class PromptTraceCardList: Fragment() {
                 action {
                     val selected = list.selectedItem
                     if (selected != null)
-                        (workspace as PromptFxWorkspace).launchTemplateView(selected)
+                        find<PromptFxWorkspace>().launchTemplateView(selected)
                 }
             }
             if (isRemovable) {

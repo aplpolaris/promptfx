@@ -17,23 +17,29 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.mm
+package tri.ai.gemini
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.core.MChatParameters
+import tri.ai.core.TextChatMessage
+import tri.ai.core.TextChatRole
+import tri.ai.core.chatMessage
+import tri.ai.gemini.GeminiClientTest.Companion
+import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.util.BASE64_IMAGE_SAMPLE
 
-class OpenAiMultimodalChatTest {
+@Tag("gemini")
+class GeminiMultimodalChatTest {
 
-    val client = OpenAiClient.INSTANCE
-    val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, client)
+    val client = GeminiClient.INSTANCE
+    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_15_FLASH, client)
 
     @Test
-    @Tag("openai")
     fun testChat_Simple() = runTest {
         val request = chatMessage {
             text("What is 2+3?")
@@ -44,7 +50,6 @@ class OpenAiMultimodalChatTest {
     }
 
     @Test
-    @Tag("openai")
     fun testChat_Multiple() = runTest {
         val request = chatMessage {
             text("Random fruit?")
@@ -52,18 +57,34 @@ class OpenAiMultimodalChatTest {
         val params = MChatParameters(numResponses = 2)
         val response = chat.chat(request, params)
         val responseText = response.values!!.map { it.content[0].text!! }
-        assertEquals(2, responseText.size)
+        assertEquals(1, responseText.size) { "Gemini only supports a single response" }
         println(responseText)
     }
 
     @Test
-    @Tag("openai")
+    fun testChat_Roles() = runTest {
+        val request = listOf(
+            chatMessage {
+                text("You are a wizard that always responds as if you are casting a spell.")
+                role(TextChatRole.System)
+            },
+            chatMessage {
+                text("What should I have for dinner?")
+                role(TextChatRole.User)
+            }
+        )
+        val response = chat.chat(request)
+        val responseText = response.firstValue.content[0].text!!
+        println(responseText)
+    }
+
+    @Test
     fun testChat_Image() = runTest {
         val request = chatMessage {
             text("According to the chart, how big is an apple?")
             inlineData(BASE64_IMAGE_SAMPLE)
         }
-        val response = OpenAiMultimodalChat("gpt-4-turbo", client).chat(request)
+        val response = chat.chat(request)
         val responseText = response.firstValue.content[0].text!!
         println(responseText)
     }

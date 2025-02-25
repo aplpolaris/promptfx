@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.mm
+package tri.ai.core
 
 import tri.ai.prompt.trace.AiPromptTrace
 

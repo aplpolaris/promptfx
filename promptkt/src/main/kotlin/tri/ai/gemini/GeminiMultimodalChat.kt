@@ -17,12 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.mm
+package tri.ai.gemini
 
-import tri.ai.core.TextChatRole
-import tri.ai.gemini.*
+import tri.ai.core.*
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
 import tri.ai.prompt.trace.*
+import tri.util.info
 
 /** Chat completion with Gemini models. */
 class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_15_FLASH, val client: GeminiClient = GeminiClient.INSTANCE) :
@@ -36,6 +36,9 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
     ): AiPromptTrace<MultimodalChatMessage> {
         val modelInfo = AiModelInfo.info(modelId, tokens = parameters.tokens, stop = parameters.stop, requestJson = parameters.responseFormat == MultimodalResponseFormat.JSON)
         val t0 = System.currentTimeMillis()
+
+        if ((parameters.numResponses ?: 1) > 1)
+            info<GeminiMultimodalChat>("Gemini chat API does not support multiple responses; only the first response will be returned.")
 
         val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
         val nonSystem = messages.filter { it.role != TextChatRole.System }

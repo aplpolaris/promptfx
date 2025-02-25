@@ -17,9 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.mm
-
-import tri.ai.core.TextChatRole
+package tri.ai.core
 
 data class MultimodalChatMessage(
     val role: TextChatRole,

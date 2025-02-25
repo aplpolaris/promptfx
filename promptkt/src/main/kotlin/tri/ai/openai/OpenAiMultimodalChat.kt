@@ -17,13 +17,11 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.mm
+package tri.ai.openai
 
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.model.ModelId
-import tri.ai.core.TextChatRole
-import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.core.*
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
@@ -36,7 +34,17 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters
     ): AiPromptTrace<MultimodalChatMessage> {
-        val request = ChatCompletionRequest(
+        val request = chatCompletionRequest(modelId, messages, parameters)
+        val response = client.chat(request)
+        return response.mapOutput { it.toMultimodalChatMessage() }
+    }
+
+    companion object {
+        private const val DEFAULT_MAX_TOKENS = 500
+
+        //region TYPE CONVERSIONS
+
+        private fun chatCompletionRequest(modelId: String, messages: List<MultimodalChatMessage>, parameters: MChatParameters) = ChatCompletionRequest(
             model = ModelId(modelId),
             messages = messages.map { it.openAi() },
             seed = parameters.variation.seed,
@@ -51,14 +59,6 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             toolChoice = parameters.tools?.toolChoice?.openAi(),
             tools = parameters.tools?.tools?.map { it.openAi() }
         )
-        val response = client.chat(request)
-        return response.mapOutput { it.toMultimodalChatMessage() }
-    }
-
-    companion object {
-        private const val DEFAULT_MAX_TOKENS = 500
-
-        //region TYPE CONVERSIONS
 
         private fun ChatMessage.toMultimodalChatMessage() =
             MultimodalChatMessage.text(TextChatRole.Assistant, content!!)
@@ -103,7 +103,7 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             MToolChoice.NONE -> ToolChoice.None
         }
 
-        private fun MTool.openAi() = com.aallam.openai.api.chat.Tool.function(
+        private fun MTool.openAi() = Tool.function(
             name = name,
             description = description,
             parameters = Parameters.fromJsonString(jsonSchema)

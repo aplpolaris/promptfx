@@ -55,7 +55,7 @@ class TextDocImageUi(val images: ObservableList<Image>): Fragment() {
                     item("Copy to clipboard").action { copyToClipboard(image) }
                     item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
                         action {
-                            val view = (workspace as PromptFxWorkspace).findTaskView("Image Description")
+                            val view = find<PromptFxWorkspace>().findTaskView("Image Description")
                             (view as? ImageDescribeView)?.apply {
                                 setImage(image)
                                 workspace.dock(view)

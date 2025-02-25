@@ -154,7 +154,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         }
         runAsync {
             runBlocking {
-                (workspace as PromptFxWorkspace).sendInput(baseComponentTitle!!, input.value, callback)
+                find<PromptFxWorkspace>().sendInput(baseComponentTitle!!, input.value, callback)
             }
         } ui {
             indicator.stopBlinking()

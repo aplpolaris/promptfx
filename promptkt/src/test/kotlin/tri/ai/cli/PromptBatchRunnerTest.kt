@@ -19,6 +19,7 @@
  */
 package tri.ai.cli
 
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.readText
@@ -26,6 +27,7 @@ import kotlin.io.path.writeText
 
 class PromptBatchRunnerTest {
     @Test
+    @Tag("openai")
     fun testRun() {
         val input = """
             ---

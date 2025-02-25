@@ -61,7 +61,7 @@ class TextLibraryToolbar : Fragment() {
                 enableWhen(libraryModel.librarySelection.isNotNull)
                 tooltip("Open the current library in the Text Manager view")
                 action {
-                    (workspace as PromptFxWorkspace).launchTextManagerView(libraryModel.librarySelection.get().library)
+                    find<PromptFxWorkspace>().launchTextManagerView(libraryModel.librarySelection.get().library)
                 }
             }
         }
