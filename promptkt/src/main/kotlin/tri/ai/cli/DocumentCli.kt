@@ -26,6 +26,7 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.validate
 import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
@@ -69,9 +70,15 @@ class DocumentCli : CliktCommand(name = "document") {
         .validate {
             require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
         }
+    private val temp by option(help = "Temperature for completion (default 0.5)")
+        .double()
+        .default(0.5)
+    private val maxTokens by option(help = "Maximum tokens for completion (default 2000)")
+        .int()
+        .default(2000)
 
     override fun run() {
-        currentContext.obj = DocumentQaConfig(root, folder, model, embedding)
+        currentContext.obj = DocumentQaConfig(root, folder, model, embedding, temp, maxTokens)
     }
 }
 
@@ -129,8 +136,8 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         }
 
     override fun run() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
-        MIN_LEVEL_TO_LOG = Level.WARNING
+//        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+//        MIN_LEVEL_TO_LOG = Level.WARNING
         val driver = createQaDriver(config)
 
         info<DocumentQa>("  question: $question")
@@ -207,7 +214,7 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
 }
 
 /** Shared config object for document QA. */
-class DocumentQaConfig(val root: Path, val folder: String, val completionModel: String?, val embeddingModel: String?) {
+class DocumentQaConfig(val root: Path, val folder: String, val completionModel: String?, val embeddingModel: String?, val temp: Double?, val maxTokens: Int?) {
     val docsFolder: File = if (folder == "") root.toFile() else File(root.toFile(), folder)
 }
 
@@ -230,5 +237,13 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         }
     }
     info<DocumentQa>("  using embedding model $embeddingModel")
+    if (config.temp != null) {
+        temp = config.temp
+        info<DocumentQa>("  using temperature $temp")
+    }
+    if (config.maxTokens != null) {
+        maxTokens = config.maxTokens
+        info<DocumentQa>("  using max tokens $maxTokens")
+    }
     initialize()
 }
