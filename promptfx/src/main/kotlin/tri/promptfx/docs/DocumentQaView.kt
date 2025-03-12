@@ -333,6 +333,16 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
                 PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!
             )
         }
+    override var temp: Double
+        get() = view.common.temp.value
+        set(value) {
+            view.common.temp.set(value)
+        }
+    override var maxTokens: Int
+        get() = view.common.maxTokens.value
+        set(value) {
+            view.common.maxTokens.set(value)
+        }
 
     override fun initialize() {
         Platform.startup { }

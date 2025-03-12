@@ -30,7 +30,6 @@ import tri.ai.prompt.trace.AiPromptTrace
 interface MultimodalChat {
 
     /** Identifier for underlying model. */
-
     val modelId: String
 
     /** Provided a response to a sequence of chat messages. */

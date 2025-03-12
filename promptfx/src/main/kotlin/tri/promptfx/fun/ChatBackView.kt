@@ -22,11 +22,9 @@ package tri.promptfx.`fun`
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
-import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.AiPromptLibrary
@@ -197,7 +195,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 "script" to conversationScript.value
             )
         return controller.chatService.value.chat(
-            listOf(TextChatMessage(TextChatRole.System, systemMessage)) +
+            listOf(TextChatMessage(MChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
             maxTokens.value,
             stop = listOf("\n")
@@ -219,7 +217,7 @@ private class ChatBackHistory {
     /** Convert to AI message list, with given user mapping. */
     fun toChatMessages(nextPerson: String, otherPersons: String, maxMessageHistory: Int) =
         conversations.takeLast(maxMessageHistory).map {
-            val role = if (it.user == nextPerson) TextChatRole.Assistant else TextChatRole.User
+            val role = if (it.user == nextPerson) MChatRole.Assistant else MChatRole.User
             TextChatMessage(role, "${it.user}: ${it.message}")
         }
 

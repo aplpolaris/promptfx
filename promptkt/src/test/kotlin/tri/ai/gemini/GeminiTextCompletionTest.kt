@@ -24,10 +24,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 
 class GeminiTextCompletionTest {
 
-    val client = GeminiTextCompletion()
+    val client = GeminiTextCompletion(GEMINI_15_FLASH)
 
     @Test
     @Tag("gemini")

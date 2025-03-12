@@ -24,7 +24,7 @@ import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.chatCompletionRequest
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.openai.OpenAiClient.Companion.toOpenAiRole
@@ -63,7 +63,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiC
                 responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
             }
         )
-        return response.mapOutput { TextChatMessage(TextChatRole.Assistant, it.content!!) }
+        return response.mapOutput { TextChatMessage(MChatRole.Assistant, it.content!!) }
     }
 
     private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.toOpenAiRole(), content)

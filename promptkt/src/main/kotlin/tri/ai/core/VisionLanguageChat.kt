@@ -41,4 +41,4 @@ interface VisionLanguageChat {
 }
 
 /** A single message in a vision-language chat. */
-data class VisionLanguageChatMessage(val role: TextChatRole, val content: String, val image: URI)
+data class VisionLanguageChatMessage(val role: MChatRole, val content: String, val image: URI)

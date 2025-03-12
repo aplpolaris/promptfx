@@ -38,5 +38,5 @@ interface TextChat {
 }
 
 /** A single message in a chat. */
-data class TextChatMessage(val role: TextChatRole, val content: String?)
+data class TextChatMessage(val role: MChatRole, val content: String?)
 

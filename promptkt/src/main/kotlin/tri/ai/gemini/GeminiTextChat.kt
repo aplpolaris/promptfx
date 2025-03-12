@@ -22,14 +22,14 @@ package tri.ai.gemini
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
-import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
+import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text chat with Gemini models. */
-class GeminiTextChat(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiTextChat(override val modelId: String = GEMINI_15_FLASH, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextChat {
 
     override fun toString() = "$modelId (Gemini)"

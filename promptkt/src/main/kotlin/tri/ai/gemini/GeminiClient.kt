@@ -23,7 +23,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.serialization.Serializable
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 
@@ -92,9 +92,9 @@ class GeminiClient : Closeable {
     }
 
     suspend fun generateContent(messages: List<TextChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
-        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
+        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            messages.filter { it.role != TextChatRole.System }.map {
+            messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
                 Content(listOf(Part(it.content)), role)
             },
@@ -105,9 +105,9 @@ class GeminiClient : Closeable {
     }
 
     suspend fun generateContentVision(messages: List<VisionLanguageChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
-        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
+        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            messages.filter { it.role != TextChatRole.System }.map {
+            messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
                 Content(listOf(
                     Part(it.content),
@@ -129,17 +129,17 @@ class GeminiClient : Closeable {
     companion object {
         val INSTANCE by lazy { GeminiClient() }
 
-        /** Convert from [TextChatRole] to string representing Gemini role. */
-        fun TextChatRole.toGeminiRole() = when (this) {
-            TextChatRole.User -> ContentRole.user
-            TextChatRole.Assistant -> ContentRole.model
+        /** Convert from [MChatRole] to string representing Gemini role. */
+        fun MChatRole.toGeminiRole() = when (this) {
+            MChatRole.User -> ContentRole.user
+            MChatRole.Assistant -> ContentRole.model
             else -> error("Invalid role: $this")
         }
 
-        /** Convert from string representing Gemini role to [TextChatRole]. */
+        /** Convert from string representing Gemini role to [MChatRole]. */
         fun ContentRole?.fromGeminiRole() = when (this) {
-            ContentRole.user -> TextChatRole.User
-            ContentRole.model -> TextChatRole.Assistant
+            ContentRole.user -> MChatRole.User
+            ContentRole.model -> MChatRole.Assistant
             else -> error("Invalid role: $this")
         }
     }

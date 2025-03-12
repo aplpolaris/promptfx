@@ -26,7 +26,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.TextPlugin
 import tri.ai.memory.*
 import tri.ai.openai.*
@@ -88,10 +88,10 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
      * The secondary task is to process and store a "memory" of the conversation.
      */
     private suspend fun doChat(userInput: String): TextChatMessage {
-        val userItem = MemoryItem(TextChatRole.User, userInput)
+        val userItem = MemoryItem(MChatRole.User, userInput)
         memory.addChat(userItem)
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
-        val personaMessage = listOf(TextChatMessage(TextChatRole.System, persona.getSystemMessage()))
+        val personaMessage = listOf(TextChatMessage(MChatRole.System, persona.getSystemMessage()))
         val response = chatModelInst.chat(personaMessage + contextualHistory).firstValue
         memory.addChat(MemoryItem(response))
         memory.saveMemory(interimSave = true)

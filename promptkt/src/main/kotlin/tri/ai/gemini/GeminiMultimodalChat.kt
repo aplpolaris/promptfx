@@ -19,8 +19,12 @@
  */
 package tri.ai.gemini
 
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import tri.ai.core.*
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
+import tri.ai.gemini.GeminiMultimodalChat.Companion.gemini
 import tri.ai.prompt.trace.*
 import tri.util.info
 
@@ -34,14 +38,14 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters
     ): AiPromptTrace<MultimodalChatMessage> {
-        val modelInfo = AiModelInfo.info(modelId, tokens = parameters.tokens, stop = parameters.stop, requestJson = parameters.responseFormat == MultimodalResponseFormat.JSON)
+        val modelInfo = AiModelInfo.info(modelId, tokens = parameters.tokens, stop = parameters.stop, requestJson = parameters.responseFormat == MResponseFormat.JSON)
         val t0 = System.currentTimeMillis()
 
         if ((parameters.numResponses ?: 1) > 1)
             info<GeminiMultimodalChat>("Gemini chat API does not support multiple responses; only the first response will be returned.")
 
-        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
-        val nonSystem = messages.filter { it.role != TextChatRole.System }
+        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
+        val nonSystem = messages.filter { it.role != MChatRole.System }
         val request = GenerateContentRequest(
             contents = nonSystem.map { it.gemini() },
             tools = parameters.geminiTools(),
@@ -51,7 +55,9 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             generationConfig = parameters.gemini(),
             cachedContent = null
         )
+        println(Json.encodeToString(request))
         val response = client.generateContent(modelId, request)
+        println(Json.encodeToString(response))
 
         return response.trace(modelInfo, t0)
     }
@@ -70,13 +76,12 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
                 AiPromptTrace.error(modelInfo, "Gemini returned no candidates", duration = System.currentTimeMillis() - t0)
             } else {
                 val firstCandidate = candidates!!.first()
-                val role = firstCandidate.content.role.fromGeminiRole()
-                val msgs = firstCandidate.content.parts.map { MultimodalChatMessage.text(role, it.text!!) }
+                val msg = firstCandidate.fromGeminiCandidate()
                 AiPromptTrace(
                     null,
                     modelInfo,
                     AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                    AiOutputInfo(msgs)
+                    AiOutputInfo.output(msg)
                 )
             }
         }
@@ -87,42 +92,74 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             candidates!!.first().content.let {
                 MultimodalChatMessage(
                     role = it.role.fromGeminiRole(),
-                    content = it.parts.map { it.fromGeminiPart() }
+                    content = it.parts.map { it.fromGemini() }
                 )
             }
 
-        fun Part.fromGeminiPart(): MChatMessagePart =
-            MChatMessagePart(
-                text = text,
-                inlineData = inlineData?.data
-            )
-
-        fun MultimodalChatMessage.gemini(): Content {
-            return Content(
-                role = role.gemini(),
-                parts = content.map { it.gemini() }
-            )
+        fun Candidate.fromGeminiCandidate(): MultimodalChatMessage {
+            val role = content.role.fromGeminiRole()
+            val functionCall = content.parts.filter { it.functionCall != null }.map { it.functionCall!! }
+            val parts = content.parts.filter { it.text != null || it.inlineData != null }.map { it.fromGemini() }
+            return MultimodalChatMessage(role, parts, functionCall.map { it.fromGemini() })
         }
 
-        fun TextChatRole.gemini(): ContentRole {
+        fun Part.fromGemini(): MChatMessagePart = when {
+            text != null -> MChatMessagePart.text(text)
+            inlineData != null -> MChatMessagePart.image(inlineData.data)
+            functionCall != null -> MChatMessagePart.toolCall(functionCall.name, functionCall.args)
+            functionResponse != null -> MChatMessagePart.toolResponse(functionResponse.name, functionResponse.response)
+            else -> throw UnsupportedOperationException("Unsupported Gemini part: $this")
+        }
+
+        fun MultimodalChatMessage.gemini(): Content {
+            return if (!toolCalls.isNullOrEmpty()) {
+                val args = toolCalls.first().argumentsAsJson
+                val toolCallArgs = Json.decodeFromString<Map<String, String>>(args)
+                Content(
+                    role = role.gemini(),
+                    parts = listOf(MChatMessagePart.toolCall(toolCalls.first().name, toolCallArgs).gemini())
+                )
+            } else if (role == MChatRole.Tool) {
+                Content(
+                    role = role.gemini(),
+                    parts = listOf(MChatMessagePart.toolResponse(toolCallId!!, mapOf("result" to content!!.first().text!!)).gemini())
+                )
+            } else {
+                Content(
+                    role = role.gemini(),
+                    parts = content?.map { it.gemini() } ?: emptyList()
+                )
+            }
+        }
+
+        fun MChatRole.gemini(): ContentRole? {
             return when (this) {
-                TextChatRole.User -> ContentRole.user
-                TextChatRole.Assistant -> ContentRole.model
+                MChatRole.User -> ContentRole.user
+                MChatRole.Assistant -> ContentRole.model
+                MChatRole.Tool -> null
                 else -> error("Invalid role: $this")
             }
         }
 
-        fun MChatMessagePart.gemini(): Part {
-            return Part(
-                text = this.text,
-                inlineData = this.inlineData?.let { Blob.fromDataUrl(it) }
-            )
+        fun MChatMessagePart.gemini(): Part = when (partType) {
+            MPartType.TEXT -> Part(text = text)
+            MPartType.IMAGE -> Part(inlineData = Blob.fromDataUrl(inlineData!!))
+            MPartType.TOOL_CALL -> Part(functionCall = FunctionCall(name = functionName!!, args = functionArgs!!))
+            MPartType.TOOL_RESPONSE -> Part(functionResponse = FunctionResponse(name = functionName!!, response = functionArgs!!))
         }
+
+        fun FunctionCall.fromGemini() = MToolCall(
+            id = "",
+            name = name,
+            argumentsAsJson = args.asString()
+        )
+
+        fun Map<String, String>.asString() = "{" + entries.joinToString(",") { (k, v) -> "\"$k\":\"$v\"" } + "}"
 
         fun MChatParameters.gemini(): GenerationConfig {
             return GenerationConfig(
                 stopSequences = stop,
-                responseMimeType = if (responseFormat == MultimodalResponseFormat.JSON) MIME_TYPE_JSON else null,
+                responseMimeType = if (responseFormat == MResponseFormat.JSON) MIME_TYPE_JSON else null,
                 responseSchema = null,
                 candidateCount = numResponses,
                 maxOutputTokens = tokens ?: DEFAULT_MAX_TOKENS,
@@ -136,10 +173,22 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             )
         }
 
-        fun MChatParameters.geminiTools(): List<Tool>? =
-            tools?.tools?.mapNotNull { it.gemini() }
+        fun MChatParameters.geminiTools(): List<Tool>? {
+            val funcs = tools?.tools?.map { it.gemini() }
+            return if (funcs.isNullOrEmpty()) {
+                null
+            } else {
+                listOf(Tool(funcs))
+            }
+        }
 
-        fun MTool.gemini(): Tool? = null // TODO
+        fun MTool.gemini() = FunctionDeclaration(name, description, jsonSchema.geminiSchema())
+
+        fun String.geminiSchema() = try {
+            Json.decodeFromString<Schema>(this)
+        } catch (x: SerializationException) {
+            error("Invalid JSON schema: $this")
+        }
 
         fun MChatParameters.geminiToolConfig(): ToolConfig? = null // TODO
 

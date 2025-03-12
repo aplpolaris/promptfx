@@ -19,20 +19,12 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatResponseFormat
-import com.aallam.openai.api.chat.ToolCall
-import com.aallam.openai.api.chat.chatMessage
-import com.aallam.openai.api.core.Role
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.gemini.Content
-import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
-import tri.ai.openai.OpenAiClient.Companion.toOpenAiRole
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.core.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxModels
@@ -41,18 +33,18 @@ import tri.promptfx.PromptFxModels
  * Common functionality for chat API views.
  * See https://beta.openai.com/docs/api-reference/chat for more information.
  */
-abstract class ChatView(title: String, instruction: String, private val roles: List<Role>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
+abstract class ChatView(title: String, instruction: String, private val roles: List<MChatRole>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
 
-    private val chatModels = PromptFxModels.policy.chatModels()
+    private val chatModels = PromptFxModels.policy.multimodalModels()
 
     protected val system = SimpleStringProperty("")
 
-    protected val model = SimpleObjectProperty(PromptFxModels.policy.chatModelDefault())
+    protected val model = SimpleObjectProperty(PromptFxModels.policy.multimodalModelDefault())
     protected val messageHistory = SimpleIntegerProperty(10)
 
     protected val seedActive = SimpleBooleanProperty(false)
     protected val seed = SimpleIntegerProperty(0)
-    protected val responseFormat = SimpleObjectProperty(ChatResponseFormat.Text)
+    protected val responseFormat = SimpleObjectProperty(MResponseFormat.TEXT)
     protected var common = ModelParameters()
 
     protected lateinit var chatHistory: ChatHistoryView
@@ -119,9 +111,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
             }
             field("Response Format") {
                 tooltip("Important: when using JSON mode, you must also instruct the model to produce JSON yourself via a system or user message.")
-                combobox(responseFormat, listOf(ChatResponseFormat.Text, ChatResponseFormat.JsonObject)) {
-                    cellFormat { text = it.type }
-                }
+                combobox(responseFormat, MResponseFormat.values().toList())
             }
             with (common) {
                 numResponses()
@@ -131,69 +121,49 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun initChatResponse() {
         onCompleted {
-            addChatsToHistory(it.finalResult)
+            addChatsToHistory(it.finalResult.output?.outputs ?: listOf())
         }
     }
 
     /** Add chats to history, also add follow-up chats for testing if relevant, and a subsequent user message. */
-    private fun addChatsToHistory(response: AiPromptTraceSupport<*>) {
-        val result = response.output?.outputs ?: listOf()
-        val types = result.mapNotNull { it?.javaClass }.toSet()
+    private fun addChatsToHistory(results: List<Any?>) {
+        val types = results.mapNotNull { it?.javaClass }.toSet()
         when {
-            types == setOf(ChatMessage::class.java) -> addChatChoices(result as List<ChatMessage>)
-            types == setOf(Content::class.java) -> (result as List<Content>).map { it.toChatMessage() }.forEach { addChat(it) }
-            types == setOf(String::class.java) -> result.map { ChatMessage(Role.Assistant, it.toString()) }.forEach { addChat(it) }
+            types == setOf(MultimodalChatMessage::class.java) -> addChatChoices(results as List<MultimodalChatMessage>)
+            types == setOf(String::class.java) -> results.map { MultimodalChatMessage.text(MChatRole.Assistant, it.toString()) }.forEach { addChat(it) }
             types.isEmpty() -> tri.util.warning<ChatView>("No chat responses found in output.")
             else -> throw IllegalArgumentException("Unsupported chat response type: $types")
         }
     }
 
-    protected fun Content.toChatMessage() = chatMessage {
-        role = this@toChatMessage.role.fromGeminiRole().toOpenAiRole()
-        if (parts.size == 1 && parts[0].text != null && parts[0].inlineData == null) {
-            content = parts[0].text!!
-        } else {
-            content {
-                parts.forEach {
-                    when {
-                        it.text != null && it.inlineData != null -> throw IllegalStateException("Unsupported content: $it")
-                        it.text != null -> this@content.text(it.text!!)
-                        it.inlineData != null -> this@content.image(it.inlineData!!.data)
-                        else -> throw IllegalStateException("Unsupported content: $it")
-                    }
-                }
-            }
-        }
-    }
-
-    private fun addChat(chat: ChatMessage) {
+    private fun addChat(chat: MultimodalChatMessage) {
         chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
-        val askTools = chat.toolCalls != null
+        val askTools = chat.toolCalls.isNotEmpty()
         if (askTools) {
-            chat.toolCalls!!.forEach {
+            chat.toolCalls.forEach {
                 // add response placeholder for each tool
-                val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
+                val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id)
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
             }
         } else {
             // add blank message for user to follow up
-            chatHistory.components.add(ChatMessageUiModel(Role.User, ""))
+            chatHistory.components.add(ChatMessageUiModel(MChatRole.User, ""))
         }
     }
 
     /** Adds multiple chat messages as different options for user. */
-    private fun addChatChoices(chat: List<ChatMessage>) {
+    private fun addChatChoices(chat: List<MultimodalChatMessage>) {
         chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
         val toolCalls = chat.first().toolCalls
-        if (toolCalls != null) {
+        if (toolCalls.isNotEmpty()) {
             toolCalls.forEach {
                 // add response placeholder for each tool
-                val sampleResponse = ChatMessage.Tool("(replace this with tool response)", (it as ToolCall.Function).id)
+                val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id)
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
             }
         } else {
             // add blank message for user to follow up
-            chatHistory.components.add(ChatMessageUiModel(Role.User, ""))
+            chatHistory.components.add(ChatMessageUiModel(MChatRole.User, ""))
         }
     }
 

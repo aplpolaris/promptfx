@@ -29,7 +29,7 @@ import tri.ai.pips.AiPlanner
  */
 abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
 
-    protected val common = ModelParameters()
+    val common = ModelParameters()
 
     override suspend fun processUserInput(): AiPipelineResult<*> =
         AiPipelineExecutor.execute(plan().plan(), progress)

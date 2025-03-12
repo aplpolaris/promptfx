@@ -42,6 +42,9 @@ interface TextPlugin {
     /** Provide a list of chat engines. */
     fun chatModels(): List<TextChat>
 
+    /** Provide a list of multimodal models. */
+    fun multimodalModels(): List<MultimodalChat>
+
     /** Provide a list of text completion engines. */
     fun textCompletionModels(): List<TextCompletion>
 
@@ -79,6 +82,8 @@ interface TextPlugin {
         fun textCompletionModels() = orderedPlugins.flatMap { it.textCompletionModels() }
         /** Get registered chat models. */
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
+        /** Get registered multimodal models. */
+        fun multimodalModels() = orderedPlugins.flatMap { it.multimodalModels() }
         /** Get registered vision language models. */
         fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
         /** Get registered image models. */
@@ -93,6 +98,9 @@ interface TextPlugin {
         /** Get a chat model by id. Throws an exception if not found. */
         fun chatModel(modelId: String) =
             chatModels().first { it.modelId == modelId }
+        /** Get a multimodal model by id. Throws an exception if not found. */
+        fun multimodalModel(modelId: String) =
+            multimodalModels().first { it.modelId == modelId }
         /** Get a vision language model by id. Throws an exception if not found. */
         fun visionLanguageModel(modelId: String) =
             visionLanguageModels().first { it.modelId == modelId }

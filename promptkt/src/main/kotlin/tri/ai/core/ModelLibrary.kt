@@ -31,6 +31,7 @@ class ModelLibrary {
     var models = mapOf<String, List<ModelInfo>>()
     var audio = listOf<String>()
     var chat = listOf<String>()
+    var multimodal = listOf<String>()
     var completion = listOf<String>()
     var embeddings = listOf<String>()
     var image_generator = listOf<String>()
@@ -64,6 +65,9 @@ abstract class ModelIndex(val modelFileName: String) {
     fun chatModelsInclusive(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots) + models(ModelLibrary::vision_language, includeSnapshots)
     /** Get chat models without vision-language models. */
     fun chatModels(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots)
+
+    /** Get multimodal models. */
+    fun multimodalModels(includeSnapshots: Boolean = false) = models(ModelLibrary::multimodal, includeSnapshots)
 
     fun completionModels(includeSnapshots: Boolean = false) = models(ModelLibrary::completion, includeSnapshots)
     fun embeddingModels(includeSnapshots: Boolean = false) = models(ModelLibrary::embeddings, includeSnapshots)

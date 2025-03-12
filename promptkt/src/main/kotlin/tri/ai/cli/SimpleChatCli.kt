@@ -27,7 +27,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
@@ -72,11 +72,11 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
             print("> ")
             var input = readln()
             while (input != "bye") {
-                chatHistory.add(TextChatMessage(TextChatRole.User, input))
+                chatHistory.add(TextChatMessage(MChatRole.User, input))
                 val response = chatModelInst.chat(chatHistory)
                 val message = response.firstValue
                 println(message.content)
-                chatHistory.add(TextChatMessage(TextChatRole.Assistant, message.content))
+                chatHistory.add(TextChatMessage(MChatRole.Assistant, message.content))
                 while (chatHistory.size > historySize) {
                     chatHistory.removeAt(0)
                 }

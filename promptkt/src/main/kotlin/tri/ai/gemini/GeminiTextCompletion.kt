@@ -20,14 +20,14 @@
 package tri.ai.gemini
 
 import tri.ai.core.TextCompletion
-import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
+import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with Gemini models. */
-class GeminiTextCompletion(override val modelId: String = GEMINI_PRO, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiTextCompletion(override val modelId: String = GEMINI_15_FLASH, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextCompletion {
 
     override fun toString() = "$modelId (Gemini)"

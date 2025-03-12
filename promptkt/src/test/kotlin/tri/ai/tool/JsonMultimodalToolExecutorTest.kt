@@ -23,25 +23,29 @@ import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.MultimodalChat
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.tool.JsonToolTest.Companion.SAMPLE_TOOLS
 
 @Tag("openai")
-class JsonToolExecutorTest {
+class JsonMultimodalToolExecutorTest {
+
+    val model = OpenAiMultimodalChat(GPT35_TURBO)
 
     @Test
     fun testTools() {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         runBlocking {
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
                 .execute("Multiply 21 times 2 and then convert it to Roman numerals.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
                 .execute("Convert 5 to a Roman numeral.")
 
-            JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
                 .execute("What year was Jurassic Park?")
         }
     }

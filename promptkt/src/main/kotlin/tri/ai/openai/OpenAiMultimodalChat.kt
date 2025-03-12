@@ -22,6 +22,7 @@ package tri.ai.openai
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.*
+import tri.ai.openai.OpenAiClient.Companion.fromOpenAiRole
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
@@ -60,11 +61,15 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             tools = parameters.tools?.tools?.map { it.openAi() }
         )
 
-        private fun ChatMessage.toMultimodalChatMessage() =
-            MultimodalChatMessage.text(TextChatRole.Assistant, content!!)
+        private fun ChatMessage.toMultimodalChatMessage() = MultimodalChatMessage(
+            role = role.fromOpenAiRole(),
+            content = messageContent?.fromOpenAiContent(),
+            toolCalls = toolCalls?.map { (it as ToolCall.Function).fromOpenAi() },
+            toolCallId = toolCallId?.id
+        )
 
-        private fun MultimodalResponseFormat.openAi() = when (this) {
-            MultimodalResponseFormat.JSON -> ChatResponseFormat.JsonObject
+        private fun MResponseFormat.openAi() = when (this) {
+            MResponseFormat.JSON -> ChatResponseFormat.JsonObject
             else -> null
         }
 
@@ -72,7 +77,7 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             return ChatMessageBuilder().apply {
                 role = this@openAi.role.openAi()
                 content {
-                    this@openAi.content.forEach {
+                    this@openAi.content?.forEach {
                         if (it.text != null)
                             text(it.text)
                         if (it.inlineData != null)
@@ -81,21 +86,42 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
                         // TODO - API support for additional modalities when available
                     }
                 }
-                if (this@openAi.toolCalls.isNotEmpty()) {
+                if (!this@openAi.toolCalls.isNullOrEmpty()) {
                     toolCalls = this@openAi.toolCalls.map { it.openAi() }
                 }
+                toolCallId = this@openAi.toolCallId?.let { ToolId(it) }
             }.build()
         }
 
-        private fun TextChatRole.openAi() = when (this) {
-            TextChatRole.User -> ChatRole.User
-            TextChatRole.System -> ChatRole.System
-            TextChatRole.Assistant -> ChatRole.Assistant
+        private fun Content.fromOpenAiContent(): List<MChatMessagePart> {
+            return when (this) {
+                is TextContent -> listOf(MChatMessagePart(text = content))
+                is ListContent -> content.map {
+                    MChatMessagePart(
+                        partType = if (it is TextPart) MPartType.TEXT else if (it is ImagePart) MPartType.IMAGE else throw IllegalStateException(),
+                        text = (it as? TextPart)?.text,
+                        inlineData = (it as? ImagePart)?.imageUrl?.url
+                    )
+                }
+            }
+        }
+
+        private fun MChatRole.openAi() = when (this) {
+            MChatRole.User -> ChatRole.User
+            MChatRole.System -> ChatRole.System
+            MChatRole.Assistant -> ChatRole.Assistant
+            MChatRole.Tool -> ChatRole.Tool
         }
 
         private fun MToolCall.openAi() = ToolCall.Function(
             id = ToolId(id),
             function = FunctionCall(name, argumentsAsJson)
+        )
+
+        private fun ToolCall.Function.fromOpenAi() = MToolCall(
+            id = id.id,
+            name = function.name,
+            argumentsAsJson = function.arguments
         )
 
         private fun MToolChoice.openAi() = when (this) {

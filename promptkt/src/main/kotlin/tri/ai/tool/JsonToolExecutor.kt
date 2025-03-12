@@ -20,6 +20,7 @@
 package tri.ai.tool
 
 import com.aallam.openai.api.chat.*
+import com.aallam.openai.api.core.Parameters
 import com.aallam.openai.api.model.ModelId
 import kotlinx.serialization.SerializationException
 import tri.ai.openai.OpenAiClient
@@ -33,13 +34,14 @@ import tri.util.*
 class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: List<JsonTool>) {
 
     private val chatTools = tools.mapNotNull {
-        try {
-            val params = it.jsonSchemaAsParameters()
-            com.aallam.openai.api.chat.Tool.function(it.name, it.description, params)
+        val params = try {
+            Parameters.fromJsonString(it.tool.jsonSchema)
         } catch (x: SerializationException) {
-            warning<JsonToolExecutor>("Invalid JSON schema", x)
+            warning<JsonToolExecutor>("Invalid JSON schema: ${it.tool.jsonSchema}", x)
             null
         }
+        if (params == null) null else
+            com.aallam.openai.api.chat.Tool.function(it.tool.name, it.tool.description, params)
     }
 
     suspend fun execute(query: String): String {
@@ -64,7 +66,7 @@ class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: L
             // print interim results
             toolCalls.forEach { call ->
                 info<JsonToolExecutor>("Call Function: $ANSI_CYAN${call.function.name}$ANSI_RESET with parameters $ANSI_CYAN${call.function.arguments}$ANSI_RESET")
-                val tool = tools.firstOrNull { it.name == call.function.name }
+                val tool = tools.firstOrNull { it.tool.name == call.function.name }
                 if (tool == null) {
                     info<JsonToolExecutor>("${ANSI_RED}Unknown tool: ${call.function.name}$ANSI_RESET")
                 }

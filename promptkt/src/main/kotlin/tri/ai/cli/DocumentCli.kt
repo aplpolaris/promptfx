@@ -45,10 +45,13 @@ import java.util.logging.Level
 import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    DocumentCli()
-        .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
-        .main(args)
+object DocumentCliRunner {
+    @JvmStatic
+    fun main(args: Array<out String>) =
+        DocumentCli()
+            .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
+            .main(args)
+}
 
 /** Base command for document QA. */
 class DocumentCli : CliktCommand(name = "document") {
@@ -136,8 +139,8 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         }
 
     override fun run() {
-//        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
-//        MIN_LEVEL_TO_LOG = Level.WARNING
+        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        MIN_LEVEL_TO_LOG = Level.WARNING
         val driver = createQaDriver(config)
 
         info<DocumentQa>("  question: $question")
