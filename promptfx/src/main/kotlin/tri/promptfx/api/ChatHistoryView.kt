@@ -21,9 +21,11 @@ package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.image.Image
@@ -34,6 +36,8 @@ import tri.ai.core.*
 import tri.promptfx.hasImageFile
 import tri.util.ui.graphic
 import tri.util.ui.imageUri
+import java.io.FileInputStream
+import java.net.URI
 import java.net.URL
 
 /** Fragment showing a history of chat messages. */
@@ -110,7 +114,7 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
             hbox(5.0, Pos.CENTER_LEFT) {
                 managedWhen(chat.roleProperty.isEqualTo(MChatRole.Tool))
                 visibleWhen(chat.roleProperty.isEqualTo(MChatRole.Tool))
-                text("id:")
+                text("id/name:")
                 textfield(chat.toolCallIdProperty) {
                     isEditable = false
                 }
@@ -137,8 +141,8 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
         hbox {
             alignment = Pos.CENTER
             spacing = 10.0
-            managedWhen(chat.toolCallsNameProperty.isNotBlank())
-            visibleWhen(chat.toolCallsNameProperty.isNotBlank())
+            managedWhen(chat.toolCallsNameProperty.isNotBlank().and(chat.roleProperty.isEqualTo(MChatRole.Assistant)))
+            visibleWhen(chat.toolCallsNameProperty.isNotBlank().and(chat.roleProperty.isEqualTo(MChatRole.Assistant)))
             text("tool:")
             textfield(chat.toolCallsNameProperty) {
                 isEditable = false
@@ -170,9 +174,9 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
             }
             setOnDragDropped { it
                 if (it.dragboard.hasImage()) {
-                    chat.contentImageProperty.set(URL(it.dragboard.image.imageUri()))
+                    chat.contentImageProperty.set(URI.create(it.dragboard.image.imageUri()))
                 } else if (it.dragboard.hasImageFile()) {
-                    chat.contentImageProperty.set(URL(Image(it.dragboard.files.first().toURI().toString()).imageUri()))
+                    chat.contentImageProperty.set(URI.create(Image(FileInputStream(it.dragboard.files.first())).imageUri()))
                 }
                 it.isDropCompleted = true
                 it.consume()
@@ -192,10 +196,10 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
 }
 
 /** Adds an image thumbnail of given size, with optional ability to edit. */
-fun EventTarget.imagethumbnail(image: SimpleObjectProperty<URL>, size: Int = 128) {
+fun EventTarget.imagethumbnail(image: ObservableValue<URI>, size: Int = 128) {
     imageview {
-        managedWhen(image.isNotNull)
-        visibleWhen(image.isNotNull)
+        managedWhen(BooleanBinding.booleanExpression(image.map { it != null }))
+        visibleWhen(BooleanBinding.booleanExpression(image.map { it != null }))
         imageProperty().bind(image.objectBinding { it?.let { Image(it.toString()) } })
         fitWidth = size.toDouble()
         fitHeight = size.toDouble()
@@ -208,7 +212,7 @@ fun EventTarget.imagethumbnail(image: SimpleObjectProperty<URL>, size: Int = 128
 class ChatMessageUiModel(
     role: MChatRole = MChatRole.User,
     contentText: String = "",
-    contentImage: URL? = null,
+    contentImage: URI? = null,
     name: String? = null,
     _toolCalls: List<MToolCall>? = null,
     _toolCallId: String? = null
@@ -219,8 +223,8 @@ class ChatMessageUiModel(
     val contentTextProperty = SimpleStringProperty(contentText)
     val contentText: String by this.contentTextProperty
 
-    val contentImageProperty = SimpleObjectProperty<URL>(contentImage)
-    var contentImage: URL? by contentImageProperty
+    val contentImageProperty = SimpleObjectProperty<URI>(contentImage)
+    var contentImage: URI? by contentImageProperty
     val detailImageProperty = SimpleStringProperty("auto")
 
     val nameProperty = SimpleStringProperty(name)
@@ -254,12 +258,12 @@ class ChatMessageUiModel(
         /** Create UI model from chat message. */
         fun valueOf(it: MultimodalChatMessage) =
             ChatMessageUiModel(
-//                name = it.name,
+                name = it.toolCallId,
                 role = it.role,
                 contentText = it.content?.firstOrNull()?.text ?: "",
-                contentImage = it.imageUrl(),
+                contentImage = it.imageUri(),
                 _toolCalls = it.toolCalls,
-//                _toolCallId = it.toolCallId
+                _toolCallId = it.toolCallId
             )
 
         /** Create UI model with multiple chat message options. */
@@ -269,7 +273,7 @@ class ChatMessageUiModel(
         }
 
         /** Find first image content in a message, if present. */
-        fun MultimodalChatMessage.imageUrl(): URL? =
-            content?.firstOrNull { it.partType == MPartType.IMAGE }?.let { URL(it.inlineData) }
+        fun MultimodalChatMessage.imageUri(): URI? =
+            content?.firstOrNull { it.partType == MPartType.IMAGE }?.let { URI.create(it.inlineData) }
     }
 }

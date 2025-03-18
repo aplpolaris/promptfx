@@ -158,7 +158,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
         if (toolCalls?.isNotEmpty() == true) {
             toolCalls.forEach {
                 // add response placeholder for each tool
-                val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id)
+                val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id.ifBlank { it.name })
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
             }
         } else {

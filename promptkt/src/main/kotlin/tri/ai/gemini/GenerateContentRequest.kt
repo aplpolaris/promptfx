@@ -305,7 +305,7 @@ enum class HarmBlockThreshold {
     OFF
 }
 
-private val ALLOWED_MIMES = setOf(null, MIME_TYPE_TEXT, MIME_TYPE_JPEG)
+private val ALLOWED_MIMES = setOf(null, MIME_TYPE_TEXT, MIME_TYPE_JPEG, MIME_TYPE_JSON)
 
 @Serializable
 data class GenerationConfig(

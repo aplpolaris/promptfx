@@ -27,14 +27,14 @@ class AiPipelineResult<T>(val finalResult: AiPromptTraceSupport<T>, val interimR
 
     companion object {
         /** Return a result object indicating an error was thrown during execution. */
-        fun error(message: String?, error: Throwable?) : AiPipelineResult<Any> {
-            val trace = AiPromptTrace.error<Any>(null, message, error)
+        fun <T> error(message: String?, error: Throwable?) : AiPipelineResult<T> {
+            val trace = AiPromptTrace.error<T>(null, message, error)
             return AiPipelineResult(trace, mapOf("result" to trace))
         }
 
         /** Return a result object indicating the pipeline has not been implemented. */
-        fun todo() = "This pipeline is not yet implemented.".let {
-            error(it, UnsupportedOperationException(it))
+        fun <T> todo() = "This pipeline is not yet implemented.".let {
+            error<T>(it, UnsupportedOperationException(it))
         }
     }
 

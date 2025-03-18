@@ -54,9 +54,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             generationConfig = parameters.gemini(),
             cachedContent = null
         )
-        println(Json.encodeToString(request)) // TODO
         val response = client.generateContent(modelId, request)
-        println(Json.encodeToString(response)) // TODO
 
         return if (response.promptFeedback != null)
             AiPromptTrace.invalidRequest(modelInfo, response.promptFeedback.toString())

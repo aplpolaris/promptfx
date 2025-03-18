@@ -4,9 +4,10 @@
 ---
 
 audio: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]
-chat: [ gemini-pro, gemini-1.0-pro ]
+chat: [ ]
 completion: [  ]
 embeddings: [ embedding-001, text-embedding-004 ]
+multimodal: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]
 moderation: [ ]
 tts: [ ]
 image_generator: [ ]

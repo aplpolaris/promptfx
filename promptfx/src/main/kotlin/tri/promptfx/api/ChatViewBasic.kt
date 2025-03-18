@@ -19,10 +19,7 @@
  */
 package tri.promptfx.api
 
-import tri.ai.core.MChatParameters
-import tri.ai.core.MChatRole
-import tri.ai.core.MChatVariation
-import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
 
 /**
