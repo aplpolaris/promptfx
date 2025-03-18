@@ -159,7 +159,7 @@ data class ModelInfo(
     val baseModelId: String? = null, // though marked as required, not returned by API
     val version: String,
     val displayName: String,
-    val description: String,
+    val description: String? = null, // though marked as required, not always returned by API
     val inputTokenLimit: Int,
     val outputTokenLimit: Int,
     val supportedGenerationMethods: List<String>,

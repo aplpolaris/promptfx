@@ -24,7 +24,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import tri.ai.core.*
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
-import tri.ai.gemini.GeminiMultimodalChat.Companion.gemini
 import tri.ai.prompt.trace.*
 import tri.util.info
 
@@ -55,11 +54,14 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             generationConfig = parameters.gemini(),
             cachedContent = null
         )
-        println(Json.encodeToString(request))
+        println(Json.encodeToString(request)) // TODO
         val response = client.generateContent(modelId, request)
-        println(Json.encodeToString(response))
+        println(Json.encodeToString(response)) // TODO
 
-        return response.trace(modelInfo, t0)
+        return if (response.promptFeedback != null)
+            AiPromptTrace.invalidRequest(modelInfo, response.promptFeedback.toString())
+        else
+            response.trace(modelInfo, t0)
     }
 
     companion object {
@@ -159,9 +161,9 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
         fun MChatParameters.gemini(): GenerationConfig {
             return GenerationConfig(
                 stopSequences = stop,
-                responseMimeType = if (responseFormat == MResponseFormat.JSON) MIME_TYPE_JSON else null,
+                responseMimeType = responseFormat.gemini(),
                 responseSchema = null,
-                candidateCount = numResponses,
+                candidateCount = numResponses, // TODO - as of 3/18/2025, there is an API error for counts >1
                 maxOutputTokens = tokens ?: DEFAULT_MAX_TOKENS,
                 temperature = variation.temperature,
                 topP = variation.topP,
@@ -180,6 +182,11 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             } else {
                 listOf(Tool(funcs))
             }
+        }
+
+        fun MResponseFormat.gemini() = when (this) {
+            MResponseFormat.TEXT -> MIME_TYPE_TEXT
+            MResponseFormat.JSON -> MIME_TYPE_JSON
         }
 
         fun MTool.gemini() = FunctionDeclaration(name, description, jsonSchema.geminiSchema())

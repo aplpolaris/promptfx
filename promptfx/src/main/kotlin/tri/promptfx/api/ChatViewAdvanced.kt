@@ -24,13 +24,8 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.core.MChatParameters
-import tri.ai.core.MChatVariation
-import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.MChatRole
+import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ifNotBlank
 
 /**
@@ -72,6 +67,18 @@ class ChatViewAdvanced : ChatView(
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
+        val toolChoice = toolCall.value.ifNotBlank {
+            when (it) {
+                "auto" -> MToolChoice.AUTO
+                "none" -> MToolChoice.NONE
+                else -> MToolChoice.function(it)
+            }
+        }
+        val tools = if (toolChoice == MToolChoice.NONE) {
+            null
+        } else {
+            toolView.tools().ifEmpty { null }
+        }
         val params = MChatParameters(
             variation = MChatVariation(
                 seed = if (seedActive.value) seed.value else null,
@@ -83,55 +90,13 @@ class ChatViewAdvanced : ChatView(
             tokens = common.maxTokens.value,
             stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
             responseFormat = responseFormat.value,
-            numResponses = common.numResponses.value
+            numResponses = common.numResponses.value,
+            tools = if (toolChoice != null && tools != null) MChatTools(toolChoice, tools) else null
         )
 
-        val toolChoice = toolCall.value.ifNotBlank {
-            when (it) {
-                "auto" -> ToolChoice.Auto
-                "none" -> ToolChoice.None
-                else -> ToolChoice.function(it)
-            }
-        }
-        val tools = if (toolChoice == ToolChoice.None) {
-            null
-        } else {
-            toolView.tools().ifEmpty { null }
-        }
-
         val m = model.value!!
-        val result = m.chat(messages, params).asPipelineResult()
-
-        val m = model.value
-        if (m is OpenAiChat) {
-            val completion = ChatCompletionRequest(
-                model = ModelId(m.modelId),
-                messages = messages,
-                temperature = common.temp.value,
-                topP = common.topP.value,
-                n = common.numResponses.value,
-                stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-                maxTokens = common.maxTokens.value,
-                presencePenalty = common.presPenalty.value,
-                frequencyPenalty = common.freqPenalty.value,
-                logitBias = null,
-                user = null,
-                functions = null,
-                functionCall = null,
-                responseFormat = responseFormat.value,
-                tools = tools,
-                toolChoice = toolChoice,
-                seed = if (seedActive.value) seed.value else null,
-                logprobs = null,
-                topLogprobs = null
-            )
-            return controller.openAiPlugin.client.chat(completion).asPipelineResult()
-        } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>(
-                m?.modelId?.let { AiModelInfo(it) },
-                "This model/plugin is not supported in the Advanced Chat API view: $m"
-            ).asPipelineResult()
-        }
+        val result = m.chat(messages, params)
+        return result.asPipelineResult()
     }
 
 }

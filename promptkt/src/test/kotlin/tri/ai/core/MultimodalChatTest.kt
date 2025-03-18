@@ -20,9 +20,7 @@
 package tri.ai.core
 
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import tri.util.BASE64_IMAGE_SAMPLE
 
 fun MultimodalChat.testChat_Simple() = runTest {
@@ -83,11 +81,12 @@ fun MultimodalChat.testChat_Tools() = runTest {
     // in the first call, the AI will provide a response indicating what tool to use
     val toolCallMessage = chat(query, params).firstValue
     assertEquals(MChatRole.Assistant, toolCallMessage.role)
-    assertEquals(emptyList<MChatMessagePart>(), toolCallMessage.content)
+    assertTrue(toolCallMessage.content.isNullOrEmpty())
+
     val calls = toolCallMessage.toolCalls!!
     assertEquals(1, calls.size)
     assertEquals("RomanNumeral", calls[0].name)
-    assertTrue("""{"input":"5"}""" == calls[0].argumentsAsJson || """{"input":"5"}""" == calls[0].argumentsAsJson)
+    assertTrue("""{"input":"5"}""" == calls[0].argumentsAsJson || """{"input":5}""" == calls[0].argumentsAsJson)
     assertEquals(null, toolCallMessage.toolCallId)
 
     // in the second call, we add the tool response to the chat

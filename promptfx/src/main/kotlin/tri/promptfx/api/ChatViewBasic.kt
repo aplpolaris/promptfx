@@ -19,22 +19,11 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.*
 import tri.ai.core.MChatParameters
+import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.MChatRole
-import tri.ai.gemini.*
-import tri.ai.gemini.Content
-import tri.ai.gemini.GeminiClient.Companion.toGeminiRole
-import tri.ai.openai.OpenAiClient.Companion.fromOpenAiMessage
-import tri.ai.openai.OpenAiClient.Companion.fromOpenAiRole
-import tri.ai.openai.OpenAiClient.Companion.toOpenAiMessage
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
 
 /**
  * Basic version of chat through API.
@@ -43,7 +32,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 class ChatViewBasic :
     ChatView("Chat", "Testing AI Assistant chat.", listOf(MChatRole.User, MChatRole.Assistant), showInput = false) {
 
-    override suspend fun processUserInput(): AiPipelineResult<ChatMessage> {
+    override suspend fun processUserInput(): AiPipelineResult<MultimodalChatMessage> {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
@@ -61,79 +50,9 @@ class ChatViewBasic :
             numResponses = common.numResponses.value
         )
 
-        val m = model.value!!
-        val result = m.chat(messages, params).asPipelineResult()
-
-        if (m is GeminiTextChat) {
-            val response = m.client.generateContent(
-                m.modelId,
-                GenerateContentRequest(
-                    messages.filter { it.role in setOf(ChatRole.User, ChatRole.Assistant) }.map { it.fromOpenAiMessageToGeminiContent() },
-                    systemInstruction = messages.firstOrNull { it.role == ChatRole.System }?.geminiSystemMessage(),
-                    generationConfig = GenerationConfig(
-                        stopSequences = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-                        responseMimeType = responseFormat.value?.let {
-                            when (it) {
-                                ChatResponseFormat.Text -> "text/plain"
-                                ChatResponseFormat.JsonObject -> "application/json"
-                                else -> throw UnsupportedOperationException("Unsupported response format: $it")
-                            }
-                        },
-                        candidateCount = null,
-                        maxOutputTokens = common.maxTokens.value,
-                        temperature = common.temp.value,
-                        topP = common.topP.value,
-                        topK = null,
-                    )
-                )
-            )
-            return if (response.promptFeedback != null)
-                AiPromptTrace.invalidRequest<ChatMessage>(m.modelId, response.promptFeedback.toString()).asPipelineResult()
-            else
-                AiPromptTrace(
-                    null,
-                    AiModelInfo(m.modelId),
-                    AiExecInfo(),
-                    AiOutputInfo.output(response.candidates!!.first().content.toChatMessage())
-                ).asPipelineResult()
-        } else if (m != null) {
-            return m.chat(
-                messages = messages.map { it.fromOpenAiMessage() },
-                tokens = common.maxTokens.value,
-                stop = if (common.stopSequences.value.isBlank()) null else listOf(common.stopSequences.value),
-                requestJson = responseFormat.value == ChatResponseFormat.JsonObject,
-                numResponses = common.numResponses.value
-            ).mapOutput {
-                it.toOpenAiMessage()
-            }.asPipelineResult()
-        } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>(null, "No model selected in the Chat API view.").asPipelineResult()
-        }
+        val result = model.value!!.chat(messages, params)
+        return result.asPipelineResult()
     }
-
-    //region API ADAPTERS AND CONVERSIONS
-
-    private fun ChatMessage.geminiSystemMessage() =
-        Content.text(content!!)
-
-
-    private fun ChatMessage.fromOpenAiMessageToGeminiContent() =
-        Content(
-            role = role.fromOpenAiRole().toGeminiRole(),
-            parts = when (val m = messageContent) {
-                is TextContent -> listOf(Part(m.content))
-                is ListContent -> m.content.map {
-                    when (it) {
-                        is TextPart -> Part(it.text)
-                        is ImagePart -> Part(null, Blob.fromDataUrl(it.imageUrl.url))
-                        else -> throw UnsupportedOperationException("Unsupported content type: $it")
-                    }
-                }
-                else -> throw UnsupportedOperationException("Unsupported content type: $m")
-            }
-        )
-
-    //endregion
 
 }
 

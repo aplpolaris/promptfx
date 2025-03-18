@@ -127,7 +127,17 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
         private fun MToolChoice.openAi() = when (this) {
             MToolChoice.AUTO -> ToolChoice.Auto
             MToolChoice.NONE -> ToolChoice.None
+            is MToolChoice.Named -> ToolChoice.Named(type.openAi(), function.openAi())
+            else -> throw IllegalStateException()
         }
+
+        private fun MToolType.openAi() = when (this) {
+            MToolType.FUNCTION -> ToolType.Function
+            else -> throw IllegalStateException()
+        }
+
+        private fun MFunctionToolChoice.openAi() =
+            FunctionToolChoice(name)
 
         private fun MTool.openAi() = Tool.function(
             name = name,

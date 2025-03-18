@@ -111,35 +111,34 @@ class GeminiAiPlugin : TextPlugin {
             )
         }
 
-    private fun findDeprecation(description: String): String? {
+    private fun findDeprecation(description: String?): String? {
         return when {
+            description == null -> null
             description.contains("will be discontinued on") ->
                 description.substringAfter("will be discontinued on")
                     .substringBefore(".").parseDate()
-
             description.contains("was deprecated on") ->
                 description.substringAfter("was deprecated on")
                     .substringBefore(".").parseDate()
-
             else -> null
         }?.toString()
     }
 
-    private fun findReleaseDate(description: String): LocalDate? {
+    private fun findReleaseDate(description: String?): LocalDate? {
         return when {
+            description == null -> null
             description.contains("released in") ->
                 description.substringAfter("released in")
                     .substringBefore(".").parseDate()
-
             description.contains("Experimental release (") ->
                 description.substringAfter("Experimental release (")
                     .substringBefore(")").parseDate()
-
             else -> null
         }
     }
 
-    private fun String.parseDate(): LocalDate? {
+    private fun String?.parseDate(): LocalDate? {
+        if (this == null) return null
         try {
             // common pattern e.g. "May of 2024"
             return LocalDate.parse(trim().replace(" of ", " 1, "), DateTimeFormatter.ofPattern("MMMM d, yyyy"))
@@ -156,9 +155,10 @@ class GeminiAiPlugin : TextPlugin {
         return null
     }
 
-    private fun findLifecycle(id: String, description: String): ModelLifecycle {
+    private fun findLifecycle(id: String, description: String?): ModelLifecycle {
         return when {
             "-exp" in id -> ModelLifecycle.EXPERIMENTAL
+            description == null -> ModelLifecycle.PRODUCTION
             "Experimental release" in description -> ModelLifecycle.EXPERIMENTAL
             "released in" in description -> ModelLifecycle.PRODUCTION
             "most recent production" in description -> ModelLifecycle.PRODUCTION_ALIAS

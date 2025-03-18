@@ -19,18 +19,13 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.FunctionTool
-import com.aallam.openai.api.chat.Tool
-import com.aallam.openai.api.chat.ToolType
-import com.aallam.openai.api.core.Parameters
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
-import kotlinx.serialization.SerializationException
 import tornadofx.*
-import tri.util.ifNotBlank
+import tri.ai.core.MTool
 
 private const val TOOL_TYPE_FUNCTION = "function"
 
@@ -103,15 +98,8 @@ class ToolListView : Fragment() {
         }
     }
 
-    fun tools() = components.mapNotNull {
-        try {
-            val params = it.parameters.ifNotBlank { Parameters.fromJsonString(it) }
-                ?: Parameters.Empty
-            Tool.function(it.name, it.description, params)
-        } catch (x: SerializationException) {
-            println(x)
-            null
-        }
+    fun tools() = components.map {
+        MTool(it.name, it.description, it.parameters)
     }
 }
 
@@ -119,11 +107,6 @@ class ToolListView : Fragment() {
 class ToolUiModel(type: String, name: String, description: String = "", params: String = "") {
     val typeProperty = SimpleStringProperty(type)
     var type: String by typeProperty
-    val toolType
-        get() = when (type) {
-            TOOL_TYPE_FUNCTION -> ToolType.Function
-            else -> throw IllegalArgumentException("Unknown tool type: $type")
-        }
 
     val nameProperty = SimpleStringProperty(name)
     var name: String by nameProperty

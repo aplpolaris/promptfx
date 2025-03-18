@@ -256,7 +256,7 @@ class ChatMessageUiModel(
             ChatMessageUiModel(
 //                name = it.name,
                 role = it.role,
-                contentText = it.content.firstOrNull()?.text ?: "",
+                contentText = it.content?.firstOrNull()?.text ?: "",
                 contentImage = it.imageUrl(),
                 _toolCalls = it.toolCalls,
 //                _toolCallId = it.toolCallId
@@ -270,6 +270,6 @@ class ChatMessageUiModel(
 
         /** Find first image content in a message, if present. */
         fun MultimodalChatMessage.imageUrl(): URL? =
-            content.firstOrNull { it.partType == MPartType.IMAGE }?.let { URL(it.inlineData) }
+            content?.firstOrNull { it.partType == MPartType.IMAGE }?.let { URL(it.inlineData) }
     }
 }

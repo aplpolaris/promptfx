@@ -138,9 +138,9 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun addChat(chat: MultimodalChatMessage) {
         chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
-        val askTools = chat.toolCalls.isNotEmpty()
+        val askTools = chat.toolCalls?.isNotEmpty() == true
         if (askTools) {
-            chat.toolCalls.forEach {
+            chat.toolCalls?.forEach {
                 // add response placeholder for each tool
                 val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id)
                 chatHistory.components.add(ChatMessageUiModel.valueOf(sampleResponse))
@@ -155,7 +155,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
     private fun addChatChoices(chat: List<MultimodalChatMessage>) {
         chatHistory.components.add(ChatMessageUiModel.valueOf(chat))
         val toolCalls = chat.first().toolCalls
-        if (toolCalls.isNotEmpty()) {
+        if (toolCalls?.isNotEmpty() == true) {
             toolCalls.forEach {
                 // add response placeholder for each tool
                 val sampleResponse = MultimodalChatMessage.tool("(replace this with tool response)", it.id)

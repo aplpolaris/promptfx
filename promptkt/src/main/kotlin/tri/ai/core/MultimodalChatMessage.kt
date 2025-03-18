@@ -19,6 +19,14 @@
  */
 package tri.ai.core
 
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonContentPolymorphicSerializer
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+
 /** Generic representation of a multimodal chat message. */
 data class MultimodalChatMessage(
     /** Role for what generated the message. */
@@ -77,9 +85,50 @@ class MChatTools(
     val tools: List<MTool>
 )
 
-enum class MToolChoice {
-    AUTO,
-    NONE
+@Serializable(with = MToolChoiceSerializer::class)
+sealed interface MToolChoice {
+    @JvmInline
+    @Serializable
+    value class Mode(val value: String) : MToolChoice
+
+    @Serializable
+    data class Named(
+        @SerialName("type") val type: MToolType,
+        @SerialName("function") val function: MFunctionToolChoice
+    ) : MToolChoice
+
+    companion object {
+        /** Represents the `auto` mode. */
+        val AUTO: MToolChoice = Mode("AUTO")
+
+        /** Represents the `none` mode. */
+        val NONE: MToolChoice = Mode("NONE")
+
+        /** Specifies a function for the model to call **/
+        fun function(name: String): MToolChoice =
+            Named(type = MToolType.FUNCTION, function = MFunctionToolChoice(name = name))
+    }
+}
+
+@JvmInline
+@Serializable
+value class MToolType(val value: String) {
+    companion object {
+        val FUNCTION = MToolType("function")
+    }
+}
+
+@Serializable
+data class MFunctionToolChoice(val name: String)
+
+internal class MToolChoiceSerializer : JsonContentPolymorphicSerializer<MToolChoice>(MToolChoice::class) {
+    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<MToolChoice> {
+        return when (element) {
+            is JsonPrimitive -> MToolChoice.Mode.serializer()
+            is JsonObject -> MToolChoice.Named.serializer()
+            else -> throw UnsupportedOperationException("Unsupported JSON element: $element")
+        }
+    }
 }
 
 class MTool(
