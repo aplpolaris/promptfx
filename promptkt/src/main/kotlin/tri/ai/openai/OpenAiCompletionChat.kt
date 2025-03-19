@@ -24,7 +24,9 @@ import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
+import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
+import tri.ai.openai.OpenAiClient.Companion.toOpenAiMessage
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.prompt.trace.AiPromptTrace
 
@@ -34,13 +36,13 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?) =
-        complete(text, tokens, temperature, stop, null, numResponses)
+    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?, history: List<TextChatMessage>) =
+        complete(text, tokens, temperature, stop, null, numResponses, history)
 
-    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?, numResponses: Int?): AiPromptTrace<String> =
+    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?, numResponses: Int?, history: List<TextChatMessage>): AiPromptTrace<String> =
         client.chatCompletion(ChatCompletionRequest(
             ModelId(modelId),
-            listOf(ChatMessage(ChatRole.User, text)),
+            listOf(ChatMessage(ChatRole.User, text)) + history.map { it.toOpenAiMessage() },
             temperature = temperature,
             maxTokens = tokens,
             stop = stop?.let { listOf(it) },

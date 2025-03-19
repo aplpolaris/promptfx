@@ -72,19 +72,31 @@ class GeminiClient : Closeable {
         }.body<BatchEmbedContentsResponse>()
     }
 
-    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null) =
-        generateContent(modelId, GenerateContentRequest(
-            content = Content.text(prompt),
+    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
+        val system = history.lastOrNull { it.role == MChatRole.System }?.content
+        val request = GenerateContentRequest(
+            contents = history.filter { it.role != MChatRole.System }.map {
+                val role = it.role.toGeminiRole()
+                Content(listOf(Part(it.content)), role)
+            } + Content.text(prompt),
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
-        ))
+        )
+        return generateContent(modelId, request)
+    }
 
-    suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null): GenerateContentResponse {
+    suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
+        val system = history.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            content = Content(listOf(
+            contents = history.filter { it.role != MChatRole.System }.map {
+                val role = it.role.toGeminiRole()
+                Content(listOf(Part(it.content)), role)
+            } + Content(listOf(
                 Part(text = prompt),
                 Part(inlineData = Blob(image, MIME_TYPE_JPEG))
             )),
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
         )

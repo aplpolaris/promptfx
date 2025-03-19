@@ -80,7 +80,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ")
+        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ", history = listOf())
             .firstValue.trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")

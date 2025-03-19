@@ -82,7 +82,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
 
     override suspend fun answerQuestion(input: String): AiPipelineResult<String> {
         val index = LocalFolderEmbeddingIndex(docsFolder, embeddingModelInst)
-        val planner = DocumentQaPlanner(index, completionModelInst).plan(
+        val planner = DocumentQaPlanner(index, completionModelInst, listOf(), 1).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,

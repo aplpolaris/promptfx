@@ -67,7 +67,8 @@ class AiPromptRunConfig(
             tokens = modelInfo.modelParams[AiModelInfo.MAX_TOKENS] as? Int,
             temperature = modelInfo.modelParams[AiModelInfo.TEMPERATURE] as? Double,
             stop = modelInfo.modelParams[AiModelInfo.STOP] as? String,
-            numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int
+            numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int,
+            history = listOf()
         )
 
 }

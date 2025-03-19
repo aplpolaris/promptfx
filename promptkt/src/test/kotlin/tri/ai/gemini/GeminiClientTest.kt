@@ -77,7 +77,7 @@ class GeminiClientTest {
     @Test
     fun testGenerateContent() {
         runBlocking {
-            val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_15_FLASH)
+            val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_15_FLASH, history = listOf())
             assertNotNull(response)
             println(response)
             with (response.candidates) {

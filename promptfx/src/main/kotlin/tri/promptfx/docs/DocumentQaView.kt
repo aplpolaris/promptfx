@@ -29,6 +29,7 @@ import javafx.beans.value.ObservableValue
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
 import tri.ai.pips.AiPipelineExecutor
@@ -52,7 +53,6 @@ import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
-import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.promptfx.ui.chunk.matchViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
@@ -87,6 +87,7 @@ class DocumentQaView: AiPlanTaskView(
     private val chunksToRetrieve = SimpleIntegerProperty(50)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
+    private val historySize = SimpleIntegerProperty(4)
 
     val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
@@ -95,6 +96,7 @@ class DocumentQaView: AiPlanTaskView(
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }
         }
+        historySize = this@DocumentQaView.historySize
     }
     val snippets
         get() = planner.snippets
@@ -151,6 +153,11 @@ class DocumentQaView: AiPlanTaskView(
                 tooltip("Number of matching snippets to send to the question answering engine")
                 slider(1..50, chunksToSendWithQuery)
                 label(chunksToSendWithQuery)
+            }
+            field("History size") {
+                tooltip("Number of previous chat messages to send to the question answering engine (including both questions and responses)")
+                slider(1..10, historySize)
+                label(historySize)
             }
         }
         addDefaultTextCompletionParameters(common)
@@ -271,6 +278,10 @@ class DocumentQaPlannerFx {
     val snippets = observableListOf<EmbeddingMatch>()
     /** The most recent result of the QA task. */
     var lastResult: QuestionAnswerResult? = null
+    /** The chat history. */
+    var chatHistory = observableListOf<TextChatMessage>()
+    /** The size of the chat history. */
+    var historySize = SimpleIntegerProperty(4)
 
     /** Reindexes all documents in the current [EmbeddingIndex] (if applicable). */
     suspend fun reindexAllDocuments() {
@@ -289,7 +300,7 @@ class DocumentQaPlannerFx {
         temp: Double?,
         numResponses: Int?
     ): AiTaskList<String> {
-        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!)
+        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!, chatHistory, historySize.value)
         return p.plan(
             question = question,
             prompt = prompt!!,

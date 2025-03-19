@@ -19,6 +19,7 @@
  */
 package tri.ai.text.docs
 
+import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.core.instructTask
 import tri.ai.embedding.*
@@ -32,7 +33,7 @@ import tri.util.ANSI_RESET
 import tri.util.info
 
 /** Runs the document QA information retrieval, query, and summarization process. */
-class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCompletion) {
+class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCompletion, val chatHistory: List<TextChatMessage>, val historySize: Int) {
 
     /**
      * Asynchronous tasks to execute for answering the given question.
@@ -72,7 +73,9 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
-        val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses)
+        val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses,
+            history = chatHistory.takeLast(historySize)
+        )
         val questionEmbedding = index.embeddingService.calculateEmbedding(question)
         val responseEmbeddings = response.values?.map {
             index.embeddingService.calculateEmbedding(it)

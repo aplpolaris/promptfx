@@ -38,7 +38,8 @@ interface TextCompletion {
         tokens: Int? = 150,
         temperature: Double? = null,
         stop: String? = null,
-        numResponses: Int? = 1
+        numResponses: Int? = 1,
+        history: List<TextChatMessage> = listOf()
     ): AiPromptTrace<String>
 
 }
@@ -46,49 +47,49 @@ interface TextCompletion {
 //region ALTERNATE EXECUTIONS
 
 /** Generate a task that adds user input to a prompt. */
-suspend fun TextCompletion.promptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null): AiPromptTrace<String> {
+suspend fun TextCompletion.promptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()): AiPromptTrace<String> {
     val promptParams = AiPrompt.inputParams(input)
     val promptInfo = AiPromptInfo(prompt.template, promptParams)
-    return promptTask(promptInfo, tokenLimit, temp, stop, numResponses)
+    return promptTask(promptInfo, tokenLimit, temp, stop, numResponses, history)
 }
 
 /** Generate a task that completes a prompt. */
-suspend fun TextCompletion.promptTask(promptText: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
-    promptTask(AiPromptInfo(promptText), tokenLimit, temp, stop, numResponses)
+suspend fun TextCompletion.promptTask(promptText: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
+    promptTask(AiPromptInfo(promptText), tokenLimit, temp, stop, numResponses, history)
 
 /** Generate a task that completes a prompt. */
-suspend fun TextCompletion.promptTask(promptInfo: AiPromptInfo, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
-    complete(promptInfo.filled(), tokenLimit, temp, stop, numResponses = numResponses).copy(
+suspend fun TextCompletion.promptTask(promptInfo: AiPromptInfo, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
+    complete(promptInfo.filled(), tokenLimit, temp, stop, numResponses, history).copy(
         promptInfo = promptInfo
     )
 
 /** Generate a task that combines a single instruction or question about contextual text. */
-suspend fun TextCompletion.instructTask(prompt: AiPrompt, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> {
+suspend fun TextCompletion.instructTask(prompt: AiPrompt, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null, history: List<TextChatMessage> = listOf()): AiPromptTrace<String> {
     val promptParams = AiPrompt.instructParams(instruct = instruct, input = userText)
-    return complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses).copy(
+    return complete(prompt.fill(promptParams), tokenLimit, temp, numResponses = numResponses, history = history).copy(
         promptInfo = AiPromptInfo(prompt.template, promptParams)
     )
 }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(prompt: AiPrompt, fields: Map<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> {
+suspend fun TextCompletion.templateTask(prompt: AiPrompt, fields: Map<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null, history: List<TextChatMessage>): AiPromptTrace<String> {
     return prompt.fill(fields).let {
         if (this is OpenAiCompletionChat)
-            complete(it, tokenLimit, temp, null, requestJson, numResponses)
+            complete(it, tokenLimit, temp, null, requestJson, numResponses, history)
         else
-            complete(it, tokenLimit, temp, null, numResponses)
+            complete(it, tokenLimit, temp, null, numResponses, history)
     }.copy(
         promptInfo = AiPromptInfo(prompt.template, fields)
     )
 }
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(prompt: AiPrompt, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null): AiPromptTrace<String> =
-    templateTask(prompt, mapOf(*fields), tokenLimit, temp, requestJson, numResponses)
+suspend fun TextCompletion.templateTask(prompt: AiPrompt, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = false, numResponses: Int? = null, history: List<TextChatMessage> = listOf()): AiPromptTrace<String> =
+    templateTask(prompt, mapOf(*fields), tokenLimit, temp, requestJson, numResponses, history)
 
 /** Generate a task that adds user input to a prompt, and attempt to convert the result to json if possible. */
-suspend inline fun <reified T> TextCompletion.jsonPromptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
-    promptTask(prompt, input, tokenLimit, temp, stop, numResponses).let {
+suspend inline fun <reified T> TextCompletion.jsonPromptTask(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
+    promptTask(prompt, input, tokenLimit, temp, stop, numResponses, history).let {
         it.mapOutput {
             try {
                 jsonMapper.readValue<T>(it.trim())
