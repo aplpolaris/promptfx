@@ -19,7 +19,14 @@
  */
 package tri.ai.gemini
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.net.URI
 
 // https://ai.google.dev/api/generate-content#method:-models.generatecontent
@@ -196,7 +203,7 @@ data class Schema(
     val items: List<Schema>? = null
 )
 
-@Serializable
+@Serializable(with = TypeSerializer::class)
 enum class Type {
     TYPE_UNSPECIFIED,
     STRING,
@@ -204,7 +211,24 @@ enum class Type {
     INTEGER,
     BOOLEAN,
     ARRAY,
-    OBJECT
+    OBJECT;
+
+    companion object {
+        fun fromString(value: String) =
+            values().find { it.name.equals(value, ignoreCase = true) }
+                ?: throw SerializationException("Unknown type: $value")
+    }
+}
+
+object TypeSerializer : KSerializer<Type> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("Type", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Type) =
+        encoder.encodeString(value.name.lowercase()) // Preserve lowercase formatting
+
+    override fun deserialize(decoder: Decoder) =
+        Type.fromString(decoder.decodeString())
 }
 
 @Serializable
@@ -281,7 +305,7 @@ enum class HarmBlockThreshold {
     OFF
 }
 
-private val ALLOWED_MIMES = setOf(null, MIME_TYPE_TEXT, MIME_TYPE_JPEG)
+private val ALLOWED_MIMES = setOf(null, MIME_TYPE_TEXT, MIME_TYPE_JPEG, MIME_TYPE_JSON)
 
 @Serializable
 data class GenerationConfig(

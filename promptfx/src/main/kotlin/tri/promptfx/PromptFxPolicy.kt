@@ -38,6 +38,9 @@ abstract class PromptFxPolicy {
     abstract fun chatModels(): List<TextChat>
     open fun chatModelDefault() = chatModels().firstOrNull()
 
+    abstract fun multimodalModels(): List<MultimodalChat>
+    open fun multimodalModelDefault() = multimodalModels().firstOrNull()
+
     abstract fun visionLanguageModels(): List<VisionLanguageChat>
     open fun visionLanguageModelDefault() = visionLanguageModels().first()
 
@@ -71,6 +74,7 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     override fun embeddingModels() = plugin.embeddingModels()
     override fun textCompletionModels() = plugin.textCompletionModels()
     override fun chatModels() = plugin.chatModels()
+    override fun multimodalModels() = plugin.multimodalModels()
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
 }
@@ -93,6 +97,7 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun embeddingModels() = TextPlugin.embeddingModels()
     override fun textCompletionModels() = TextPlugin.textCompletionModels()
     override fun chatModels() = TextPlugin.chatModels()
+    override fun multimodalModels() = TextPlugin.multimodalModels()
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
     override val bar = PromptFxPolicyBar("Unrestricted", Color.GRAY, Color.WHITE)

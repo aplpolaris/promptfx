@@ -33,6 +33,10 @@ interface DocumentQaDriver {
     var completionModel: String
     /** The text embedding model (by id). */
     var embeddingModel: String
+    /** Temperature. */
+    var temp: Double
+    /** Maximum tokens. */
+    var maxTokens: Int
 
     /** Initialize the driver. */
     fun initialize()

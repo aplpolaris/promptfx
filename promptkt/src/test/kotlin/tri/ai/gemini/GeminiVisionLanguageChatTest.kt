@@ -24,7 +24,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.util.BASE64_IMAGE_SAMPLE
@@ -52,7 +52,7 @@ class GeminiVisionLanguageChatTest {
     @Tag("gemini")
     fun testChat() = runTest {
         val message = VisionLanguageChatMessage(
-            TextChatRole.User,
+            MChatRole.User,
             "Describe this image in 6 words.",
             URI.create(BASE64_IMAGE_SAMPLE)
         )

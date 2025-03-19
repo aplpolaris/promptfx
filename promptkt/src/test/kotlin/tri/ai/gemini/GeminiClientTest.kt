@@ -23,10 +23,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.gemini.GeminiModelIndex.EMBED1
 import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
-import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO
 import tri.util.BASE64_AUDIO_SAMPLE
 
 @Tag("gemini")
@@ -78,7 +77,7 @@ class GeminiClientTest {
     @Test
     fun testGenerateContent() {
         runBlocking {
-            val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_PRO)
+            val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_15_FLASH, history = listOf())
             assertNotNull(response)
             println(response)
             with (response.candidates) {
@@ -90,14 +89,13 @@ class GeminiClientTest {
                     assert(content.parts.size == 1)
                     assert(content.parts[0].text != null)
                     assert(finishReason == FinishReason.STOP)
-                    assert(safetyRatings!!.size == 4)
-                    assert(safetyRatings!!.all { it.probability == HarmProbability.NEGLIGIBLE })
+                    assert(safetyRatings == null)
                 }
             }
             assert(response.promptFeedback == null)
             with (response.usageMetadata) {
                 assert(this != null)
-                assert(this!!.promptTokenCount == 11)
+                assertEquals(10, this!!.promptTokenCount)
                 assert(candidatesTokenCount > 10)
                 assert(totalTokenCount > 20)
             }
@@ -109,8 +107,8 @@ class GeminiClientTest {
     fun testGenerateContentWithChat() {
         runBlocking {
             val response = client.generateContent(listOf(
-                TextChatMessage(TextChatRole.System, "You are a wizard that always responds as if you are casting a spell."),
-                TextChatMessage(TextChatRole.User, "What should I have for dinner?")
+                TextChatMessage(MChatRole.System, "You are a wizard that always responds as if you are casting a spell."),
+                TextChatMessage(MChatRole.User, "What should I have for dinner?")
             ), GEMINI_15_FLASH)
             assertNotNull(response)
             assert(response.promptFeedback?.blockReason == null)

@@ -1,5 +1,12 @@
 # Sample runtime prompt file that overrides the default prompt file.
 ---
+# basic prompt for extracting dates
+date-extraction: |
+  Extract a list of dates from the following text, and format as {{DATE_FORMAT}}.
+  '''
+  {{{input}}}
+  '''
+
 # using the same name as predefined prompt will override the default
 question-answer: |
   Answer the following question about the text below. If you do not know the answer, say you don't know.
@@ -101,3 +108,13 @@ image-describe-ips:
   template-name: Get IPs from image
   template-prompt: |
     Extract a list of IPs found in the image, as a JSON list. If there are none, return an empty list.
+
+# convert input into a Bluey episode
+document-reduce-bluey-episode:
+  template-name: Bluey Episode
+  template-prompt: |
+    Combine the following summaries into an outline of a script for a Bluey episode.
+    Provide three main scenes, and for each scene include a brief description of the setting and the main events.
+    ```
+    {{{input}}}
+    ```

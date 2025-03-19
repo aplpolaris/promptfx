@@ -6,11 +6,26 @@ chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4 ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]
 moderation: [ text-moderation-latest, text-moderation-stable ]
+multimodal: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4, gpt-4o-mini, gpt-4o, gpt-4.5-preview, o3-mini ]
 tts: [ tts-1, tts-1-hd ]
 image_generator: [ dall-e-2, dall-e-3 ]
-vision_language: [ gpt-4o-mini, gpt-4o ]
+vision_language: [ gpt-4o-mini, gpt-4o, gpt-4.5-preview, o3-mini ]
 
 models:
+
+  GPT-45:
+
+    - id: gpt-4.5-preview
+      name: GPT-4.5 Preview
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        This is a research preview of GPT-4.5, our largest and most capable GPT model yet. Its deep world knowledge and better understanding of user intent makes it good at creative tasks and agentic planning. GPT-4.5 excels at tasks that benefit from creative, open-ended thinking and conversation, such as writing, learning, or exploring new ideas.
+      lifecycle: EXPERIMENTAL
+      totalTokenLimit: 128000
+      outputTokenLimit: 16384
 
   GPT-4:
 
@@ -84,6 +99,18 @@ models:
       snapshots: [ '0613', '1106-preview' ]
 
   GPT-4 Reasoning:
+
+    - id: o3-mini
+      name: GPT o3-mini Reasoning
+      type: TEXT_CHAT
+      inputs: [ text ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
 
     - id: o1
       name: GPT o1 Reasoning

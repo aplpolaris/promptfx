@@ -79,7 +79,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                 action {
                     if (currentWindow != workspace.currentWindow)
                         close()
-                    (workspace as PromptFxWorkspace).launchTemplateView(trace.value!!)
+                    find<PromptFxWorkspace>().launchTemplateView(trace.value!!)
                 }
             }
             // add button to close dialog and open trace in template view
@@ -90,7 +90,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                 action {
                     if (currentWindow != workspace.currentWindow)
                         close()
-                    (workspace as PromptFxWorkspace).launchHistoryView(trace.value!!)
+                    find<PromptFxWorkspace>().launchHistoryView(trace.value!!)
                 }
             }
         }

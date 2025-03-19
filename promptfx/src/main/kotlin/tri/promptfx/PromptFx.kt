@@ -22,6 +22,7 @@ package tri.promptfx
 import javafx.scene.Cursor
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
+import javafx.stage.Stage
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.impl.Jdk14Logger
 import org.apache.pdfbox.pdmodel.font.PDSimpleFont
@@ -31,14 +32,19 @@ import java.util.logging.Level
 import kotlin.system.exitProcess
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
-    val promptFxConfig : PromptFxConfig by inject()
+    val promptFxConfig: PromptFxConfig by inject()
 
     override fun init() {
         promptFxConfig.isStarshipEnabled = parameters.raw.contains("starship")
     }
-    override fun onBeforeShow(view: UIComponent) {
-        workspace.dock<DocumentQaView>()
+
+    override fun start(stage: Stage) {
+        super.start(stage)
+        // as of 0.10.0, workspace doesn't seem to be initialized properly unless this is set here. not sure what changed
+        // (moved "onBeforeShow" with default view to the workspace code, since it didn't seem to be docking properly)
+        scope.workspace(find<PromptFxWorkspace>())
     }
+
     override fun stop() {
         workspace.find<PromptFxController>().close()
         promptFxConfig.save()

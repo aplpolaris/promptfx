@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
-import tri.ai.tool.JsonFunctionExecutorTest.Companion.SAMPLE_TOOLS
+import tri.ai.tool.JsonToolTest.Companion.SAMPLE_TOOLS
 
 @Tag("openai")
 class JsonToolExecutorTest {

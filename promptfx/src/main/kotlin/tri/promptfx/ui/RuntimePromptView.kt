@@ -17,15 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx
+package tri.promptfx.ui
 
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.combobox
-import tornadofx.field
+import tornadofx.*
 import tri.ai.pips.templatePlan
 import tri.ai.prompt.AiPrompt
-import tri.promptfx.ui.PromptSelectionModel
-import tri.promptfx.ui.promptfield
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.RuntimePromptViewConfigs
 
 /**
  * A view with a single input and a single output that can be fully configured at runtime.
@@ -42,7 +41,10 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
         parameters("Prompt") {
             modeConfigs.forEach {
                 field(it.label) {
-                    combobox(it.mode, it.options) { isEditable = true }
+                    combobox(it.mode, it.options) {
+                        maxWidth = 200.0
+                        isEditable = true
+                    }
                 }
             }
             if (promptConfig.isVisible) {
@@ -61,37 +63,23 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
 
     override fun plan() = completionEngine.templatePlan(
         prompt = promptModel.prompt.value,
-        fields = modeConfigs.associate { it.idInTemplate to RuntimePromptViewConfigs.modeTemplateValue(it.id, it.mode.get()) }
-                + mapOf(AiPrompt.INPUT to input.get()),
+        fields = modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) } +
+                mapOf(AiPrompt.INPUT to input.get()),
         tokenLimit = common.maxTokens.value,
         temp = common.temp.value,
         numResponses = common.numResponses.value
     )
 
+    private fun modeTemplateValue(id: String?, valueOrValueId: String) =
+        if (id == null) valueOrValueId else RuntimePromptViewConfigs.modeTemplateValue(id, valueOrValueId)
+
     /** Mode config with property indicating current selection. */
     inner class ModeViewConfig(config: ModeConfig) {
         val id = config.id
-        val idInTemplate = config.templateId
+        val templateId = config.templateId
         val label = config.label
-        val options: List<String> = RuntimePromptViewConfigs.modeOptionList(id)
+        val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
         val mode = SimpleStringProperty(options[0])
     }
 
 }
-
-/** Configuration for a [RuntimePromptView]. */
-class RuntimePromptViewConfig(
-    val category: String,
-    val title: String,
-    val description: String,
-    val modeOptions: List<ModeConfig>,
-    val promptConfig: PromptConfig,
-    val isShowModelParameters: Boolean,
-    val isShowMultipleResponseOption: Boolean = false
-)
-
-/** Reference mode [id] in configuration file, associated [templateId] for use in prompt, [label] for UI. */
-class ModeConfig(val id: String, val templateId: String, val label: String)
-
-/** Prompt config for view. */
-class PromptConfig(val id: String, val isVisible: Boolean = true)

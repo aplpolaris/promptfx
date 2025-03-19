@@ -19,32 +19,29 @@
  */
 package tri.ai.pips
 
-import tri.ai.core.TextCompletion
-import tri.ai.core.instructTask
-import tri.ai.core.promptTask
-import tri.ai.core.templateTask
+import tri.ai.core.*
 import tri.ai.prompt.AiPrompt
 
 /** Planner that generates a plan for a single completion prompt. */
-fun TextCompletion.promptPlan(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null) =
+fun TextCompletion.promptPlan(prompt: AiPrompt, input: String, tokenLimit: Int, temp: Double?, stop: String? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
     aitask(prompt.templateName) {
-        promptTask(prompt, input, tokenLimit, temp, stop, numResponses)
+        promptTask(prompt, input, tokenLimit, temp, stop, numResponses, history)
     }.planner
 
 /** Planner that generates a plan for a single instruction or question about user's text. */
-fun TextCompletion.instructTextPlan(prompt: AiPrompt, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null) =
+fun TextCompletion.instructTextPlan(prompt: AiPrompt, instruct: String, userText: String, tokenLimit: Int, temp: Double?, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
     aitask(prompt.template) {
-        instructTask(prompt, instruct, userText, tokenLimit, temp, numResponses)
+        instructTask(prompt, instruct, userText, tokenLimit, temp, numResponses, history)
     }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(prompt: AiPrompt, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) =
+fun TextCompletion.templatePlan(prompt: AiPrompt, vararg fields: Pair<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
     aitask(prompt.templateName) {
-        templateTask(prompt, fields.toMap(), tokenLimit, temp, requestJson, numResponses)
+        templateTask(prompt, fields.toMap(), tokenLimit, temp, requestJson, numResponses, history)
     }.planner
 
 /** Planner that generates a plan to fill inputs into a prompt. */
-fun TextCompletion.templatePlan(prompt: AiPrompt, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null) =
+fun TextCompletion.templatePlan(prompt: AiPrompt, fields: Map<String, String>, tokenLimit: Int, temp: Double?, requestJson: Boolean? = null, numResponses: Int? = null, history: List<TextChatMessage> = listOf()) =
     aitask(prompt.templateName) {
-        templateTask(prompt, fields, tokenLimit, temp, requestJson, numResponses)
+        templateTask(prompt, fields, tokenLimit, temp, requestJson, numResponses, history)
     }.planner

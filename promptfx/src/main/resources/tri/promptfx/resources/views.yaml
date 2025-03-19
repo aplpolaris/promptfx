@@ -4,6 +4,8 @@ entity-extraction:
   category: Text
   title: Entity Extraction
   description: Extract entities from text.
+  promptConfig:
+    id: entity-extraction
   modeOptions:
     - id: entities
       templateId: mode
@@ -11,26 +13,26 @@ entity-extraction:
     - id: structured-format
       templateId: format
       label: Format as
-  promptConfig:
-    id: entity-extraction
   isShowModelParameters: true
 
 sentiment-analysis:
   category: Text
   title: Sentiment Analysis
   description: Enter text to estimate sentiment.
+  promptConfig:
+    id: sentiment-classify
   modeOptions:
     - id: sentiment
       templateId: instruct
       label: Sentiment
-  promptConfig:
-    id: sentiment-classify
   isShowModelParameters: true
 
 summarization:
   category: Text
-  title: Summarize
+  title: Summarization
   description: Summarize text.
+  promptConfig:
+    id: summarization
   modeOptions:
     - id: summarization-audience
       templateId: audience
@@ -41,28 +43,24 @@ summarization:
     - id: summarization-format
       templateId: format
       label: Shown as
-  promptConfig:
-    id: summarization
   isShowModelParameters: true
 
 translation:
   category: Text
   title: Translation
   description: Translate text from one language to another.
+  promptConfig:
+    id: translate-text
   modeOptions:
     - id: translation
       templateId: instruct
       label: Language
-  promptConfig:
-    id: translate-text
   isShowModelParameters: true
 
 emoji:
   category: Fun
   title: Text-to-Emoji
   description: Enter text to get an emoji.
-  modeOptions: []
   promptConfig:
     id: example-emoji
-  isShowModelParameters: false
   isShowMultipleResponseOption: true

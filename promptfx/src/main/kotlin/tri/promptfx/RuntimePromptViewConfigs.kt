@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.promptfx.ui.RuntimePromptViewConfig
 import tri.util.ui.MAPPER
 import java.io.File
 
@@ -54,13 +55,17 @@ object RuntimePromptViewConfigs {
                 }
         } ?: mapOf()
 
+    /** Get a list of categories. */
+    fun categories() = (index.values + runtimeIndex.values).map { it.category }.distinct()
+    /** Get a list of configs by category. */
+    fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.category == category }
     /** Get a config by id. */
     fun config(id: String) = runtimeIndex[id] ?: index[id]!!
 
     /**
      * Get value of a mode id for use in prompts.
-     * If [valueId] is not present for given mode, returns [valueId].
      * If [modeId] is not present in index, throws an error.
+     * If [valueId] is not present for given mode, returns [valueId].
      */
     fun modeTemplateValue(modeId: String, valueId: String) =
         (runtimeModes[modeId] ?: modes[modeId])?.getOrDefault(valueId, valueId) ?: error("Mode $modeId not found in index.")

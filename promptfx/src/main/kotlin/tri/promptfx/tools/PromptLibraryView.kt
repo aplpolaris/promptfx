@@ -119,12 +119,12 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     }
 
     private fun sendToTemplateView() {
-        (workspace as PromptFxWorkspace).launchTemplateView(promptSelection.value!!.value.template)
+        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.value.template)
     }
 
     private fun refilter() {
         filteredPromptEntries.setAll(promptEntries.filter { promptFilter(it.key) })
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiPipelineResult.todo<String>()
 }

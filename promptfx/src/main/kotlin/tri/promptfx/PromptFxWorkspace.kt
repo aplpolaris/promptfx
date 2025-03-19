@@ -30,10 +30,12 @@ import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
+import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.PromptTemplateView
 import tri.promptfx.library.TextManagerView
 import tri.promptfx.tools.PromptTraceHistoryView
+import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -123,47 +125,26 @@ class PromptFxWorkspace : Workspace() {
                 separator { }
                 browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
             }
-            group("Tools", FontAwesomeIcon.WRENCH.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
+            (RuntimePromptViewConfigs.categories() - setOf("API", "Tools", "Documents", "Text", "Fun", "Audio", "Vision", "Integrations", "Documentation")).forEach {
+                group(it, FontAwesomeIcon.COG.graphic.forestGreen) { }
             }
-            group("Documents", FontAwesomeIcon.FILE.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
-            }
-            group("Text", FontAwesomeIcon.FONT.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
-            }
-            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
-            }
-            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
+            // views below are configured via [NavigableWorkspaceView] plugins
+            group("Tools", FontAwesomeIcon.WRENCH.graphic.forestGreen)
+            group("Documents", FontAwesomeIcon.FILE.graphic.forestGreen)
+            group("Text", FontAwesomeIcon.FONT.graphic.forestGreen)
+            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.forestGreen)
+            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.forestGreen)
+            group("Vision", FontAwesomeIcon.IMAGE.graphic.forestGreen)
+            group("Integrations", FontAwesomeIcon.PLUG.graphic.forestGreen)
 
-                // IDEAS for additional audio apps
-                // - speech recognition
-                // - speech translation
-                // - speech synthesis
-            }
-            group("Vision", FontAwesomeIcon.IMAGE.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
-
-                // IDEAS for additional image apps
-                // - automatic image captioning
-                // - visual question answering
-                // - style/pose/depth transfer, inpainting, outpainting, etc.
-                // - optical character recognition
-                // - image classification, object detection, facial recognition, etc.
-                // - image segmentation, depth, pose estimation, gaze estimation, etc.
-                // - image enhancement, super-resolution, denoising, inpainting, deblurring, etc.
-            }
-            group("Integrations", FontAwesomeIcon.PLUG.graphic.forestGreen) {
-                // configured via [NavigableWorkspaceView] plugins
-            }
             group("Documentation", FontAwesomeIcon.BOOK.graphic.forestGreen) {
                 // nothing here, but testing to see this doesn't show up in view
-
-                // configured via [NavigableWorkspaceView] plugins
             }
         }
+    }
+
+    override fun onBeforeShow() {
+        dock<DocumentQaView>()
     }
 
     //region HOOKS FOR SPECIFIC VIEWS
@@ -171,7 +152,7 @@ class PromptFxWorkspace : Workspace() {
     /** Looks up a view by name. */
     fun findTaskView(name: String): AiTaskView? {
         return views.values.map { it.entries }.flatten()
-            .find { it.key == name }?.let { find(it.value.view) } as? AiTaskView
+            .find { it.key == name }?.let { it.value.viewComponent ?: find(it.value.view!!) } as? AiTaskView
     }
 
     /** Launches the template view with the given prompt trace. */
@@ -251,11 +232,18 @@ class PromptFxWorkspace : Workspace() {
 
     //region LAYOUT
 
-    private fun Drawer.group(title: String, icon: Node? = null, op: EventTarget.() -> Unit) {
-        item(title, icon, expanded = false) {
+    private fun Drawer.group(category: String, icon: Node? = null, op: EventTarget.() -> Unit = { }) {
+        item(category, icon, expanded = false) {
             op()
-            NavigableWorkspaceView.viewPlugins.filter { it.category == title }.forEach {
-                hyperlinkview(title, it)
+            val viewsById = NavigableWorkspaceView.viewPlugins.filter { it.category == category }
+                .associateBy { it.name }
+                .toSortedMap()
+            val viewsDefinedAtRuntime = RuntimePromptViewConfigs.configs(category)
+                .filter { it.title !in viewsById }
+                .associate { it.title to NavigableWorkspaceViewRuntime(it) }
+            viewsById.putAll(viewsDefinedAtRuntime)
+            viewsById.values.forEach {
+                hyperlinkview(category, it)
             }
         }.apply {
             if (children.isEmpty()) {
@@ -278,11 +266,32 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
+//    private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
+//        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
+//            if (view is NavigableWorkspaceViewImpl<*>) {
+//                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
+//                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
+//                }
+//            }
+//            hyperlink(view.name) {
+//                action {
+//                    isVisited = false
+//                    view.dock(this@PromptFxWorkspace)
+//                }
+//            }
+//        }
+//    }
+
     private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
-        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
+        val viewSimpleName = (view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: view.name
+        if (PromptFxModels.policy.supportsView(viewSimpleName)) {
             if (view is NavigableWorkspaceViewImpl<*>) {
                 views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
-                    PromptFxViewInfo(viewGroup, view.name, view.type.java, view.affordances)
+                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
+                }
+            } else if (view is NavigableWorkspaceViewRuntime) {
+                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
+                    PromptFxViewInfo(viewGroup, view.name, viewComponent = view.view, affordances = view.affordances)
                 }
             }
             hyperlink(view.name) {

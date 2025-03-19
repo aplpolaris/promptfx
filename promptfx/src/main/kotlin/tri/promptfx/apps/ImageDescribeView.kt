@@ -22,7 +22,7 @@ package tri.promptfx.apps
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import tornadofx.*
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.pips.task
 import tri.ai.prompt.AiPromptLibrary
@@ -79,7 +79,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     private suspend fun describeImage(prompt: String): String? {
         val res = model.value.chat(
             listOf(
-                VisionLanguageChatMessage(TextChatRole.User, prompt, URI.create(image.value.imageUri()))
+                VisionLanguageChatMessage(MChatRole.User, prompt, URI.create(image.value.imageUri()))
             ),
             common.temp.value,
             common.maxTokens.value,

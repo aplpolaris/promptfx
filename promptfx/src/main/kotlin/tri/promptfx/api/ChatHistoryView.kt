@@ -19,28 +19,32 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.*
-import com.aallam.openai.api.core.Role
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.*
 import tri.promptfx.hasImageFile
 import tri.util.ui.graphic
 import tri.util.ui.imageUri
+import java.io.FileInputStream
+import java.net.URI
+import java.net.URL
 
 /** Fragment showing a history of chat messages. */
-class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : Fragment() {
+class ChatHistoryView(roles: List<MChatRole> = listOf(MChatRole.Assistant, MChatRole.User)) : Fragment() {
 
     val components = observableListOf<ChatMessageUiModel>().apply {
-        add(ChatMessageUiModel(ChatRole.User, ""))
+        add(ChatMessageUiModel(MChatRole.User, ""))
     }
 
     override val root = vbox {
@@ -66,29 +70,27 @@ class ChatHistoryView(roles: List<Role> = listOf(Role.Assistant, Role.User)) : F
     }
 
     fun chatMessages() = components.map {
-        chatMessage {
-            role = it.role
-            name = it.name?.ifBlank { null }
-            content {
-                if (it.content.isNotBlank())
-                    text(it.content)
-                if (it.contentImage != null)
-                    image(it.contentImage!!.url, it.detailImageProperty.value.let { if (it == "auto") null else it })
-            }
-            toolCalls = it.toolCalls
-            toolCallId = it.toolCallId
+        chatMessage(it.role) {
+//            name = it.name?.ifBlank { null }
+            if (it.contentText.isNotBlank())
+                text(it.contentText)
+            if (it.contentImage != null)
+                image(it.contentImage.toString())
+                // TODO - add detailImageProperty to API (used in OpenAI)
+                // it.detailImageProperty.value.let { if (it == "auto") null else it })
+            toolCalls(it.toolCalls ?: listOf())
+            toolCallId(it.toolCallId)
         }
     }
 }
 
 /** UI for a single chat message. */
-class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: () -> Unit) : Fragment() {
+class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remove: () -> Unit) : Fragment() {
     override val root = vbox(10.0) {
         hbox(5.0) {
             // only allow user or assistant per intended API use
-            combobox(chat.roleProperty, roles) {
-                cellFormat { text = it.role }
-            }
+            combobox(chat.roleProperty, roles)
+//                cellFormat { text = it.toString() }
             hbox(5.0, Pos.CENTER_LEFT) {
                 managedWhen(chat.contentImageProperty.isNotNull)
                 visibleWhen(chat.contentImageProperty.isNotNull)
@@ -110,9 +112,9 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
                 }
             }
             hbox(5.0, Pos.CENTER_LEFT) {
-                managedWhen(chat.roleProperty.isEqualTo(Role.Tool))
-                visibleWhen(chat.roleProperty.isEqualTo(Role.Tool))
-                text("id:")
+                managedWhen(chat.roleProperty.isEqualTo(MChatRole.Tool))
+                visibleWhen(chat.roleProperty.isEqualTo(MChatRole.Tool))
+                text("id/name:")
                 textfield(chat.toolCallIdProperty) {
                     isEditable = false
                 }
@@ -139,8 +141,8 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
         hbox {
             alignment = Pos.CENTER
             spacing = 10.0
-            managedWhen(chat.toolCallsNameProperty.isNotBlank())
-            visibleWhen(chat.toolCallsNameProperty.isNotBlank())
+            managedWhen(chat.toolCallsNameProperty.isNotBlank().and(chat.roleProperty.isEqualTo(MChatRole.Assistant)))
+            visibleWhen(chat.toolCallsNameProperty.isNotBlank().and(chat.roleProperty.isEqualTo(MChatRole.Assistant)))
             text("tool:")
             textfield(chat.toolCallsNameProperty) {
                 isEditable = false
@@ -156,9 +158,9 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
             }
         }
         hbox(5.0) {
-            textarea(chat.contentProperty) {
-                managedWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
-                visibleWhen(chat.roleProperty.isEqualTo(ChatRole.User).or(chat.contentProperty.isNotBlank()))
+            textarea(chat.contentTextProperty) {
+                managedWhen(chat.roleProperty.isEqualTo(MChatRole.User).or(chat.contentTextProperty.isNotBlank()))
+                visibleWhen(chat.roleProperty.isEqualTo(MChatRole.User).or(chat.contentTextProperty.isNotBlank()))
                 hgrow = Priority.ALWAYS
                 prefRowCount = 3
                 isWrapText = true
@@ -172,9 +174,9 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
             }
             setOnDragDropped { it
                 if (it.dragboard.hasImage()) {
-                    chat.contentImageProperty.set(ImagePart.ImageURL(it.dragboard.image.imageUri()))
+                    chat.contentImageProperty.set(URI.create(it.dragboard.image.imageUri()))
                 } else if (it.dragboard.hasImageFile()) {
-                    chat.contentImageProperty.set(ImagePart.ImageURL(Image(it.dragboard.files.first().toURI().toString()).imageUri()))
+                    chat.contentImageProperty.set(URI.create(Image(FileInputStream(it.dragboard.files.first())).imageUri()))
                 }
                 it.isDropCompleted = true
                 it.consume()
@@ -194,11 +196,11 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<Role>, remove: (
 }
 
 /** Adds an image thumbnail of given size, with optional ability to edit. */
-fun EventTarget.imagethumbnail(image: SimpleObjectProperty<ImagePart.ImageURL>, size: Int = 128) {
+fun EventTarget.imagethumbnail(image: ObservableValue<URI>, size: Int = 128) {
     imageview {
-        managedWhen(image.isNotNull)
-        visibleWhen(image.isNotNull)
-        imageProperty().bind(image.objectBinding { it?.let { Image(it.url) } })
+        managedWhen(BooleanBinding.booleanExpression(image.map { it != null }))
+        visibleWhen(BooleanBinding.booleanExpression(image.map { it != null }))
+        imageProperty().bind(image.objectBinding { it?.let { Image(it.toString()) } })
         fitWidth = size.toDouble()
         fitHeight = size.toDouble()
         isPreserveRatio = true
@@ -208,33 +210,33 @@ fun EventTarget.imagethumbnail(image: SimpleObjectProperty<ImagePart.ImageURL>, 
 
 /** UI model for a chat message. */
 class ChatMessageUiModel(
-    role: ChatRole = ChatRole.User,
-    content: String = "",
-    contentImage: ImagePart.ImageURL? = null,
+    role: MChatRole = MChatRole.User,
+    contentText: String = "",
+    contentImage: URI? = null,
     name: String? = null,
-    _toolCalls: List<ToolCall.Function>? = null,
-    _toolCallId: ToolId? = null
+    _toolCalls: List<MToolCall>? = null,
+    _toolCallId: String? = null
 ) : ViewModel() {
     val roleProperty = SimpleObjectProperty(role)
-    val role: ChatRole by roleProperty
+    val role: MChatRole by roleProperty
 
-    val contentProperty = SimpleStringProperty(content)
-    val content: String by contentProperty
+    val contentTextProperty = SimpleStringProperty(contentText)
+    val contentText: String by this.contentTextProperty
 
-    val contentImageProperty = SimpleObjectProperty<ImagePart.ImageURL>(contentImage)
-    var contentImage: ImagePart.ImageURL? by contentImageProperty
+    val contentImageProperty = SimpleObjectProperty<URI>(contentImage)
+    var contentImage: URI? by contentImageProperty
     val detailImageProperty = SimpleStringProperty("auto")
 
     val nameProperty = SimpleStringProperty(name)
     var name: String? by nameProperty
 
-    val toolCalls: List<ToolCall.Function>? = _toolCalls
-    val toolCallId: ToolId? = _toolCallId
+    val toolCalls: List<MToolCall>? = _toolCalls
+    val toolCallId: String? = _toolCallId
 
-    val toolCallsNameProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.function.name })
-    val toolCallsArgsProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.function.arguments })
-    val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id.id })
-    val toolCallIdProperty = SimpleStringProperty(_toolCallId?.id)
+    val toolCallsNameProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.name })
+    val toolCallsArgsProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.argumentsAsJson })
+    val toolCallsIdProperty = SimpleStringProperty(_toolCalls?.joinToString(" -- ") { it.id })
+    val toolCallIdProperty = SimpleStringProperty(_toolCallId)
 
     var messageList = observableListOf<ChatMessageUiModel>()
     val messageListEmpty = messageList.sizeProperty.isEqualTo(0)
@@ -243,7 +245,7 @@ class ChatMessageUiModel(
     /** Copy parameters from second model. */
     fun copyFrom(other: ChatMessageUiModel) {
         roleProperty.set(other.role)
-        contentProperty.set(other.content)
+        contentTextProperty.set(other.contentText)
         contentImageProperty.set(other.contentImage)
         nameProperty.set(other.name)
         toolCallsNameProperty.set(other.toolCallsNameProperty.value)
@@ -254,24 +256,24 @@ class ChatMessageUiModel(
 
     companion object {
         /** Create UI model from chat message. */
-        fun valueOf(it: ChatMessage) =
+        fun valueOf(it: MultimodalChatMessage) =
             ChatMessageUiModel(
+                name = it.toolCallId,
                 role = it.role,
-                content = it.content ?: "",
-                contentImage = it.imageContent(),
-                name = it.name,
-                _toolCalls = it.toolCalls?.filterIsInstance<ToolCall.Function>(),
+                contentText = it.content?.firstOrNull()?.text ?: "",
+                contentImage = it.imageUri(),
+                _toolCalls = it.toolCalls,
                 _toolCallId = it.toolCallId
             )
 
         /** Create UI model with multiple chat message options. */
-        fun valueOf(chats: List<ChatMessage>) = valueOf(chats.first()).apply {
+        fun valueOf(chats: List<MultimodalChatMessage>) = valueOf(chats.first()).apply {
             messageList.setAll(chats.map { valueOf(it) })
             messageListIndex.set(0)
         }
 
         /** Find first image content in a message, if present. */
-        fun ChatMessage.imageContent() =
-            ((messageContent as? ListContent)?.content?.firstOrNull { it is ImagePart } as? ImagePart)?.imageUrl
+        fun MultimodalChatMessage.imageUri(): URI? =
+            content?.firstOrNull { it.partType == MPartType.IMAGE }?.let { URI.create(it.inlineData) }
     }
 }

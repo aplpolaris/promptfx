@@ -201,16 +201,16 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
         item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
             enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
             action {
-                (component.workspace as PromptFxWorkspace).launchTemplateView(trace.value)
+                find<PromptFxWorkspace>().launchTemplateView(trace.value)
             }
         }
         item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
             enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
             action {
-                (component.workspace as PromptFxWorkspace).launchHistoryView(trace.value)
+                find<PromptFxWorkspace>().launchHistoryView(trace.value)
             }
         }
-        buildsendresultmenu(trace, component.workspace as PromptFxWorkspace)
+        buildsendresultmenu(trace, find<PromptFxWorkspace>())
         separator()
         op()
     }

@@ -29,12 +29,11 @@ import javafx.beans.value.ObservableValue
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.MChatRole
+import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.*
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiTaskList
-import tri.ai.pips.IgnoreMonitor
+import tri.ai.pips.*
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
@@ -52,9 +51,10 @@ import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
-import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.promptfx.ui.chunk.matchViewModel
 import tri.promptfx.ui.promptfield
+import tri.util.ANSI_GRAY
+import tri.util.ANSI_RESET
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -87,6 +87,7 @@ class DocumentQaView: AiPlanTaskView(
     private val chunksToRetrieve = SimpleIntegerProperty(50)
     private val minChunkSizeForRelevancy = SimpleIntegerProperty(50)
     private val chunksToSendWithQuery = SimpleIntegerProperty(5)
+    private val historySize = SimpleIntegerProperty(0)
 
     val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
@@ -95,6 +96,7 @@ class DocumentQaView: AiPlanTaskView(
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }
         }
+        historySize = this@DocumentQaView.historySize
     }
     val snippets
         get() = planner.snippets
@@ -151,6 +153,11 @@ class DocumentQaView: AiPlanTaskView(
                 tooltip("Number of matching snippets to send to the question answering engine")
                 slider(1..50, chunksToSendWithQuery)
                 label(chunksToSendWithQuery)
+            }
+            field("History size") {
+                tooltip("Number of previous chat messages to send to the question answering engine (including both questions and responses)")
+                slider(0..10, historySize)
+                label(historySize)
             }
         }
         addDefaultTextCompletionParameters(common)
@@ -271,6 +278,10 @@ class DocumentQaPlannerFx {
     val snippets = observableListOf<EmbeddingMatch>()
     /** The most recent result of the QA task. */
     var lastResult: QuestionAnswerResult? = null
+    /** The chat history. */
+    var chatHistory = observableListOf<TextChatMessage>()
+    /** The size of the chat history. */
+    var historySize = SimpleIntegerProperty(4)
 
     /** Reindexes all documents in the current [EmbeddingIndex] (if applicable). */
     suspend fun reindexAllDocuments() {
@@ -289,8 +300,7 @@ class DocumentQaPlannerFx {
         temp: Double?,
         numResponses: Int?
     ): AiTaskList<String> {
-        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!)
-        return p.plan(
+        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!, chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
             chunksToRetrieve = chunksToRetrieve!!,
@@ -302,6 +312,14 @@ class DocumentQaPlannerFx {
             numResponses = numResponses!!,
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
+        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask<QuestionAnswerResult>)
+            .aitask("process-result") {
+                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${it.responseScore}$ANSI_RESET")
+                lastResult = it
+                chatHistory.add(TextChatMessage(MChatRole.User, question))
+                chatHistory.add(TextChatMessage(MChatRole.Assistant, it.trace.firstValue))
+                FormattedPromptTraceResult(it.trace, it.splitOutputs().map { it.formatResult() })
+            }
     }
 }
 
@@ -332,6 +350,16 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
             view.controller.embeddingService.set(
                 PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!
             )
+        }
+    override var temp: Double
+        get() = view.common.temp.value
+        set(value) {
+            view.common.temp.set(value)
+        }
+    override var maxTokens: Int
+        get() = view.common.maxTokens.value
+        set(value) {
+            view.common.maxTokens.set(value)
         }
 
     override fun initialize() {

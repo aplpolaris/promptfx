@@ -99,6 +99,6 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
         promptListUi.selectPromptTrace(foundPrompt ?: prompt)
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiPipelineResult.todo<String>()
 }
 

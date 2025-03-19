@@ -21,15 +21,15 @@ package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.scene.paint.Color
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 
 /** Role type style settings. */
-enum class ChatEntryRole(val role: TextChatRole?, val glyph: FontAwesomeIcon, val glyphStyle: String, val background: Color, val text: Color, val rightAlign: Boolean) {
-    USER(TextChatRole.User, FontAwesomeIcon.USER, "-fx-fill: black;", Color.LIGHTGRAY, Color.BLACK, false),
-    ASSISTANT(TextChatRole.Assistant, FontAwesomeIcon.ROCKET, "-fx-fill: darkgreen;", Color.DARKGREEN, Color.LIGHTGREEN, true),
-    SYSTEM(TextChatRole.System, FontAwesomeIcon.DESKTOP, "-fx-fill: gray;", Color.LIGHTGRAY, Color.DARKGRAY, true),
+enum class ChatEntryRole(val role: MChatRole?, val glyph: FontAwesomeIcon, val glyphStyle: String, val background: Color, val text: Color, val rightAlign: Boolean) {
+    USER(MChatRole.User, FontAwesomeIcon.USER, "-fx-fill: black;", Color.LIGHTGRAY, Color.BLACK, false),
+    ASSISTANT(MChatRole.Assistant, FontAwesomeIcon.ROCKET, "-fx-fill: darkgreen;", Color.DARKGREEN, Color.LIGHTGREEN, true),
+    SYSTEM(MChatRole.System, FontAwesomeIcon.DESKTOP, "-fx-fill: gray;", Color.LIGHTGRAY, Color.DARKGRAY, true),
     ERROR(null, FontAwesomeIcon.EXCLAMATION_TRIANGLE, "-fx-fill: red;", Color.LIGHTGRAY, Color.RED, true);
 }
 
-/** Convert [TextChatRole] to a [ChatEntryRole]. */
-fun TextChatRole.toChatRoleStyle() = ChatEntryRole.values().firstOrNull { it.role == this } ?: ChatEntryRole.ERROR
+/** Convert [MChatRole] to a [ChatEntryRole]. */
+fun MChatRole.toChatRoleStyle() = ChatEntryRole.values().firstOrNull { it.role == this } ?: ChatEntryRole.ERROR

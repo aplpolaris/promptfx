@@ -37,17 +37,22 @@ object PromptFxModels {
     fun chatModels() = policy.chatModels()
     fun chatModelDefault() = policy.chatModelDefault()
 
+    fun multimodalModels() = policy.multimodalModels()
+    fun multimodalModelDefault() = policy.multimodalModelDefault()
+
     fun imageModels() = policy.imageModels()
     fun imageModelDefault() = policy.imageModelDefault()
 
     fun visionLanguageModels() = policy.visionLanguageModels()
     fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
 
-    fun modelIds() =
-        textCompletionModels().map { it.modelId } +
-        embeddingModels().map { it.modelId } +
-        chatModels().map { it.modelId } +
-        imageModels().map { it.modelId } +
-        visionLanguageModels().map { it.modelId }
+    fun modelIds() = (
+            textCompletionModels().map { it.modelId } +
+            embeddingModels().map { it.modelId } +
+            chatModels().map { it.modelId } +
+            multimodalModels().map { it.modelId } +
+            imageModels().map { it.modelId } +
+            visionLanguageModels().map { it.modelId }
+        ).toSet()
 
 }

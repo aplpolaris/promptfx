@@ -23,7 +23,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.serialization.Serializable
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 
@@ -72,19 +72,31 @@ class GeminiClient : Closeable {
         }.body<BatchEmbedContentsResponse>()
     }
 
-    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null) =
-        generateContent(modelId, GenerateContentRequest(
-            content = Content.text(prompt),
+    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
+        val system = history.lastOrNull { it.role == MChatRole.System }?.content
+        val request = GenerateContentRequest(
+            contents = history.filter { it.role != MChatRole.System }.map {
+                val role = it.role.toGeminiRole()
+                Content(listOf(Part(it.content)), role)
+            } + Content.text(prompt),
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
-        ))
+        )
+        return generateContent(modelId, request)
+    }
 
-    suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null): GenerateContentResponse {
+    suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
+        val system = history.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            content = Content(listOf(
+            contents = history.filter { it.role != MChatRole.System }.map {
+                val role = it.role.toGeminiRole()
+                Content(listOf(Part(it.content)), role)
+            } + Content(listOf(
                 Part(text = prompt),
                 Part(inlineData = Blob(image, MIME_TYPE_JPEG))
             )),
+            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
         )
@@ -92,9 +104,9 @@ class GeminiClient : Closeable {
     }
 
     suspend fun generateContent(messages: List<TextChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
-        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
+        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            messages.filter { it.role != TextChatRole.System }.map {
+            messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
                 Content(listOf(Part(it.content)), role)
             },
@@ -105,9 +117,9 @@ class GeminiClient : Closeable {
     }
 
     suspend fun generateContentVision(messages: List<VisionLanguageChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
-        val system = messages.lastOrNull { it.role == TextChatRole.System }?.content
+        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
-            messages.filter { it.role != TextChatRole.System }.map {
+            messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
                 Content(listOf(
                     Part(it.content),
@@ -129,17 +141,17 @@ class GeminiClient : Closeable {
     companion object {
         val INSTANCE by lazy { GeminiClient() }
 
-        /** Convert from [TextChatRole] to string representing Gemini role. */
-        fun TextChatRole.toGeminiRole() = when (this) {
-            TextChatRole.User -> ContentRole.user
-            TextChatRole.Assistant -> ContentRole.model
+        /** Convert from [MChatRole] to string representing Gemini role. */
+        fun MChatRole.toGeminiRole() = when (this) {
+            MChatRole.User -> ContentRole.user
+            MChatRole.Assistant -> ContentRole.model
             else -> error("Invalid role: $this")
         }
 
-        /** Convert from string representing Gemini role to [TextChatRole]. */
+        /** Convert from string representing Gemini role to [MChatRole]. */
         fun ContentRole?.fromGeminiRole() = when (this) {
-            ContentRole.user -> TextChatRole.User
-            ContentRole.model -> TextChatRole.Assistant
+            ContentRole.user -> MChatRole.User
+            ContentRole.model -> MChatRole.Assistant
             else -> error("Invalid role: $this")
         }
     }
@@ -159,7 +171,7 @@ data class ModelInfo(
     val baseModelId: String? = null, // though marked as required, not returned by API
     val version: String,
     val displayName: String,
-    val description: String,
+    val description: String? = null, // though marked as required, not always returned by API
     val inputTokenLimit: Int,
     val outputTokenLimit: Int,
     val supportedGenerationMethods: List<String>,

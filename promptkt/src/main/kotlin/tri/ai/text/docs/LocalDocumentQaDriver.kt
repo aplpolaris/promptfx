@@ -67,6 +67,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         set(value) {
             embeddingModelInst = TextPlugin.embeddingModels().first { it.modelId == value }
         }
+    override var temp: Double = 1.0
+    override var maxTokens: Int = 2000
 
     private val prompt = AiPromptLibrary.lookupPrompt("$PROMPT_PREFIX-docs")
     private val joiner = GroupingTemplateJoiner("$JOINER_PREFIX-citations")
@@ -80,15 +82,15 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
 
     override suspend fun answerQuestion(input: String): AiPipelineResult<String> {
         val index = LocalFolderEmbeddingIndex(docsFolder, embeddingModelInst)
-        val planner = DocumentQaPlanner(index, completionModelInst).plan(
+        val planner = DocumentQaPlanner(index, completionModelInst, listOf(), 1).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,
             minChunkSize = 50,
             contextStrategy = joiner,
             contextChunks = 10,
-            maxTokens = 1000,
-            temp = 1.0,
+            maxTokens = maxTokens,
+            temp = temp,
             numResponses = 1,
             snippetCallback = { }
         )

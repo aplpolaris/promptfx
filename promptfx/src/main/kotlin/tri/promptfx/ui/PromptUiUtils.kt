@@ -56,7 +56,7 @@ fun EventTarget.promptfield(
         }
         button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
             tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
-            action { (workspace as PromptFxWorkspace).launchTemplateView(prompt.text.value) }
+            action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
         }
     }
     field(null, forceLabelIndent = true) {

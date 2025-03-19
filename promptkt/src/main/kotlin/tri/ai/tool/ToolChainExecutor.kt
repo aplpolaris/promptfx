@@ -36,7 +36,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     Question: the input question you must answer
     Thought: you should always think about what to do
     Action: the action to take, should be one of [{{tool_names}}]
-    Action Input: the input to the action
+    Action Input: the input to the action (always provide the full input, including any contextual text provided with the question)
     Observation: the result of the action
     ... (this Thought/Action/Action Input/Observation can repeat N times)
     Thought: I now know the final answer
@@ -80,7 +80,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ")
+        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ", history = listOf())
             .firstValue.trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
@@ -89,8 +89,9 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             .map { it.split(":", limit = 2) }
             .filter { it.size == 2 }
             .associate { it[0] to it[1] }
-        responseOp["Final Answer"]?.trim()?.let {
-            return ToolResult(textCompletion, it)
+        if ("Final Answer:" in textCompletion) {
+            val answer = textCompletion.substringAfter("Final Answer:").trim()
+            return ToolResult(textCompletion, answer)
         }
 
         val toolName = responseOp["Action"]?.trim()

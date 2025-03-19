@@ -31,6 +31,7 @@ object OpenAiModelIndex : ModelIndex("openai-models.yaml") {
     const val DALLE2_ID = "dall-e-2"
     private const val DALLE3_ID = "dall-e-3"
     const val GPT35_TURBO_ID = "gpt-3.5-turbo"
+    const val GPT4_TURBO_ID = "gpt-4-turbo"
     private const val GPT35_TURBO_INSTRUCT_ID = "gpt-3.5-turbo-instruct"
 
     //endregion

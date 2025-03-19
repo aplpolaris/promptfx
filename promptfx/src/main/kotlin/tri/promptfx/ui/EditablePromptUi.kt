@@ -57,7 +57,7 @@ class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -
             templatemenubutton(templateText, promptFilter)
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                 tooltip("Try out the current prompt in the Prompt Template view.")
-                action { (workspace as PromptFxWorkspace).launchTemplateView(templateText.value) }
+                action { find<PromptFxWorkspace>().launchTemplateView(templateText.value) }
             }
         }
         textarea(templateText) {

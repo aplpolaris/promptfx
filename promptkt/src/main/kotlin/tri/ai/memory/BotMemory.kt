@@ -24,7 +24,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChatRole
+import tri.ai.core.MChatRole
 import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.dot
 import java.io.File
@@ -108,7 +108,7 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
 
         // summarize content for memory
         val conversation = chatSinceLastMemory.joinToString("\n") {
-            (if (it.role == TextChatRole.Assistant) persona.name else it.role.toString()) + ": " + it.content
+            (if (it.role == MChatRole.Assistant) persona.name else it.role.toString()) + ": " + it.content
         }
         val query = """
             Please summarize the following conversation:
@@ -120,14 +120,14 @@ class BotMemory(val persona: BotPersona, val chatEngine: TextChat, val embedding
 
         val response = chatEngine.chat(
             listOf(
-                TextChatMessage(TextChatRole.System, "You are a chatbot that summarizes key content from prior conversations."),
-                TextChatMessage(TextChatRole.User, query)
+                TextChatMessage(MChatRole.System, "You are a chatbot that summarizes key content from prior conversations."),
+                TextChatMessage(MChatRole.User, query)
             ))
-        val summaryMessage = TextChatMessage(TextChatRole.Assistant, "[MEMORY] " + (response.firstValue.content ?: "").trim())
+        val summaryMessage = TextChatMessage(MChatRole.Assistant, "[MEMORY] " + (response.firstValue.content ?: "").trim())
         chatHistory.add(MemoryItem(summaryMessage))
     }
 
     private fun MemoryItem.isMemory() =
-        role == TextChatRole.Assistant && (content ?: "").startsWith("[MEMORY]")
+        role == MChatRole.Assistant && (content ?: "").startsWith("[MEMORY]")
 
 }

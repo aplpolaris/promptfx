@@ -37,7 +37,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
-import tri.ai.core.TextChatRole
+import tri.ai.core.TextChatMessage
+import tri.ai.core.MChatRole
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
@@ -294,20 +295,35 @@ class OpenAiClient(val settings: OpenAiSettings) {
     companion object {
         val INSTANCE by lazy { OpenAiClient(OpenAiSettings()) }
 
-        /** Convert from [TextChatRole] to OpenAI [ChatRole]. */
-        fun TextChatRole.toOpenAiRole() = when (this) {
-            TextChatRole.System -> ChatRole.System
-            TextChatRole.User -> ChatRole.User
-            TextChatRole.Assistant -> ChatRole.Assistant
+        /** Convert from [MChatRole] to OpenAI [ChatRole]. */
+        fun MChatRole.toOpenAiRole() = when (this) {
+            MChatRole.System -> ChatRole.System
+            MChatRole.User -> ChatRole.User
+            MChatRole.Assistant -> ChatRole.Assistant
             else -> error("Invalid role: $this")
         }
 
-        /** Convert from OpenAI [ChatRole] to [TextChatRole]. */
+        /** Convert from OpenAI [ChatRole] to [MChatRole]. */
         fun ChatRole.fromOpenAiRole() = when (this) {
-            ChatRole.System -> TextChatRole.System
-            ChatRole.User -> TextChatRole.User
-            ChatRole.Assistant -> TextChatRole.Assistant
+            ChatRole.System -> MChatRole.System
+            ChatRole.User -> MChatRole.User
+            ChatRole.Assistant -> MChatRole.Assistant
             else -> error("Invalid role: $this")
+        }
+
+        /** Convert from [TextChatMessage] to OpenAI [ChatMessage]. */
+        fun TextChatMessage.toOpenAiMessage() =
+            ChatMessage(role.toOpenAiRole(), content)
+
+        /** Convert from OpenAI [ChatMessage] to [TextChatMessage]. */
+        fun ChatMessage.fromOpenAiMessage(): TextChatMessage {
+            val mc = messageContent
+            val usePrompt = when {
+                mc is TextContent -> mc.content
+                mc is ListContent && mc.content.size == 1 && mc.content[0] is TextPart -> (mc.content[0] as TextPart).text
+                else -> null
+            }
+            return TextChatMessage(role.fromOpenAiRole(), usePrompt)
         }
     }
 

@@ -115,7 +115,7 @@ fun AiTaskView.documentsourceparameters(
                 enableWhen(library.isNotNull)
                 tooltip("Open the current library in the Text Manager view")
                 action {
-                    (workspace as PromptFxWorkspace).launchTextManagerView(library.get())
+                    find<PromptFxWorkspace>().launchTextManagerView(library.get())
                 }
             }
             button("", FontAwesomeIcon.MINUS_CIRCLE.graphic) {

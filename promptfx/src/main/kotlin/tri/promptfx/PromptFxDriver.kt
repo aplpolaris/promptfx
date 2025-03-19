@@ -124,7 +124,7 @@ object PromptFxDriver {
         if (dialog.execute)
             runAsync {
                 runBlocking {
-                    (workspace as PromptFxWorkspace).sendInput(dialog.targetView.value, dialog.input.value) {
+                    find<PromptFxWorkspace>().sendInput(dialog.targetView.value, dialog.input.value) {
                         println("Callback Result: $it")
                     }
                 }
@@ -144,7 +144,7 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
         form {
             fieldset {
                 field("View Name:") {
-                    val keys = listOf(PromptFxDriver.IMMERSIVE_VIEW) + (workspace as PromptFxWorkspace).views.keys.toList()
+                    val keys = listOf(PromptFxDriver.IMMERSIVE_VIEW) + find<PromptFxWorkspace>().views.keys.toList()
                     combobox(targetView, keys) {
                         isEditable = true
                     }
@@ -214,10 +214,10 @@ private fun Menu.buildviewsubmenus(value: ObservableStringValue, workspace: Prom
         if (map.isNotEmpty()) {
             menu(group) {
                 map.forEach { (_, info) ->
-                    val view = workspace.find(info.view, scope = workspace.scope) as AiTaskView
+                    val view = info.viewComponent ?: workspace.find(info.view!!, scope = workspace.scope) as AiTaskView
                     item(view.title) {
                         action {
-                            with (PromptFxDriver) {
+                            with(PromptFxDriver) {
                                 workspace.setInputAndRun(view, value.value)
                             }
                         }
@@ -233,12 +233,12 @@ fun ContextMenu.buildsendcollectionmenu(view: UIComponent, value: ObservableValu
     menu("Load collection in view") {
         disableWhen(value.booleanBinding { it == null })
 
-        val workspace = view.workspace as PromptFxWorkspace
+        val workspace = find<PromptFxWorkspace>()
         workspace.viewsWithCollections.forEach { (group, map) ->
             if (map.isNotEmpty()) {
                 menu(group) {
                     map.forEach { (_, info) ->
-                        val targetView = workspace.find(info.view) as AiTaskView
+                        val targetView = info.viewComponent ?: workspace.find(info.view!!) as AiTaskView
                         if (view != targetView) {
                             item(targetView.title) {
                                 action {

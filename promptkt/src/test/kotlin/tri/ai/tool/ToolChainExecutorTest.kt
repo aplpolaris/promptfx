@@ -59,7 +59,7 @@ class ToolChainExecutorTest {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Data Query", "Use this to search for data that is needed to answer a question") {
-            override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500).firstValue!!
+            override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500, history = listOf()).firstValue!!
         }
         val tool2 = object : Tool("Timeline", "Use this once you have all the data needed to show the result on a timeline. Provide structured data as input.", isTerminal = true) {
             override suspend fun run(input: String) = OpenAiCompletionChat().complete("""
@@ -68,7 +68,7 @@ class ToolChainExecutorTest {
                 The result should confirm to the vega-lite spec, using either a Gantt chart or a dot plot.
                 Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
                 Provide the JSON result only, no explanation.
-            """.trimIndent(), tokens = 1000).firstValue!!
+            """.trimIndent(), tokens = 1000, history = listOf()).firstValue!!
         }
         ToolChainExecutor(OpenAiCompletionChat())
             .executeChain("Look up data with the birth years of the first 10 US presidents along with the order of their presidency, and then visualize the results.", listOf(tool1, tool2))

@@ -93,6 +93,9 @@ class OpenAiPlugin : TextPlugin {
     override fun chatModels() =
         OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
 
+    override fun multimodalModels() =
+        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
+
     override fun visionLanguageModels() =
         OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
 

@@ -39,6 +39,6 @@ open class AiCompletionView(
         addInputTextArea(input)
     }
 
-    override fun plan() = completionEngine.promptPlan(prompt, input.get(), tokenLimit, temp, stop)
+    override fun plan() = completionEngine.promptPlan(prompt, input.get(), tokenLimit, temp, stop, 1, emptyList())
 
 }

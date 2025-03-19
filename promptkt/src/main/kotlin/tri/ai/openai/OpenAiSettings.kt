@@ -49,7 +49,7 @@ class OpenAiSettings {
             buildClient()
         }
 
-    var logLevel = LogLevel.Info
+    var logLevel = LogLevel.None
         set(value) {
             field = value
             buildClient()

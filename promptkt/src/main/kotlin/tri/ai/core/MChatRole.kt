@@ -20,6 +20,9 @@
 package tri.ai.core
 
 /** The role of a chat message. */
-enum class TextChatRole {
-    System, User, Assistant
+enum class MChatRole {
+    System,
+    User,
+    Assistant,
+    Tool
 }

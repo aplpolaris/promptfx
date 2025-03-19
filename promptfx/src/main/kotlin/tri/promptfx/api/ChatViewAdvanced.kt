@@ -19,18 +19,13 @@
  */
 package tri.promptfx.api
 
-import com.aallam.openai.api.chat.*
-import com.aallam.openai.api.core.Role
-import com.aallam.openai.api.model.ModelId
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.openai.OpenAiChat
+import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ifNotBlank
 
 /**
@@ -40,7 +35,7 @@ import tri.util.ifNotBlank
 class ChatViewAdvanced : ChatView(
     "Chat (Advanced)",
     "Test the AI Assistant chat, with optional function calls and full control over chat history.",
-    listOf(Role.System, Role.User, Role.Assistant, Role.Tool),
+    listOf(MChatRole.System, MChatRole.User, MChatRole.Assistant, MChatRole.Tool),
     showInput = true
 ) {
 
@@ -68,53 +63,40 @@ class ChatViewAdvanced : ChatView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<ChatMessage> {
+    override suspend fun processUserInput(): AiPipelineResult<MultimodalChatMessage> {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
-            listOf(ChatMessage(ChatRole.System, system.value))
+            listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
         val toolChoice = toolCall.value.ifNotBlank {
             when (it) {
-                "auto" -> ToolChoice.Auto
-                "none" -> ToolChoice.None
-                else -> ToolChoice.function(it)
+                "auto" -> MToolChoice.AUTO
+                "none" -> MToolChoice.NONE
+                else -> MToolChoice.function(it)
             }
         }
-        val tools = if (toolChoice == ToolChoice.None) {
+        val tools = if (toolChoice == MToolChoice.NONE) {
             null
         } else {
             toolView.tools().ifEmpty { null }
         }
-
-        val m = model.value
-        if (m is OpenAiChat) {
-            val completion = ChatCompletionRequest(
-                model = ModelId(m.modelId),
-                messages = messages,
+        val params = MChatParameters(
+            variation = MChatVariation(
+                seed = if (seedActive.value) seed.value else null,
                 temperature = common.temp.value,
                 topP = common.topP.value,
-                n = common.numResponses.value,
-                stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
-                maxTokens = common.maxTokens.value,
-                presencePenalty = common.presPenalty.value,
                 frequencyPenalty = common.freqPenalty.value,
-                logitBias = null,
-                user = null,
-                functions = null,
-                functionCall = null,
-                responseFormat = responseFormat.value,
-                tools = tools,
-                toolChoice = toolChoice,
-                seed = if (seedActive.value) seed.value else null,
-                logprobs = null,
-                topLogprobs = null
-            )
-            return controller.openAiPlugin.client.chat(completion).asPipelineResult()
-        } else {
-            return AiPromptTrace.invalidRequest<ChatMessage>(
-                m?.modelId?.let { AiModelInfo(it) },
-                "This model/plugin is not supported in the Advanced Chat API view: $m"
-            ).asPipelineResult()
-        }
+                presencePenalty = common.presPenalty.value
+            ),
+            tokens = common.maxTokens.value,
+            stop = if (common.stopSequences.value.isBlank()) null else common.stopSequences.value.split("||"),
+            responseFormat = responseFormat.value,
+            numResponses = common.numResponses.value,
+            tools = if (toolChoice != null && tools != null) MChatTools(toolChoice, tools) else null
+        )
+
+        val m = model.value!!
+        val result = m.chat(messages, params)
+        return result.asPipelineResult()
     }
 
 }
