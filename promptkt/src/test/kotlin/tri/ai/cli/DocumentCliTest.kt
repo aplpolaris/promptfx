@@ -20,6 +20,7 @@
 package tri.ai.cli
 
 import com.github.ajalt.clikt.core.subcommands
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.io.path.Path
 import kotlin.io.path.readText
@@ -34,6 +35,7 @@ class DocumentCliTest {
     private val path = Path("C:\\data\\chatgpt\\test3")
 
     @Test
+    @Disabled
     fun testChunk() {
         main(arrayOf(
             "--root=$path",
@@ -44,6 +46,7 @@ class DocumentCliTest {
     }
 
     @Test
+    @Disabled
     fun testEmbeddings() {
         main(arrayOf(
             "--root=$path",
@@ -53,6 +56,7 @@ class DocumentCliTest {
     }
 
     @Test
+    @Disabled
     fun testQa() {
         main(arrayOf(
             "--root=$path",
