@@ -340,7 +340,15 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     //endregion
 
     /** Gets the input area of the view. By default this finds the first [TextArea] in the input pane. */
-    open fun inputArea(): TextInputControl? = inputPane.children.filterIsInstance<TextArea>().firstOrNull()
+    open fun inputArea(): TextInputControl? {
+        val first = inputPane.children.filterIsInstance<TextArea>().firstOrNull()
+        if (first != null) return first
+        val second = inputPane.children.filterIsInstance<VBox>()
+            .flatMap { it.children }
+            .filterIsInstance<TextArea>()
+            .firstOrNull()
+        return second
+    }
 
     /** Gets the output area of the view. By default, this finds the first node in the output pane. */
     open fun outputArea(): EventTarget? = outputPane.children.firstOrNull()?.let {
