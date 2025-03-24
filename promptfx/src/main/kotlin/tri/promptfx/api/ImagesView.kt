@@ -185,7 +185,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             if (fr.exec.error != null) {
                 error("Error: ${fr.exec.error}")
             } else {
-                images.addAll(fr.splitImages())
+                runLater {
+                    images.addAll(fr.splitImages())
+                }
             }
         }
     }
