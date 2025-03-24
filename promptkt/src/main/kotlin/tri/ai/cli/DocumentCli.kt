@@ -231,6 +231,7 @@ class DocumentQaConfig(
 
 /** Creates driver from provided settings. */
 fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root.toFile()).apply {
+    folder = config.folder
     info<DocumentQa>("Asking question about documents in $folder")
     if (config.completionModel != null) {
         try {
