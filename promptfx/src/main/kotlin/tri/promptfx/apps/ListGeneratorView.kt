@@ -106,7 +106,10 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
 
         onCompleted {
             val rawText = it.finalResult.firstValue.toString()
-            val codeText = rawText.substringAfter("```").substringBefore("```").trim()
+            val codeText = if ("```json" in rawText)
+                rawText.substringAfter("```json").substringBefore("```").trim()
+            else
+                rawText.substringAfter("```").substringBefore("```").trim()
             try {
                 val parsed1 = MAPPER.readValue<ListPromptResult>(codeText)
                 output.set(parsed1)
