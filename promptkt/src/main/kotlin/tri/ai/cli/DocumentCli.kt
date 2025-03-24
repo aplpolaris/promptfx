@@ -24,6 +24,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.arguments.validate
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.double
@@ -33,7 +34,6 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiEmbeddingService
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.ai.text.chunks.process.SmartTextChunker
@@ -43,7 +43,6 @@ import java.io.File
 import java.nio.file.Path
 import java.util.logging.Level
 import kotlin.io.path.Path
-import kotlin.system.exitProcess
 
 object DocumentCliRunner {
     @JvmStatic
@@ -79,9 +78,10 @@ class DocumentCli : CliktCommand(name = "document") {
     private val maxTokens by option(help = "Maximum tokens for completion (default 2000)")
         .int()
         .default(2000)
+    private val templateId by option(help = "Q&A prompt template id (qa/chat modes, default question-answer-docs)")
 
     override fun run() {
-        currentContext.obj = DocumentQaConfig(root, folder, model, embedding, temp, maxTokens)
+        currentContext.obj = DocumentQaConfig(root, folder, model, embedding, temp, maxTokens, templateId)
     }
 }
 
@@ -217,7 +217,15 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
 }
 
 /** Shared config object for document QA. */
-class DocumentQaConfig(val root: Path, val folder: String, val completionModel: String?, val embeddingModel: String?, val temp: Double?, val maxTokens: Int?) {
+class DocumentQaConfig(
+    val root: Path,
+    val folder: String,
+    val completionModel: String?,
+    val embeddingModel: String?,
+    val temp: Double?,
+    val maxTokens: Int?,
+    val templateId: String?
+) {
     val docsFolder: File = if (folder == "") root.toFile() else File(root.toFile(), folder)
 }
 
@@ -247,6 +255,10 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
     if (config.maxTokens != null) {
         maxTokens = config.maxTokens
         info<DocumentQa>("  using max tokens $maxTokens")
+    }
+    if (config.templateId != null) {
+        templateId = config.templateId
+        info<DocumentQa>("  using template $templateId")
     }
     initialize()
 }
