@@ -69,8 +69,10 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         }
     override var temp: Double = 1.0
     override var maxTokens: Int = 2000
+    var templateId: String? = null
 
-    private val prompt = AiPromptLibrary.lookupPrompt("$PROMPT_PREFIX-docs")
+    private val prompt
+        get() = AiPromptLibrary.lookupPrompt(templateId ?: "$PROMPT_PREFIX-docs")
     private val joiner = GroupingTemplateJoiner("$JOINER_PREFIX-citations")
 
     override fun initialize() {

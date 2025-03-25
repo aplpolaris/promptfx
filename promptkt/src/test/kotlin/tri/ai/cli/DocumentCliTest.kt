@@ -32,7 +32,8 @@ class DocumentCliTest {
             .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
             .main(args)
 
-    private val path = Path("C:\\data\\chatgpt\\test3")
+    private val path = Path("C:\\data\\chatgpt")
+    private val folder = Path("test3")
 
     @Test
     @Disabled
@@ -60,6 +61,7 @@ class DocumentCliTest {
     fun testQa() {
         main(arrayOf(
             "--root=$path",
+            "--folder=$folder",
             "qa",
             "What is Llama?"
         ))
