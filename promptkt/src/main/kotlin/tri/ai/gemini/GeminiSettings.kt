@@ -32,6 +32,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import tri.util.info
+import tri.util.warning
 import java.io.File
 
 /** Manages Gemini API key and client. */
@@ -75,7 +76,7 @@ class GeminiSettings {
             System.getenv(API_KEY_ENV)
 
         return if (key.isNullOrBlank()) {
-            info<GeminiSettings>("Gemini API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
+            warning<GeminiSettings>("Gemini API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
             ""
         } else
             key

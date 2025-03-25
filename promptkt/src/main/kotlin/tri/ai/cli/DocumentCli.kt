@@ -32,6 +32,7 @@ import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.gemini.GeminiSettings
 import tri.ai.openai.OpenAiClient
 import tri.ai.openai.OpenAiEmbeddingService
 import tri.ai.openai.OpenAiModelIndex
@@ -161,7 +162,7 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
         .flag(default = false)
     private val reindexNew by option(help = "Reindex new documents in the folder (default)")
         .flag(default = true)
-    private val maxChunkSize by option(help = "Maximum chunk size for embeddings")
+    private val maxChunkSize by option(help = "Maximum chunk size (# of characters) for embeddings (default 1000)")
         .int()
         .default(1000)
 
@@ -190,7 +191,7 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
         .flag(default = false)
     private val reindexNew by option(help = "Reindex new documents in the folder (default)")
         .flag(default = true)
-    private val maxChunkSize by option(help = "Maximum chunk size for embeddings")
+    private val maxChunkSize by option(help = "Maximum chunk size (# of characters) for embeddings (default 1000)")
         .int()
         .default(1000)
     private val indexFile by option(help = "Index file name for the documents (default docs.json)")
@@ -223,6 +224,8 @@ class DocumentQaConfig(val root: Path, val folder: String, val completionModel: 
 
 /** Creates driver from provided settings. */
 fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root.toFile()).apply {
+    folder = config.folder
+
     info<DocumentQa>("Asking question about documents in $folder")
     if (config.completionModel != null) {
         try {
