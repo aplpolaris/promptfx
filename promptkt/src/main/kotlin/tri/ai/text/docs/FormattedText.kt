@@ -35,7 +35,8 @@ class FormattedText(val nodes: List<FormattedTextNode>) {
 data class FormattedTextNode(
     val text: String,
     val style: String? = null,
-    val hyperlink: String? = null
+    val hyperlink: String? = null,
+    val tooltip: String? = null
 )
 
 //region CONVERSIONS

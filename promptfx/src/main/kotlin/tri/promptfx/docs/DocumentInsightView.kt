@@ -35,6 +35,7 @@ import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.DocumentListView
@@ -180,7 +181,9 @@ class DocumentInsightView: AiPlanTaskView(
             prompt = mapPromptUi.templateText.value
             promptParams = mapOf(AiPrompt.INPUT to inputs, "name" to names)
             runs = inputs.size
-        }.tasks().map {
+        }.tasks { id ->
+            PromptFxModels.textCompletionModels().find { it.modelId == id }!!
+        }.map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->
                 runLater { mapResult.value += "\n\n${res.first()}" }
