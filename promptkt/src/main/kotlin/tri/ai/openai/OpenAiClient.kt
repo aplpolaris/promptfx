@@ -61,9 +61,9 @@ class OpenAiClient(val settings: OpenAiSettings) {
     /** Checks for an OpenAI API key, if the base URL points to OpenAI. */
     private fun checkApiKey() {
         val isOpenAi = settings.baseUrl.let { it == null || it.contains("api.openai.com") }
-        val isValidKey = isOpenAi && settings.apiKey.startsWith("sk-") && !settings.apiKey.trim().contains(" ")
-        if (!isValidKey)
-            throw UnsupportedOperationException("Invalid API key. Please set a valid OpenAI API key.")
+        val isValidOpenAiKey = settings.apiKey.startsWith("sk-") && !settings.apiKey.trim().contains(" ")
+        if (!isValidOpenAiKey && isOpenAi)
+            throw UnsupportedOperationException("Invalid OpenAi API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
     }
 
     /** Runs an embedding using ADA embedding model. */

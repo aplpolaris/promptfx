@@ -30,6 +30,7 @@ import tri.ai.text.chunks.process.LocalFileManager.fileToText
 import tri.util.fine
 import java.io.File
 import java.net.URISyntaxException
+import java.nio.charset.Charset
 
 /**
  * Collection of [TextDoc]s.
@@ -52,12 +53,19 @@ class TextLibrary(_id: String? = null) {
          * May automatically fix some paths if the folder with index file and all its referenced files have been copied from another location.
          */
         fun loadFrom(indexFile: File): TextLibrary =
+            loadFrom(indexFile.readText(Charset.defaultCharset()), indexFile.parentFile)
+
+        /**
+         * Load a [TextLibrary] from text.
+         * May automatically fix some paths if the folder with index file and all its referenced files have been copied from another location.
+         */
+        fun loadFrom(indexFile: String, parentFile: File): TextLibrary =
             MAPPER.readValue<TextLibrary>(indexFile).also {
                 it.docs.forEach { doc ->
                     val uri = doc.metadata.path
                     if (uri != null) {
                         try {
-                            val file = LocalFileManager.fixPath(File(uri), indexFile.parentFile)
+                            val file = LocalFileManager.fixPath(File(uri), parentFile)
                             doc.metadata.path = file!!.toURI()
                             doc.all = TextChunkRaw(file.fileToText(useCache = true))
                         } catch (x: URISyntaxException) {
@@ -77,7 +85,7 @@ class TextLibrary(_id: String? = null) {
                 .writeValue(indexFile, index)
         }
 
-        internal val MAPPER = ObjectMapper()
+        val MAPPER = ObjectMapper()
             .registerKotlinModule()
             .registerModule(JavaTimeModule())
             .registerModule(SimpleModule().apply {

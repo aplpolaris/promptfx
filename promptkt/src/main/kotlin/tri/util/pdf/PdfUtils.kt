@@ -20,6 +20,7 @@
 package tri.util.pdf
 
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.filter.MissingImageReaderException
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
@@ -27,6 +28,7 @@ import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink
 import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.text.PDFTextStripperByArea
+import tri.util.warning
 import java.awt.geom.Rectangle2D
 import java.io.File
 import java.time.Instant
@@ -49,7 +51,17 @@ object PdfUtils {
                 "pdf.producer" to it.producer,
                 "pdf.creationDate" to it.creationDate?.toLocalDateTime(),
                 "pdf.modificationDate" to it.modificationDate?.toLocalDateTime(),
-                "file.modificationDate" to file.lastModifiedDateTime()
+                "file.modificationDate" to file.lastModifiedDateTime(),
+                "pdf.creationDate" to it.creationDate?.let {
+                    LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault())
+                },
+                "pdf.modificationDate" to it.modificationDate?.let {
+                    LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault())
+                },
+                "file.modificationDate" to LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(file.lastModified()),
+                    ZoneId.systemDefault()
+                )
             )
         }
     }
@@ -105,9 +117,14 @@ object PdfUtils {
     /** Extract images on a specific page of a PDF. */
     private fun PDPage.images(): List<PdfImageInfo> {
         val index = resources.xObjectNames.associateBy { it.name }
-        return PdfImageFinder().apply { processPage(this@images) }.result.map {
-            val img = (resources.getXObject(index[it.name]) as? PDImageXObject)?.image
-            it.withImage(img)
+        return PdfImageFinder().apply { processPage(this@images) }.result.mapNotNull {
+            try {
+                val img = (resources.getXObject(index[it.name]) as? PDImageXObject)?.image
+                it.withImage(img)
+            } catch (x: MissingImageReaderException) {
+                warning<PdfUtils>("Unable to read image ${it.name}: ${x.message}", x)
+                null
+            }
         }
     }
 

@@ -28,7 +28,8 @@ import tri.ai.prompt.trace.*
 /** Configuration required for executing a text completion prompt. */
 class AiPromptRunConfig(
     val promptInfo: AiPromptInfo,
-    val modelInfo: AiModelInfo
+    val modelInfo: AiModelInfo,
+    val modelLookup: (String) -> TextCompletion = { TextPlugin.textCompletionModel(it) }
 ) {
     override fun toString() =
         "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"
@@ -39,7 +40,7 @@ class AiPromptRunConfig(
             inputs: Map<String, AiPromptTraceSupport<*>>,
             monitor: AiTaskMonitor
         ): AiPromptTrace<String> = try {
-            execute(TextPlugin.textCompletionModel(modelInfo.modelId))
+            execute(modelLookup(modelInfo.modelId))
         } catch (x: NoSuchElementException) {
             AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
         }

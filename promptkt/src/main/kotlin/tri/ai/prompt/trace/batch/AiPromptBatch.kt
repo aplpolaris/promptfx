@@ -19,19 +19,22 @@
  */
 package tri.ai.prompt.trace.batch
 
+import tri.ai.core.TextCompletion
 import tri.ai.pips.*
 
 /** Provides a series of prompt/model pairings for execution. */
 abstract class AiPromptBatch(val id: String) {
 
     /** Get all run configs within this series. */
-    abstract fun runConfigs(): Iterable<AiPromptRunConfig>
+    abstract fun runConfigs(modelLookup: (String) -> TextCompletion): Iterable<AiPromptRunConfig>
 
     /**
      * Generate executable list of tasks for a prompt batch.
      * These can be passed to [AiPipelineExecutor] for execution.
      */
-    fun tasks(): List<AiTask<String>> =
-        runConfigs().mapIndexed { i, v -> v.task("$id $i") }
+    fun tasks(modelLookup: (String) -> TextCompletion): List<AiTask<String>> =
+        runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
+    /** Get an [AiPlanner] for executing this batch of prompts. */
+    fun plan(modelLookup: (String) -> TextCompletion) = tasks(modelLookup).aggregate().planner
 }
