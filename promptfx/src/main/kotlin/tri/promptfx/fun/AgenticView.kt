@@ -19,24 +19,22 @@
  */
 package tri.promptfx.`fun`
 
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import tornadofx.*
-import tri.ai.openai.OpenAiClient
-import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.tool.JsonTool
-import tri.ai.tool.JsonToolExecutor
 import tri.ai.tool.Tool
 import tri.ai.tool.ToolChainExecutor
-import tri.promptfx.*
+import tri.promptfx.AiPlanTaskView
+import tri.promptfx.AiTaskView
+import tri.promptfx.PromptFxViewInfo
+import tri.promptfx.PromptFxWorkspace
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -49,62 +47,95 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     val pfxWorkspace: PromptFxWorkspace by inject()
     private val input = SimpleStringProperty("")
+    private val tools = observableListOf<SelectableTool>()
 
     init {
         addInputTextArea(input)
+
+        input {
+            listview(tools) {
+                cellFormat {
+                    graphic = hbox(5) {
+                        checkbox(property = it.selectedProperty)
+                        label(it.tool.name)
+                        label(" - ${it.tool.description}") {
+                            style {
+                                textFill = c("#888")
+                                fontStyle = javafx.scene.text.FontPosture.ITALIC
+                            }
+                        }
+                        // background light yellow if used, light green if active, adjusted when properties change
+                        it.stateProperty.onChange { state ->
+                            when (state) {
+                                ToolState.NONE -> style {
+                                    backgroundColor += c("#f0f0f0")
+                                }
+                                ToolState.USED -> style {
+                                    backgroundColor += c("#ffffe0")
+                                }
+                                ToolState.ACTIVE -> style {
+                                    backgroundColor += c("#f0fff0")
+                                }
+                                null -> TODO()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onDock() {
+        if (tools.isEmpty())
+            tools.addAll(tools().map { SelectableTool(it) })
     }
 
     override fun plan(): AiPlanner = aitask("agent") {
         executeToolChain()
     }.planner
 
-    /** Executes using [ToolChainExecutor]. */
-    private fun executeToolChain(): AiPromptTrace<String> {
-        val task = input.value
-        info<AgenticView>("Executing task using tools: $task")
+    /** Get the tools available. */
+    private fun tools(): List<Tool> {
         val views: List<PromptFxViewInfo> = pfxWorkspace.viewsWithInputs.values
             .map { it.entries }.flatten().map { it.value }
+            .filter { it.view != AgenticView::class.java }
         val tools = views.map { info ->
             val view = (info.viewComponent ?: find(info.view!!)) as AiTaskView
             object : Tool(info.name, view.instruction, null, requiresLlm = true, isTerminal = false) {
                 override suspend fun run(input: String) = executeTask(view, input)
             }
         }
+        return tools
+    }
+
+    /** Executes using [ToolChainExecutor]. */
+    private fun executeToolChain(): AiPromptTrace<String> {
+        tools.onEach { it.state = ToolState.NONE }
+        val task = input.value
+        info<AgenticView>("Executing task using tools: $task")
+        val selectedTools = tools.filter { it.selected }.map { it.tool }
+        info<AgenticView>("Tools available: ${selectedTools.map { it.name }}")
+
         val result = ToolChainExecutor(controller.completionEngine.value)
-            .executeChain(task, tools)
+            .executeChain(task, selectedTools)
         runLater {
             pfxWorkspace.dock(this)
         }
         return AiPromptTrace(outputInfo = AiOutputInfo.output(result))
     }
 
-    private val JSON_SCHEMA_STRING_INPUT = """{"type":"object","properties":{"input":{"type":"string"}}}"""
-
-    /** Executes using [JsonToolExecutor]. */
-    private suspend fun executeJsonTools(): AiPromptTrace<String> {
-        val task = input.value
-        info<AgenticView>("Executing task using tools: $task")
-        val views: List<PromptFxViewInfo> = pfxWorkspace.viewsWithInputs.values
-            .map { it.entries }.flatten().map { it.value }
-        val tools = views.map { info ->
-            val view = (info.viewComponent ?: find(info.view!!)) as AiTaskView
-            object : JsonTool(info.name, view.instruction, JSON_SCHEMA_STRING_INPUT) {
-                override suspend fun run(input: JsonObject) =
-                    executeTask(view, input["input"]?.jsonPrimitive?.content ?: "No input")
-            }
-        }
-        val result = JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO_ID, tools)
-            .execute(task)
-        return AiPromptTrace(
-            modelInfo = AiModelInfo.info(GPT35_TURBO_ID),
-            outputInfo = AiOutputInfo.output(result)
-        )
-    }
-
-    fun executeTask(view: AiTaskView, input: String): String {
+    /** Executes a view's tool with specified input. Switches to show the view while executing. */
+    private fun executeTask(view: AiTaskView, input: String): String {
         val result = CompletableDeferred<String>()
         runLater {
             pfxWorkspace.dock(view)
+            tools.onEach {
+                if (it.state == ToolState.ACTIVE)
+                    it.state = ToolState.USED
+            }
+            tools.firstOrNull { it.tool.name == view.title }?.let {
+                it.state = ToolState.ACTIVE
+            }
         }
         runBlocking {
             runLater {
@@ -121,4 +152,38 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         return runBlocking { result.await() }
     }
 
+//    private val JSON_SCHEMA_STRING_INPUT = """{"type":"object","properties":{"input":{"type":"string"}}}"""
+//
+//    /** Executes using [JsonToolExecutor]. */
+//    private suspend fun executeJsonTools(): AiPromptTrace<String> {
+//        val task = input.value
+//        info<AgenticView>("Executing task using tools: $task")
+//        val views: List<PromptFxViewInfo> = pfxWorkspace.viewsWithInputs.values
+//            .map { it.entries }.flatten().map { it.value }
+//        val tools = views.map { info ->
+//            val view = (info.viewComponent ?: find(info.view!!)) as AiTaskView
+//            object : JsonTool(info.name, view.instruction, JSON_SCHEMA_STRING_INPUT) {
+//                override suspend fun run(input: JsonObject) =
+//                    executeTask(view, input["input"]?.jsonPrimitive?.content ?: "No input")
+//            }
+//        }
+//        val result = JsonToolExecutor(OpenAiClient.INSTANCE, GPT35_TURBO_ID, tools)
+//            .execute(task)
+//        return AiPromptTrace(
+//            modelInfo = AiModelInfo.info(GPT35_TURBO_ID),
+//            outputInfo = AiOutputInfo.output(result)
+//        )
+//    }
+
+    /** UI representation of a tool that can be selected. */
+    private class SelectableTool(val tool: Tool) {
+        val selectedProperty = SimpleBooleanProperty(true)
+        var selected by selectedProperty
+        val stateProperty = SimpleObjectProperty(ToolState.NONE)
+        var state by stateProperty
+    }
+
+    enum class ToolState { NONE, USED, ACTIVE }
+
 }
+
