@@ -35,7 +35,8 @@ class FormattedText(val nodes: List<FormattedTextNode>) {
 data class FormattedTextNode(
     val text: String,
     val style: String? = null,
-    val hyperlink: String? = null
+    val hyperlink: String? = null,
+    val tooltip: String? = null
 )
 
 //region CONVERSIONS
@@ -88,11 +89,11 @@ fun FormattedTextNode.splitOn(find: Regex, replace: (String) -> FormattedTextNod
 }
 
 /** Splits all text elements on a given search string. */
-internal fun MutableList<FormattedTextNode>.splitOn(find: String, replace: (String) -> FormattedTextNode) =
+fun MutableList<FormattedTextNode>.splitOn(find: String, replace: (String) -> FormattedTextNode) =
     splitOn(Regex.fromLiteral(find), replace)
 
 /** Splits all text elements on a given search string. */
-internal fun MutableList<FormattedTextNode>.splitOn(find: Regex, replace: (String) -> FormattedTextNode) =
+fun MutableList<FormattedTextNode>.splitOn(find: Regex, replace: (String) -> FormattedTextNode) =
     toList().forEach {
         val newNodes = it.splitOn(find, replace)
         if (newNodes != listOf(it)) {

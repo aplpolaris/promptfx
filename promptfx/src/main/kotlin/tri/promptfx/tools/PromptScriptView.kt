@@ -30,6 +30,7 @@ import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.docs.TextLibraryToolbar
@@ -151,7 +152,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             ChunksWithHeader(doc.metadata.title, doc.dataHeader, inputs.filter { it.text in docChunks })
         }
         runLater { promptTraces.setAll() }
-        val tasks = promptBatch(inputs.map { it.text }).tasks()
+        val tasks = promptBatch(inputs.map { it.text }).tasks { id ->
+            PromptFxModels.textCompletionModels().find { it.modelId == id }!!
+        }
         // TODO - not sure what to do here with the view, since the traces probably shouldn't all be aggregated into one batch...
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {

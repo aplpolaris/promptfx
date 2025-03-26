@@ -59,7 +59,7 @@ class ToolChainExecutorTest {
         OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Data Query", "Use this to search for data that is needed to answer a question") {
-            override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500, history = listOf()).firstValue!!
+            override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500).firstValue
         }
         val tool2 = object : Tool("Timeline", "Use this once you have all the data needed to show the result on a timeline. Provide structured data as input.", isTerminal = true) {
             override suspend fun run(input: String) = OpenAiCompletionChat().complete("""
@@ -68,7 +68,7 @@ class ToolChainExecutorTest {
                 The result should confirm to the vega-lite spec, using either a Gantt chart or a dot plot.
                 Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
                 Provide the JSON result only, no explanation.
-            """.trimIndent(), tokens = 1000, history = listOf()).firstValue!!
+            """.trimIndent(), tokens = 1000).firstValue
         }
         ToolChainExecutor(OpenAiCompletionChat())
             .executeChain("Look up data with the birth years of the first 10 US presidents along with the order of their presidency, and then visualize the results.", listOf(tool1, tool2))
@@ -103,31 +103,31 @@ class ToolChainExecutorTest {
             AiPromptLibrary.lookupPrompt("summarization").fill(
                 "input" to it,
                 "instruct" to "Extract the main point and research implications of the text in 1-2 concise sentences."
-            ).let { runBlocking { GPT35.complete(it).firstValue!! } }
+            ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool3 = tool("Concepts", "Use this to extract the main concepts from text (input is raw text)") {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a list of concepts",
                 "input" to it
-            ).let { runBlocking { GPT35.complete(it).firstValue!! } }
+            ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool4 = tool("Sentiment", "Use this to extract the sentiment from text (input is raw text)") {
             AiPromptLibrary.lookupPrompt("sentiment-classify").fill(
                 "input" to it,
                 "instruct" to "positive, negative, or neutral"
-            ).let { runBlocking { GPT35.complete(it).firstValue!! } }
+            ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool5 = tool("Citation Finder", "Use this to extract the citations from text (input is raw text)") {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a list of citations",
                 "input" to it
-            ).let { runBlocking { GPT35.complete(it).firstValue!! } }
+            ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool6 = tool("Concept Map", "Use this to generate a concept map from text (input is any text)") {
             AiPromptLibrary.lookupPrompt("text-to-json").fill(
                 "format" to "a PlantUML mindmap diagram",
                 "input" to it
-            ).let { runBlocking { GPT35.complete(it).firstValue!! } }
+            ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool7 = tool("Report Generator", "Use this to write a formal report on the user's question (input is any text)") {
             "I have generated a report and saved it to the file CoolReport.pdf."

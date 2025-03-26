@@ -25,8 +25,7 @@ package tri.promptfx
  */
 object PromptFxModels {
 
-    val policy: PromptFxPolicy = PromptFxPolicyUnrestricted
-//    val policy: PromptFxPolicy = PromptFxPolicyOpenAi
+    var policy: PromptFxPolicy = PromptFxPolicyUnrestricted
 
     fun textCompletionModels() = policy.textCompletionModels()
     fun textCompletionModelDefault() = policy.textCompletionModelDefault()

@@ -36,9 +36,7 @@ import tri.promptfx.PromptFxModels
 abstract class ChatView(title: String, instruction: String, private val roles: List<MChatRole>, showInput: Boolean) : AiTaskView(title, instruction, showInput) {
 
     private val chatModels = PromptFxModels.policy.multimodalModels()
-
     protected val system = SimpleStringProperty("")
-
     protected val model = SimpleObjectProperty(PromptFxModels.policy.multimodalModelDefault())
     protected val messageHistory = SimpleIntegerProperty(10)
 

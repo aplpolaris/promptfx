@@ -25,7 +25,9 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.EventTarget
 import javafx.scene.layout.HBox
 import javafx.scene.Node
+import javafx.scene.control.ContentDisplay
 import javafx.scene.control.Hyperlink
+import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
 import tri.ai.text.docs.FormattedText
@@ -75,9 +77,31 @@ fun FormattedTextNode.toFxNode(hyperlinkOp: (String) -> Unit): Node =
     when (hyperlink) {
         null -> Text(text).also {
             it.style = style
+            tooltip?.let { t -> it.fancytooltip(t) }
         }
         else -> Hyperlink(text).also {
             it.style = style
+            tooltip?.let { t -> it.fancytooltip(t) }
             it.action { hyperlinkOp(text) }
         }
     }
+
+private fun Node.fancytooltip(tip: String) = tooltip(
+    graphic = vbox(10.0) {
+        if ("\n\n" in tip) {
+            this.text(tip.substringBefore("\n\n")) {
+                style = "-fx-font-weight: normal; -fx-font-size: 14; -fx-fill: #eee"
+                wrappingWidth = 300.0
+            }
+            this.text(tip.substringAfter("\n\n")) {
+                style = "-fx-font-style: italic; -fx-font-size: 14; -fx-fill: white"
+                wrappingWidth = 300.0
+            }
+        } else {
+            this.text(tip)
+        }
+        vgrow = Priority.NEVER
+    }
+) {
+    contentDisplay = ContentDisplay.GRAPHIC_ONLY
+}

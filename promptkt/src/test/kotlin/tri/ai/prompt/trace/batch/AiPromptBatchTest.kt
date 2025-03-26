@@ -53,7 +53,7 @@ class AiPromptBatchTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks(), PrintMonitor()).interimResults.values.onEach {
+            AiPipelineExecutor.execute(batch.tasks { TextPlugin.textCompletionModel(it) }, PrintMonitor()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -68,7 +68,7 @@ class AiPromptBatchTest {
                 AiModelInfo(defaultTextCompletion.modelId),
                 4
             )
-            val result = AiPipelineExecutor.execute(batch.tasks(), PrintMonitor())
+            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.textCompletionModel(it) }, PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result.interimResults.values)
             }

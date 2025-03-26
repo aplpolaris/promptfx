@@ -26,6 +26,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonWriter
 import tri.ai.openai.yamlWriter
 import tri.ai.pips.*
@@ -66,14 +67,12 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            batch.tasks().map {
-                it.execute(mapOf(), IgnoreMonitor)
-            }
+            batch.plan { TextPlugin.textCompletionModel(it) }.execute(IgnoreMonitor).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         val writer = if (jsonOut) jsonWriter else yamlWriter
-        val outputObject: Any = if (database) AiPromptTraceDatabase(result) else result
+        val outputObject: Any = if (database) AiPromptTraceDatabase(listOf(result)) else result
         writer.writeValue(outputFile, outputObject)
 
         println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
