@@ -1,0 +1,110 @@
+# Sample runtime prompt file that overrides the default prompt file.
+---
+# basic prompt for extracting dates
+date-extraction: |
+  Extract a list of dates from the following text, and format as {{DATE_FORMAT}}.
+  '''
+  {{{input}}}
+  '''
+
+# using the same name as predefined prompt will override the default
+question-answer: |
+  Answer the following question about the text below. If you do not know the answer, say you don't know.
+  ```
+  {{{input}}}
+  ```
+  Question: {{{instruct}}}
+  Answer:
+  
+# you can also add new prompts
+question-answer-custom: |
+  Answer the following question about the quoted text. If you do not know the answer, say you don't know.
+  ```
+  {{{input}}}
+  ```
+  Question: {{{instruct}}}
+  Answer:
+  
+# question-answer-* prompts are used in the Document Q&A view to answer questions
+# keywords:
+#   {{{instruct}}} - question
+#   {{{input}}} - document sections
+
+question-answer-docs-custom: |
+  Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
+  Please also indicate the documents used to answer the question.
+  Question: {{{instruct}}}
+  ```
+  {{{input}}}
+  ```
+  Answer: 
+  
+# snippet-joiner-* prompts are used in the Document Q&A to combine text chunks for a prompt
+# keywords:
+#   {{matches}} - list of snippets
+#   {{name}} - name of snippet
+#   {{{text}}} - text of snippet
+
+snippet-joiner-custom: |
+  {{#matches}}
+  Document: {{name}}
+  Relevant Text: {{{text}}}  
+  {{/matches}}
+  
+# document-map-* prompts are used in the Document Insights view to run against all snippets
+# keywords:
+#   {{{input}}} - text to process
+document-map-custom: |
+  Extract three main points from this text:
+  ```
+  {{{input}}}
+  ```
+  
+# document-map-* prompts are used in the Document Insights view to run against all snippets
+# keywords:
+#   {{{input}}} - text to process
+document-map-custom3: |
+  Extract three main points from this text:
+  ```
+  {{{input}}}
+  ```
+
+# document-reduce-* prompts are used in the Document Insights view to combine snippet results
+# keywords:
+#   {{{input}}} - text to process
+document-reduce-custom: |
+  Combine all of the provided points into a list of five most important takeaways.
+  ```
+  {{{input}}}
+  ```
+
+# extract author from input
+extract-author: |
+  Input: {{{input}}}
+  Author: 
+
+# extract date from input
+extract-date: |
+  Input: {{{input}}}
+  Date (mm/dd/yyyy): 
+
+# extract topic from text
+extract-topic: |
+  Input: {{{input}}}
+  Topic: 
+
+# simplify text for a given audience
+text-simplify-audience:
+  template-name: Simplify
+  template-prompt: |
+    Simplify the following text into 1-2 short sentences explaining the main idea.
+    Write it for {{audience}}.
+    For younger audiences, keep it short with minimal jargon. For more technical audiences, use precise technical terminology.
+    ```
+    {{{input}}}
+    ```
+    
+image-describe-ips:
+  template-name: Get IPs from image
+  template-prompt: |
+    Extract a list of IPs found in the image, as a JSON list. If there are none, return an empty list.

@@ -1,0 +1,33 @@
+# Library of view configurations
+---
+date-extraction:
+  category: Text
+  title: Date Extraction
+  description: Extract all dates from input text and provide as a list.
+  promptConfig:
+    id: date-extraction
+  modeOptions:
+    - templateId: DATE_FORMAT
+      label: Date Format
+      values:
+        - ISO8601 Date
+        - MMM dd, yyyy
+        - yyyy/MM/dd
+        - the 12th of February
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
+entity-extraction:
+  category: Text
+  title: Entity Extraction
+  description: Extract entities from text (testing runtime override)
+  promptConfig:
+    id: entity-extraction
+  modeOptions:
+    - id: entities
+      templateId: mode
+      label: Mode
+    - id: structured-format
+      templateId: format
+      label: Format as
+  isShowModelParameters: true
