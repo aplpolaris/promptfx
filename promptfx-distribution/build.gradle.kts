@@ -40,13 +40,11 @@ platformsWithExts.forEach { (platform, ext) ->
                 destinationDir.deleteRecursively()
             }
         }
-        from("launchers/run-$platform.$ext") {
+        from("src/main/launchers/run-$platform.$ext") {
             filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to version))
             filteringCharset = "UTF-8"
         }
-        from("config") {
-            into("config")
-        }
+        from("src/main/dist")
         from(appJar) {
             rename { "promptfx-$version.jar" }
         }
