@@ -1,0 +1,41 @@
+# Configuration for the Starship Demo mode
+---
+explain:
+  - "AI generates a random question about LLMs."
+  - "Using semantic text similarity models, we look for matching paragraphs in a set of source documents."
+  - "LLMs answer the question using the matching paragraphs."
+  - "The answer is summarized for the target audience."
+  - "The answer can be transformed in other ways depending on the use case."
+
+prompt-info:
+  - text-simplify-audience:
+      audience: a general audience
+  - document-reduce-outline
+  - document-reduce-technical-terms
+  - translate-text:
+      instruct: a random language
+
+user-options:
+  text-simplify-audience:
+    audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
+  translate-text:
+    instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
+
+random-question:
+  # template uses {{topic}} and {{example}} to pick from lists below
+  template: |
+    Generate a random question about LLMs. The question should be 10-20 words.
+    The random question should be about {{topic}}.
+    Example Question:
+      - {{example}}
+  topics:
+    - "the theory behind an LLM architecture ({{types:2}})"
+    - "applications for LLMs ({{apps}})"
+    - "history of LLMs"
+  examples:
+    - "What are the main components of a transformer model?"
+    - "What are some applications of LLMs in the medical field?"
+    - "When was the first transformer model created?"
+  lists:
+    types: [ "transformer models", "BERT", "GPT-3", "T5", "RoBERTa", "XLNet", "ALBERT", "DistilBERT", "ELECTRA", "CamemBERT", "XLM-RoBERTa", "BART", "Pegasus", "MarianMT", "MBart", "Turing-NLG", "GPT-2", "GPT-4" ]
+    apps: [ "medical diagnosis", "chatbots", "translation", "summarization", "question-answering", "text generation", "code generation", "image generation", "music generation", "video generation", "data analysis", "data visualization", "data summarization", "data governance" ]
