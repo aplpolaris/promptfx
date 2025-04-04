@@ -84,7 +84,15 @@ PromptFX works with **OpenAI** and **Google Gemini** APIs. You can enter your AP
 #### Gemini:
 - Save your key in a file named `apikey-gemini.txt` in the app folder
 
-## Customization
+### ⚙️ Runtime Options
+
+PromptFX supports optional runtime flags that modify behavior or enable experimental features.
+
+| Flag         | Description                                                                 |
+|--------------|-----------------------------------------------------------------------------|
+| `starship` | Enables the **Starship demo** button in the UI, allowing access to features defined in `config/starship.yaml`. |
+
+### 🛠️ Runtime Configuration Files
 
 PromptFX uses YAML files to configure models, views, prompts, and runtime behavior. You can customize these to suit your needs.
 
