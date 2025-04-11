@@ -20,6 +20,7 @@
 import tri.ai.core.TextPlugin;
 import tri.ai.gemini.GeminiAiPlugin;
 import tri.ai.openai.OpenAiPlugin;
+import tri.ai.openai.api.OpenAiApiPlugin;
 
 module tri.promptkt {
     requires transitive kotlin.stdlib;
@@ -63,6 +64,7 @@ module tri.promptkt {
     opens tri.ai.embedding to com.fasterxml.jackson.databind;
     opens tri.ai.memory to com.fasterxml.jackson.databind;
     opens tri.ai.openai to com.fasterxml.jackson.databind;
+    opens tri.ai.openai.api to com.fasterxml.jackson.databind;
     opens tri.ai.pips to com.fasterxml.jackson.databind;
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
@@ -74,6 +76,7 @@ module tri.promptkt {
     exports tri.ai.gemini;
     exports tri.ai.memory;
     exports tri.ai.openai;
+    exports tri.ai.openai.api;
     exports tri.ai.pips;
     exports tri.ai.prompt;
     exports tri.ai.prompt.trace;
@@ -88,5 +91,5 @@ module tri.promptkt {
     // services (service loader API)
     uses TextPlugin;
 
-    provides TextPlugin with OpenAiPlugin, GeminiAiPlugin;
+    provides TextPlugin with OpenAiPlugin, GeminiAiPlugin, OpenAiApiPlugin;
 }

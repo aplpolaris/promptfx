@@ -25,7 +25,7 @@ import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.process.SmartTextChunker
 
 /** An embedding service that uses the OpenAI API. */
-class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val client: OpenAiClient = OpenAiClient.INSTANCE) : EmbeddingService {
+class OpenAiEmbeddingService(override val modelId: String = EMBEDDING_ADA, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) : EmbeddingService {
 
     override fun toString() = modelId
 

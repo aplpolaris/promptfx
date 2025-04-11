@@ -28,7 +28,9 @@ import com.aallam.openai.api.edits.EditsRequest
 import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.file.FileSource
 import com.aallam.openai.api.image.ImageCreation
+import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.client.OpenAI
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
@@ -37,44 +39,40 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
-import tri.ai.core.TextChatMessage
-import tri.ai.core.MChatRole
+import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.openai.api.OpenAiApiSettings
 import tri.ai.pips.UsageUnit
 import tri.ai.prompt.trace.*
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
 import java.util.*
 
-/** OpenAI API client with built-in usage tracking. */
-class OpenAiClient(val settings: OpenAiSettings) {
+/** Adapter for an OpenAI client with usage tracking. */
+class OpenAiAdapter(val settings: OpenAiApiSettings, val client: OpenAI) {
 
-    /** OpenAI API client. */
-    val client
-        get() = settings.client
+    companion object {
+        private val INSTANCE_SETTINGS = OpenAiApiSettingsBasic()
+        val INSTANCE = OpenAiAdapter(INSTANCE_SETTINGS, INSTANCE_SETTINGS.buildClient())
+    }
+
     /** OpenAI API usage stats. */
     val usage = mutableMapOf<UsageUnit, Int>()
 
     //region QUICK API CALLS
 
-    /** Checks for an OpenAI API key, if the base URL points to OpenAI. */
-    private fun checkApiKey() {
-        val isOpenAi = settings.baseUrl.let { it == null || it.contains("api.openai.com") }
-        val isValidOpenAiKey = settings.apiKey.startsWith("sk-") && !settings.apiKey.trim().contains(" ")
-        if (!isValidOpenAiKey && isOpenAi)
-            throw UnsupportedOperationException("Invalid OpenAi API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
-    }
-
     /** Runs an embedding using ADA embedding model. */
     suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiPromptTrace<List<List<Double>>> {
-        checkApiKey()
+        settings.checkApiKey()
         return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
     /** Runs an embedding using ADA embedding model. */
     suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace<List<List<Double>>> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val resp = client.embeddings(EmbeddingRequest(
@@ -93,7 +91,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a quick audio transcription for a given file. */
     suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace<String> {
-        checkApiKey()
+        settings.checkApiKey()
         if (!audioFile.isAudioFile())
             return AiPromptTrace.invalidRequest(modelId, "Audio file not provided.")
 
@@ -119,7 +117,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a text completion request. */
     suspend fun completion(completionRequest: CompletionRequest): AiPromptTrace<String> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val resp = client.completion(completionRequest)
@@ -139,7 +137,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a chat response. */
     suspend fun chat(completionRequest: ChatCompletionRequest): AiPromptTrace<ChatMessage> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val userInputOnly = completionRequest.messages.size == 1 && completionRequest.messages.first().role == ChatRole.User
@@ -165,7 +163,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
     /** Runs an edit request (deprecated API). */
     @Suppress("DEPRECATION")
     suspend fun edit(request: EditsRequest): AiPromptTrace<String> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val resp = client.edit(request)
@@ -181,7 +179,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs an image creation request. */
     suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace<String> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val resp = client.imageURL(imageCreation)
@@ -197,7 +195,7 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     /** Runs a speech request. */
     suspend fun speech(request: SpeechRequest): AiPromptTraceSupport<ByteArray> {
-        checkApiKey()
+        settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
         val resp = client.speech(request)
@@ -292,41 +290,6 @@ class OpenAiClient(val settings: OpenAiSettings) {
 
     //endregion
 
-    companion object {
-        val INSTANCE by lazy { OpenAiClient(OpenAiSettings()) }
-
-        /** Convert from [MChatRole] to OpenAI [ChatRole]. */
-        fun MChatRole.toOpenAiRole() = when (this) {
-            MChatRole.System -> ChatRole.System
-            MChatRole.User -> ChatRole.User
-            MChatRole.Assistant -> ChatRole.Assistant
-            else -> error("Invalid role: $this")
-        }
-
-        /** Convert from OpenAI [ChatRole] to [MChatRole]. */
-        fun ChatRole.fromOpenAiRole() = when (this) {
-            ChatRole.System -> MChatRole.System
-            ChatRole.User -> MChatRole.User
-            ChatRole.Assistant -> MChatRole.Assistant
-            else -> error("Invalid role: $this")
-        }
-
-        /** Convert from [TextChatMessage] to OpenAI [ChatMessage]. */
-        fun TextChatMessage.toOpenAiMessage() =
-            ChatMessage(role.toOpenAiRole(), content)
-
-        /** Convert from OpenAI [ChatMessage] to [TextChatMessage]. */
-        fun ChatMessage.fromOpenAiMessage(): TextChatMessage {
-            val mc = messageContent
-            val usePrompt = when {
-                mc is TextContent -> mc.content
-                mc is ListContent && mc.content.size == 1 && mc.content[0] is TextPart -> (mc.content[0] as TextPart).text
-                else -> null
-            }
-            return TextChatMessage(role.fromOpenAiRole(), usePrompt)
-        }
-    }
-
 }
 
 //region UTILS
@@ -345,5 +308,76 @@ val yamlWriter: ObjectWriter = yamlMapper.writerWithDefaultPrettyPrinter()
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
+
+//endregion
+
+//region OpenAI CONVERSIONS
+
+/** Convert from [MChatRole] to OpenAI [ChatRole]. */
+fun MChatRole.toOpenAiRole() = when (this) {
+    MChatRole.System -> ChatRole.System
+    MChatRole.User -> ChatRole.User
+    MChatRole.Assistant -> ChatRole.Assistant
+    else -> error("Invalid role: $this")
+}
+
+/** Convert from OpenAI [ChatRole] to [MChatRole]. */
+fun ChatRole.fromOpenAiRole() = when (this) {
+    ChatRole.System -> MChatRole.System
+    ChatRole.User -> MChatRole.User
+    ChatRole.Assistant -> MChatRole.Assistant
+    else -> error("Invalid role: $this")
+}
+
+/** Convert from [TextChatMessage] to OpenAI [ChatMessage]. */
+fun TextChatMessage.toOpenAiMessage() =
+    ChatMessage(role.toOpenAiRole(), content)
+
+/** Convert from OpenAI [ChatMessage] to [TextChatMessage]. */
+fun ChatMessage.fromOpenAiMessage(): TextChatMessage {
+    val mc = messageContent
+    val usePrompt = when {
+        mc is TextContent -> mc.content
+        mc is ListContent && mc.content.size == 1 && mc.content[0] is TextPart -> (mc.content[0] as TextPart).text
+        else -> null
+    }
+    return TextChatMessage(role.fromOpenAiRole(), usePrompt)
+}
+
+/** Convert from OpenAI [Model] to [ModelInfo]. */
+fun Model.toModelInfo(source: String): ModelInfo {
+    val existing = OpenAiModelIndex.modelInfoIndex[id.id]
+    val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, source)
+    created?.let {
+        info.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
+    }
+
+    if (info.type == ModelType.UNKNOWN) {
+        when {
+            "moderation" in id.id -> info.type = ModelType.MODERATION
+            "-realtime-" in id.id -> {
+                info.type = ModelType.REALTIME_CHAT
+                info.inputs = listOf(DataModality.text, DataModality.audio)
+                info.outputs = listOf(DataModality.text, DataModality.audio)
+            }
+            "-audio-" in id.id -> {
+                info.type = ModelType.AUDIO_CHAT
+                info.inputs = listOf(DataModality.audio)
+                info.outputs = listOf(DataModality.audio)
+            }
+            else -> {
+                // attempt to assign type for tagged models based on a "parent type"
+                var possibleTypeId = id.id
+                while (OpenAiModelIndex.modelInfoIndex[possibleTypeId]?.type in listOf(null, ModelType.UNKNOWN)) {
+                    possibleTypeId = possibleTypeId.substringBeforeLast("-")
+                    if ("-" !in possibleTypeId) break
+                }
+                info.type = OpenAiModelIndex.modelInfoIndex[possibleTypeId]?.type ?: ModelType.UNKNOWN
+            }
+        }
+    }
+
+    return info
+}
 
 //endregion

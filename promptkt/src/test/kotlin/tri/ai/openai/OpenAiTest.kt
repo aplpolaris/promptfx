@@ -33,11 +33,11 @@ import tri.util.BASE64_IMAGE_SAMPLE
 
 class OpenAiTest {
 
-    val client = OpenAiClient.INSTANCE.client
+    val client = OpenAiAdapter.INSTANCE.client
 
     @Test
     fun testModelLibrary() {
-        println(OpenAiModelIndex.MODEL_INFO_INDEX)
+        println(OpenAiModelIndex.modelInfoIndex)
     }
 
     @Test
@@ -47,10 +47,10 @@ class OpenAiTest {
         println(res)
         println("-".repeat(50))
         println("OpenAI API models not in local index: " +
-                (res.map { it.id.id }.toSet() - OpenAiModelIndex.MODEL_INFO_INDEX.values.map { it.id }.toSet()))
+                (res.map { it.id.id }.toSet() - OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()))
         println("-".repeat(50))
         println("Local index models not in OpenAI API: " +
-                (OpenAiModelIndex.MODEL_INFO_INDEX.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
+                (OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet() - res.map { it.id.id }.toSet()))
     }
 
     @Test

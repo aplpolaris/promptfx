@@ -23,8 +23,7 @@ import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.MultimodalChat
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.tool.JsonToolTest.Companion.SAMPLE_TOOLS
@@ -36,7 +35,7 @@ class JsonMultimodalToolExecutorTest {
 
     @Test
     fun testTools() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
         runBlocking {
             JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)

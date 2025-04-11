@@ -1,0 +1,13 @@
+# Library of OpenAI API compatible endpoints
+---
+endpoints: []
+
+# Sample Endpoint
+#  - source: OpenAI (pluggable config)
+#    settings:
+#      baseUrl: https://api.openai.com/v1/
+#      apiKeyFile: apikey.txt
+#      apiKeyRegistry: OPENAI_API_KEY
+#      logLevel: None
+#      timeoutSeconds: 60
+#    modelFileName: openai-models.yaml

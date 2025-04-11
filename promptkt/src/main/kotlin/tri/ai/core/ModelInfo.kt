@@ -43,7 +43,7 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     var params: MutableMap<String, Any> = mutableMapOf()
 
     override fun toString() =
-        "id ($type $source)"
+        "$id ($type $source)"
 
     /** Sets non-null parameters based on provided list of key-value pairs. */
     fun params(vararg pairs: Pair<String, Any?>) {

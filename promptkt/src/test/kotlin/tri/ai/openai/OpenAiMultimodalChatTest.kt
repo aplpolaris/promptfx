@@ -26,7 +26,7 @@ import tri.ai.core.*
 
 class OpenAiMultimodalChatTest {
 
-    private val client = OpenAiClient.INSTANCE
+    private val client = OpenAiAdapter.INSTANCE
     private val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, client)
     private val chatVision = OpenAiMultimodalChat(OpenAiModelIndex.GPT4_TURBO_ID, client)
 

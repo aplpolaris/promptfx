@@ -17,18 +17,19 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai
+package tri.ai.openai.azure
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
+import tri.ai.openai.*
 
 /**
  * Implementation of [TextPlugin] using OpenAI API.
  * Models are as described in `openai-models.yaml`.
  */
-class OpenAiPlugin : TextPlugin {
+class OpenAiAzurePlugin : TextPlugin {
 
-    val client = OpenAiAdapter.INSTANCE
+    val client = OpenAiAzureSettings.INSTANCE
 
     override fun modelSource() = "OpenAI"
 
@@ -42,23 +43,23 @@ class OpenAiPlugin : TextPlugin {
     }
 
     override fun embeddingModels() =
-        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingService(it, client) }
+        OpenAiAzureModelIndex.embeddingModels().map { OpenAiEmbeddingService(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
-        OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
+        OpenAiAzureModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
+                OpenAiAzureModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
+        OpenAiAzureModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
+        OpenAiAzureModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+        OpenAiAzureModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
+        OpenAiAzureModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()

@@ -26,12 +26,11 @@ import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
-import tri.ai.openai.OpenAiClient.Companion.toOpenAiMessage
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with OpenAI chat models. */
-class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) :
+class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
     TextCompletion {
 
     override fun toString() = modelId

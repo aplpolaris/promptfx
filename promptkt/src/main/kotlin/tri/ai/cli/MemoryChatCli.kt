@@ -63,7 +63,7 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
             MIN_LEVEL_TO_LOG = Level.FINE
         } else {
             MIN_LEVEL_TO_LOG = Level.WARNING
-            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+            OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         }
 
         println(greeting)
