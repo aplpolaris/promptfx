@@ -78,7 +78,7 @@ class AiEngineView: View() {
                             contentText = "API Key:"
                             showAndWait().ifPresent {
                                 if (it.isNotBlank())
-                                    (OpenAiAdapter.INSTANCE.settings as OpenAiApiSettingsBasic).apiKey = it
+                                    OpenAiAdapter.apiKey = it
                             }
                         }
                     }

@@ -52,11 +52,20 @@ import java.time.ZoneId
 import java.util.*
 
 /** Adapter for an OpenAI client with usage tracking. */
-class OpenAiAdapter(val settings: OpenAiApiSettings, val client: OpenAI) {
+class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
+
+    var client = _client
+        internal set
 
     companion object {
         private val INSTANCE_SETTINGS = OpenAiApiSettingsBasic()
         val INSTANCE = OpenAiAdapter(INSTANCE_SETTINGS, INSTANCE_SETTINGS.buildClient())
+        var apiKey
+            get() = INSTANCE_SETTINGS.apiKey
+            set(value) {
+                INSTANCE_SETTINGS.apiKey = value
+                INSTANCE.client = INSTANCE_SETTINGS.buildClient()
+            }
     }
 
     /** OpenAI API usage stats. */
