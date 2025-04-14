@@ -6,7 +6,7 @@ group = "com.googlecode.blaisemath"
 version = "0.10.2"
 
 val appName = "promptfx"
-val appVersion = "0.10.2"
+val appVersion = "0.10.3-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -19,12 +19,16 @@ val appJar by configurations.creating {
 }
 
 dependencies {
-    appJar("$group:$appName:$appVersion:jar-with-dependencies@jar")
+    appJar("$group:$appName:$appVersion:windows@jar")
+    appJar("$group:$appName:$appVersion:macos@jar")
+    appJar("$group:$appName:$appVersion:macos64@jar")
+    appJar("$group:$appName:$appVersion:linux@jar")
 }
 
 val platformsWithExts = mapOf(
     "windows" to "bat",
     "macos" to "command",
+    "macos64" to "command",
     "linux" to "sh"
 )
 

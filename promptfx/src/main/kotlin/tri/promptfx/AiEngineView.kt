@@ -28,6 +28,7 @@ import javafx.scene.Cursor
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
 import tri.ai.openai.OpenAiAdapter
+import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.promptfx.PromptFxDriver.showDriverDialog
 import tri.util.ui.graphic
 
@@ -77,7 +78,7 @@ class AiEngineView: View() {
                             contentText = "API Key:"
                             showAndWait().ifPresent {
                                 if (it.isNotBlank())
-                                    OpenAiAdapter.INSTANCE.settings.apiKey = it
+                                    (OpenAiAdapter.INSTANCE.settings as OpenAiApiSettingsBasic).apiKey = it
                             }
                         }
                     }
