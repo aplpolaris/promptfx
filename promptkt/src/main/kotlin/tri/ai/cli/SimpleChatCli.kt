@@ -29,7 +29,7 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.TextPlugin
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
@@ -61,7 +61,7 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
             MIN_LEVEL_TO_LOG = Level.FINE
         } else {
             MIN_LEVEL_TO_LOG = Level.WARNING
-            OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+            OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         }
 
         runBlocking {

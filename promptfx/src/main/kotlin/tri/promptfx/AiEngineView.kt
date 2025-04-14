@@ -27,7 +27,8 @@ import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
+import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.promptfx.PromptFxDriver.showDriverDialog
 import tri.util.ui.graphic
 
@@ -70,14 +71,14 @@ class AiEngineView: View() {
             if (PromptFxModels.policy.isShowApiKeyButton)
                 button("", graphic = FontAwesomeIcon.KEY.graphic) {
                     action {
-                        TextInputDialog(OpenAiClient.INSTANCE.settings.apiKey).apply {
+                        TextInputDialog(OpenAiAdapter.INSTANCE.settings.apiKey).apply {
                             initOwner(primaryStage)
                             title = "OpenAI API Key"
                             headerText = "Enter your OpenAI API key."
                             contentText = "API Key:"
                             showAndWait().ifPresent {
                                 if (it.isNotBlank())
-                                    OpenAiClient.INSTANCE.settings.apiKey = it
+                                    OpenAiAdapter.apiKey = it
                             }
                         }
                     }

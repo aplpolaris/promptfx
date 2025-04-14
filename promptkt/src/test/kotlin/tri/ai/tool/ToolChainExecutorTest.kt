@@ -23,7 +23,7 @@ import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.prompt.AiPromptLibrary
@@ -35,7 +35,7 @@ class ToolChainExecutorTest {
 
     @Test
     fun testTools() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Calculator", "Use this to do math") {
             override suspend fun run(input: String) = "42"
@@ -56,7 +56,7 @@ class ToolChainExecutorTest {
 
     @Test
     fun testTools2() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = object : Tool("Data Query", "Use this to search for data that is needed to answer a question") {
             override suspend fun run(input: String) = OpenAiCompletionChat().complete(input, tokens = 500).firstValue
@@ -76,7 +76,7 @@ class ToolChainExecutorTest {
 
     @Test
     fun testTools3() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
         val tool1 = tool("Abstract", "Use this to extract the abstract of a research paper (input is a reference to the paper)") {
             """

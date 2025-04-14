@@ -23,7 +23,7 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Parameters
 import com.aallam.openai.api.model.ModelId
 import kotlinx.serialization.SerializationException
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
 import tri.util.*
 
 /**
@@ -31,7 +31,7 @@ import tri.util.*
  * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
  * query if needed.
  */
-class JsonToolExecutor(val client: OpenAiClient, val model: String, val tools: List<JsonTool>) {
+class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: List<JsonTool>) {
 
     private val chatTools = tools.mapNotNull {
         val params = try {

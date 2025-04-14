@@ -35,9 +35,24 @@ PromptFX is ideal for experimentation, prototyping, and learning about prompt wo
 
 Once launched, the PromptFX interface provides multiple tabs for different types of AI interactions, including direct prompting, chaining, view-based templates, and more.
 
+> **EXECUTABLE CONFIGURATION**
+> 
+> You may need to approve the app in your system's security settings if it doesn't open right away.
+> 
+> **For Apple Macs (Intel or ARM)**:
+> Right-click the unzipped folder and select `New Terminal At Folder`.
+> Paste the following command into the terminal. This is a one-time operation that removes the
+> quarantine flag allowing you to run downloaded software:
+> ```bash
+> xattr -rd com.apple.quarantine .
+> ```
+> Then, run the app using the `run-macos.command` file.
+ 
+> **JAVA INSTALLATION**
+> 
 > You’ll need Java 17+ installed unless you’re using a bundled version (coming soon).
 > 
-> **For Apple Silicon (ARM) Macs**: PromptFX was built using OpenJDK 21. If you don't have Java 21 installed, run:
+> **For Apple Macs (Intel or ARM)**: PromptFX was built using OpenJDK 21. If you don't have Java 21 installed, run:
 > ```bash
 > brew install openjdk@21
 > ```

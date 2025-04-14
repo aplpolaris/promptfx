@@ -35,7 +35,7 @@ import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.openai.OpenAiClient
+import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.text.chunks.process.LocalTextDocIndex
 import tri.ai.text.chunks.process.SmartTextChunker
@@ -92,7 +92,7 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
     private val config by requireObject<DocumentQaConfig>()
 
     override fun run() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
         val driver = createQaDriver(config)
 
@@ -141,7 +141,7 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         }
 
     override fun run() {
-        OpenAiClient.INSTANCE.settings.logLevel = LogLevel.None
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
         val driver = createQaDriver(config)
 

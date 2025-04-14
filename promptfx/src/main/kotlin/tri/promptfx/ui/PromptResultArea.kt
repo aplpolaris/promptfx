@@ -161,10 +161,19 @@ abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
 
     /** Set the final result to display in the result area. */
     fun setFinalResult(finalResult: AiPromptTraceSupport<*>) {
-        val results = finalResult.values?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
-        this.results.setAll(results)
-        this.resultsFormatted.setAll((finalResult as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
-        selectionIndex.set(0)
+        if (finalResult.exec.error != null) {
+            results.setAll("(error)")
+            resultsFormatted.setAll(listOf())
+            selectionIndex.set(0)
+            error(owner = currentWindow,
+                header = "Error during Execution",
+                content = "Error: ${finalResult.exec.error}")
+        } else {
+            val results = finalResult.values?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
+            this.results.setAll(results)
+            this.resultsFormatted.setAll((finalResult as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
+            selectionIndex.set(0)
+        }
         trace.set(finalResult)
     }
 

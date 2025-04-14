@@ -22,11 +22,10 @@ package tri.ai.openai
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.*
-import tri.ai.openai.OpenAiClient.Companion.fromOpenAiRole
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
-class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35_TURBO, val client: OpenAiClient = OpenAiClient.INSTANCE) :
+class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
     MultimodalChat {
 
     override fun toString() = modelId

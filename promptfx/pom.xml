@@ -145,21 +145,13 @@
             <version>${javafx.version}</version>
         </dependency>
 
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-media</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-swing</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-web</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
-
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-media</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-swing</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
-        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-web</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-media</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-swing</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-web</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
 
         <dependency>
             <groupId>org.controlsfx</groupId>
@@ -264,7 +256,11 @@
                         <manifest>
                             <mainClass>${main.class}</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <Built-For>${platform.name}</Built-For>
+                        </manifestEntries>
                     </archive>
+                    <finalName>${project.artifactId}-${project.version}-${platform.name}</finalName>
                 </configuration>
                 <executions>
                     <execution>
@@ -401,6 +397,46 @@
     </reporting>
 
     <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>win</javafx.platform>
+                <platform.name>windows</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>macos</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>mac</javafx.platform>
+                <platform.name>macos</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>mac64</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>mac-aarch64</javafx.platform>
+                <platform.name>mac64</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>linux</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>linux</javafx.platform>
+                <platform.name>linux</platform.name>
+            </properties>
+        </profile>
         <profile>
             <!-- this is for building sources & javadocs, signing, & deploying to staging repo -->
             <id>release</id>
