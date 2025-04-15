@@ -24,6 +24,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.util.fine
 import tri.util.warning
 import java.io.File
 
@@ -34,7 +35,7 @@ open class ModelIndex(val modelFileName: String) {
     private val models: ModelLibrary by lazy {
         val resource = javaClass.getResourceAsStream("resources/$modelFileName")
         if (resource == null) {
-            warning<ModelIndex>("Model resource index not found: $modelFileName. Using runtime configuration only.")
+            fine<ModelIndex>("Model resource index not found: $modelFileName. Using runtime configuration only.")
             ModelLibrary()
         } else {
             MAPPER.readValue(resource)

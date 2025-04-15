@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.MAPPER
 import tri.ai.core.ModelIndex
+import tri.util.info
 import java.io.File
 
 /**
@@ -45,6 +46,8 @@ class OpenAiApiConfig {
                     MAPPER.readValue<OpenAiApiConfig>(it)
                 } ?: OpenAiApiConfig()
             val runtimeSources = runtimeConfig.endpoints.map { it.source }.toSet()
+            if (runtimeSources.isNotEmpty())
+                info<OpenAiApiConfig>("Registering OpenAI-compatible API endpoint(s): $runtimeSources")
             endpoints.addAll(defaultConfig.endpoints.filter { it.source !in runtimeSources })
             endpoints.addAll(runtimeConfig.endpoints)
         }
@@ -59,6 +62,5 @@ class OpenAiApiEndpointConfig {
     var modelFileName: String = ""
 
     @get:JsonIgnore
-    val index
-        get() = ModelIndex(modelFileName)
+    val index by lazy { ModelIndex(modelFileName) }
 }
