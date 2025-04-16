@@ -44,7 +44,7 @@ import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
 import tri.ai.text.docs.FormattedPromptTraceResult
-import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.promptfx.ui.PromptResultArea
 import tri.util.ui.graphic
 import java.io.File
@@ -65,7 +65,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val controller: PromptFxController by inject()
     val progress: AiProgressView by inject()
     val resultArea = PromptResultArea()
-    val formattedResultArea = FormattedPromptResultArea()
+    val formattedResultArea = PromptResultAreaFormatted()
 
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult<*>) -> Unit> = mutableListOf()

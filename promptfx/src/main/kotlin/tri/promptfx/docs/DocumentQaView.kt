@@ -46,7 +46,7 @@ import tri.ai.text.docs.QuestionAnswerResult
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
@@ -80,6 +80,7 @@ class DocumentQaView: AiPlanTaskView(
     private val singleInput = SimpleBooleanProperty(true)
     private val multiInput = SimpleBooleanProperty(false)
     val question = SimpleStringProperty("")
+    val resultBox: PromptResultAreaFormatted
 
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
@@ -167,7 +168,7 @@ class DocumentQaView: AiPlanTaskView(
             promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
-        val resultBox = FormattedPromptResultArea()
+        resultBox = PromptResultAreaFormatted()
         outputPane.clear()
         outputPane.add(resultBox)
 
@@ -185,9 +186,18 @@ class DocumentQaView: AiPlanTaskView(
             error("No questions found.")
             return
         }
+        val results = mutableListOf<AiPipelineResult<*>>()
         questions.forEach {
             question.set(it)
-            super.runTask { AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress) }
+            super.runTask {
+                AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress).also {
+                    results += it
+                    if (results.size == questions.size)
+                        runLater {
+                            resultBox.setFinalResultList(results.map { it.finalResult })
+                        }
+                }
+            }
         }
         question.set(questionInput)
     }

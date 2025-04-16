@@ -43,7 +43,7 @@ import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextClustering.generateClusterHierarchy
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.FormattedTextNode
@@ -99,7 +99,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
             }
         }
 
-        val resultBox = FormattedPromptResultArea()
+        val resultBox = PromptResultAreaFormatted()
         outputPane.clear()
         output {
             borderpane {

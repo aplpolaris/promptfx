@@ -23,18 +23,20 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import tornadofx.*
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ui.plainText
 
 /** Formatted text area for displaying a prompt result or other output, based on [TextFlow].
  * Adds support for clickable links, cycling outputs if multiple, and save to file.
  */
-class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Result Area") {
+class PromptResultAreaFormatted : Fragment("Formatted Prompt Result Area") {
 
+    private val model = PromptResultAreaModel()
     private val htmlArea = TextFlow()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        addtoolbar()
+        addtoolbar(model)
         scrollpane {
             vgrow = Priority.ALWAYS
             isFitToWidth = true
@@ -43,11 +45,11 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
                 vgrow = Priority.ALWAYS
                 style = "-fx-font-size: 16px;"
 
-                promptTraceContextMenu(this@FormattedPromptResultArea, trace) {
+                promptTraceContextMenu(model.trace) {
                     item("Copy output to clipboard") {
                         action {
                             clipboard.setContent(mapOf(
-                                DataFormat.HTML to selectionHtml.value,
+                                DataFormat.HTML to model.resultTextHtml,
                                 DataFormat.PLAIN_TEXT to plainText()
                             ))
                         }
@@ -60,10 +62,22 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
 
     init {
         root
-        selectionFormatted.onChange {
+        model.resultTextFormatted.onChange {
             htmlArea.children.clear()
             htmlArea.children.addAll(it?.toFxNodes() ?: listOf())
         }
     }
 
+    /** Set final result for a single trace. */
+    fun setFinalResult(finalResult: AiPromptTraceSupport<out Any?>) {
+        model.setFinalResult(finalResult, currentWindow)
+    }
+
+    /** Set final result as a collection of traces. */
+    fun setFinalResultList(resultList: List<AiPromptTraceSupport<out Any?>>) {
+        if (resultList.size == 1)
+            model.setFinalResult(resultList.first(), currentWindow)
+        else
+            model.setFinalResultList(resultList, currentWindow)
+    }
 }

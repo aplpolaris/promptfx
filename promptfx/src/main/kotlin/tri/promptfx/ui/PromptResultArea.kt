@@ -20,8 +20,7 @@
 package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
 import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
@@ -29,9 +28,6 @@ import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTraceSupport
-import tri.ai.text.docs.FormattedPromptTraceResult
-import tri.ai.text.docs.FormattedText
-import tri.ai.text.docs.toHtml
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
@@ -44,29 +40,24 @@ import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
 
 /**
- * Text area for displaying a prompt result or other output, with support for cycling outputs if multiple.
+ * Text area displaying one or more prompt results, with associated formatting.
  * Adjusts font size, adds ability to copy/save output to a file.
  */
-class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
+class PromptResultArea : Fragment("Prompt Result Area") {
 
-    private val containsCode = selectionString.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
-    private val containsPlantUml = selectionString.booleanBinding { it != null && (
-            it.contains("@startuml") && it.contains("@enduml") ||
-            it.contains("@startmindmap") && it.contains("@endmindmap")
-        )
-    }
+    val model = PromptResultAreaModel()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        addtoolbar()
-        textarea(selectionString) {
+        addtoolbar(model)
+        textarea(model.resultText) {
             promptText = "Prompt output will be shown here"
             isEditable = false
             isWrapText = true
             font = Font("Segoe UI Emoji", 18.0)
             vgrow = Priority.ALWAYS
 
-            promptTraceContextMenu(this@PromptResultArea, trace) {
+            promptTraceContextMenu(model.trace) {
                 item("Select all") {
                     action { selectAll() }
                 }
@@ -87,42 +78,40 @@ class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
                 }
                 separator()
                 item("Copy code") {
-                    enableWhen(containsCode)
+                    enableWhen(model.containsCode)
                     action { copyCode() }
                 }
                 item("Browse to PlantUML diagram") {
-                    enableWhen(containsPlantUml)
+                    enableWhen(model.containsPlantUml)
                     action { browseToPlantUml() }
                 }
                 item("Show PlantUML diagram") {
-                    enableWhen(containsPlantUml)
+                    enableWhen(model.containsPlantUml)
                     action { showPlantUmlPopup() }
                 }
             }
         }
     }
 
+    fun setFinalResult(finalResult: AiPromptTraceSupport<out Any?>) {
+        model.setFinalResult(finalResult, currentWindow)
+    }
+
     //region DETECTED CODE ACTIONS
 
     private fun copyCode() {
-        val code = selectionString.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
+        val code = model.resultText.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
         clipboard.putString(code)
     }
 
-    private fun plantUmlText() = if ("@startuml" in selectionString.value) {
-        "@startuml\n" + selectionString.value.substringAfter("@startuml").substringBefore("@enduml").trim() + "\n@enduml"
-    } else {
-        "@startmindmap\n" + selectionString.value.substringAfter("@startmindmap").substringBefore("@endmindmap").trim() + "\n@endmindmap"
-    }
-
     private fun browseToPlantUml() {
-        val url = plantUmlUrlText(plantUmlText(), type="uml")
+        val url = plantUmlUrlText(model.plantUmlText, type="uml")
         println(url)
         hostServices.showDocument(url)
     }
 
     private fun showPlantUmlPopup() {
-        val url = plantUmlUrlText(plantUmlText(), type="png")
+        val url = plantUmlUrlText(model.plantUmlText, type="png")
         val image = Image(url)
         if (!image.isError && !image.isBackgroundLoading && image.width > 0.0 && image.height > 0.0)
             showImageDialog(image)
@@ -134,75 +123,51 @@ class PromptResultArea : PromptResultAreaSupport("Prompt Result Area") {
 
 }
 
-/** Implementation of a prompt result area with support for displaying a list of results. */
-abstract class PromptResultAreaSupport(title: String) : Fragment(title) {
+//region UI HELPERS
 
-    /** The trace being represented in the result area. */
-    val trace = SimpleObjectProperty<AiPromptTraceSupport<*>>(null)
-    /** List of results to display in the result area. */
-    protected val results = observableListOf<String>()
-    /** List of results, as [FormattedText], if present. */
-    protected val resultsFormatted = observableListOf<FormattedText>()
-    /** Whether there are multiple results to display. */
-    private val multiResult = results.sizeProperty.greaterThan(1)
-
-    /** Index of the currently selected result. */
-    private val selectionIndex = SimpleIntegerProperty()
-    /** String representation of the currently selected result. */
-    val selectionString = selectionIndex.stringBinding(results) {
-        results.getOrNull(it?.toInt() ?: 0)
-    }
-    /** Formatted representation of the currently selected result. */
-    protected val selectionFormatted = selectionIndex.objectBinding(resultsFormatted) {
-        resultsFormatted.getOrNull(it?.toInt() ?: 0)
-    }
-    /** HTML representation of the currently selected result. */
-    protected val selectionHtml = selectionFormatted.stringBinding { it?.toHtml() ?: "<html>(No result)" }
-
-    /** Set the final result to display in the result area. */
-    fun setFinalResult(finalResult: AiPromptTraceSupport<*>) {
-        if (finalResult.exec.error != null) {
-            results.setAll("(error)")
-            resultsFormatted.setAll(listOf())
-            selectionIndex.set(0)
-            error(owner = currentWindow,
-                header = "Error during Execution",
-                content = "Error: ${finalResult.exec.error}")
-        } else {
-            val results = finalResult.values?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
-            this.results.setAll(results)
-            this.resultsFormatted.setAll((finalResult as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
-            selectionIndex.set(0)
-        }
-        trace.set(finalResult)
-    }
-
-    /** Adds a toolbar that appears when there are multiple results presented. */
-    protected fun EventTarget.addtoolbar() {
-        toolbar {
-            visibleWhen(multiResult)
-            managedWhen(multiResult)
+/** Adds a toolbar that appears when there are multiple results presented. */
+fun EventTarget.addtoolbar(model: PromptResultAreaModel) {
+    toolbar {
+        visibleWhen(model.multiResult.or(model.multiTrace))
+        managedWhen(model.multiResult.or(model.multiTrace))
+        hbox {
+            visibleWhen(model.multiTrace)
+            managedWhen(model.multiTrace)
+            label("Trace")
             button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
-                enableWhen(selectionIndex.greaterThan(0))
-                action { selectionIndex.set(selectionIndex.value - 1) }
+                enableWhen(model.traceIndex.greaterThan(0))
+                action { model.traceIndex.set(model.traceIndex.value - 1) }
             }
             button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
-                enableWhen(selectionIndex.lessThan(results.sizeProperty.subtract(1)))
-                action { selectionIndex.set(selectionIndex.value + 1) }
+                enableWhen(model.traceIndex.lessThan(model.traces.sizeProperty.subtract(1)))
+                action { model.traceIndex.set(model.traceIndex.value + 1) }
+            }
+        }
+        hbox {
+            visibleWhen(model.multiResult)
+            managedWhen(model.multiResult)
+            label("Result")
+            button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
+                enableWhen(model.resultIndex.greaterThan(0))
+                action { model.resultIndex.set(model.resultIndex.value - 1) }
+            }
+            button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
+                enableWhen(model.resultIndex.lessThan(model.results.sizeProperty.subtract(1)))
+                action { model.resultIndex.set(model.resultIndex.value + 1) }
             }
         }
     }
-
 }
 
 /** Set up a context menu with a given prompt trace object. */
-fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObjectProperty<AiPromptTraceSupport<*>>, op: ContextMenu.() -> Unit = {}) =
+fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport<*>?>, op: ContextMenu.() -> Unit = {}) {
+    val value = trace.value ?: return
     lazyContextmenu {
         item("Details...") {
-            enableWhen { trace.isNotNull }
+            enableWhen { trace.booleanBinding { it != null } }
             action {
                 find<PromptTraceDetailsUi>().apply {
-                    setTrace(trace.value)
+                    setTrace(value)
                     openModal()
                 }
             }
@@ -210,16 +175,19 @@ fun EventTarget.promptTraceContextMenu(component: Component, trace: SimpleObject
         item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
             enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
             action {
-                find<PromptFxWorkspace>().launchTemplateView(trace.value)
+                find<PromptFxWorkspace>().launchTemplateView(value)
             }
         }
         item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
             enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
             action {
-                find<PromptFxWorkspace>().launchHistoryView(trace.value)
+                find<PromptFxWorkspace>().launchHistoryView(value)
             }
         }
-        buildsendresultmenu(trace, find<PromptFxWorkspace>())
+        buildsendresultmenu(value, find<PromptFxWorkspace>())
         separator()
         op()
     }
+}
+
+//endregion
