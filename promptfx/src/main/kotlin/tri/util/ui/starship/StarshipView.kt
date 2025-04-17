@@ -38,6 +38,7 @@ import tri.promptfx.PromptFxDriver.sendInput
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.ai.text.docs.FormattedText
+import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.toFxNodes
 import tri.util.info
 import tri.util.ui.*

@@ -85,14 +85,12 @@ class PromptResultAreaModel {
 
     /** Clears the list of traces. */
     fun clearTraces() {
-        println(ANSI_RED + "clear traces" + ANSI_RESET)
         traceIndex.set(0)
         traces.clear()
     }
 
     /** Adds a trace to the result, and selects it. */
     fun addTrace(trace: AiPromptTraceSupport<*>) {
-        println(ANSI_RED + "add trace" + ANSI_RESET)
         traces.add(trace)
         traceIndex.set(traces.size - 1)
     }

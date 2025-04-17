@@ -316,7 +316,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Adds trace of an execution to the output area. */
-    protected fun addTrace(trace: AiPromptTraceSupport<*>) {
+    protected open fun addTrace(trace: AiPromptTraceSupport<*>) {
         when (trace) {
             is AiPromptTrace<*> ->
                 resultArea.model.addTrace(trace)

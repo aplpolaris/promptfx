@@ -35,6 +35,7 @@ import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.tools.PromptTemplateView
 import tri.promptfx.library.TextManagerView
 import tri.promptfx.tools.PromptTraceHistoryView
+import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
