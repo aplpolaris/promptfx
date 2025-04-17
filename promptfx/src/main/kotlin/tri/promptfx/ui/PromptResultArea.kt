@@ -26,6 +26,7 @@ import javafx.scene.control.ContextMenu
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
+import javafx.stage.Window
 import tornadofx.*
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
@@ -93,10 +94,6 @@ class PromptResultArea : Fragment("Prompt Result Area") {
         }
     }
 
-    fun setFinalResult(finalResult: AiPromptTraceSupport<out Any?>) {
-        model.setFinalResult(finalResult, currentWindow)
-    }
-
     //region DETECTED CODE ACTIONS
 
     private fun copyCode() {
@@ -125,67 +122,85 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
 //region UI HELPERS
 
+fun AiPromptTraceSupport<*>.checkError(window: Window?) {
+    if (exec.error != null) {
+        error(
+            owner = window,
+            header = "Error during Execution",
+            content = "Error: ${exec.error}"
+        )
+    }
+}
+
 /** Adds a toolbar that appears when there are multiple results presented. */
 fun EventTarget.addtoolbar(model: PromptResultAreaModel) {
     toolbar {
         visibleWhen(model.multiResult.or(model.multiTrace))
         managedWhen(model.multiResult.or(model.multiTrace))
-        hbox {
+        label("Question") {
             visibleWhen(model.multiTrace)
             managedWhen(model.multiTrace)
-            label("Trace")
-            button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
-                enableWhen(model.traceIndex.greaterThan(0))
-                action { model.traceIndex.set(model.traceIndex.value - 1) }
-            }
-            button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
-                enableWhen(model.traceIndex.lessThan(model.traces.sizeProperty.subtract(1)))
-                action { model.traceIndex.set(model.traceIndex.value + 1) }
-            }
         }
-        hbox {
+        button("", FontAwesomeIcon.ANGLE_DOUBLE_LEFT.graphic) {
+            visibleWhen(model.multiTrace)
+            managedWhen(model.multiTrace)
+            enableWhen(model.traceIndex.greaterThan(0))
+            action { model.traceIndex.set(model.traceIndex.value - 1) }
+        }
+        button("", FontAwesomeIcon.ANGLE_DOUBLE_RIGHT.graphic) {
+            visibleWhen(model.multiTrace)
+            managedWhen(model.multiTrace)
+            enableWhen(model.traceIndex.lessThan(model.traces.sizeProperty.subtract(1)))
+            action { model.traceIndex.set(model.traceIndex.value + 1) }
+        }
+        label("Response") {
             visibleWhen(model.multiResult)
             managedWhen(model.multiResult)
-            label("Result")
-            button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
-                enableWhen(model.resultIndex.greaterThan(0))
-                action { model.resultIndex.set(model.resultIndex.value - 1) }
-            }
-            button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
-                enableWhen(model.resultIndex.lessThan(model.results.sizeProperty.subtract(1)))
-                action { model.resultIndex.set(model.resultIndex.value + 1) }
-            }
+        }
+        button("", FontAwesomeIcon.ANGLE_LEFT.graphic) {
+            visibleWhen(model.multiResult)
+            managedWhen(model.multiResult)
+            enableWhen(model.resultIndex.greaterThan(0))
+            action { model.resultIndex.set(model.resultIndex.value - 1) }
+        }
+        button("", FontAwesomeIcon.ANGLE_RIGHT.graphic) {
+            visibleWhen(model.multiResult)
+            managedWhen(model.multiResult)
+            enableWhen(model.resultIndex.lessThan(model.results.sizeProperty.subtract(1)))
+            action { model.resultIndex.set(model.resultIndex.value + 1) }
         }
     }
 }
 
 /** Set up a context menu with a given prompt trace object. */
 fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport<*>?>, op: ContextMenu.() -> Unit = {}) {
-    val value = trace.value ?: return
     lazyContextmenu {
-        item("Details...") {
-            enableWhen { trace.booleanBinding { it != null } }
-            action {
-                find<PromptTraceDetailsUi>().apply {
-                    setTrace(value)
-                    openModal()
+        val value = trace.value
+        if (value != null) {
+            item("Details...") {
+                enableWhen { trace.booleanBinding { it != null } }
+                action {
+                    find<PromptTraceDetailsUi>().apply {
+                        setTrace(value)
+                        openModal()
+                    }
                 }
             }
-        }
-        item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-            enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
-            action {
-                find<PromptFxWorkspace>().launchTemplateView(value)
+            item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                action {
+                    find<PromptFxWorkspace>().launchTemplateView(value)
+                }
             }
-        }
-        item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
-            enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
-            action {
-                find<PromptFxWorkspace>().launchHistoryView(value)
+            item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                action {
+                    find<PromptFxWorkspace>().launchHistoryView(value)
+                }
             }
+            buildsendresultmenu(value, find<PromptFxWorkspace>())
+            separator()
         }
-        buildsendresultmenu(value, find<PromptFxWorkspace>())
-        separator()
         op()
     }
 }

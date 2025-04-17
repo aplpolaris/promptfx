@@ -7,8 +7,13 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.toHtml
+import tri.util.ANSI_RED
+import tri.util.ANSI_RESET
 
-/** Implementation of a prompt result area with support for displaying a list of results. */
+/**
+ * Implementation of a prompt result area with support for displaying a list of prompt traces,
+ * each of which may have multiple results.
+ */
 class PromptResultAreaModel {
 
     /** The trace being represented in the result area. */
@@ -49,11 +54,12 @@ class PromptResultAreaModel {
     val resultTextFormatted = resultIndex.objectBinding(resultsFormatted) {
         resultsFormatted.getOrNull(it?.toInt() ?: 0)
     }
+
+    //region ADDITIONAL RESULT CONTENT GETTERS
+
     /** HTML representation of the currently selected result. */
     val resultTextHtml
         get() = resultTextFormatted.value?.toHtml() ?: "<html>(No result)"
-
-    //region ADDITIONAL RESULT CONTENT DETECTION
 
     /** Flag indicating if the selected result contains code. */
     val containsCode = resultText.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
@@ -75,6 +81,26 @@ class PromptResultAreaModel {
 
     //endregion
 
+    //region UPDATING TRACES
+
+    /** Clears the list of traces. */
+    fun clearTraces() {
+        println(ANSI_RED + "clear traces" + ANSI_RESET)
+        traceIndex.set(0)
+        traces.clear()
+    }
+
+    /** Adds a trace to the result, and selects it. */
+    fun addTrace(trace: AiPromptTraceSupport<*>) {
+        println(ANSI_RED + "add trace" + ANSI_RESET)
+        traces.add(trace)
+        traceIndex.set(traces.size - 1)
+    }
+
+    //endregion
+
+    //region UPDATING RESULTS
+
     /** Update the result objects, when the trace changes. */
     private fun updateResults() {
         val single = traces == listOf(trace.value)
@@ -94,24 +120,6 @@ class PromptResultAreaModel {
         }
     }
 
-    /** Set the final result to display in the result area. */
-    fun setFinalResult(finalResult: AiPromptTraceSupport<*>, currentWindow: Window?) {
-        traces.setAll(finalResult)
-        traceIndex.set(0)
-
-        if (finalResult.exec.error != null) {
-            error(
-                owner = currentWindow,
-                header = "Error during Execution",
-                content = "Error: ${finalResult.exec.error}"
-            )
-        }
-    }
-
-    /** Set the final result to display in the result area, as a list of results. */
-    fun setFinalResultList(resultList: List<AiPromptTraceSupport<*>>, currentWindow: Window?) {
-        traces.setAll(resultList)
-        traceIndex.set(0)
-    }
+    //endregions
 
 }

@@ -80,7 +80,6 @@ class DocumentQaView: AiPlanTaskView(
     private val singleInput = SimpleBooleanProperty(true)
     private val multiInput = SimpleBooleanProperty(false)
     val question = SimpleStringProperty("")
-    val resultBox: PromptResultAreaFormatted
 
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
@@ -168,17 +167,17 @@ class DocumentQaView: AiPlanTaskView(
             promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
         }
 
-        resultBox = PromptResultAreaFormatted()
         outputPane.clear()
-        outputPane.add(resultBox)
-
-        onCompleted {
-            resultBox.setFinalResult(it.finalResult)
-        }
+        outputPane.add(formattedResultArea)
+        onCompleted.clear()
     }
 
-    /** Executes task on a background thread and updates progress info. */
+    /**
+     * Executes task on a background thread and updates progress info.
+     * Overwrites parent method to allow for batch execution.
+     */
     override fun runTask(op: suspend () -> AiPipelineResult<*>) {
+        formattedResultArea.model.clearTraces()
         val questionInput = question.value
         val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
             .filter { it.isNotBlank() }
@@ -186,16 +185,13 @@ class DocumentQaView: AiPlanTaskView(
             error("No questions found.")
             return
         }
-        val results = mutableListOf<AiPipelineResult<*>>()
         questions.forEach {
             question.set(it)
             super.runTask {
                 AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress).also {
-                    results += it
-                    if (results.size == questions.size)
-                        runLater {
-                            resultBox.setFinalResultList(results.map { it.finalResult })
-                        }
+                    runLater {
+                        addTrace(it.finalResult)
+                    }
                 }
             }
         }

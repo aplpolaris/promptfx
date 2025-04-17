@@ -72,7 +72,9 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
                     managedWhen(isShowFormattedOutput)
                 }
                 promptListUi.selectedPrompt.onChange {
-                    setFinalResult(it ?: AiPromptTrace<String>())
+                    model.clearTraces()
+                    if (it != null)
+                        model.addTrace(it)
                 }
                 this@output.add(this)
             }

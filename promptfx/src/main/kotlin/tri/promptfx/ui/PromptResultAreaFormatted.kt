@@ -23,7 +23,6 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.Priority
 import javafx.scene.text.TextFlow
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ui.plainText
 
 /** Formatted text area for displaying a prompt result or other output, based on [TextFlow].
@@ -31,7 +30,7 @@ import tri.util.ui.plainText
  */
 class PromptResultAreaFormatted : Fragment("Formatted Prompt Result Area") {
 
-    private val model = PromptResultAreaModel()
+    val model = PromptResultAreaModel()
     private val htmlArea = TextFlow()
 
     override val root = vbox {
@@ -66,18 +65,5 @@ class PromptResultAreaFormatted : Fragment("Formatted Prompt Result Area") {
             htmlArea.children.clear()
             htmlArea.children.addAll(it?.toFxNodes() ?: listOf())
         }
-    }
-
-    /** Set final result for a single trace. */
-    fun setFinalResult(finalResult: AiPromptTraceSupport<out Any?>) {
-        model.setFinalResult(finalResult, currentWindow)
-    }
-
-    /** Set final result as a collection of traces. */
-    fun setFinalResultList(resultList: List<AiPromptTraceSupport<out Any?>>) {
-        if (resultList.size == 1)
-            model.setFinalResult(resultList.first(), currentWindow)
-        else
-            model.setFinalResultList(resultList, currentWindow)
     }
 }

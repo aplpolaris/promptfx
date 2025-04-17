@@ -138,9 +138,6 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 vgrow = Priority.ALWAYS
             }
         }
-        onCompleted {
-            resultArea.setFinalResult(it.finalResult)
-        }
     }
 
     override fun plan(): AiPlanner {

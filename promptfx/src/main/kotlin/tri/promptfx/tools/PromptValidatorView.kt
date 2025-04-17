@@ -29,6 +29,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.EditablePromptUi
+import tri.promptfx.ui.checkError
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptValidatorView]. */
@@ -58,10 +59,18 @@ class PromptValidatorView : AiPlanTaskView(
         outputPane.clear()
         output {
             add(PromptResultArea().apply {
-                promptOutput.onChange { setFinalResult(it!!) }
+                promptOutput.onChange {
+                    model.clearTraces()
+                    it?.checkError(currentWindow)
+                    model.addTrace(it!!)
+                }
             })
             add(PromptResultArea().apply {
-                validatorOutput.onChange { setFinalResult(it!!) }
+                validatorOutput.onChange {
+                    model.clearTraces()
+                    it?.checkError(currentWindow)
+                    model.addTrace(it!!)
+                }
             })
         }
         onCompleted {
