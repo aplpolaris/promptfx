@@ -35,7 +35,7 @@ class PromptResultAreaFormatted : Fragment("Formatted Prompt Result Area") {
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        addtoolbar(model)
+        addtoolbar(model, this@PromptResultAreaFormatted)
         scrollpane {
             vgrow = Priority.ALWAYS
             isFitToWidth = true

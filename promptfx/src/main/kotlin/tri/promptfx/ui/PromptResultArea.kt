@@ -19,6 +19,8 @@
  */
 package tri.promptfx.ui
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
@@ -27,18 +29,27 @@ import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import javafx.stage.Window
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_CSV
+import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.trace.PromptTraceDetailsUi
+import tri.promptfx.ui.trace.exportPromptTraceDatabase
+import tri.promptfx.ui.trace.exportPromptTraceList
+import tri.promptfx.ui.trace.exportPromptTraceListCsv
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
+import java.io.File
 
 /**
  * Text area displaying one or more prompt results, with associated formatting.
@@ -50,7 +61,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        addtoolbar(model)
+        addtoolbar(model, this@PromptResultArea)
         textarea(model.resultText) {
             promptText = "Prompt output will be shown here"
             isEditable = false
@@ -133,7 +144,7 @@ fun AiPromptTraceSupport<*>.checkError(window: Window?) {
 }
 
 /** Adds a toolbar that appears when there are multiple results presented. */
-fun EventTarget.addtoolbar(model: PromptResultAreaModel) {
+fun EventTarget.addtoolbar(model: PromptResultAreaModel, component: UIComponent) {
     toolbar {
         visibleWhen(model.multiResult.or(model.multiTrace))
         managedWhen(model.multiResult.or(model.multiTrace))
@@ -168,6 +179,25 @@ fun EventTarget.addtoolbar(model: PromptResultAreaModel) {
             managedWhen(model.multiResult)
             enableWhen(model.resultIndex.lessThan(model.results.sizeProperty.subtract(1)))
             action { model.resultIndex.set(model.resultIndex.value + 1) }
+        }
+        separator {  }
+        // export menu button
+        menubutton("Export") {
+            item("as CSV...") {
+                action {
+                    component.exportPromptTraceListCsv(model.traces.toList())
+                }
+            }
+            item("as JSON/YAML List...") {
+                action {
+                    component.exportPromptTraceList(model.traces.toList())
+                }
+            }
+            item("as JSON/YAML Database...") {
+                action {
+                    component.exportPromptTraceDatabase(model.traces.toList())
+                }
+            }
         }
     }
 }

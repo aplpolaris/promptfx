@@ -60,6 +60,7 @@ module tri.promptkt {
 
     opens tri.ai.gemini to io.ktor.serialization;
 
+    opens tri.ai.cli to com.fasterxml.jackson.databind;
     opens tri.ai.core to com.fasterxml.jackson.databind;
     opens tri.ai.embedding to com.fasterxml.jackson.databind;
     opens tri.ai.memory to com.fasterxml.jackson.databind;
@@ -71,6 +72,7 @@ module tri.promptkt {
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
     opens tri.ai.text.chunks to com.fasterxml.jackson.databind, com.github.mustachejava;
 
+    exports tri.ai.cli;
     exports tri.ai.core;
     exports tri.ai.embedding;
     exports tri.ai.gemini;
