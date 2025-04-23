@@ -7,7 +7,7 @@ Write-Host $javaVersion
 $rootPath = "C:\path-to-folder\my-research-papers"
 
 # Define the path to your jar file
-$jarFilePath = "C:\path-to-jar\promptfx-x.x.x-jar-with-dependencies.jar"
+$jarFilePath = "C:\path-to-jar\promptkt-x.x.x-jar-with-dependencies.jar"
 
 # Define the model
 $model = "gpt-4o-mini"
