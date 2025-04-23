@@ -12,6 +12,9 @@ $jarFilePath = "C:\path-to-jar\promptfx-x.x.x-jar-with-dependencies.jar"
 # Define the model
 $model = "gpt-4o-mini"
 
+# Define the embedding model
+$embeddingModel = "text-embedding-3-small"
+
 # Define the file containing the list of questions
 $questionsFile = "questions.txt"
 
@@ -28,7 +31,7 @@ $questions = Get-Content $questionsFile
 foreach ($question in $questions) {
     # Construct the command
     Write-Host $question
-    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
+    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
     Write-Host $command
 
     # Execute the command and capture the output

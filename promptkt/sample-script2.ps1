@@ -8,7 +8,7 @@ Write-Host "Current Java Version:"
 Write-Host $javaVersion
 
 # Define the path to your jar file
-$jarFilePath = "C:\Users\petereb1\Desktop\DEMOS\promptfx\OPENAI VERSION\promptfx-0.10.2.jar"
+$jarFilePath = "C:\path-to-jar\promptfx-x.x.x-jar-with-dependencies.jar"
 
 # Define the root path to the collection of folders
 $rootPath = "C:\data\docstest"
@@ -61,7 +61,7 @@ $results = @()
 foreach ($question in $questions) {
     # Construct the command
     Write-Host $question
-    $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
+    $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
     Write-Host $command2
 
     # Execute the command and capture the output
