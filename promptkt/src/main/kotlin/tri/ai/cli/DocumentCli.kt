@@ -182,6 +182,7 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
             }
             println("Reindexing complete.")
         }
+        TextPlugin.orderedPlugins.forEach { it.close() }
     }
 }
 
@@ -215,6 +216,7 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
         docs.saveIndex()
 
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
+        TextPlugin.orderedPlugins.forEach { it.close() }
     }
 }
 
