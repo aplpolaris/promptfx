@@ -161,7 +161,8 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         val response = runBlocking {
             driver.answerQuestion(question, numResponses = numResponses)
         }
-        println(response.finalResult.firstValue)
+        val aggregatedResponses = response.finalResult.output?.outputs?.joinToString("\n\n") ?: ""
+        println(aggregatedResponses)
 
         driver.close()
     }

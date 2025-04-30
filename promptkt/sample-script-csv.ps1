@@ -1,7 +1,11 @@
 ###
+###
+### sample-script2.ps1
+###
 ### This script is designed to run a Java application that processes text files and generates answers to questions.
 ### The chunking process is executed first to enable control over chunking parameters (max-chunk-size).
 ### The Q&A process is executed second with command-line parameters for temperature (temp) and max # of tokens (max-tokens).
+###
 ###
 
 # Print the current Java version
@@ -10,10 +14,10 @@ Write-Host "Current Java Version:"
 Write-Host $javaVersion
 
 # Define the path to your jar file
-$jarFilePath = "C:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
+$jarFilePath = "D:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
 
 # Define the root path to the collection of folders
-$rootPath = "C:\data\docstest"
+$rootPath = "D:\data\chatgpt\foundation-model-papers"
 
 # Define the embedding model
 $embeddingModel = "text-embedding-3-small"

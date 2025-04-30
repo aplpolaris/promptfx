@@ -1,5 +1,9 @@
 ###
+###
+### sample-script.ps1
+###
 ### This script is designed to run a Java application that processes text files and generates answers to questions.
+###
 ###
 
 # Print the current Java version
@@ -8,10 +12,10 @@ Write-Host "Current Java Version:"
 Write-Host $javaVersion
 
 # Define the root path to the collection of folders
-$rootPath = "C:\data\docstest"
+$rootPath = "D:\data\chatgpt\foundation-model-papers"
 
 # Define the path to your jar file
-$jarFilePath = "C:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
+$jarFilePath = "D:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
 
 # Define the model
 $model = "gpt-4o-mini"
@@ -41,9 +45,16 @@ foreach ($question in $questions) {
     # Execute the command and capture the output
     $output = Invoke-Expression $command
 
-    # Append the question and the corresponding output to the output file
+    # Ensure output is a string with preserved newlines
+    $outputText = if ($output -is [System.Array]) {
+        $output -join "`n"
+    } else {
+        $output
+    }
+
+    # Append to file
     Add-Content $outputFile "`nQuestion: $question"
-    Add-Content $outputFile "Answer: $output"
+    Add-Content $outputFile "Answer:`n$outputText"
     Add-Content $outputFile "`n---`n"
 }
 
