@@ -90,6 +90,12 @@ class DocumentCli : CliktCommand(name = "document") {
 /** Command-line app for asking questions of documents. */
 class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switch between folders until done") {
     private val config by requireObject<DocumentQaConfig>()
+    private val chatHistory by option(help = "Number of chat history messages to include (default 0)")
+        .int()
+        .default(0)
+        .validate {
+            require(it >= 0) { "Chat history must be greater than or equal to 0." }
+        }
 
     override fun run() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
@@ -118,7 +124,7 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
                         println("Invalid folder $folder. " + status(driver.folders.toString()))
                     }
                 } else {
-                    val result = driver.answerQuestion(input) // TODO - add support for including chat history
+                    val result = driver.answerQuestion(input, historySize = chatHistory)
                     println(result.finalResult)
                 }
                 print("> ")
@@ -135,6 +141,12 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
 /** Command-line app for generating a response using a folder of documents. */
 class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
     private val config by requireObject<DocumentQaConfig>()
+    private val numResponses by option(help = "Number of responses to generate per question (default 1)")
+        .int()
+        .default(1)
+        .validate {
+            require(it > 0) { "Number of responses must be greater than 0." }
+        }
     private val question by argument(help = "Question to ask about the documents")
         .validate {
             require(it.isNotBlank()) { "Question must not be blank." }
@@ -147,7 +159,7 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
 
         info<DocumentQa>("  question: $question")
         val response = runBlocking {
-            driver.answerQuestion(question)
+            driver.answerQuestion(question, numResponses = numResponses)
         }
         println(response.finalResult.firstValue)
 

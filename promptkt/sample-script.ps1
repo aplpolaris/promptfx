@@ -1,13 +1,17 @@
+###
+### This script is designed to run a Java application that processes text files and generates answers to questions.
+###
+
 # Print the current Java version
 $javaVersion = java -version 2>&1
 Write-Host "Current Java Version:"
 Write-Host $javaVersion
 
 # Define the root path to the collection of folders
-$rootPath = "C:\path-to-folder\my-research-papers"
+$rootPath = "C:\data\docstest"
 
 # Define the path to your jar file
-$jarFilePath = "C:\path-to-jar\promptkt-x.x.x-jar-with-dependencies.jar"
+$jarFilePath = "C:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
 
 # Define the model
 $model = "gpt-4o-mini"
@@ -31,7 +35,7 @@ $questions = Get-Content $questionsFile
 foreach ($question in $questions) {
     # Construct the command
     Write-Host $question
-    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
+    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa --num-responses=2 `"$question`""
     Write-Host $command
 
     # Execute the command and capture the output

@@ -1,5 +1,7 @@
 ###
 ### This script is designed to run a Java application that processes text files and generates answers to questions.
+### The chunking process is executed first to enable control over chunking parameters (max-chunk-size).
+### The Q&A process is executed second with command-line parameters for temperature (temp) and max # of tokens (max-tokens).
 ###
 
 # Print the current Java version
@@ -8,7 +10,7 @@ Write-Host "Current Java Version:"
 Write-Host $javaVersion
 
 # Define the path to your jar file
-$jarFilePath = "C:\path-to-jar\promptkt-x.x.x-jar-with-dependencies.jar"
+$jarFilePath = "C:\code\aplpolaris\promptfx\promptkt\target\promptkt-0.10.3-SNAPSHOT-jar-with-dependencies.jar"
 
 # Define the root path to the collection of folders
 $rootPath = "C:\data\docstest"
@@ -61,7 +63,7 @@ $results = @()
 foreach ($question in $questions) {
     # Construct the command
     Write-Host $question
-    $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa `"$question`""
+    $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa --num-responses=2 `"$question`""
     Write-Host $command2
 
     # Execute the command and capture the output
