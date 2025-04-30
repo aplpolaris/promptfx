@@ -27,6 +27,9 @@ import tri.ai.pips.AiTaskList
 import tri.ai.pips.task
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_ID
+import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
+import tri.ai.prompt.trace.AiModelInfo.Companion.EMBEDDING_MODEL
 import tri.ai.text.chunks.SnippetJoiner
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -87,6 +90,12 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
                 it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
             }
         }
+        val model = response.model ?: AiModelInfo(modelId = completionEngine.modelId)
+        model.modelParams = (response.model?.modelParams ?: mapOf()) + mapOf<String, Any>(
+            EMBEDDING_MODEL to index.embeddingService.modelId,
+            CHUNKER_ID to "PromptFx",
+            CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
+        )
         response.mapOutput {
             QuestionAnswerResult(
                 query = SemanticTextQuery(question, questionEmbedding, index.embeddingService.modelId),

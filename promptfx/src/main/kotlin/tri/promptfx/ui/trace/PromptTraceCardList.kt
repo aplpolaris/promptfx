@@ -19,6 +19,10 @@
  */
 package tri.promptfx.ui.trace
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
+import com.fasterxml.jackson.dataformat.csv.CsvMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
@@ -29,7 +33,14 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.cli.writeTraceDatabase
 import tri.ai.cli.writeTraces
+import tri.ai.prompt.AiPrompt.Companion.INSTRUCT
+import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
+import tri.ai.prompt.trace.AiModelInfo.Companion.EMBEDDING_MODEL
+import tri.ai.prompt.trace.AiModelInfo.Companion.MAX_TOKENS
+import tri.ai.prompt.trace.AiModelInfo.Companion.TEMPERATURE
+import tri.ai.prompt.trace.AiPromptInfo.Companion.INPUT
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -170,6 +181,11 @@ class PromptTraceCardList: Fragment() {
                         exportPromptTraceDatabase(filteredPrompts.toList())
                     }
                 }
+                item("Export as CSV...") {
+                    action {
+                        exportPromptTraceListCsv(filteredPrompts.toList())
+                    }
+                }
             }
             if (isRemovable) {
                 button("", FontAwesomeIcon.TRASH.graphic) {
@@ -250,7 +266,7 @@ fun UIComponent.exportPromptTraceListCsv(traces: List<AiPromptTraceSupport<*>>) 
         filters = arrayOf(FF_CSV, FF_ALL),
         mode = FileChooserMode.Save
     ) { file ->
-        TODO()
+        file.first { writeTraceListCsv(traces, it) }
     }
 }
 
@@ -263,4 +279,76 @@ private fun List<File>.first(op: (File) -> Unit) {
             }
         }
     }
+}
+
+/** Utility for writing a Q&A row to a CSV file. */
+@JsonPropertyOrder(
+    "ragEngine",
+    "embeddingModel",
+    "chunkSize",
+    "chatModel",
+    "temperature",
+    "responseTokens",
+    "question",
+    "answer",
+    "answerIndex",
+    "error"
+)
+
+data class DocQaCsvRow(
+    @JsonProperty("RAG Engine")
+    val ragEngine: String,
+    @JsonProperty("Embedding Model")
+    val embeddingModel: Any?,
+    @JsonProperty("Chunk Size")
+    val chunkSize: Any?,
+    @JsonProperty("Chat Model")
+    val chatModel: String,
+    @JsonProperty("Temperature")
+    val temperature: Any?,
+    @JsonProperty("Response Tokens")
+    val responseTokens: Any?,
+    @JsonProperty("Question")
+    val question: Any?,
+    @JsonProperty("Answer")
+    val answer: String,
+    @JsonProperty("Answer Index")
+    val answerIndex: Int,
+    @JsonProperty("Error")
+    val error: String?
+)
+
+/** Writes the given [AiPromptTraceDatabase] to the specified CSV file. */
+fun writeTraceListCsv(traces: List<AiPromptTraceSupport<*>>, file: File) {
+    val mapper = CsvMapper().apply {
+        registerKotlinModule()
+    }
+    val schema = mapper.schemaFor(DocQaCsvRow::class.java).withHeader()
+    val rows = traces.flatMap { t ->
+        t.output?.outputs?.mapIndexed { i, output ->
+            DocQaCsvRow("PromptFx",
+                t.model?.modelParams?.get(EMBEDDING_MODEL),
+                t.model?.modelParams?.get(CHUNKER_MAX_CHUNK_SIZE),
+                t.model?.modelId ?: "unknown",
+                t.model?.modelParams?.get(TEMPERATURE),
+                t.model?.modelParams?.get(MAX_TOKENS),
+                t.prompt?.promptParams?.get(INSTRUCT),
+                output.toString(),
+                i+1,
+                null
+            )
+        } ?:
+        listOf(DocQaCsvRow("PromptFx",
+            "unknown",
+            "0",
+            t.model?.modelId ?: "unknown",
+            t.model?.modelParams?.get(TEMPERATURE),
+            t.model?.modelParams?.get(MAX_TOKENS),
+            t.prompt?.promptParams?.get(INPUT),
+            "",
+            0,
+            "No output"
+        ))
+    }
+    mapper.writer(schema).writeValue(file, rows)
 }

@@ -50,6 +50,9 @@ data class AiModelInfo(
         const val STYLE = "style"
         const val VOICE = "voice"
         const val SPEED = "speed"
+        const val EMBEDDING_MODEL = "embedding_model"
+        const val CHUNKER_ID = "chunker_id"
+        const val CHUNKER_MAX_CHUNK_SIZE = "chunker_max_chunk_size"
 
         /** Create model info. */
         fun info(modelId: String, vararg pairs: Pair<String, Any?>) =
