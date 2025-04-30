@@ -19,8 +19,6 @@
  */
 package tri.promptfx.ui
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.ObjectWriter
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
@@ -29,15 +27,10 @@ import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.text.Font
 import javafx.stage.Window
-import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiPromptTraceSupport
-import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
-import tri.promptfx.PromptFxConfig.Companion.FF_CSV
-import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
@@ -49,7 +42,6 @@ import tri.promptfx.ui.trace.exportPromptTraceListCsv
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
-import java.io.File
 
 /**
  * Text area displaying one or more prompt results, with associated formatting.

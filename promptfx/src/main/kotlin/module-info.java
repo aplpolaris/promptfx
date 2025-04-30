@@ -64,6 +64,7 @@ module tri.promptfx {
     requires com.fasterxml.jackson.kotlin;
     requires com.fasterxml.jackson.datatype.jsr310;
     requires com.fasterxml.jackson.dataformat.yaml;
+    requires com.fasterxml.jackson.dataformat.csv;
 
     requires javafx.controls;
     requires javafx.fxml;
