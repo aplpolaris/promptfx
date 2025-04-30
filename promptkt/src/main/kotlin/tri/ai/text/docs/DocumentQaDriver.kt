@@ -44,7 +44,7 @@ interface DocumentQaDriver {
     fun close()
 
     /** Answer a question using documents in the current folder. */
-    suspend fun answerQuestion(input: String): AiPipelineResult<String>
+    suspend fun answerQuestion(input: String, numResponses: Int = 1, historySize: Int = 1): AiPipelineResult<String>
 
 }
 

@@ -82,9 +82,9 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         TextPlugin.orderedPlugins.forEach { it.close() }
     }
 
-    override suspend fun answerQuestion(input: String): AiPipelineResult<String> {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult<String> {
         val index = LocalFolderEmbeddingIndex(docsFolder, embeddingModelInst)
-        val planner = DocumentQaPlanner(index, completionModelInst, listOf(), 1).plan(
+        val planner = DocumentQaPlanner(index, completionModelInst, listOf(), historySize).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,
@@ -93,7 +93,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
             contextChunks = 10,
             maxTokens = maxTokens,
             temp = temp,
-            numResponses = 1,
+            numResponses = numResponses,
             snippetCallback = { }
         )
         val monitor = PrintMonitor()

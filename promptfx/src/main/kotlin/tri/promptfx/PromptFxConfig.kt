@@ -114,7 +114,9 @@ class PromptFxConfig: Component(), ScopedInstance {
         const val DIR_KEY_TRACE = "trace"
         const val DIR_KEY_IMAGE = "image"
 
+        val FF_CSV = FileChooser.ExtensionFilter("CSV Files", "*.csv")
         val FF_JSON = FileChooser.ExtensionFilter("JSON", "*.json")
+        val FF_YAML = FileChooser.ExtensionFilter("YAML", "*.yaml", "*.yml")
         val FF_TXT = FileChooser.ExtensionFilter("Text Files", "*.txt", "*.md")
         val FF_PNG = FileChooser.ExtensionFilter("PNG Images", "*.png")
         val FF_IMAGE = FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff")

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.ui
+package tri.promptfx.ui
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
@@ -35,7 +35,10 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.DocumentQaView.Companion.browseToBestSnippet
 import tri.ai.text.docs.FormattedText
-import tri.promptfx.ui.toFxNodes
+import tri.util.ui.AnimatingTextFlow
+import tri.util.ui.AnimatingThumbnailBox
+import tri.util.ui.BlinkingIndicator
+import tri.util.ui.DocumentThumbnail
 import tri.util.ui.DocumentUtils.documentThumbnail
 
 /** View for a full-screen chat display. */
@@ -159,6 +162,9 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         } ui {
             indicator.stopBlinking()
             controller.updateUsage()
+            if (baseComponent is DocumentQaView) {
+                (baseComponent as DocumentQaView).enableHyperlinkActions(listOf(it))
+            }
             output.animateText(it.toFxNodes(), onFinished = {
                 (root.scene.lookup("#chat-input") as TextField).selectAll()
             })

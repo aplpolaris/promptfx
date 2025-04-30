@@ -48,10 +48,10 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
             }
         }
 
-        resultArea.trace.onChange {
+        resultArea.model.trace.onChange {
             updateOutputTextAreaColor(it.toString())
         }
-        resultArea.selectionString.onChange {
+        resultArea.model.resultText.onChange {
             updateOutputTextAreaColor(it.toString())
         }
     }

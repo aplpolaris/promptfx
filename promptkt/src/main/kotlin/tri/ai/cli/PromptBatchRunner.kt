@@ -27,8 +27,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
-import tri.ai.openai.jsonWriter
-import tri.ai.openai.yamlWriter
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
@@ -52,7 +50,6 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
 
     override fun run() {
         val jsonIn = inputFile.extension == "json"
-        val jsonOut = outputFile.extension == "json"
 
         println("${ANSI_CYAN}Reading prompt batch from ${inputFile}...$ANSI_RESET")
         val batch = try {
@@ -71,18 +68,18 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
-        val writer = if (jsonOut) jsonWriter else yamlWriter
-        val outputObject: Any = if (database) AiPromptTraceDatabase(listOf(result)) else result
-        writer.writeValue(outputFile, outputObject)
-
+        when (database) {
+            true -> writeTraceDatabase(AiPromptTraceDatabase(listOf(result)), outputFile)
+            else -> writeTrace(result, outputFile)
+        }
         println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
     }
+}
 
-    private fun checkExtension(file: File, vararg extensions: String): Boolean {
-        if (file.extension !in extensions) {
-            println("Invalid file extension: $file. Must be one of: ${extensions.joinToString(", ")}.")
-            return false
-        }
-        return true
+private fun checkExtension(file: File, vararg extensions: String): Boolean {
+    if (file.extension !in extensions) {
+        println("Invalid file extension: $file. Must be one of: ${extensions.joinToString(", ")}.")
+        return false
     }
+    return true
 }

@@ -28,13 +28,14 @@ import tri.util.ui.plainText
 /** Formatted text area for displaying a prompt result or other output, based on [TextFlow].
  * Adds support for clickable links, cycling outputs if multiple, and save to file.
  */
-class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Result Area") {
+class PromptResultAreaFormatted : Fragment("Formatted Prompt Result Area") {
 
+    val model = PromptResultAreaModel()
     private val htmlArea = TextFlow()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
-        addtoolbar()
+        addtoolbar(model, this@PromptResultAreaFormatted)
         scrollpane {
             vgrow = Priority.ALWAYS
             isFitToWidth = true
@@ -43,11 +44,11 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
                 vgrow = Priority.ALWAYS
                 style = "-fx-font-size: 16px;"
 
-                promptTraceContextMenu(this@FormattedPromptResultArea, trace) {
+                promptTraceContextMenu(model.trace) {
                     item("Copy output to clipboard") {
                         action {
                             clipboard.setContent(mapOf(
-                                DataFormat.HTML to selectionHtml.value,
+                                DataFormat.HTML to model.resultTextHtml,
                                 DataFormat.PLAIN_TEXT to plainText()
                             ))
                         }
@@ -60,10 +61,9 @@ class FormattedPromptResultArea : PromptResultAreaSupport("Formatted Prompt Resu
 
     init {
         root
-        selectionFormatted.onChange {
+        model.resultTextFormatted.onChange {
             htmlArea.children.clear()
             htmlArea.children.addAll(it?.toFxNodes() ?: listOf())
         }
     }
-
 }

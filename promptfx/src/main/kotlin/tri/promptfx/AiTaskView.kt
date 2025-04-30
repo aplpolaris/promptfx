@@ -44,8 +44,9 @@ import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
 import tri.ai.text.docs.FormattedPromptTraceResult
-import tri.promptfx.ui.FormattedPromptResultArea
+import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.promptfx.ui.PromptResultArea
+import tri.promptfx.ui.checkError
 import tri.util.ui.graphic
 import java.io.File
 import java.lang.Exception
@@ -65,7 +66,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val controller: PromptFxController by inject()
     val progress: AiProgressView by inject()
     val resultArea = PromptResultArea()
-    val formattedResultArea = FormattedPromptResultArea()
+    val formattedResultArea = PromptResultAreaFormatted()
 
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult<*>) -> Unit> = mutableListOf()
@@ -310,21 +311,30 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
             add(resultArea.root)
         }
         onCompleted {
-            setFinalResult(it.finalResult)
+            setFinalTrace(it.finalResult)
         }
     }
 
-    protected fun setFinalResult(result: AiPromptTraceSupport<*>) {
-        when (result) {
+    /** Adds trace of an execution to the output area. */
+    protected open fun addTrace(trace: AiPromptTraceSupport<*>) {
+        when (trace) {
             is AiPromptTrace<*> ->
-                resultArea.setFinalResult(result)
+                resultArea.model.addTrace(trace)
             is FormattedPromptTraceResult ->
-                formattedResultArea.setFinalResult(result)
+                formattedResultArea.model.addTrace(trace)
             is AiImageTrace -> {
                 // ignore - this is handled by view
             }
-            else -> throw IllegalStateException("Unexpected result type: $result")
+            else -> throw IllegalStateException("Unexpected result type: $trace")
         }
+    }
+
+    /** Sets the output to display the result of the given execution. */
+    protected fun setFinalTrace(trace: AiPromptTraceSupport<*>) {
+        trace.checkError(currentWindow)
+        resultArea.model.clearTraces()
+        formattedResultArea.model.clearTraces()
+        addTrace(trace)
     }
 
     /** Hide the parameters view. */

@@ -20,21 +20,22 @@
 package tri.promptfx.ui.trace
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
-import javafx.event.EventTarget
 import javafx.scene.control.MultipleSelectionModel
 import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.openai.jsonWriter
+import tri.ai.cli.writeTraceDatabase
+import tri.ai.cli.writeTraces
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig.Companion.FF_CSV
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON
+import tri.promptfx.PromptFxConfig.Companion.FF_YAML
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
@@ -42,6 +43,7 @@ import tri.promptfx.promptFxFileChooser
 import tri.promptfx.tools.PromptTraceFilter
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
+import java.io.File
 
 /** UI for a list of [AiPromptTrace]s. */
 class PromptTraceCardList: Fragment() {
@@ -155,11 +157,18 @@ class PromptTraceCardList: Fragment() {
                     }
                 }
             }
-            button("", FontAwesomeIcon.DOWNLOAD.graphic) {
-                tooltip("Export prompt traces as JSON.")
+            menubutton("", FontAwesomeIcon.DOWNLOAD.graphic) {
+                tooltip("Export prompt traces with details to a file.")
                 enableWhen(prompts.sizeProperty.greaterThan(0))
-                action {
-                    exportPromptTraceList()
+                item("Export as JSON/YAML List...") {
+                    action {
+                        exportPromptTraceList(filteredPrompts.toList())
+                    }
+                }
+                item("Export as JSON/YAML Database...") {
+                    action {
+                        exportPromptTraceDatabase(filteredPrompts.toList())
+                    }
                 }
             }
             if (isRemovable) {
@@ -194,24 +203,6 @@ class PromptTraceCardList: Fragment() {
         }
     }
 
-    private fun exportPromptTraceList() {
-        val promptTraces = filteredPrompts.toList()
-        promptFxFileChooser(
-            dirKey = DIR_KEY_TRACE,
-            title = "Export Prompt Traces as JSON",
-            filters = arrayOf(FF_JSON, FF_ALL),
-            mode = FileChooserMode.Save
-        ) { file ->
-            file.firstOrNull()?.let {
-                runAsync {
-                    runBlocking {
-                        jsonWriter.writeValue(it, promptTraces)
-                    }
-                }
-            }
-        }
-    }
-
     private fun refilter() {
         if (isShowFilter) {
             val filter = promptFilter.filter.value
@@ -225,4 +216,51 @@ class PromptTraceCardList: Fragment() {
         promptSelectionModel.select(prompt)
     }
 
+}
+
+/** Exports the given list of prompt traces to a JSON file. */
+fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport<*>>) {
+    promptFxFileChooser(
+        dirKey = DIR_KEY_TRACE,
+        title = "Export Prompt Traces as JSON/YAML List",
+        filters = arrayOf(FF_JSON, FF_YAML, FF_ALL),
+        mode = FileChooserMode.Save
+    ) { file ->
+        file.first { writeTraces(traces, it) }
+    }
+}
+
+/** Exports the given list of prompt traces as a [AiPromptTraceDatabase] to a user-selected file. */
+fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport<*>>) {
+    promptFxFileChooser(
+        dirKey = DIR_KEY_TRACE,
+        title = "Export Prompt Traces as JSON/YAML Database",
+        filters = arrayOf(FF_JSON, FF_YAML, FF_ALL),
+        mode = FileChooserMode.Save
+    ) { file ->
+        file.first { writeTraceDatabase(traces, it) }
+    }
+}
+
+/** Exports the given list of prompt traces as a CSV file. */
+fun UIComponent.exportPromptTraceListCsv(traces: List<AiPromptTraceSupport<*>>) {
+    promptFxFileChooser(
+        dirKey = DIR_KEY_TRACE,
+        title = "Export Prompt Traces as CSV",
+        filters = arrayOf(FF_CSV, FF_ALL),
+        mode = FileChooserMode.Save
+    ) { file ->
+        TODO()
+    }
+}
+
+/** Utility to run on first file in a background thread. */
+private fun List<File>.first(op: (File) -> Unit) {
+    firstOrNull()?.let {
+        runAsync {
+            runBlocking {
+                op(it)
+            }
+        }
+    }
 }

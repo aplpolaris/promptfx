@@ -20,7 +20,6 @@
 package tri.promptfx.ui.trace
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -56,18 +55,18 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     lateinit var playButton: Button
     private var player: MediaPlayer? = null
 
-    fun setTrace(trace: AiPromptTraceSupport<*>) {
+    fun setTrace(trace: AiPromptTraceSupport<*>?) {
         this.trace.set(trace)
-        prompt.value = trace.prompt?.prompt
-        promptParams.value = trace.prompt?.promptParams
-        model.value = trace.model?.modelId
-        modelParams.value = trace.model?.modelParams
-        exec.value = trace.exec
-        val outputs = trace.output?.outputs ?: listOf("No result")
+        prompt.value = trace?.prompt?.prompt
+        promptParams.value = trace?.prompt?.promptParams
+        model.value = trace?.model?.modelId
+        modelParams.value = trace?.model?.modelParams
+        exec.value = trace?.exec
+        val outputs = trace?.output?.outputs ?: listOf("No result")
         if (outputs.size == 1)
             result.value = outputs[0] ?: "No result"
         else
-            result.value = trace.output?.outputs?.joinToString("\n\n") ?: "No result"
+            result.value = trace?.output?.outputs?.joinToString("\n\n") ?: "No result"
     }
 
     override val root = vbox {
