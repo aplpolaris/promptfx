@@ -1,0 +1,11 @@
+# Library of Ollama Models
+---
+audio: [ ]
+chat: [ llama3.1 ]
+completion: [ ]
+embeddings: [ nomic-embed-text ]
+moderation: [ ]
+multimodal: [ ]
+tts: [ ]
+image_generator: [ ]
+vision_language: [ ]
