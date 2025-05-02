@@ -1,9 +1,9 @@
 # Library of OpenAI API compatible endpoints
 ---
-endpoints: 
-  - source: Ollama
-    settings:
-      baseUrl: "http://localhost:11434/v1/"
-      logLevel: None
-      timeoutSeconds: 120
-    modelFileName: ollama-models.yaml
+endpoints: []
+#  - source: Ollama
+#    settings:
+#      baseUrl: "http://localhost:11434/v1/"
+#      logLevel: None
+#      timeoutSeconds: 120
+#    modelFileName: ollama-models.yaml

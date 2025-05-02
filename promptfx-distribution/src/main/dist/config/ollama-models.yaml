@@ -1,9 +1,9 @@
 # Library of Ollama Models
 ---
 audio: [ ]
-chat: [ llama3.1 ]
+chat: [ ]
 completion: [ ]
-embeddings: [ nomic-embed-text ]
+embeddings: [ ]
 moderation: [ ]
 multimodal: [ ]
 tts: [ ]

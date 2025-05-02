@@ -13,43 +13,56 @@ repositories {
 }
 
 // Configuration to extract just the jar from the dependency
-val appJar by configurations.creating {
+val appJarLinux by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+}
+val appJarWindows by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+}
+val appJarMacos by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+}
+val appJarMacos64 by configurations.creating {
     isCanBeResolved = true
     isCanBeConsumed = false
 }
 
 dependencies {
-    appJar("$group:$appName:$appVersion:windows@jar")
-    appJar("$group:$appName:$appVersion:macos@jar")
-    appJar("$group:$appName:$appVersion:macos64@jar")
-    appJar("$group:$appName:$appVersion:linux@jar")
+    appJarWindows("$group:$appName:$appVersion:windows@jar")
+    appJarMacos("$group:$appName:$appVersion:macos@jar")
+    appJarMacos64("$group:$appName:$appVersion:mac64@jar")
+    appJarLinux("$group:$appName:$appVersion:linux@jar")
 }
 
+val platformConfigs = mapOf(
+    "windows" to appJarWindows,
+    "macos" to appJarMacos,
+    "mac64" to appJarMacos64,
+    "linux" to appJarLinux
+)
 val platformsWithExts = mapOf(
     "windows" to "bat",
     "macos" to "command",
-    "macos64" to "command",
+    "mac64" to "command",
     "linux" to "sh"
 )
 
 // Register per-platform prepareDist tasks
 platformsWithExts.forEach { (platform, ext) ->
+    val config = platformConfigs[platform]!!
     tasks.register<Copy>("prepareDist${platform.capitalize()}") {
-        dependsOn(appJar)
-
+        dependsOn(config)
         destinationDir = layout.buildDirectory.dir("dist/$platform").get().asFile
-
-        doFirst {
-            if (destinationDir.exists()) {
-                destinationDir.deleteRecursively()
-            }
-        }
+        doFirst { if (destinationDir.exists()) destinationDir.deleteRecursively() }
         from("src/main/launchers/run-$platform.$ext") {
             filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to version))
             filteringCharset = "UTF-8"
         }
         from("src/main/dist")
-        from(appJar) {
+        from(config.singleFile) {
             rename { "promptfx-$version.jar" }
         }
     }
