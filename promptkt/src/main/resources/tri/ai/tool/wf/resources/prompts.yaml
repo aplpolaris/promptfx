@@ -1,0 +1,75 @@
+# Library of prompts
+#
+# Usage:
+#  - preconfigured prompt file in "prompts.yaml" in promptkt
+#  - custom prompt file in "prompts.yaml" in the current directory
+#
+# Syntax:
+#  - mustache templates: https://mustache.github.io/mustache.5.html
+#  - double braces to insert text {{...}}
+#  - triple braces to insert text without escaping HTML {{{...}}}
+#
+# Keywords:
+#  - many templates expect {{input}} and/or {{instruct}}
+#  - {{today}} is always replaced with the current date
+#
+---
+planner: |
+  You are a planning assistant that can decompose a problem into smaller tasks using tools. 
+  Output a YAML that includes:
+  - the problem,
+  - a list of subtasks,
+  - each subtask's tool,
+  - a unique ID,
+  - and which previous subtasks provide inputs to this one.
+
+  Each subtask may list one or more `inputs` referencing previous task IDs.
+
+  Example:
+  ```
+  problem: "..."
+  subtasks:
+    - id: "search"
+      task: "..."
+      tool: "Tool A"
+      inputs: []
+    - id: "summarize"
+      task: "..."
+      tool: "Tool B"
+      inputs: ["search"]
+  ```
+
+  The problem is:
+  {{problem}}
+
+  Use ONLY tools from the following list:
+  {{tools_details}}
+
+  Output:
+
+tool-query: |
+  {{{input}}}
+
+tool-timeline: |
+  Create a JSON object that can be used to plot a timeline of the following information:
+  {{{input}}}
+  The result should confirm to the vega-lite spec, using either a Gantt chart or a dot plot.
+  Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
+  Provide the JSON result only, no explanation.
+
+tool-validate: |
+  You are a validation assistant verifying the result of a process that answer's a user request.
+  You will be given the request and the computed result, and need to respond back with
+  (i) true/false indicating whether the request has been answered, (ii) rationale explaining why.
+  
+  Example Output:
+  ```
+  rationale: (explain briefly why the request was or was not answered)
+  isRequestAnswered: (true or false)
+  ```
+  
+  User Request:
+  {{{user_request}}}
+  
+  Computed Result:
+  {{{proposed_result}}}
