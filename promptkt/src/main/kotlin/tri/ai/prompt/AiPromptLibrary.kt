@@ -32,6 +32,12 @@ class AiPromptLibrary {
 
     var prompts = mutableMapOf<String, AiPrompt>()
 
+    /** Fills content within a prompt and returns the complete string. */
+    fun fill(key: String, vararg args: Pair<String, Any>): String {
+        val prompt = prompts[key] ?: throw IllegalArgumentException("No prompt found with id $key")
+        return prompt.fill(*args)
+    }
+
     companion object {
 
         /** Get list of prompts with given prefix. */
@@ -123,6 +129,11 @@ class AiPromptLibrary {
         /** Load a resource as YAML from the classpath. */
         inline fun <reified X> KClass<*>.yaml(resource: String) =
             java.getResourceAsStream(resource).use { MAPPER.readValue<X>(it!!) }
+
+        /** Reads a prompt library from the resources file associated with a given class. */
+        inline fun <reified X> readResource() = AiPromptLibrary().apply {
+            prompts.putAll(X::class.yaml<Map<String, AiPrompt>>("resources/prompts.yaml"))
+        }
 
         //endregion
 

@@ -1,6 +1,27 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.tool.wf
 
 import tri.util.ANSI_GRAY
+import tri.util.ANSI_GREEN
+import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
 
 /** Tracks state of workflow execution. */
@@ -37,12 +58,15 @@ class WorkflowState(_request: WorkflowUserRequest) {
         trees.forEach { tree ->
             print(ANSI_GRAY)
             print(indent)
+            if (tree.root.isDone)
+                print("${ANSI_GREEN}✔${ANSI_RESET} ")
+            else
+                print("❓")
             if ((tree.root as? WorkflowTaskTool)?.id != null)
                 print("[${tree.root.id}] ")
             print(tree.root.name)
             if (tree.root.description.isNotBlank())
                 print(": ${tree.root.description}")
-            print(", Completed: ${tree.root.isDone}")
             if ((tree.root as? WorkflowTaskTool)?.inputs.let { it != null && !it.isEmpty() })
                 print(", Inputs: ${(tree.root as WorkflowTaskTool).inputs}")
             println("")
