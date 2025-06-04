@@ -19,6 +19,8 @@
  */
 package tri.promptfx.ui
 
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Configuration for a [RuntimePromptView]. */
@@ -40,4 +42,9 @@ class RuntimePromptViewConfig(
 class ModeConfig(val id: String? = null, val templateId: String, val label: String, val values: List<String>? = null)
 
 /** Prompt config for view. */
-class PromptConfig(val id: String, val isVisible: Boolean = true)
+class PromptConfig(
+    @JsonProperty("id") @JsonAlias("template-name") val id: String,
+    val isVisible: Boolean = true,
+    @JsonProperty("template-description") val templateDescription: String? = null,
+    @JsonProperty("template-prompt") val templatePrompt: String? = null
+)

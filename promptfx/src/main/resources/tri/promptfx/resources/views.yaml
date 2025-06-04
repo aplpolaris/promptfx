@@ -1,5 +1,15 @@
 # Library of view configurations
 ---
+view-config-generator:
+  category: Meta
+  title: View Config Generator
+  description: Generate a new view configuration YAML block from a short description of what the tool should do.
+  promptConfig:
+    id: generate-view-config
+  modeOptions: []
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
 entity-extraction:
   category: Text
   title: Entity Extraction

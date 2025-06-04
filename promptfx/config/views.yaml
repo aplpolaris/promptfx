@@ -1,5 +1,56 @@
 # Library of view configurations
 ---
+math_unit_conversion:
+  category: Math
+  title: Unit Conversions
+  description: Convert units to a specified unit
+  modeOptions:
+    - templateId: UNIT_TYPE
+      label: Unit Type
+      values:
+        - Length
+        - Mass
+        - Volume
+    - templateId: CONVERT_TO_UNIT
+      label: Convert To Unit
+      values:
+        - Meter
+        - Kilogram
+        - Liter
+  promptConfig:
+    id: math_unit_conversion
+    template-prompt: |
+      Enter the value to convert and the unit type to convert from, and specify the unit to convert to:
+      '''
+      Value: {{ input }}
+      Convert from: {{ UNIT_TYPE }}
+      Convert to: {{ CONVERT_TO_UNIT }}
+      '''
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
+math_calculations:
+  category: Math
+  title: Math Calculations
+  description: Perform various math calculations efficiently.
+  promptConfig:
+    id: math-calculations
+    template-prompt: |
+      Perform math calculations on the following numbers:
+      '''
+      {{input}}
+      '''
+  modeOptions:
+    - templateId: OPERATION_TYPE
+      label: Operation Type
+      values:
+        - Addition
+        - Subtraction
+        - Multiplication
+        - Division
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
 date-extraction:
   category: Text
   title: Date Extraction

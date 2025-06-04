@@ -27,9 +27,9 @@ import tri.ai.prompt.AiPrompt.Companion.fill
 import tri.ai.prompt.AiPromptLibrary
 
 /** Model for a prompt id and lookup result in prompt table. */
-class PromptSelectionModel(_id: String) {
+class PromptSelectionModel(_id: String, _prompt: String? = null) {
     val id = SimpleStringProperty(_id)
-    val prompt = SimpleObjectProperty(AiPromptLibrary.lookupPrompt(id.value))
+    val prompt = SimpleObjectProperty(_prompt?.let { AiPrompt(template = it) } ?: AiPromptLibrary.lookupPrompt(id.value))
     val text = SimpleStringProperty(prompt.value!!.template)
 
     init {

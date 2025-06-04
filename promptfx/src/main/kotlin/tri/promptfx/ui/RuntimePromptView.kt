@@ -48,7 +48,7 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
                 }
             }
             if (promptConfig.isVisible) {
-                promptModel = PromptSelectionModel(promptConfig.id)
+                promptModel = PromptSelectionModel(promptConfig.id, promptConfig.templatePrompt)
                 promptfield(prompt = promptModel, workspace = workspace)
             }
             if (config.isShowMultipleResponseOption && !config.isShowModelParameters) {
