@@ -24,7 +24,7 @@ import tri.promptfx.api.ImagesApiPlugin;
 import tri.promptfx.apps.*;
 import tri.promptfx.docs.DocumentInsightPlugin;
 import tri.promptfx.docs.DocumentQaPlugin;
-import tri.promptfx.fun.AgenticPlugin;
+import tri.promptfx.meta.AgenticPlugin;
 import tri.promptfx.fun.ChatBackPlugin;
 import tri.promptfx.fun.ColorPlugin;
 import tri.promptfx.integration.WeatherViewPlugin;
@@ -91,6 +91,7 @@ module tri.promptfx {
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.library to com.fasterxml.jackson.databind;
+    opens tri.promptfx.meta to com.fasterxml.jackson.databind;
     opens tri.promptfx.tools to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui.docs to com.fasterxml.jackson.databind;
@@ -103,6 +104,7 @@ module tri.promptfx {
     exports tri.promptfx.fun;
     exports tri.promptfx.integration;
     exports tri.promptfx.library;
+    exports tri.promptfx.meta;
     exports tri.promptfx.tools;
     exports tri.promptfx.ui;
     exports tri.promptfx.ui.chunk;

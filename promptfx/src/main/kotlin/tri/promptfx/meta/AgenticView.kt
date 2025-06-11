@@ -1,27 +1,10 @@
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.promptfx.`fun`
+package tri.promptfx.meta
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.scene.text.FontPosture
+import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -40,13 +23,7 @@ import tri.ai.tool.ToolChainExecutor
 import tri.ai.tool.ToolDict
 import tri.ai.tool.ToolResult
 import tri.ai.tool.input
-import tri.ai.tool.wf.WExecutorChat
-import tri.ai.tool.wf.WorkflowExecutor
-import tri.ai.tool.wf.WorkflowSolveStep
-import tri.ai.tool.wf.WorkflowSolver
-import tri.ai.tool.wf.WorkflowState
-import tri.ai.tool.wf.WorkflowTask
-import tri.ai.tool.wf.WorkflowUserRequest
+import tri.ai.tool.wf.*
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
@@ -57,7 +34,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [AgenticView]. */
-class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Fun", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
+class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Meta", "Agentic Workflow", WorkspaceViewAffordance.Companion.INPUT_ONLY, AgenticView::class)
 
 /** View to execute an agentic workflow where the tools are view with text inputs and outputs. */
 class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any necessary input to use multiple views within a common workflow.") {
@@ -79,11 +56,16 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 cellFormat {
                     graphic = hbox(5) {
                         checkbox(property = it.selectedProperty)
-                        label(it.tool.name)
-                        label(" - ${it.tool.description}") {
+                        label(it.category) {
+                            style {
+                                fontWeight = FontWeight.BOLD
+                            }
+                        }
+                        label(it.name)
+                        label(" - ${it.description}") {
                             style {
                                 textFill = c("#888")
-                                fontStyle = javafx.scene.text.FontPosture.ITALIC
+                                fontStyle = FontPosture.ITALIC
                             }
                         }
                         // background light yellow if used, light green if active, adjusted when properties change
@@ -123,17 +105,19 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     override fun onDock() {
         if (tools.isEmpty())
-            tools.addAll(tools().map { SelectableTool(it) })
+            tools.addAll(tools()
+                .sortedWith(compareBy({ it.category }, { it.name }))
+            )
     }
 
     /** Get the tools available. */
-    private fun tools(): List<Tool> {
+    private fun tools(): List<SelectableTool> {
         val views: List<PromptFxViewInfo> = pfxWorkspace.viewsWithInputs.values
             .map { it.entries }.flatten().map { it.value }
             .filter { it.view != AgenticView::class.java }
         val tools = views.map { info ->
             val view = (info.viewComponent ?: find(info.view!!)) as AiTaskView
-            object : Tool(info.name, view.instruction, requiresLlm = true) {
+            object : SelectableTool(info.name, view.instruction, info.group) {
                 override suspend fun run(input: ToolDict) = executeTask(view, input)
             }
         }
@@ -144,7 +128,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         tools.onEach { it.state = ToolState.NONE }
         val task = input.value
         info<AgenticView>("Executing task using ${engine.value}: $task")
-        val selectedTools = tools.filter { it.selected }.map { it.tool }
+        val selectedTools = tools.filter { it.selected }
         info<AgenticView>("  > Tools available: ${selectedTools.map { it.name }}")
 
         val result = when (engine.value) {
@@ -157,25 +141,30 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         runLater {
             pfxWorkspace.dock(this)
         }
-        AiPromptTrace(outputInfo = AiOutputInfo.output(result))
+        AiPromptTrace(outputInfo = AiOutputInfo.Companion.output(result))
     }.planner
 
-    /** Executes using [ToolChainExecutor]. */
+    //region WORKFLOW EXECUTION METHODS
+
+    /** Executes using [tri.ai.tool.ToolChainExecutor]. */
     private fun executeToolChain(task: String, selectedTools: List<Tool>): String {
         val exec = ToolChainExecutor(controller.completionEngine.value)
         return exec.executeChain(task, selectedTools)
     }
 
-    /** Executes using [JsonToolExecutor]. */
+    /** Executes using [tri.ai.tool.JsonToolExecutor]. */
     private fun executeJsonTool(task: String, selectedTools: List<Tool>): String {
         // TODO - remove dependence on specific OpenAI adapter
-        val exec = JsonToolExecutor(OpenAiAdapter.INSTANCE, controller.chatService.value.modelId, selectedTools.map { it.toJsonTool() })
+        val exec = JsonToolExecutor(
+            OpenAiAdapter.Companion.INSTANCE,
+            controller.chatService.value.modelId,
+            selectedTools.map { it.toJsonTool() })
         return runBlocking {
             exec.execute(task)
         }
     }
 
-    /** Executes using [JsonMultimodalToolExecutor]. */
+    /** Executes using [tri.ai.tool.JsonMultimodalToolExecutor]. */
     private fun executeJsonMultimodalTool(task: String, selectedTools: List<Tool>): String {
         val exec = JsonMultimodalToolExecutor(model.value!!, selectedTools.map { it.toJsonTool() })
         return runBlocking {
@@ -183,7 +172,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         }
     }
 
-    /** Executes using [WorkflowExecutor]. */
+    /** Executes using [tri.ai.tool.wf.WorkflowExecutor]. */
     private fun executeWorkflowPlanner(task: String, selectedTools: List<Tool>): String {
         val exec = WorkflowExecutor(
             WExecutorChat(controller.completionEngine.value, maxTokens = 2000, temp = 0.5),
@@ -193,6 +182,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         return exec.solve(request).finalResult().toString()
     }
 
+    //endregion
 
     /** Executes a view's tool with specified input. Switches to show the view while executing. */
     private fun executeTask(view: AiTaskView, input: ToolDict): ToolResult {
@@ -203,7 +193,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 if (it.state == ToolState.ACTIVE)
                     it.state = ToolState.USED
             }
-            tools.firstOrNull { it.tool.name == view.title }?.let {
+            tools.firstOrNull { it.name == view.title }?.let {
                 it.state = ToolState.ACTIVE
             }
         }
@@ -226,7 +216,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     companion object {
         private val JSON_SCHEMA_STRING_INPUT = """{"type":"object","properties":{"input":{"type":"string"}}}"""
 
-        /** Converts a [Tool] to a [JsonTool]. */
+        /** Converts a [Tool] to a [tri.ai.tool.JsonTool]. */
         private fun Tool.toJsonTool() = object : JsonTool(name, description, JSON_SCHEMA_STRING_INPUT) {
             override suspend fun run(input: JsonObject): String {
                 val dict = input.toToolDict()
@@ -240,7 +230,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             return mapOf("input" to input)
         }
 
-        /** Converts a [Tool] to a [WorkflowSolver]. */
+        /** Converts a [Tool] to a [tri.ai.tool.wf.WorkflowSolver]. */
         private fun Tool.toSolver() = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
@@ -253,7 +243,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         }
 
         /** UI representation of a tool that can be selected. */
-        private class SelectableTool(val tool: Tool) {
+        private abstract class SelectableTool(name: String, description: String, val category: String): Tool(name, description, requiresLlm = true) {
             val selectedProperty = SimpleBooleanProperty(true)
             var selected by selectedProperty
             val stateProperty = SimpleObjectProperty(ToolState.NONE)
@@ -275,4 +265,3 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
 }
-
