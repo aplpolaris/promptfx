@@ -1,5 +1,41 @@
 # Library of view configurations
 ---
+rag_qa_prefilter_json:
+  category: RAG QA
+  title: Prefilter JSON Generation
+  description: Generate JSON to prefilter large document sets based on user queries.
+  modeOptions: []
+  promptConfig:
+    id: rag_qa_prefilter_json
+    template-prompt: |
+      Given the user's query, extract relevant information to prefilter a large document set. Create a JSON object using filter fields such as:
+        - Date/Time Range
+        - Sources
+        - Language
+        - Perspective
+        - Geographic Area of Interest (AOI)
+        - etc.
+      Only include a field if the user has provided information for it. If the user has not provided information for a field, do not include it in the JSON object.
+      
+      User query:
+      {{{
+      input
+      }}}
+      
+      Today is {{today}}.
+
+      Sample Output:
+      {
+        "datetime": {
+          "start": "2010-01-01",
+          "stop": "2010-12-31",
+        },
+        "sources": [ "CNN", "Wikipedia" ],
+        "aoi": "Europe"
+      }
+  isShowModelParameters: false
+  isShowMultipleResponseOption: false
+
 math_unit_conversion:
   category: Math
   title: Unit Conversions
