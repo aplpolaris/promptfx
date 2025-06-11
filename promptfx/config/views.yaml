@@ -8,31 +8,29 @@ rag_qa_prefilter_json:
   promptConfig:
     id: rag_qa_prefilter_json
     template-prompt: |
-      Given the user's query, extract relevant information to prefilter a large document set. Create a JSON object using filter fields such as:
-        - Date/Time Range
-        - Sources
-        - Language
-        - Perspective
-        - Geographic Area of Interest (AOI)
-        - etc.
-      Only include a field if the user has provided information for it. If the user has not provided information for a field, do not include it in the JSON object.
-      
-      User query:
-      {{{
-      input
-      }}}
-      
-      Today is {{today}}.
+      You are acting as a preprocessor that determines an appropriate next step based on a user's question in a chat field. Users might have general questions (answerable with latent information in a large language model), or might have more domain specific questions (answerable using RAG based on information in a document database). Your job is to (i) determine the degree to which each method is appropriate for the user's inquiry, and (ii) in the latter case, determine if there are any appropriate filter criteria to downselect the documents.
 
-      Sample Output:
+      The output should have the following form:
+      ```json
       {
-        "datetime": {
-          "start": "2010-01-01",
-          "stop": "2010-12-31",
-        },
-        "sources": [ "CNN", "Wikipedia" ],
-        "aoi": "Europe"
+        "model_utility": "<NONE|LOW|MED|HIGH>",
+        "rag_utility": "<NONE|LOW|MED|HIGH>",
+        "rag_query_filter": {
+          "time_range": { "start": <DATE>, "end": <DATE> }, // if any specified
+          "geographic_aoi": [ "<AOI>" ],  // if any specified
+          "language": [ "<LANGUAGE>" ], // if any specified
+          "source": [ "<SOURCE>" ], // if any specified
+          ... // any other filter criteria
+        }
       }
+      ```
+
+      User prompt:
+      ```
+      {{{input}}}
+      ```
+
+      Today is {{today}}.
   isShowModelParameters: false
   isShowMultipleResponseOption: false
 
