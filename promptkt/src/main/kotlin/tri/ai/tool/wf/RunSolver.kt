@@ -23,20 +23,21 @@ package tri.ai.tool.wf
 class RunSolver(
     name: String,
     description: String,
-    inputDescription: String,
+    inputDescription: String? = null,
     outputDescription: String,
     val run: (String) -> String
-) : WorkflowSolver(name, description, mapOf("input" to inputDescription), mapOf("result" to outputDescription)) {
+) : WorkflowSolver(name, description, inputDescription?.let { mapOf(INPUT to it) } ?: mapOf(), mapOf(RESULT to outputDescription)) {
     override suspend fun solve(
         state: WorkflowState,
         task: WorkflowTask
     ): WorkflowSolveStep {
         val t0 = System.currentTimeMillis()
-        val inputData = state.aggregateInputsFor(name).values.joinToString("\n") { "${it?.value}" }
+        val inputData = if (inputs.isEmpty()) "" else
+            state.aggregateInputsFor(name).values.joinToString("\n") { "${it?.value}" }
         val result = run(inputData)
         return solveStep(
             task,
-            inputs(inputData),
+            if (inputs.isEmpty()) inputs() else inputs(inputData),
             outputs(result),
             System.currentTimeMillis() - t0,
             true

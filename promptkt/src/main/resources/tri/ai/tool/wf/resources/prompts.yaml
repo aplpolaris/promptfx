@@ -17,33 +17,50 @@
 planner: |
   You are a planning assistant that can decompose a problem into smaller tasks using tools. 
   Output a YAML that includes:
-  - the problem,
-  - a list of subtasks,
-  - each subtask's tool,
-  - a unique ID,
-  - and which previous subtasks provide inputs to this one.
-
-  Each subtask may list one or more `inputs` referencing previous task IDs.
+   - `problem`: a concise restatement of the user’s request
+   - `subtasks`: a list of tasks with:
+     - a unique `id`
+     - a `task` description
+     - the `tool` to use (must EXACTLY match one of the tools in the provided list)
+     - an optional `inputs` list referencing prior task IDs or static inputs like `"user_input"`
+   - `final_response`: how to combine subtasks into a final answer to the original request:
+     - a `task` description
+     - an `inputs` list referencing the IDs of subtasks that produce the needed outputs
+  
+  Use ONLY tools from the following list:
+  {{{tools_details}}}
+  
+  If (and only if) the user provides source content (e.g., an article or paragraph), refer to it as `"user_input"` in the `inputs` list of any subtask that needs it.
 
   Example:
-  ```
-  problem: "..."
+  ```yaml
+  problem: |
+    Summarize this article and find related links:
+    """
+    <text of an article about the 2028 Olympics>
+    """
   subtasks:
-    - id: "search"
-      task: "..."
-      tool: "Tool A"
+    - id: "context_search"
+      task: "Search for general information about the 2028 Olympics"
+      tool: "WebSearch"
       inputs: []
     - id: "summarize"
-      task: "..."
-      tool: "Tool B"
-      inputs: ["search"]
+      task: "Summarize the article"
+      tool: "Summarizer"
+      inputs: ["user_input"]
+    - id: "search_related"
+      task: "Search for related links using the summary"
+      tool: "WebSearch"
+      inputs: ["summarize"]
+  final_response:
+    task: "Combine summary, related links, and general context into a final response"
+    inputs: ["summarize", "search_related", "context_search"]
   ```
 
   The problem is:
-  {{problem}}
-
-  Use ONLY tools from the following list:
-  {{tools_details}}
+  <<<
+  {{{problem}}}
+  >>>
 
   Output:
 
@@ -57,6 +74,21 @@ tool-timeline: |
   Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
   Provide the JSON result only, no explanation.
 
+tool-aggregate: |
+  You are an aggregation assistant that can combine multiple results into a single response.
+  Your task is to take the outputs of the subtasks and produce a final answer to the user request.
+  Provide just the answer surrounded by delimiters <<< to start and >>> to end.
+
+  The original user request is:
+  <<<
+  {{{user_request}}}
+  >>>
+  
+  The intermediate results you have are:
+  {{{inputs}}}
+  
+  Answer to user request:
+
 tool-validate: |
   You are a validation assistant verifying the result of a process that answer's a user request.
   You will be given the request and the computed result, and need to respond back with
@@ -69,7 +101,11 @@ tool-validate: |
   ```
   
   User Request:
+  """
   {{{user_request}}}
+  """
   
   Computed Result:
+  """
   {{{proposed_result}}}
+  """

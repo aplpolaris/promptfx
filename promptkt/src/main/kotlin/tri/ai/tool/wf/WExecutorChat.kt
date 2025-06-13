@@ -32,12 +32,14 @@ import tri.util.warning
  */
 class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) :  WorkflowExecutorStrategy {
 
+    private val LOGGER = WorkflowLogger
+
     // use the LLM and the known set of solvers to select a sequence of tasks for a task in the workflow
     // for now to simplify things, we'll just limit this to the root "problem" in the workflow
     // we always have a final task to wrap things up, validating that the result matches the user's question
     override suspend fun decomposeTask(state: WorkflowState, solvers: List<WorkflowSolver>): WorkflowTaskPlan {
         if (state.taskTree.findTask { it == state.request }!!.tasks.isNotEmpty()) {
-            println("${ANSI_GRAY}Problem task tree is not empty, skipping task decomposition.$ANSI_RESET")
+            // println("${ANSI_GRAY}Problem task tree is not empty, skipping task decomposition.$ANSI_RESET")
             return WorkflowTaskPlan(listOf())
         }
 
@@ -54,18 +56,26 @@ class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, va
         val response = completionEngine.complete(prompt, tokens = maxTokens, temperature = temp)
 
         // parse the response and use it to build a set of subtasks to solve
-        val taskDecomp = parseTaskDecomp(response.firstValue)
+        val taskDecomp = try {
+            parseTaskDecomp(response.firstValue)
+        } catch (x: IllegalStateException) {
+            throw x
+        }
+
         val taskTree = when {
             taskDecomp.subtasks.isEmpty() ->
                 error("Empty task decomposition: ${taskDecomp.problem}")
-            taskDecomp.subtasks.size == 1 && taskDecomp.subtasks.first().task == taskDecomp.problem ->
+            taskDecomp.subtasks.size == 1 && taskDecomp.subtasks.first().task == taskDecomp.problem -> {
+                warning<WExecutorChat>("Task decomposition only has one task, using it directly: ${taskDecomp.problem}")
+                warning<WExecutorChat>("Not sure if we should include the final task in this tree, or if this is a common outcome produced by the LLM...")
+                warning<WExecutorChat>("Right now the code is ignoring the final task...")
+                warning<WExecutorChat>("The final task is: ${taskDecomp.final_response}")
                 WorkflowTaskTree(rootTask, listOf())
+            }
             else ->
                 WorkflowTaskTree(rootTask, taskDecomp.subtasks.map {
-                    WorkflowTaskTool(id = it.id, name = it.task, tool = it.tool, inputs = it.inputs)
-                }.map {
-                    WorkflowTaskTree(it)
-                })
+                    WorkflowTaskTree(it.id, it.task, it.tool, it.inputs)
+                } + WorkflowTaskTree("final", taskDecomp.final_response.task, "Aggregator", taskDecomp.final_response.inputs))
         }
         return WorkflowTaskPlan(listOf(taskTree))
     }
@@ -75,10 +85,14 @@ class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, va
         val task = state.taskTree.findTask { it is WorkflowTaskTool && !it.isDone }?.root as? WorkflowTaskTool
             ?: state.taskTree.findTask { it is WorkflowValidatorTask }?.root
             ?: throw WorkflowTaskNotFoundException("Unable to find task in workflow state")
-        val solver = when (task) {
-            is WorkflowValidatorTask -> WValiditySolver(completionEngine, maxTokens, temp)
-            is WorkflowTaskTool -> solvers.find { it.name == task.tool }
-                ?: throw WorkflowToolNotFoundException("Unable to find solver for task: ${task.tool}")
+        val solver = when {
+            task is WorkflowValidatorTask ->
+                WValiditySolver(completionEngine, maxTokens, temp)
+            task is WorkflowTaskTool && task.id == "final" && task.tool == "Aggregator" ->
+                WAggregatorSolver(completionEngine, maxTokens, temp)
+            task is WorkflowTaskTool ->
+                solvers.find { it.name == task.tool }
+                    ?: throw WorkflowToolNotFoundException("Unable to find solver for task: ${task.tool}")
             else -> error("Unexpected branch")
         }
         return solver to task
@@ -90,18 +104,23 @@ class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, va
         return try {
             MAPPER.readValue<TaskDecomp>(quotedResponse)
         } catch (e: IOException) {
-            warning<WExecutorChat>("Failed to parse task decomposition from response:\n$quotedResponse", e)
-            TaskDecomp("", emptyList())
+            throw IllegalStateException("Failed to parse task decomposition from response:\n$quotedResponse", e)
         }
     }
 }
 
-fun String.findCode() = substringAfter("```").substringAfter("\n").substringBefore("```").trim()
+fun String.findCode() = when {
+    "```" in this -> substringAfter("```").substringAfter("\n").substringBefore("```").trim()
+    "<code>" in this -> substringAfter("<code>").substringBefore("</code>").trim()
+    "<<<" in this -> substringAfter("<<<").substringBefore(">>>").trim()
+    else -> this.trim()
+}
 
 /** Class for task decomposition prompt result. */
 data class TaskDecomp(
     val problem: String,
-    val subtasks: List<TaskDecompSubtask>
+    val subtasks: List<TaskDecompSubtask>,
+    val final_response: TaskDecompFinal
 )
 
 /** Class for a subtask with noted inputs. */
@@ -109,5 +128,11 @@ data class TaskDecompSubtask(
     val id: String,
     val task: String,
     val tool: String,
+    val inputs: List<String>
+)
+
+/** Class for the final response from the LLM. */
+data class TaskDecompFinal(
+    val task: String,
     val inputs: List<String>
 )

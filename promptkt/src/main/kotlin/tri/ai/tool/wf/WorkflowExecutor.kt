@@ -20,6 +20,8 @@
 package tri.ai.tool.wf
 
 import kotlinx.coroutines.runBlocking
+import tri.ai.pips.RetryExecutor
+import tri.ai.pips.SimpleRetryExecutor
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN
@@ -40,6 +42,8 @@ class WorkflowExecutor(
     /** Solve the given problem using a dynamic workflow execution. */
     fun solve(problem: WorkflowUserRequest): WorkflowState {
         val state = WorkflowState(problem)
+        LOGGER.executionStep("Workflow Planning")
+        LOGGER.executionProgress("User Request", "\n${problem.request}".replace("\n", "\n  "))
 
         runBlocking {
             var i = 1
@@ -49,28 +53,39 @@ class WorkflowExecutor(
                     LOGGER.failedExecutionMajor("Too many steps, stopping execution.")
                     break
                 }
-                LOGGER.executionStep("Workflow Step ${i++}")
 
                 // 1. Do a planning step, which may involve breaking up a task into smaller tasks
-                val updatedTasks = strategy.decomposeTask(state, solvers)
-                LOGGER.execution("Task Planning:")
+                val updatedTasks = SimpleRetryExecutor().execute(
+                    { strategy.decomposeTask(state, solvers) },
+                    onSuccess = { it.value!! },
+                    onFailure = { it ->
+                        LOGGER.failedExecutionMajor("Failed to decompose task: ${it.error}")
+                        throw it.error!!
+                    }
+                )
+
                 if (updatedTasks.decomp.isNotEmpty())
                     state.updateTasking(updatedTasks)
 
                 // 2. Select a solver and task to work on
+                LOGGER.executionStep("\nWorkflow Step ${i++}")
                 val (solver, task) = strategy.nextSolver(state, solvers)
-                LOGGER.executionProgress("Solver", solver.name)
-                LOGGER.executionProgress("Task", task.name)
+                LOGGER.executionProgress("Task", "[${task.id}] ${task.name}" + (task.description?.let { " - $it" } ?: ""))
+                LOGGER.executionProgress("  Solver", "${solver.name} (${solver.description})")
 
                 // 3. Use the selected solver to solve part of the task
                 val step = solver.solve(state, task)
+                if (step.inputs.isEmpty())
+                    LOGGER.executionProgress("  Inputs", "None")
+                else
+                    LOGGER.executionProgress("  Inputs", "\n${step.inputs.joinToString("\n") { "${it.name}: ${it.value}" }}".replace("\n", "\n    "))
+
                 if (step.isSuccess) {
                     state.taskTree.setTaskDone(task)
                     state.scratchpad.addResults(task, step.outputs)
-                    LOGGER.executionProgressLine("Solve Inputs","- ${step.inputs.joinToString("\n - ") { "${it.name}: ${it.value}" }}")
-                    LOGGER.executionProgressLine("Solve Outputs"," - ${step.outputs.joinToString("\n - ") { "${it.name}: ${it.value}" }}")
+                    LOGGER.executionProgress("  Outputs", "\n${step.outputs.joinToString("\n") { "${it.name}: ${it.value}" }}".replace("\n", "\n    "))
                 } else {
-                    LOGGER.failedExecutionMinor("Solve Failed: ${step.inputs.joinToString("\n") { "$it" }}")
+                    LOGGER.failedExecutionMinor("  Solve Failed")
                 }
                 state.solveHistory.add(step)
 
@@ -82,7 +97,7 @@ class WorkflowExecutor(
             }
             if (i <= maxSteps) {
                 val execTime = System.currentTimeMillis() - t0
-                LOGGER.execution("Workflow execution complete in ${execTime}ms and ${i-1} steps!")
+                LOGGER.executionStep("\nWorkflow execution complete in ${execTime}ms and ${i-1} steps!")
                 LOGGER.execution("Final Result:")
                 LOGGER.executionStep(state.finalResult())
             }
@@ -93,7 +108,7 @@ class WorkflowExecutor(
 }
 
 /** Manages logging for [WorkflowExecutor]. */
-private object WorkflowLogger {
+internal object WorkflowLogger {
     var isEnabled = true
 
     fun failedExecutionMajor(msg: Any) = println("$ANSI_RED$msg$ANSI_RESET")
@@ -103,7 +118,6 @@ private object WorkflowLogger {
     fun execution(msg: Any) = println(msg)
     fun executionComment(msg: Any) = println("$ANSI_GRAY$msg$ANSI_RESET")
     fun executionProgress(key: String, value: Any) = println("$key: $ANSI_CYAN$value$ANSI_RESET")
-    fun executionProgressLine(key: String, value: Any) = println("$key:\n$ANSI_CYAN$value$ANSI_RESET")
 
     fun println(string: String) {
         if (isEnabled)

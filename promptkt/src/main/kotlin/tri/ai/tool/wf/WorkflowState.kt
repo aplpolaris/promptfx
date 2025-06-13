@@ -21,7 +21,6 @@ package tri.ai.tool.wf
 
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN
-import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
 
 /** Tracks state of workflow execution. */
@@ -37,6 +36,13 @@ class WorkflowState(_request: WorkflowUserRequest) {
     /** Flag indicating when the execution is complete. */
     var isDone: Boolean = false
         private set
+
+    init {
+        // TODO - this is very brittle
+        val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
+        if (userInput.isNotEmpty())
+            scratchpad.data["user_input"] = WVar("user_input", "User input for the workflow", userInput)
+    }
 
     /** Check for completion, updating the isDone flag if all tasks are complete. */
     fun checkDone() {
@@ -65,7 +71,7 @@ class WorkflowState(_request: WorkflowUserRequest) {
             if ((tree.root as? WorkflowTaskTool)?.id != null)
                 print("[${tree.root.id}] ")
             print(tree.root.name)
-            if (tree.root.description.isNotBlank())
+            if (!tree.root.description.isNullOrBlank())
                 print(": ${tree.root.description}")
             if ((tree.root as? WorkflowTaskTool)?.inputs.let { it != null && !it.isEmpty() })
                 print(", Inputs: ${(tree.root as WorkflowTaskTool).inputs}")
@@ -78,12 +84,12 @@ class WorkflowState(_request: WorkflowUserRequest) {
     /** Using the current plan, look up all the inputs associated with the given tool. */
     fun aggregateInputsFor(toolName: String) =
         ((taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
-            ?: listOf()).associateWith { scratchpad.data["$it.result"] }
+            ?: listOf()).associateWith { scratchpad.data["$it.result"] ?: scratchpad.data[it] }
 
     /** Get the final computed result from the scratchpad. */
     fun finalResult() =
         // TODO - this is brittle since it assumes a specific output exists on the scratchpad, want a general purpose solution
-        scratchpad.data[WValiditySolver.finalResultId]!!.value
+        scratchpad.data[FINAL_RESULT_ID]!!.value
 }
 
 /** Tracks intermediate results and other useful information. */

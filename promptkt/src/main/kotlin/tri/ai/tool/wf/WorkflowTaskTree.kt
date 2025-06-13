@@ -27,6 +27,8 @@ class WorkflowTaskTree(
     _tasks: List<WorkflowTaskTree> = listOf()
 ) {
 
+    constructor(id: String, name: String, tool: String, inputs: List<String>): this(WorkflowTaskTool(id, name, tool = tool, inputs = inputs))
+
     /** Child tasks that should be completed first. */
     val tasks: MutableList<WorkflowTaskTree> = _tasks.toMutableList()
 

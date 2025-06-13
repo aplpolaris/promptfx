@@ -27,9 +27,9 @@ import tri.ai.core.TextCompletion
 /** A solver used to validate that a computed result answers the actual user question. */
 class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) : WorkflowSolver(
     "Validate Final Result",
-    "",
-    mapOf("request" to "User's initial request", "result" to "Workflow's final result"),
-    mapOf("answered" to "Flag indicating whether request has been answered", "rationale" to "Assessment of result validity/relevance", VALIDATED_RESULT to "Validated final result")
+    "Checks if the final result answers the user's request",
+    mapOf(REQUEST to "User's initial request", RESULT to "Workflow's final result"),
+    mapOf(ANSWERED to "Flag indicating whether request has been answered", RATIONALE to "Assessment of result validity/relevance", VALIDATED_RESULT to "Validated final result")
 ) {
     override suspend fun solve(
         state: WorkflowState,
@@ -43,9 +43,9 @@ class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, 
         val finalResult = state.scratchpad.data["$finalTaskId.result"]!!
 
         // complete a prompt doing the assessment
-        val prompt = PROMPTS.fill("tool-validate",
-            "user_request" to userRequest,
-            "proposed_result" to finalResult.value.toString()
+        val prompt = PROMPTS.fill(VALIDATOR_PROMPT_ID,
+            USER_REQUEST_PARAM to userRequest,
+            PROPOSED_RESULT_PARAM to finalResult.value.toString()
         )
 
         // use LLM to generate a response
@@ -72,13 +72,8 @@ class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, 
         return try {
             MAPPER.readValue<ResultValidity>(quotedResponse)
         } catch (e: IOException) {
-            error("Failed to parse response: $e\n$quotedResponse")
+            error("Failed to parse response: $e\n$quotedResponse\n$value")
         }
-    }
-
-    companion object {
-        private const val VALIDATED_RESULT = "validated_result"
-        val finalResultId = "${WorkflowValidatorTask.TASK_ID}.$VALIDATED_RESULT"
     }
 }
 

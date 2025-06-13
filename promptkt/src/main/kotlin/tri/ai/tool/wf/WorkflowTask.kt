@@ -23,7 +23,7 @@ package tri.ai.tool.wf
 abstract class WorkflowTask(
     val id: String,
     val name: String,
-    val description: String,
+    val description: String?,
     var isDone: Boolean = false
 )
 
@@ -50,9 +50,9 @@ class WorkflowValidatorTask :
 class WorkflowTaskTool(
     id: String,
     name: String,
-    description: String = "",
+    description: String? = null,
     isDone: Boolean = false,
-    val tool: String = "",
+    val tool: String? = null,
     val inputs: List<String>
 ) : WorkflowTask(id, name, description, isDone) {
     override fun toString() =

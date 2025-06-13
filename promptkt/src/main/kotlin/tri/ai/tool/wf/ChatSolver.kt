@@ -32,15 +32,11 @@ class ChatSolver(
     outputDescription: String,
     val promptId: String
 ) : WorkflowSolver(name, description, mapOf("input" to inputDescription), mapOf("result" to outputDescription)) {
-    override suspend fun solve(
-        state: WorkflowState,
-        task: WorkflowTask
-    ): WorkflowSolveStep {
+    override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
         val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")
-
         val prompt = PROMPTS.fill(promptId, "input" to inputData)
         val result = OpenAiCompletionChat().complete(prompt, tokens = 1000)
 
@@ -53,5 +49,31 @@ class ChatSolver(
         )
     }
 
+}
+
+/** Solver that takes a single input, provides a single output, based on a provided LLM chat instruction. */
+class InstructSolver(
+    name: String,
+    description: String,
+    inputDescription: String,
+    outputDescription: String,
+    val instruction: String
+) : WorkflowSolver(name, description, mapOf("input" to inputDescription), mapOf("result" to outputDescription)) {
+    override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
+        val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+            listOf(task.name)
+        }
+        val inputData = inputs.joinToString("\n")
+        val promptInput = "$instruction\n\nInput:\n$inputData"
+        val result = OpenAiCompletionChat().complete(promptInput, tokens = 1000)
+
+        return solveStep(
+            task,
+            inputs(inputData),
+            outputs(result.firstValue),
+            result.exec.responseTimeMillisTotal ?: 0L,
+            true
+        )
+    }
 }
 
