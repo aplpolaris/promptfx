@@ -57,7 +57,7 @@ class WorkflowExecutorTest {
     //endregion
 
     @Test
-    fun `test WorkflowExecutor with a calculator`() {
+    fun testWorkflowExecutor_calc() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
         val problem = WorkflowUserRequest("I need a Roman numeral that represents the product 21 times 2.")
@@ -85,7 +85,7 @@ class WorkflowExecutorTest {
     //endregion
 
     @Test
-    fun `test WorkflowExecutor with a timeline visualization`() {
+    fun testWorkflowExecutor_timeline() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = WorkflowUserRequest("What is the timeline of the life of Albert Einstein?")
@@ -93,7 +93,7 @@ class WorkflowExecutorTest {
     }
 
     @Test
-    fun `test WorkflowExecutor with a timeline visualization (presidents)`() {
+    fun testWorkflowExecutor_timeline2() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = WorkflowUserRequest("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
@@ -129,7 +129,7 @@ class WorkflowExecutorTest {
     //endregion
 
     @Test
-    fun `test WorkflowExecutor with an article context`() {
+    fun testWorkflowExecutor_article() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_SUMMARY, SOLVER_TITLEGEN, SOLVER_KEYDATES, SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = WorkflowUserRequest("""
