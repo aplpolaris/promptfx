@@ -19,9 +19,11 @@
  */
 package tri.ai.tool.wf
 
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiPlugin
 
+@Tag("openai")
 class WorkflowExecutorTest {
 
     private val GPT35 = OpenAiPlugin().textCompletionModels()[0]
