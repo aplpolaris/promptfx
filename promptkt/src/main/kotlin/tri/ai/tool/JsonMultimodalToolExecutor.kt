@@ -36,8 +36,9 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
 
     suspend fun execute(query: String): String {
         info<JsonMultimodalToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
+        val systemMessage = PROMPTS.fill("json-tool-system-message")
         val messages = mutableListOf(
-            MultimodalChatMessage.text(MChatRole.System, SYSTEM_MESSAGE_1),
+            MultimodalChatMessage.text(MChatRole.System, systemMessage),
             MultimodalChatMessage.text(MChatRole.User, query)
         )
 
@@ -82,11 +83,6 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
     }
 
     companion object {
-        private const val SYSTEM_MESSAGE_1 =
-            "Don't make assumptions about what values to plug into functions. " +
-            "Ask for clarification if a user request is ambiguous. " +
-            "Don't attempt to answer questions that are outside the scope of the functions. "
-
         private fun MToolCall.tryJson() = try {
             Json.parseToJsonElement(argumentsAsJson) as? JsonObject
         } catch (x: SerializationException) {

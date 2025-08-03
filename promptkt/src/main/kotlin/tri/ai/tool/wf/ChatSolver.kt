@@ -22,7 +22,7 @@ package tri.ai.tool.wf
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.prompt.AiPromptLibrary
 
-val PROMPTS = AiPromptLibrary.Companion.readResource<WorkflowExecutor>()
+val PROMPTS = AiPromptLibrary.readResource<WorkflowExecutor>()
 
 /** Solver that takes a single input, provides a single output, based on an LLM chat request. */
 class ChatSolver(

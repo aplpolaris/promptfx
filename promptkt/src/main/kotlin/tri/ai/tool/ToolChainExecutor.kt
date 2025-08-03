@@ -21,7 +21,10 @@ package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
+import tri.ai.prompt.AiPromptLibrary
 import tri.util.*
+
+val PROMPTS = AiPromptLibrary.readResource<ToolChainExecutor>()
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
@@ -34,10 +37,12 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     fun executeChain(question: String, tools: List<Tool>): String {
         info<ToolChainExecutor>("User Question: $ANSI_YELLOW$question$ANSI_RESET")
 
-        val templateForQuestion = TOOL_PROMPT
-            .replace("{{tools}}", tools.joinToString("\n") { "${it.name}: ${it.description}" })
-            .replace("{{tool_names}}", tools.joinToString(", ") { it.name })
-            .replace("{{input}}", question)
+        val templateForQuestion = PROMPTS.fill("tool-chain-executor",
+            "tools" to tools.joinToString("\n") { "${it.name}: ${it.description}" },
+            "tool_names" to tools.joinToString(", ") { it.name },
+            "input" to question,
+            "agent_scratchpad" to "{{agent_scratchpad}}"
+        )
 
         return runBlocking {
             val scratchpad = ToolScratchpad()
@@ -84,36 +89,9 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         }
 
         val toolResult = tool.run(mapOf(TOOL_DICT_INPUT to toolInput))
-        info<ToolChainExecutor>("Result: $ANSI_CYAN$toolResult$ANSI_RESET")
+        info<ToolChainExecutor>("Result: $ANSI_CYAN${toolResult.result[TOOL_DICT_RESULT]}$ANSI_RESET")
         scratchpad.data[tool.name + " Result"] = toolResult.result[TOOL_DICT_RESULT] ?: toolResult.result.toString()
         return toolResult
-    }
-
-    companion object {
-        val TOOL_PROMPT = """
-            Answer the following question. You have access to the following tools:
-        
-            {{tools}}
-        
-            Use the following format:
-        
-            Question: the input question you must answer
-            Thought: you should always think about what to do
-            Action: the action to take, should be one of [{{tool_names}}]
-            Action Input: the input to the action (always provide the full input, including any contextual text provided with the question)
-            Observation: the result of the action
-            ... (this Thought/Action/Action Input/Observation can repeat N times)
-            Thought: I now know the final answer
-            Final Answer: the final answer to the original input question
-        
-            Begin!
-        
-            Previous conversation history:
-            {{history}}
-        
-            New question: {{input}}
-            {{agent_scratchpad}}
-        """.trimIndent()
     }
 
 }

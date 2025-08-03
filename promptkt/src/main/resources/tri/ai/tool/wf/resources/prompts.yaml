@@ -1,17 +1,9 @@
-# Library of prompts
-#
-# Usage:
-#  - preconfigured prompt file in "prompts.yaml" in promptkt
-#  - custom prompt file in "prompts.yaml" in the current directory
+# tri.ai.tool.wf.resources
 #
 # Syntax:
 #  - mustache templates: https://mustache.github.io/mustache.5.html
 #  - double braces to insert text {{...}}
 #  - triple braces to insert text without escaping HTML {{{...}}}
-#
-# Keywords:
-#  - many templates expect {{input}} and/or {{instruct}}
-#  - {{today}} is always replaced with the current date
 #
 ---
 planner: |
