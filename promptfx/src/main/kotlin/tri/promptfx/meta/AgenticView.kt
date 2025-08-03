@@ -234,8 +234,10 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         private fun Tool.toSolver() = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
-                val input = state.aggregateInputsFor(name).values.firstOrNull()?.value ?: ""
-                val dict = mapOf("input" to input) as ToolDict
+                val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+                    listOf(task.name)
+                }.joinToString("\n")
+                val dict = mapOf("input" to input)
                 val result = runBlocking { this@toSolver.run(dict) }
                 val tt = System.currentTimeMillis() - t0
                 return solveStep(task, inputs(input), outputs(result), tt, true)
