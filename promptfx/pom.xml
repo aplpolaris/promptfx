@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptfx</artifactId>
-    <version>0.11.1-SNAPSHOT</version>
+    <version>0.11.1.1</version>
 	
     <name>${project.artifactId}-${project.version}</name>
     <description>LLM demo application.</description>
@@ -37,7 +37,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>promptfx-0.11.1.1</tag>
     </scm>
 
     <issueManagement>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt</artifactId>
-            <version>0.11.1-SNAPSHOT</version>
+            <version>0.11.1.1</version>
         </dependency>
 
         <dependency>
