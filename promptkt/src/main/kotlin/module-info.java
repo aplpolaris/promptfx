@@ -72,6 +72,7 @@ module tri.promptkt {
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
     opens tri.ai.text.chunks to com.fasterxml.jackson.databind, com.github.mustachejava;
+    opens tri.ai.tool.wf to com.fasterxml.jackson.databind;
 
     exports tri.ai.cli;
     exports tri.ai.core;
@@ -88,6 +89,7 @@ module tri.promptkt {
     exports tri.ai.text.chunks.process;
     exports tri.ai.text.docs;
     exports tri.ai.tool;
+    exports tri.ai.tool.wf;
     exports tri.util;
     exports tri.util.pdf;
 

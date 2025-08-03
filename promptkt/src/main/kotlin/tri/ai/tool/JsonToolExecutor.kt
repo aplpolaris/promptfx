@@ -46,8 +46,9 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
 
     suspend fun execute(query: String): String {
         info<JsonToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
+        val systemMessage = PROMPTS.fill("json-tool-system-message")
         val messages = mutableListOf(
-            ChatMessage(ChatRole.System, SYSTEM_MESSAGE_1),
+            ChatMessage(ChatRole.System, systemMessage),
             ChatMessage(ChatRole.User, query)
         )
 
@@ -97,11 +98,6 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
     }
 
     companion object {
-        private const val SYSTEM_MESSAGE_1 =
-            "Don't make assumptions about what values to plug into functions. " +
-            "Ask for clarification if a user request is ambiguous. " +
-            "Don't attempt to answer questions that are outside the scope of the functions. "
-
         private fun FunctionCall.tryJson() = try {
             argumentsAsJson()
         } catch (x: SerializationException) {

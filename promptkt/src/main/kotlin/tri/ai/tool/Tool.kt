@@ -21,14 +21,33 @@ package tri.ai.tool
 
 /** General purpose functionality that can be leveraged by an LLM agent or prompt. */
 abstract class Tool(
+    /** Simple name of tool. */
     val name: String,
+    /** Description of tool. */
     val description: String,
-    val notes: String? = null,
+    /** Input parameters required by the tool. */
+    val requiredParameters: List<String> = listOf(),
+    /** Flag indicating if the tool requires an LLM to run. */
     val requiresLlm: Boolean = false,
+    /** Flag indicating if the tool is a terminal tool. */
     val isTerminal: Boolean = false
 ) {
-    abstract suspend fun run(input: String): String
+    abstract suspend fun run(input: ToolDict): ToolResult
 }
 
-/** The result of running a tool. */
-class ToolResult(val historyText: String, val finalResult: String? = null)
+const val TOOL_DICT_INPUT = "input"
+const val TOOL_DICT_RESULT = "result"
+
+/** Placeholder for tool inputs and outputs. */
+typealias ToolDict = Map<String, String>
+
+val ToolDict.input
+    get() = this[TOOL_DICT_INPUT] ?: ""
+val ToolDict.result
+    get() = this[TOOL_DICT_RESULT] ?: ""
+
+/** Result of a tool execution. */
+class ToolResult(val result: ToolDict, val isTerminal: Boolean = false, val finalResult: String? = null) {
+    constructor(value: String): this(mapOf(TOOL_DICT_RESULT to value))
+    override fun toString() = "ToolResult(result=$result, isTerminal=$isTerminal, finalResult=$finalResult)"
+}

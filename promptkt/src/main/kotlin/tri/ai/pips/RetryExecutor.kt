@@ -30,49 +30,81 @@ import java.time.Duration
  */
 class RetryExecutor(
     /** Max number of times to reattempt a failed execution. */
-    var maxRetries: Int = 3,
+    maxRetries: Int = 3,
     /** Initial delay before first retry. */
-    var initialRetryDelay: Long = 1000L,
+    initialRetryDelay: Long = 1000L,
     /** Factor by which to increase the delay between retries. */
-    var retryBackoff: Double = 1.5,
+    retryBackoff: Double = 1.5,
 ) {
+    val retry = SimpleRetryExecutor(maxRetries, initialRetryDelay, retryBackoff)
 
     /**
      * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
      * related to the number of attempts and total duration.
      */
     suspend fun <T> execute(task: AiTask<T>, inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
+        return retry.execute({
+            task.execute(inputs, monitor)
+        }, onSuccess = { it ->
+            val trace = it.value!!
+            trace.copy(
+                execInfo = trace.exec.copy(
+                    responseTimeMillis = it.attemptTime,
+                    responseTimeMillisTotal = it.totalTime,
+                    attempts = it.attempts
+                )
+            )
+        }, onFailure = {
+            AiPromptTrace.error(
+                modelInfo = null,
+                message = it.error!!.message,
+                throwable = it.error!!,
+                duration = it.attemptTime,
+                durationTotal = it.totalTime,
+                attempts = it.attempts
+            )
+        })
+    }
+
+}
+
+/** Executes a runnable multiple times with a retry policy. */
+class SimpleRetryExecutor(
+    var maxRetries: Int = 3,
+    var initialRetryDelay: Long = 1000L,
+    var retryBackoff: Double = 1.5
+) {
+    suspend fun <S, T> execute(task: suspend () -> S, onSuccess: (RetryTaskResult<S>) -> T, onFailure: (RetryTaskResult<S>) -> T): T {
         var retries = 0
         var delay = initialRetryDelay
         val t00 = System.currentTimeMillis()
         while (true) {
             val t0 = System.currentTimeMillis()
             try {
-                val success = task.execute(inputs, monitor)
-                val t1 = System.currentTimeMillis()
-                return success.copy(
-                    execInfo = success.exec.copy(
-                        responseTimeMillis = t1 - t0,
-                        responseTimeMillisTotal = t1 - t00,
-                        attempts = retries + 1
-                    )
-                )
-            } catch (x: Exception) {
-                val t1 = System.currentTimeMillis()
+                val success = task()
+                return onSuccess(RetryTaskResult(success, retries + 1, t00, t0))
+            } catch (e: Exception) {
                 if (retries++ >= maxRetries)
-                    return AiPromptTrace.error(
-                        modelInfo = null,
-                        message = x.message,
-                        throwable = x,
-                        duration = t1 - t0,
-                        durationTotal = t1 - t00,
-                        attempts = retries
-                    )
-                info<RetryExecutor>("Failed with ${x.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")
+                    return onFailure(RetryTaskResult(null, retries, t00, t0, error = e))
+                info<RetryExecutor>("Failed with ${e.message}. Retrying after ${Duration.ofMillis(t0 - t00)}...")
                 kotlinx.coroutines.delay(delay)
                 delay = (delay * retryBackoff).toLong()
             }
         }
     }
+}
 
+/** Representation of a retry task result. */
+class RetryTaskResult<T>(
+    val value: T?,
+    val attempts: Int,
+    val overallStartTime: Long,
+    val attemptStartTime: Long,
+    val attemptEndTime: Long = System.currentTimeMillis(),
+    val error: Exception? = null
+) {
+    val totalTime: Long
+        get() = attemptEndTime - overallStartTime
+    val attemptTime: Long
+        get() = attemptEndTime - attemptStartTime
 }

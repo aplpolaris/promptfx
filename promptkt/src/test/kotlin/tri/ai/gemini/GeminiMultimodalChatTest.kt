@@ -55,6 +55,7 @@ class GeminiMultimodalChatTest {
     @Test
     @Tag("gemini")
     fun testChat_Tools() =
+        // note - Gemini does not always get this test right (sometimes refuses to use the tool)
         chat.testChat_Tools()
 
 }

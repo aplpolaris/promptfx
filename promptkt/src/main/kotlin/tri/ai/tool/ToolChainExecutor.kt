@@ -21,89 +21,85 @@ package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
+import tri.ai.prompt.AiPromptLibrary
 import tri.util.*
+
+val PROMPTS = AiPromptLibrary.readResource<ToolChainExecutor>()
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
 
-    val toolPrompt = """
-    Answer the following question. You have access to the following tools:
-
-    {{tools}}
-
-    Use the following format:
-
-    Question: the input question you must answer
-    Thought: you should always think about what to do
-    Action: the action to take, should be one of [{{tool_names}}]
-    Action Input: the input to the action (always provide the full input, including any contextual text provided with the question)
-    Observation: the result of the action
-    ... (this Thought/Action/Action Input/Observation can repeat N times)
-    Thought: I now know the final answer
-    Final Answer: the final answer to the original input question
-
-    Begin!
-
-    Previous conversation history:
-    {{history}}
-
-    New question: {{input}}
-    {{agent_scratchpad}}
-""".trimIndent()
     val logPrompts = false
     val iterationLimit = 5
+    val completionTokens = 500
 
     /** Answers a question while leveraging a series of tools to get to the answer. */
     fun executeChain(question: String, tools: List<Tool>): String {
         info<ToolChainExecutor>("User Question: $ANSI_YELLOW$question$ANSI_RESET")
 
-        val templateForQuestion = toolPrompt
-            .replace("{{tools}}", tools.joinToString("\n") { "${it.name}: ${it.description}" })
-            .replace("{{tool_names}}", tools.joinToString(", ") { it.name })
-            .replace("{{history}}", "None")
-            .replace("{{input}}", question)
+        val templateForQuestion = PROMPTS.fill("tool-chain-executor",
+            "tools" to tools.joinToString("\n") { "${it.name}: ${it.description}" },
+            "tool_names" to tools.joinToString(", ") { it.name },
+            "input" to question,
+            "agent_scratchpad" to "{{agent_scratchpad}}"
+        )
 
         return runBlocking {
-            var result = ToolResult("")
+            val scratchpad = ToolScratchpad()
+            var result: ToolResult? = null
             var iterations = 0
-            while (result.finalResult == null && iterations++ < iterationLimit) {
-                val stepResult = runExecChain(templateForQuestion, result.historyText, tools)
-                result = ToolResult(result.historyText + stepResult.historyText, stepResult.finalResult)
+            while (result?.isTerminal != true && iterations++ < iterationLimit) {
+                result = runExecChain(templateForQuestion, tools, scratchpad)
             }
-            result.finalResult ?: "I was unable to determine a final answer."
+            result?.finalResult ?: "I was unable to determine a final answer."
         }
     }
 
     /** Runs a single step of an execution chain. */
-    private suspend fun runExecChain(promptTemplate: String, prevResults: String, tools: List<Tool>): ToolResult {
-        val prompt = promptTemplate.replace("{{agent_scratchpad}}", prevResults)
+    private suspend fun runExecChain(promptTemplate: String, tools: List<Tool>, scratchpad: ToolScratchpad): ToolResult {
+        val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ", history = listOf())
+        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ", tokens = completionTokens, history = listOf())
             .firstValue.trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
+        scratchpad.steps.add(textCompletion)
 
         val responseOp = textCompletion.split("\n")
             .map { it.split(":", limit = 2) }
             .filter { it.size == 2 }
-            .associate { it[0] to it[1] }
+            .associate { it[0].trim() to it[1].trim() }
         if ("Final Answer:" in textCompletion) {
             val answer = textCompletion.substringAfter("Final Answer:").trim()
-            return ToolResult(textCompletion, answer)
+            return ToolResult(mapOf(), isTerminal = true, finalResult = answer)
         }
 
         val toolName = responseOp["Action"]?.trim()
-        val tool = tools.find { it.name == toolName }!!
-        val toolInput = responseOp["Action Input"]?.trim()
-        val observation = tool.run(toolInput!!)
-        info<ToolChainExecutor>("Observation: $ANSI_CYAN$observation$ANSI_RESET")
+        val tool = tools.find { it.name == toolName } ?: error("Tool $toolName not found.")
 
-        return ToolResult(
-            historyText = "$textCompletion\nObservation: $observation",
-            finalResult = if (tool.isTerminal) observation else null
-        )
+        val toolInput = responseOp["Action Input"]?.trim()
+        scratchpad.data[tool.name + " Input"] = toolInput ?: ""
+        if (toolInput.isNullOrBlank()) {
+            val fallback = "Tool input missing or malformed."
+            info<ToolChainExecutor>("Result: $ANSI_RED$fallback$ANSI_RESET")
+            scratchpad.data[tool.name + " Result"] = fallback
+            return ToolResult(mapOf())
+        }
+
+        val toolResult = tool.run(mapOf(TOOL_DICT_INPUT to toolInput))
+        info<ToolChainExecutor>("Result: $ANSI_CYAN${toolResult.result[TOOL_DICT_RESULT]}$ANSI_RESET")
+        scratchpad.data[tool.name + " Result"] = toolResult.result[TOOL_DICT_RESULT] ?: toolResult.result.toString()
+        return toolResult
     }
 
+}
+
+/** A scratchpad for storing context, tool results, and steps. */
+class ToolScratchpad {
+    val data = mutableMapOf<String, String>()
+    val steps = mutableListOf<String>()
+
+    fun summary() = data.entries.joinToString("\n") { " - ${it.key}: ${it.value}" }
 }
