@@ -38,8 +38,8 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextCompletion
-import tri.ai.embedding.EmbeddingService
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
@@ -73,8 +73,8 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
 
     val completionEngine: TextCompletion
         get() = controller.completionEngine.value
-    val embeddingService: EmbeddingService
-        get() = controller.embeddingService.value
+    val embeddingModel: EmbeddingModel
+        get() = controller.embeddingStrategy.value.model
 
     init {
         disableCreate()

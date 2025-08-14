@@ -31,20 +31,13 @@ interface NavigableWorkspaceView {
     val category: String
     val name: String
     val affordances: WorkspaceViewAffordance
-//    val description: String
-//    val icon: String
 
     /** Add the view to the workspace. */
     fun dock(workspace: Workspace)
 
     companion object {
         val viewPlugins: List<NavigableWorkspaceView> by lazy {
-            ServiceLoader.load(NavigableWorkspaceView::class.java).toList().also {
-                info<NavigableWorkspaceView>("Loading views...")
-                it.groupBy { it.category }.toSortedMap().forEach { (category, views) ->
-                    info<NavigableWorkspaceView>("  - $category: $ANSI_YELLOW${views.joinToString { it.name }}$ANSI_RESET")
-                }
-            }
+            ServiceLoader.load(NavigableWorkspaceView::class.java).toList()
         }
     }
 }

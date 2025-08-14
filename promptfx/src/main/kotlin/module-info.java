@@ -39,15 +39,7 @@ import tri.util.ui.NavigableWorkspaceView;
 // --add-opens javafx.controls/javafx.scene.control.skin=tornadofx
 // --add-opens javafx.graphics/javafx.scene=tornadofx
 module tri.promptfx {
-
-    requires transitive tri.promptkt;
-
-    requires java.desktop;
-    requires java.logging;
-
-    requires kotlin.stdlib;
-    requires kotlinx.coroutines.core;
-    requires kotlinx.serialization.core;
+    requires transitive tri.promptkt.docs;
 
     requires openai.core.jvm;
     requires openai.client.jvm;
@@ -56,15 +48,6 @@ module tri.promptfx {
     requires okio;
 
     requires org.apache.pdfbox;
-    requires org.apache.poi.ooxml;
-    requires org.apache.poi.scratchpad;
-
-    requires com.fasterxml.jackson.annotation;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.kotlin;
-    requires com.fasterxml.jackson.datatype.jsr310;
-    requires com.fasterxml.jackson.dataformat.yaml;
-    requires com.fasterxml.jackson.dataformat.csv;
 
     requires javafx.controls;
     requires javafx.fxml;
@@ -82,7 +65,6 @@ module tri.promptfx {
     // clustering tools
     requires commons.math3;
     requires clust4j;
-    requires kotlinx.serialization.json;
 
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
@@ -119,27 +101,41 @@ module tri.promptfx {
     uses NavigableWorkspaceView;
 
     provides NavigableWorkspaceView with
-            AgenticPlugin,
-            AudioApiPlugin,
-            AudioSpeechApiPlugin,
-            ImagesApiPlugin,
-            ImageDescribePlugin,
+
+            // tools
             PromptLibraryPlugin,
             PromptScriptPlugin,
             PromptTemplatePlugin,
             PromptValidatorPlugin,
             PromptTraceHistoryPlugin,
+
+            // documents
             DocumentQaPlugin,
             DocumentInsightPlugin,
             TextManagerPlugin,
             TextClusterPlugin,
+
+            // text
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,
             StructuredDataPlugin,
             TextSimilarityPlugin,
+
+            // fun
             ChatBackPlugin,
             ColorPlugin,
+
+            // multimodal
+            AudioApiPlugin,
+            AudioSpeechApiPlugin,
+            ImagesApiPlugin,
+            ImageDescribePlugin,
+
+            // integrations
             WeatherViewPlugin,
-            WikipediaViewPlugin
+            WikipediaViewPlugin,
+
+            // meta
+            AgenticPlugin
     ;
 }

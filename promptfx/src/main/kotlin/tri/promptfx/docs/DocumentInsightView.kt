@@ -30,6 +30,7 @@ import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.aggregate
+import tri.ai.pips.tasks
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
@@ -68,10 +69,10 @@ class DocumentInsightView: AiPlanTaskView(
     private val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(5000)
     private val embeddingIndex = Bindings.createObjectBinding({
-        LocalFolderEmbeddingIndex(documentFolder.value, controller.embeddingService.value).apply {
+        LocalFolderEmbeddingIndex(documentFolder.value, controller.embeddingStrategy.value).apply {
             maxChunkSize = this@DocumentInsightView.maxChunkSize.value
         }
-    }, controller.embeddingService, documentFolder, maxChunkSize)
+    }, controller.embeddingStrategy, documentFolder, maxChunkSize)
 
     private val docs = observableListOf<BrowsableSource>()
     private val chunkListModel: TextChunkListModel by inject(viewScope)
@@ -205,8 +206,9 @@ class DocumentInsightView: AiPlanTaskView(
             doc.chunks.take(chunksToProcess.value).map { it to doc }
         }
         runLater {
+            val modelId = controller.embeddingStrategy.value.modelId
             docs.setAll(docList.map { it.browsable() })
-            chunkListModel.chunkList.setAll(chunkList.map { it.asTextChunkViewModel(controller.embeddingService.value.modelId) })
+            chunkListModel.chunkList.setAll(chunkList.map { it.asTextChunkViewModel(modelId) })
         }
         chunkList
     }

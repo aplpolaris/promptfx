@@ -23,7 +23,7 @@ import javafx.collections.ObservableList
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.DocumentOpenInViewer
 import tri.promptfx.library.fieldifnotblank
 import tri.promptfx.ui.DocumentListView

@@ -31,8 +31,6 @@ import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.cli.writeTraceDatabase
-import tri.ai.cli.writeTraces
 import tri.ai.prompt.AiPrompt.Companion.INSTRUCT
 import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
 import tri.ai.prompt.trace.AiModelInfo.Companion.EMBEDDING_MODEL
@@ -42,6 +40,8 @@ import tri.ai.prompt.trace.AiPromptInfo.Companion.INPUT
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.writeTraceDatabase
+import tri.ai.prompt.trace.writeTraces
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_CSV

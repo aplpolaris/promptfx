@@ -24,10 +24,14 @@ package tri.promptfx.ui.docs
 import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import tornadofx.*
+import tri.ai.text.chunks.DelimiterTextChunker
+import tri.ai.text.chunks.NoOpTextChunker
+import tri.ai.text.chunks.RegexTextChunker
+import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunker
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.*
 import tri.promptfx.PromptFxController
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.promptfx.ui.chunk.asTextChunkViewModel
@@ -125,7 +129,7 @@ class TextChunkerWizardModel: ViewModel() {
         val inputTextSample = inputTextSample()
         val chunker = chunker()
         val doc = TextDoc("", inputTextSample)
-        return doc to chunker.chunk(doc.all!!)
+        return doc to chunker.chunkText(doc.all!!.text, maxChunkSize.value)
     }
 
     /** Initializes chunking options based on input docs. */
@@ -145,20 +149,21 @@ class TextChunkerWizardModel: ViewModel() {
         val useChunks = chunks
             .filter(chunkFilter(doc.all!!))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingService.value?.modelId, null) })
+        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingStrategy.value?.modelId, null) })
     }
 
     /** Chunker based on current settings. */
     private fun chunker(): TextChunker = when {
         isChunkAutomatic.get() ->
-            SmartTextChunker(maxChunkSize.value)
+            SmartTextChunker()
         isChunkDelimiter.get() ->
             DelimiterTextChunker(
-                isCleanUpWhiteSpace.value, listOf(chunkDelimiter.value
-                    .replace("\\n", "\n")
-                    .replace("\\r", "\r")
-                    .replace("\\t", "\t")
-                    .ifEmpty { "\n" })
+                isCleanUpWhiteSpace.value, listOf(
+                    chunkDelimiter.value
+                        .replace("\\n", "\n")
+                        .replace("\\r", "\r")
+                        .replace("\\t", "\t")
+                        .ifEmpty { "\n" })
             )
         isChunkRegex.get() -> try {
             RegexTextChunker(isCleanUpWhiteSpace.value, chunkRegex.value.toRegex())
@@ -181,7 +186,8 @@ class TextChunkerWizardModel: ViewModel() {
         val addedChunks = mutableSetOf<String>()
         return inputDocs(progressUpdate).mapNotNull { doc ->
             val docChunk = doc.all!!
-            val docChunks = chunker.chunk(docChunk).filter(chunkFilter(docChunk))
+            val docChunks = chunker.chunkText(docChunk.text, maxChunkSize.value)
+                .filter(chunkFilter(docChunk))
             if (!chunkFilterRemoveDuplicates.value)
                 doc.chunks.addAll(docChunks)
             else

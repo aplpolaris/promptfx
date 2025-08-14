@@ -1,8 +1,3 @@
-tri.promptfx.meta.AgenticPlugin
-tri.promptfx.api.AudioApiPlugin
-tri.promptfx.api.AudioSpeechApiPlugin
-tri.promptfx.api.ImagesApiPlugin
-tri.promptfx.apps.ImageDescribePlugin
 tri.promptfx.tools.PromptLibraryPlugin
 tri.promptfx.tools.PromptScriptPlugin
 tri.promptfx.tools.PromptTemplatePlugin
@@ -18,5 +13,10 @@ tri.promptfx.apps.StructuredDataPlugin
 tri.promptfx.apps.TextSimilarityPlugin
 tri.promptfx.fun.ChatBackPlugin
 tri.promptfx.fun.ColorPlugin
+tri.promptfx.api.AudioApiPlugin
+tri.promptfx.api.AudioSpeechApiPlugin
+tri.promptfx.api.ImagesApiPlugin
+tri.promptfx.apps.ImageDescribePlugin
 tri.promptfx.integration.WeatherViewPlugin
 tri.promptfx.integration.WikipediaViewPlugin
+tri.promptfx.meta.AgenticPlugin

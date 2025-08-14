@@ -26,9 +26,9 @@ import tornadofx.*
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.process.LocalFileManager.PDF
 import tri.util.info
-import tri.util.pdf.PdfUtils.findTextInPdf
+import tri.util.io.LocalFileManager.PDF
+import tri.util.io.pdf.PdfUtils.findTextInPdf
 import tri.util.ui.pdf.PdfViewer
 import java.awt.Desktop
 

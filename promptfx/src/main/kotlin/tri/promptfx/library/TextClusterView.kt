@@ -269,7 +269,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                 categories = categoryList.value.split(",").map { it.trim() },
                 sampleTheme = summarizeSample.value.ifBlank { "This content all appears to discuss animals or pets." },
                 completionEngine = controller.completionEngine.value,
-                embeddingService = controller.embeddingService.value,
+                embeddingModel = controller.embeddingStrategy.value.model,
                 minForRegroup = minForRegroup.value,
                 attempts = attempts.value,
                 progress = { msg, pct ->

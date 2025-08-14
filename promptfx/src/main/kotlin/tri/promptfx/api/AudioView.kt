@@ -35,6 +35,7 @@ import tornadofx.*
 import tri.ai.gemini.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.*
 import tri.util.ui.AudioRecorder
 import tri.promptfx.AiTaskView

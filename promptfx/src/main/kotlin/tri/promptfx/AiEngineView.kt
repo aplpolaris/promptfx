@@ -27,8 +27,9 @@ import javafx.geometry.Pos
 import javafx.scene.Cursor
 import javafx.scene.control.TextInputDialog
 import tornadofx.*
+import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiAdapter
-import tri.ai.openai.OpenAiApiSettingsBasic
+import tri.ai.text.chunks.SmartTextChunker
 import tri.promptfx.PromptFxDriver.showDriverDialog
 import tri.util.ui.graphic
 
@@ -54,13 +55,13 @@ class AiEngineView: View() {
                 }
             }
             menubutton("Embeddings", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                tooltip(embeddingService.value?.toString() ?: "Select the embedding engine to use.")
-                embeddingService.onChange { tooltip.text = it.toString() }
+                tooltip(embeddingStrategy.value?.model?.toString() ?: "Select the embedding engine to use.")
+                embeddingStrategy.onChange { tooltip.text = it?.model.toString() }
                 PromptFxModels.embeddingModels().forEach { model ->
                     item(model.toString()) {
-                        style = menustyle(model.modelId, embeddingService.value?.modelId)
-                        styleProperty().bind(embeddingService.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { embeddingService.set(model) }
+                        style = menustyle(model.modelId, embeddingStrategy.value?.modelId)
+                        styleProperty().bind(embeddingStrategy.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { embeddingStrategy.set(EmbeddingStrategy(model, SmartTextChunker())) }
                     }
                 }
             }

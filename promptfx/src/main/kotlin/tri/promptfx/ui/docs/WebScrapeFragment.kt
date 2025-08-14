@@ -25,8 +25,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.text.docs.WebCrawler
 import tri.promptfx.promptFxDirectoryChooser
+import tri.util.io.WebCrawler
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel

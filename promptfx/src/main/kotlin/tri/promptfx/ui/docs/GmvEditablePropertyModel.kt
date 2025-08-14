@@ -27,9 +27,9 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
 import tri.ai.text.chunks.TextDocMetadata
-import tri.ai.text.chunks.process.GuessedMetadataObject
-import tri.ai.text.chunks.process.MultipleGuessedMetadataObjects
-import tri.ai.text.chunks.process.PdfMetadataGuesser.toGuessedMetadataObject
+import tri.ai.process.pdf.GuessedMetadataObject
+import tri.ai.process.pdf.MultipleGuessedMetadataObjects
+import tri.ai.process.pdf.PdfMetadataGuesser.toGuessedMetadataObject
 import java.time.LocalDate
 import java.time.LocalDateTime
 

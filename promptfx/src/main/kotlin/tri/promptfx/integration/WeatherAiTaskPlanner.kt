@@ -19,10 +19,10 @@
  */
 package tri.promptfx.integration
 
+import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextCompletion
 import tri.ai.core.instructTask
 import tri.ai.core.jsonPromptTask
-import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.*
 import tri.ai.pips.*
@@ -33,7 +33,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
-class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingService: EmbeddingService, val input: String) : AiPlanner {
+class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
 
     override fun plan() =
         aitask("weather-similarity-check") {
@@ -48,14 +48,14 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingSe
         }.plan
 
     private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace<String> {
-        val embeddings = embeddingService.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
+        val embeddings = embeddingModel.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
         val similarity = cosineSimilarity(embeddings[0], embeddings[1])
         info<WeatherAiTaskPlanner>("Input alignment to weather: $similarity")
         if (similarity < 0.5)
             throw IllegalArgumentException("The input is not about weather.")
 
         return AiPromptTrace(
-            modelInfo = AiModelInfo(embeddingService.modelId),
+            modelInfo = AiModelInfo(embeddingModel.modelId),
             outputInfo = AiOutputInfo.output(input)
         )
     }

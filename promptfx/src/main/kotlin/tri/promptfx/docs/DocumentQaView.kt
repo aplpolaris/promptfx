@@ -33,10 +33,10 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.GroupingTemplateJoiner
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.TextLibraryReceiver
@@ -80,7 +80,7 @@ class DocumentQaView: AiPlanTaskView(
 
     val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
-        embeddingIndex = controller.embeddingService.objectBinding(documentFolder, maxChunkSize) {
+        embeddingIndex = controller.embeddingStrategy.objectBinding(documentFolder, maxChunkSize) {
             LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }

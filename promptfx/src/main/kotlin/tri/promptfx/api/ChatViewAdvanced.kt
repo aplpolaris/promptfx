@@ -26,6 +26,7 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.util.ifNotBlank
 
 /**

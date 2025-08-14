@@ -73,13 +73,13 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
     private fun modeTemplateValue(id: String?, valueOrValueId: String) =
         if (id == null) valueOrValueId else RuntimePromptViewConfigs.modeTemplateValue(id, valueOrValueId)
 
-    /** Mode config with property indicating current selection. */
-    inner class ModeViewConfig(config: ModeConfig) {
-        val id = config.id
-        val templateId = config.templateId
-        val label = config.label
-        val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
-        val mode = SimpleStringProperty(options[0])
-    }
+}
 
+/** Mode config with property indicating current selection. */
+internal class ModeViewConfig(config: ModeConfig) {
+    val id = config.id
+    val templateId = config.templateId
+    val label = config.label
+    val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
+    val mode = SimpleStringProperty(options[0])
 }

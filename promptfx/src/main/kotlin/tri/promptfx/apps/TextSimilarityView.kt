@@ -23,6 +23,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
@@ -51,7 +52,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
     override suspend fun processUserInput(): AiPipelineResult<*> {
         val chunks = secondText.get().splitIntoChunks()
-        val mod = controller.embeddingService.get()
+        val mod = controller.embeddingStrategy.get().model
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
 
         val score = cosineSimilarity(embedList[0], embedList[1])

@@ -21,11 +21,15 @@ package tri.promptfx
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.promptfx.ui.RuntimePromptViewConfig
+import tri.promptfx.ui.RuntimePromptViewConfigMcp
+import tri.util.fine
 import tri.util.ui.MAPPER
 import java.io.File
 
 /** Configs for prompt apps. */
 object RuntimePromptViewConfigs {
+
+    //region VIEW CONFIGS
 
     /** Index of configs. */
     private val index: Map<String, RuntimePromptViewConfig> = RuntimePromptViewConfigs::class.java.getResource("resources/views.yaml")!!
@@ -36,24 +40,16 @@ object RuntimePromptViewConfigs {
         File("config/views.yaml")
     ).firstOrNull { it.exists() }?.let { MAPPER.readValue(it) } ?: mapOf()
 
-    /** Index of modes. Key is mode group, value key is for UI presentation/selection, value is for prompt. */
-    private val modes: Map<String, Map<String, String>> = RuntimePromptViewConfigs::class.java.getResource("resources/modes.yaml")!!
-        .let {
-            MAPPER.readValue<Map<String, Any>>(it)
-                .mapValues {
-                    (it.value as? List<*>)?.associate { (it as String) to it }
-                        ?: (it.value as Map<String, String>)
-                }
+    /** All views by name. The runtime configs override the resource configs. */
+    val views: Map<String, RuntimePromptViewConfig> by lazy {
+        mutableMapOf<String, RuntimePromptViewConfig>().apply {
+            putAll(index)
+            putAll(runtimeIndex)
+            runtimeIndex.keys.intersect(index.keys).forEach {
+                fine<RuntimePromptViewConfigs>("Runtime config for prompt view $it overrides resource config.")
+            }
         }
-    /** Runtime index of modes. */
-    private val runtimeModes: Map<String, Map<String, String>> = setOf(File("modes.yaml"), File("config/modes.yaml"))
-        .firstOrNull { it.exists() }?.let {
-            MAPPER.readValue<Map<String, Any>>(it)
-                .mapValues {
-                    (it.value as? List<*>)?.associate { (it as String) to it }
-                        ?: (it.value as Map<String, String>)
-                }
-        } ?: mapOf()
+    }
 
     /** Get a list of categories. */
     fun categories() = (index.values + runtimeIndex.values).map { it.category }.distinct()
@@ -61,6 +57,52 @@ object RuntimePromptViewConfigs {
     fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.category == category }
     /** Get a config by id. */
     fun config(id: String) = runtimeIndex[id] ?: index[id]!!
+
+    //endregion
+
+    //region MCP VIEWS
+
+    /** Index of configs. */
+    private val mcpIndex: Map<String, RuntimePromptViewConfigMcp> = RuntimePromptViewConfigs::class.java.getResource("resources/views-mcp.yaml")!!
+        .let { MAPPER.readValue(it) }
+    /** Index of runtime configs. */
+    private val mcpRuntimeIndex: Map<String, RuntimePromptViewConfigMcp> = setOf(
+        File("views-mcp.yaml"),
+        File("config/views-mcp.yaml")
+    ).firstOrNull { it.exists() }?.let { MAPPER.readValue(it) } ?: mapOf()
+
+    val mcpViews: Map<String, RuntimePromptViewConfigMcp> by lazy {
+        mutableMapOf<String, RuntimePromptViewConfigMcp>().apply {
+            putAll(mcpIndex)
+            putAll(mcpRuntimeIndex)
+            mcpRuntimeIndex.keys.intersect(mcpIndex.keys).forEach {
+                fine<RuntimePromptViewConfigs>("Runtime config for MCP prompt view $it overrides resource config.")
+            }
+        }
+    }
+
+    /** Get a list of categories. */
+    fun mcpCategories() = (mcpIndex.values + mcpRuntimeIndex.values).map { it.category }.distinct()
+    /** Get a list of configs by category. */
+    fun mcpConfigs(category: String) = (mcpIndex.values + mcpRuntimeIndex.values).filter { it.category == category }
+    /** Get a config by id. */
+    fun mcpConfig(id: String) = mcpRuntimeIndex[id] ?: mcpIndex[id]!!
+
+    //endregion
+
+    //region MODES
+
+    /** Index of modes. Key is mode group, value key is for UI presentation/selection, value is for prompt. */
+    internal val modes: Map<String, Map<String, String>> = RuntimePromptViewConfigs::class.java.getResource("resources/modes.yaml")!!
+        .let { MAPPER.readValue<Map<String, Any>>(it).parseModes() }
+    /** Runtime index of modes. */
+    internal val runtimeModes: Map<String, Map<String, String>> = setOf(File("modes.yaml"), File("config/modes.yaml"))
+        .firstOrNull { it.exists() }?.let { MAPPER.readValue<Map<String, Any>>(it).parseModes() } ?: mapOf()
+
+    private fun Map<String, Any>.parseModes() = mapValues {
+        (it.value as? List<*>)?.associate { (it as String) to it }
+            ?: (it.value as Map<String, String>)
+    }
 
     /**
      * Get value of a mode id for use in prompts.
@@ -75,5 +117,7 @@ object RuntimePromptViewConfigs {
 
     /** Get options for mode, where keys are presentation values and values are prompt values. */
     fun modeOptionMap(modeId: String) = (runtimeModes[modeId] ?: modes[modeId]) ?: error("Mode $modeId not found in index.")
+
+    //endregion
 
 }

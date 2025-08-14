@@ -27,6 +27,7 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo

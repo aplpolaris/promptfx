@@ -21,6 +21,7 @@ package tri.promptfx.api
 
 import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 
 /**
  * Basic version of chat through API.

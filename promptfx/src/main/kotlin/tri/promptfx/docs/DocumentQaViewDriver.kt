@@ -20,9 +20,11 @@
 package tri.promptfx.docs
 
 import javafx.application.Platform
+import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.IgnoreMonitor
+import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.docs.DocumentQaDriver
 import tri.promptfx.PromptFxModels
 import java.io.File
@@ -50,10 +52,11 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
             )
         }
     override var embeddingModel: String
-        get() = view.controller.embeddingService.value.modelId
+        get() = view.controller.embeddingStrategy.value.modelId
         set(value) {
-            view.controller.embeddingService.set(
-                PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!
+            view.controller.embeddingStrategy.set(
+                EmbeddingStrategy(PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!,
+                    SmartTextChunker())
             )
         }
     override var temp: Double

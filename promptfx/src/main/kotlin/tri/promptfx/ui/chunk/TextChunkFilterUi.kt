@@ -81,7 +81,7 @@ class TextChunkFilterUi : Fragment(), ScopedInstance {
     }
 
     private fun updateFilter() {
-        filterModel.updateFilter(listModel.chunkList, controller.embeddingService.value)
+        filterModel.updateFilter(listModel.chunkList, controller.embeddingStrategy.value.model)
     }
 
 }

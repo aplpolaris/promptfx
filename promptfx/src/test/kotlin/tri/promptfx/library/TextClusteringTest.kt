@@ -22,11 +22,11 @@ package tri.promptfx.library
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import tri.ai.embedding.EmbeddingPrecision
+import tri.ai.core.EmbeddingPrecision
 import tri.ai.openai.OpenAiCompletionChat
-import tri.ai.openai.OpenAiEmbeddingService
+import tri.ai.openai.OpenAiEmbeddingModel
 import tri.ai.text.chunks.TextChunkRaw
-import tri.ai.text.chunks.process.TextDocEmbeddings.putEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.putEmbeddingInfo
 import tri.promptfx.library.TextClustering.generateClusterHierarchy
 import tri.promptfx.library.TextClustering.generateClusterSummary
 import tri.promptfx.library.TextClustering.generateClusters
@@ -39,7 +39,7 @@ class TextClusteringTest {
 
     private val clusterService = AffinityClusterService()
     private val textCompletion = OpenAiCompletionChat()
-    private val embeddingService = OpenAiEmbeddingService()
+    private val embeddingService = OpenAiEmbeddingModel()
 
     @Disabled("Requires API key")
     @Test

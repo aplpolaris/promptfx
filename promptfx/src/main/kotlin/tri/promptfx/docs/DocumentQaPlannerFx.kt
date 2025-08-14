@@ -34,10 +34,10 @@ import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskList
 import tri.ai.prompt.AiPrompt
-import tri.ai.text.chunks.GroupingTemplateJoiner
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET

@@ -30,11 +30,11 @@ import tornadofx.*
 import tri.ai.core.TextCompletion
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocMetadata
-import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
-import tri.ai.text.chunks.process.PdfMetadataGuesser
+import tri.ai.process.pdf.PdfMetadataGuesser
 import tri.promptfx.AiProgressView
 import tri.promptfx.PromptFxController
 import tri.promptfx.ui.docs.TextLibraryViewModel.Companion.mergeIn
+import tri.util.io.LocalFileManager.extractMetadata
 import tri.util.ui.graphic
 import tri.util.ui.pdf.PdfViewer
 

@@ -22,7 +22,6 @@ package tri.promptfx
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.event.EventHandler
 import javafx.event.EventTarget
-import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.stage.Screen
 import javafx.stage.StageStyle
@@ -37,6 +36,7 @@ import tri.promptfx.library.TextManagerView
 import tri.promptfx.tools.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
+import tri.promptfx.ui.NavigableWorkspaceViewRuntimeMcp
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -94,7 +94,7 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group("API", FontAwesomeIcon.CLOUD.graphic.forestGreen) {
+            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.forestGreen, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
                 separator { }
@@ -126,20 +126,8 @@ class PromptFxWorkspace : Workspace() {
                 separator { }
                 browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
             }
-            (RuntimePromptViewConfigs.categories() - setOf("API", "Tools", "Documents", "Text", "Fun", "Audio", "Vision", "Integrations", "Documentation")).forEach {
-                group(it, FontAwesomeIcon.COG.graphic.forestGreen) { }
-            }
-            // views below are configured via [NavigableWorkspaceView] plugins
-            group("Tools", FontAwesomeIcon.WRENCH.graphic.forestGreen)
-            group("Documents", FontAwesomeIcon.FILE.graphic.forestGreen)
-            group("Text", FontAwesomeIcon.FONT.graphic.forestGreen)
-            group("Fun", FontAwesomeIcon.SMILE_ALT.graphic.forestGreen)
-            group("Audio", FontAwesomeIcon.MICROPHONE.graphic.forestGreen)
-            group("Vision", FontAwesomeIcon.IMAGE.graphic.forestGreen)
-            group("Integrations", FontAwesomeIcon.PLUG.graphic.forestGreen)
-
-            group("Documentation", FontAwesomeIcon.BOOK.graphic.forestGreen) {
-                // nothing here, but testing to see this doesn't show up in view
+            PromptFxWorkspaceModel.instance.viewGroups.forEach {
+                group(it)
             }
         }
     }
@@ -233,18 +221,11 @@ class PromptFxWorkspace : Workspace() {
 
     //region LAYOUT
 
-    private fun Drawer.group(category: String, icon: Node? = null, op: EventTarget.() -> Unit = { }) {
-        item(category, icon, expanded = false) {
+    private fun Drawer.group(model: ViewGroupModel, op: EventTarget.() -> Unit = { }) {
+        item(model.category, model.icon, expanded = false) {
             op()
-            val viewsById = NavigableWorkspaceView.viewPlugins.filter { it.category == category }
-                .associateBy { it.name }
-                .toSortedMap()
-            val viewsDefinedAtRuntime = RuntimePromptViewConfigs.configs(category)
-                .filter { it.title !in viewsById }
-                .associate { it.title to NavigableWorkspaceViewRuntime(it) }
-            viewsById.putAll(viewsDefinedAtRuntime)
-            viewsById.values.forEach {
-                hyperlinkview(category, it)
+            model.views.forEach {
+                hyperlinkview(it.category, it)
             }
         }.apply {
             if (children.isEmpty()) {
@@ -267,34 +248,12 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
-//    private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
-//        if (PromptFxModels.policy.supportsView((view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: "")) {
-//            if (view is NavigableWorkspaceViewImpl<*>) {
-//                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
-//                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
-//                }
-//            }
-//            hyperlink(view.name) {
-//                action {
-//                    isVisited = false
-//                    view.dock(this@PromptFxWorkspace)
-//                }
-//            }
-//        }
-//    }
-
     private fun EventTarget.hyperlinkview(viewGroup: String, view: NavigableWorkspaceView) {
         val viewSimpleName = (view as? NavigableWorkspaceViewImpl<*>)?.type?.simpleName ?: view.name
         if (PromptFxModels.policy.supportsView(viewSimpleName)) {
-            if (view is NavigableWorkspaceViewImpl<*>) {
-                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
-                    PromptFxViewInfo(viewGroup, view.name, view.type.java, affordances = view.affordances)
-                }
-            } else if (view is NavigableWorkspaceViewRuntime) {
-                views.getOrPut(viewGroup) { mutableMapOf() }.getOrPut(view.name) {
-                    PromptFxViewInfo(viewGroup, view.name, viewComponent = view.view, affordances = view.affordances)
-                }
-            }
+            val viewInfo = view.viewInfo()
+            if (viewInfo != null)
+                views.getOrPut(viewGroup) { mutableMapOf() }.put(view.name, viewInfo)
             hyperlink(view.name) {
                 action {
                     isVisited = false
@@ -302,6 +261,13 @@ class PromptFxWorkspace : Workspace() {
                 }
             }
         }
+    }
+
+    private fun NavigableWorkspaceView.viewInfo() = when (this) {
+        is NavigableWorkspaceViewImpl<*> -> PromptFxViewInfo(category, name, type.java, null, affordances)
+        is NavigableWorkspaceViewRuntime -> PromptFxViewInfo(category, name, null, view, affordances)
+        is NavigableWorkspaceViewRuntimeMcp -> PromptFxViewInfo(category, name, null, view, affordances)
+        else -> null
     }
 
     private fun EventTarget.browsehyperlink(label: String, url: String) {
@@ -313,3 +279,4 @@ class PromptFxWorkspace : Workspace() {
     //endregion
 
 }
+

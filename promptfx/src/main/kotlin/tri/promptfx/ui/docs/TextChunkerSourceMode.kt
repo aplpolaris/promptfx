@@ -2,10 +2,10 @@ package tri.promptfx.ui.docs
 
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.LocalFileManager
-import tri.ai.text.chunks.process.LocalFileManager.extractTextContent
-import tri.ai.text.chunks.process.LocalFileManager.fileToText
-import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.util.io.LocalFileManager
+import tri.util.io.LocalFileManager.extractTextContent
+import tri.util.io.LocalFileManager.fileToText
+import tri.util.io.LocalFileManager.originalFile
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime

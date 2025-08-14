@@ -19,9 +19,9 @@
  */
 package tri.promptfx.library
 
+import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextCompletion
 import tri.ai.core.templateTask
-import tri.ai.embedding.EmbeddingService
 import tri.ai.prompt.AiPrompt
 import tri.ai.prompt.AiPrompt.Companion.INPUT
 import tri.ai.prompt.AiPromptLibrary
@@ -33,7 +33,7 @@ import tri.util.ml.ClusterService
 object TextClustering {
 
     /**
-     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [TextCompletion] and [EmbeddingService].
+     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [TextCompletion] and [EmbeddingModel].
      * Summarizes clusters hierarchically whenever the list of chunks (or clusters) is at least size [minForRegroup].
      */
     suspend fun ClusterService.generateClusterHierarchy(
@@ -43,7 +43,7 @@ object TextClustering {
         categories: List<String>,
         sampleTheme: String,
         completionEngine: TextCompletion,
-        embeddingService: EmbeddingService,
+        embeddingModel: EmbeddingModel,
         minForRegroup: Int = 20,
         attempts: Int = 3,
         progress: (String, Double) -> Unit
@@ -60,7 +60,7 @@ object TextClustering {
             }
             progress("Level $n Cluster Embedding Calculations", 0.0)
             clusters.forEach {
-                it.embedding = it.description.theme?.let { embeddingService.calculateEmbedding(it) }
+                it.embedding = it.description.theme?.let { embeddingModel.calculateEmbedding(it) }
             }
             n++
         } while (clusters.all { it.description.theme != null } && clusters.size > minForRegroup)

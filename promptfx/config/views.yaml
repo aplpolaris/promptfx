@@ -70,9 +70,9 @@ math_calculations:
   promptConfig:
     id: math-calculations
     template-prompt: |
-      Perform math calculations on the following numbers:
+      Perform math calculations on the following numbers ({{OPERATION_TYPE}}):
       '''
-      {{input}}
+      {{{input}}}
       '''
   modeOptions:
     - templateId: OPERATION_TYPE

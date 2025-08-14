@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.googlecode.blaisemath</groupId>
+    <artifactId>promptfx-meta</artifactId>
+    <version>0.12.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>${project.artifactId}-${project.version}</name>
+    <description>PromptFx parent pom.</description>
+    <url>https://github.com/aplpolaris/promptfx</url>
+    <inceptionYear>2023</inceptionYear>
+
+    <modules>
+        <module>promptkt-core</module>
+        <module>promptkt-pips</module>
+        <module>promptkt-docs</module>
+        <module>promptkt-cli</module>
+        <module>promptfx</module>
+    </modules>
+
+    <!-- configuration of the default license to use -->
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Johns Hopkins University Applied Physics Laboratory</name>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Elisha Peterson</name>
+            <email>triathematician+blaise@gmail.com</email>
+            <url>https://github.com/triathematician</url>
+            <organization>JHU-APL</organization>
+            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aplpolaris/promptfx</url>
+        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
+        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/aplpolaris/promptfx/issues</url>
+    </issueManagement>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
+        <license.licenseName>apache_v2</license.licenseName>
+
+        <clikt.version>4.4.0</clikt.version>
+        <jackson.version>2.17.1</jackson.version>
+        <jsoup.version>1.17.2</jsoup.version>
+        <junit.version>5.10.2</junit.version>
+        <kotlin.version>1.9.25</kotlin.version>
+        <kotlin-coroutines-test.version>1.7.3</kotlin-coroutines-test.version>
+        <kotlin-dokka.version>1.8.20</kotlin-dokka.version>
+        <ktor.version>2.3.13</ktor.version> <!-- match version in openai-client -->
+        <mustache.version>0.9.13</mustache.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <openai-kotlin.version>3.8.2</openai-kotlin.version>
+        <pdfbox.version>3.0.2</pdfbox.version>
+        <poi.version>5.3.0</poi.version>
+        <slf4j.version>1.7.35</slf4j.version> <!-- match version in io.ktor -->
+        <log4j.version>2.21.1</log4j.version> <!-- match version in poi -->
+    </properties>
+
+    <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+
+        <plugins>
+            <!-- maven and java required versions -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M2</version>
+                <executions>
+                    <execution>
+                        <id>enforce</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.5.4</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>11</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- set java 11 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+
+            <!-- set jvm target version java 11 -->
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <jvmTarget>11</jvmTarget>
+                    <compilerPlugins>
+                        <plugin>kotlinx-serialization</plugin>
+                    </compilerPlugins>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-serialization</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <!-- update surefire plugin for junit 5 -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <configuration>
+                    <!-- TODO - set up profiles so we can run different test sets from command line -->
+                    <!--                    <excludedGroups>gemini</excludedGroups>-->
+                    <excludedGroups>gemini | openai</excludedGroups>
+                </configuration>
+            </plugin>
+
+            <!-- Automatically update file headers, and add license file to distribution -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.20</version>
+                <configuration>
+                    <roots>
+                        <root>src/main/kotlin</root>
+                        <root>src/test/kotlin</root>
+                    </roots>
+                    <canUpdateCopyright>true</canUpdateCopyright>
+                    <canUpdateDescription>false</canUpdateDescription>
+                    <projectName>tri.promptfx:promptkt</projectName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>update-project-license</goal>
+                            <goal>update-file-header</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- generate SBOM -->
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>2.8.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeAggregateBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Version specified for compatibility with maven-project-info-reports-plugin 3.0.0-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.8.2</version>
+            </plugin>
+
+            <!-- ensure release plugin skips javadocs step since that's done with dokka -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <arguments>-Dmaven.javadoc.skip=true</arguments>
+                    <releaseProfiles>release</releaseProfiles>
+                </configuration>
+            </plugin>
+
+            <!-- build javadocs with dokka -->
+            <plugin>
+                <groupId>org.jetbrains.dokka</groupId>
+                <artifactId>dokka-maven-plugin</artifactId>
+                <version>${kotlin-dokka.version}</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>javadocJar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <reportUndocumented>false</reportUndocumented>
+                    <skipEmptyPackages>true</skipEmptyPackages>
+                    <jdkVersion>11</jdkVersion>
+                    <platform>JVM</platform>
+                    <noStdlibLink>true</noStdlibLink>
+                    <noJdkLink>true</noJdkLink>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+            <!-- check for vulnerabilities, with `mvn verify` or `mvn site` -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.1.0</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <profiles>
+        <profile>
+            <!-- this is for building sources & javadocs, signing, & deploying to staging repo -->
+            <id>release</id>
+            <build>
+                <plugins>
+                    <!-- build sources -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- sign the artifacts with gpg (requires command-line utility) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- deploy to maven central -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

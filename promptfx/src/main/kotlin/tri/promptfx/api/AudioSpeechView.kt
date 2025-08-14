@@ -43,6 +43,7 @@ import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView

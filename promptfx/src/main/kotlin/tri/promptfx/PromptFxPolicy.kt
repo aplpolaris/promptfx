@@ -21,7 +21,6 @@ package tri.promptfx
 
 import javafx.scene.paint.Color
 import tri.ai.core.*
-import tri.ai.embedding.EmbeddingService
 import tri.ai.openai.OpenAiPlugin
 
 /** Policy for determining which models are available within PromptFx. */
@@ -29,7 +28,7 @@ abstract class PromptFxPolicy {
 
     abstract fun modelInfo(): List<ModelInfo>
 
-    abstract fun embeddingModels(): List<EmbeddingService>
+    abstract fun embeddingModels(): List<EmbeddingModel>
     open fun embeddingModelDefault() = embeddingModels().first()
 
     abstract fun textCompletionModels(): List<TextCompletion>
