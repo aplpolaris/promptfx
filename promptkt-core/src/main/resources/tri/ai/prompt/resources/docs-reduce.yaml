@@ -1,0 +1,58 @@
+---
+groupId: docs-reduce
+defaults: { category: docs }
+prompts:
+
+  - id: docs-reduce/author@1.0.0
+    title: Document Reduce - Author Profile
+    template: |
+      Use the following summaries to generate a profile of the author of these texts.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/keywords@1.0.0
+    title: Document Reduce - Keywords
+    template: |
+      Combine the following lists of keywords into a single list. Group terms that are synonyms.
+      ````
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/math-terms@1.0.0
+    title: Document Reduce - Math Terms
+    template: |
+      Combine the following lists of mathematical terms into a single list. Group terms that are synonyms.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/outline@1.0.0
+    title: Document Reduce - Outline
+    template: |
+      Combine the following summaries into an outline.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/summarize@1.0.0
+    title: Document Reduce - Summarize
+    template: |
+      Create a summary of the following text:
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/technical-terms@1.0.0
+    title: Document Reduce - Technical Terms
+    template: |
+      Extract technical terms and tools from the input text into a bulleted list. Group terms that are synonyms.
+      Sample output:
+      ```
+      - Term 1: describe it
+      - Term 2: describe it
+      ```
+      Input:
+      ```
+      {{{input}}}
+      ```

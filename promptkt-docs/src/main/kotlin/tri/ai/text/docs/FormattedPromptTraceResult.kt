@@ -28,7 +28,7 @@ class FormattedPromptTraceResult(trace: AiPromptTrace<String>, @get:JsonIgnore v
 
     override fun toString() = output?.outputs?.joinToString() ?: "null"
 
-    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
+    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
         FormattedPromptTraceResult(AiPromptTrace(promptInfo, modelInfo, execInfo, output), formattedOutputs)
 
 }

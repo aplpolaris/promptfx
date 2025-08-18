@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MChatVariation
 import tri.ai.gemini.GeminiModelIndex.EMBED1
 import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 import tri.util.BASE64_AUDIO_SAMPLE
@@ -77,7 +78,12 @@ class GeminiClientTest {
     @Test
     fun testGenerateContent() {
         runBlocking {
-            val response = client.generateContent("Write a limerick about a magic backpack.", GEMINI_15_FLASH, history = listOf())
+            val response = client.generateContent(
+                "Write a limerick about a magic backpack.",
+                GEMINI_15_FLASH,
+                MChatVariation(),
+                history = listOf()
+            )
             assertNotNull(response)
             println(response)
             with (response.candidates) {

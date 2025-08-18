@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 /** Details of an executed prompt, including prompt configuration, model configuration, execution metadata, and output. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 class AiPromptTrace<T>(
-    promptInfo: AiPromptInfo? = null,
+    promptInfo: PromptInfo? = null,
     modelInfo: AiModelInfo? = null,
     execInfo: AiExecInfo = AiExecInfo(),
     outputInfo: AiOutputInfo<T>? = null
@@ -34,7 +34,7 @@ class AiPromptTrace<T>(
         "AiPromptTrace(promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
 
     override fun copy(
-        promptInfo: AiPromptInfo?,
+        promptInfo: PromptInfo?,
         modelInfo: AiModelInfo?,
         execInfo: AiExecInfo
     ): AiPromptTrace<T> = AiPromptTrace(promptInfo, modelInfo, execInfo, output)

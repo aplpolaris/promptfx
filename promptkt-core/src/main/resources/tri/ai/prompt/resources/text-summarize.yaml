@@ -1,0 +1,12 @@
+---
+groupId: text-summarize
+defaults: { category: text }
+prompts:
+
+  - id: text-summarize/summarize@1.0.0
+    title: Text Summarization Example
+    template: |
+      Summarize the following{{#audience}}, written for {{audience}}{{/audience}}{{#style}}, in the style of {{style}}{{/style}}{{#format}}, structured as {{format}}{{/format}}:
+      ```
+      {{{input}}}
+      ```

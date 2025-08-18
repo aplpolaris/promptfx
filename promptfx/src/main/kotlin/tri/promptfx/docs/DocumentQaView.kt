@@ -30,7 +30,6 @@ import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
@@ -39,6 +38,7 @@ import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.PromptSelectionModel
@@ -62,8 +62,8 @@ class DocumentQaView: AiPlanTaskView(
 ), TextLibraryReceiver {
 
     private val viewScope = Scope(workspace)
-    private val prompt = PromptSelectionModel("$PROMPT_PREFIX-docs")
-    private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX-citations")
+    private val prompt = PromptSelectionModel("$PROMPT_PREFIX/answer")
+    private val joinerPrompt = PromptSelectionModel("$JOINER_PREFIX/citations")
 
     private val inputToggleGroup = ToggleGroup()
     private val singleInput = SimpleBooleanProperty(true)
@@ -152,8 +152,8 @@ class DocumentQaView: AiPlanTaskView(
         addDefaultTextCompletionParameters(common)
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
-            promptfield("Template", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
-            promptfield("Snippet Joiner", joinerPrompt, AiPromptLibrary.withPrefix(JOINER_PREFIX), workspace)
+            promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
+            promptfield("Snippet Joiner", joinerPrompt, promptsWithPrefix(JOINER_PREFIX), workspace)
         }
 
         outputPane.clear()
@@ -197,7 +197,7 @@ class DocumentQaView: AiPlanTaskView(
             minChunkSize = minChunkSizeForRelevancy.value,
             contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
             contextChunks = chunksToSendWithQuery.value,
-            completionEngine = controller.completionEngine.value,
+            chatEngine = controller.chatService.value,
             maxTokens = common.maxTokens.value,
             temp = common.temp.value,
             numResponses = common.numResponses.value
@@ -236,8 +236,8 @@ class DocumentQaView: AiPlanTaskView(
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-qa.folder"
 
-        private const val PROMPT_PREFIX = "question-answer"
-        private const val JOINER_PREFIX = "snippet-joiner"
+        private const val PROMPT_PREFIX = "docs-qa"
+        private const val JOINER_PREFIX = "snippet-joiners"
 
         internal fun browseToBestSnippet(doc: BrowsableSource, result: QuestionAnswerResult?, hostServices: HostServices) {
             if (doc.uri.scheme.startsWith("http")) {

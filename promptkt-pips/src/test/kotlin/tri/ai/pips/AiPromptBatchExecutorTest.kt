@@ -28,11 +28,8 @@ import tri.ai.core.TextPlugin
 import tri.ai.openai.jsonMapper
 import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceDatabase
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.PromptInfo
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
 
@@ -47,7 +44,7 @@ class AiPromptBatchExecutorTest {
         runs = 2
     }
 
-    private val promptInfo = AiPromptInfo(
+    private val promptInfo = PromptInfo(
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )
@@ -64,7 +61,7 @@ class AiPromptBatchExecutorTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks { TextPlugin.textCompletionModel(it) }, PrintMonitor()).interimResults.values.onEach {
+            AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -75,11 +72,11 @@ class AiPromptBatchExecutorTest {
     fun testBatchExecuteDatabase() {
         runBlocking {
             val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
-                AiPromptInfo("Generate a random number between 1 and 100."),
+                PromptInfo("Generate a random number between 1 and 100."),
                 AiModelInfo(defaultTextCompletion.modelId),
                 4
             )
-            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.textCompletionModel(it) }, PrintMonitor())
+            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor())
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result.interimResults.values)
             }

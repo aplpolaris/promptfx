@@ -20,8 +20,11 @@
 package tri.ai.tool.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import okio.IOException
+import tri.ai.core.MChatVariation
+import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
+import tri.ai.prompt.fill
+import java.io.IOException
 
 /** A solver used to validate that a computed result answers the actual user question. */
 class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) : WorkflowSolver(
@@ -42,13 +45,13 @@ class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, 
         val finalResult = state.scratchpad.data["$finalTaskId.result"]!!
 
         // complete a prompt doing the assessment
-        val prompt = PROMPTS.fill(VALIDATOR_PROMPT_ID,
+        val prompt = PROMPTS.get(VALIDATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
             PROPOSED_RESULT_PARAM to finalResult.value.toString()
         )
 
         // use LLM to generate a response
-        val response = completionEngine.complete(prompt, tokens = maxTokens, temperature = temp)
+        val response = completionEngine.complete(prompt, tokens = maxTokens, variation = temp(temp))
 
         // parse the response and use it to build a set of subtasks to solve
         val validity = parseValidity(response.firstValue)

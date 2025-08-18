@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.MChatVariation
 
 class OpenAiCompletionChatTest {
 
@@ -32,15 +33,22 @@ class OpenAiCompletionChatTest {
     @Test
     @Tag("openai")
     fun testComplete() = runTest {
-        val res = client.complete("Translate Hello, world! into French.", 100, 0.5, history = listOf())
+        val res = client.complete("Translate Hello, world! into French.",
+            variation = MChatVariation(temperature = 0.5),
+            tokens = 100
+        )
         println(res)
-        assertTrue("monde" in res.firstValue!!.lowercase())
+        assertTrue("monde" in res.firstValue.lowercase())
     }
 
     @Test
     @Tag("openai")
     fun testCompleteMultiple() = runTest {
-        val res = client.complete("Translate Hello, world! into French.", 100, 0.5, numResponses = 2, history = listOf())
+        val res = client.complete("Translate Hello, world! into French.",
+            variation = MChatVariation(temperature  = 0.5),
+            tokens = 100,
+            numResponses = 2
+        )
         assertEquals(2, res.output!!.outputs.size)
         println(res)
     }

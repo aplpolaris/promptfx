@@ -17,25 +17,31 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt
+package tri.ai.prompt.server
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.fill
 
-/** Implements basic functionality of MCP prompt server. */
+/**
+ * Implements basic functionality of MCP prompt server.
+ * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+ */
 class McpPromptServer {
 
-    private val prompts = mutableListOf<McpPromptWithTemplate>()
+    var library = PromptLibrary()
 
     /** List prompt information. */
-    fun listPrompts(): List<McpPrompt> = prompts
+    fun listPrompts(): List<McpPrompt> = library.list().map { it.toMcpContract() }
 
     /** Gets result of filling a prompt with arguments. */
     fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
-        val prompt = prompts.find { it.name == name }
-            ?: throw PromptNotFoundException("Prompt with name '$name' not found")
+        val prompt = library.get(name)
+            ?: throw McpServerException("Prompt with name '$name' not found")
         val filled = prompt.fill(args)
         return McpGetPromptResponse(
             description = prompt.description,
@@ -48,22 +54,8 @@ class McpPromptServer {
 }
 
 /** Response returned from a prompt request. */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class McpGetPromptResponse(
     val description: String? = null,
     val messages: List<MultimodalChatMessage>
 )
-
-/** Exception thrown when a prompt is not found. */
-class PromptNotFoundException(message: String) : Exception(message)
-
-//region MCP SERVER CAPABILITIES
-
-class McpServerCapabilities(
-    val prompts: McpServerPromptCapability
-)
-
-class McpServerPromptCapability(
-    val listChanged: Boolean = false
-)
-
-//endregion

@@ -1,0 +1,19 @@
+---
+groupId: validate
+prompts:
+
+  - id: validate/correct@1.0.0
+    title: Validate Correctness
+    template: |
+      Determine whether the following is true or false. If it is false, provide a corrected version.
+      ```
+      {{{result}}}
+      ```
+
+  - id: validate/json@1.0.0
+    title: Validate JSON
+    template: |
+      Determine if the result is valid json. Respond simply "valid" or "invalid".
+      ```
+      {{{result}}}
+      ```

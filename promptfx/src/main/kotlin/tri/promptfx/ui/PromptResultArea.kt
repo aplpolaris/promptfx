@@ -209,13 +209,13 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
                 }
             }
             item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
                 action {
                     find<PromptFxWorkspace>().launchTemplateView(value)
                 }
             }
             item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
-                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
                 action {
                     find<PromptFxWorkspace>().launchHistoryView(value)
                 }

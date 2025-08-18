@@ -23,9 +23,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
 import tornadofx.*
-import tri.ai.pips.promptPlan
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.pips.taskPlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -75,14 +75,12 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         }
     }
 
-    override fun plan() = completionEngine.promptPlan(
-        AiPromptLibrary.lookupPrompt("example-color"),
-        input.get(),
-        tokenLimit = 6,
-        temp = null,
-        stop = ";",
-        numResponses = common.numResponses.value
-    )
+    override fun plan() = common.completionBuilder()
+        .prompt(lookupPrompt("examples/color"))
+        .paramsInput(input = input.get())
+        .tokens(6)
+        .stop(";")
+        .taskPlan(completionEngine)
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"
 

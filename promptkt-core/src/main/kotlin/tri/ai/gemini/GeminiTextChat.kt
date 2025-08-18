@@ -19,6 +19,7 @@
  */
 package tri.ai.gemini
 
+import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
@@ -34,7 +35,14 @@ class GeminiTextChat(override val modelId: String = GEMINI_15_FLASH, val client:
 
     override fun toString() = "$modelId (Gemini)"
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?, numResponses: Int?): AiPromptTrace<TextChatMessage> {
+    override suspend fun chat(
+        messages: List<TextChatMessage>,
+        variation: MChatVariation,
+        tokens: Int?,
+        stop: List<String>?,
+        numResponses: Int?,
+        requestJson: Boolean?
+    ): AiPromptTrace<TextChatMessage> {
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson, numResponses = numResponses)
         val t0 = System.currentTimeMillis()
         val resp = client.generateContent(

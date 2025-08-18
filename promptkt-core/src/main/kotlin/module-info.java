@@ -58,6 +58,7 @@ module tri.promptkt.core {
     opens tri.ai.openai to com.fasterxml.jackson.databind;
     opens tri.ai.openai.api to com.fasterxml.jackson.databind;
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
+    opens tri.ai.prompt.server to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
 
@@ -66,6 +67,7 @@ module tri.promptkt.core {
     exports tri.ai.openai;
     exports tri.ai.openai.api;
     exports tri.ai.prompt;
+    exports tri.ai.prompt.server;
     exports tri.ai.prompt.trace;
     exports tri.ai.prompt.trace.batch;
     exports tri.util;

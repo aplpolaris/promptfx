@@ -19,6 +19,7 @@
  */
 package tri.ai.text.docs
 
+import tri.ai.core.TextChatMessage
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.SemanticTextQuery
 import tri.ai.embedding.cosineSimilarity

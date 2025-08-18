@@ -42,9 +42,10 @@ import javafx.scene.text.TextFlow
 import javafx.stage.Modality
 import javafx.stage.StageStyle
 import tornadofx.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptLibrary
 import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.api.ImagesView
 import tri.promptfx.promptFxFileChooser
 import tri.util.loggerFor
@@ -150,10 +151,10 @@ val FontAwesomeIconView.forestGreen
 /**
  * Creates a [menubutton] to select a template
  */
-fun EventTarget.templatemenubutton(template: SimpleStringProperty, promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean = { true }) =
+fun EventTarget.templatemenubutton(template: SimpleStringProperty, promptFilter: (PromptDef) -> Boolean = { true }) =
     listmenubutton(
-        items = { AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys.sorted() },
-        action = { template.set(AiPromptLibrary.lookupPrompt(it).template) }
+        items = { PromptLibrary.INSTANCE.list(promptFilter).map { it.id }.sorted() },
+        action = { template.set(lookupPrompt(it).template) }
     )
 
 /**

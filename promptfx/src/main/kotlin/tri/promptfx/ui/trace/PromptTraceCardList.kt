@@ -31,12 +31,11 @@ import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.prompt.AiPrompt.Companion.INSTRUCT
+import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
 import tri.ai.prompt.trace.AiModelInfo.Companion.EMBEDDING_MODEL
 import tri.ai.prompt.trace.AiModelInfo.Companion.MAX_TOKENS
 import tri.ai.prompt.trace.AiModelInfo.Companion.TEMPERATURE
-import tri.ai.prompt.trace.AiPromptInfo.Companion.INPUT
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.AiPromptTraceSupport
@@ -118,7 +117,7 @@ class PromptTraceCardList: Fragment() {
                 }
                 item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                        it?.prompt?.prompt?.isNotBlank() == true
+                        it?.prompt?.template?.isNotBlank() == true
                     })
                     action {
                         val selected = selectionModel.selectedItem
@@ -129,7 +128,7 @@ class PromptTraceCardList: Fragment() {
                 if (!isGlobalHistoryView) {
                     item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
                         enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                            it?.prompt?.prompt?.isNotBlank() == true
+                            it?.prompt?.template?.isNotBlank() == true
                         })
                         action {
                             val selected = selectionModel.selectedItem
@@ -332,7 +331,7 @@ fun writeTraceListCsv(traces: List<AiPromptTraceSupport<*>>, file: File) {
                 t.model?.modelId ?: "unknown",
                 t.model?.modelParams?.get(TEMPERATURE),
                 t.model?.modelParams?.get(MAX_TOKENS),
-                t.prompt?.promptParams?.get(INSTRUCT),
+                t.prompt?.params?.get(PromptTemplate.INSTRUCT),
                 output.toString(),
                 i+1,
                 null
@@ -344,7 +343,7 @@ fun writeTraceListCsv(traces: List<AiPromptTraceSupport<*>>, file: File) {
             t.model?.modelId ?: "unknown",
             t.model?.modelParams?.get(TEMPERATURE),
             t.model?.modelParams?.get(MAX_TOKENS),
-            t.prompt?.promptParams?.get(INPUT),
+            t.prompt?.params?.get(PromptTemplate.INPUT),
             "",
             0,
             "No output"

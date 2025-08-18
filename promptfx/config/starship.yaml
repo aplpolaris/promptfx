@@ -8,17 +8,17 @@ explain:
   - "The answer can be transformed in other ways depending on the use case."
 
 prompt-info:
-  - text-simplify-audience:
+  - text-summarize/simplify-audience:
       audience: a general audience
-  - document-reduce-outline
-  - document-reduce-technical-terms
-  - translate-text:
+  - docs-reduce/outline
+  - docs-reduce/technical-terms
+  - docs-translate/translate:
       instruct: a random language
 
 user-options:
-  text-simplify-audience:
+  docs-summarize/simplify-audience:
     audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
-  translate-text:
+  docs-translate/translate:
     instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
 
 random-question:

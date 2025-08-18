@@ -1,0 +1,24 @@
+# This file is used to store prompts that are created at runtime.
+#
+# Usage:
+#  - preconfigured prompt file in "prompts.yaml" in promptkt
+#  - custom prompt file in "prompts.yaml" in the current directory
+#
+# Syntax:
+#  - mustache templates: https://mustache.github.io/mustache.5.html
+#  - double braces to insert text {{...}}
+#  - triple braces to insert text without escaping HTML {{{...}}}
+#
+# Keywords:
+#  - many templates expect {{input}} and/or {{instruct}}
+#  - {{today}} is always replaced with the current date
+#
+---
+# This is a sample prompt. You can delete it.
+prompts:
+  - id: examples/few@1.0.0
+    title: Translating English to French (Few-Shot)
+    template: |
+      cheese -> fromage
+      boy -> garcon
+      {{input}} ->

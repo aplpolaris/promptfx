@@ -26,9 +26,10 @@ import javafx.scene.control.ToggleButton
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.EmbeddingModel
+import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.PromptTemplate
 import tri.promptfx.tools.PromptScriptView
 import java.util.regex.PatternSyntaxException
 import kotlin.error
@@ -158,8 +159,8 @@ class TextChunkFilterModel : Component(), ScopedInstance {
      */
     private fun llmFilter(completionEngine: TextCompletion, prompt: String, input: String, maxTokens: Int, temp: Double): Boolean {
         val result = runBlocking {
-            AiPrompt(prompt).fill(AiPrompt.INPUT to input)
-                .let { completionEngine.complete(it, tokens = maxTokens, temperature = temp) }
+            PromptTemplate(prompt).fill(PromptTemplate.INPUT to input)
+                .let { completionEngine.complete(it, tokens = maxTokens, variation = temp(temp)) }
                 .firstValue
         }
         return result.contains("yes", ignoreCase = true)

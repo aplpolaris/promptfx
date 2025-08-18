@@ -25,21 +25,35 @@ import com.aallam.openai.api.model.ModelId
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MChatVariation
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) : TextChat {
 
     override fun toString() = modelId
 
-    override suspend fun chat(messages: List<TextChatMessage>, tokens: Int?, stop: List<String>?, requestJson: Boolean?, numResponses: Int?) =
+    override suspend fun chat(
+        messages: List<TextChatMessage>,
+        variation: MChatVariation,
+        tokens: Int?,
+        stop: List<String>?,
+        numResponses: Int?,
+        requestJson: Boolean?
+    ): AiPromptTrace<TextChatMessage> =
         client.chatCompletion(ChatCompletionRequest(
-            ModelId(modelId),
-            messages.map { it.toOpenAiMessage() },
+            model = ModelId(modelId),
+            messages = messages.map { it.toOpenAiMessage() },
+            seed = variation.seed,
+            temperature = variation.temperature,
+            topP = variation.topP,
+            presencePenalty = variation.presencePenalty,
+            frequencyPenalty = variation.frequencyPenalty,
             maxTokens = tokens ?: 500,
             stop = stop,
-            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null,
-            n = numResponses
+            n = numResponses,
+            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
         )).mapOutput { TextChatMessage(MChatRole.Assistant, it) }
 
 }

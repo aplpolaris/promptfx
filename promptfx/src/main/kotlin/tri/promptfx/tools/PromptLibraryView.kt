@@ -27,8 +27,8 @@ import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -39,14 +39,14 @@ class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools
 /** A view designed to help you test prompt templates. */
 class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates.") {
 
-    private val lib = AiPromptLibrary.INSTANCE
-    private val customLib = AiPromptLibrary.RUNTIME_INSTANCE
+    private val lib = PromptLibrary.INSTANCE
+    private val runtimeLib = PromptLibrary.RUNTIME_INSTANCE
 
-    private val promptEntries = observableListOf(lib.prompts.entries.toMutableList())
-    private var promptFilter: (String) -> Boolean = { true }
+    private val promptEntries = observableListOf(lib.list().toMutableList())
+    private var promptIdFilter: (String) -> Boolean = { true }
     private val filteredPromptEntries = observableListOf(promptEntries)
-    private val promptSelection = SimpleObjectProperty<MutableMap.MutableEntry<String, AiPrompt>>()
-    private val promptTemplate = Bindings.createStringBinding({ promptSelection.value?.value?.template ?: "" }, promptSelection)
+    private val promptSelection = SimpleObjectProperty<PromptDef>()
+    private val promptTemplate = Bindings.createStringBinding({ promptSelection.value?.template ?: "" }, promptSelection)
 
     init {
         input {
@@ -59,7 +59,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 textfield("") {
                     promptText = "Search"
                     setOnKeyPressed {
-                        promptFilter = { text in it }
+                        promptIdFilter = { text in it }
                         refilter()
                     }
                 }
@@ -72,17 +72,17 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the prompt list.")
                     action {
-                        AiPromptLibrary.refreshRuntimePrompts()
-                        promptEntries.setAll(lib.prompts.entries.toMutableList())
+                        PromptLibrary.refreshRuntimePrompts()
+                        promptEntries.setAll(lib.list().toMutableList())
                         refilter()
                     }
                 }
                 button("", FontAwesomeIconView(FontAwesomeIcon.EDIT)) {
                     tooltip("Edit the custom prompts.yaml file in your default editor.")
                     action {
-                        val file = AiPromptLibrary.RUNTIME_PROMPTS_FILE
+                        val file = PromptLibrary.RUNTIME_PROMPTS_FILE
                         if (!file.exists()) {
-                            AiPromptLibrary.createRuntimePromptsFile()
+                            PromptLibrary.createRuntimePromptsFile()
                         }
                         hostServices.showDocument(file.toURI().toString())
                     }
@@ -92,11 +92,11 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 vgrow = Priority.ALWAYS
                 promptSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    graphic = Text(it.key).apply {
-                        tooltip(it.value.template)
-                        if (it.key in customLib.prompts) {
+                    graphic = Text(it.id).apply {
+                        tooltip(it.template)
+                        if (runtimeLib.get(it.id) != null) {
                             style = "-fx-font-weight: bold"
-                            text = it.key + " (customized)"
+                            text = it.id + " (customized)"
                         }
                     }
                 }
@@ -119,11 +119,11 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     }
 
     private fun sendToTemplateView() {
-        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.value.template)
+        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.template)
     }
 
     private fun refilter() {
-        filteredPromptEntries.setAll(promptEntries.filter { promptFilter(it.key) })
+        filteredPromptEntries.setAll(promptEntries.filter { promptIdFilter(it.id) })
     }
 
     override suspend fun processUserInput() = AiPipelineResult.todo<String>()

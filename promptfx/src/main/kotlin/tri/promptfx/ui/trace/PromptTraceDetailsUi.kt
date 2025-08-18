@@ -57,8 +57,8 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     fun setTrace(trace: AiPromptTraceSupport<*>?) {
         this.trace.set(trace)
-        prompt.value = trace?.prompt?.prompt
-        promptParams.value = trace?.prompt?.promptParams
+        prompt.value = trace?.prompt?.template
+        promptParams.value = trace?.prompt?.params
         model.value = trace?.model?.modelId
         modelParams.value = trace?.model?.modelParams
         exec.value = trace?.exec

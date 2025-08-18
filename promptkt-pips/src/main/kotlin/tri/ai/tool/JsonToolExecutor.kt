@@ -46,10 +46,10 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
 
     suspend fun execute(query: String): String {
         info<JsonToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
-        val systemMessage = PROMPTS.fill("json-tool-system-message")
+        val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template
         val messages = mutableListOf(
-            ChatMessage(ChatRole.System, systemMessage),
-            ChatMessage(ChatRole.User, query)
+            ChatMessage(role = ChatRole.System, content = systemMessage),
+            ChatMessage(role = ChatRole.User, content = query)
         )
 
         var response = client.chat(ChatCompletionRequest(

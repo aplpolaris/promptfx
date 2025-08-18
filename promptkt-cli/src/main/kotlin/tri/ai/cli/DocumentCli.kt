@@ -65,20 +65,20 @@ class DocumentCli : CliktCommand(name = "document") {
         }
     private val folder by option(help = "Folder containing documents (relative to root path)")
         .default("")
-    private val model by option(help = "Chat/completion model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
+    private val model by option(help = "Chat model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
         .default(OpenAiModelIndex.GPT35_TURBO_ID)
         .validate {
-            require(it in TextPlugin.textCompletionModels().map { it.modelId }) { "Invalid model $it" }
+            require(it in TextPlugin.chatModels().map { it.modelId }) { "Invalid model $it" }
         }
     private val embedding by option(help = "Embedding model to use (default ${OpenAiModelIndex.EMBEDDING_ADA})")
         .default(OpenAiModelIndex.EMBEDDING_ADA)
         .validate {
             require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
         }
-    private val temp by option(help = "Temperature for completion (default 0.5)")
+    private val temp by option(help = "Temperature for chat completion (default 0.5)")
         .double()
         .default(0.5)
-    private val maxTokens by option(help = "Maximum tokens for completion (default 2000)")
+    private val maxTokens by option(help = "Maximum tokens for chat completion (default 2000)")
         .int()
         .default(2000)
     private val templateId by option(help = "Q&A prompt template id (qa/chat modes, default question-answer-docs)")
@@ -107,7 +107,7 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
         val folderStatus: (String) -> String = { "You can use any of these folders: ${ANSI_CYAN}$it${ANSI_RESET}" }
 
         runBlocking {
-            println("Using completion engine ${ANSI_CYAN}${driver.completionModel}${ANSI_RESET}")
+            println("Using chat engine ${ANSI_CYAN}${driver.chatModel}${ANSI_RESET}")
             println("Using embedding service ${ANSI_CYAN}${driver.embeddingModel}${ANSI_RESET}")
             println(folderStatus(driver.folders.toString()))
 
@@ -237,7 +237,7 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
 class DocumentQaConfig(
     val root: Path,
     val folder: String,
-    val completionModel: String?,
+    val chatModel: String?,
     val embeddingModel: String?,
     val temp: Double?,
     val maxTokens: Int?,
@@ -251,14 +251,14 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
     folder = config.folder
 
     info<DocumentQa>("Asking question about documents in $folder")
-    if (config.completionModel != null) {
+    if (config.chatModel != null) {
         try {
-            completionModel = config.completionModel
+            chatModel = config.chatModel
         } catch (x: NoSuchElementException) {
-            error("Completion model ${config.completionModel} not found.")
+            error("Chat model ${config.chatModel} not found.")
         }
     }
-    info<DocumentQa>("  using completion engine $completionModel")
+    info<DocumentQa>("  using chat engine $chatModel")
     if (config.embeddingModel != null) {
         try {
             embeddingModel = config.embeddingModel

@@ -19,7 +19,7 @@
  */
 package tri.ai.pips
 
-import tri.ai.core.TextCompletion
+import tri.ai.core.TextChat
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
@@ -30,11 +30,11 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
  * Generate executable list of tasks for a prompt batch.
  * These can be passed to [AiPipelineExecutor] for execution.
  */
-fun AiPromptBatch.tasks(modelLookup: (String) -> TextCompletion): List<AiTask<String>> =
+fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat): List<AiTask<String>> =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
 /** Get an [AiPlanner] for executing this batch of prompts. */
-fun AiPromptBatch.plan(modelLookup: (String) -> TextCompletion) =
+fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
     tasks(modelLookup).aggregate().planner
 
 /** Create task for executing a run config. */

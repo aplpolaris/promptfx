@@ -22,9 +22,9 @@ package tri.promptfx.library
 import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextCompletion
 import tri.ai.core.templateTask
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.INPUT
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.util.fine
 import tri.util.ml.ClusterService
@@ -74,7 +74,7 @@ object TextClustering {
     private fun addHierarchyPrefixes(cluster: EmbeddingCluster, n: Int, prefix: String = "") {
         val subprefix = if (prefix.isBlank()) "$n" else "$prefix.$n"
         cluster.items.forEachIndexed { i, it ->
-            addHierarchyPrefixes(it, i+1, "$subprefix")
+            addHierarchyPrefixes(it, i+1, subprefix)
         }
         if (cluster.baseChunk != null)
             cluster.name = "Chunk $subprefix"
@@ -127,7 +127,7 @@ object TextClustering {
         val responses = (1..attempts).map {
             completionEngine.templateTask(
                 prompt.summaryType.prompt,
-                INPUT to inputText,
+                PromptTemplate.INPUT to inputText,
                 "item_type" to prompt.itemType,
                 "categories" to prompt.categories.joinToString("\n") { " - $it" },
                 "sample_category" to prompt.categories.first(),
@@ -175,8 +175,8 @@ enum class ClusterSummaryType(val promptId: String) {
     CATEGORIES_ONLY("generate-categories"),
     NONE("");
 
-    val prompt: AiPrompt
-        get() = AiPromptLibrary.lookupPrompt(promptId)
+    val prompt: PromptDef
+        get() = lookupPrompt(promptId)
 }
 
 /** Consolidates information about a cluster. */

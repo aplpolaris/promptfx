@@ -25,8 +25,8 @@ import tornadofx.*
 import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.pips.task
-import tri.ai.prompt.AiPromptLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
@@ -58,7 +58,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
         }
         parameters("Prompt") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
-            promptfield("Prompt", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
+            promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
         parameters("Model Parameters") {
             with (common) {
@@ -86,7 +86,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
             null,
             false
         )
-        return res.firstValue!!.content!!
+        return res.firstValue.content!!
     }
 
 }

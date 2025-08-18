@@ -1,0 +1,57 @@
+###########################
+# DOCUMENT MAPPING
+############################
+# view: Document Insights
+# prefix:
+#   document-map-* - prompts to run against all snippets
+#   document-reduce-* - method to combine results
+# keywords:
+#   {{{input}}} - text to process
+
+---
+groupId: docs-map
+defaults: { category: docs }
+prompts:
+
+  - id: docs-map/keywords@1.0.0
+    title: Keywords
+    template: |
+      Generate a JSON list of keywords from the following text. If there are no keywords, provide an empty list.
+      ```
+      {{{input}}}
+      ```
+      Keywords:
+
+  - id: docs-map/math-terms@1.0.0
+    title: Math Terms
+    template: |
+      Generate a JSON list of mathematical concepts in the following text. If there are no mathematical terms, provide an empty list.
+      ```
+      {{{input}}}
+      ```
+      Concepts:
+
+  - id: docs-map/simplify@1.0.0
+    title: Simplify
+    template: |
+      Simplify the following text into 1-2 short sentences explaining the main idea. Put it in simple terms with no jargon,
+      appropriate for an elementary school student.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-map/summarize@1.0.0
+    title: Summarize
+    template: |
+      Provide a one-line summary of this text.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-map/technical-terms@1.0.0
+    title: Technical Terms
+    template: |
+      Generate a JSON list of technical terms and tools in the following text. If there are no technical terms, provide an empty list.
+      ```
+      {{{input}}}
+      ```

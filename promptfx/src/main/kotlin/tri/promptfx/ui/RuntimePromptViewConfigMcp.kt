@@ -20,7 +20,7 @@
 package tri.promptfx.ui
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import tri.ai.prompt.McpPrompt
+import tri.ai.prompt.server.McpPrompt
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Configuration for a [RuntimePromptViewMcp]. */

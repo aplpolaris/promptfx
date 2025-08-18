@@ -20,7 +20,7 @@
             <artifactId>promptkt-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-		
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
-            <version>${kotlin-coroutines-test.version}</version>
+            <version>${kotlinx-coroutines-core.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -36,7 +36,7 @@ class SnippetJoinerTest {
 
     @Test
     fun testBasicTemplateJoiner() {
-        val res0 = BasicTemplateJoiner("snippet-joiner-basic").constructContext(testMatches)
+        val res0 = BasicTemplateJoiner("snippet-joiners/basic").constructContext(testMatches)
         assertEquals("""
             Document: doc1
 
@@ -56,7 +56,7 @@ class SnippetJoinerTest {
 
     @Test
     fun testGroupingTemplateJoiner() {
-        val res0 = GroupingTemplateJoiner("snippet-joiner-basic").constructContext(testMatches)
+        val res0 = GroupingTemplateJoiner("snippet-joiners/basic").constructContext(testMatches)
         assertEquals("""
             Document: doc1
 
@@ -74,7 +74,7 @@ class SnippetJoinerTest {
 
     @Test
     fun testBulletedTemplateJoiner() {
-        val res0 = BulletedTemplateJoiner("snippet-joiner-basic").constructContext(testMatches)
+        val res0 = BulletedTemplateJoiner("snippet-joiners/basic").constructContext(testMatches)
         assertEquals("""
             Document: doc1
 

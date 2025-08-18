@@ -26,13 +26,15 @@ import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiPlugin
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.fill
 
 @Tag("openai")
 class ToolChainExecutorTest {
 
     val GPT35 = OpenAiPlugin().textCompletionModels().first()
-
+    val PROMPTS = PromptLibrary.INSTANCE
+    
     @Test
     fun testTools() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
@@ -100,31 +102,31 @@ class ToolChainExecutorTest {
             }
         }
         val tool2 = tool("Main Point", "Use this to extract the main points from text (input is raw text)") {
-            AiPromptLibrary.lookupPrompt("summarization").fill(
+            PROMPTS.get("text-summarize/summarize")!!.fill(
                 "input" to it,
                 "instruct" to "Extract the main point and research implications of the text in 1-2 concise sentences."
             ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool3 = tool("Concepts", "Use this to extract the main concepts from text (input is raw text)") {
-            AiPromptLibrary.lookupPrompt("text-to-json").fill(
+            PROMPTS.get("text-extract/text-to-json")!!.fill(
                 "format" to "a list of concepts",
                 "input" to it
             ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool4 = tool("Sentiment", "Use this to extract the sentiment from text (input is raw text)") {
-            AiPromptLibrary.lookupPrompt("sentiment-classify").fill(
+            PROMPTS.get("text-classify/sentiment")!!.fill(
                 "input" to it,
                 "instruct" to "positive, negative, or neutral"
             ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool5 = tool("Citation Finder", "Use this to extract the citations from text (input is raw text)") {
-            AiPromptLibrary.lookupPrompt("text-to-json").fill(
+            PROMPTS.get("text-extract/text-to-json")!!.fill(
                 "format" to "a list of citations",
                 "input" to it
             ).let { runBlocking { GPT35.complete(it).firstValue } }
         }
         val tool6 = tool("Concept Map", "Use this to generate a concept map from text (input is any text)") {
-            AiPromptLibrary.lookupPrompt("text-to-json").fill(
+            PROMPTS.get("text-extract/text-to-json")!!.fill(
                 "format" to "a PlantUML mindmap diagram",
                 "input" to it
             ).let { runBlocking { GPT35.complete(it).firstValue } }

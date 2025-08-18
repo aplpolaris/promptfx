@@ -31,7 +31,7 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
-import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
@@ -41,8 +41,8 @@ import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.DocumentListView
 import tri.promptfx.ui.EditablePromptUi
-import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkListModel
+import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.asTextChunkViewModel
 import tri.promptfx.ui.editablepromptui
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -159,11 +159,10 @@ class DocumentInsightView: AiPlanTaskView(
         return promptBatch().aggregate()
             .aitask("results-summarize") { _ ->
                 val concat = mapResult.value
-                completionEngine.complete(
-                    reducePromptUi.fill(AiPrompt.INPUT to concat),
-                    common.maxTokens.value,
-                    common.temp.value
-                ).mapOutput { concat to it }
+                common.completionBuilder()
+                    .text(reducePromptUi.fill(PromptTemplate.INPUT to concat))
+                    .execute(completionEngine)
+                    .mapOutput { concat to it }
             }.planner
     }
 
@@ -180,10 +179,10 @@ class DocumentInsightView: AiPlanTaskView(
             model = completionEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPromptUi.templateText.value
-            promptParams = mapOf(AiPrompt.INPUT to inputs, "name" to names)
+            promptParams = mapOf(PromptTemplate.INPUT to inputs, "name" to names)
             runs = inputs.size
         }.tasks { id ->
-            PromptFxModels.textCompletionModels().find { it.modelId == id }!!
+            PromptFxModels.chatModels().find { it.modelId == id }!!
         }.map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->

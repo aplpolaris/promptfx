@@ -21,6 +21,7 @@ package tri.ai.openai
 
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.model.ModelId
+import tri.ai.core.MChatVariation
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_INSTRUCT
@@ -32,15 +33,23 @@ class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val 
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?, history: List<TextChatMessage>): AiPromptTrace<String> =
-        client.completion(CompletionRequest(
-            ModelId(modelId),
-            text,
-            maxTokens = tokens,
-            temperature = temperature,
-            stop = stop?.let { listOf(it) },
-            n = numResponses
-        ))
+    override suspend fun complete(
+        text: String,
+        variation: MChatVariation,
+        tokens: Int?,
+        stop: List<String>?,
+        numResponses: Int?
+    ) = client.completion(CompletionRequest(
+        ModelId(modelId),
+        text,
+        temperature = variation.temperature,
+        topP = variation.topP,
+        presencePenalty = variation.presencePenalty,
+        frequencyPenalty = variation.frequencyPenalty,
+        maxTokens = tokens,
+        stop = stop,
+        n = numResponses
+    ))
 
 }
 

@@ -29,8 +29,8 @@ interface DocumentQaDriver {
     /** The currently selected folder, or document set. */
     var folder: String
 
-    /** The text completion model (by id). */
-    var completionModel: String
+    /** The chat model (by id). */
+    var chatModel: String
     /** The text embedding model (by id). */
     var embeddingModel: String
     /** Temperature. */

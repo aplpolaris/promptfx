@@ -1,0 +1,12 @@
+---
+groupId: text-translate
+defaults: { category: text }
+prompts:
+
+  - id: text-translate/translate@1.0.0
+    title: Translate Text Example
+    template: |
+      Translate this text to {{instruct}}:
+      ```
+      {{{input}}}
+      ```

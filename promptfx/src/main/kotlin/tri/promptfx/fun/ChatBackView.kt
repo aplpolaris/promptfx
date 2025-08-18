@@ -27,9 +27,11 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFx
+import tri.promptfx.PromptFxGlobals.fillPrompt
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
 import tri.promptfx.ui.PromptSelectionModel
@@ -186,18 +188,18 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     }
 
     private suspend fun chatBack(): AiPromptTrace<String> {
-        val systemMessage = AiPromptLibrary.lookupPrompt("chat-back")
-            .fill("person" to nextPerson,
-                "other persons" to otherPersons,
-                "topic" to conversationTopic.value,
-                "setting" to conversationSetting.value,
-                "tone" to conversationTone.value,
-                "script" to conversationScript.value
-            )
+        val systemMessage = fillPrompt("chat-back",
+            "person" to nextPerson,
+            "other persons" to otherPersons,
+            "topic" to conversationTopic.value,
+            "setting" to conversationSetting.value,
+            "tone" to conversationTone.value,
+            "script" to conversationScript.value
+        )
         return controller.chatService.value.chat(
             listOf(TextChatMessage(MChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
-            maxTokens.value,
+            tokens = maxTokens.value,
             stop = listOf("\n")
         ).mapOutput { it.content!! }
     }

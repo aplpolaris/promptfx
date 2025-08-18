@@ -39,6 +39,7 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.EmbeddingModel
+import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
@@ -71,6 +72,8 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult<*>) -> Unit> = mutableListOf()
 
+    val chatEngine: TextChat
+        get() = controller.chatService.value
     val completionEngine: TextCompletion
         get() = controller.completionEngine.value
     val embeddingModel: EmbeddingModel

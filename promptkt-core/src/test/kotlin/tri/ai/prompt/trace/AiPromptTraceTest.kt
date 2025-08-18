@@ -24,7 +24,7 @@ import tri.ai.openai.jsonWriter
 
 class AiPromptTraceTest {
 
-    private val promptInfo = AiPromptInfo(
+    private val promptInfo = PromptInfo(
         "Translate {{text}} into French.",
         mapOf("text" to "Hello, world!")
     )

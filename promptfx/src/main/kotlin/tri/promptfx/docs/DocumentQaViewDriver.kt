@@ -44,11 +44,11 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
             if (folderFile.exists())
                 view.documentFolder.set(folderFile)
         }
-    override var completionModel: String
-        get() = view.controller.completionEngine.value.modelId
+    override var chatModel: String
+        get() = view.controller.chatService.value.modelId
         set(value) {
-            view.controller.completionEngine.set(
-                PromptFxModels.policy.textCompletionModels().find { it.modelId == value }!!
+            view.controller.chatService.set(
+                PromptFxModels.policy.chatModels().find { it.modelId == value }!!
             )
         }
     override var embeddingModel: String

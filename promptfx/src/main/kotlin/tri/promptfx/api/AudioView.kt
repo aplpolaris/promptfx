@@ -183,7 +183,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
                     it.generateContent(modelId, request)
                 }
                 AiPromptTrace(
-                    AiPromptInfo(GEMINI_PROMPT),
+                    PromptInfo(GEMINI_PROMPT),
                     AiModelInfo(modelId),
                     AiExecInfo(),
                     AiOutputInfo.output(response.candidates!![0].content.parts[0].text!!)

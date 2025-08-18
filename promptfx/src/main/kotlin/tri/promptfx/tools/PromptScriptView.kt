@@ -24,22 +24,31 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.pips.AiPlanner
+import tri.ai.pips.aggregatetrace
+import tri.ai.pips.task
+import tri.ai.pips.tasks
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.ui.docs.TextLibraryToolbar
-import tri.promptfx.ui.docs.TextLibraryViewModel
-import tri.promptfx.ui.*
+import tri.promptfx.ui.EditablePromptUi
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.docs.TextLibraryToolbar
+import tri.promptfx.ui.docs.TextLibraryViewModel
+import tri.promptfx.ui.editablepromptui
+import tri.promptfx.ui.promptfield
 import tri.promptfx.ui.trace.PromptTraceCardList
-import tri.util.ui.*
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.sliderwitheditablelabel
 
 /** Plugin for the [PromptScriptView]. */
 class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", WorkspaceViewAffordance.COLLECTION_ONLY, PromptScriptView::class)
@@ -81,7 +90,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 titleText.set("Input")
             })
             promptUi = editablepromptui(
-                promptFilter = { it.value.fields() == listOf(AiPrompt.INPUT) },
+                promptFilter = { it.template().findFields() == listOf(PromptTemplate.INPUT) },
                 instruction = "Prompt to Execute:"
             )
             add(find<TextChunkListView>(viewScope))
@@ -116,8 +125,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         parameters("LLM Aggregation Options") {
             enableWhen(summarizeResults)
             tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
-            promptfield("Text Joiner", joinerPrompt, AiPromptLibrary.withPrefix(TEXT_JOINER_PREFIX), workspace)
-            promptfield("Summarizer", summaryPrompt, AiPromptLibrary.withPrefix(TEXT_SUMMARIZER_PREFIX), workspace)
+            promptfield("Text Joiner", joinerPrompt, promptsWithPrefix(TEXT_JOINER_PREFIX), workspace)
+            promptfield("Summarizer", summaryPrompt, promptsWithPrefix(TEXT_SUMMARIZER_PREFIX), workspace)
         }
     }
 
@@ -150,7 +159,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         runLater { promptTraces.setAll() }
         val tasks = promptBatch(inputs.map { it.text }).tasks { id ->
-            PromptFxModels.textCompletionModels().find { it.modelId == id }!!
+            PromptFxModels.chatModels().find { it.modelId == id }!!
         }
         // TODO - not sure what to do here with the view, since the traces probably shouldn't all be aggregated into one batch...
         // TODO - need to include the prompt trace as part of the output
@@ -170,7 +179,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         model = completionEngine.modelId
         modelParams = common.toModelParams()
         prompt = promptUi.templateText.value
-        promptParams = mapOf(AiPrompt.INPUT to inputs)
+        promptParams = mapOf(PromptTemplate.INPUT to inputs)
         runs = inputs.size
     }
 
@@ -196,18 +205,20 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val key = "CSV Output"
             resultSets[key] = generateCsvOutput(inputs, results)
         }
-        val promptInfo: AiPromptInfo
+        val promptInfo: PromptInfo
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerPrompt.fill("matches" to
                 results.map { mapOf("text" to it.firstValue) }
             )
-            val summarizer = summaryPrompt.fill(AiPrompt.INPUT to joined)
-            val summarizerResult = completionEngine.complete(summarizer, common.maxTokens.value, common.temp.value)
+            val summarizer = summaryPrompt.fill(PromptTemplate.INPUT to joined)
+            val summarizerResult = common.completionBuilder()
+                .text(summarizer)
+                .execute(completionEngine)
             resultSets[key] = summarizerResult.firstValue
-            promptInfo = AiPromptInfo(summaryPrompt.text.value, mapOf(AiPrompt.INPUT to joined))
+            promptInfo = PromptInfo(summaryPrompt.text.value, mapOf(PromptTemplate.INPUT to joined))
         } else {
-            promptInfo = AiPromptInfo("")
+            promptInfo = PromptInfo("")
         }
         val output = if (resultSets.size <= 1) {
             resultSets.values.firstOrNull() ?: ""
@@ -227,7 +238,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     /** Generate CSV output (first input object only. */
     private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiPromptTraceSupport<String>>): String {
         val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
-        val csv = results.joinToString("\n") { "${it.prompt!!.promptParams[AiPrompt.INPUT]},${it.firstValue}" }
+        val csv = results.joinToString("\n") { "${it.prompt!!.params[PromptTemplate.INPUT]},${it.firstValue}" }
         return "$csvHeader\n$csv".trim()
     }
 

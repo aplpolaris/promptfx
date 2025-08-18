@@ -21,9 +21,9 @@ package tri.promptfx.apps
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.instructTextPlan
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.pips.taskPlan
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -60,18 +60,14 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
         }
         parameters("Prompt Template") {
             tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
-            promptfield("Template", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
+            promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
         addDefaultTextCompletionParameters(common)
     }
 
-    override fun plan() = completionEngine.instructTextPlan(
-        prompt.prompt.value,
-        instruct = instruct.get(),
-        userText = input.get(),
-        tokenLimit = common.maxTokens.value!!,
-        temp = common.temp.value,
-        numResponses = common.numResponses.value
-    )
+    override fun plan() = common.completionBuilder()
+        .prompt(prompt.prompt.value)
+        .paramsInstruct(input = input.get(), instruct = instruct.get())
+        .taskPlan(completionEngine)
 
 }

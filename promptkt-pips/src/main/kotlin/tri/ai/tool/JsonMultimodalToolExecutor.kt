@@ -23,6 +23,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.*
+import tri.ai.prompt.template
 import tri.util.*
 
 /**
@@ -36,7 +37,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
 
     suspend fun execute(query: String): String {
         info<JsonMultimodalToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
-        val systemMessage = PROMPTS.fill("json-tool-system-message")
+        val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template
         val messages = mutableListOf(
             MultimodalChatMessage.text(MChatRole.System, systemMessage),
             MultimodalChatMessage.text(MChatRole.User, query)

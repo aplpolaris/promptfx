@@ -26,7 +26,7 @@ import tri.ai.pips.aitask
 import tri.ai.openai.jsonMapper
 import tri.ai.core.promptTask
 import tri.ai.core.instructTask
-import tri.ai.prompt.AiPromptLibrary
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import java.net.URL
 import java.net.URLEncoder
 
@@ -34,7 +34,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
 
     override fun plan() =
         aitask("wikipedia-page-guess") {
-            completionEngine.promptTask(AiPromptLibrary.lookupPrompt("wikipedia-page-guess"), input, tokenLimit = 100, temp = null)
+            completionEngine.promptTask(lookupPrompt("examples-api/wikipedia-page-guess"), input, tokenLimit = 100, temp = null)
         }.task("wikipedia-page-search") {
             firstMatchingPage(it).also {
                 pageTitle?.value = it
@@ -44,7 +44,7 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
                 pageTitle?.apply { value = "$value\n\n$it" }
             }
         }.aitask("question-answer") {
-            completionEngine.instructTask(AiPromptLibrary.lookupPrompt("question-answer"), input, it, tokenLimit = 1000, temp = null)
+            completionEngine.instructTask(lookupPrompt("text-qa/answer"), input, it, tokenLimit = 1000, temp = null)
         }.plan
 
     private fun firstMatchingPage(query: String): String {

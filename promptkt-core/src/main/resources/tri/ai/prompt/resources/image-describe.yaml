@@ -1,0 +1,36 @@
+---
+groupId: image-describe
+defaults: { category: image }
+prompts:
+
+  - id: image-describe/basic@1.0.0
+    title: Basic Image Description
+    template: Describe the image.
+
+  - id: image-describe/caption@1.0.0
+    title: Image Caption Generation
+    template: Generate a caption for the image.
+
+  - id: image-describe/detailed@1.0.0
+    title: Detailed Image Description
+    template: Describe everything you see in this image. Provide a detailed list of contents.
+
+  - id: image-describe/json@1.0.0
+    title: Image to JSON Conversion
+    template: Convert the image into a JSON object describing its contents.
+
+  - id: image-describe/json-graph@1.0.0
+    title: Image to JSON Graph Conversion
+    template: |
+      Convert the image into a JSON object describing its contents and relationships.
+      Example:
+      ```
+      {
+        "items": [ ... ],
+        "relationships": [ ... ]
+      }
+      ```
+
+  - id: image-describe/outline@1.0.0
+    title: Image Outline Creation
+    template: Create a markdown outline of the image contents.

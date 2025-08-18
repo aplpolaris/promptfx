@@ -22,8 +22,9 @@ package tri.util.ui.starship
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.fill
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.fill
 import tri.promptfx.PromptFxModels
 import java.io.File
 
@@ -87,8 +88,9 @@ object StarshipContentConfig {
         val index = randomQuestionTopic.indices.random()
         val topic = randomQuestionTopic[index]
         val example = randomQuestionExample[index % randomQuestionExample.size]
-        val prompt = AiPrompt(randomQuestionTemplate.fill("topic" to topic, "example" to example))
-        val fields = prompt.fields().associateWith {
+        val template = PromptTemplate(randomQuestionTemplate)
+        val prompt = PromptDef(id = "", template = template.fill("topic" to topic, "example" to example))
+        val fields = template.findFields().associateWith {
             val rand = if (":" in it) {
                 val (key, n) = it.split(":")
                 key to n.toInt()
@@ -97,7 +99,7 @@ object StarshipContentConfig {
             }
             randomQuestionLists[rand.first]!!.random(rand.second)
         }
-        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue!!
+        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue
     }
 
     private fun List<String>.random(n: Int) = when (n) {

@@ -19,12 +19,12 @@
  */
 package tri.ai.prompt.trace.batch
 
-import tri.ai.core.TextCompletion
+import tri.ai.core.TextChat
 
 /** Provides a series of prompt/model pairings for execution. */
 abstract class AiPromptBatch(val id: String) {
 
     /** Get all run configs within this series. */
-    abstract fun runConfigs(modelLookup: (String) -> TextCompletion): Iterable<AiPromptRunConfig>
+    abstract fun runConfigs(modelLookup: (String) -> TextChat): Iterable<AiPromptRunConfig>
 
 }

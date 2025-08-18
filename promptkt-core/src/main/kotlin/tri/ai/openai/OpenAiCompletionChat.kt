@@ -19,11 +19,8 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatResponseFormat
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.model.ModelId
+import tri.ai.core.MChatRole
+import tri.ai.core.MChatVariation
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
@@ -35,18 +32,20 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
 
     override fun toString() = modelId
 
-    override suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, numResponses: Int?, history: List<TextChatMessage>) =
-        complete(text, tokens, temperature, stop, null, numResponses, history)
-
-    suspend fun complete(text: String, tokens: Int?, temperature: Double?, stop: String?, requestJson: Boolean?, numResponses: Int?, history: List<TextChatMessage>): AiPromptTrace<String> =
-        client.chatCompletion(ChatCompletionRequest(
-            ModelId(modelId),
-            listOf(ChatMessage(ChatRole.User, text)) + history.map { it.toOpenAiMessage() },
-            temperature = temperature,
-            maxTokens = tokens,
-            stop = stop?.let { listOf(it) },
-            responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null,
-            n = numResponses
-        ))
+    override suspend fun complete(
+        text: String,
+        variation: MChatVariation,
+        tokens: Int?,
+        stop: List<String>?,
+        numResponses: Int?
+    ): AiPromptTrace<String> = OpenAiChat(modelId, client).chat(
+        listOf(TextChatMessage(MChatRole.User, text)),
+        variation = variation,
+        tokens = tokens ?: 1000,
+        stop = stop,
+        numResponses = numResponses ?: 1,
+    ).mapOutput {
+        it.content!!
+    }
 
 }

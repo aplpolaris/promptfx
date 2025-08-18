@@ -29,7 +29,7 @@ class AiPromptTraceDatabase() {
 
     var traces = mutableListOf<AiPromptTraceId>()
 
-    var prompts = mutableSetOf<AiPromptInfo>()
+    var prompts = mutableSetOf<PromptInfo>()
     var models = mutableSetOf<AiModelInfo>()
     var execs = mutableSetOf<AiExecInfo>()
     var outputs = mutableSetOf<AiOutputInfo<*>>()

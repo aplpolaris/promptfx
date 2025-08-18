@@ -24,6 +24,7 @@ import io.ktor.client.request.*
 import kotlinx.serialization.Serializable
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MChatVariation
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 
@@ -72,7 +73,7 @@ class GeminiClient : Closeable {
         }.body<BatchEmbedContentsResponse>()
     }
 
-    suspend fun generateContent(prompt: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
+    suspend fun generateContent(prompt: String, modelId: String, variation: MChatVariation, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {
         val system = history.lastOrNull { it.role == MChatRole.System }?.content
         val request = GenerateContentRequest(
             contents = history.filter { it.role != MChatRole.System }.map {
@@ -80,10 +81,20 @@ class GeminiClient : Closeable {
                 Content(listOf(Part(it.content)), role)
             } + Content.text(prompt),
             systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
-// TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
-//            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
+            generationConfig = variation.asGenerationConfig(numResponses = numResponses)
         )
         return generateContent(modelId, request)
+    }
+
+    private fun MChatVariation.asGenerationConfig(numResponses: Int? = null): GenerationConfig {
+        return GenerationConfig(
+            temperature = temperature,
+            topP = topP,
+            topK = topK,
+            presencePenalty = presencePenalty,
+            frequencyPenalty = frequencyPenalty,
+            candidateCount = numResponses ?: 1
+        )
     }
 
     suspend fun generateContent(prompt: String, image: String, modelId: String, numResponses: Int? = null, history: List<TextChatMessage>): GenerateContentResponse {

@@ -22,10 +22,10 @@ package tri.promptfx.apps
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.templatePlan
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.pips.taskPlan
+import tri.ai.prompt.PromptTemplate
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
@@ -77,15 +77,12 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
         }
     }
 
-    override fun plan() = completionEngine.templatePlan(AiPromptLibrary.lookupPrompt("text-to-json"),
-        AiPrompt.INPUT to sourceText.get(),
-        "guidance" to guidance.get(),
-        "format" to (formatModeOptions[formatMode.value] ?: formatMode.value),
-        "example" to sampleOutput.get(),
-        tokenLimit = common.maxTokens.value,
-        temp = common.temp.value,
-        requestJson = if (requestJson.value) true else null,
-        numResponses = common.numResponses.value
-    )
+    override fun plan() = common.completionBuilder()
+        .prompt(lookupPrompt("text-extract/text-to-json"))
+        .params(PromptTemplate.INPUT to sourceText.get(), "guidance" to guidance.get(), "format" to format(), "example" to sampleOutput.get())
+        .requestJson(if (requestJson.value) true else null)
+        .taskPlan(chatEngine)
+
+    private fun format() = formatModeOptions[formatMode.value] ?: formatMode.value
 
 }

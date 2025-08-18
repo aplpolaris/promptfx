@@ -42,7 +42,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
-            <version>${kotlin-coroutines-test.version}</version>
+            <version>${kotlinx-coroutines-core.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

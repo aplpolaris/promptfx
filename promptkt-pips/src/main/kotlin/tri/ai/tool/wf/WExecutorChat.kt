@@ -20,9 +20,12 @@
 package tri.ai.tool.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import okio.IOException
+import tri.ai.core.MChatVariation
+import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
+import tri.ai.prompt.fill
 import tri.util.warning
+import java.io.IOException
 
 /**
  * Uses an LLM for workflow planning and tool (solver) selection.
@@ -41,14 +44,13 @@ class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, va
         // build the prompt using current state
         val rootTask = state.request
         val toolsPlaintext = solvers.joinToString("\n") { " - ${it.toPlaintext()}" }
-        val prompt = PROMPTS.fill(
-            "planner",
+        val prompt = PROMPTS.get(PLANNER_PROMPT_ID)!!.fill(
             "problem" to rootTask.request,
             "tools_details" to toolsPlaintext
         )
 
         // use LLM to generate a response
-        val response = completionEngine.complete(prompt, tokens = maxTokens, temperature = temp)
+        val response = completionEngine.complete(prompt, tokens = maxTokens, variation = temp(temp))
 
         // parse the response and use it to build a set of subtasks to solve
         val taskDecomp = try {

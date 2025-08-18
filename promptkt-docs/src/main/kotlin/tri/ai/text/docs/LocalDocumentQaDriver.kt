@@ -26,7 +26,7 @@ import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.asPipelineResult
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.SmartTextChunker
 import java.io.File
@@ -56,13 +56,13 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     val docsFolder
         get() = if (folder == "") root else File(root, folder)
 
-    private var completionModelInst = TextPlugin.textCompletionModels().first()
+    private var chatModelInst = TextPlugin.chatModels().first()
     private var embeddingModelInst = TextPlugin.embeddingModels().first()
 
-    override var completionModel
-        get() = completionModelInst.modelId
+    override var chatModel
+        get() = chatModelInst.modelId
         set(value) {
-            completionModelInst = TextPlugin.textCompletionModels().first { it.modelId == value }
+            chatModelInst = TextPlugin.chatModels().first { it.modelId == value }
         }
     override var embeddingModel
         get() = embeddingModelInst.modelId
@@ -74,8 +74,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     var templateId: String? = null
 
     private val prompt
-        get() = AiPromptLibrary.lookupPrompt(templateId ?: "$PROMPT_PREFIX-docs")
-    private val joiner = GroupingTemplateJoiner("$JOINER_PREFIX-citations")
+        get() = PromptLibrary.INSTANCE.get(templateId ?: PROMPT_PREFIX)!!
+    private val joiner = GroupingTemplateJoiner("$JOINER_PREFIX/citations")
 
     override fun initialize() {
     }
@@ -86,7 +86,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
 
     override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult<String> {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
-        val planner = DocumentQaPlanner(index, completionModelInst, listOf(), historySize).plan(
+        val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,
@@ -104,8 +104,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     }
 
     companion object {
-        const val PROMPT_PREFIX = "question-answer"
-        const val JOINER_PREFIX = "snippet-joiner"
+        const val PROMPT_PREFIX = "docs-qa/answer"
+        const val JOINER_PREFIX = "snippet-joiners"
     }
 
 }

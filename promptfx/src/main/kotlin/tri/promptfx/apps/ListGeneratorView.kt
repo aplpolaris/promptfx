@@ -24,11 +24,11 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.templatePlan
 import tri.ai.pips.AiPlanner
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.pips.taskPlan
+import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
@@ -66,7 +66,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
                 tooltip("Provide known/existing/sample items in the list, separated by commas.")
                 textfield(sampleItems)
             }
-            promptfield("Prompt", prompt, AiPromptLibrary.withPrefix(PROMPT_PREFIX), workspace)
+            promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
         addDefaultTextCompletionParameters(common)
     }
@@ -126,17 +126,15 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             output.set(null)
             outputItems.clear()
         }
-        return completionEngine.templatePlan(prompt.prompt.value,
-            AiPrompt.INPUT to sourceText.get(),
-            "item_category" to itemCategory.get(),
-            "known_items" to sampleItems.get().split(",")
-                .joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" },
-            tokenLimit = common.maxTokens.value,
-            temp = common.temp.value,
-            requestJson = true,
-            numResponses = common.numResponses.value
-        )
+        return common.completionBuilder()
+            .prompt(prompt.prompt.value)
+            .params(INPUT to sourceText.get(), "item_category" to itemCategory.get(), "known_items" to sampleItems.get().parseSampleItems())
+            .requestJson(true)
+            .taskPlan(chatEngine)
     }
+
+    private fun String.parseSampleItems() =
+        split(",").joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" }
 
     /** Object describing result of a list prompt. */
     class ListPromptResult(

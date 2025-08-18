@@ -1,0 +1,34 @@
+---
+groupId: text-extract
+defaults: { category: text }
+prompts:
+  - id: text-extract/entities@1.0.0
+    title: Entity Extraction Example
+    template: |
+      Extract entities from the following text. The result should be a list of {{mode}}{{#format}} formatted as {{format}}{{/format}}.
+      ```
+      {{{input}}}
+      ```
+  - id: text-extract/keywords@1.0.0
+    title: Keyword Extraction Example
+    template: |
+      Generate a JSON list of keywords from the following text. If there are no keywords, provide an empty list.
+      ```
+      {{{input}}}
+      ```
+      Keywords:
+  - id: text-extract/text-to-json@1.0.0
+    title: Convert Text to JSON
+    template: |
+      Extract information from the following text:
+      ```
+      {{{input}}}
+      ```
+      {{#guidance}}The result should contain {{guidance}}.{{/guidance}}
+      The result must be formatted as {{#format}}{{format}}{{/format}}{{^format}}structured data{{/format}}.
+      {{#example}}
+      The result schema should match the following example:
+      ```
+      {{{example}}}
+      ```
+      {{/example}}

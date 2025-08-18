@@ -24,7 +24,7 @@ package tri.ai.prompt.trace
  * Not designed for serialization (yet).
  */
 class AiImageTrace(
-    promptInfo: AiPromptInfo?,
+    promptInfo: PromptInfo?,
     modelInfo: AiModelInfo?,
     execInfo: AiExecInfo = AiExecInfo(),
     outputInfo: AiOutputInfo<String>? = AiOutputInfo(listOf())
@@ -38,7 +38,7 @@ class AiImageTrace(
             AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
         }
 
-    override fun copy(promptInfo: AiPromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
+    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
         AiImageTrace(promptInfo, modelInfo, execInfo, output)
 
 }

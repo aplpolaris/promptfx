@@ -1,0 +1,26 @@
+############################
+# TEXT JOINER CONCATENATIONS
+############################
+# view: Prompt Scripting
+# keywords:
+#   {{matches}} - list of items
+#   {{{text}}} - text of snippet
+---
+groupId: text-joiners
+defaults: { category: joiners }
+prompts:
+
+  - id: joiners/basic@1.0.0
+    title: Basic Text Joiner
+    template: |
+      {{#matches}}
+      {{#prefix}}({{prefix}}){{/prefix}}
+      {{{text}}}  
+      {{/matches}}
+
+  - id: joiners/bullets@1.0.0
+    title: Bulleted Text Joiner
+    template: |
+      {{#matches}} 
+      - {{#prefix}}({{prefix}}) {{/prefix}}{{{text}}}  
+      {{/matches}}

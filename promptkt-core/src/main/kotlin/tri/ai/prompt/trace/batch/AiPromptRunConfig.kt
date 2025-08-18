@@ -19,43 +19,54 @@
  */
 package tri.ai.prompt.trace.batch
 
+import tri.ai.core.TextChat
+import tri.ai.core.TextChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.PromptInfo.Companion.filled
 
 /** Configuration required for executing a text completion prompt. */
 class AiPromptRunConfig(
-    val promptInfo: AiPromptInfo,
+    val promptInfo: PromptInfo,
     val modelInfo: AiModelInfo,
-    val modelLookup: (String) -> TextCompletion = { TextPlugin.textCompletionModel(it) }
+    val modelLookup: (String) -> TextChat = { TextPlugin.chatModel(it) }
 ) {
     override fun toString() =
         "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"
 
     /**
-     * Executes a text completion with a single configuration.
+     * Executes a text chat completion with a single configuration.
      * Overwrites the model id in the configuration to match the model.
-     * @param completion the text completion model
+     * @param chat the chat model
      * @return trace of the execution
      */
-    suspend fun execute(completion: TextCompletion): AiPromptTrace<String> {
-        modelInfo.modelId = completion.modelId
+    suspend fun execute(chat: TextChat): AiPromptTrace<String> {
+        modelInfo.modelId = chat.modelId
         val promptText = promptInfo.filled()
-        val result = completion.complete(promptText, modelInfo)
-        return result.copy(promptInfo = promptInfo)
+        val result = chat.chat(promptText, modelInfo)
+        return result.copy(promptInfo = promptInfo).mapOutput { it.content!! }
     }
 
     /**
      * Executes a single text completion query, with model parameters encoded in [modelInfo].
      */
-    private suspend fun TextCompletion.complete(text: String, modelInfo: AiModelInfo) =
-        complete(
-            text = text,
+    private suspend fun TextChat.chat(text: String, modelInfo: AiModelInfo) =
+        chat(
+            messages = listOf(TextChatMessage.user(text)),
             tokens = modelInfo.modelParams[AiModelInfo.MAX_TOKENS] as? Int,
-            temperature = modelInfo.modelParams[AiModelInfo.TEMPERATURE] as? Double,
-            stop = modelInfo.modelParams[AiModelInfo.STOP] as? String,
-            numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int,
-            history = listOf()
+            variation = modelInfo.toVariation(),
+            stop = modelInfo.modelParams[AiModelInfo.STOP] as? List<String>
+                ?: (modelInfo.modelParams[AiModelInfo.STOP] as? String)?.let { listOf(it) },
+            numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int
         )
+
+    private fun AiModelInfo.toVariation() = tri.ai.core.MChatVariation(
+        seed = (modelParams[AiModelInfo.SEED] as? Number)?.toInt(),
+        temperature = modelParams[AiModelInfo.TEMPERATURE] as? Double,
+        topP = modelParams[AiModelInfo.TOP_P] as? Double,
+        presencePenalty = modelParams[AiModelInfo.PRESENCE_PENALTY] as? Double,
+        frequencyPenalty = modelParams[AiModelInfo.FREQUENCY_PENALTY] as? Double,
+    )
 
 }

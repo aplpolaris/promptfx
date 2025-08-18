@@ -3,6 +3,7 @@
 code-review:
   category: Code
   prompt:
+    id: code/code-review@1.0.0
     name: code-review
     title: Request Code Review
     description: Asks the LLM to analyze provided code and suggest improvements or bug fixes

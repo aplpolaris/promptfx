@@ -44,6 +44,8 @@ import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.api.OpenAiApiSettings
+import tri.ai.prompt.PromptTemplate.Companion.INPUT
+import tri.ai.prompt.PromptTemplate.Companion.INSTRUCT
 import tri.ai.prompt.trace.*
 import java.io.File
 import java.time.Instant
@@ -132,7 +134,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         usage.increment(resp.usage)
 
         return AiPromptTrace(
-            completionRequest.prompt?.let { AiPromptInfo(it) },
+            completionRequest.prompt?.let { PromptInfo(it) },
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
             AiOutputInfo(resp.choices.map { it.text })
@@ -161,7 +163,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         usage.increment(resp.usage)
 
         return AiPromptTrace(
-            prompt?.let { AiPromptInfo(it) },
+            prompt?.let { PromptInfo(it) },
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
             AiOutputInfo(resp.choices.map { it.message })
@@ -263,9 +265,9 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         AiModelInfo.TOP_P to topP
     )
 
-    private fun EditsRequest.toPromptInfo() = AiPromptInfo.info(instruction,
-        AiPromptInfo.INSTRUCTION to instruction,
-        AiPromptInfo.INPUT to input
+    private fun EditsRequest.toPromptInfo() = PromptInfo(instruction,
+        INPUT to input,
+        INSTRUCT to instruction
     )
 
     private fun ImageCreation.toModelInfo() = AiModelInfo.info(model?.id ?: DALLE2_ID,

@@ -20,7 +20,10 @@
 package tri.promptfx.ui
 
 import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.databind.annotation.JsonValueInstantiator
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Configuration for a [RuntimePromptView]. */
@@ -28,12 +31,21 @@ class RuntimePromptViewConfig(
     val category: String,
     val title: String,
     val description: String,
-    val promptConfig: PromptConfig,
+    val promptConfig: PromptConfig? = null,
+    val promptRef: String? = null,
     val modeOptions: List<ModeConfig> = listOf(),
     val isShowModelParameters: Boolean = false,
     val isShowMultipleResponseOption: Boolean = false,
     val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.INPUT_ONLY
-)
+) {
+    init {
+        require(promptConfig != null || promptRef != null) { "Either promptConfig or promptRef must be provided." }
+        require(promptConfig == null || promptRef == null) { "Only one of promptConfig or promptRef can be provided." }
+    }
+
+    fun promptConfig() = promptConfig ?: PromptConfig(id = promptRef!!)
+
+}
 
 /**
  * Reference mode [id] in `modes.yaml` configuration file, associated [templateId] for use in prompt, [label] for UI.

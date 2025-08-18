@@ -21,8 +21,9 @@ package tri.promptfx.ui
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.templatePlan
-import tri.ai.prompt.AiPrompt
+import tri.ai.pips.taskPlan
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.template
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
 
@@ -65,18 +66,15 @@ open class RuntimePromptViewMcp(config: RuntimePromptViewConfigMcp) :
             addDefaultTextCompletionParameters(common)
     }
 
-    override fun plan() = completionEngine.templatePlan(
-        prompt = promptModel.prompt.value,
-        fields = modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) } +
-                mapOf(singleTemplateFieldName() to input.get()),
-        tokenLimit = common.maxTokens.value,
-        temp = common.temp.value,
-        numResponses = common.numResponses.value
-    )
+    override fun plan() = common.completionBuilder()
+        .prompt(promptModel.prompt.value)
+        .params(modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) })
+        .params(singleTemplateFieldName() to input.get())
+        .taskPlan(completionEngine)
 
-    /** Returns the name of the first template placeholder variable used for input, or [AiPrompt.INPUT] as a default. */
+    /** Returns the name of the first template placeholder variable used for input, or [PromptTemplate.INPUT] as a default. */
     private fun singleTemplateFieldName() =
-        promptModel.prompt.value.fields().firstOrNull() ?: AiPrompt.INPUT
+        promptModel.prompt.value.template().findFields().firstOrNull() ?: PromptTemplate.INPUT
 
     private fun modeTemplateValue(id: String?, valueOrValueId: String) =
         if (id == null) valueOrValueId else RuntimePromptViewConfigs.modeTemplateValue(id, valueOrValueId)

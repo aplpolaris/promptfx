@@ -25,8 +25,9 @@ module tri.promptkt.pips {
     requires openai.client.jvm;
 
     requires okhttp3;
-    requires okio;
     requires com.github.mustachejava;
+
+    opens tri.ai.tool.wf to com.fasterxml.jackson.databind;
 
     exports tri.ai.pips;
     exports tri.ai.tool;

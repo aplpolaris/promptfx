@@ -21,10 +21,12 @@ package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextCompletion
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.fill
+import tri.ai.prompt.template
 import tri.util.*
 
-val PROMPTS = AiPromptLibrary.readResource<ToolChainExecutor>()
+val PROMPTS = PromptLibrary.readFromResourceDirectory<ToolChainExecutor>()
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
@@ -37,7 +39,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     fun executeChain(question: String, tools: List<Tool>): String {
         info<ToolChainExecutor>("User Question: $ANSI_YELLOW$question$ANSI_RESET")
 
-        val templateForQuestion = PROMPTS.fill("tool-chain-executor",
+        val templateForQuestion = PROMPTS.get("tools/chain-executor")!!.fill(
             "tools" to tools.joinToString("\n") { "${it.name}: ${it.description}" },
             "tool_names" to tools.joinToString(", ") { it.name },
             "input" to question,
@@ -61,7 +63,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = "Observation: ", tokens = completionTokens, history = listOf())
+        val textCompletion = completionEngine.complete(prompt, stop = listOf("Observation: "), tokens = completionTokens)
             .firstValue.trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")

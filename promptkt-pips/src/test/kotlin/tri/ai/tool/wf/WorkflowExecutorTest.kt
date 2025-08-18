@@ -73,7 +73,7 @@ class WorkflowExecutorTest {
         "Use this to search for data that is needed to answer a question",
         "The query to search for",
         "The result of the query",
-        "tool-query"
+        "tools/tool-query"
     )
 
     private val SOLVER_TIMELINE = ChatSolver(
@@ -81,7 +81,7 @@ class WorkflowExecutorTest {
         "Use this once you have all the data needed to visualize the result on a timeline.",
         "The data to visualize",
         "Visualization specification (structured content)",
-        "tool-timeline"
+        "tools/tool-timeline"
     )
 
     //endregion

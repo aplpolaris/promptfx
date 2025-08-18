@@ -4,8 +4,7 @@ view-config-generator:
   category: Meta
   title: View Config Generator
   description: Generate a new view configuration YAML block from a short description of what the tool should do.
-  promptConfig:
-    id: generate-view-config
+  promptRef: generate-config/promptfx-view-config
   modeOptions: []
   isShowModelParameters: false
   isShowMultipleResponseOption: false
@@ -14,8 +13,7 @@ entity-extraction:
   category: Text
   title: Entity Extraction
   description: Extract entities from text.
-  promptConfig:
-    id: entity-extraction
+  promptRef: text-extract/entities
   modeOptions:
     - id: entities
       templateId: mode
@@ -29,8 +27,7 @@ sentiment-analysis:
   category: Text
   title: Sentiment Analysis
   description: Enter text to estimate sentiment.
-  promptConfig:
-    id: sentiment-classify
+  promptRef: text-classify/sentiment
   modeOptions:
     - id: sentiment
       templateId: instruct
@@ -41,8 +38,7 @@ summarization:
   category: Text
   title: Summarization
   description: Summarize text.
-  promptConfig:
-    id: summarization
+  promptRef: text-summarize/summarize
   modeOptions:
     - id: summarization-audience
       templateId: audience
@@ -59,8 +55,7 @@ translation:
   category: Text
   title: Translation
   description: Translate text from one language to another.
-  promptConfig:
-    id: translate-text
+  promptRef: text-translate/translate
   modeOptions:
     - id: translation
       templateId: instruct
@@ -71,6 +66,5 @@ emoji:
   category: Fun
   title: Text-to-Emoji
   description: Enter text to get an emoji.
-  promptConfig:
-    id: example-emoji
+  promptRef: examples/emoji
   isShowMultipleResponseOption: true

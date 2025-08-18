@@ -64,7 +64,7 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            batch.plan { TextPlugin.textCompletionModel(it) }.execute(IgnoreMonitor).finalResult
+            batch.plan { TextPlugin.chatModel(it) }.execute(IgnoreMonitor).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 

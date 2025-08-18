@@ -119,7 +119,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                         isPreserveRatio = true
                         isPickOnBounds = true // so you can click anywhere on transparent images
                         tooltip { graphic = vbox {
-                            val text = text(it.prompt!!.prompt) {
+                            val text = text(it.prompt!!.template) {
                                 style = "-fx-fill: white;"
                             }
                             val image = imageview(it.firstValue)
@@ -194,7 +194,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     override fun plan() = aitask("generate-image") {
         val t0 = System.currentTimeMillis()
-        val promptInfo = AiPromptInfo(input.value)
+        val promptInfo = PromptInfo(input.value)
         val modelInfo = AiModelInfo(model.value, mapOf(
             "n" to numProperty.value,
             "size" to imageSize.value,
@@ -225,7 +225,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     //region CONTEXT MENU ACTIONS
 
     private fun copyPromptToClipboard(trace: AiImageTrace) {
-        clipboard.putString(trace.prompt!!.prompt)
+        clipboard.putString(trace.prompt!!.template)
     }
 
     private fun saveAllToFile() {

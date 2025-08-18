@@ -1,0 +1,54 @@
+---
+groupId: examples-api
+defaults: { category: examples }
+prompts:
+
+  - id: examples-api/traffic-api-request@1.0.0
+    title: Traffic API Request Example
+    template: |
+      Today is {{today}}. Convert the following natural language request for traffic information into a JSON object:
+      ```
+      {{{input}}}
+      ```
+      The JSON object must conform to the following scheme:
+      ```
+      {
+          "latitude": 40.712776,
+          "longitude": -74.005974
+      }
+      ```
+
+  - id: examples-api/weather-api-request@1.0.0
+    title: Weather API Request Example
+    template: |
+      Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
+      ```
+      {{{input}}}
+      ```
+      The JSON object must conform to the following schema:
+      ```
+      {
+          "city": "Boston, MA",
+          "date": "2023-03-04"
+      }
+      ```
+
+  - id: examples-api/weather-response-formatter@1.0.0
+    title: Weather Response Formatter Example
+    template: |
+      Today is {{today}}. Use the following data to answer a user question.
+      If the data indicates unknown or nulls, tell the user there was a problem retrieving weather information.
+      If you cannot answer the question directly but there is useful weather information in the data, provide a summary of the JSON as a basic weather forecast.
+      Question: {{instruct}}
+      ```
+      {{{input}}}
+      ```
+
+  - id: examples-api/wikipedia-page-guess@1.0.0
+    title: Wikipedia Page Guess Example
+    template: |
+      What is the title of the Wikipedia page that answers the following question? Give a short answer with your best guess.
+      Question: How big is Texas?
+      Wikipedia Page: Texas
+      Question: {{input}}
+      Wikipedia Page:

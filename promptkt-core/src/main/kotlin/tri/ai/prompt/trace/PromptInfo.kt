@@ -20,25 +20,25 @@
 package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import tri.ai.prompt.AiPrompt.Companion.fill
+import tri.ai.prompt.PromptTemplate
 
-/** Text prompt generation info. */
+/**
+ * A prompt template and parameters used to fill values, for execution traces.
+ */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiPromptInfo(
-    var prompt: String,
-    var promptParams: Map<String, Any> = mapOf()
+data class PromptInfo(
+    var template: String,
+    var params: Map<String, Any> = mapOf()
 ) {
 
-    /** Fill in the prompt with the parameters. */
-    fun filled() = prompt.fill(promptParams)
+    /** Create prompt info with a template and parameters. */
+    constructor(prompt: String, vararg pairs: Pair<String, Any?>) :
+            this(prompt, mapOfNotNull(*pairs))
 
     companion object {
-        const val INSTRUCTION = "instruction"
-        const val INPUT = "input"
-
-        /** Create prompt info. */
-        fun info(prompt: String, vararg pairs: Pair<String, Any?>) =
-            AiPromptInfo(prompt, mapOfNotNull(*pairs))
+        /** Fill in the prompt with the parameters. */
+        fun PromptInfo.filled() =
+            PromptTemplate(template).fill(params)
 
         private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
             mapOf(*pairs).filterValues { it != null } as Map<String, Any>

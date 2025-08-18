@@ -1,0 +1,74 @@
+# Sample runtime prompt file that overrides the default prompt file.
+---
+prompts:
+  - # using the same name as predefined prompt will override the default
+    id: text-qa/answer@1.0.0
+    title: Question Answering
+    template: |
+      Answer the following question about the text below. If you do not know the answer, say you don't know.
+      ```
+      {{{input}}}
+      ```
+      Question: {{{instruct}}}
+      Answer:
+  - # you can also add new prompts
+    id: text-qa/custom@1.0.0
+    title: Custom Question Answering
+    template: |
+      Answer the following question about the quoted text. If you do not know the answer, say you don't know.
+      ```
+      {{{input}}}
+      ```
+      Question: {{{instruct}}}
+      Answer:
+  - # docs-qa/answer-* prompts are used in the Document Q&A view to answer questions
+    # keywords:
+    #   {{{instruct}}} - question
+    #   {{{input}}} - document sections
+    id: docs-qa/answer-custom@1.0.0
+    title: Document Question Answering (Custom)
+    template: |
+      Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
+      Please also indicate the documents used to answer the question.
+      Question: {{{instruct}}}
+      ```
+      {{{input}}}
+      ```
+      Answer:
+  - # snippet-joiner-* prompts are used in the Document Q&A to combine text chunks for a prompt
+    # keywords:
+    #   {{matches}} - list of snippets
+    #   {{name}} - name of snippet
+    #   {{{text}}} - text of snippet
+    id: snippet-joiner/custom@1.0.0
+    title: Custom Snippet Joiner
+    template: |
+      {{#matches}}
+      Document: {{name}}
+      Relevant Text: {{{text}}}  
+      {{/matches}}
+  - # docs-map/* prompts are used in the Document Insights view to run against all snippets
+    # keywords:
+    #   {{{input}}} - text to process
+    id: docs-map/custom@1.0.0
+    title: Three Main Points
+    template: |
+      Extract three main points from this text:
+      ```
+      {{{input}}}
+      ```
+  - # docs-reduce/* prompts are used in the Document Insights view to combine snippet results
+    # keywords:
+    #   {{{input}}} - text to process
+    id: docs-reduce/custom@1.0.0
+    title: Five Key Takeaways
+    template: |
+      Combine all of the provided points into a list of five most important takeaways.
+      ```
+      {{{input}}}
+      ```
+  - # image-describe/* prompts are used in the Image Insights view to describe images
+    id: image-describe/ips@1.0.0
+    title: Extract IPs from Image
+    template: |
+      Extract a list of IPs found in the image, as a JSON list. If there are none, return an empty list.

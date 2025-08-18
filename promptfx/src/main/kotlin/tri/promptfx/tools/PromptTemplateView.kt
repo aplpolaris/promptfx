@@ -26,8 +26,10 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.aitask
-import tri.ai.prompt.AiPrompt
+import tri.ai.pips.taskPlan
+import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.PromptInfo.Companion.filled
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxModels
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -101,22 +103,20 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         addDefaultTextCompletionParameters(common)
     }
 
-    override fun plan() = aitask("text-completion") {
-        val resp = AiPrompt(template.value).fill(fieldMap).let {
-            completionEngine.complete(it, tokens = common.maxTokens.value, temperature = common.temp.value, numResponses = common.numResponses.value)
-        }
-        resp.copy(promptInfo = AiPromptInfo(template.value, fieldMap.toMap()))
-    }.planner
+    override fun plan() = common.completionBuilder()
+        .template(template.value)
+        .params(fieldMap.toMap())
+        .taskPlan(completionEngine)
 
     /**
      * Loads a prompt trace into the view.
      * Will set the prompt, prompt inputs, model, and model parameters associated with the trace.
      */
     fun importPromptTrace(prompt: AiPromptTraceSupport<*>) {
-        val promptInfo = prompt.prompt ?: AiPromptInfo("N/A")
+        val promptInfo = prompt.prompt ?: PromptInfo("N/A")
         val modelInfo = prompt.model ?: AiModelInfo("N/A")
-        template.set(promptInfo.prompt)
-        fields.setAll(promptInfo.promptParams.entries.map { it.key to it.value.toString() })
+        template.set(promptInfo.template)
+        fields.setAll(promptInfo.params.entries.map { it.key to it.value.toString() })
         val model = PromptFxModels.textCompletionModels().find { it.modelId == modelInfo.modelId }
         if (model != null) {
             controller.completionEngine.set(model)
@@ -128,7 +128,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
 
     private fun updateTemplateInputs(template: String) {
         // extract {{{.}}} and {{.}} delimited fields from new value
-        val nueFields = AiPrompt.fieldsInTemplate(template)
+        val nueFields = PromptTemplate(template).findFields()
         if (fields.toSet() != nueFields.toSet()) {
             val fieldMapCopy = fieldMap.toMap()
             fieldMap.clear()

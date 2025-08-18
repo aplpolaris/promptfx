@@ -24,7 +24,7 @@ import java.util.UUID.randomUUID
 
 /** Common elements of a prompt trace. */
 abstract class AiPromptTraceSupport<T>(
-    var prompt: AiPromptInfo?,
+    var prompt: PromptInfo?,
     var model: AiModelInfo?,
     var exec: AiExecInfo,
     var output: AiOutputInfo<T>? = null
@@ -35,7 +35,7 @@ abstract class AiPromptTraceSupport<T>(
 
     /** Make a copy of this trace with updated information. */
     abstract fun copy(
-        promptInfo: AiPromptInfo? = this.prompt,
+        promptInfo: PromptInfo? = this.prompt,
         modelInfo: AiModelInfo? = this.model,
         execInfo: AiExecInfo = this.exec
     ): AiPromptTraceSupport<T>

@@ -19,13 +19,14 @@
  */
 package tri.ai.text.docs
 
+import tri.ai.core.MChatVariation
+import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextCompletion
-import tri.ai.core.instructTask
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskList
 import tri.ai.pips.task
-import tri.ai.prompt.AiPrompt
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_ID
 import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
@@ -35,7 +36,7 @@ import tri.util.ANSI_RESET
 import tri.util.info
 
 /** Runs the document QA information retrieval, query, and summarization process. */
-class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCompletion, val chatHistory: List<TextChatMessage>, val historySize: Int) {
+class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatHistory: List<TextChatMessage>, val historySize: Int) {
 
     /**
      * Asynchronous tasks to execute for answering the given question.
@@ -51,7 +52,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
      */
     fun plan(
         question: String,
-        prompt: AiPrompt,
+        prompt: PromptDef,
         chunksToRetrieve: Int,
         minChunkSize: Int,
         contextStrategy: SnippetJoiner,
@@ -72,13 +73,13 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
-        val response = completionEngine.instructTask(prompt, question, context, maxTokens, temp, numResponses,
-            history = chatHistory.takeLast(historySize)
-        )
+        val query = prompt.template().fillInstruct(input = context, instruct = question)
+        val messages = chatHistory.takeLast(historySize) + TextChatMessage.user(query)
+        val response = chat.chat(messages, MChatVariation.temp(temp), maxTokens, null, numResponses, null)
         val embeddingModel = index.embeddingStrategy.model
         val questionEmbedding = embeddingModel.calculateEmbedding(question)
-        val responseEmbeddings = response.values?.map {
-            embeddingModel.calculateEmbedding(it)
+        val responseEmbeddings = response.values?.map { it: TextChatMessage ->
+            embeddingModel.calculateEmbedding(it.content!!)
         } ?: listOf()
         // TODO - make this support more than one response embedding
         // add snippet response scores for first response embedding only
@@ -87,7 +88,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
                 it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
             }
         }
-        val model = response.model ?: AiModelInfo(modelId = completionEngine.modelId)
+        val model = response.model ?: AiModelInfo(chat.modelId)
         model.modelParams = (response.model?.modelParams ?: mapOf()) + mapOf<String, Any>(
             EMBEDDING_MODEL to embeddingModel.modelId,
             CHUNKER_ID to "PromptFx",
@@ -97,7 +98,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val completionEngine: TextCom
             QuestionAnswerResult(
                 query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
                 matches = snippets,
-                trace = response,
+                trace = response.mapOutput { it.content!! },
                 responseEmbeddings = responseEmbeddings
             )
         }

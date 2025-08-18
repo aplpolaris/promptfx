@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
 
 class GeminiTextCompletionTest {
@@ -33,7 +34,10 @@ class GeminiTextCompletionTest {
     @Test
     @Tag("gemini")
     fun testComplete() = runTest {
-        val res = client.complete("Translate Hello, world! into French.", 100, 0.5, history = listOf())
+        val res = client.complete("Translate Hello, world! into French.",
+            variation = temp(0.5),
+            tokens = 100
+        )
         println(res)
         assertTrue("monde" in res.firstValue.lowercase())
     }
@@ -41,8 +45,12 @@ class GeminiTextCompletionTest {
     @Test
     @Tag("gemini")
     fun testCompleteMultiple() = runTest {
-        val res = client.complete("Translate Hello, world! into French.", 100, 0.5, numResponses = 2, history = listOf())
-        assertEquals(1, res.output!!.outputs.size) { "Gemini only supports a single response" }
+        val res = client.complete("Translate Hello, world! into French.",
+            variation = temp(0.5),
+            tokens = 100,
+            numResponses = 2
+        )
+        assertEquals(2, res.output!!.outputs.size)
         println(res)
     }
 

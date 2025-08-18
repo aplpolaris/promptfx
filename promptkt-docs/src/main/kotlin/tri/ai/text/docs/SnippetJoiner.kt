@@ -20,7 +20,8 @@
 package tri.ai.text.docs
 
 import tri.ai.embedding.EmbeddingMatch
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.fill
 
 /** Name used in snippet joiner template for matching text. */
 const val MATCHES_TEMPLATE = "matches"
@@ -40,7 +41,7 @@ sealed class SnippetJoiner(val id: String) {
 /** A basic joiner with content of each chunk in a separate match. */
 class BasicTemplateJoiner(_id: String) : SnippetJoiner(_id) {
     override fun constructContext(matches: List<EmbeddingMatch>) =
-        AiPromptLibrary.lookupPrompt(id)
+        PromptLibrary.INSTANCE.get(id)!!
             .fill(MATCHES_TEMPLATE to matches.mapIndexed { i, it ->
                 NameText(i + 1, it)
             })
@@ -55,7 +56,7 @@ class GroupingTemplateJoiner(_id: String) : SnippetJoiner(_id) {
             val docPrefix = doc.attributes[TEXT_DOC_ATTRIBUTE_CONTEXT_PREFIX] as? String ?: ""
             NameText(i + 1, en.key, docPrefix, joinedInThisDoc)
         }.let {
-            AiPromptLibrary.lookupPrompt(id).fill(MATCHES_TEMPLATE to it)
+            PromptLibrary.INSTANCE.get(id)!!.fill(MATCHES_TEMPLATE to it)
         }
 }
 
@@ -91,7 +92,7 @@ class BulletedTemplateJoiner(_id: String) : SnippetJoiner(_id) {
             char += 1
             NameText(i + 1, en.key, docPrefix, joinedInThisDoc)
         }
-        val filledPrompt = AiPromptLibrary.lookupPrompt(id).fill(MATCHES_TEMPLATE to fillContent)
+        val filledPrompt = PromptLibrary.INSTANCE.get(id)!!.fill(MATCHES_TEMPLATE to fillContent)
         return ContextChunkInfo(filledPrompt, chunkIndex)
     }
 }

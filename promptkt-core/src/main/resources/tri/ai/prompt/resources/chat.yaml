@@ -1,0 +1,8 @@
+---
+groupId: chat
+prompts:
+  - id: chat/chat-back@1.0.0
+    title: Chat Back
+    template: |
+      You are role-playing as {{person}} talking about {{topic}} with {{other persons}} {{setting}}.
+      Your response should be what they might say {{script}} and have a {{tone}} tone.

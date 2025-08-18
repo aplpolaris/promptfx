@@ -22,39 +22,39 @@ package tri.promptfx.ui
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.fill
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 
 /** Model for a prompt id and lookup result in prompt table. */
 class PromptSelectionModel(_id: String, _prompt: String? = null) {
     val id = SimpleStringProperty(_id)
-    val prompt = SimpleObjectProperty(_prompt?.let { AiPrompt(template = it) } ?: AiPromptLibrary.lookupPrompt(id.value))
+    val prompt = SimpleObjectProperty(_prompt?.let { PromptDef(_id, template = it) } ?: lookupPrompt(_id))
     val text = SimpleStringProperty(prompt.value!!.template)
 
     init {
         id.onChange {
             if (it == CUSTOM) {
-                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
+                prompt.set(PromptDef(id = CUSTOM, template = text.value))
             } else {
-                prompt.set(AiPromptLibrary.lookupPrompt(it!!))
+                prompt.set(lookupPrompt(it!!))
                 text.set(prompt.value.template)
             }
         }
         text.onChange {
-            val currentTemplate = if (id.value == CUSTOM) null else AiPromptLibrary.lookupPrompt(id.value).template
+            val currentTemplate = if (id.value == CUSTOM) null else lookupPrompt(id.value).template
             if (it != currentTemplate) {
                 id.set(CUSTOM)
-                prompt.set(AiPrompt(text.value, templateName = CUSTOM))
+                prompt.set(PromptDef(id = CUSTOM, template = text.value))
             }
         }
     }
 
     /** Fill fields into prompt text (mustache template). */
-    fun fill(vararg fields: Pair<String, Any>) = text.value.fill(*fields)
+    fun fill(vararg fields: Pair<String, Any>) = PromptTemplate(text.value).fill(*fields)
 
     /** Fill fields into prompt text (mustache template). */
-    fun fill(fields: Map<String, Any>) = text.value.fill(fields)
+    fun fill(fields: Map<String, Any>) = PromptTemplate(text.value).fill(fields)
 
     companion object {
         const val CUSTOM = "Custom"

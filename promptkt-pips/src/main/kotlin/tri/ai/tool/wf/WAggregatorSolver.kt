@@ -21,6 +21,7 @@ package tri.ai.tool.wf
 
 import tri.ai.core.TextCompletion
 import tri.ai.openai.OpenAiCompletionChat
+import tri.ai.prompt.fill
 
 /** A solver used to aggregate/finalize a response for an original user question. */
 class WAggregatorSolver(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) : WorkflowSolver(
@@ -38,7 +39,7 @@ class WAggregatorSolver(val completionEngine: TextCompletion, val maxTokens: Int
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")
-        val prompt = PROMPTS.fill(AGGREGATOR_PROMPT_ID,
+        val prompt = PROMPTS.get(AGGREGATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
             INPUTS_PARAM to inputData
         )

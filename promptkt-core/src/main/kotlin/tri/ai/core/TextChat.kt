@@ -29,14 +29,22 @@ interface TextChat {
     /** Completes user text. */
     suspend fun chat(
         messages: List<TextChatMessage>,
+        variation: MChatVariation = MChatVariation(),
         tokens: Int? = 1000,
         stop: List<String>? = null,
-        requestJson: Boolean? = null,
-        numResponses: Int? = null
+        numResponses: Int? = null,
+        requestJson: Boolean? = null
     ): AiPromptTrace<TextChatMessage>
 
 }
 
 /** A single message in a chat. */
-data class TextChatMessage(val role: MChatRole, val content: String?)
+data class TextChatMessage(val role: MChatRole, val content: String?) {
+    companion object {
+        fun user(content: String?) = TextChatMessage(MChatRole.User, content)
+        fun system(content: String?) = TextChatMessage(MChatRole.System, content)
+        fun assistant(content: String?) = TextChatMessage(MChatRole.Assistant, content)
+        fun tool(content: String?) = TextChatMessage(MChatRole.Tool, content)
+    }
+}
 

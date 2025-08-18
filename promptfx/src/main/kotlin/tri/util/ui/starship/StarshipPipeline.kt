@@ -23,13 +23,15 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.INPUT
-import tri.ai.prompt.AiPromptLibrary
-import tri.ai.prompt.trace.AiPromptInfo
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.fill
 import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.PromptInfo
+import tri.ai.prompt.trace.PromptInfo.Companion.filled
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
 import tri.ai.text.docs.FormattedText
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.util.ui.DocumentThumbnail
 
 /** Pipeline execution for [StarshipUi]. */
@@ -45,7 +47,7 @@ object StarshipPipeline {
         results.input.set(input)
 
         val runConfig = AiPromptRunConfig(
-            AiPromptInfo(config.primaryPrompt.prompt.template, mapOf(INPUT to input) + config.primaryPrompt.params),
+            PromptInfo(config.primaryPrompt.prompt.template, mapOf(PromptTemplate.INPUT to input) + config.primaryPrompt.params),
             AiModelInfo(config.completion.modelId)
         )
         results.runConfig.set(runConfig)
@@ -62,7 +64,7 @@ object StarshipPipeline {
         config.secondaryPrompts.forEach {
             val secondInput = results.output.value.rawText
             val secondRunConfig = AiPromptRunConfig(
-                AiPromptInfo(it.prompt.template, mapOf(INPUT to secondInput) + it.params),
+                PromptInfo(it.prompt.template, mapOf(PromptTemplate.INPUT to secondInput) + it.params),
                 AiModelInfo(config.completion.modelId)
             )
             results.secondaryRunConfigs.add(secondRunConfig)
@@ -104,9 +106,9 @@ class StarshipInterimResult(val label: String, val text: FormattedText, val imag
 }
 
 /** Groups a prompt with associated parameters. */
-class PromptWithParams(val prompt: AiPrompt, val params: MutableMap<String, Any> = mutableMapOf()) {
-    constructor(prompt: String, params: Map<String, Any> = mapOf()) :
-            this(AiPromptLibrary.lookupPrompt(prompt), params.toMutableMap())
+class PromptWithParams(val prompt: PromptDef, val params: MutableMap<String, Any> = mutableMapOf()) {
+    constructor(promptId: String, params: Map<String, Any> = mapOf()) :
+            this(lookupPrompt(promptId), params.toMutableMap())
 
-    fun fill(input: String) = prompt.fill(mapOf(INPUT to input) + params)
+    fun fill(input: String) = prompt.fill(mapOf(PromptTemplate.INPUT to input) + params)
 }

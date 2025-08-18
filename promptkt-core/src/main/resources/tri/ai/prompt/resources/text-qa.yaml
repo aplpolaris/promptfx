@@ -1,0 +1,30 @@
+---
+groupId: text-qa
+defaults: { category: text }
+prompts:
+
+  - id: text-qa/answer@1.0.0
+    title: Question Answer Example
+    template: |
+      Answer the following question about the text below. If you do not know the answer, say you don't know.
+      ```
+      {{{input}}}
+      ```
+      Question: {{{instruct}}}
+      Answer:
+
+  - id: examples/text-summarize@1.0.0
+    title: Text Summarization Example
+    template: |
+      Summarize the following{{#audience}}, written for {{audience}}{{/audience}}{{#style}}, in the style of {{style}}{{/style}}{{#format}}, structured as {{format}}{{/format}}:
+      ```
+      {{{input}}}
+      ```
+
+  - id: examples/translate-text@1.0.0
+    title: Translate Text Example
+    template: |
+      Translate this text to {{instruct}}:
+      ```
+      {{{input}}}
+      ```

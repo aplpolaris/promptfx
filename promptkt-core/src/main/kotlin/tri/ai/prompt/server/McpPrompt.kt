@@ -17,38 +17,42 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt
+package tri.ai.prompt.server
 
-import tri.ai.prompt.AiPrompt.Companion.fill
+import com.fasterxml.jackson.annotation.JsonInclude
+import tri.ai.prompt.PromptDef
 
 /**
  * An MCP specification prompt.
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  */
-open class McpPrompt(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class McpPrompt(
+    val id: String,
     val name: String,
     val title: String? = null,
     val description: String? = null,
-    val arguments: List<McpPromptArgument>? = null
+    val arguments: List<McpPromptArg>? = null
 )
 
 /** An argument for an MCP prompt. */
-class McpPromptArgument(
+data class McpPromptArg(
     val name: String,
     val description: String,
     val required: Boolean
 )
 
-/** MCP prompt backed by a mustache template. */
-class McpPromptWithTemplate(
-    _name: String,
-    _title: String,
-    _description: String,
-    _arguments: List<McpPromptArgument>,
-    val template: String
-) :
-    McpPrompt(_name, _title, _description, _arguments) {
-
-    /** Fills the template with the provided arguments. */
-    fun fill(args: Map<String, Any>) = template.fill(args)
-}
+/** Converts a prompt to an MCP contract prompt. */
+fun PromptDef.toMcpContract() = McpPrompt(
+    id = id,
+    name = name ?: id.substringAfterLast('/').substringBefore("@"),
+    title = title,
+    description = description,
+    arguments = args.map { arg ->
+        McpPromptArg(
+            name = arg.name,
+            description = arg.description ?: "No description provided",
+            required = arg.required
+        )
+    }
+)

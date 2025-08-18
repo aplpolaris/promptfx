@@ -1,0 +1,33 @@
+---
+groupId: examples
+defaults:
+  category: examples
+  tags: [ testing ]
+prompts:
+
+  - id: examples/hello-world@1.0.0
+    title: Hello World Example
+    template: |
+      Hello, world!
+      This is an example prompt.
+      Input: {{{input}}}
+      Output: 
+
+  - id: examples/color@1.0.0
+    title: Color Example
+    tags: [ color ]
+    template: |
+      Create a 6-digit CSS code (e.g. `#808080`) for a color like the following text.
+      text: {{input}}
+      background-color: #
+
+  - id: examples/emoji@1.0.0
+    title: Emoji Example
+    tags: [ emoji ]
+    template: |
+      Text: I love you
+      Emoji: ❤️
+      Text: Star Wars
+      Emoji: 💫🗡
+      Text: {{input}}
+      Emoji:

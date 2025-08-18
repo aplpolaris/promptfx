@@ -6,7 +6,7 @@ rag_qa_prefilter_json:
   description: Generate JSON to prefilter large document sets based on user queries.
   modeOptions: []
   promptConfig:
-    id: rag_qa_prefilter_json
+    id: docs-qa/prefilter-json
     template-prompt: |
       You are acting as a preprocessor that determines an appropriate next step based on a user's question in a chat field. Users might have general questions (answerable with latent information in a large language model), or might have more domain specific questions (answerable using RAG based on information in a document database). Your job is to (i) determine the degree to which each method is appropriate for the user's inquiry, and (ii) in the latter case, determine if there are any appropriate filter criteria to downselect the documents.
 
@@ -52,7 +52,7 @@ math_unit_conversion:
         - Kilogram
         - Liter
   promptConfig:
-    id: math_unit_conversion
+    id: math/unit_conversion
     template-prompt: |
       Enter the value to convert and the unit type to convert from, and specify the unit to convert to:
       '''
@@ -68,7 +68,7 @@ math_calculations:
   title: Math Calculations
   description: Perform various math calculations efficiently.
   promptConfig:
-    id: math-calculations
+    id: math/calculations
     template-prompt: |
       Perform math calculations on the following numbers ({{OPERATION_TYPE}}):
       '''
@@ -90,7 +90,7 @@ date-extraction:
   title: Date Extraction
   description: Extract all dates from input text and provide as a list.
   promptConfig:
-    id: date-extraction
+    id: text-extract/dates
   modeOptions:
     - templateId: DATE_FORMAT
       label: Date Format
@@ -107,7 +107,7 @@ entity-extraction:
   title: Entity Extraction
   description: Extract entities from text (testing runtime override)
   promptConfig:
-    id: entity-extraction
+    id: text-extract/entities
   modeOptions:
     - id: entities
       templateId: mode

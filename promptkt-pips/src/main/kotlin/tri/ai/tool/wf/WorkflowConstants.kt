@@ -27,11 +27,13 @@ const val RESULT = "result"
 const val ANSWERED = "answered"
 const val RATIONALE = "rationale"
 
-const val AGGREGATOR_PROMPT_ID = "tool-aggregate"
+const val PLANNER_PROMPT_ID = "workflow/planning"
+
+const val AGGREGATOR_PROMPT_ID = "workflow/aggregation"
 const val USER_REQUEST_PARAM = "user_request"
 const val INPUTS_PARAM = "inputs"
 
-const val VALIDATOR_PROMPT_ID = "tool-validate"
+const val VALIDATOR_PROMPT_ID = "workflow/validation"
 const val PROPOSED_RESULT_PARAM = "proposed_result"
 const val VALIDATED_RESULT = "validated_result"
 const val FINAL_RESULT_ID = "${WorkflowValidatorTask.TASK_ID}.$VALIDATED_RESULT"

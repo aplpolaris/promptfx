@@ -20,9 +20,10 @@
 package tri.ai.tool.wf
 
 import tri.ai.openai.OpenAiCompletionChat
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.template
 
-val PROMPTS = AiPromptLibrary.readResource<WorkflowExecutor>()
+val PROMPTS = PromptLibrary.readFromResourceDirectory<WorkflowExecutor>()
 
 /** Solver that takes a single input, provides a single output, based on an LLM chat request. */
 class ChatSolver(
@@ -31,13 +32,13 @@ class ChatSolver(
     inputDescription: String,
     outputDescription: String,
     val promptId: String
-) : WorkflowSolver(name, description, mapOf("input" to inputDescription), mapOf("result" to outputDescription)) {
+) : WorkflowSolver(name, description, mapOf(INPUT to inputDescription), mapOf(RESULT to outputDescription)) {
     override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
         val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")
-        val prompt = PROMPTS.fill(promptId, "input" to inputData)
+        val prompt = PROMPTS.get(promptId)!!.template().fillInput(inputData)
         val result = OpenAiCompletionChat().complete(prompt, tokens = 1000)
 
         return solveStep(

@@ -1,0 +1,23 @@
+# tri.ai.tool.wf.resources
+#
+# Syntax:
+#  - mustache templates: https://mustache.github.io/mustache.5.html
+#  - double braces to insert text {{...}}
+#  - triple braces to insert text without escaping HTML {{{...}}}
+#
+---
+groupId: tools
+defaults: { category: tools }
+prompts:
+  - id: tools/tool-query@1.0.0
+    title: Query Tool
+    template: |
+      {{{input}}}
+  - id: tools/tool-timeline@1.0.0
+    title: Timeline Tool
+    template: |
+      Create a JSON object that can be used to plot a timeline of the following information:
+      {{{input}}}
+      The result should confirm to the vega-lite spec, using either a Gantt chart or a dot plot.
+      Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
+      Provide the JSON result only, no explanation.
