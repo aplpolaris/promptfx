@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -33,7 +33,7 @@ import tri.promptfx.ui.checkError
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptValidatorView]. */
-class PromptValidatorPlugin : NavigableWorkspaceViewImpl<PromptValidatorView>("Tools", "Prompt Validator", type = PromptValidatorView::class)
+class PromptValidatorPlugin : NavigableWorkspaceViewImpl<PromptValidatorView>("Prompts", "Prompt Validator", type = PromptValidatorView::class)
 
 /** View with a prompt for testing, and a second prompt for validation. */
 class PromptValidatorView : AiPlanTaskView(
@@ -88,6 +88,6 @@ class PromptValidatorView : AiPlanTaskView(
     }.planner
 
     companion object {
-        private const val PROMPT_VALIDATE_PREFIX = "prompt-validate"
+        private const val PROMPT_VALIDATE_PREFIX = "validate"
     }
 }

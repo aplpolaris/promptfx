@@ -60,6 +60,14 @@ class PromptLibrary {
         }
     }
 
+    private fun reindex(prompts: List<PromptDef>) {
+        byId.clear()
+        byBare.clear()
+        byCategory.clear()
+        byTag.clear()
+        prompts.forEach { addPrompt(it) }
+    }
+
     //endregion
 
     /** Get a prompt by exact id or by bare id (returns latest). */
@@ -89,12 +97,12 @@ class PromptLibrary {
 
     companion object {
 
-        var RUNTIME_INSTANCE: PromptLibrary = loadRuntimePromptLibrary()
-        var INSTANCE: PromptLibrary = loadDefaultPromptLibrary()
+        val RUNTIME_INSTANCE: PromptLibrary = loadRuntimePromptLibrary()
+        val INSTANCE: PromptLibrary = loadDefaultPromptLibrary()
 
         fun refreshRuntimePrompts() {
-            INSTANCE = loadDefaultPromptLibrary()
-            RUNTIME_INSTANCE = loadRuntimePromptLibrary()
+            INSTANCE.reindex(loadDefaultPromptLibrary().list())
+            RUNTIME_INSTANCE.reindex(loadRuntimePromptLibrary().list())
         }
 
         private fun loadDefaultPromptLibrary() = PromptLibrary().apply {

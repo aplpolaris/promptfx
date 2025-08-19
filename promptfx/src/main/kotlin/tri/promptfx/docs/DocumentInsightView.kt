@@ -216,7 +216,7 @@ class DocumentInsightView: AiPlanTaskView(
         private const val PREF_APP = "promptfx"
         private const val PREF_DOCS_FOLDER = "document-insights.folder"
 
-        private const val DOCUMENT_MAP_PREFIX = "document-map"
-        internal const val DOCUMENT_REDUCE_PREFIX = "document-reduce"
+        private const val DOCUMENT_MAP_PREFIX = "docs-map"
+        internal const val DOCUMENT_REDUCE_PREFIX = "docs-reduce"
     }
 }

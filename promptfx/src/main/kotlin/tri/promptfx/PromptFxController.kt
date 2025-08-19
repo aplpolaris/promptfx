@@ -29,7 +29,7 @@ import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiPipelineResult
 import tri.ai.text.chunks.SmartTextChunker
-import tri.promptfx.tools.PromptTraceHistoryModel
+import tri.promptfx.prompts.PromptTraceHistoryModel
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {

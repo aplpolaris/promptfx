@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui.trace
+package tri.promptfx.ui.prompt
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleDoubleProperty
@@ -33,12 +33,14 @@ import tri.ai.openai.OpenAiModelIndex
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.*
-import tri.promptfx.tools.PromptTraceHistoryView
+import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.util.ui.graphic
 import tri.util.ui.loadAudio
 
 /** View showing all details of a prompt trace. */
 class PromptTraceDetailsUi : Fragment("Prompt Trace") {
+
+    // TODO - add a PromptDetailsUi dialog or view
 
     var trace = SimpleObjectProperty<AiPromptTraceSupport<*>>()
 

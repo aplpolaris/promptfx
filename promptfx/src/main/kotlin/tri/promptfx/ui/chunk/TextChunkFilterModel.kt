@@ -30,7 +30,7 @@ import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.prompt.PromptTemplate
-import tri.promptfx.tools.PromptScriptView
+import tri.promptfx.prompts.PromptScriptView
 import java.util.regex.PatternSyntaxException
 import kotlin.error
 

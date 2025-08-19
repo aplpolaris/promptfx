@@ -83,7 +83,7 @@ class PromptFxWorkspaceModel(
         private fun groupIcon(category: String): FontAwesomeIconView {
             return when (category) {
                 "API" -> FontAwesomeIcon.CLOUD.graphic.forestGreen
-                "Tools" -> FontAwesomeIcon.WRENCH.graphic.forestGreen
+                "Prompts" -> FontAwesomeIcon.WRENCH.graphic.forestGreen
                 "Documents" -> FontAwesomeIcon.FILE.graphic.forestGreen
                 "Text" -> FontAwesomeIcon.FONT.graphic.forestGreen
                 "Fun" -> FontAwesomeIcon.SMILE_ALT.graphic.forestGreen

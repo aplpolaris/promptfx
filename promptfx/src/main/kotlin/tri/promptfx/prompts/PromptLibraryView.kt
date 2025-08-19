@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.prompts
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -31,13 +31,16 @@ import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.ui.prompt.PromptDetailsUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptTemplateView]. */
-class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Tools", "Prompt Library", type = PromptLibraryView::class)
+class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Prompts", "Prompt Library", type = PromptLibraryView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptLibraryView : AiTaskView("Prompt Library", "View and customize prompt templates.") {
+
+    // TODO - make the prompt details ui stretch the whole height
 
     private val lib = PromptLibrary.INSTANCE
     private val runtimeLib = PromptLibrary.RUNTIME_INSTANCE
@@ -46,7 +49,6 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     private var promptIdFilter: (String) -> Boolean = { true }
     private val filteredPromptEntries = observableListOf(promptEntries)
     private val promptSelection = SimpleObjectProperty<PromptDef>()
-    private val promptTemplate = Bindings.createStringBinding({ promptSelection.value?.template ?: "" }, promptSelection)
 
     init {
         input {
@@ -63,11 +65,6 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                         refilter()
                     }
                 }
-
-                button("Try in Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-                    enableWhen(promptSelection.isNotNull)
-                    action { sendToTemplateView() }
-                }
                 spacer()
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the prompt list.")
@@ -78,7 +75,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
                 button("", FontAwesomeIconView(FontAwesomeIcon.EDIT)) {
-                    tooltip("Edit the custom prompts.yaml file in your default editor.")
+                    tooltip("Edit custom-prompts.yaml file in your default editor.")
                     action {
                         val file = PromptLibrary.RUNTIME_PROMPTS_FILE
                         if (!file.exists()) {
@@ -92,7 +89,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 vgrow = Priority.ALWAYS
                 promptSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    graphic = Text(it.id).apply {
+                    graphic = Text(it.bareId).apply {
                         tooltip(it.template)
                         if (runtimeLib.get(it.id) != null) {
                             style = "-fx-font-weight: bold"
@@ -104,10 +101,15 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
         }
         outputPane.clear()
         output {
-            textarea(promptTemplate) {
-                isEditable = true
-                isWrapText = true
-                vgrow = Priority.ALWAYS
+            toolbar {
+                button("Try in Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                    enableWhen(promptSelection.isNotNull)
+                    action { sendToTemplateView() }
+                }
+            }
+            find<PromptDetailsUi>().apply {
+                promptSelection.onChange { prompt.set(it) }
+                this@output.add(this)
             }
         }
         hideParameters()

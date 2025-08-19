@@ -31,9 +31,9 @@ import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.library.TextLibraryInfo
-import tri.promptfx.tools.PromptTemplateView
+import tri.promptfx.prompts.PromptTemplateView
 import tri.promptfx.library.TextManagerView
-import tri.promptfx.tools.PromptTraceHistoryView
+import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.promptfx.ui.NavigableWorkspaceViewRuntimeMcp

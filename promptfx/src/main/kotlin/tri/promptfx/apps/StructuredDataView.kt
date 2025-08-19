@@ -66,7 +66,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
             field("Format as") {
                 combobox(formatMode, formatModeOptions.keys.toList()) { isEditable = true }
             }
-            promptfield(prompt = PromptSelectionModel("text-to-json"), workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("text-extract/text-to-json"), workspace = workspace)
         }
         addDefaultTextCompletionParameters(common)
         parameters("Response") {

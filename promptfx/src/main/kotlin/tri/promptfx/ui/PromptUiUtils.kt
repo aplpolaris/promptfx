@@ -49,6 +49,10 @@ fun EventTarget.promptfield(
         (inputContainer as? HBox)?.spacing = 5.0
         combobox(prompt.id, promptIdList + PromptSelectionModel.CUSTOM) {
             maxWidth = 200.0
+            cellFormat(workspace.scope) {
+                text = it.substringBefore("@")
+                tooltip(it)
+            }
         }
         togglebutton(text = "") {
             graphic = FontAwesomeIconView(FontAwesomeIcon.EYE)

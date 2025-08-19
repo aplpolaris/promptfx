@@ -55,18 +55,18 @@ object StarshipContentConfig {
     /** Prompt info for secondary prompts in pipeline. */
     val promptInfo = config["prompt-info"] as? List<Any?> ?:
         listOf(
-            mapOf("text-simplify-audience" to mapOf("audience" to "a general audience")),
-            "document-reduce-outline",
-            "document-reduce-technical-terms",
-            mapOf("translate-text" to mapOf("instruct" to "a random language")),
+            mapOf("text-summarize/simplify-audience" to mapOf("audience" to "a general audience")),
+            "docs-reduce/outline",
+            "docs-reduce/technical-terms",
+            mapOf("text-translate/translate" to mapOf("instruct" to "a random language")),
         )
 
     /** Options that can be dropped into custom prompts. */
     @Suppress("UNCHECKED_CAST")
     val userOptions = config["user-options"] as? Map<String, Map<String, List<String>>> ?:
         mapOf(
-            "text-simplify-audience" to mapOf("audience" to listOf("a general audience", "elementary school students", "high school students", "software engineers", "executives")),
-            "translate-text" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
+            "text-summarize/simplify-audience" to mapOf("audience" to listOf("a general audience", "elementary school students", "high school students", "software engineers", "executives")),
+            "text-translate/translate-text" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
         )
 
     //region RANDOM QUESTION CONFIGS

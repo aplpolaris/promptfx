@@ -151,7 +151,7 @@ class DocumentQaView: AiPlanTaskView(
         }
         addDefaultTextCompletionParameters(common)
         parameters("Prompt Template") {
-            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
+            tooltip("Loads prompts with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
             promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
             promptfield("Snippet Joiner", joinerPrompt, promptsWithPrefix(JOINER_PREFIX), workspace)
         }

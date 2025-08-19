@@ -31,7 +31,7 @@ import tri.promptfx.integration.WeatherViewPlugin;
 import tri.promptfx.integration.WikipediaViewPlugin;
 import tri.promptfx.library.TextClusterPlugin;
 import tri.promptfx.library.TextManagerPlugin;
-import tri.promptfx.tools.*;
+import tri.promptfx.prompts.*;
 import tri.util.ui.NavigableWorkspaceView;
 
 // command line settings:
@@ -74,7 +74,7 @@ module tri.promptfx {
     opens tri.promptfx.integration to com.fasterxml.jackson.databind;
     opens tri.promptfx.library to com.fasterxml.jackson.databind;
     opens tri.promptfx.meta to com.fasterxml.jackson.databind;
-    opens tri.promptfx.tools to com.fasterxml.jackson.databind;
+    opens tri.promptfx.prompts to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui.docs to com.fasterxml.jackson.databind;
     opens tri.util.ui.starship to com.fasterxml.jackson.databind;
@@ -87,11 +87,11 @@ module tri.promptfx {
     exports tri.promptfx.integration;
     exports tri.promptfx.library;
     exports tri.promptfx.meta;
-    exports tri.promptfx.tools;
+    exports tri.promptfx.prompts;
     exports tri.promptfx.ui;
     exports tri.promptfx.ui.chunk;
     exports tri.promptfx.ui.docs;
-    exports tri.promptfx.ui.trace;
+    exports tri.promptfx.ui.prompt;
     exports tri.util.ui;
     exports tri.util.ui.pdf;
     exports tri.util.ui.starship;

@@ -47,7 +47,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
     private val image = SimpleObjectProperty<Image>(null)
     private val model = SimpleObjectProperty(PromptFxModels.visionLanguageModelDefault())
 
-    private val prompt = PromptSelectionModel("$PROMPT_PREFIX-basic")
+    private val prompt = PromptSelectionModel("$PROMPT_PREFIX/basic")
 
     init {
         addInputImageArea(image)
@@ -57,7 +57,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an ima
             }
         }
         parameters("Prompt") {
-            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
+            tooltip("Loads prompts with prefix $PROMPT_PREFIX")
             promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
         parameters("Model Parameters") {

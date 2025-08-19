@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
@@ -45,13 +45,13 @@ import tri.promptfx.ui.docs.TextLibraryToolbar
 import tri.promptfx.ui.docs.TextLibraryViewModel
 import tri.promptfx.ui.editablepromptui
 import tri.promptfx.ui.promptfield
-import tri.promptfx.ui.trace.PromptTraceCardList
+import tri.promptfx.ui.prompt.PromptTraceCardList
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.sliderwitheditablelabel
 
 /** Plugin for the [PromptScriptView]. */
-class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Tools", "Prompt Scripting", WorkspaceViewAffordance.COLLECTION_ONLY, PromptScriptView::class)
+class PromptScriptPlugin : NavigableWorkspaceViewImpl<PromptScriptView>("Prompts", "Prompt Scripting", WorkspaceViewAffordance.COLLECTION_ONLY, PromptScriptView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptScriptView : AiPlanTaskView("Prompt Scripting",
@@ -71,8 +71,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private lateinit var promptUi: EditablePromptUi
 
     // options for prompted summary of all results
-    private val summaryPrompt = PromptSelectionModel("$TEXT_SUMMARIZER_PREFIX-summarize")
-    private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX-basic")
+    private val summaryPrompt = PromptSelectionModel("$TEXT_SUMMARIZER_PREFIX/summarize")
+    private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX/basic")
 
     // result list
     private val promptTraces = observableListOf<AiPromptTraceSupport<*>>()
@@ -124,7 +124,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         parameters("LLM Aggregation Options") {
             enableWhen(summarizeResults)
-            tooltip("Loads from prompts.yaml with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
+            tooltip("Loads prompts with prefix $TEXT_JOINER_PREFIX and $TEXT_SUMMARIZER_PREFIX")
             promptfield("Text Joiner", joinerPrompt, promptsWithPrefix(TEXT_JOINER_PREFIX), workspace)
             promptfield("Summarizer", summaryPrompt, promptsWithPrefix(TEXT_SUMMARIZER_PREFIX), workspace)
         }
@@ -243,8 +243,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     companion object {
-        private const val TEXT_SUMMARIZER_PREFIX = "document-reduce"
-        private const val TEXT_JOINER_PREFIX = "text-joiner"
+        private const val TEXT_SUMMARIZER_PREFIX = "docs-reduce"
+        private const val TEXT_JOINER_PREFIX = "joiners"
 
         private fun String.cleanedup() = lowercase().removeSuffix(".")
     }

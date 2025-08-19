@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleBooleanProperty
 import tornadofx.*
@@ -26,12 +26,12 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.promptfx.ui.PromptResultArea
-import tri.promptfx.ui.trace.PromptTraceCardList
-import tri.promptfx.ui.trace.PromptTraceDetailsUi
+import tri.promptfx.ui.prompt.PromptTraceCardList
+import tri.promptfx.ui.prompt.PromptTraceDetailsUi
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [PromptTemplateView]. */
-class PromptTraceHistoryPlugin : NavigableWorkspaceViewImpl<PromptTraceHistoryView>("Tools", "Prompt Trace History", type = PromptTraceHistoryView::class)
+class PromptTraceHistoryPlugin : NavigableWorkspaceViewImpl<PromptTraceHistoryView>("Prompts", "Prompt Trace History", type = PromptTraceHistoryView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and export history of prompt executions.") {

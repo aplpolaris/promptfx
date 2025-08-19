@@ -1,8 +1,7 @@
-# This file is used to store prompts that are created at runtime.
 #
-# Usage:
-#  - preconfigured prompt file in "prompts.yaml" in promptkt
-#  - custom prompt file in "prompts.yaml" in the current directory
+# custom-prompts.yaml
+#
+# This file is used to store prompts that are created at runtime.
 #
 # Syntax:
 #  - mustache templates: https://mustache.github.io/mustache.5.html

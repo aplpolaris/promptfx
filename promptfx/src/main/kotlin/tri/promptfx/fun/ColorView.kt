@@ -42,7 +42,7 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
     init {
         addInputTextArea(input)
         parameters("Prompt") {
-            promptfield(prompt = PromptSelectionModel("example-color"), workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("examples/color"), workspace = workspace)
             with (common) {
                 numResponses()
             }

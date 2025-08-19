@@ -26,8 +26,8 @@ import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.PromptDef
-import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.PromptTemplate
+import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.templatemenubutton
@@ -36,7 +36,7 @@ import tri.util.ui.templatemenubutton
 class EditablePromptUi(private val promptFilter: (PromptDef) -> Boolean, val instruction: String): Fragment() {
 
     private val prompts
-        get() = PromptLibrary.INSTANCE.list(promptFilter).map { it.id }
+        get() = PromptFxGlobals.promptLibrary.list(promptFilter).map { it.id }
     val templateText = SimpleStringProperty("")
 
     init {
@@ -55,7 +55,7 @@ class EditablePromptUi(private val promptFilter: (PromptDef) -> Boolean, val ins
         toolbar {
             text(instruction)
             spacer()
-            templatemenubutton(templateText, promptFilter)
+            templatemenubutton(templateText, promptFilter = promptFilter)
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                 tooltip("Try out the current prompt in the Prompt Template view.")
                 action { find<PromptFxWorkspace>().launchTemplateView(templateText.value) }

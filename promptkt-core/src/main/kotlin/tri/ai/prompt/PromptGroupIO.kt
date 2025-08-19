@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import tri.util.info
+import tri.util.fine
 import tri.util.warning
 import java.io.InputStreamReader
 import java.net.JarURLConnection
@@ -46,7 +46,7 @@ object PromptGroupIO {
 
     /** Load a single PromptGroup from a classpath resource. */
     fun readFromResource(resourcePath: String, cl: ClassLoader = Thread.currentThread().contextClassLoader): PromptGroup {
-        info<PromptGroupIO>("Loading prompt group from resource: $resourcePath")
+        fine<PromptGroupIO>("Loading prompt group from resource: $resourcePath")
         val isr = cl.getResourceAsStream(resourcePath)
             ?: PromptGroupIO::class.java.getResourceAsStream(resourcePath)
             ?: PromptGroupIO::class.java.getResourceAsStream("resources/$resourcePath")
@@ -67,7 +67,7 @@ object PromptGroupIO {
     /** Load a single PromptGroup from a runtime file. */
     fun readFromFile(path: Path) =
         Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
-            info<PromptGroupIO>("Loading prompt group from file: $path")
+            fine<PromptGroupIO>("Loading prompt group from file: $path")
             MAPPER.readValue(reader, PromptGroup::class.java).resolved()
         }
 
@@ -124,7 +124,6 @@ object PromptGroupIO {
 
         val basePath = basePackage.replace('.', '/') + "/"
         cl.getResources(basePath).toList().forEach { url ->
-            println(url)
             when (url.protocol.lowercase()) {
                 "file" ->
                     // resources in exploded directory (e.g., during dev/tests)

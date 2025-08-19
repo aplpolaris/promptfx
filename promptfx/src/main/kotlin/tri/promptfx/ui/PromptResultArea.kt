@@ -35,10 +35,10 @@ import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.trace.PromptTraceDetailsUi
-import tri.promptfx.ui.trace.exportPromptTraceDatabase
-import tri.promptfx.ui.trace.exportPromptTraceList
-import tri.promptfx.ui.trace.exportPromptTraceListCsv
+import tri.promptfx.ui.prompt.PromptTraceDetailsUi
+import tri.promptfx.ui.prompt.exportPromptTraceDatabase
+import tri.promptfx.ui.prompt.exportPromptTraceList
+import tri.promptfx.ui.prompt.exportPromptTraceListCsv
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog

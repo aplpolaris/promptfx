@@ -50,7 +50,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
     private val itemCategory = SimpleStringProperty("")
     private val sampleItems = SimpleStringProperty("")
 
-    private val prompt = PromptSelectionModel(PROMPT_PREFIX)
+    private val prompt = PromptSelectionModel(promptsWithPrefix(PROMPT_PREFIX).first())
 
     private val output = SimpleObjectProperty<ListPromptResult>()
     private val outputItems = observableListOf<String>()

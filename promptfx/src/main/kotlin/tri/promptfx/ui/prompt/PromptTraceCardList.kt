@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui.trace
+package tri.promptfx.ui.prompt
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
@@ -50,7 +50,7 @@ import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.tools.PromptTraceFilter
+import tri.promptfx.prompts.PromptTraceFilter
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 import java.io.File

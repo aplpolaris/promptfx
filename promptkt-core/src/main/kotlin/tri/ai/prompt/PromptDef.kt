@@ -30,15 +30,18 @@ data class PromptDef(
 
     /** Category, optional if derived from id prefix. */
     val category: String? = null,
+    /** Tags for discoverability and bucketing. */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    val tags: List<String> = listOf(),
+
     /** Human-readable name; defaults to last path segment. */
     val name: String? = null,
     /** Display title. */
     val title: String? = null,
     /** Display description. */
     val description: String? = null,
-    /** Tags for discoverability and bucketing. */
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    val tags: List<String> = listOf(),
+    /** Version. */
+    val version: String? = null,
 
     /** Arguments contract. */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -46,13 +49,10 @@ data class PromptDef(
 
     /** Mustache template string. */
     val template: String,
-
     /** Rendering context/hints. */
-    val contextInject: ContextConfig? = null,
-    // TODO - consider inclusion of additional context: rendering engine, ...
+    val contextInject: ContextConfig? = null
 
-    /** Version. */
-    val version: String? = null
+    // TODO - consider inclusion of additional context: rendering engine, ...
     // TODO - consider inclusion of additional tracking information: aliases, deprecated, ...
 ) {
     @get:JsonIgnore

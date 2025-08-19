@@ -149,7 +149,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 }
                 label(maxTokens.asString())
             }
-            promptfield(prompt = PromptSelectionModel("chat-back"), workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("chat/chat-back"), workspace = workspace)
         }
     }
 

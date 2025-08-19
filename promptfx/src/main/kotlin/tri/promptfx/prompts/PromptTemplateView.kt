@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.tools
+package tri.promptfx.prompts
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
@@ -25,11 +25,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.aitask
 import tri.ai.pips.taskPlan
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.*
-import tri.ai.prompt.trace.PromptInfo.Companion.filled
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxModels
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -38,7 +36,7 @@ import tri.util.warning
 import java.time.LocalDate
 
 /** Plugin for the [PromptTemplateView]. */
-class PromptTemplatePlugin : NavigableWorkspaceViewImpl<PromptTemplateView>("Tools", "Prompt Template", type = PromptTemplateView::class)
+class PromptTemplatePlugin : NavigableWorkspaceViewImpl<PromptTemplateView>("Prompts", "Prompt Template", type = PromptTemplateView::class)
 
 /** A view designed to help you test prompt templates. */
 class PromptTemplateView : AiPlanTaskView("Prompt Template",
@@ -57,7 +55,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
             toolbar {
                 text("Template:")
                 spacer()
-                templatemenubutton(template)
+                templatemenubutton(template, isNestedByCategory = true)
             }
             textarea(template) {
                 promptText = "Enter a prompt template, using syntax like {{field}} for fields to fill in."

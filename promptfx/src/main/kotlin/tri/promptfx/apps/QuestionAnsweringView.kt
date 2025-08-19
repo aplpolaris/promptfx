@@ -37,13 +37,13 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
     "Enter question in the top box, and the text with an answer in the box below.",) {
 
     companion object {
-        private const val PROMPT_PREFIX = "question-answer"
+        private const val PROMPT_PREFIX = "text-qa"
     }
 
     private val instruct = SimpleStringProperty("")
     private val input = SimpleStringProperty("")
 
-    private val prompt = PromptSelectionModel(PROMPT_PREFIX)
+    private val prompt = PromptSelectionModel(promptsWithPrefix(PROMPT_PREFIX).first())
 
     init {
         addInputTextArea(instruct) {
@@ -59,7 +59,7 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
             }
         }
         parameters("Prompt Template") {
-            tooltip("Loads from prompts.yaml with prefix $PROMPT_PREFIX")
+            tooltip("Loads prompts with prefix $PROMPT_PREFIX")
             promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
         addDefaultTextCompletionParameters(common)

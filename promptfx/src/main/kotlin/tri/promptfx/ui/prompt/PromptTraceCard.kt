@@ -17,10 +17,9 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.ui.trace
+package tri.promptfx.ui.prompt
 
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
 import tornadofx.Fragment
 import tornadofx.label
 import tornadofx.onLeftClick
