@@ -82,6 +82,8 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                             checklistmenu("Source", filter.sourceFilters) { refilter() }
                             checklistmenu("Type", filter.typeFilters, ::graphic) { refilter() }
                             checklistmenu("Lifecycle", filter.lifecycleFilters) { refilter() }
+                            checklistmenu<DataModality>("Inputs", filter.inputFilters, { graphics(listOf(it)).firstOrNull() }) { refilter() }
+                            checklistmenu<DataModality>("Outputs", filter.outputFilters, { graphics(listOf(it)).firstOrNull() }) { refilter() }
                             checkmenuitem("Show All") {
                                 isSelected = true
                                 action { filter.model.selectAll() }
