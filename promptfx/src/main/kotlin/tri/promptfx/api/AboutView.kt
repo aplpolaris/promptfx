@@ -32,6 +32,52 @@ import tri.util.ui.graphic
 /** About view showing application information. */
 class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx application", showInput = false) {
 
+    companion object {
+        /**
+         * Gets the application version dynamically from the package manifest or fallback sources.
+         * This allows the version to be automatically updated without manual code changes.
+         * 
+         * The method tries multiple approaches in order:
+         * 1. Package implementation version (available in packaged JARs)
+         * 2. Version from resources/version.properties (custom approach)
+         * 3. Version from Maven-generated pom.properties (standard Maven approach)
+         * 4. Fallback to hardcoded version if none of the above work
+         * 
+         * @return The application version string, e.g., "0.11.2-SNAPSHOT"
+         */
+        fun getApplicationVersion(): String {
+            // Try to get version from package implementation version (works in packaged JAR)
+            AboutView::class.java.`package`?.implementationVersion?.let { version ->
+                return version
+            }
+            
+            // Try to get version from resources (fallback for development)
+            try {
+                val properties = java.util.Properties()
+                AboutView::class.java.getResourceAsStream("/version.properties")?.use { stream ->
+                    properties.load(stream)
+                    properties.getProperty("version")?.let { return it }
+                }
+            } catch (e: Exception) {
+                // Ignore, continue to fallback
+            }
+            
+            // Try to read from Maven filtered resources (another common approach)
+            try {
+                AboutView::class.java.getResourceAsStream("/META-INF/maven/com.googlecode.blaisemath/promptfx/pom.properties")?.use { stream ->
+                    val properties = java.util.Properties()
+                    properties.load(stream)
+                    properties.getProperty("version")?.let { return it }
+                }
+            } catch (e: Exception) {
+                // Ignore, continue to fallback
+            }
+            
+            // Default fallback version
+            return "0.11.2-SNAPSHOT"
+        }
+    }
+
     init {
         // Hide parameters and input since this is an information-only view
         hideParameters()
@@ -67,7 +113,7 @@ class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx a
                         }
                     }
                     
-                    label("Version 0.11.2-SNAPSHOT") {
+                    label("Version ${getApplicationVersion()}") {
                         style {
                             fontSize = 18.px
                             fontWeight = FontWeight.NORMAL
