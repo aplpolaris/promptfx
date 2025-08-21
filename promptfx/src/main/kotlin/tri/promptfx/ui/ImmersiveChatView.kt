@@ -166,7 +166,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
                 (baseComponent as DocumentQaView).enableHyperlinkActions(listOf(it))
             }
             // Calculate and set automated font size based on response length
-            val fontSize = calculateOptimalFontSize(it.text)
+            val fontSize = calculateOptimalFontSize(it.toString())
             output.updateFontSize(fontSize)
             output.animateText(it.toFxNodes(), onFinished = {
                 (root.scene.lookup("#chat-input") as TextField).selectAll()
