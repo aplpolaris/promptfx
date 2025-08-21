@@ -29,6 +29,7 @@ object PromptFxModels {
 
     fun textCompletionModels() = policy.textCompletionModels()
     fun textCompletionModelDefault() = policy.textCompletionModelDefault()
+    fun pureCompletionModelDefault() = policy.pureCompletionModelDefault()
 
     fun embeddingModels() = policy.embeddingModels()
     fun embeddingModelDefault() = policy.embeddingModelDefault()

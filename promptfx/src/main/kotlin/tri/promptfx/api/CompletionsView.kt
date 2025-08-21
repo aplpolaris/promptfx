@@ -33,7 +33,7 @@ import tri.promptfx.PromptFxModels
 class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
 
     private val input = SimpleStringProperty("")
-    private val model = SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
+    private val model = SimpleObjectProperty(PromptFxModels.pureCompletionModelDefault())
     private var common = ModelParameters()
 
     init {

@@ -33,7 +33,16 @@ abstract class PromptFxPolicy {
     open fun embeddingModelDefault() = embeddingModels().first()
 
     abstract fun textCompletionModels(): List<TextCompletion>
-    open fun textCompletionModelDefault() = textCompletionModels().first()
+    open fun textCompletionModelDefault() = 
+        // Prefer chat-based completion models over pure completion models for most use cases
+        textCompletionModels().find { it.javaClass.simpleName.contains("Chat") } 
+            ?: textCompletionModels().first()
+
+    /** Gets the first pure completion model, or falls back to any completion model. Used specifically by CompletionsView. */
+    open fun pureCompletionModelDefault() = 
+        // Prefer non-chat completion models for the Completions API view
+        textCompletionModels().find { !it.javaClass.simpleName.contains("Chat") } 
+            ?: textCompletionModels().first()
 
     abstract fun chatModels(): List<TextChat>
     open fun chatModelDefault() = chatModels().firstOrNull()
