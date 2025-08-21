@@ -19,6 +19,7 @@
  */
 import tri.ai.core.TextPlugin;
 import tri.promptfx.agents.*;
+import tri.promptfx.settings.AboutPlugin;
 import tri.promptfx.text.*;
 import tri.promptfx.docs.*;
 import tri.promptfx.fun.*;
@@ -61,11 +62,12 @@ module tri.promptfx {
     opens tri.promptfx to com.fasterxml.jackson.databind;
     opens tri.promptfx.agents to com.fasterxml.jackson.databind;
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
-    opens tri.promptfx.text to com.fasterxml.jackson.databind;
     opens tri.promptfx.docs to tornadofx, com.github.mustachejava;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.multimodal to com.fasterxml.jackson.databind;
     opens tri.promptfx.prompts to com.fasterxml.jackson.databind;
+    opens tri.promptfx.settings to com.fasterxml.jackson.databind;
+    opens tri.promptfx.text to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui.docs to com.fasterxml.jackson.databind;
     opens tri.util.ui.starship to com.fasterxml.jackson.databind;
@@ -73,11 +75,12 @@ module tri.promptfx {
     exports tri.promptfx;
     exports tri.promptfx.agents;
     exports tri.promptfx.api;
-    exports tri.promptfx.text;
     exports tri.promptfx.docs;
     exports tri.promptfx.fun;
     exports tri.promptfx.multimodal;
     exports tri.promptfx.prompts;
+    exports tri.promptfx.settings;
+    exports tri.promptfx.text;
     exports tri.promptfx.ui;
     exports tri.promptfx.ui.chunk;
     exports tri.promptfx.ui.docs;
@@ -124,6 +127,9 @@ module tri.promptfx {
             WikipediaViewPlugin,
 
             // 6 - agents
-            AgenticPlugin
+            AgenticPlugin,
+
+            // 7 - settings
+            AboutPlugin
     ;
 }

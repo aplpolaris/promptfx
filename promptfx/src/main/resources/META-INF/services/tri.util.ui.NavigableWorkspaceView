@@ -20,3 +20,4 @@ tri.promptfx.fun.ColorPlugin
 tri.promptfx.fun.WeatherViewPlugin
 tri.promptfx.fun.WikipediaViewPlugin
 tri.promptfx.agents.AgenticPlugin
+tri.promptfx.settings.AboutPlugin
