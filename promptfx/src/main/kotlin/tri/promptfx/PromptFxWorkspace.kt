@@ -139,7 +139,7 @@ class PromptFxWorkspace : Workspace() {
             group("Integrations", FontAwesomeIcon.PLUG.graphic.forestGreen)
 
             group("Documentation", FontAwesomeIcon.BOOK.graphic.forestGreen) {
-                // nothing here, but testing to see this doesn't show up in view
+                hyperlinkview<AboutView>("Documentation", "About PromptFx")
             }
         }
     }
