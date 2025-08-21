@@ -43,14 +43,14 @@ class AiEngineView: View() {
         spacing = 10.0
 
         with (controller) {
-            menubutton("Completions", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                tooltip(completionEngine.value?.toString() ?: "Select the completion engine to use.")
-                completionEngine.onChange { tooltip.text = it.toString() }
-                PromptFxModels.textCompletionModels().forEach { model ->
+            menubutton("Chat", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
+                tooltip(chatService.value?.toString() ?: "Select the chat model to use.")
+                chatService.onChange { tooltip.text = it.toString() }
+                PromptFxModels.chatModels().forEach { model ->
                     item(model.toString()) {
-                        style = menustyle(model.modelId, completionEngine.value?.modelId)
-                        styleProperty().bind(completionEngine.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { completionEngine.set(model) }
+                        style = menustyle(model.modelId, chatService.value?.modelId)
+                        styleProperty().bind(chatService.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { chatService.set(model) }
                     }
                 }
             }
