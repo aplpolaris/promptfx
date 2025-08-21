@@ -34,11 +34,13 @@ import javafx.collections.ObservableList
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.core.ImageSize as CoreImageSize
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.*
 
@@ -66,6 +68,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     quality.set(STANDARD_QUALITY)
                 }
                 DALLE2_ID -> {
+                    imageQualities.setAll(STANDARD_QUALITY)
+                    quality.set(STANDARD_QUALITY)
+                }
+                IMAGEN_3_GENERATE, IMAGEN_3_FAST_GENERATE -> {
+                    numProperty.set(1)
                     imageQualities.setAll(STANDARD_QUALITY)
                     quality.set(STANDARD_QUALITY)
                 }
@@ -202,21 +209,22 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             "style" to imageStyle.value
         ))
         val result = try {
-            val images = controller.openAiPlugin.client.imageURL(
-                ImageCreation(
-                    model = ModelId(model.value),
-                    prompt = input.value,
-                    n = numProperty.value,
-                    size = imageSize.value,
-                    quality = quality.value,
-                    style = imageStyle.value
-                )
+            // Find the appropriate image generator for this model
+            val imageGenerator = PromptFxModels.imageModels().find { it.modelId == model.value }
+                ?: throw UnsupportedOperationException("No image generator found for model: ${model.value}")
+            
+            // Use the generic ImageGenerator interface
+            val imageUrls = imageGenerator.generateImage(
+                text = input.value,
+                size = parseImageSize(imageSize.value),
+                numResponses = numProperty.value
             )
+            
             AiImageTrace(promptInfo, modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiOutputInfo(images.values ?: listOf())
+                AiOutputInfo(imageUrls.map { it.toString() })
             )
-        } catch (x: OpenAIAPIException) {
+        } catch (x: Exception) {
             AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
         }
         result
@@ -287,13 +295,40 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     //endregion
 
+    //region HELPER METHODS
+    
+    /** Convert OpenAI ImageSize to core ImageSize */
+    private fun parseImageSize(openAiSize: ImageSize): CoreImageSize {
+        val sizeStr = openAiSize.size
+        return when (sizeStr) {
+            "256x256" -> CoreImageSize(256, 256)
+            "512x512" -> CoreImageSize(512, 512)
+            "1024x1024" -> CoreImageSize(1024, 1024)
+            "1792x1024" -> CoreImageSize(1792, 1024)
+            "1024x1792" -> CoreImageSize(1024, 1792)
+            else -> {
+                // Try to parse generic WxH format
+                val parts = sizeStr.split("x")
+                if (parts.size == 2) {
+                    CoreImageSize(parts[0].toInt(), parts[1].toInt())
+                } else {
+                    throw UnsupportedOperationException("Unknown image size: $sizeStr")
+                }
+            }
+        }
+    }
+
+    //endregion
+
     companion object {
         private const val DALLE2_ID = "dall-e-2"
         private const val DALLE3_ID = "dall-e-3"
+        private const val IMAGEN_3_GENERATE = "imagen-3.0-generate-001"
+        private const val IMAGEN_3_FAST_GENERATE = "imagen-3.0-fast-generate-001"
 
         private val STANDARD_QUALITY = Quality("standard")
 
-        private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
+        private val IMAGE_MODELS = PromptFxModels.imageModels().map { it.modelId }
         private val IMAGE_SIZES = mapOf(
             DALLE2_ID to listOf(
                 ImageSize.is256x256,
@@ -301,6 +336,16 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 ImageSize.is1024x1024
             ),
             DALLE3_ID to listOf(
+                ImageSize.is1024x1024,
+                ImageSize("1792x1024"),
+                ImageSize("1024x1792")
+            ),
+            IMAGEN_3_GENERATE to listOf(
+                ImageSize.is1024x1024,
+                ImageSize("1792x1024"), 
+                ImageSize("1024x1792")
+            ),
+            IMAGEN_3_FAST_GENERATE to listOf(
                 ImageSize.is1024x1024,
                 ImageSize("1792x1024"),
                 ImageSize("1024x1792")

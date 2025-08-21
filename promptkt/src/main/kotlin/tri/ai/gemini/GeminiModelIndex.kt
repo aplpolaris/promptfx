@@ -34,6 +34,9 @@ object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
     const val GEMINI_15_FLASH = "gemini-1.5-flash"
     const val GEMINI_15_PRO = "gemini-1.5-prop"
 
+    const val IMAGEN_3_GENERATE = "imagen-3.0-generate-001"
+    const val IMAGEN_3_FAST_GENERATE = "imagen-3.0-fast-generate-001"
+
     //endregion
 
 }
