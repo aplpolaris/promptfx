@@ -187,7 +187,7 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
         
         // Define font size bounds
         val minFontSize = 12.0
-        val maxFontSize = 24.0
+        val maxFontSize = 96.0
         
         // Get the TextFlow dimensions from the output component
         val textFlow = try {
