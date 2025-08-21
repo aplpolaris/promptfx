@@ -97,10 +97,11 @@ class PromptFxWorkspace : Workspace() {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
                 separator { }
-                label("Text APIs")
+                label("Text Completion APIs")
+                hyperlinkview<CompletionsView>("API", "Completions")
+                label("Chat APIs")
                 hyperlinkview<ChatViewBasic>("API", "Chat")
                 hyperlinkview<ChatViewAdvanced>("API", "Chat (Advanced)")
-                hyperlinkview<CompletionsView>("API", "Completions")
                 separator { }
                 label("Audio/Visual APIs")
                 hyperlinkview<AudioView>("API", "Audio")
