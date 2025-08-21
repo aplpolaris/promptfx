@@ -132,6 +132,19 @@ class GeminiClient : Closeable {
         return generateContent(modelId, request)
     }
 
+    suspend fun generateImage(modelId: String, prompt: String, numImages: Int = 1, aspectRatio: String = "1:1"): GenerateContentResponse {
+        // Note: This implementation assumes image generation uses the same generateContent endpoint
+        // The actual Gemini Imagen API may use a different endpoint and request format
+        val request = GenerateContentRequest(
+            contents = listOf(Content.text(prompt)),
+            generationConfig = GenerationConfig(
+                candidateCount = numImages,
+                responseMimeType = MIME_TYPE_JPEG
+            )
+        )
+        return generateContent(modelId, request)
+    }
+
     //endregion
 
     override fun close() {
