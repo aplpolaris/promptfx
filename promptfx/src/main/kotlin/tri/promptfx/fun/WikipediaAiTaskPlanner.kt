@@ -1,23 +1,27 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
+import tri.ai.core.TextChat
 import tri.ai.pips.AiPlanner
-import tri.ai.core.TextCompletion
 import tri.ai.pips.aitask
 import tri.ai.openai.jsonMapper
-import tri.ai.core.promptTask
-import tri.ai.core.instructTask
+import tri.ai.prompt.PromptTemplate
+import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
 import java.net.URL
 import java.net.URLEncoder
 
-class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
+class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
 
     override fun plan() =
         aitask("wikipedia-page-guess") {
-            completionEngine.promptTask(lookupPrompt("examples-api/wikipedia-page-guess"), input, tokenLimit = 100, temp = null)
+            common.completionBuilder()
+                .prompt(lookupPrompt("examples-api/wikipedia-page-guess"))
+                .tokens(200)
+                .params(PromptTemplate.INPUT to input)
+                .execute(chatEngine)
         }.task("wikipedia-page-search") {
-            firstMatchingPage(it).also {
+            firstMatchingPage(it.content!!).also {
                 pageTitle?.value = it
             }
         }.task("retrieve-page-text") {
@@ -25,7 +29,11 @@ class WikipediaAiTaskPlanner(val completionEngine: TextCompletion, val pageTitle
                 pageTitle?.apply { value = "$value\n\n$it" }
             }
         }.aitask("question-answer") {
-            completionEngine.instructTask(lookupPrompt("text-qa/answer"), input, it, tokenLimit = 1000, temp = null)
+            common.completionBuilder()
+                .prompt(lookupPrompt("text-qa/answer"))
+                .params(PromptTemplate.INPUT to input, PromptTemplate.INSTRUCT to it)
+                .tokens(1000)
+                .execute(chatEngine)
         }.plan
 
     private fun firstMatchingPage(query: String): String {

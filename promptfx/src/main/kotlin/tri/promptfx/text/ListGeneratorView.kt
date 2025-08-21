@@ -68,7 +68,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
             }
             promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
     }
 
     init {

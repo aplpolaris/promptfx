@@ -21,12 +21,10 @@ package tri.ai.process.pdf
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.MChatVariation
-import tri.ai.core.TextCompletion
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.TextChat
 import tri.ai.openai.jsonMapper
-import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
-import tri.ai.prompt.fill
 import tri.ai.prompt.template
 import tri.ai.text.chunks.TextDocMetadata
 import tri.util.fine
@@ -39,12 +37,17 @@ object PdfMetadataGuesser {
     private val PROMPT = PromptLibrary.INSTANCE.get("docs-metadata/guess")!!
 
     /** Attempt to extract metadata from a PDF file, using up to [pageLimit] pages. Each page is processed by an LLM query, so this may consume a lot of tokens. */
-    suspend fun guessPdfMetadata(model: TextCompletion, file: File, pageLimit: Int, progress: (String) -> Unit): MultipleGuessedMetadataObjects {
+    suspend fun guessPdfMetadata(chatEngine: TextChat, file: File, pageLimit: Int, progress: (String) -> Unit): MultipleGuessedMetadataObjects {
         val text = PdfUtils.pdfPageInfo(file).take(pageLimit)
         val parsedMetadata = text.mapNotNull {
             val progressString = "Processing page ${it.pageNumber} for ${file.name}..."
             progress(progressString)
-            val result = model.complete(PROMPT.template().fillInput(it.text), tokens = 1000, variation = MChatVariation(temperature = 0.2)).firstValue
+            val result = CompletionBuilder()
+                .tokens(1000)
+                .temperature(0.2)
+                .template(PROMPT.template())
+                .paramsInput(it.text)
+                .execute(chatEngine).firstValue.content!!
             val parsed = result
                 .betweenTripleTicks()
                 .betweenBraces()

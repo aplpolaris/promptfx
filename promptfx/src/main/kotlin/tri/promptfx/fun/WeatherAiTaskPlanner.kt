@@ -2,6 +2,7 @@ package tri.promptfx.`fun`
 
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.EmbeddingModel
+import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.openai.jsonMapper
@@ -10,11 +11,12 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
-class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
+class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
 
     override fun plan() =
         aitask("weather-similarity-check") {
@@ -24,7 +26,7 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingMo
                 .prompt(lookupPrompt("examples-api/weather-api-request"))
                 .paramsInput(input)
                 .tokens(500)
-                .executeJson<WeatherRequest>(completionEngine)
+                .executeJson<WeatherRequest>(chatEngine)
         }.task("weather-api") {
             weatherService.getWeather(it!!)
         }.aitask("weather-response-formatter") {
@@ -32,7 +34,7 @@ class WeatherAiTaskPlanner(val completionEngine: TextCompletion, val embeddingMo
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-response-formatter"))
                 .paramsInstruct(instruct = input, input = json)
-                .execute(completionEngine)
+                .execute(chatEngine)
         }.plan
 
     private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace<String> {

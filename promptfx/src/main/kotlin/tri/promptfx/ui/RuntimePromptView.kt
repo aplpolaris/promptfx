@@ -60,14 +60,14 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(
             }
         }
         if (config.isShowModelParameters)
-            addDefaultTextCompletionParameters(common)
+            addDefaultChatParameters(common)
     }
 
     override fun plan() = common.completionBuilder()
         .prompt(promptModel.prompt.value)
         .params(modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) })
         .params(singleTemplateFieldName() to input.get())
-        .taskPlan(completionEngine)
+        .taskPlan(chatEngine)
 
     /** Returns the name of the first template placeholder variable used for input, or [PromptTemplate.INPUT] as a default. */
     private fun singleTemplateFieldName() =

@@ -125,7 +125,7 @@ class DocumentInsightView: AiPlanTaskView(
                 sliderwitheditablelabel(1..5000, minSnippetCharsToProcess)
             }
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
     }
 
     init {
@@ -160,7 +160,7 @@ class DocumentInsightView: AiPlanTaskView(
                 val concat = mapResult.value
                 common.completionBuilder()
                     .text(reducePromptUi.fill(PromptTemplate.INPUT to concat))
-                    .execute(completionEngine)
+                    .execute(chatEngine)
                     .mapOutput { concat to it }
             }.planner
     }

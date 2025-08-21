@@ -24,6 +24,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.promptTask
 import tri.ai.pips.aitask
+import tri.ai.pips.taskPlan
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
@@ -54,7 +55,7 @@ class PromptValidatorView : AiPlanTaskView(
             validatorPromptUi = EditablePromptUi(PROMPT_VALIDATE_PREFIX, "Prompt to validate the result:")
             add(validatorPromptUi)
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
 
         outputPane.clear()
         output {
@@ -79,12 +80,15 @@ class PromptValidatorView : AiPlanTaskView(
     }
 
     override fun plan() = aitask("complete-prompt") {
-        completionEngine.promptTask(prompt.value, common.maxTokens.value, common.temp.value).also {
-            runLater { promptOutput.value = it }
-        }
+        common.completionBuilder()
+            .numResponses(1)
+            .template(prompt.value)
+            .execute(chatEngine)
     }.aitask("validate-result") {
-        val validatorPromptText = validatorPromptUi.fill("result" to it)
-        completionEngine.promptTask(validatorPromptText, common.maxTokens.value, common.temp.value, numResponses = common.numResponses.value)
+        val validatorPromptText = validatorPromptUi.fill("result" to it.content!!)
+        common.completionBuilder()
+            .template(validatorPromptText)
+            .execute(chatEngine)
     }.planner
 
     companion object {

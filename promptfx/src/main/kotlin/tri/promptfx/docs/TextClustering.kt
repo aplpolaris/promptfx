@@ -1,8 +1,9 @@
 package tri.promptfx.docs
 
+import tri.ai.core.CompletionBuilder
 import tri.ai.core.EmbeddingModel
+import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
-import tri.ai.core.templateTask
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
 import tri.promptfx.PromptFxGlobals.lookupPrompt
@@ -14,7 +15,7 @@ import tri.util.ml.ClusterService
 object TextClustering {
 
     /**
-     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [TextCompletion] and [EmbeddingModel].
+     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [TextChat] and [EmbeddingModel].
      * Summarizes clusters hierarchically whenever the list of chunks (or clusters) is at least size [minForRegroup].
      */
     suspend fun ClusterService.generateClusterHierarchy(
@@ -23,7 +24,7 @@ object TextClustering {
         itemType: String,
         categories: List<String>,
         sampleTheme: String,
-        completionEngine: TextCompletion,
+        chatEngine: TextChat,
         embeddingModel: EmbeddingModel,
         minForRegroup: Int = 20,
         attempts: Int = 3,
@@ -36,7 +37,7 @@ object TextClustering {
         var n = 1
         do {
             val prompt = ClusteringPrompt(summaryType, itemType, categories, sampleTheme)
-            clusters = generateClusters(clusters, prompt, completionEngine, attempts) { msg, pct ->
+            clusters = generateClusters(clusters, prompt, chatEngine, attempts) { msg, pct ->
                 progress("Level $n", pct)
             }
             progress("Level $n Cluster Embedding Calculations", 0.0)
@@ -71,7 +72,7 @@ object TextClustering {
     suspend fun ClusterService.generateClusters(
         input: List<EmbeddingCluster>,
         prompt: ClusteringPrompt,
-        completionEngine: TextCompletion,
+        chatEngine: TextChat,
         attempts: Int,
         progress: (String, Double) -> Unit
     ): List<EmbeddingCluster> {
@@ -84,7 +85,7 @@ object TextClustering {
             val description = if (prompt.summaryType == ClusterSummaryType.NONE)
                 ClusterDescription()
             else
-                generateClusterSummary(matches, prompt, completionEngine, attempts)
+                generateClusterSummary(matches, prompt, chatEngine, attempts)
             pct += 1.0/clusterCount
             progress("Computing cluster summaries", pct)
             EmbeddingCluster("${i+1}", description, matches, null, null)
@@ -101,23 +102,25 @@ object TextClustering {
     suspend fun generateClusterSummary(
         cluster: List<EmbeddingCluster>,
         prompt: ClusteringPrompt,
-        completionEngine: TextCompletion,
+        chatEngine: TextChat,
         attempts: Int
     ): ClusterDescription {
         val inputText = cluster.joinToString("\n") { it.description.theme!! }
         val responses = (1..attempts).map {
-            completionEngine.templateTask(
-                prompt.summaryType.prompt,
-                PromptTemplate.INPUT to inputText,
-                "item_type" to prompt.itemType,
-                "categories" to prompt.categories.joinToString("\n") { " - $it" },
-                "sample_category" to prompt.categories.first(),
-                "sample_theme" to prompt.sampleTheme,
-                tokenLimit = 2000,
-                temp = 0.5
-            )
+            CompletionBuilder()
+                .tokens(2000)
+                .temperature(0.5)
+                .template(prompt.summaryType.prompt.template!!)
+                .params(
+                    PromptTemplate.INPUT to inputText,
+                    "item_type" to prompt.itemType,
+                    "categories" to prompt.categories.joinToString("\n") { " - $it" },
+                    "sample_category" to prompt.categories.first(),
+                    "sample_theme" to prompt.sampleTheme
+                )
+                .execute(chatEngine)
         }.map {
-            val lines = it.firstValue.lines()
+            val lines = it.firstValue.content!!.lines()
             val foundCategory = lines.findLine("category")?.parseList() ?: listOf()
             val foundTheme = lines.findLine("theme") ?: ""
             foundTheme to foundCategory
@@ -151,9 +154,9 @@ class ClusteringPrompt(
 
 /** Types of summaries that can be generated for a cluster. */
 enum class ClusterSummaryType(val promptId: String) {
-    CATEGORIES_AND_THEME("generate-categories-and-theme"),
-    THEME_ONLY("generate-categories-theme-only"),
-    CATEGORIES_ONLY("generate-categories"),
+    CATEGORIES_AND_THEME("generate-taxonomy/categories-and-theme"),
+    THEME_ONLY("generate-taxonomy/theme"),
+    CATEGORIES_ONLY("generate-taxonomy/categories"),
     NONE("");
 
     val prompt: PromptDef

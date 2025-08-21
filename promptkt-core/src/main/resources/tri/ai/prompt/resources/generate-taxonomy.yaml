@@ -2,7 +2,6 @@
 groupId: generate-taxonomy
 defaults: { category: generate }
 prompts:
-
   - id: generate-taxonomy/categories@1.0.0
     title: Generate Categories
     description: Generates a category or categories for a list of items.
@@ -21,7 +20,6 @@ prompts:
       ```
       {{{input}}}
       ```
-
   - id: generate-taxonomy/categories-and-theme@1.0.0
     title: Generate Categories and Theme
     description: Generates a category or categories and a summarizing theme for a list of items.
@@ -41,7 +39,6 @@ prompts:
       ```
       {{{input}}}
       ```
-
   - id: generate-taxonomy/theme@1.0.0
     title: Generate Theme
     description: Generates a summarizing theme for a list of items.

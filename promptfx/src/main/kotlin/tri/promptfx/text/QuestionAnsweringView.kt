@@ -62,12 +62,12 @@ class QuestionAnsweringView: AiPlanTaskView("Question Answering",
             tooltip("Loads prompts with prefix $PROMPT_PREFIX")
             promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
     }
 
     override fun plan() = common.completionBuilder()
         .prompt(prompt.prompt.value)
         .paramsInstruct(input = input.get(), instruct = instruct.get())
-        .taskPlan(completionEngine)
+        .taskPlan(chatEngine)
 
 }

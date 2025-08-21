@@ -95,10 +95,10 @@ class CompletionBuilder {
      * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.
      * Fails silently, returning null without throwing an exception if parsing fails.
      */
-    suspend inline fun <reified T> executeJson(completion: TextCompletion) =
-        execute(completion).mapOutput {
+    suspend inline fun <reified T> executeJson(completion: TextChat) =
+        requestJson(true).execute(completion).mapOutput {
             try {
-                JSON_MAPPER.readValue<T>(it.trim())
+                JSON_MAPPER.readValue<T>(it.content!!.trim())
             } catch (x: JsonMappingException) {
                 fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
                 null

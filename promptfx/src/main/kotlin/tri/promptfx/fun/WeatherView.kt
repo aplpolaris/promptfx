@@ -30,7 +30,7 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
     override fun plan() = task("audio-transcribe") {
         userInput()
     }.task("weather") {
-        WeatherAiTaskPlanner(completionEngine, embeddingModel, it).execute(progress)
+        WeatherAiTaskPlanner(chatEngine, common, embeddingModel, it).execute(progress)
     }.planner
 
     private suspend fun userInput(): String {

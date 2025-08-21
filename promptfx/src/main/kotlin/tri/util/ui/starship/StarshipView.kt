@@ -286,7 +286,7 @@ class StarshipView : Fragment("Starship") {
             return
         results.clearAll()
         job = runAsync {
-            val config = StarshipPipelineConfig(controller.completionEngine.value)
+            val config = StarshipPipelineConfig(controller.chatService.value)
             config.secondaryPrompts[0].params["audience"] = summarizeFor.value
             config.secondaryPrompts[3].params["instruct"] = targetLanguage.value
             config.promptExec = object : AiPromptExecutor {

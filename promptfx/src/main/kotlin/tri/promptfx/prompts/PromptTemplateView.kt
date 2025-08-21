@@ -98,13 +98,13 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
                 }
             }
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
     }
 
     override fun plan() = common.completionBuilder()
         .template(template.value)
         .params(fieldMap.toMap())
-        .taskPlan(completionEngine)
+        .taskPlan(chatEngine)
 
     /**
      * Loads a prompt trace into the view.
@@ -115,9 +115,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         val modelInfo = prompt.model ?: AiModelInfo("N/A")
         template.set(promptInfo.template)
         fields.setAll(promptInfo.params.entries.map { it.key to it.value.toString() })
-        val model = PromptFxModels.textCompletionModels().find { it.modelId == modelInfo.modelId }
+        val model = PromptFxModels.chatModels().find { it.modelId == modelInfo.modelId }
         if (model != null) {
-            controller.completionEngine.set(model)
+            controller.chatService.set(model)
         } else {
             warning<PromptTemplateView>("Model ${modelInfo.modelId} not found.")
         }

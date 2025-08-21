@@ -68,7 +68,7 @@ class StructuredDataView: AiPlanTaskView("Structured Data",
             }
             promptfield(prompt = PromptSelectionModel("text-extract/text-to-json"), workspace = workspace)
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
         parameters("Response") {
             field("Response Format") {
                 tooltip("Important: when using JSON mode, you must also instruct the model to produce JSON yourself via a system or user message.")

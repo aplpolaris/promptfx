@@ -22,6 +22,7 @@ package tri.promptfx.ui
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.stage.Window
 import tornadofx.*
+import tri.ai.core.TextChatMessage
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
@@ -130,7 +131,11 @@ class PromptResultAreaModel {
             resultsFormatted.setAll(listOf())
             resultIndex.set(0)
         } else {
-            val results = trace.value!!.values?.map { it?.toString() ?: "(no result)" } ?: listOf("(no result)")
+            val results = trace.value!!.values?.map {
+                (it as? TextChatMessage)?.content
+                    ?: it?.toString()
+                    ?: "(no result)"
+            } ?: listOf("(no result)")
             this.results.setAll(results)
             this.resultsFormatted.setAll((trace.value as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
             resultIndex.set(0)

@@ -106,7 +106,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 sliderwitheditablelabel(1..1000, chunkLimit)
             }
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
         parameters("Aggregation Types") {
             tooltip("These settings control how the results are displayed.")
             field("Display") {
@@ -176,7 +176,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     }
 
     private fun promptBatch(inputs: List<String>) = AiPromptBatchCyclic("prompt-script").apply {
-        model = completionEngine.modelId
+        model = chatEngine.modelId
         modelParams = common.toModelParams()
         prompt = promptUi.templateText.value
         promptParams = mapOf(PromptTemplate.INPUT to inputs)
@@ -214,8 +214,8 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val summarizer = summaryPrompt.fill(PromptTemplate.INPUT to joined)
             val summarizerResult = common.completionBuilder()
                 .text(summarizer)
-                .execute(completionEngine)
-            resultSets[key] = summarizerResult.firstValue
+                .execute(chatEngine)
+            resultSets[key] = summarizerResult.firstValue.content!!
             promptInfo = PromptInfo(summaryPrompt.text.value, mapOf(PromptTemplate.INPUT to joined))
         } else {
             promptInfo = PromptInfo("")
@@ -229,7 +229,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         return AiPromptTrace(
             promptInfo,
-            AiModelInfo(completionEngine.modelId, common.toModelParams()),
+            AiModelInfo(chatEngine.modelId, common.toModelParams()),
             AiExecInfo(),
             AiOutputInfo.output(output)
         )

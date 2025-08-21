@@ -186,6 +186,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Adds default model parameters (model, temperature, tokens) to the view. */
+    @Deprecated("use chat model instead")
     fun addDefaultTextCompletionParameters(common: ModelParameters) {
         parameters("Text Completion Model") {
             field("Model") {
