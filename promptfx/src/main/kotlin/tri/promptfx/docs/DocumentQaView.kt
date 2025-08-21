@@ -149,7 +149,7 @@ class DocumentQaView: AiPlanTaskView(
                 label(historySize)
             }
         }
-        addDefaultTextCompletionParameters(common)
+        addDefaultChatParameters(common)
         parameters("Prompt Template") {
             tooltip("Loads prompts with prefix $PROMPT_PREFIX and $JOINER_PREFIX")
             promptfield("Template", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)

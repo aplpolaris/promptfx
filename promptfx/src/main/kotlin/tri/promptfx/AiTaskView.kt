@@ -199,6 +199,20 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
         }
     }
 
+    /** Adds default model parameters (model, temperature, tokens) to the view. */
+    fun addDefaultChatParameters(common: ModelParameters) {
+        parameters("Chat Model") {
+            field("Model") {
+                combobox(controller.chatService, PromptFxModels.chatModels())
+            }
+            with (common) {
+                temperature()
+                maxTokens()
+                numResponses()
+            }
+        }
+    }
+
     /** Adds default content to the input area of the view. */
     fun addInputTextArea(property: SimpleStringProperty, op: TextArea.() -> Unit = {}) {
         input {
