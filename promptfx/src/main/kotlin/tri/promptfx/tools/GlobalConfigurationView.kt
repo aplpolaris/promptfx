@@ -32,7 +32,7 @@ import tri.promptfx.PromptFxModels
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [GlobalConfigurationView]. */
-class GlobalConfigurationPlugin : NavigableWorkspaceViewImpl<GlobalConfigurationView>("Tools", "Global Configuration", type = GlobalConfigurationView::class)
+class GlobalConfigurationPlugin : NavigableWorkspaceViewImpl<GlobalConfigurationView>("Settings", "Global Configuration", type = GlobalConfigurationView::class)
 
 /** A view designed to show global configuration information for PromptFx. */
 class GlobalConfigurationView : AiTaskView("Global Configuration", "Display global configuration settings and available models/plugins.", showInput = false) {

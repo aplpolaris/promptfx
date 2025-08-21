@@ -1,7 +1,7 @@
 # Library of view configurations
 ---
 view-config-generator:
-  category: Meta
+  category: Settings
   title: View Config Generator
   description: Generate a new view configuration YAML block from a short description of what the tool should do.
   promptConfig:
