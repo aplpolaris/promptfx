@@ -22,6 +22,7 @@ package tri.promptfx.api
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.ObservableList
 import tornadofx.Component
+import tornadofx.observableListOf
 import tornadofx.onChange
 import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
@@ -32,8 +33,8 @@ import tri.util.ui.FilterSortModel
 class ModelsFilter : Component() {
 
     // Custom modality filters that work differently from standard filters
-    val inputModalityFilter = InputModalityFilter { it.inputs ?: emptyList() }
-    val outputModalityFilter = InputModalityFilter { it.outputs ?: emptyList() }
+    val inputModalityFilter = ModalityFilter { it.inputs ?: emptyList() }
+    val outputModalityFilter = ModalityFilter { it.outputs ?: emptyList() }
 
     val model = object : FilterSortModel<ModelInfo>() {
         override fun updateFilterOptions(list: List<ModelInfo>) {
@@ -90,8 +91,8 @@ class ModelsFilter : Component() {
  * Custom filter for input/output modalities that handles list containment.
  * Unlike regular filters, this checks if any of the selected modalities are present in the model's list.
  */
-class InputModalityFilter(val attribute: (ModelInfo) -> List<DataModality>) {
-    val values = tornadofx.observableListOf<Pair<DataModality, SimpleBooleanProperty>>()
+class ModalityFilter(val attribute: (ModelInfo) -> List<DataModality>) {
+    val values = observableListOf<Pair<DataModality, SimpleBooleanProperty>>()
 
     /** Updates filter options based on given list of values. */
     fun updateAttributeOptions(newItems: Set<ModelInfo>, updateFilter: () -> Unit) {
