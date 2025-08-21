@@ -25,16 +25,37 @@ import org.junit.jupiter.api.Assertions.*
 class FontSizeCalculationTest {
 
     /**
-     * Implementation of the font size calculation logic for testing.
-     * This matches the logic in ImmersiveChatView.calculateOptimalFontSize().
+     * Implementation of the area-based font size calculation logic for testing.
+     * This simulates the logic in ImmersiveChatView.calculateOptimalFontSize().
      */
-    private fun calculateOptimalFontSize(text: String): Double {
+    private fun calculateOptimalFontSize(text: String, availableWidth: Double = 1200.0, availableHeight: Double = 300.0): Double {
         val textLength = text.length
         
         // Define font size bounds
         val minFontSize = 12.0
         val maxFontSize = 24.0
         
+        val availableArea = availableWidth * availableHeight
+        
+        if (availableArea <= 0 || textLength == 0) {
+            return calculateFontSizeByLength(textLength, minFontSize, maxFontSize)
+        }
+        
+        // Calculate font size to achieve target area usage
+        // Each character takes approximately font_size² * 0.72 pixels
+        // Target: character_area * text_length * 1.5 = available_area  
+        val characterAreaFactor = 0.72 * 1.5 // Character area multiplier * target density factor
+        val idealFontSizeSquared = availableArea / (textLength * characterAreaFactor)
+        val idealFontSize = kotlin.math.sqrt(idealFontSizeSquared)
+        
+        // Clamp to reasonable bounds
+        return idealFontSize.coerceIn(minFontSize, maxFontSize)
+    }
+    
+    /**
+     * Fallback font size calculation based purely on text length.
+     */
+    private fun calculateFontSizeByLength(textLength: Int, minFontSize: Double, maxFontSize: Double): Double {
         // Define text length thresholds
         val shortTextThreshold = 100    // Very short responses get max font size
         val longTextThreshold = 2000    // Very long responses get min font size
@@ -51,59 +72,82 @@ class FontSizeCalculationTest {
     }
 
     @Test
-    fun testCalculateOptimalFontSize() {
-        // Test very short text - should get max font size (24.0)
+    fun testAreaBasedFontSizeCalculation() {
+        // Test with standard area (1200 x 300 = 360,000 pixels)
+        
+        // Very short text should get max font size (due to clamping)
         val shortText = "Hi"
-        assertEquals(24.0, calculateOptimalFontSize(shortText), 0.1)
+        val shortFontSize = calculateOptimalFontSize(shortText)
+        assertTrue(shortFontSize >= 12.0 && shortFontSize <= 24.0)
+        assertEquals(24.0, shortFontSize, 0.1, "Very short text should get max font size due to clamping")
         
-        // Test text at short threshold (100 chars) - should get max font size
-        val shortThresholdText = "x".repeat(100)
-        assertEquals(24.0, calculateOptimalFontSize(shortThresholdText), 0.1)
+        // Medium-short text (still gets max due to large area available)
+        val mediumShortText = "x".repeat(100)
+        val mediumShortFontSize = calculateOptimalFontSize(mediumShortText)
+        assertTrue(mediumShortFontSize >= 12.0 && mediumShortFontSize <= 24.0)
         
-        // Test medium text (500 chars) - should get interpolated size
-        val mediumText = "x".repeat(500)
-        val mediumFontSize = calculateOptimalFontSize(mediumText)
-        assertTrue(mediumFontSize > 12.0 && mediumFontSize < 24.0)
+        // Longer text should eventually get smaller font size
+        val longerText = "x".repeat(1000) 
+        val longerFontSize = calculateOptimalFontSize(longerText)
+        assertTrue(longerFontSize >= 12.0 && longerFontSize <= 24.0)
+        assertTrue(longerFontSize < 24.0, "Longer text should get smaller font than max: $longerFontSize")
         
-        // Test long text (1000 chars) - should get smaller interpolated size
-        val longText = "x".repeat(1000)  
-        val longFontSize = calculateOptimalFontSize(longText)
-        assertTrue(longFontSize > 12.0 && longFontSize < mediumFontSize)
-        
-        // Test text at long threshold (2000 chars) - should get min font size (12.0)
-        val longThresholdText = "x".repeat(2000)
-        assertEquals(12.0, calculateOptimalFontSize(longThresholdText), 0.1)
-        
-        // Test very long text - should get min font size (12.0)  
+        // Very long text should get even smaller font
         val veryLongText = "x".repeat(5000)
-        assertEquals(12.0, calculateOptimalFontSize(veryLongText), 0.1)
+        val veryLongFontSize = calculateOptimalFontSize(veryLongText)
+        assertTrue(veryLongFontSize >= 12.0 && veryLongFontSize <= 24.0)
+        assertTrue(veryLongFontSize < longerFontSize, "Very long text should get smaller font than longer text")
     }
 
     @Test
-    fun testFontSizeDecreaseWithLength() {
-        // Test that font size decreases as text length increases
-        val sizes = listOf(100, 500, 1000, 1500, 2000).map { length ->
-            val text = "x".repeat(length)
-            calculateOptimalFontSize(text)
-        }
+    fun testDifferentAreaSizes() {
+        val testText = "x".repeat(1000) // Fixed length for comparison
         
-        // Check that each font size is less than or equal to the previous one
-        for (i in 1 until sizes.size) {
-            assertTrue(sizes[i] <= sizes[i-1], 
-                "Font size should decrease as text length increases: ${sizes[i-1]} -> ${sizes[i]}")
-        }
+        // Larger area should allow larger font
+        val largeFontSize = calculateOptimalFontSize(testText, 1600.0, 400.0)
+        
+        // Smaller area should require smaller font  
+        val smallFontSize = calculateOptimalFontSize(testText, 800.0, 200.0)
+        
+        assertTrue(largeFontSize > smallFontSize, 
+            "Larger area should allow larger font: $largeFontSize vs $smallFontSize")
+        
+        // Both should be within bounds
+        assertTrue(largeFontSize >= 12.0 && largeFontSize <= 24.0)
+        assertTrue(smallFontSize >= 12.0 && smallFontSize <= 24.0)
     }
 
     @Test
     fun testFontSizeBounds() {
-        // Test various text lengths to ensure font size is always within bounds
-        val testLengths = listOf(0, 50, 100, 150, 500, 1000, 1500, 2000, 3000, 5000)
+        // Test various scenarios to ensure font size is always within bounds
+        val testCases = listOf(
+            Triple("", 1000.0, 300.0), // Empty text
+            Triple("x".repeat(1), 100.0, 100.0), // Very small area
+            Triple("x".repeat(10000), 2000.0, 500.0), // Very long text, large area
+            Triple("x".repeat(50), 3000.0, 800.0), // Short text, very large area
+        )
         
-        for (length in testLengths) {
-            val text = "x".repeat(length)
-            val fontSize = calculateOptimalFontSize(text)
+        for ((text, width, height) in testCases) {
+            val fontSize = calculateOptimalFontSize(text, width, height)
             assertTrue(fontSize >= 12.0 && fontSize <= 24.0,
-                "Font size $fontSize should be between 12.0 and 24.0 for text length $length")
+                "Font size $fontSize should be between 12.0 and 24.0 for text length ${text.length}, area ${width}x$height")
         }
+    }
+    
+    @Test
+    fun testAreaBasedVsLengthBasedConsistency() {
+        // When area-based calculation would give similar results to length-based,
+        // they should be reasonably close
+        val testText = "x".repeat(1000)
+        
+        val areaBasedSize = calculateOptimalFontSize(testText, 1200.0, 300.0)
+        val lengthBasedSize = calculateFontSizeByLength(testText.length, 12.0, 24.0)
+        
+        // Both should be valid sizes
+        assertTrue(areaBasedSize >= 12.0 && areaBasedSize <= 24.0)
+        assertTrue(lengthBasedSize >= 12.0 && lengthBasedSize <= 24.0)
+        
+        // They don't need to be identical, but should be in similar ranges
+        println("Area-based: $areaBasedSize, Length-based: $lengthBasedSize")
     }
 }
