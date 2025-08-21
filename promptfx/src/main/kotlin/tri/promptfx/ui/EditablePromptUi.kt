@@ -79,7 +79,7 @@ fun EventTarget.editablepromptui(promptFilter: (PromptDef) -> Boolean, instructi
 }
 
 /** Add a prompt field to the UI. */
-fun EventTarget.editablepromptui(prefix: String, instruction: String): EditablePromptUi {
+fun EventTarget.editablepromptprefixui(prefix: String, instruction: String): EditablePromptUi {
     val ui = EditablePromptUi(prefix, instruction)
     plusAssign(ui)
     return ui

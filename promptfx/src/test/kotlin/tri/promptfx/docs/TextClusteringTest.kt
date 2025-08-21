@@ -1,11 +1,44 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.promptfx.docs
 
-import kotlin.collections.get
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import tri.ai.core.EmbeddingPrecision
+import tri.ai.openai.OpenAiChat
+import tri.ai.openai.OpenAiEmbeddingModel
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextDocEmbeddings.putEmbeddingInfo
+import tri.promptfx.docs.TextClustering.generateClusterHierarchy
+import tri.promptfx.docs.TextClustering.generateClusterSummary
+import tri.promptfx.docs.TextClustering.generateClusters
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
+import tri.util.info
+import tri.util.ml.AffinityClusterService
 
 class TextClusteringTest {
 
     private val clusterService = AffinityClusterService()
-    private val textCompletion = OpenAiCompletionChat()
+    private val textChat = OpenAiChat()
     private val embeddingService = OpenAiEmbeddingModel()
 
     @Disabled("Requires API key")
@@ -19,7 +52,7 @@ class TextClusteringTest {
                 itemType = "Animals",
                 categories = listOf("Land", "Sea", "Air", "Other"),
                 sampleTheme = "Animals commonly found in the rainforest and known to climb trees.",
-                textCompletion,
+                textChat,
                 embeddingService
             ) { _, _ -> }
         }
@@ -39,7 +72,7 @@ class TextClusteringTest {
                     categories = listOf("Land", "Sea", "Air", "Other"),
                     sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
                 ),
-                textCompletion,
+                textChat,
                 attempts = 2
             ) { _, it ->
                 info<TextClustering>("Progress: ${"%.1f".format(it*100)}%")
@@ -64,7 +97,7 @@ class TextClusteringTest {
                     categories = listOf("Land", "Sea", "Air", "Other"),
                     sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
                 ),
-                textCompletion,
+                textChat,
                 attempts = 2
             )
         }
