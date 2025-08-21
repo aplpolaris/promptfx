@@ -22,7 +22,6 @@ package tri.promptfx
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.ui.RuntimePromptViewConfig
-import tri.promptfx.ui.RuntimePromptViewConfigMcp
 import tri.util.fine
 import tri.util.ui.MAPPER
 import java.io.File
@@ -58,36 +57,6 @@ object RuntimePromptViewConfigs {
     fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.prompt.category == category }
     /** Get a config by id. */
     fun config(id: String) = runtimeIndex[id] ?: index[id]!!
-
-    //endregion
-
-    //region MCP VIEWS
-
-    /** Index of configs. */
-    private val mcpIndex: Map<String, RuntimePromptViewConfigMcp> = RuntimePromptViewConfigs::class.java.getResource("resources/views-mcp.yaml")!!
-        .let { MAPPER.readValue(it) }
-    /** Index of runtime configs. */
-    private val mcpRuntimeIndex: Map<String, RuntimePromptViewConfigMcp> = setOf(
-        File("views-mcp.yaml"),
-        File("config/views-mcp.yaml")
-    ).firstOrNull { it.exists() }?.let { MAPPER.readValue(it) } ?: mapOf()
-
-    val mcpViews: Map<String, RuntimePromptViewConfigMcp> by lazy {
-        mutableMapOf<String, RuntimePromptViewConfigMcp>().apply {
-            putAll(mcpIndex)
-            putAll(mcpRuntimeIndex)
-            mcpRuntimeIndex.keys.intersect(mcpIndex.keys).forEach {
-                fine<RuntimePromptViewConfigs>("Runtime config for MCP prompt view $it overrides resource config.")
-            }
-        }
-    }
-
-    /** Get a list of categories. */
-    fun mcpCategories() = (mcpIndex.values + mcpRuntimeIndex.values).map { it.category }.distinct()
-    /** Get a list of configs by category. */
-    fun mcpConfigs(category: String) = (mcpIndex.values + mcpRuntimeIndex.values).filter { it.category == category }
-    /** Get a config by id. */
-    fun mcpConfig(id: String) = mcpRuntimeIndex[id] ?: mcpIndex[id]!!
 
     //endregion
 

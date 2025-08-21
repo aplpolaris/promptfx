@@ -44,25 +44,3 @@ class NavigableWorkspaceViewRuntime(val config: RuntimePromptViewConfig) : Navig
         private val viewCache = mutableMapOf<RuntimePromptViewConfig, RuntimePromptView>()
     }
 }
-
-/** View that is configured entirely at runtime. */
-class NavigableWorkspaceViewRuntimeMcp(val config: RuntimePromptViewConfigMcp) : NavigableWorkspaceView {
-    override val category: String
-        get() = config.category
-    override val name: String
-        get() = config.prompt.title ?: config.prompt.name
-    override val affordances: WorkspaceViewAffordance
-        get() = WorkspaceViewAffordance.INPUT_ONLY // TODO - should this be added into runtime configs??
-    val view by lazy {
-        viewCache.getOrPut(config) { RuntimePromptViewMcp(config) }
-    }
-
-    override fun dock(workspace: Workspace) {
-        view.scope.workspace = workspace
-        workspace.dock(view)
-    }
-
-    companion object {
-        private val viewCache = mutableMapOf<RuntimePromptViewConfigMcp, RuntimePromptViewMcp>()
-    }
-}

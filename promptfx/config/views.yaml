@@ -113,3 +113,23 @@ entity-extraction:
       templateId: format
       label: Format as
   isShowModelParameters: true
+
+code-review:
+  prompt:
+    id: code/code-review@1.0.0
+    category: Code
+    name: Code Review
+    title: Request Code Review
+    description: Asks the LLM to analyze provided code and suggest improvements or bug fixes
+    args:
+      - name: code
+        description: The code to review
+        required: true
+    template: |
+      Please review the following code and provide suggestions for improvements or bug fixes:
+      ```
+      {{{code}}}
+      ```
+  modeOptions: []
+  isShowModelParameters: true
+  isShowMultipleResponseOption: true

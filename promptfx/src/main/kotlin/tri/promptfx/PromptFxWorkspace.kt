@@ -36,7 +36,6 @@ import tri.promptfx.library.TextManagerView
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
-import tri.promptfx.ui.NavigableWorkspaceViewRuntimeMcp
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
 
@@ -266,7 +265,6 @@ class PromptFxWorkspace : Workspace() {
     private fun NavigableWorkspaceView.viewInfo() = when (this) {
         is NavigableWorkspaceViewImpl<*> -> PromptFxViewInfo(category, name, type.java, null, affordances)
         is NavigableWorkspaceViewRuntime -> PromptFxViewInfo(category, name, null, view, affordances)
-        is NavigableWorkspaceViewRuntimeMcp -> PromptFxViewInfo(category, name, null, view, affordances)
         else -> null
     }
 
