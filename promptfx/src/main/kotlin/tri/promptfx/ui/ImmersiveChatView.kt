@@ -165,9 +165,42 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             if (baseComponent is DocumentQaView) {
                 (baseComponent as DocumentQaView).enableHyperlinkActions(listOf(it))
             }
+            // Calculate and set automated font size based on response length
+            val fontSize = calculateOptimalFontSize(it.text)
+            output.updateFontSize(fontSize)
             output.animateText(it.toFxNodes(), onFinished = {
                 (root.scene.lookup("#chat-input") as TextField).selectAll()
             })
+        }
+    }
+
+    //endregion
+
+    //region FONT SIZE CALCULATION
+
+    /**
+     * Calculates optimal font size for response text based on length.
+     * Shorter responses get larger fonts, longer responses get smaller fonts for better readability.
+     */
+    private fun calculateOptimalFontSize(text: String): Double {
+        val textLength = text.length
+        
+        // Define font size bounds
+        val minFontSize = 12.0
+        val maxFontSize = 24.0
+        
+        // Define text length thresholds
+        val shortTextThreshold = 100    // Very short responses get max font size
+        val longTextThreshold = 2000    // Very long responses get min font size
+        
+        return when {
+            textLength <= shortTextThreshold -> maxFontSize
+            textLength >= longTextThreshold -> minFontSize
+            else -> {
+                // Linear interpolation between max and min font size
+                val ratio = (textLength - shortTextThreshold).toDouble() / (longTextThreshold - shortTextThreshold)
+                maxFontSize - (ratio * (maxFontSize - minFontSize))
+            }
         }
     }
 
