@@ -1,3 +1,4 @@
+tri.promptfx.tools.GlobalConfigurationPlugin
 tri.promptfx.meta.AgenticPlugin
 tri.promptfx.api.AudioApiPlugin
 tri.promptfx.api.AudioSpeechApiPlugin
