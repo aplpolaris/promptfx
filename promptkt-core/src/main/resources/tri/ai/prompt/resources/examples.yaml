@@ -15,6 +15,7 @@ prompts:
 
   - id: examples/color@1.0.0
     title: Color Example
+    description: Enter text to get a CSS color code.
     tags: [ color ]
     template: |
       Create a 6-digit CSS code (e.g. `#808080`) for a color like the following text.
@@ -23,6 +24,7 @@ prompts:
 
   - id: examples/emoji@1.0.0
     title: Emoji Example
+    description: Enter text to get an emoji.
     tags: [ emoji ]
     template: |
       Text: I love you

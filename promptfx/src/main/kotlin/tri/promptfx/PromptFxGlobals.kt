@@ -1,5 +1,6 @@
 package tri.promptfx
 
+import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
@@ -8,6 +9,8 @@ object PromptFxGlobals {
 
     /** Prompt library. */
     val promptLibrary = PromptLibrary.INSTANCE
+    /** Additional prompts from runtime views. */
+    val runtimeViewPromptLibrary = RuntimePromptViewConfigs.PROMPT_LIBRARY
 
     /** Gets prompt ids with a given prefix. */
     fun promptsWithPrefix(prefix: String) =
@@ -15,10 +18,14 @@ object PromptFxGlobals {
 
     /** Lookup a prompt with given id. */
     fun lookupPrompt(promptId: String) =
-        promptLibrary.get(promptId) ?: error("Prompt '$promptId' not found in library")
+        promptLibrary.get(promptId) ?: runtimeViewPromptLibrary.get(promptId) ?: error("Prompt '$promptId' not found in library")
+
+    /** Lookup a prompt with given id, or null if not found. */
+    fun lookupPromptOrNull(promptId: String): PromptDef? =
+        promptLibrary.get(promptId) ?: runtimeViewPromptLibrary.get(promptId)
 
     /** Fills a prompt with the given values. */
     fun fillPrompt(promptId: String, vararg values: Pair<String, Any>) =
-        promptLibrary.get(promptId)?.fill(*values) ?: error("Prompt '$promptId' not found in library")
+        lookupPrompt(promptId).fill(*values)
 
 }

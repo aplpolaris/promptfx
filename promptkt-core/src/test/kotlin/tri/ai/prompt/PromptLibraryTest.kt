@@ -102,7 +102,7 @@ class PromptLibraryTest {
         assertNotNull(prompt)
         assertEquals("answer", prompt!!.name)
         assertNotNull(prompt.template)
-        assertTrue(prompt.template.isNotBlank())
+        assertTrue(prompt.template!!.isNotBlank())
     }
 
     @Test

@@ -23,8 +23,6 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.taskPlan
 import tri.ai.prompt.PromptTemplate
-import tri.ai.prompt.PromptTemplate.Companion
-import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.template
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
@@ -32,10 +30,11 @@ import tri.promptfx.RuntimePromptViewConfigs
 /**
  * A view with a single input and a single output that can be fully configured at runtime.
  */
-open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(config.title, config.description) {
+open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(
+    config.prompt.title(), config.prompt.description!!
+) {
 
     private val modeConfigs = config.modeOptions.map { ModeViewConfig(it) }
-    private val promptConfig = config.promptConfig()
     private lateinit var promptModel: PromptSelectionModel
     private val input = SimpleStringProperty("")
 
@@ -50,8 +49,8 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
                     }
                 }
             }
-            if (promptConfig.isVisible) {
-                promptModel = PromptSelectionModel(promptConfig.id, promptConfig.templatePrompt)
+            if (config.isShowPrompt) {
+                promptModel = PromptSelectionModel(config.prompt.id, config.prompt.template)
                 promptfield(prompt = promptModel, workspace = workspace)
             }
             if (config.isShowMultipleResponseOption && !config.isShowModelParameters) {

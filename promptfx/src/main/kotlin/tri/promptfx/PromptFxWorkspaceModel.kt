@@ -23,7 +23,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.promptfx.ui.NavigableWorkspaceViewRuntimeMcp
-import tri.promptfx.ui.RuntimePromptView
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
@@ -32,7 +31,6 @@ import tri.util.info
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.forestGreen
 import tri.util.ui.graphic
-import kotlin.collections.groupBy
 
 /** Model of the view content within [PromptFx] (views, groups, etc.). */
 class PromptFxWorkspaceModel(
@@ -42,11 +40,11 @@ class PromptFxWorkspaceModel(
         /** The singleton instance of the workspace model. */
         val instance: PromptFxWorkspaceModel by lazy {
             val categories = NavigableWorkspaceView.viewPlugins.map { it.category }.toSet() +
-                    RuntimePromptViewConfigs.views.values.map { it.category }.toSet() +
+                    RuntimePromptViewConfigs.views.values.map { it.prompt.category ?: "Uncategorized" }.toSet() +
                     RuntimePromptViewConfigs.mcpViews.values.map { it.category }.toSet()
 
             val viewsById = NavigableWorkspaceView.viewPlugins.associateBy { it.name }
-            val viewsRuntimeById = RuntimePromptViewConfigs.views.values.associateBy { it.title }
+            val viewsRuntimeById = RuntimePromptViewConfigs.views.values.associateBy { it.prompt.title ?: it.prompt.name ?: it.prompt.id }
             val viewsRuntimeMcpById = RuntimePromptViewConfigs.mcpViews.values.associateBy { it.prompt.title ?: it.prompt.name }
             val allViewsById = mutableMapOf<String, NavigableWorkspaceView>().apply {
                 putAll(viewsById)

@@ -64,7 +64,7 @@ fun PromptDef.resolved(group: PromptGroup): PromptDef {
 
 /** Generates arguments from the template. */
 fun PromptDef.generateArgs(): List<PromptArgDef> {
-    val fields = PromptTemplate(template).findFields()
+    val fields = PromptTemplate(template!!).findFields()
     return fields.map { PromptArgDef(it) }
 }
 

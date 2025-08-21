@@ -5,6 +5,7 @@ prompts:
 
   - id: text-classify/sentiment@1.0.0
     title: Classify Sentiment
+    description: Estimate the sentiment of the provided text.
     template: |
       Classify the sentiment in this text as {{instruct}}:
       ```

@@ -48,7 +48,7 @@ data class PromptDef(
     val args: List<PromptArgDef> = listOf(),
 
     /** Mustache template string. */
-    val template: String,
+    val template: String? = null,
     /** Rendering context/hints. */
     val contextInject: ContextConfig? = null
 
@@ -57,6 +57,25 @@ data class PromptDef(
 ) {
     @get:JsonIgnore
     val bareId: String by lazy { id.substringBefore('@') }
+
+    /** Best non-null title for user. */
+    fun title() = title ?: name ?: id.substringAfter('/').substringBefore('@').ifBlank { id }.ifBlank { "Untitled Prompt" }
+
+    /** Create a copy where values are overridden if provided/customized in the other prompt definition object. */
+    fun copyWithOverrides(other: PromptDef): PromptDef {
+        return PromptDef(
+            id = other.id,
+            category = other.category ?: category,
+            tags = other.tags.ifEmpty { tags },
+            name = other.name ?: name,
+            title = other.title ?: title,
+            description = other.description ?: description,
+            version = other.version ?: version,
+            args = other.args.ifEmpty { args },
+            template = other.template ?: template,
+            contextInject = other.contextInject ?: contextInject
+        )
+    }
 }
 
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)

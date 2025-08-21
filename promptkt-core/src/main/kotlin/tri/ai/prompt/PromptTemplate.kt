@@ -109,7 +109,7 @@ data class PromptTemplate(
 }
 
 /** Gets template from prompt object. */
-fun PromptDef.template() = PromptTemplate(template, injectToday = contextInject?.today ?: true)
+fun PromptDef.template() = PromptTemplate(template!!, injectToday = contextInject?.today ?: true)
 
 /** Gets and fills template from prompt object. */
 fun PromptDef.fill(vararg fields: Pair<String, Any>) =

@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.prompt.PromptLibrary
 import tri.promptfx.ui.RuntimePromptViewConfig
 import tri.promptfx.ui.RuntimePromptViewConfigMcp
 import tri.util.fine
@@ -52,9 +53,9 @@ object RuntimePromptViewConfigs {
     }
 
     /** Get a list of categories. */
-    fun categories() = (index.values + runtimeIndex.values).map { it.category }.distinct()
+    fun categories() = (index.values + runtimeIndex.values).map { it.prompt.category ?: "Uncategorized" }.distinct()
     /** Get a list of configs by category. */
-    fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.category == category }
+    fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.prompt.category == category }
     /** Get a config by id. */
     fun config(id: String) = runtimeIndex[id] ?: index[id]!!
 
@@ -119,5 +120,17 @@ object RuntimePromptViewConfigs {
     fun modeOptionMap(modeId: String) = (runtimeModes[modeId] ?: modes[modeId]) ?: error("Mode $modeId not found in index.")
 
     //endregion
+
+    val PROMPT_LIBRARY by lazy {
+        PromptLibrary().apply {
+            views.values.forEach {
+                try {
+                    addPrompt(it.prompt)
+                } catch (e: Exception) {
+                    fine<RuntimePromptViewConfigs>("Error adding prompt ${it.prompt.id} from view config: ${e.message}")
+                }
+            }
+        }
+    }
 
 }

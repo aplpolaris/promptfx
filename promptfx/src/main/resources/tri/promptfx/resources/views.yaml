@@ -1,19 +1,17 @@
 # Library of view configurations
 ---
 view-config-generator:
-  category: Meta
-  title: View Config Generator
-  description: Generate a new view configuration YAML block from a short description of what the tool should do.
-  promptRef: generate-config/promptfx-view-config
+  prompt:
+    id: generate-config/promptfx-view-config
+    category: Configuration
   modeOptions: []
   isShowModelParameters: false
   isShowMultipleResponseOption: false
 
 entity-extraction:
-  category: Text
-  title: Entity Extraction
-  description: Extract entities from text.
-  promptRef: text-extract/entities
+  prompt:
+    id: text-extract/entities
+    category: Text
   modeOptions:
     - id: entities
       templateId: mode
@@ -24,10 +22,9 @@ entity-extraction:
   isShowModelParameters: true
 
 sentiment-analysis:
-  category: Text
-  title: Sentiment Analysis
-  description: Enter text to estimate sentiment.
-  promptRef: text-classify/sentiment
+  prompt:
+    id: text-classify/sentiment
+    category: Text
   modeOptions:
     - id: sentiment
       templateId: instruct
@@ -35,10 +32,9 @@ sentiment-analysis:
   isShowModelParameters: true
 
 summarization:
-  category: Text
-  title: Summarization
-  description: Summarize text.
-  promptRef: text-summarize/summarize
+  prompt:
+    category: Text
+    id: text-summarize/summarize
   modeOptions:
     - id: summarization-audience
       templateId: audience
@@ -52,10 +48,9 @@ summarization:
   isShowModelParameters: true
 
 translation:
-  category: Text
-  title: Translation
-  description: Translate text from one language to another.
-  promptRef: text-translate/translate
+  prompt:
+    id: text-translate/translate
+    category: Text
   modeOptions:
     - id: translation
       templateId: instruct
@@ -63,8 +58,7 @@ translation:
   isShowModelParameters: true
 
 emoji:
-  category: Fun
-  title: Text-to-Emoji
-  description: Enter text to get an emoji.
-  promptRef: examples/emoji
+  prompt:
+    id: examples/emoji
+    category: Fun
   isShowMultipleResponseOption: true

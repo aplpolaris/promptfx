@@ -1,13 +1,12 @@
 # Library of view configurations
 ---
 rag_qa_prefilter_json:
-  category: RAG QA
-  title: Prefilter JSON Generation
-  description: Generate JSON to prefilter large document sets based on user queries.
-  modeOptions: []
-  promptConfig:
+  prompt:
     id: docs-qa/prefilter-json
-    template-prompt: |
+    category: RAG QA
+    name: Prefilter JSON Generation
+    description: Generate JSON to prefilter large document sets based on user queries.
+    template: |
       You are acting as a preprocessor that determines an appropriate next step based on a user's question in a chat field. Users might have general questions (answerable with latent information in a large language model), or might have more domain specific questions (answerable using RAG based on information in a document database). Your job is to (i) determine the degree to which each method is appropriate for the user's inquiry, and (ii) in the latter case, determine if there are any appropriate filter criteria to downselect the documents.
 
       The output should have the following form:
@@ -31,13 +30,23 @@ rag_qa_prefilter_json:
       ```
 
       Today is {{today}}.
+  modeOptions: []
   isShowModelParameters: false
   isShowMultipleResponseOption: false
 
 math_unit_conversion:
-  category: Math
-  title: Unit Conversions
-  description: Convert units to a specified unit
+  prompt:
+    id: math/unit_conversion
+    category: Math
+    name: Unit Conversions
+    description: Convert units to a specified unit
+    template: |
+      Enter the value to convert and the unit type to convert from, and specify the unit to convert to:
+      '''
+      Value: {{input}}
+      Convert from: {{UNIT_TYPE}}
+      Convert to: {{CONVERT_TO_UNIT}}
+      '''
   modeOptions:
     - templateId: UNIT_TYPE
       label: Unit Type
@@ -51,25 +60,16 @@ math_unit_conversion:
         - Meter
         - Kilogram
         - Liter
-  promptConfig:
-    id: math/unit_conversion
-    template-prompt: |
-      Enter the value to convert and the unit type to convert from, and specify the unit to convert to:
-      '''
-      Value: {{ input }}
-      Convert from: {{ UNIT_TYPE }}
-      Convert to: {{ CONVERT_TO_UNIT }}
-      '''
   isShowModelParameters: false
   isShowMultipleResponseOption: false
 
 math_calculations:
-  category: Math
-  title: Math Calculations
-  description: Perform various math calculations efficiently.
-  promptConfig:
+  prompt:
     id: math/calculations
-    template-prompt: |
+    category: Math
+    name: Math Calculations
+    description: Perform various math calculations efficiently.
+    template: |
       Perform math calculations on the following numbers ({{OPERATION_TYPE}}):
       '''
       {{{input}}}
@@ -86,11 +86,9 @@ math_calculations:
   isShowMultipleResponseOption: false
 
 date-extraction:
-  category: Text
-  title: Date Extraction
-  description: Extract all dates from input text and provide as a list.
-  promptConfig:
+  prompt:
     id: text-extract/dates
+    category: Text
   modeOptions:
     - templateId: DATE_FORMAT
       label: Date Format
@@ -103,11 +101,10 @@ date-extraction:
   isShowMultipleResponseOption: false
 
 entity-extraction:
-  category: Text
-  title: Entity Extraction
-  description: Extract entities from text (testing runtime override)
-  promptConfig:
+  prompt:
     id: text-extract/entities
+    category: Text
+    description: Extract entities from text (testing runtime override)
   modeOptions:
     - id: entities
       templateId: mode

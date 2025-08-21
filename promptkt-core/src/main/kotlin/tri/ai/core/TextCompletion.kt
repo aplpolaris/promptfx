@@ -47,7 +47,7 @@ interface TextCompletion {
 
 /** Generate a task that adds user input to a prompt. */
 suspend fun TextCompletion.promptTask(prompt: PromptDef, input: String, tokenLimit: Int, temp: Double?, stop: List<String>? = null, numResponses: Int? = null): AiPromptTrace<String> {
-    val promptInfo = PromptInfo(prompt.template, defaultInputParams(input))
+    val promptInfo = PromptInfo(prompt.template!!, defaultInputParams(input))
     return promptTask(promptInfo, tokenLimit, temp, stop, numResponses)
 }
 
@@ -67,7 +67,7 @@ suspend fun TextCompletion.instructTask(prompt: PromptDef, instruct: String, use
 
 /** Generate a task that fills inputs into a prompt. */
 suspend fun TextCompletion.templateTask(prompt: PromptDef, fields: Map<String, Any>, tokenLimit: Int, temp: Double?, numResponses: Int? = null) =
-    promptTask(PromptInfo(prompt.template, fields), tokenLimit, temp, null, numResponses)
+    promptTask(PromptInfo(prompt.template!!, fields), tokenLimit, temp, null, numResponses)
 
 /** Generate a task that fills inputs into a prompt. */
 suspend fun TextCompletion.templateTask(prompt: PromptDef, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> =

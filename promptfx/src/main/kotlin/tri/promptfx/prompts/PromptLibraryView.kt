@@ -121,7 +121,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     }
 
     private fun sendToTemplateView() {
-        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.template)
+        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.template!!)
     }
 
     private fun refilter() {

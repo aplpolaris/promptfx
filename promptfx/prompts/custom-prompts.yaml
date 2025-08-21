@@ -3,6 +3,7 @@
 prompts:
   - id: text-extract/dates@1.0.0
     title: Extract Dates
+    description: Extract all dates from input text and provide as a list.
     template: |
       Extract a list of dates from the following text, and format as {{DATE_FORMAT}}.
       '''

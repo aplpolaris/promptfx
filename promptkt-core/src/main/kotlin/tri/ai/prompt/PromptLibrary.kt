@@ -47,7 +47,7 @@ class PromptLibrary {
     }
 
     /** Adds a prompt to the library, indexing it by id, bare id, category, and tags. */
-    private fun addPrompt(prompt: PromptDef) {
+    fun addPrompt(prompt: PromptDef) {
         prompt.resolved(PromptGroup("Uncategorized")).let {
             byId[it.id] = it
             byBare.getOrPut(it.bareId) { mutableListOf() }.add(it)

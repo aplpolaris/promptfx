@@ -37,7 +37,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
 
     suspend fun execute(query: String): String {
         info<JsonMultimodalToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
-        val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template
+        val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template!!
         val messages = mutableListOf(
             MultimodalChatMessage.text(MChatRole.System, systemMessage),
             MultimodalChatMessage.text(MChatRole.User, query)

@@ -47,7 +47,7 @@ object StarshipPipeline {
         results.input.set(input)
 
         val runConfig = AiPromptRunConfig(
-            PromptInfo(config.primaryPrompt.prompt.template, mapOf(PromptTemplate.INPUT to input) + config.primaryPrompt.params),
+            PromptInfo(config.primaryPrompt.prompt.template!!, mapOf(PromptTemplate.INPUT to input) + config.primaryPrompt.params),
             AiModelInfo(config.completion.modelId)
         )
         results.runConfig.set(runConfig)
@@ -64,7 +64,7 @@ object StarshipPipeline {
         config.secondaryPrompts.forEach {
             val secondInput = results.output.value.rawText
             val secondRunConfig = AiPromptRunConfig(
-                PromptInfo(it.prompt.template, mapOf(PromptTemplate.INPUT to secondInput) + it.params),
+                PromptInfo(it.prompt.template!!, mapOf(PromptTemplate.INPUT to secondInput) + it.params),
                 AiModelInfo(config.completion.modelId)
             )
             results.secondaryRunConfigs.add(secondRunConfig)
