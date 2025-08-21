@@ -25,7 +25,7 @@ import tornadofx.*
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.DocumentOpenInViewer
-import tri.promptfx.library.fieldifnotblank
+import tri.promptfx.docs.fieldifnotblank
 import tri.promptfx.ui.DocumentListView
 import tri.util.ui.DocumentUtils
 

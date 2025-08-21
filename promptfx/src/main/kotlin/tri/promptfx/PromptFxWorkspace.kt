@@ -30,9 +30,12 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
 import tri.promptfx.docs.DocumentQaView
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
+import tri.promptfx.docs.TextManagerView
+import tri.promptfx.multimodal.AudioSpeechView
+import tri.promptfx.multimodal.AudioView
 import tri.promptfx.prompts.PromptTemplateView
-import tri.promptfx.library.TextManagerView
+import tri.promptfx.multimodal.ImagesView
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
@@ -93,17 +96,18 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.forestGreen, listOf())) {
+            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.fireOrange, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
                 separator { }
-                label("Text Completion APIs")
+                label("Text Completion API")
                 hyperlinkview<CompletionsView>("API", "Completions")
+                separator { }
                 label("Chat APIs")
                 hyperlinkview<ChatViewBasic>("API", "Chat")
                 hyperlinkview<ChatViewAdvanced>("API", "Chat (Advanced)")
                 separator { }
-                label("Audio/Visual APIs")
+                label("Multimodal APIs")
                 hyperlinkview<AudioView>("API", "Audio")
                 hyperlinkview<AudioSpeechView>("API", "Speech")
                 hyperlinkview<ImagesView>("API", "Images")

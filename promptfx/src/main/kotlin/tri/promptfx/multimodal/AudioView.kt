@@ -1,27 +1,7 @@
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.promptfx.api
+package tri.promptfx.multimodal
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
-import io.ktor.util.*
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventHandler
@@ -37,16 +17,15 @@ import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.*
-import tri.util.ui.AudioRecorder
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
+import tri.util.ui.AudioRecorder
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.audioUri
 import java.io.File
-import java.util.*
 
 /** Plugin for the [AudioView]. */
-class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Audio", "Speech-to-Text", type = AudioView::class)
+class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Multimodal", "Speech-to-Text", type = AudioView::class)
 
 /** View for audio transcription. */
 class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {

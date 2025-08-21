@@ -26,7 +26,7 @@ import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.promptfx.PromptFxWorkspace
-import tri.promptfx.apps.ImageDescribeView
+import tri.promptfx.multimodal.ImageDescribeView
 import tri.util.ui.copyToClipboard
 import tri.util.ui.graphic
 import tri.util.ui.saveToFile
@@ -55,7 +55,7 @@ class TextDocImageUi(val images: ObservableList<Image>): Fragment() {
                     item("Copy to clipboard").action { copyToClipboard(image) }
                     item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
                         action {
-                            val view = find<PromptFxWorkspace>().findTaskView("Image Description")
+                            val view = find<PromptFxWorkspace>().findTaskView("Image Description (beta)")
                             (view as? ImageDescribeView)?.apply {
                                 setImage(image)
                                 workspace.dock(view)

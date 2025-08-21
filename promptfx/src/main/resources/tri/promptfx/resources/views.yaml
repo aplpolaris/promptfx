@@ -3,7 +3,7 @@
 view-config-generator:
   prompt:
     id: generate-config/promptfx-view-config
-    category: Configuration
+    category: Settings
   modeOptions: []
   isShowModelParameters: false
   isShowMultipleResponseOption: false

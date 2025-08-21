@@ -21,8 +21,8 @@ package tri.promptfx
 
 import javafx.stage.FileChooser
 import tornadofx.*
-import tri.promptfx.library.TextClusterView
-import tri.promptfx.library.TextManagerView
+import tri.promptfx.docs.TextClusterView
+import tri.promptfx.docs.TextManagerView
 import tri.util.loggerFor
 import java.io.File
 import java.net.URI

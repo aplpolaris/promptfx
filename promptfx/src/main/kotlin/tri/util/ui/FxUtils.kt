@@ -47,7 +47,7 @@ import tri.ai.prompt.PromptLibrary
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxGlobals.lookupPrompt
-import tri.promptfx.api.ImagesView
+import tri.promptfx.multimodal.ImagesView
 import tri.promptfx.promptFxFileChooser
 import tri.util.loggerFor
 import tri.util.warning
@@ -126,24 +126,15 @@ val FontAwesomeIcon.graphic
     get() = icon(this)
 
 val FontAwesomeIconView.gray
-    get() = apply {
-        fill = Color.GRAY
-    }
-
+    get() = apply { fill = Color.GRAY }
 val FontAwesomeIconView.navy
-    get() = apply {
-        fill = Color.NAVY
-    }
-
+    get() = apply { fill = Color.NAVY }
 val FontAwesomeIconView.burgundy
-    get() = apply {
-        fill = Color(128.0/255, 0.0, 32.0/255, 1.0)
-    }
-
+    get() = apply { fill = Color(128.0/255, 0.0, 32.0/255, 1.0) }
 val FontAwesomeIconView.forestGreen
-    get() = apply {
-        fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0)
-    }
+    get() = apply { fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0) }
+val FontAwesomeIconView.fireOrange
+    get() = apply { fill = Color(1.0, 69.0/255, 0.0, 1.0) }
 
 //endregion
 

@@ -27,7 +27,6 @@ import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.*
-import tri.promptfx.library.TextLibraryInfo
 import tri.util.ui.graphic
 import tri.util.ui.sliderwitheditablelabel
 import java.awt.Desktop

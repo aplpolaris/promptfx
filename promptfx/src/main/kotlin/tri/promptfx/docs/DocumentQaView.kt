@@ -40,7 +40,6 @@ import tri.ai.text.docs.QuestionAnswerResult
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.library.TextLibraryInfo
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.matchViewModel

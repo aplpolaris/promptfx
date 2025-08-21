@@ -37,7 +37,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.toFxNodes
 import tri.util.ui.graphic
 

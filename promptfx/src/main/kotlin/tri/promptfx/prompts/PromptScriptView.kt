@@ -36,7 +36,7 @@ import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView

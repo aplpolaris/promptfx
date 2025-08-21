@@ -1,4 +1,4 @@
-package tri.promptfx.meta
+package tri.promptfx.agents
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -34,7 +34,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [AgenticView]. */
-class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Meta", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
+class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Agents", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
 
 /** View to execute an agentic workflow where the tools are view with text inputs and outputs. */
 class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any necessary input to use multiple views within a common workflow.") {

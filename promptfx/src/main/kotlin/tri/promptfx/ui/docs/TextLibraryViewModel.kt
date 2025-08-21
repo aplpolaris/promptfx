@@ -40,7 +40,7 @@ import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info

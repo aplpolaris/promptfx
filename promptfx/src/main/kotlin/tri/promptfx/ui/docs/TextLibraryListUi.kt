@@ -30,7 +30,7 @@ import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.*
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.util.info
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic

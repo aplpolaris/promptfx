@@ -19,7 +19,7 @@
  */
 package tri.promptfx
 
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 
 /** Marks a view as capable of receiving a text library. */
 interface TextLibraryReceiver {

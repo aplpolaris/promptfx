@@ -1,23 +1,4 @@
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.promptfx.library
+package tri.promptfx.docs
 
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
@@ -99,8 +80,6 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
 /** Track a library with where it was loaded from, null indicates not saved to a file. */
 data class TextLibraryInfo(val library: TextLibrary, var file: File?)
 
-//region UI BUILDERS
-
 private fun EventTarget.fieldifnotblank(label: String, text: ObservableValue<String>) {
     field(label) {
         text(text) {
@@ -119,5 +98,3 @@ internal fun EventTarget.fieldifnotblank(label: String, text: String?, op: Field
             op()
         }
 }
-
-//endregion

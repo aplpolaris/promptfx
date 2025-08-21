@@ -1,23 +1,4 @@
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.promptfx.integration
+package tri.promptfx.`fun`
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -35,6 +16,7 @@ interface WeatherService {
 }
 
 data class WeatherRequest(val city: String, val date: LocalDate = LocalDate.now(), val historical: Boolean = date != LocalDate.now())
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class WeatherResult(
     val request: WeatherRequest,
@@ -90,6 +72,7 @@ data class WeatherResponse(
     val clouds: WeatherResponseClouds? = null,
     val sys: WeatherResponseSys? = null,
 )
+
 data class WeatherResponseMain(val temp: Double)
 data class WeatherResponseWeather(val main: String, val description: String)
 data class WeatherResponseRain(val `3h`: Double? = null, val `1h`: Double? = null)

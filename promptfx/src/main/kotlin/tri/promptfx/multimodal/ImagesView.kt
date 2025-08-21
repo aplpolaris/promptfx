@@ -1,23 +1,4 @@
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.promptfx.api
+package tri.promptfx.multimodal
 
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.image.ImageCreation
@@ -33,17 +14,52 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
-import tornadofx.*
+import tornadofx.action
+import tornadofx.button
+import tornadofx.clear
+import tornadofx.combobox
+import tornadofx.contextmenu
+import tornadofx.datagrid
+import tornadofx.disableWhen
+import tornadofx.enableWhen
+import tornadofx.error
+import tornadofx.field
+import tornadofx.imageview
+import tornadofx.information
+import tornadofx.integerBinding
+import tornadofx.item
+import tornadofx.label
+import tornadofx.observableListOf
+import tornadofx.onChange
+import tornadofx.putString
+import tornadofx.runLater
+import tornadofx.separator
+import tornadofx.slider
+import tornadofx.text
+import tornadofx.toolbar
+import tornadofx.tooltip
+import tornadofx.vbox
+import tornadofx.vgrow
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.aitask
-import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiImageTrace
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.PromptInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
-import tri.util.ui.*
+import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.copyToClipboard
+import tri.util.ui.saveToFile
+import tri.util.ui.showImageDialog
+import tri.util.ui.writeImageToFile
+import kotlin.collections.get
 
 /** Plugin for the [ImagesView]. */
-class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Vision", "Text-to-Image", WorkspaceViewAffordance.INPUT_ONLY, ImagesView::class)
+class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Multimodal", "Text-to-Image", WorkspaceViewAffordance.Companion.INPUT_ONLY, ImagesView::class)
 
 /** View for the OpenAI API's image endpoint (https://platform.openai.com/docs/api-reference/images). */
 class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
@@ -62,7 +78,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             when (it) {
                 DALLE3_ID -> {
                     numProperty.set(1)
-                    imageQualities.setAll(STANDARD_QUALITY, Quality.HD)
+                    imageQualities.setAll(STANDARD_QUALITY, Quality.Companion.HD)
                     quality.set(STANDARD_QUALITY)
                 }
                 DALLE2_ID -> {
@@ -77,18 +93,18 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Available sizes based on model */
     private val imageSizes: ObservableList<ImageSize> = observableListOf(IMAGE_SIZES[model.value] ?: listOf())
     /** Available quality values based on model */
-    private val imageQualities = observableListOf(STANDARD_QUALITY, Quality.HD)
+    private val imageQualities = observableListOf(STANDARD_QUALITY, Quality.Companion.HD)
     /** Available styles based on model */
-    private val imageStyles = observableListOf(Style.Vivid, Style.Natural)
+    private val imageStyles = observableListOf(Style.Companion.Vivid, Style.Companion.Natural)
 
     /** Number of images to generate */
     private val numProperty = SimpleIntegerProperty(1)
     /** Image size */
-    private val imageSize = SimpleObjectProperty(ImageSize.is256x256)
+    private val imageSize = SimpleObjectProperty(ImageSize.Companion.is256x256)
     /** Image quality */
     private val quality = SimpleObjectProperty(STANDARD_QUALITY)
     /** Image style */
-    private val imageStyle = SimpleObjectProperty(Style.Vivid)
+    private val imageStyle = SimpleObjectProperty(Style.Companion.Vivid)
 
     /** Grid thumbnail size */
     private val thumbnailSize = SimpleDoubleProperty(128.0)
@@ -195,12 +211,14 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     override fun plan() = aitask("generate-image") {
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
-        val modelInfo = AiModelInfo(model.value, mapOf(
-            "n" to numProperty.value,
-            "size" to imageSize.value,
-            "quality" to quality.value,
-            "style" to imageStyle.value
-        ))
+        val modelInfo = AiModelInfo(
+            model.value, mapOf(
+                "n" to numProperty.value,
+                "size" to imageSize.value,
+                "quality" to quality.value,
+                "style" to imageStyle.value
+            )
+        )
         val result = try {
             val images = controller.openAiPlugin.client.imageURL(
                 ImageCreation(
@@ -212,12 +230,13 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     style = imageStyle.value
                 )
             )
-            AiImageTrace(promptInfo, modelInfo,
+            AiImageTrace(
+                promptInfo, modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
                 AiOutputInfo(images.values ?: listOf())
             )
         } catch (x: OpenAIAPIException) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.Companion.error(x.message))
         }
         result
     }.planner
@@ -230,7 +249,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     private fun saveAllToFile() {
         promptFxDirectoryChooser(
-            dirKey = PromptFxConfig.DIR_KEY_IMAGE,
+            dirKey = PromptFxConfig.Companion.DIR_KEY_IMAGE,
             title = "Save Images to Folder"
         ) { folder ->
             var i = 1
@@ -296,12 +315,12 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
         private val IMAGE_SIZES = mapOf(
             DALLE2_ID to listOf(
-                ImageSize.is256x256,
-                ImageSize.is512x512,
-                ImageSize.is1024x1024
+                ImageSize.Companion.is256x256,
+                ImageSize.Companion.is512x512,
+                ImageSize.Companion.is1024x1024
             ),
             DALLE3_ID to listOf(
-                ImageSize.is1024x1024,
+                ImageSize.Companion.is1024x1024,
                 ImageSize("1792x1024"),
                 ImageSize("1024x1792")
             )

@@ -27,6 +27,7 @@ import tri.util.ANSI_RESET
 import tri.util.ANSI_YELLOW
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceView
+import tri.util.ui.fireOrange
 import tri.util.ui.forestGreen
 import tri.util.ui.graphic
 
@@ -49,7 +50,8 @@ class PromptFxWorkspaceModel(
 
             info<PromptFxWorkspaceModel>("Loading view configuration...")
             val viewGroups = categories.associateWith {
-                val viewsInCategory = allViewsById.values.filter { view -> view.category == it }.toList()
+                val viewsInCategory = allViewsById.values.filter { view -> view.category == it }
+                    .sortedBy { it.name }
 
                 //region LOGGING
                 val viewLoggingInfo = viewsInCategory.map { view ->
@@ -74,17 +76,20 @@ class PromptFxWorkspaceModel(
         }
         private fun groupIcon(category: String): FontAwesomeIconView {
             return when (category) {
-                "API" -> FontAwesomeIcon.CLOUD.graphic.forestGreen
-                "Prompts" -> FontAwesomeIcon.WRENCH.graphic.forestGreen
-                "Documents" -> FontAwesomeIcon.FILE.graphic.forestGreen
-                "Text" -> FontAwesomeIcon.FONT.graphic.forestGreen
-                "Fun" -> FontAwesomeIcon.SMILE_ALT.graphic.forestGreen
-                "Audio" -> FontAwesomeIcon.MICROPHONE.graphic.forestGreen
-                "Vision" -> FontAwesomeIcon.IMAGE.graphic.forestGreen
-                "Integrations" -> FontAwesomeIcon.PLUG.graphic.forestGreen
-                "Documentation" -> FontAwesomeIcon.BOOK.graphic.forestGreen
-                else -> FontAwesomeIcon.COG.graphic.forestGreen
-            }
+                "API" -> FontAwesomeIcon.CLOUD
+                "Prompts" -> FontAwesomeIcon.WRENCH
+                "Documents" -> FontAwesomeIcon.FILE
+                "Text" -> FontAwesomeIcon.FONT
+                "Fun" -> FontAwesomeIcon.SMILE_ALT
+                "Audio" -> FontAwesomeIcon.MICROPHONE
+                "Vision" -> FontAwesomeIcon.IMAGE
+                "Multimodal" -> FontAwesomeIcon.IMAGE
+                "Integrations" -> FontAwesomeIcon.PLUG
+                "Documentation" -> FontAwesomeIcon.BOOK
+                "Agents" -> FontAwesomeIcon.ANDROID
+                "Settings" -> FontAwesomeIcon.COG
+                else -> FontAwesomeIcon.CUBES
+            }.graphic.fireOrange
         }
     }
 }
