@@ -14,6 +14,15 @@ prompts:
 
   - id: docs-qa/answer@1.0.0
     title: Answer Question from Documents (with Citations)
+    args:
+      - name: input
+        description: Document excerpts or sections to use as source material
+        required: true
+        type: string
+      - name: instruct
+        description: The question to answer using the document content
+        required: true
+        type: string
     template: |
       Answer the question using the provided excerpts from factual sources.
       Include citations to all sources used, and only those sources.

@@ -5,6 +5,11 @@ prompts:
 
   - id: docs-reduce/author@1.0.0
     title: Document Reduce - Author Profile
+    args:
+      - name: input
+        description: Text summaries to analyze for author profile creation
+        required: true
+        type: string
     template: |
       Use the following summaries to generate a profile of the author of these texts.
       ```
@@ -13,6 +18,11 @@ prompts:
 
   - id: docs-reduce/keywords@1.0.0
     title: Document Reduce - Keywords
+    args:
+      - name: input
+        description: Lists of keywords to combine and organize
+        required: true
+        type: string
     template: |
       Combine the following lists of keywords into a single list. Group terms that are synonyms.
       ````
@@ -21,6 +31,11 @@ prompts:
 
   - id: docs-reduce/math-terms@1.0.0
     title: Document Reduce - Math Terms
+    args:
+      - name: input
+        description: Lists of mathematical terms to combine and organize
+        required: true
+        type: string
     template: |
       Combine the following lists of mathematical terms into a single list. Group terms that are synonyms.
       ```
@@ -29,6 +44,11 @@ prompts:
 
   - id: docs-reduce/outline@1.0.0
     title: Document Reduce - Outline
+    args:
+      - name: input
+        description: Text summaries to combine into a cohesive outline
+        required: true
+        type: string
     template: |
       Combine the following summaries into an outline.
       ```
@@ -37,6 +57,11 @@ prompts:
 
   - id: docs-reduce/summarize@1.0.0
     title: Document Reduce - Summarize
+    args:
+      - name: input
+        description: Text content to summarize
+        required: true
+        type: string
     template: |
       Create a summary of the following text:
       ```
@@ -45,6 +70,11 @@ prompts:
 
   - id: docs-reduce/technical-terms@1.0.0
     title: Document Reduce - Technical Terms
+    args:
+      - name: input
+        description: Text content to extract technical terms from
+        required: true
+        type: string
     template: |
       Extract technical terms and tools from the input text into a bulleted list. Group terms that are synonyms.
       Sample output:

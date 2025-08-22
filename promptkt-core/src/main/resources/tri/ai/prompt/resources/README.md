@@ -9,11 +9,49 @@ defaults:
 prompts:
   - id: examples/hello-world@1.0.0
     title: Hello World Example
+    args:
+      - name: input
+        description: The input text to include in the example
+        required: true
+        type: string
     template: |
       Hello, world!
       This is an example prompt.
       Input: {{{input}}}
       Output: 
+```
+
+## Enhanced Example with Multiple Arguments:
+```yaml
+groupId: text-summarize
+defaults:
+  category: text
+prompts:
+  - id: text-summarize/summarize@1.0.0
+    title: Summarize Text
+    description: Summarize the provided text, using the given audience, style, and format.
+    args:
+      - name: input
+        description: The text to be summarized
+        required: true
+        type: string
+      - name: audience
+        description: The intended audience for the summary (optional)
+        required: false
+        type: string
+      - name: style
+        description: The writing style for the summary (optional)
+        required: false
+        type: string
+      - name: format
+        description: The structural format for the summary (optional)
+        required: false
+        type: string
+    template: |
+      Summarize the following{{#audience}}, written for {{audience}}{{/audience}}{{#style}}, in the style of {{style}}{{/style}}{{#format}}, structured as {{format}}{{/format}}:
+      ```
+      {{{input}}}
+      ```
 ```
 
 **Group Parameters:**
