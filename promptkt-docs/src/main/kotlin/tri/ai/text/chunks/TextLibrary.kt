@@ -65,9 +65,22 @@ class TextLibrary(_id: String? = null) {
                     val uri = doc.metadata.path
                     if (uri != null) {
                         try {
-                            val file = LocalFileManager.fixPath(File(uri), parentFile)
-                            doc.metadata.path = file!!.toURI()
-                            doc.all = TextChunkRaw(file.fileToText(useCache = true))
+                            val originalFile = File(uri)
+                            val file = if (originalFile.exists()) {
+                                // If original file exists, use it as-is to preserve URI consistency
+                                originalFile
+                            } else {
+                                // Only use fixPath if original file doesn't exist 
+                                LocalFileManager.fixPath(originalFile, parentFile)
+                            }
+                            
+                            if (file != null) {
+                                // Only update URI if we used fixPath, otherwise keep original
+                                if (file != originalFile) {
+                                    doc.metadata.path = file.toURI()
+                                }
+                                doc.all = TextChunkRaw(file.fileToText(useCache = true))
+                            }
                         } catch (x: URISyntaxException) {
                             fine<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
                         } catch (x: NullPointerException) {
