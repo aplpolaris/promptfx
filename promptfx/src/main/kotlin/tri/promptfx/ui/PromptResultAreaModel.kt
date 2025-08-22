@@ -20,14 +20,12 @@
 package tri.promptfx.ui
 
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.stage.Window
 import tornadofx.*
+import tri.ai.core.JsonResponseProcessor
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.toHtml
-import tri.util.ANSI_RED
-import tri.util.ANSI_RESET
 
 /**
  * Implementation of a prompt result area with support for displaying a list of prompt traces,
@@ -82,6 +80,8 @@ class PromptResultAreaModel {
 
     /** Flag indicating if the selected result contains code. */
     val containsCode = resultText.booleanBinding { it != null && it.lines().count { it.startsWith("```") } >= 2 }
+    /** Flag indicating if the selected result contains valid JSON. */
+    val containsJson = resultText.booleanBinding { it != null && JsonResponseProcessor.containsValidJson(it) }
     /** Flag indicating if the selected result contains PlantUML or MindMap code. */
     val containsPlantUml = resultText.booleanBinding { it != null && (
             it.contains("@startuml") && it.contains("@enduml") ||
@@ -97,6 +97,18 @@ class PromptResultAreaModel {
         } else {
             throw IllegalStateException("No PlantUML or MindMap code found in the selected result.")
         }
+
+    /** JSON content from the selected result, if present. */
+    val jsonText: String?
+        get() = resultText.value?.let { JsonResponseProcessor.extractFirstJsonText(it) }
+
+    /** Formatted JSON content from the selected result, if present. */
+    val jsonTextFormatted: String?
+        get() = jsonText?.let { JsonResponseProcessor.formatJson(it) }
+
+    /** JSON-only view of the result text (hides non-JSON content). */
+    val jsonOnlyText: String
+        get() = jsonTextFormatted ?: resultText.value ?: ""
 
     //endregion
 
