@@ -18,5 +18,6 @@ tri.promptfx.apps.StructuredDataPlugin
 tri.promptfx.apps.TextSimilarityPlugin
 tri.promptfx.fun.ChatBackPlugin
 tri.promptfx.fun.ColorPlugin
+tri.promptfx.settings.ConfigurationPlugin
 tri.promptfx.integration.WeatherViewPlugin
 tri.promptfx.integration.WikipediaViewPlugin
