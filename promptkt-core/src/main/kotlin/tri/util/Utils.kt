@@ -29,6 +29,7 @@ const val ANSI_YELLOW = "\u001B[33m"
 const val ANSI_GREEN = "\u001B[32m"
 const val ANSI_CYAN = "\u001B[36m"
 const val ANSI_GRAY = "\u001B[37m"
+const val ANSI_BOLD = "\u001B[1m"
 
 fun <X> String?.ifNotBlank(op: (String) -> X): X? =
     if (isNullOrBlank()) {
