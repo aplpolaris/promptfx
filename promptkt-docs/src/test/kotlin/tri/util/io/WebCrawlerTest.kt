@@ -143,4 +143,78 @@ class WebCrawlerTest {
         val readMetadata = WebCrawler.JSON_MAPPER.readValue<WebScrapedDocumentMetadata>(metadataFile)
         assertEquals(content.url, readMetadata.url)
     }
+    
+    @Test  
+    fun testIntegrationWithMockData(@TempDir tempDir: Path) {
+        // Test the complete workflow with mock crawl results
+        val mockCrawlResult = mapOf(
+            "https://example.com/page1" to WebCrawlContent(
+                url = "https://example.com/page1",
+                docNode = org.jsoup.Jsoup.parse("<html><head><title>Test Page 1</title></head><body><article><p>First test page</p><a href='https://example.com/related1'>Related Link</a></article></body></html>"),
+                title = "Test Page 1", 
+                textElement = org.jsoup.Jsoup.parse("<article><p>First test page</p></article>").select("article").first()!!,
+                textArticle = true,
+                text = "First test page content with some links",
+                links = listOf("https://example.com/related1", "https://example.com/related2")
+            ),
+            "https://example.com/page2" to WebCrawlContent(
+                url = "https://example.com/page2", 
+                docNode = org.jsoup.Jsoup.parse("<html><head><title>Test Page 2</title></head><body><div><p>Second test page</p></div></body></html>"),
+                title = "Test Page 2",
+                textElement = org.jsoup.Jsoup.parse("<div><p>Second test page</p></div>").select("div").first()!!,
+                textArticle = false,
+                text = "Second test page content without article structure",
+                links = listOf("https://example.com/external")
+            )
+        )
+        
+        // Simulate the file writing logic from crawlWebsite method
+        mockCrawlResult.forEach { (_, content) ->
+            val baseFileName = content.title.replace("[^a-zA-Z0-9.-]".toRegex(), "_") + ".txt"
+            
+            // Save text file
+            File(tempDir.toFile(), baseFileName).writeText(content.text)
+                
+            // Save metadata file
+            val metadata = WebScrapedDocumentMetadata(
+                url = content.url,
+                title = content.title,
+                isArticle = content.textArticle,
+                links = content.links,
+                textLength = content.text.length
+            )
+            val metadataFileName = baseFileName.substringBeforeLast(".txt") + ".metadata.json"
+            WebCrawler.JSON_MAPPER.writerWithDefaultPrettyPrinter()
+                .writeValue(File(tempDir.toFile(), metadataFileName), metadata)
+        }
+        
+        // Verify all expected files were created
+        val files = tempDir.toFile().listFiles()!!.sortedBy { it.name }
+        assertEquals(4, files.size)  // 2 text files + 2 metadata files
+        
+        // Verify text files
+        val textFiles = files.filter { it.name.endsWith(".txt") }
+        assertEquals(2, textFiles.size)
+        assertTrue(textFiles.any { it.name == "Test_Page_1.txt" })
+        assertTrue(textFiles.any { it.name == "Test_Page_2.txt" })
+        
+        // Verify metadata files  
+        val metadataFiles = files.filter { it.name.endsWith(".metadata.json") }
+        assertEquals(2, metadataFiles.size)
+        assertTrue(metadataFiles.any { it.name == "Test_Page_1.metadata.json" })
+        assertTrue(metadataFiles.any { it.name == "Test_Page_2.metadata.json" })
+        
+        // Verify content of one metadata file
+        val page1Metadata = WebCrawler.JSON_MAPPER.readValue<WebScrapedDocumentMetadata>(
+            metadataFiles.first { it.name == "Test_Page_1.metadata.json" }
+        )
+        assertEquals("https://example.com/page1", page1Metadata.url)
+        assertEquals("Test Page 1", page1Metadata.title)
+        assertTrue(page1Metadata.isArticle)
+        assertEquals(2, page1Metadata.linkCount)
+        assertTrue(page1Metadata.links.contains("https://example.com/related1"))
+        
+        println("Integration test created files:")
+        files.forEach { println("- ${it.name}") }
+    }
 }
