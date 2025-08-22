@@ -47,6 +47,7 @@ import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
 import tri.util.io.pdf.PdfUtils
 import tri.util.ui.createListBinding
+import tri.util.ui.ImageCacheManager
 import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
@@ -98,17 +99,17 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             docSelectionPdf.set(firstPdf)
 
             docSelectionImages.clear()
-            it.list.forEach {
-                val pdfFile = it.pdfFile()
+            it.list.forEach { doc ->
+                val pdfFile = doc.pdfFile()
                 if (pdfFile != null && pdfFile.exists()) {
                     runAsync {
-                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
-                            .deduplicated()
-                    } ui {
-                        if (it.isEmpty()) {
+                        ImageCacheManager.getImagesFromPdf(pdfFile)
+                    } ui { images ->
+                        if (images.isEmpty()) {
                             info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
+                        } else {
+                            docSelectionImages.addAll(images.map { SwingFXUtils.toFXImage(it, null) })
                         }
-                        docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }
                 }
             }
@@ -168,9 +169,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         else
             docSelection.setAll(library.library.docs.first())
     }
-
-    private fun List<BufferedImage>.deduplicated() =
-        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 
