@@ -19,12 +19,26 @@
  */
 package tri.promptfx.docs
 
-import kotlin.collections.get
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import tri.ai.core.EmbeddingPrecision
+import tri.ai.openai.OpenAiChat
+import tri.ai.openai.OpenAiEmbeddingModel
+import tri.ai.text.chunks.TextChunkRaw
+import tri.ai.text.chunks.TextDocEmbeddings.putEmbeddingInfo
+import tri.promptfx.docs.TextClustering.generateClusterHierarchy
+import tri.promptfx.docs.TextClustering.generateClusterSummary
+import tri.promptfx.docs.TextClustering.generateClusters
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.chunk.asTextChunkViewModel
+import tri.util.info
+import tri.util.ml.AffinityClusterService
 
 class TextClusteringTest {
 
     private val clusterService = AffinityClusterService()
-    private val textCompletion = OpenAiCompletionChat()
+    private val textChat = OpenAiChat()
     private val embeddingService = OpenAiEmbeddingModel()
 
     @Disabled("Requires API key")
@@ -38,7 +52,7 @@ class TextClusteringTest {
                 itemType = "Animals",
                 categories = listOf("Land", "Sea", "Air", "Other"),
                 sampleTheme = "Animals commonly found in the rainforest and known to climb trees.",
-                textCompletion,
+                textChat,
                 embeddingService
             ) { _, _ -> }
         }
@@ -58,7 +72,7 @@ class TextClusteringTest {
                     categories = listOf("Land", "Sea", "Air", "Other"),
                     sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
                 ),
-                textCompletion,
+                textChat,
                 attempts = 2
             ) { _, it ->
                 info<TextClustering>("Progress: ${"%.1f".format(it*100)}%")
@@ -83,7 +97,7 @@ class TextClusteringTest {
                     categories = listOf("Land", "Sea", "Air", "Other"),
                     sampleTheme = "Animals commonly found in the rainforest and known to climb trees."
                 ),
-                textCompletion,
+                textChat,
                 attempts = 2
             )
         }

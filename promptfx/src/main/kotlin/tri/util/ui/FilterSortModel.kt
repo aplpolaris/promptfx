@@ -48,7 +48,7 @@ abstract class FilterSortModel<X> {
     //endregion
 
     /** Update filter options based on given list of objects. */
-    fun updateFilterOptions(list: List<X>) {
+    open fun updateFilterOptions(list: List<X>) {
         filters.forEach { (_, f) ->
             f.updateAttributeOptions(list.toSet(), ::updateFilter)
         }
@@ -56,7 +56,7 @@ abstract class FilterSortModel<X> {
     }
 
     /** Invoked whenever one of the flag properties changes, resets filter to match all flag filters. */
-    fun updateFilter() {
+    open fun updateFilter() {
         val flagFilters = filters.map { (_, value) -> value.createFilter() }
         filter.set { x -> flagFilters.all { it(x) } }
     }
@@ -81,11 +81,11 @@ abstract class FilterSortModel<X> {
             sort.set(sortOps.map { it.comparator() }.reduce { acc, c -> acc.thenComparing(c) })
     }
 
-    fun selectAll() = filters.values.forEach { it.selectAll() }
-    fun selectNone() = filters.values.forEach { it.selectNone() }
+    open fun selectAll() = filters.values.forEach { it.selectAll() }
+    open fun selectNone() = filters.values.forEach { it.selectNone() }
 
-    fun isAllSelected() = filters.values.all { it.isAllSelected() }
-    fun isNoneSelected() = filters.values.all { it.isNoneSelected() }
+    open fun isAllSelected() = filters.values.all { it.isAllSelected() }
+    open fun isNoneSelected() = filters.values.all { it.isNoneSelected() }
 
 }
 

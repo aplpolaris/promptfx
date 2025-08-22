@@ -19,6 +19,12 @@
  */
 package tri.promptfx.`fun`
 
+import com.fasterxml.jackson.module.kotlin.readValue
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import tri.ai.openai.jsonMapper
+import java.time.LocalDate
+
 class WeatherServiceTest {
 
     val testJson = """

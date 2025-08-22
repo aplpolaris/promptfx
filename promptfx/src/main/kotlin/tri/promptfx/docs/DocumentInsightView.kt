@@ -43,7 +43,7 @@ import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.asTextChunkViewModel
-import tri.promptfx.ui.editablepromptui
+import tri.promptfx.ui.editablepromptprefixui
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
@@ -96,8 +96,8 @@ class DocumentInsightView: AiPlanTaskView(
 
     init {
         input {
-            mapPromptUi = editablepromptui(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
-            reducePromptUi = editablepromptui(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
+            mapPromptUi = editablepromptprefixui(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
+            reducePromptUi = editablepromptprefixui(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
             add(DocumentListView(docs, hostServices))
             add(find<TextChunkListView>(viewScope).apply {
                 label.set("Document Snippets")

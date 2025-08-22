@@ -162,6 +162,7 @@
                     <!-- TODO - set up profiles so we can run different test sets from command line -->
                     <!--                    <excludedGroups>gemini</excludedGroups>-->
                     <excludedGroups>gemini | openai</excludedGroups>
+                    <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
 
