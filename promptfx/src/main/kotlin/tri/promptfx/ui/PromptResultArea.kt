@@ -85,6 +85,20 @@ class PromptResultArea : Fragment("Prompt Result Area") {
                     enableWhen(model.containsCode)
                     action { copyCode() }
                 }
+                item("Copy JSON") {
+                    enableWhen(model.containsJson)
+                    action { copyJson() }
+                }
+                item("Copy formatted JSON") {
+                    enableWhen(model.containsJson)
+                    action { copyFormattedJson() }
+                }
+                separator()
+                item("Show JSON only") {
+                    enableWhen(model.containsJson)
+                    action { showJsonOnly() }
+                }
+                separator()
                 item("Browse to PlantUML diagram") {
                     enableWhen(model.containsPlantUml)
                     action { browseToPlantUml() }
@@ -102,6 +116,23 @@ class PromptResultArea : Fragment("Prompt Result Area") {
     private fun copyCode() {
         val code = model.resultText.value.substringAfter("```").substringAfter("\n").substringBefore("```").trim()
         clipboard.putString(code)
+    }
+
+    private fun copyJson() {
+        model.jsonText?.let { 
+            clipboard.putString(it)
+        }
+    }
+
+    private fun copyFormattedJson() {
+        model.jsonTextFormatted?.let { 
+            clipboard.putString(it)
+        }
+    }
+
+    private fun showJsonOnly() {
+        // Create a new dialog showing only the JSON content
+        find<JsonOnlyDialog>(mapOf(JsonOnlyDialog::jsonContent to model.jsonTextFormatted)).openModal()
     }
 
     private fun browseToPlantUml() {
