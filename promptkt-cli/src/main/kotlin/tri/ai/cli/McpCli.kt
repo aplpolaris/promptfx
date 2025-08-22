@@ -178,55 +178,29 @@ class McpCli : CliktCommand(
         private val promptName by argument(help = "Name or ID of the prompt to execute")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
 
-        override fun run() = runBlocking {
-            val adapter = this@McpCli.createAdapter()
-            try {
-                val args = this@McpCli.parseArguments(arguments)
-                if (this@McpCli.verbose) {
-                    echo("Executing prompt: $promptName")
-                    if (args.isNotEmpty()) {
-                        echo("With arguments: ${args.entries.joinToString { "${it.key}=${it.value}" }}")
-                    }
-                }
-                
-                val filledPrompt = adapter.getPrompt(promptName, args)
-                
-                echo("Filled prompt:")
-                echo("=".repeat(50))
-                
-                if (filledPrompt.description != null) {
-                    echo("Description: ${filledPrompt.description}")
-                    echo("-".repeat(40))
-                }
-                
-                filledPrompt.messages.forEach { message ->
-                    echo("Role: ${message.role}")
-                    message.content?.forEach { part ->
-                        when (part.partType) {
-                            tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
-                            else -> echo("${part.partType}: ${part.text ?: part}")
+        override fun run() {
+            runBlocking {
+                val adapter = this@McpCli.createAdapter()
+                try {
+                    val args = this@McpCli.parseArguments(arguments)
+                    if (this@McpCli.verbose) {
+                        echo("Executing prompt: $promptName")
+                        if (args.isNotEmpty()) {
+                            echo("With arguments: ${args.entries.joinToString { "${it.key}=${it.value}" }}")
                         }
                     }
-                    echo()
-                }
-
-                val model = try {
-                    TextPlugin.multimodalModel(model)
-                } catch (x: NoSuchElementException) {
-                    throw McpServerException("Model '$model' not found. Available models: ${TextPlugin.chatModels().joinToString { it.modelId }}", x)
-                }
-
-                val completed = model.chat(filledPrompt.messages)
-
-                echo("=".repeat(50))
-                echo("Response from model '${model.modelId}':")
-
-                if (completed.values == null) {
-                    echo("No response received from the model.")
-                } else if (completed.values!!.isEmpty()) {
-                    echo("Model returned an empty response.")
-                } else {
-                    completed.values!!.forEach { message ->
+                    
+                    val filledPrompt = adapter.getPrompt(promptName, args)
+                    
+                    echo("Filled prompt:")
+                    echo("=".repeat(50))
+                    
+                    if (filledPrompt.description != null) {
+                        echo("Description: ${filledPrompt.description}")
+                        echo("-".repeat(40))
+                    }
+                    
+                    filledPrompt.messages.forEach { message ->
                         echo("Role: ${message.role}")
                         message.content?.forEach { part ->
                             when (part.partType) {
@@ -236,15 +210,43 @@ class McpCli : CliktCommand(
                         }
                         echo()
                     }
-                }
 
-                (model as? OpenAiMultimodalChat)?.client?.client?.close()
-                (model as? GeminiMultimodalChat)?.client?.close()
-            } catch (e: McpServerException) {
-                echo("Error: ${e.message}", err = true)
-                exitProcess(1)
-            } finally {
-                adapter.close()
+                    val model = try {
+                        TextPlugin.multimodalModel(model)
+                    } catch (x: NoSuchElementException) {
+                        throw McpServerException("Model '$model' not found. Available models: ${TextPlugin.chatModels().joinToString { it.modelId }}", x)
+                    }
+
+                    val completed = model.chat(filledPrompt.messages)
+
+                    echo("=".repeat(50))
+                    echo("Response from model '${model.modelId}':")
+
+                    if (completed.values == null) {
+                        echo("No response received from the model.")
+                    } else if (completed.values!!.isEmpty()) {
+                        echo("Model returned an empty response.")
+                    } else {
+                        completed.values!!.forEach { message ->
+                            echo("Role: ${message.role}")
+                            message.content?.forEach { part ->
+                                when (part.partType) {
+                                    tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
+                                    else -> echo("${part.partType}: ${part.text ?: part}")
+                                }
+                            }
+                            echo()
+                        }
+                    }
+
+                    (model as? OpenAiMultimodalChat)?.client?.client?.close()
+                    (model as? GeminiMultimodalChat)?.client?.close()
+                } catch (e: McpServerException) {
+                    echo("Error: ${e.message}", err = true)
+                    exitProcess(1)
+                } finally {
+                    adapter.close()
+                }
             }
         }
     }
