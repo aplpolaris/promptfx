@@ -28,34 +28,44 @@ import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
 /**
- * Implements basic functionality of MCP prompt server.
- * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+ * Implements basic functionality of MCP prompt server based on a local prompt library.
  */
-class McpPromptServer {
+class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAdapter {
 
-    var library = PromptLibrary()
+    override fun toString() = "LocalMcpServer"
 
     /** List prompt information. */
-    fun listPrompts(): List<McpPrompt> = library.list().map { it.toMcpContract() }
+    override suspend fun listPrompts() =
+        library.list().map { it.toMcpContract() }
 
     /** Gets result of filling a prompt with arguments. */
-    fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
+    override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
         val prompt = library.get(name)
             ?: throw McpServerException("Prompt with name '$name' not found")
         val filled = prompt.fill(args)
         return McpGetPromptResponse(
-            description = prompt.description,
+            description = prompt.description ?: prompt.title(),
             listOf(MultimodalChatMessage(
                 role = MChatRole.User,
                 content = listOf(MChatMessagePart(MPartType.TEXT, text = filled))
         )))
     }
 
+    override suspend fun getCapabilities(): McpServerCapabilities {
+        return McpServerCapabilities(
+            prompts = McpServerPromptCapability(listChanged = false)
+        )
+    }
+
+    override suspend fun close() {
+        // Nothing to close for local adapter
+    }
+
 }
 
 /** Response returned from a prompt request. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class McpGetPromptResponse(
+data class McpGetPromptResponse(
     val description: String? = null,
     val messages: List<MultimodalChatMessage>
 )

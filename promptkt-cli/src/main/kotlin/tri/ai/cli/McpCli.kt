@@ -27,11 +27,19 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.TextPlugin
+import tri.ai.gemini.GeminiMultimodalChat
+import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.prompt.PromptLibrary
-import tri.ai.prompt.server.LocalMcpServerAdapter
+import tri.ai.prompt.server.LocalMcpServer
 import tri.ai.prompt.server.McpServerAdapter
 import tri.ai.prompt.server.McpServerException
-import tri.ai.prompt.server.RemoteMcpServerAdapter
+import tri.ai.prompt.server.RemoteMcpServer
+import tri.util.ANSI_BOLD
+import tri.util.ANSI_CYAN
+import tri.util.ANSI_GRAY
+import tri.util.ANSI_RESET
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
@@ -63,10 +71,10 @@ class McpCli : CliktCommand(
     private fun createAdapter(): McpServerAdapter {
         return if (serverUrl == "local") {
             if (verbose) echo("Using local MCP server with PromptLibrary")
-            LocalMcpServerAdapter(PromptLibrary.INSTANCE)
+            LocalMcpServer(PromptLibrary.INSTANCE)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
-            RemoteMcpServerAdapter(serverUrl)
+            RemoteMcpServer(serverUrl)
         }
     }
 
@@ -84,22 +92,23 @@ class McpCli : CliktCommand(
                     echo("No prompts found.")
                     return@runBlocking
                 }
-                
-                echo("Available prompts:")
+
+                echo()
+                echo("Available prompts on $adapter:")
                 echo("=".repeat(50))
                 
                 prompts.forEach { prompt ->
-                    echo("ID: ${prompt.id}")
-                    echo("Name: ${prompt.name}")
-                    if (prompt.title != null) echo("Title: ${prompt.title}")
-                    if (prompt.description != null) echo("Description: ${prompt.description}")
+                    echo("${ANSI_BOLD}ID$ANSI_RESET: $ANSI_CYAN${prompt.id}$ANSI_RESET")
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${prompt.name}")
+                    if (prompt.title != null) echo("${ANSI_BOLD}Title$ANSI_RESET: ${prompt.title}")
+                    if (prompt.description != null) echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${prompt.description}$ANSI_RESET")
                     
                     prompt.arguments?.let { args ->
                         if (args.isNotEmpty()) {
-                            echo("Arguments:")
+                            echo("${ANSI_BOLD}Arguments$ANSI_RESET:")
                             args.forEach { arg ->
                                 val required = if (arg.required) " (required)" else " (optional)"
-                                echo("  - ${arg.name}$required: ${arg.description}")
+                                echo("  - ${arg.name}$required: $ANSI_GRAY${arg.description}$ANSI_RESET")
                             }
                         }
                     }
@@ -162,8 +171,10 @@ class McpCli : CliktCommand(
     /** Execute a prompt (fill and then potentially run with LLM). */
     inner class ExecuteCommand : CliktCommand(
         name = "execute", 
-        help = "Execute a prompt - fill it with arguments and display the result"
+        help = "Execute a prompt - fill it with arguments and display the result after calling an LLM"
     ) {
+        private val model by option("--model", "-m", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
+            .default(GPT35_TURBO_ID)
         private val promptName by argument(help = "Name or ID of the prompt to execute")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
 
@@ -178,17 +189,17 @@ class McpCli : CliktCommand(
                     }
                 }
                 
-                val response = adapter.getPrompt(promptName, args)
+                val filledPrompt = adapter.getPrompt(promptName, args)
                 
-                echo("Executed prompt:")
+                echo("Filled prompt:")
                 echo("=".repeat(50))
                 
-                if (response.description != null) {
-                    echo("Description: ${response.description}")
+                if (filledPrompt.description != null) {
+                    echo("Description: ${filledPrompt.description}")
                     echo("-".repeat(40))
                 }
                 
-                response.messages.forEach { message ->
+                filledPrompt.messages.forEach { message ->
                     echo("Role: ${message.role}")
                     message.content?.forEach { part ->
                         when (part.partType) {
@@ -198,10 +209,37 @@ class McpCli : CliktCommand(
                     }
                     echo()
                 }
-                
+
+                val model = try {
+                    TextPlugin.multimodalModel(model)
+                } catch (x: NoSuchElementException) {
+                    throw McpServerException("Model '$model' not found. Available models: ${TextPlugin.chatModels().joinToString { it.modelId }}", x)
+                }
+
+                val completed = model.chat(filledPrompt.messages)
+
                 echo("=".repeat(50))
-                echo("Note: This shows the filled prompt. To run with an LLM, pipe to another tool or use a different command.")
-                
+                echo("Response from model '${model.modelId}':")
+
+                if (completed.values == null) {
+                    echo("No response received from the model.")
+                } else if (completed.values!!.isEmpty()) {
+                    echo("Model returned an empty response.")
+                } else {
+                    completed.values!!.forEach { message ->
+                        echo("Role: ${message.role}")
+                        message.content?.forEach { part ->
+                            when (part.partType) {
+                                tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
+                                else -> echo("${part.partType}: ${part.text ?: part}")
+                            }
+                        }
+                        echo()
+                    }
+                }
+
+                (model as? OpenAiMultimodalChat)?.client?.client?.close()
+                (model as? GeminiMultimodalChat)?.client?.close()
             } catch (e: McpServerException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)

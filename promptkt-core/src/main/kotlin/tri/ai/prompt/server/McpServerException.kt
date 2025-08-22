@@ -20,4 +20,4 @@
 package tri.ai.prompt.server
 
 /** Exception thrown when a prompt is not found. */
-class McpServerException(message: String) : Exception(message)
+class McpServerException(message: String, x: Throwable? = null) : Exception(message, x)

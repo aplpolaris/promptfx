@@ -31,9 +31,7 @@ import io.ktor.http.*
 /**
  * Remote MCP server adapter that connects to external MCP servers via HTTP.
  */
-class RemoteMcpServerAdapter(
-    private val baseUrl: String
-) : McpServerAdapter {
+class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
     
     private val httpClient = HttpClient(OkHttp) {
         engine {

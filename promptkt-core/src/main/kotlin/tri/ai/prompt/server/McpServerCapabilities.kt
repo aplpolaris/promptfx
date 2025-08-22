@@ -19,6 +19,10 @@
  */
 package tri.ai.prompt.server
 
-class McpServerCapabilities(
+data class McpServerCapabilities(
     val prompts: McpServerPromptCapability
+)
+
+data class McpServerPromptCapability(
+    val listChanged: Boolean = false
 )

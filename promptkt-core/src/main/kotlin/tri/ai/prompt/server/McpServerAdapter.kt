@@ -21,6 +21,7 @@ package tri.ai.prompt.server
 
 /**
  * Interface for connecting to MCP prompt servers, supporting both local and remote connections.
+ * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  */
 interface McpServerAdapter {
     
