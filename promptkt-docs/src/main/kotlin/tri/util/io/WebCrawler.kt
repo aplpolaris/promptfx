@@ -19,6 +19,10 @@
  */
 package tri.util.io
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -33,14 +37,33 @@ import java.io.IOException
  */
 object WebCrawler {
 
+    val JSON_MAPPER = ObjectMapper()
+        .registerKotlinModule()
+        .registerModule(JavaTimeModule())
+
     /** Crawls a given URL, extracting text and optionally following links. */
     fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, targetFolder: File, progressUpdate: (String) -> Unit) {
         val crawlResult = runBlocking {
             crawlWebsite(url, depth, maxLinks, requireSameDomain, mutableSetOf(), progressUpdate)
         }
         crawlResult.forEach { (_, content) ->
-            File(targetFolder, content.fileName())
+            val baseFileName = content.fileName()
+            
+            // Save text file
+            File(targetFolder, baseFileName)
                 .writeText(content.text)
+                
+            // Save metadata file
+            val metadata = WebScrapedDocumentMetadata(
+                url = content.url,
+                title = content.title,
+                isArticle = content.textArticle,
+                links = content.links,
+                textLength = content.text.length
+            )
+            val metadataFileName = baseFileName.substringBeforeLast(".txt") + ".metadata.json"
+            JSON_MAPPER.writerWithDefaultPrettyPrinter()
+                .writeValue(File(targetFolder, metadataFileName), metadata)
         }
     }
 
@@ -128,4 +151,16 @@ class WebCrawlContent(
     val textArticle: Boolean,
     val text: String,
     val links: List<String>
+)
+
+/** Metadata for a web scraped document. */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+data class WebScrapedDocumentMetadata(
+    val url: String,
+    val title: String,
+    val isArticle: Boolean,
+    val scrapedAt: String = java.time.LocalDateTime.now().toString(),
+    val links: List<String> = emptyList(),
+    val textLength: Int,
+    val linkCount: Int = links.size
 )
