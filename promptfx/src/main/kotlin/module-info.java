@@ -20,6 +20,7 @@
 import tri.ai.core.TextPlugin;
 import tri.promptfx.agents.*;
 import tri.promptfx.settings.AboutPlugin;
+import tri.promptfx.settings.ConfigurationPlugin;
 import tri.promptfx.text.*;
 import tri.promptfx.docs.*;
 import tri.promptfx.fun.*;
@@ -130,6 +131,7 @@ module tri.promptfx {
             AgenticPlugin,
 
             // 7 - settings
-            AboutPlugin
+            AboutPlugin,
+            ConfigurationPlugin
     ;
 }
