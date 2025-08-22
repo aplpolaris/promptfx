@@ -49,6 +49,9 @@ abstract class PromptFxPolicy {
     /** Returns true if the given view is supported by this policy. */
     abstract fun supportsView(simpleName: String): Boolean
 
+    /** Returns the list of plugins that are supported by this policy. */
+    abstract fun supportedPlugins(): List<TextPlugin>
+
     abstract val isShowBanner: Boolean
     abstract val isShowUsage: Boolean
     abstract val isShowApiKeyButton: Boolean
@@ -76,6 +79,7 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     override fun multimodalModels() = plugin.multimodalModels()
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
+    override fun supportedPlugins() = listOf(plugin)
 }
 
 /** OpenAI-only policy, as managed by [OpenAiPlugin]. */
@@ -99,6 +103,7 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun multimodalModels() = TextPlugin.multimodalModels()
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
+    override fun supportedPlugins() = TextPlugin.orderedPlugins
     override val bar = PromptFxPolicyBar("Unrestricted", Color.GRAY, Color.WHITE)
     override fun supportsView(simpleName: String) = true
 }

@@ -42,6 +42,8 @@ class ConfigurationViewTest {
         assertTrue(categories.any { it.displayName == "APIs/Models" })
         assertTrue(categories.any { it.displayName == "Views" })
         assertTrue(categories.any { it.displayName == "Configuration Files" })
+        assertTrue(categories.any { it.displayName == "PromptFx Config" })
+        assertTrue(categories.any { it.displayName == "Starship Config" })
         
         // Test that each category has a display name and icon
         categories.forEach { category ->
