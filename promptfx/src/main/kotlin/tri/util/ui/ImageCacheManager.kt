@@ -23,6 +23,7 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.Weigher
 import javafx.scene.image.Image
+import tri.util.info
 import tri.util.io.pdf.PdfUtils
 import java.awt.image.BufferedImage
 import java.io.File
@@ -55,8 +56,10 @@ object ImageCacheManager {
         .weigher(imageWeigher)
         .expireAfterAccess(1, TimeUnit.HOURS)
         .removalListener<ImageCacheKey, BufferedImage> { notification ->
-            // Optional: Log cache evictions for debugging
-            // println("Evicting image cache entry: ${notification.key}, cause: ${notification.cause}")
+            // Log cache evictions for debugging large document sets
+            if (notification.wasEvicted()) {
+                info<ImageCacheManager>("Evicted image from cache: ${notification.key?.pdfPath} (${notification.cause})")
+            }
         }
         .build()
 
@@ -93,9 +96,10 @@ object ImageCacheManager {
             }
         } catch (e: Exception) {
             // Log error but don't break the application
-            println("Error extracting images from PDF ${pdfFile.name}: ${e.message}")
+            info<ImageCacheManager>("Error extracting images from PDF ${pdfFile.name}: ${e.message}")
         }
 
+        info<ImageCacheManager>("Loaded ${result.size} images from ${pdfFile.name} (${imageCache.size()} total cached)")
         return result.distinctBy { it.hashCode() } // Remove duplicates
     }
 
