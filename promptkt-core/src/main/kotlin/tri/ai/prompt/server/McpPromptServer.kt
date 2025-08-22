@@ -47,7 +47,7 @@ class McpPromptServer {
             description = prompt.description,
             listOf(MultimodalChatMessage(
                 role = MChatRole.User,
-                content = listOf(MChatMessagePart(MPartType.TEXT, filled))
+                content = listOf(MChatMessagePart(MPartType.TEXT, text = filled))
         )))
     }
 
