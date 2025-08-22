@@ -21,4 +21,4 @@ tri.promptfx.fun.WeatherViewPlugin
 tri.promptfx.fun.WikipediaViewPlugin
 tri.promptfx.agents.AgenticPlugin
 tri.promptfx.settings.AboutPlugin
-tri.promptfx.settings.ConfigurationPlugin
+tri.promptfx.settings.PromptFxSettingsPlugin

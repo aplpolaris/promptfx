@@ -28,7 +28,7 @@ import java.time.format.DateTimeParseException
 /** Plugin registering models and services via the Gemini API. */
 class GeminiAiPlugin : TextPlugin {
 
-    private val client = GeminiClient()
+    val client = GeminiClient()
 
     override fun modelSource() = "Gemini"
 

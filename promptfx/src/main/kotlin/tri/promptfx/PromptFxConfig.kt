@@ -21,6 +21,7 @@ package tri.promptfx
 
 import javafx.stage.FileChooser
 import tornadofx.*
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_DEFAULT
 import tri.promptfx.docs.TextClusterView
 import tri.promptfx.docs.TextManagerView
 import tri.util.loggerFor
@@ -39,7 +40,7 @@ class PromptFxConfig: Component(), ScopedInstance {
     /** Management of local file/folder directory selections. */
     private val directories by lazy {
         mutableMapOf<String, File>().apply {
-            put("default", File(System.getProperty("user.home")))
+            put(DIR_KEY_DEFAULT, File(System.getProperty("user.home")))
             config.keys.filterIsInstance<String>().filter { it.startsWith(DIR_PREFIX) }.forEach {
                 put(it.substringAfter(DIR_PREFIX), File(config.getProperty(it)))
             }
@@ -55,7 +56,7 @@ class PromptFxConfig: Component(), ScopedInstance {
     }
 
     /** Get the directory for a given key. */
-    fun directory(key: String): File = directories[key] ?: directories["default"]!!
+    fun directory(key: String): File = directories[key] ?: directories[DIR_KEY_DEFAULT]!!
 
     /** Get the directory file for a given key. */
     fun directoryFile(key: String): String? = directoryFiles[key]
@@ -109,17 +110,26 @@ class PromptFxConfig: Component(), ScopedInstance {
         const val TEXTLIB_FILES = "textlib.files"
         const val CLUSTERLIB_FILES = "clusterlib.files"
 
+        const val DIR_KEY_DEFAULT = "default"
         const val DIR_KEY_TEXTLIB = "textlib"
         const val DIR_KEY_TXT = "txt"
         const val DIR_KEY_TRACE = "trace"
         const val DIR_KEY_IMAGE = "image"
 
+        val DIR_KEYS = listOf(
+            DIR_KEY_DEFAULT,
+            DIR_KEY_TEXTLIB,
+            DIR_KEY_TXT,
+            DIR_KEY_TRACE,
+            DIR_KEY_IMAGE
+        )
+
         val FF_CSV = FileChooser.ExtensionFilter("CSV Files", "*.csv")
-        val FF_JSON = FileChooser.ExtensionFilter("JSON", "*.json")
-        val FF_YAML = FileChooser.ExtensionFilter("YAML", "*.yaml", "*.yml")
+        val FF_JSON = FileChooser.ExtensionFilter("JSON Files", "*.json")
+        val FF_YAML = FileChooser.ExtensionFilter("YAML Files", "*.yaml", "*.yml")
         val FF_TXT = FileChooser.ExtensionFilter("Text Files", "*.txt", "*.md")
         val FF_PNG = FileChooser.ExtensionFilter("PNG Images", "*.png")
-        val FF_IMAGE = FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff")
+        val FF_IMAGE = FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff")
         val FF_ALL = FileChooser.ExtensionFilter("All Files", "*.*")
     }
 
@@ -130,7 +140,7 @@ fun UIComponent.promptFxFileChooser(
     title: String,
     filters: Array<FileChooser.ExtensionFilter> = emptyArray(),
     mode: FileChooserMode = FileChooserMode.Single,
-    dirKey: String = "default",
+    dirKey: String = DIR_KEY_DEFAULT,
     onComplete: (List<File>) -> Unit
 ) = chooseFile(
     title = title,
@@ -150,7 +160,7 @@ fun UIComponent.promptFxFileChooser(
 /** Show a directory chooser dialog with given settings, using global PromptFx config to manage initial directory. */
 fun UIComponent.promptFxDirectoryChooser(
     title: String = "Select Folder",
-    dirKey: String = "default",
+    dirKey: String = DIR_KEY_DEFAULT,
     onComplete: (File) -> Unit
 ) = chooseDirectory(
     title = title,
