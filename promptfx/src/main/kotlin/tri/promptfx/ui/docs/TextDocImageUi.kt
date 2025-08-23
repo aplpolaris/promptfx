@@ -24,6 +24,7 @@ import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.collections.ObservableList
 import javafx.geometry.Orientation
+import javafx.geometry.Pos
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
@@ -41,7 +42,7 @@ class TextDocImageUi: Fragment() {
 
     val images: ObservableList<Image> by param()
 
-    private val thumbnailSize = SimpleDoubleProperty(128.0)
+    private val thumbnailSize = SimpleDoubleProperty(THUMBNAIL_SIZE)
 
     override val root = scrollpane {
         vgrow = Priority.ALWAYS
@@ -62,12 +63,10 @@ class TextDocImageUi: Fragment() {
             }, images, thumbnailSize)
         )
         
-        hbox {
-            spacing = 8.0
-            
-            // Bind to the observable list to handle dynamic updates
+        hbox(8.0, Pos.CENTER) {
             bindChildren(images) { image ->
                 imageview(image) {
+                    paddingAll = 4.0
                     fitWidthProperty().bind(thumbnailSize)
                     fitHeightProperty().bind(thumbnailSize)
                     isPreserveRatio = true
@@ -78,7 +77,7 @@ class TextDocImageUi: Fragment() {
                         item("Copy to clipboard").action { copyToClipboard(image) }
                         item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
                             action {
-                                val workspace = scope!!.workspace as PromptFxWorkspace
+                                val workspace = scope.workspace as PromptFxWorkspace
                                 val view = try {
                                     workspace.findTaskView<ImageDescribeView>()!!
                                 } catch (e: Exception) {
@@ -95,5 +94,9 @@ class TextDocImageUi: Fragment() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val THUMBNAIL_SIZE = 128.0
     }
 }
