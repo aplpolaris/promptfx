@@ -33,7 +33,7 @@ class PdfUtilsTest {
 
     @Test
     fun testPdfPages() {
-        val pages = PdfUtils.pdfPageInfo(file)
+        val pages = PdfUtils.pdfPageInfo(file, false)
         pages.forEach {
             println("-".repeat(100))
             println("Page ${it.pageNumber}")
