@@ -87,17 +87,28 @@ data class TextDocMetadata(
     var path: URI? = null,
     var relativePath: String? = null,
 ) {
+
+    /** Additional attributes. */
+    var properties: TextAttributes = mutableMapOf()
+
     /**
      * Replace existing values with those provided.
      * Updates [title] and [author] but not other local properties.
      */
     fun replaceAll(values: Map<String, Any>) {
+        properties.clear()
         title = values["title"] as? String
         author = values["author"] as? String
-        properties.clear()
-        properties.putAll(values.filterKeys { it !in listOf("title", "author") })
+        mergeAll(values)
     }
 
-    /** Additional attributes. */
-    var properties: TextAttributes = mutableMapOf()
+    /**
+     * Merges existing values with those provided.
+     * Updates [title] and [author] but not other local properties.
+     */
+    fun mergeAll(values: Map<String, Any>) {
+        (values["title"] as? String)?.let { if (it.isNotBlank()) title = it }
+        (values["author"] as? String)?.let { if (it.isNotBlank()) author = it }
+        properties.putAll(values.filterKeys { it !in listOf("title", "author") })
+    }
 }
