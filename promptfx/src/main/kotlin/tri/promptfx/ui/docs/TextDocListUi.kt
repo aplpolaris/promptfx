@@ -94,7 +94,7 @@ class TextDocListUi : Fragment() {
 
     private fun openMetadataViewer(doc: TextDoc) {
         PdfViewerWithMetadataUi(doc) {
-            model.updateMetadata(doc, it.savedValues(), isSelect = true)
+            model.updateMetadata(doc, it.savedValues(), isReplace = true, isSelect = true)
         }.openModal(
             modality = Modality.NONE,
             block = false,

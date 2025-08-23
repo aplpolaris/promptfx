@@ -25,6 +25,7 @@ import tri.util.io.LocalFileManager
 import tri.util.io.LocalFileManager.extractTextContent
 import tri.util.io.LocalFileManager.fileToText
 import tri.util.io.LocalFileManager.originalFile
+import tri.util.io.LocalFileManager.readMetadata
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -79,8 +80,9 @@ enum class TextChunkerSourceMode(val uiName: String) {
             model.webScrapeModel.mainUrlText()
         override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> =
             model.webScrapeModel.scrapeWebsite(model.libraryFolder.value, model.isExtractMetadata.value, progressUpdate).map {
-                it.localFile?.asTextDoc(model.isHeaderRow.value)
-                    ?: textDocWithHeader(it.url.toString(), it.contentText, model.isHeaderRow.value)
+                it.localFile?.let { file ->
+                    file.asTextDoc(model.isHeaderRow.value)
+                } ?: textDocWithHeader(it.url.toString(), it.contentText, model.isHeaderRow.value)
             }
     },
 
@@ -114,6 +116,8 @@ enum class TextChunkerSourceMode(val uiName: String) {
                 }
                 metadata.path = uri
                 metadata.relativePath = relativeTo(File(parent)).path
+                metadata.mergeAll(readMetadata())
+
                 if (isFirstLineHeader)
                     dataHeader = text.substringBefore("\n").trim()
             }
