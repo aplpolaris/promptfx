@@ -5,6 +5,15 @@ prompts:
 
   - id: examples-api/traffic-api-request@1.0.0
     title: Traffic API Request Example
+    args:
+      - name: input
+        description: Natural language request for traffic information
+        required: true
+        type: string
+      - name: today
+        description: Current date (automatically injected)
+        required: false
+        type: string
     template: |
       Today is {{today}}. Convert the following natural language request for traffic information into a JSON object:
       ```
@@ -20,6 +29,15 @@ prompts:
 
   - id: examples-api/weather-api-request@1.0.0
     title: Weather API Request Example
+    args:
+      - name: input
+        description: Natural language request for weather information
+        required: true
+        type: string
+      - name: today
+        description: Current date (automatically injected)
+        required: false
+        type: string
     template: |
       Today is {{today}}. Convert the following natural language request for weather information into a JSON object:
       ```

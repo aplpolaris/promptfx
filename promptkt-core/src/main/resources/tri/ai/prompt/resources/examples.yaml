@@ -7,6 +7,11 @@ prompts:
 
   - id: examples/hello-world@1.0.0
     title: Hello World Example
+    args:
+      - name: input
+        description: The input text to include in the example
+        required: true
+        type: string
     template: |
       Hello, world!
       This is an example prompt.
@@ -17,6 +22,11 @@ prompts:
     title: Color Example
     description: Enter text to get a CSS color code.
     tags: [ color ]
+    args:
+      - name: input
+        description: Text describing a color to convert to CSS hex code
+        required: true
+        type: string
     template: |
       Create a 6-digit CSS code (e.g. `#808080`) for a color like the following text.
       text: {{input}}
@@ -26,6 +36,11 @@ prompts:
     title: Emoji Example
     description: Enter text to get an emoji.
     tags: [ emoji ]
+    args:
+      - name: input
+        description: Text to convert to emoji representation
+        required: true
+        type: string
     template: |
       Text: I love you
       Emoji: ❤️

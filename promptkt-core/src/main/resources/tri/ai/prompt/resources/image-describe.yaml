@@ -5,18 +5,22 @@ prompts:
 
   - id: image-describe/basic@1.0.0
     title: Basic Image Description
+    args: []
     template: Describe the image.
 
   - id: image-describe/caption@1.0.0
     title: Image Caption Generation
+    args: []
     template: Generate a caption for the image.
 
   - id: image-describe/detailed@1.0.0
     title: Detailed Image Description
+    args: []
     template: Describe everything you see in this image. Provide a detailed list of contents.
 
   - id: image-describe/json@1.0.0
     title: Image to JSON Conversion
+    args: []
     template: Convert the image into a JSON object describing its contents.
 
   - id: image-describe/json-graph@1.0.0
