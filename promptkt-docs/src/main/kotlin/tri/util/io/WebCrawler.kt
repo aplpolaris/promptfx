@@ -19,19 +19,31 @@
  */
 package tri.util.io
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.safety.Safelist
+import tri.util.io.LocalFileManager.metadataFile
+import tri.util.io.LocalFileManager.writeMetadata
 import tri.util.warning
 import java.io.File
 import java.io.IOException
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Recursive web crawler for extracting text from web pages, using [Jsoup].
  */
 object WebCrawler {
+
+    val JSON_MAPPER = ObjectMapper()
+        .registerKotlinModule()
+        .registerModule(JavaTimeModule())
 
     /** Crawls a given URL, extracting text and optionally following links. */
     fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, targetFolder: File, progressUpdate: (String) -> Unit) {
@@ -39,10 +51,26 @@ object WebCrawler {
             crawlWebsite(url, depth, maxLinks, requireSameDomain, mutableSetOf(), progressUpdate)
         }
         crawlResult.forEach { (_, content) ->
-            File(targetFolder, content.fileName())
-                .writeText(content.text)
+            val baseFileName = content.fileName()
+            
+            val textFile = File(targetFolder, baseFileName)
+            textFile.writeText(content.text)
+
+            val scrapedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(textFile.lastModified()), ZoneId.systemDefault())
+            textFile.metadataFile().writeMetadata(content.toMetadata(scrapedAt))
         }
     }
+
+    /** Extracts metadata from a WebCrawlContent object and timestamp. */
+    fun WebCrawlContent.toMetadata(scrapedAt: LocalDateTime = LocalDateTime.now()) = mapOf(
+        "web.url" to url,
+        "web.title" to title,
+        "web.isArticle" to textArticle,
+        "web.links" to links,
+        "web.length" to text.length,
+        "web.scrapedAt" to scrapedAt,
+        "file.modificationDate" to scrapedAt
+    )
 
     /**
      * Crawls a given URL, extracting text and optionally following links.

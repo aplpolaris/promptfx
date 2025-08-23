@@ -89,9 +89,9 @@ object LocalFileManager {
         return File(parentFile, "$name.txt")
     }
     /** Map a file to an associated metadata file. */
-    fun File.metadataFile(): File {
-        val name = nameWithoutExtension
-        return File(parentFile, "$name.meta.json")
+    fun File.metadataFile() = when {
+        name.endsWith(".meta.json") -> this
+        else -> File(parentFile, "$nameWithoutExtension.meta.json")
     }
 
     //endregion
@@ -148,12 +148,18 @@ object LocalFileManager {
             DOCX -> WordDocUtils.readDocxMetadata(this)
             else -> emptyMap()
         }.filterValues { it !is String || it.isNotBlank() }
-        if (props.isNotEmpty())
-            ObjectMapper()
-                .registerModule(JavaTimeModule())
-                .writerWithDefaultPrettyPrinter()
-                .writeValue(metadataFile(), props)
+        writeMetadata(props)
         return props
+    }
+
+    /**
+     * Write metadata to a given file's associated metadata file.
+     */
+    fun File.writeMetadata(props: Map<String, Any>) {
+        ObjectMapper()
+            .registerModule(JavaTimeModule())
+            .writerWithDefaultPrettyPrinter()
+            .writeValue(metadataFile(), props)
     }
 
     //endregion
