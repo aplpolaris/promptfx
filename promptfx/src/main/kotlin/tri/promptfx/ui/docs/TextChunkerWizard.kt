@@ -26,7 +26,10 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextChunk
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
+import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.chunk.TextChunkListView
@@ -45,6 +48,7 @@ class TextChunkerWizard: Wizard("Create Text Library", "Generate a library of te
     init {
         add(find<TextChunkerWizardSelectData>(wizardScope))
         add(find<TextChunkerWizardMethod>(wizardScope))
+        add(find<TextChunkerWizardLocation>(wizardScope))
     }
 }
 
@@ -286,5 +290,83 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
         internal const val CHUNK_BY_DELIMITER = "Delimiter"
         internal const val CHUNK_BY_REGEX = "Regex"
         internal const val CHUNK_BY_FIELD = "Field"
+    }
+}
+
+/** Wizard step for selecting where to save the library and additional processing options. */
+class TextChunkerWizardLocation: View("Library Location") {
+
+    val model: TextChunkerWizardModel by inject()
+
+    override val complete = model.isLibraryLocationValid
+
+    override val root = vbox(10) {
+        // library location selection
+        form {
+            fieldset("Library Location") {
+                field("Folder:") {
+                    hbox(5) {
+                        button("Select...") {
+                            action {
+                                promptFxDirectoryChooser(
+                                    dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
+                                    title = "Select Library Folder"
+                                ) {
+                                    model.libraryFolder.set(it)
+                                }
+                            }
+                        }
+                        label(model.libraryFolder.stringBinding { it?.absolutePath ?: "None selected" })
+                    }
+                }
+                field("Filename:") {
+                    hbox(5) {
+                        textfield(model.libraryFileName) {
+                            promptText = "embeddings2.json"
+                            prefColumnCount = 30
+                        }
+                        label {
+                            textProperty().bind(model.fileExists.stringBinding { if (it == true) "⚠" else "" })
+                            style = "-fx-text-fill: red; -fx-font-weight: bold;"
+                            tooltip = tooltip("File already exists and will be overwritten")
+                            visibleWhen(model.fileExists)
+                        }
+                    }
+                }
+            }
+            
+            fieldset("Processing Options") {
+                field {
+                    checkbox("Extract metadata", model.extractMetadata) {
+                        tooltip("Extract metadata for all documents in the library")
+                    }
+                }
+                field {
+                    vbox(5) {
+                        checkbox("Generate embeddings", model.generateEmbeddings) {
+                            tooltip("Calculate embedding vectors for all chunks in the library")
+                        }
+                        hbox(5) {
+                            visibleWhen(model.generateEmbeddings)
+                            managedWhen(model.generateEmbeddings)
+                            label("Embedding model:")
+                            combobox(model.embeddingModel, PromptFxModels.embeddingModels()) {
+                                cellFormat { text = it.modelId }
+                                prefWidth = 200.0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // show full path preview
+        separator()
+        hbox(5) {
+            label("Full path:")
+            label(model.libraryFile.stringBinding { it?.absolutePath ?: "" }) {
+                style = "-fx-font-style: italic;"
+            }
+        }
     }
 }

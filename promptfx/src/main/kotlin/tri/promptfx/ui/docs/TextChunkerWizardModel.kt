@@ -24,6 +24,7 @@ package tri.promptfx.ui.docs
 import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import tornadofx.*
+import tri.ai.core.EmbeddingModel
 import tri.ai.text.chunks.DelimiterTextChunker
 import tri.ai.text.chunks.NoOpTextChunker
 import tri.ai.text.chunks.RegexTextChunker
@@ -95,6 +96,21 @@ class TextChunkerWizardModel: ViewModel() {
     val chunkFilterMinSize = SimpleIntegerProperty(50)
     val chunkFilterRemoveDuplicates = SimpleBooleanProperty(true)
 
+    // library location options
+    val libraryFolder = SimpleObjectProperty<File>()
+    val libraryFileName = SimpleStringProperty("embeddings2.json")
+    val extractMetadata = SimpleBooleanProperty(true)
+    val generateEmbeddings = SimpleBooleanProperty(false)
+    val embeddingModel = SimpleObjectProperty<tri.ai.core.EmbeddingModel>()
+    
+    // computed properties for library location validation
+    val isLibraryLocationValid = libraryFolder.isNotNull.and(libraryFileName.isNotEmpty)
+    val libraryFile = Bindings.createObjectBinding(
+        { libraryFolder.value?.let { File(it, libraryFileName.value) } },
+        libraryFolder, libraryFileName
+    )
+    val fileExists = libraryFile.booleanBinding { it?.exists() == true }
+
     // preview of chunks
     val previewChunks = observableListOf<TextChunkViewModel>()
 
@@ -109,6 +125,21 @@ class TextChunkerWizardModel: ViewModel() {
         chunkDelimiter.onChange { updatePreview() }
         chunkRegex.onChange { updatePreview() }
         chunkFilterMinSize.onChange { updatePreview() }
+        
+        // Initialize library folder based on source selection
+        file.onChange { 
+            if (libraryFolder.value == null && it != null) {
+                libraryFolder.set(it.parentFile)
+            }
+        }
+        folder.onChange { 
+            if (libraryFolder.value == null && it != null) {
+                libraryFolder.set(it)
+            }
+        }
+        
+        // Initialize embedding model with default
+        embeddingModel.set(controller.embeddingStrategy.value?.model)
     }
 
     /** Get sample of input text based on current settings. */
