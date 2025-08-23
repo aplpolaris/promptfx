@@ -90,6 +90,13 @@ class PromptFxWorkspace : Workspace() {
         root.bottom {
             add(find<AiProgressView>())
         }
+        
+        // Track changes to the docked component to save last active view
+        dockedComponentProperty.addListener { _, _, newComponent ->
+            newComponent?.let { component ->
+                promptFxConfig.setLastActiveView(component::class.java.simpleName)
+            }
+        }
     }
 
     init {
@@ -137,7 +144,60 @@ class PromptFxWorkspace : Workspace() {
     }
 
     override fun onBeforeShow() {
-        dock<DocumentQaView>()
+        // Try to restore the last active view, fallback to DocumentQaView if not available
+        val lastActiveViewName = promptFxConfig.getLastActiveView()
+        if (lastActiveViewName != null) {
+            val restored = tryRestoreView(lastActiveViewName)
+            if (!restored) {
+                // Fallback to default view if restore failed
+                dock<DocumentQaView>()
+            }
+        } else {
+            // First time run - use default view
+            dock<DocumentQaView>()
+        }
+    }
+
+    /** Attempts to restore a view by its simple class name. Returns true if successful. */
+    private fun tryRestoreView(viewClassName: String): Boolean {
+        return try {
+            // Try to find the view in our registered views
+            val viewInfo = views.values.flatMap { it.values }
+                .find { viewInfo -> 
+                    viewInfo.view?.simpleName == viewClassName || 
+                    viewInfo.viewComponent?.javaClass?.simpleName == viewClassName 
+                }
+            
+            if (viewInfo != null) {
+                if (viewInfo.viewComponent != null) {
+                    dock(viewInfo.viewComponent!!)
+                    return true
+                } else if (viewInfo.view != null) {
+                    val viewInstance = find(viewInfo.view!!)
+                    dock(viewInstance)
+                    return true
+                }
+            }
+            
+            // Try to restore by matching known view class names
+            when (viewClassName) {
+                "DocumentQaView" -> { dock<DocumentQaView>(); true }
+                "CompletionsView" -> { dock<CompletionsView>(); true }
+                "ChatViewBasic" -> { dock<ChatViewBasic>(); true }
+                "ChatViewAdvanced" -> { dock<ChatViewAdvanced>(); true }
+                "ModelsView" -> { dock<ModelsView>(); true }
+                "EmbeddingsView" -> { dock<EmbeddingsView>(); true }
+                "ModerationsView" -> { dock<ModerationsView>(); true }
+                "AudioView" -> { dock<AudioView>(); true }
+                "AudioSpeechView" -> { dock<AudioSpeechView>(); true }
+                "ImagesView" -> { dock<ImagesView>(); true }
+                else -> false
+            }
+        } catch (e: Exception) {
+            // Log error and return false to trigger fallback
+            println("Failed to restore view $viewClassName: ${e.message}")
+            false
+        }
     }
 
     //region HOOKS FOR SPECIFIC VIEWS
