@@ -20,8 +20,12 @@
 package tri.promptfx.ui.docs
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.collections.ObservableList
+import javafx.geometry.Orientation
+import javafx.geometry.Pos
+import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -38,41 +42,61 @@ class TextDocImageUi: Fragment() {
 
     val images: ObservableList<Image> by param()
 
-    private val thumbnailSize = SimpleDoubleProperty(128.0)
+    private val thumbnailSize = SimpleDoubleProperty(THUMBNAIL_SIZE)
 
-    override val root = datagrid(images) {
+    override val root = scrollpane {
         vgrow = Priority.ALWAYS
-        prefWidth = 600.0
-        prefHeight = 600.0
-        cellWidthProperty.bind(thumbnailSize)
-        cellHeightProperty.bind(thumbnailSize)
-        cellCache {
-            imageview(it) {
-                fitWidthProperty().bind(thumbnailSize)
-                fitHeightProperty().bind(thumbnailSize)
-                isPreserveRatio = true
-                isPickOnBounds = true // so you can click anywhere on transparent images
-                tooltip { graphic = imageview(it) }
-                contextmenu {
-                    item("View full size").action { showImageDialog(image) }
-                    item("Copy to clipboard").action { copyToClipboard(image) }
-                    item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
-                        action {
-                            val workspace = scope!!.workspace as PromptFxWorkspace
-                            val view = try {
-                                workspace.findTaskView<ImageDescribeView>()!!
-                            } catch (e: Exception) {
-                                warning<TextDocImageUi>("Unable to find image description view.", e)
-                                return@action
+        hbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
+        vbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+        isFitToHeight = true
+        
+        // Set preferred size based on whether there are images and thumbnail size
+        // If no images, use minimal size; otherwise use width for ~4 images + spacing
+        prefWidthProperty().bind(
+            Bindings.createDoubleBinding({
+                if (images.isEmpty()) 100.0 else thumbnailSize.value * 4.2
+            }, images, thumbnailSize)
+        )
+        prefHeightProperty().bind(
+            Bindings.createDoubleBinding({
+                if (images.isEmpty()) 50.0 else thumbnailSize.value + 20.0
+            }, images, thumbnailSize)
+        )
+        
+        hbox(8.0, Pos.CENTER) {
+            bindChildren(images) { image ->
+                imageview(image) {
+                    paddingAll = 4.0
+                    fitWidthProperty().bind(thumbnailSize)
+                    fitHeightProperty().bind(thumbnailSize)
+                    isPreserveRatio = true
+                    isPickOnBounds = true // so you can click anywhere on transparent images
+                    tooltip { graphic = imageview(image) }
+                    contextmenu {
+                        item("View full size").action { showImageDialog(image) }
+                        item("Copy to clipboard").action { copyToClipboard(image) }
+                        item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
+                            action {
+                                val workspace = scope.workspace as PromptFxWorkspace
+                                val view = try {
+                                    workspace.findTaskView<ImageDescribeView>()!!
+                                } catch (e: Exception) {
+                                    warning<TextDocImageUi>("Unable to find image description view.", e)
+                                    return@action
+                                }
+                                view.setImage(image)
+                                workspace.dock(view)
+                                view.runTask()
                             }
-                            view.setImage(image)
-                            workspace.dock(view)
-                            view.runTask()
                         }
+                        item("Save to file...").action { saveToFile(image) }
                     }
-                    item("Save to file...").action { saveToFile(image) }
                 }
             }
         }
+    }
+
+    companion object {
+        const val THUMBNAIL_SIZE = 128.0
     }
 }
