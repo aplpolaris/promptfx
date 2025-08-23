@@ -68,6 +68,73 @@ class EmbeddingProgressTest {
         assertEquals(4 to 4, progressCalls[3])
     }
 
+    /** Test that progress callbacks work correctly with caching scenarios. */
+    @Test
+    fun testProgressWithCaching() = runTest {
+        val progressUpdates = mutableListOf<Pair<Int, Int>>()
+        val progressCallback: (Int, Int) -> Unit = { completed, total ->
+            progressUpdates.add(completed to total)
+        }
+        
+        val testModel = object : EmbeddingModel {
+            override val modelId = "test-model-with-cache"
+            private val cache = mutableMapOf<String, List<Double>>()
+            
+            override suspend fun calculateEmbedding(
+                text: List<String>,
+                outputDimensionality: Int?,
+                progressCallback: ((Int, Int) -> Unit)?
+            ): List<List<Double>> {
+                // Simulate caching logic like real implementations
+                val uncached = text.filter { it !in cache }
+                var processedCount = 0
+                
+                // Process uncached items in batches
+                uncached.chunked(2).forEach { batch ->
+                    Thread.sleep(5) // simulate processing time
+                    batch.forEach { item ->
+                        cache[item] = listOf(0.1, 0.2, 0.3)
+                    }
+                    processedCount += batch.size
+                    // Report progress: cached items + newly processed items
+                    progressCallback?.invoke(text.size - uncached.size + processedCount, text.size)
+                }
+                
+                return text.map { cache[it]!! }
+            }
+        }
+        
+        // First call - all items need processing
+        val texts1 = listOf("A", "B", "C", "D")
+        val result1 = testModel.calculateEmbedding(texts1, null, progressCallback)
+        assertEquals(4, result1.size)
+        
+        // Should have progress updates
+        assertTrue(progressUpdates.isNotEmpty())
+        assertEquals(4 to 4, progressUpdates.last()) // All completed
+        
+        progressUpdates.clear()
+        
+        // Second call - some cached, some new
+        val texts2 = listOf("A", "E", "B", "F") // A and B are cached
+        val result2 = testModel.calculateEmbedding(texts2, null, progressCallback)
+        assertEquals(4, result2.size)
+        
+        // Should report progress correctly with cached items
+        assertTrue(progressUpdates.isNotEmpty())
+        assertEquals(4 to 4, progressUpdates.last()) // All 4 completed (2 from cache + 2 processed)
+        
+        // First progress update should account for immediately available cached items
+        if (progressUpdates.size >= 2) {
+            assertTrue(progressUpdates[0].first >= 2, "Should account for cached items: ${progressUpdates[0]}")
+        }
+        
+        println("Caching scenario progress updates:")
+        progressUpdates.forEach { (completed, total) ->
+            println("  $completed/$total (${(completed.toDouble() / total * 100).toInt()}%)")
+        }
+    }
+
     /** Test that embedding models work correctly without progress callbacks. */
     @Test
     fun testWithoutProgressCallback() = runTest {
