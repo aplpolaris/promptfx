@@ -1,0 +1,37 @@
+# Sample runtime configuration to test Custom tab feature
+---
+custom-test-view-1:
+  prompt:
+    id: test-custom-category-1
+    name: Custom Test View 1
+    category: CustomCategory1
+    template: "Test prompt 1: {{input}}"
+  modeOptions: []
+  isShowModelParameters: false
+
+custom-test-view-2:
+  prompt:
+    id: test-custom-category-2
+    name: Custom Test View 2
+    category: CustomCategory1
+    template: "Test prompt 2: {{input}}"
+  modeOptions: []
+  isShowModelParameters: false
+
+custom-test-view-3:
+  prompt:
+    id: test-custom-category-3
+    name: Custom Test View 3
+    category: CustomCategory2
+    template: "Test prompt 3: {{input}}"
+  modeOptions: []
+  isShowModelParameters: false
+
+existing-category-test:
+  prompt:
+    id: test-existing-category
+    name: Text Analysis Custom
+    category: Text
+    template: "Analyze this text: {{input}}"
+  modeOptions: []
+  isShowModelParameters: false

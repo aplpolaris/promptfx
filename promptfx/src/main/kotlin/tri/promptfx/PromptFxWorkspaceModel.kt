@@ -36,43 +36,62 @@ class PromptFxWorkspaceModel(
     val viewGroups: List<ViewGroupModel> = mutableListOf()
 ) {
     companion object {
+        /** Built-in categories that should have their own tabs. */
+        private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+        
         /** The singleton instance of the workspace model. */
         val instance: PromptFxWorkspaceModel by lazy {
-            val categories = NavigableWorkspaceView.viewPlugins.map { it.category }.toSet() +
-                    RuntimePromptViewConfigs.views.values.map { it.prompt.category ?: "Uncategorized" }.toSet()
-
+            val builtInCategories = NavigableWorkspaceView.viewPlugins.map { it.category }.toSet()
+            
             val viewsById = NavigableWorkspaceView.viewPlugins.associateBy { it.name }
             val viewsRuntimeById = RuntimePromptViewConfigs.views.values.associateBy { it.prompt.title ?: it.prompt.name ?: it.prompt.id }
-            val allViewsById = mutableMapOf<String, NavigableWorkspaceView>().apply {
-                putAll(viewsById)
-                putAll(viewsRuntimeById.mapValues { NavigableWorkspaceViewRuntime(it.value) })
-            }
+            
+            // Separate runtime views into those that match built-in categories and those that don't
+            val runtimeViews = viewsRuntimeById.mapValues { NavigableWorkspaceViewRuntime(it.value) }
+            val runtimeViewsInBuiltInCategories = runtimeViews.values.filter { it.category in BUILT_IN_CATEGORIES }
+            val runtimeViewsInCustomCategories = runtimeViews.values.filter { it.category !in BUILT_IN_CATEGORIES }
 
             info<PromptFxWorkspaceModel>("Loading view configuration...")
-            val viewGroups = categories.associateWith {
-                val viewsInCategory = allViewsById.values.filter { view -> view.category == it }
-                    .sortedBy { it.name }
+            
+            // Create view groups for built-in categories (including runtime views that match)
+            val builtInViewGroups = builtInCategories.associateWith { category ->
+                val builtInViewsInCategory = viewsById.values.filter { it.category == category }.sortedBy { it.name }
+                val runtimeViewsInCategory = runtimeViewsInBuiltInCategories.filter { it.category == category }.sortedBy { it.name }
+                val allViewsInCategory = builtInViewsInCategory + runtimeViewsInCategory
 
                 //region LOGGING
-                val viewLoggingInfo = viewsInCategory.map { view ->
+                val viewLoggingInfo = allViewsInCategory.map { view ->
                     val color = when (view.name) {
                         in viewsById -> ANSI_YELLOW
-                        in viewsRuntimeById -> ANSI_GREEN
+                        in runtimeViews -> ANSI_GREEN
                         else -> throw IllegalStateException("Impossible.")
                     }
-                    val viewExistsMoreThanOnce = listOfNotNull(viewsById[view.name], viewsRuntimeById[view.name]).size > 1
+                    val viewExistsMoreThanOnce = listOfNotNull(viewsById[view.name], runtimeViews[view.name]).size > 1
                     if (viewExistsMoreThanOnce)
                         "$color${view.name}*$ANSI_RESET"
                     else
                         "$color${view.name}$ANSI_RESET"
                 }
-                info<NavigableWorkspaceView>("  - $it: ${viewLoggingInfo.joinToString()}")
+                info<NavigableWorkspaceView>("  - $category: ${viewLoggingInfo.joinToString()}")
                 //endregion
 
-                ViewGroupModel(it, groupIcon(it), viewsInCategory)
+                ViewGroupModel(category, groupIcon(category), allViewsInCategory)
+            }
+            
+            // Create Custom tab for runtime views with non-built-in categories
+            val customViewGroups = if (runtimeViewsInCustomCategories.isNotEmpty()) {
+                val customCategories = runtimeViewsInCustomCategories.map { it.category }.distinct().sorted()
+                info<NavigableWorkspaceView>("  - Custom: ${customCategories.joinToString { cat -> 
+                    val viewsInCat = runtimeViewsInCustomCategories.filter { it.category == cat }
+                    "$ANSI_GREEN$cat (${viewsInCat.size} views)$ANSI_RESET" 
+                }}")
+                
+                listOf(ViewGroupModel("Custom", groupIcon("Custom"), runtimeViewsInCustomCategories.sortedBy { "${it.category}/${it.name}" }))
+            } else {
+                emptyList()
             }
 
-            PromptFxWorkspaceModel(viewGroups.values.toList())
+            PromptFxWorkspaceModel(builtInViewGroups.values.toList() + customViewGroups)
         }
         private fun groupIcon(category: String): FontAwesomeIconView {
             return when (category) {
@@ -88,6 +107,7 @@ class PromptFxWorkspaceModel(
                 "Documentation" -> FontAwesomeIcon.BOOK
                 "Agents" -> FontAwesomeIcon.ANDROID
                 "Settings" -> FontAwesomeIcon.COG
+                "Custom" -> FontAwesomeIcon.CUBES
                 else -> FontAwesomeIcon.CUBES
             }.graphic.fireOrange
         }
