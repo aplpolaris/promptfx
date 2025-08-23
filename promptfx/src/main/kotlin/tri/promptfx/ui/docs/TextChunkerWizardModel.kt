@@ -104,7 +104,9 @@ class TextChunkerWizardModel: ViewModel() {
     val embeddingModel = SimpleObjectProperty<tri.ai.core.EmbeddingModel>()
     
     // computed properties for library location validation
-    val isLibraryLocationValid = libraryFolder.isNotNull.and(libraryFileName.isNotEmpty)
+    val isLibraryLocationValid = libraryFolder.isNotNull
+        .and(libraryFileName.isNotEmpty)
+        .and(generateEmbeddings.not().or(embeddingModel.isNotNull))
     val libraryFile = Bindings.createObjectBinding(
         { libraryFolder.value?.let { File(it, libraryFileName.value) } },
         libraryFolder, libraryFileName

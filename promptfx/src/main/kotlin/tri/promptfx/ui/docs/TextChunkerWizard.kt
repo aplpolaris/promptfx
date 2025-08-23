@@ -354,6 +354,11 @@ class TextChunkerWizardLocation: View("Library Location") {
                                 cellFormat { text = it.modelId }
                                 prefWidth = 200.0
                             }
+                            label("*") {
+                                style = "-fx-text-fill: red; -fx-font-weight: bold;"
+                                tooltip = tooltip("Embedding model required when generating embeddings")
+                                visibleWhen(model.generateEmbeddings.and(model.embeddingModel.isNull))
+                            }
                         }
                     }
                 }
