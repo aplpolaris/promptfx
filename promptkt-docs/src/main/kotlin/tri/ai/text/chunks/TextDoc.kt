@@ -21,6 +21,7 @@ package tri.ai.text.chunks
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import tri.util.io.LocalFileManager.PDF
 import java.io.File
 import java.net.URI
@@ -84,9 +85,16 @@ data class TextDocMetadata(
     @Deprecated("Use 'dateTime' instead")
     var date: LocalDate? = null,
     var dateTime: LocalDateTime? = null,
+    @JsonIgnore
     var path: URI? = null,
     var relativePath: String? = null,
 ) {
+
+    @get:JsonProperty("path")
+    private var pathString: String?
+        get() = path?.toASCIIString()
+        set(value) { path = value?.let { URI.create(it) } }
+
 
     /** Additional attributes. */
     var properties: TextAttributes = mutableMapOf()

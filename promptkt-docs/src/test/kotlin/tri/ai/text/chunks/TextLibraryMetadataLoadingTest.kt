@@ -19,14 +19,11 @@
  */
 package tri.ai.text.chunks
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import tri.util.io.LocalFileManager.writeMetadata
 import java.io.File
-import java.time.LocalDateTime
 
 class TextLibraryMetadataLoadingTest {
 
