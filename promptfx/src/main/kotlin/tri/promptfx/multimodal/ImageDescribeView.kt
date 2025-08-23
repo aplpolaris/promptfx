@@ -38,7 +38,7 @@ import java.net.URI
 class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Multimodal", "Image Description", type = ImageDescribeView::class)
 
 /** View designed to describe an image. */
-class ImageDescribeView: AiPlanTaskView("Image Description (beta)", "Drop an image to describe into the box on the left.") {
+class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to describe into the box on the left.") {
 
     companion object {
         private const val PROMPT_PREFIX = "image-describe"

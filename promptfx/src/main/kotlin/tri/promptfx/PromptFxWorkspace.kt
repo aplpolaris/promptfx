@@ -59,7 +59,7 @@ class PromptFxWorkspace : Workspace() {
     val viewsWithOutputs
         get() = views.filter { it.affordances.producesOutput }
 
-    private fun <X> Map<String, Map<String, X>>.filter(predicate: (X) -> Boolean) =
+    private fun Map<String, Map<String, PromptFxViewInfo>>.filter(predicate: (PromptFxViewInfo) -> Boolean) =
         mapValues { it.value.filterValues(predicate) }.filterValues { it.isNotEmpty() }
 
     //endregion
@@ -142,10 +142,24 @@ class PromptFxWorkspace : Workspace() {
 
     //region HOOKS FOR SPECIFIC VIEWS
 
-    /** Looks up a view by name. */
+    /**
+     * Looks up a view by name.
+     * This may instantiate a new view if not already created.
+     */
     fun findTaskView(name: String): AiTaskView? {
         return views.values.map { it.entries }.flatten()
-            .find { it.key == name }?.let { it.value.viewComponent ?: find(it.value.view!!) } as? AiTaskView
+            .find { it.key == name }
+            ?.let { it.value.viewComponent ?: find(it.value.view!!) } as? AiTaskView
+    }
+
+    /**
+     * Looks up a view by type.
+     * This may instantiate a new view if not already created.
+     */
+    inline fun <reified T> findTaskView(): T? where T: AiTaskView {
+        return views.values.map { it.entries }.flatten()
+            .map { it.value.viewComponent ?: find(it.value.view!!) }
+            .filterIsInstance<T>().firstOrNull()
     }
 
     /** Launches the template view with the given prompt trace. */

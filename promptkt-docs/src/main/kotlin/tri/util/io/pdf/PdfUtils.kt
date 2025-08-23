@@ -70,11 +70,11 @@ object PdfUtils {
 
     /** Extract text from PDF. */
     fun pdfText(file: File) =
-        pdfPageInfo(file).joinToString("\n\n\n") { it.text }
+        pdfPageInfo(file, findImages = false).joinToString("\n\n\n") { it.text }
 
     /** Extract text from PDF into pages. */
-    fun pdfPageInfo(file: File) = Loader.loadPDF(file).use { doc ->
-        (1..doc.numberOfPages).map { doc.pageInfo(it) }
+    fun pdfPageInfo(file: File, findImages: Boolean) = Loader.loadPDF(file).use { doc ->
+        (1..doc.numberOfPages).map { doc.pageInfo(it, findImages) }
     }
 
     //region GENERAL UTILS
@@ -92,10 +92,10 @@ object PdfUtils {
     //region PAGE UTILS
 
     /** Extract text from a specific page of a PDF. */
-    private fun PDDocument.pageInfo(pageNumber: Int): PdfPageInfo {
+    private fun PDDocument.pageInfo(pageNumber: Int, findImages: Boolean): PdfPageInfo {
         val page = getPage(pageNumber - 1)
         val text = textOnPage(pageNumber)
-        val images = page.images()
+        val images = if (findImages) page.images() else listOf() // image extraction has significant memory overhead
         val links = page.links()
         return PdfPageInfo(pageNumber, text, images, links)
     }

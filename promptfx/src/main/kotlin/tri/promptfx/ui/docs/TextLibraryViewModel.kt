@@ -45,7 +45,7 @@ import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
-import tri.util.io.pdf.PdfUtils
+import tri.util.io.pdf.PdfImageCache
 import tri.util.ui.createListBinding
 import java.awt.image.BufferedImage
 import java.io.File
@@ -95,20 +95,23 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
-            docSelectionPdf.set(firstPdf)
 
-            docSelectionImages.clear()
-            it.list.forEach {
-                val pdfFile = it.pdfFile()
-                if (pdfFile != null && pdfFile.exists()) {
-                    runAsync {
-                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
-                            .deduplicated()
-                    } ui {
-                        if (it.isEmpty()) {
-                            info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
+            if (docSelectionPdf.value != firstPdf) {
+                docSelectionPdf.set(firstPdf)
+                docSelectionImages.clear()
+                it.list.forEach {
+                    val pdfFile = it.pdfFile()
+                    if (pdfFile != null && pdfFile.exists()) {
+                        runAsync {
+                            PdfImageCache.getImagesFromPdf(pdfFile)
+//                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
+//                            .deduplicated()
+                        } ui {
+                            if (it.isEmpty()) {
+                                info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
+                            }
+                            docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                         }
-                        docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }
                 }
             }

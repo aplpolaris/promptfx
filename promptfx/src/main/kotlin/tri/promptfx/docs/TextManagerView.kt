@@ -70,10 +70,10 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
                     }
                     fold("Details on Selected Document(s)", expanded = true) {
                         isFitToWidth = true
-                        add(TextDocDetailsUi(model.docSelection))
+                        add(find<TextDocDetailsUi>(viewScope, params = mapOf("selectedItems" to model.docSelection)))
                     }
                     fold("Images from Document", expanded = false) {
-                        add(TextDocImageUi(model.docSelectionImages))
+                        add(find<TextDocImageUi>(viewScope, params = mapOf("images" to model.docSelectionImages)))
                     }
                     fold("Details on Selected Chunk(s)", expanded = false) {
                         vgrow = Priority.ALWAYS
