@@ -26,6 +26,9 @@ import tri.ai.openai.OpenAiPlugin
 /** Policy for determining which models are available within PromptFx. */
 abstract class PromptFxPolicy {
 
+    /** Returns the list of plugins that are supported by this policy. */
+    abstract fun supportedPlugins(): List<TextPlugin>
+    /** Returns information about all models supported by this policy. */
     abstract fun modelInfo(): List<ModelInfo>
 
     abstract fun embeddingModels(): List<EmbeddingModel>
@@ -69,6 +72,7 @@ data class PromptFxPolicyBar(
 
 /** Policy based on a provided plugin. */
 abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
+    override fun supportedPlugins() = listOf(plugin)
     override fun modelInfo() = plugin.modelInfo()
     override fun embeddingModels() = plugin.embeddingModels()
     override fun textCompletionModels() = plugin.textCompletionModels()
@@ -92,6 +96,8 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override val isShowUsage = true
     override val isShowBanner = false
     override val isShowApiKeyButton = true
+    override val bar = PromptFxPolicyBar("Unrestricted", Color.GRAY, Color.WHITE)
+    override fun supportedPlugins() = TextPlugin.orderedPlugins
     override fun modelInfo() = TextPlugin.modelInfo()
     override fun embeddingModels() = TextPlugin.embeddingModels()
     override fun textCompletionModels() = TextPlugin.textCompletionModels()
@@ -99,6 +105,5 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun multimodalModels() = TextPlugin.multimodalModels()
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
-    override val bar = PromptFxPolicyBar("Unrestricted", Color.GRAY, Color.WHITE)
     override fun supportsView(simpleName: String) = true
 }

@@ -6,6 +6,19 @@ prompts:
   - id: generate-list/items-with-category@1.0.0
     title: Generate List of Items with Category
     description: Generates a basic list of items from the input text based on a provided category and known items.
+    args:
+      - name: input
+        description: The text to analyze for items
+        required: true
+        type: string
+      - name: item_category
+        description: The category of items to identify
+        required: true
+        type: string
+      - name: known_items
+        description: List of known items in the category to use as examples
+        required: true
+        type: string
     template: |
       Generate a list from the input text based on the provided list, as a JSON with two parts:
         1. "item_category": copy the category provided
@@ -39,6 +52,19 @@ prompts:
   - id: generate-list/items-with-category-new@1.0.0
     title: Generate List of Items with Category - Known and New
     description: Generates a list of items from the input text based on a provided category and known items.
+    args:
+      - name: input
+        description: The text to analyze for items
+        required: true
+        type: string
+      - name: item_category
+        description: The category of items to identify
+        required: true
+        type: string
+      - name: known_items
+        description: List of known items in the category
+        required: true
+        type: string
     template: |
       Generate a list from the input text based on the provided list, as a JSON with four parts:
         1. "item_category": copy the category provided

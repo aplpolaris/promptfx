@@ -4,6 +4,11 @@ prompts:
 
   - id: validate/correct@1.0.0
     title: Validate Correctness
+    args:
+      - name: result
+        description: The statement or result to validate for correctness
+        required: true
+        type: string
     template: |
       Determine whether the following is true or false. If it is false, provide a corrected version.
       ```
@@ -12,6 +17,11 @@ prompts:
 
   - id: validate/json@1.0.0
     title: Validate JSON
+    args:
+      - name: result
+        description: The JSON string to validate
+        required: true
+        type: string
     template: |
       Determine if the result is valid json. Respond simply "valid" or "invalid".
       ```

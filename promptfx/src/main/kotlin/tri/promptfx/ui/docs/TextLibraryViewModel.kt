@@ -47,6 +47,7 @@ import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
 import tri.util.io.pdf.PdfImageCache
 import tri.util.ui.createListBinding
+import tri.util.ui.ImageCacheManager
 import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
@@ -95,7 +96,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
-
             if (docSelectionPdf.value != firstPdf) {
                 docSelectionPdf.set(firstPdf)
                 docSelectionImages.clear()
@@ -104,8 +104,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                     if (pdfFile != null && pdfFile.exists()) {
                         runAsync {
                             PdfImageCache.getImagesFromPdf(pdfFile)
-//                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
-//                            .deduplicated()
                         } ui {
                             if (it.isEmpty()) {
                                 info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
@@ -171,9 +169,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         else
             docSelection.setAll(library.library.docs.first())
     }
-
-    private fun List<BufferedImage>.deduplicated() =
-        associateBy { it.hashCode() }.values.toList()
 
     //endregion
 

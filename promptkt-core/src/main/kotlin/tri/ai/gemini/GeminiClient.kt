@@ -34,7 +34,7 @@ import java.io.Closeable
  */
 class GeminiClient : Closeable {
 
-    private val settings = GeminiSettings()
+    val settings = GeminiSettings()
     private val client = settings.client
 
     /** Returns true if the client is configured with an API key. */
