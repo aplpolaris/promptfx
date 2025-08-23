@@ -343,9 +343,8 @@ fun <X> ListView<X>.bindSelectionBidirectional(property: ObservableList<X>) {
     property.onChange {
         if (!isUpdating) {
             val indices = it.list.map { items.indexOf(it) }.toIntArray()
-            if (indices.isEmpty())
-                selectionModel.clearSelection()
-            else
+            selectionModel.clearSelection()
+            if (indices.isNotEmpty())
                 selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
         }
     }
