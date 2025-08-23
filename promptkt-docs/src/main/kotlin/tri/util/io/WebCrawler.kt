@@ -19,7 +19,6 @@
  */
 package tri.util.io
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
@@ -28,9 +27,14 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.safety.Safelist
+import tri.util.io.LocalFileManager.metadataFile
+import tri.util.io.LocalFileManager.writeMetadata
 import tri.util.warning
 import java.io.File
 import java.io.IOException
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Recursive web crawler for extracting text from web pages, using [Jsoup].
@@ -49,23 +53,24 @@ object WebCrawler {
         crawlResult.forEach { (_, content) ->
             val baseFileName = content.fileName()
             
-            // Save text file
-            File(targetFolder, baseFileName)
-                .writeText(content.text)
-                
-            // Save metadata file
-            val metadata = WebScrapedDocumentMetadata(
-                url = content.url,
-                title = content.title,
-                isArticle = content.textArticle,
-                links = content.links,
-                textLength = content.text.length
-            )
-            val metadataFileName = baseFileName.substringBeforeLast(".txt") + ".metadata.json"
-            JSON_MAPPER.writerWithDefaultPrettyPrinter()
-                .writeValue(File(targetFolder, metadataFileName), metadata)
+            val textFile = File(targetFolder, baseFileName)
+            textFile.writeText(content.text)
+
+            val scrapedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(textFile.lastModified()), ZoneId.systemDefault())
+            textFile.metadataFile().writeMetadata(content.toMetadata(scrapedAt))
         }
     }
+
+    /** Extracts metadata from a WebCrawlContent object and timestamp. */
+    fun WebCrawlContent.toMetadata(scrapedAt: LocalDateTime = LocalDateTime.now()) = mapOf(
+        "web.url" to url,
+        "web.title" to title,
+        "web.isArticle" to textArticle,
+        "web.links" to links,
+        "web.length" to text.length,
+        "web.scrapedAt" to scrapedAt,
+        "file.modificationDate" to scrapedAt
+    )
 
     /**
      * Crawls a given URL, extracting text and optionally following links.
@@ -151,16 +156,4 @@ class WebCrawlContent(
     val textArticle: Boolean,
     val text: String,
     val links: List<String>
-)
-
-/** Metadata for a web scraped document. */
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class WebScrapedDocumentMetadata(
-    val url: String,
-    val title: String,
-    val isArticle: Boolean,
-    val scrapedAt: String = java.time.LocalDateTime.now().toString(),
-    val links: List<String> = emptyList(),
-    val textLength: Int,
-    val linkCount: Int = links.size
 )
