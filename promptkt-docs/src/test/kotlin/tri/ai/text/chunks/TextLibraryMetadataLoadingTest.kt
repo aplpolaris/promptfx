@@ -119,11 +119,9 @@ class TextLibraryMetadataLoadingTest {
 
     @Test
     fun `test metadata from meta json file overrides embedded metadata`(@TempDir tempDir: File) {
-        // Create a test text file
         val textFile = File(tempDir, "override-test.txt")
         textFile.writeText("Document with metadata override test.")
 
-        // Create metadata file with different values
         val metadataFromFile = mapOf(
             "title" to "Title from Meta File",
             "author" to "Author from Meta File",
@@ -140,25 +138,19 @@ class TextLibraryMetadataLoadingTest {
                 this.metadata.properties["originalProperty"] = "Original Property Value"
             })
         }
-
-        // Save the library to embeddings.json
         val embeddingsFile = File(tempDir, "embeddings-override.json")
         TextLibrary.saveTo(library, embeddingsFile)
-
-        // Load the library back
         val loadedLibrary = TextLibrary.loadFrom(embeddingsFile)
 
         // Verify the library was loaded correctly
         assertEquals(1, loadedLibrary.docs.size)
         val loadedDoc = loadedLibrary.docs.first()
 
-        // Verify metadata from .meta.json file overrides embedded metadata
+        // Verify metadata merge from .meta.json file overrides embedded metadata, keeping old properties
         assertEquals("Title from Meta File", loadedDoc.metadata.title)
         assertEquals("Author from Meta File", loadedDoc.metadata.author)
         assertEquals("New Property Value", loadedDoc.metadata.properties["newProperty"])
-
-        // Verify original properties are replaced (as per replaceAll() behavior)
-        assertNull(loadedDoc.metadata.properties["originalProperty"])
+        assertEquals("Original Property Value", loadedDoc.metadata.properties["originalProperty"])
     }
 
     @Test
