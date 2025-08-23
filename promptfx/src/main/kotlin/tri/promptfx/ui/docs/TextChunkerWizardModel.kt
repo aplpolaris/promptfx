@@ -24,6 +24,7 @@ package tri.promptfx.ui.docs
 import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import tornadofx.*
+import tri.ai.core.EmbeddingModel
 import tri.ai.text.chunks.DelimiterTextChunker
 import tri.ai.text.chunks.NoOpTextChunker
 import tri.ai.text.chunks.RegexTextChunker
@@ -50,11 +51,9 @@ class TextChunkerWizardModel: ViewModel() {
 
     var isFileMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FILE.uiName)!!
     val file = SimpleObjectProperty<File>()
-    val fileName = file.stringBinding { it?.name ?: "None" }
 
     val isFolderMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FOLDER.uiName)!!
     val folder = SimpleObjectProperty<File>()
-    val folderName = folder.stringBinding { it?.name ?: "None" }
     val folderIncludeSubfolders = SimpleObjectProperty(false)
     val folderExtractText = SimpleObjectProperty(true)
 
@@ -95,6 +94,23 @@ class TextChunkerWizardModel: ViewModel() {
     val chunkFilterMinSize = SimpleIntegerProperty(50)
     val chunkFilterRemoveDuplicates = SimpleBooleanProperty(true)
 
+    // library location options
+    val libraryFolder = SimpleObjectProperty<File>()
+    val libraryFileName = SimpleStringProperty("embeddings2.json")
+    val isExtractMetadata = SimpleBooleanProperty(true)
+    val isGenerateEmbeddings = SimpleBooleanProperty(false)
+    val embeddingModel = SimpleObjectProperty<EmbeddingModel>()
+    
+    // computed properties for library location validation
+    val isLibraryLocationValid = libraryFolder.isNotNull
+        .and(libraryFileName.isNotEmpty)
+        .and(isGenerateEmbeddings.not().or(embeddingModel.isNotNull))
+    val libraryFile = Bindings.createObjectBinding(
+        { libraryFolder.value?.let { File(it, libraryFileName.value) } },
+        libraryFolder, libraryFileName
+    )
+    val fileExists = libraryFile.booleanBinding { it?.exists() == true }
+
     // preview of chunks
     val previewChunks = observableListOf<TextChunkViewModel>()
 
@@ -109,6 +125,13 @@ class TextChunkerWizardModel: ViewModel() {
         chunkDelimiter.onChange { updatePreview() }
         chunkRegex.onChange { updatePreview() }
         chunkFilterMinSize.onChange { updatePreview() }
+        
+        // Initialize library folder based on source selection
+        file.onChange { libraryFolder.set(it!!.parentFile) }
+        folder.onChange { libraryFolder.set(it) }
+        
+        // Initialize embedding model with default
+        embeddingModel.set(controller.embeddingStrategy.value?.model)
     }
 
     /** Get sample of input text based on current settings. */

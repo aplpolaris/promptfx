@@ -73,7 +73,7 @@ class TextLibrary(_id: String? = null) {
                             // Load metadata from .meta.json file if it exists
                             val metadataFromFile = file.readMetadata()
                             if (metadataFromFile.isNotEmpty()) {
-                                doc.metadata.replaceAll(metadataFromFile)
+                                doc.metadata.mergeAll(metadataFromFile)
                             }
                         } catch (x: URISyntaxException) {
                             fine<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")

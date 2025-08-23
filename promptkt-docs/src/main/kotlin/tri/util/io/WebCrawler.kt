@@ -46,18 +46,35 @@ object WebCrawler {
         .registerModule(JavaTimeModule())
 
     /** Crawls a given URL, extracting text and optionally following links. */
-    fun crawlWebsite(url: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, targetFolder: File, progressUpdate: (String) -> Unit) {
+    fun crawlWebsite(
+        url: String,
+        depth: Int = 0,
+        maxLinks: Int = 100,
+        requireSameDomain: Boolean,
+        targetFolder: File?,
+        saveMetadata: Boolean,
+        progressUpdate: (String) -> Unit
+    ): Map<String, WebCrawlContent> {
         val crawlResult = runBlocking {
             crawlWebsite(url, depth, maxLinks, requireSameDomain, mutableSetOf(), progressUpdate)
         }
+        if (targetFolder != null) {
+            saveCrawlResults(crawlResult, targetFolder, saveMetadata)
+        }
+        return crawlResult
+    }
+
+    private fun saveCrawlResults(crawlResult: Map<String, WebCrawlContent>, targetFolder: File, saveMetadata: Boolean) {
         crawlResult.forEach { (_, content) ->
             val baseFileName = content.fileName()
-            
             val textFile = File(targetFolder, baseFileName)
             textFile.writeText(content.text)
+            content.localFile = textFile
 
-            val scrapedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(textFile.lastModified()), ZoneId.systemDefault())
-            textFile.metadataFile().writeMetadata(content.toMetadata(scrapedAt))
+            if (saveMetadata) {
+                val scrapedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(textFile.lastModified()), ZoneId.systemDefault())
+                textFile.metadataFile().writeMetadata(content.toMetadata(scrapedAt))
+            }
         }
     }
 
@@ -76,7 +93,14 @@ object WebCrawler {
      * Crawls a given URL, extracting text and optionally following links.
      * Should run in a background thread.
      */
-    fun crawlWebsite(link: String, depth: Int = 0, maxLinks: Int = 100, requireSameDomain: Boolean, scraped: MutableSet<String> = mutableSetOf(), progressUpdate: (String) -> Unit): Map<String, WebCrawlContent> {
+    fun crawlWebsite(
+        link: String,
+        depth: Int = 0,
+        maxLinks: Int = 100,
+        requireSameDomain: Boolean,
+        scraped: MutableSet<String> = mutableSetOf(),
+        progressUpdate: (String) -> Unit
+    ): Map<String, WebCrawlContent> {
         // revise url to prevent duplicate result
         val url = link.substringBeforeLast('#')
 
@@ -132,7 +156,15 @@ object WebCrawler {
             .replace(Regex("\\n\\s*\\n\\s*\\n"), "\n\n")
             .replace(Regex("^\\n{1,2}"), "")
             .replace(Regex("\\n{1,2}$"), "")
-        return WebCrawlContent(url, doc, doc.title(), textElement, article != null, textWithWhiteSpaceCleaned, textElement.links())
+        return WebCrawlContent(
+            url,
+            doc,
+            doc.title(),
+            textElement,
+            article != null,
+            textWithWhiteSpaceCleaned,
+            textElement.links()
+        )
     }
 
     /** Get list of links from a web element. */
@@ -155,5 +187,6 @@ class WebCrawlContent(
     val textElement: Element,
     val textArticle: Boolean,
     val text: String,
-    val links: List<String>
+    val links: List<String>,
+    var localFile: File? = null
 )

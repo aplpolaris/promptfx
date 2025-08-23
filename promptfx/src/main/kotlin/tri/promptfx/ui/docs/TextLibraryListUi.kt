@@ -28,12 +28,16 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.*
 import tri.promptfx.docs.TextLibraryInfo
 import tri.util.info
+import tri.util.io.LocalFileManager.extractMetadata
+import tri.util.io.LocalFileManager.metadataFile
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
+import java.io.File
 
 /** View for managing text collections and documents. */
 class TextLibraryListUi : Fragment() {
@@ -230,14 +234,70 @@ internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel,
             }
             runAsync {
                 info<TextLibraryListUi>("Creating library based on user selection")
-                model.finalLibrary {
-                    runLater { progressDialog.contentText = it }
+                
+                // Step 1: Create the library
+                val library = model.finalLibrary {
+                    runLater { progressDialog.contentText = "Creating library: $it" }
                 }
-            } ui {
-                info<TextLibraryListUi>("Created library: $it")
+                
+                if (library != null && model.libraryFile.value != null) {
+                    val targetFile = model.libraryFile.value!!
+                    
+                    // Step 2: Save the library to the specified file
+                    runLater { progressDialog.contentText = "Saving library to ${targetFile.name}..." }
+                    TextLibrary.saveTo(library, targetFile)
+                    val libInfo = TextLibraryInfo(library, targetFile)
+                    
+                    // Step 3: Optional metadata extraction
+                    if (model.isExtractMetadata.value) {
+                        runLater { progressDialog.contentText = "Extracting metadata..." }
+                        var metadataCount = 0
+                        library.docs.forEach { doc ->
+                            val path = doc.metadata.path
+                            if (path != null && File(path).exists() && !File(path).metadataFile().exists()) {
+                                val metadata = File(path).extractMetadata()
+                                if (metadata.isNotEmpty()) {
+                                    doc.metadata.replaceAll(metadata)
+                                    metadataCount++
+                                }
+                            }
+                        }
+                        if (metadataCount > 0) {
+                            TextLibrary.saveTo(library, targetFile) // Re-save with metadata
+                        }
+                        info<TextLibraryListUi>("Extracted metadata from $metadataCount documents")
+                    }
+                    
+                    // Step 4: Optional embedding generation
+                    if (model.isGenerateEmbeddings.value && model.embeddingModel.value != null) {
+                        runLater { progressDialog.contentText = "Generating embeddings..." }
+                        val embeddingModel = model.embeddingModel.value!!
+                        var documentCount = 0
+                        library.docs.forEach { doc ->
+                            if (doc.chunks.isNotEmpty()) {
+                                try {
+                                    runLater { progressDialog.contentText = "Generating embeddings for ${doc.metadata.title}..." }
+                                    embeddingModel.addEmbeddingInfo(doc)
+                                    documentCount++
+                                } catch (e: Exception) {
+                                    info<TextLibraryListUi>("Failed to generate embeddings for document ${doc.metadata.title}: ${e.message}")
+                                }
+                            }
+                        }
+                        if (documentCount > 0) {
+                            TextLibrary.saveTo(library, targetFile) // Re-save with embeddings
+                        }
+                        info<TextLibraryListUi>("Generated embeddings for $documentCount documents")
+                    }
+                    
+                    libInfo
+                } else {
+                    null
+                }
+            } ui { libInfo ->
                 progressDialog.close()
-                if (it != null) {
-                    val libInfo = TextLibraryInfo(it, null)
+                if (libInfo != null) {
+                    info<TextLibraryListUi>("Created and saved library: ${libInfo.library}")
                     libraryModel.loadTextLibrary(libInfo, replace, selectAllDocs)
                 }
             }

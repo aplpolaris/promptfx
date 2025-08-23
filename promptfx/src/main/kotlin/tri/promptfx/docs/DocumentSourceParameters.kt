@@ -64,14 +64,6 @@ fun AiTaskView.documentsourceparameters(
                     promptFxDirectoryChooser("Select folder") { documentFolder.set(it) }
                 }
             }
-            button("", FontAwesomeIcon.GLOBE.graphic) {
-                tooltip("Enter a website to scrape")
-                action {
-                    val dialog = find<TextCrawlDialog>()
-                    dialog.model.webTargetFolder.set(documentFolder.get())
-                    dialog.openModal()
-                }
-            }
             button("", FontAwesomeIcon.REFRESH.graphic) {
                 tooltip("Rebuild embedding index for this folder")
                 action {

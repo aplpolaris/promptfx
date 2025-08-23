@@ -203,7 +203,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         }
     }
 
-    /** Extracts metadata from all documents in selected collections, returning associated task. */
+    /** Extracts metadata from all documents in selected collections, adding to existing metadata, returning associated task. */
     fun extractMetadataTask() = runAsync {
         var count = 0
         librarySelection.value.library.docs.forEach {
@@ -212,7 +212,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 val md = File(path).extractMetadata()
                 if (md.isNotEmpty()) {
                     count++
-                    updateMetadata(it, md, isSelect = false)
+                    updateMetadata(it, md, isReplace = false, isSelect = false)
                 }
             }
         }
@@ -220,8 +220,11 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     }
 
     /** Copy new metadata values into document and update selection. */
-    fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isSelect: Boolean) {
-        doc.metadata.replaceAll(newMetadataValues)
+    fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isReplace: Boolean, isSelect: Boolean) {
+        if (isReplace)
+            doc.metadata.replaceAll(newMetadataValues)
+        else
+            doc.metadata.mergeAll(newMetadataValues)
         if (isSelect)
             docSelection.setAll(listOf(doc))
         markChanged(doc)
