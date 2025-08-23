@@ -33,7 +33,7 @@ class PdfUtilsTest {
 
     @Test
     fun testPdfPages() {
-        val pages = PdfUtils.pdfPageInfo(file)
+        val pages = PdfUtils.pdfPageInfo(file, findImages = true)
         pages.forEach {
             println("-".repeat(100))
             println("Page ${it.pageNumber}")
@@ -47,6 +47,8 @@ class PdfUtilsTest {
         }
         assert(pages[0].text.startsWith("Galaxy: Link Space Visualization and Analysis of Network Traffic"))
         assertEquals(3, pages[0].images.size)
+
+        assertEquals(0, PdfUtils.pdfPageInfo(file, findImages = false)[0].images.size)
     }
 
     @Test

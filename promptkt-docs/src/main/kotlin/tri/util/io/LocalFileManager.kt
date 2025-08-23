@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import tri.util.io.pdf.PdfUtils
 import tri.util.io.poi.WordDocUtils
+import tri.util.warning
 import java.io.File
 import java.io.FileFilter
 import java.net.URI
@@ -156,6 +157,8 @@ object LocalFileManager {
      * Write metadata to a given file's associated metadata file.
      */
     fun File.writeMetadata(props: Map<String, Any>) {
+        if (metadataFile().exists())
+            warning<LocalFileManager>("Overwriting existing metadata file for $absolutePath")
         ObjectMapper()
             .registerModule(JavaTimeModule())
             .writerWithDefaultPrettyPrinter()

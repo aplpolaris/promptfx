@@ -34,6 +34,7 @@ import tri.promptfx.*
 import tri.promptfx.docs.TextLibraryInfo
 import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
+import tri.util.io.LocalFileManager.metadataFile
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
 import java.io.File
@@ -248,12 +249,12 @@ internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel,
                     val libInfo = TextLibraryInfo(library, targetFile)
                     
                     // Step 3: Optional metadata extraction
-                    if (model.extractMetadata.value) {
+                    if (model.isExtractMetadata.value) {
                         runLater { progressDialog.contentText = "Extracting metadata..." }
                         var metadataCount = 0
                         library.docs.forEach { doc ->
                             val path = doc.metadata.path
-                            if (path != null && File(path).exists()) {
+                            if (path != null && File(path).exists() && !File(path).metadataFile().exists()) {
                                 val metadata = File(path).extractMetadata()
                                 if (metadata.isNotEmpty()) {
                                     doc.metadata.replaceAll(metadata)
@@ -268,7 +269,7 @@ internal fun UIComponent.createLibraryWizard(libraryModel: TextLibraryViewModel,
                     }
                     
                     // Step 4: Optional embedding generation
-                    if (model.generateEmbeddings.value && model.embeddingModel.value != null) {
+                    if (model.isGenerateEmbeddings.value && model.embeddingModel.value != null) {
                         runLater { progressDialog.contentText = "Generating embeddings..." }
                         val embeddingModel = model.embeddingModel.value!!
                         var documentCount = 0
