@@ -90,7 +90,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                                     text = item.displayName
                                     graphic = item.icon.graphic
                                 }
-                                style = "-fx-font-size:18"
+                                style = "-fx-font-size:14"
                             }
                         }
                     }
