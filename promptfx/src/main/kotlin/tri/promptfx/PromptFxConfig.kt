@@ -22,6 +22,8 @@ package tri.promptfx
 import javafx.stage.FileChooser
 import tornadofx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_DEFAULT
+import tri.promptfx.docs.DocumentInsightView
+import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.TextClusterView
 import tri.promptfx.docs.TextManagerView
 import tri.util.loggerFor
@@ -73,6 +75,12 @@ class PromptFxConfig: Component(), ScopedInstance {
     fun textManagerFiles(): List<File> = loadLibrary(TEXTLIB_FILES)
     /** Get cluster files from configuration. */
     fun textClusterFiles(): List<File> = loadLibrary(CLUSTERLIB_FILES)
+    /** Get document insight library file from configuration. */
+    fun documentInsightFile(): File? = config.getProperty(DOCINSIGHT_LIB)
+        ?.let { File(URI.create(it)).takeIf { it.exists() } }
+    /** Get document QA library file from configuration. */
+    fun documentQaFile(): File? = config.getProperty(DOCQA_LIB)
+        ?.let { File(URI.create(it)).takeIf { it.exists() } }
 
     private fun loadLibrary(key: String): List<File> {
         val value = (config.getProperty(key) ?: "").trim()
@@ -92,14 +100,14 @@ class PromptFxConfig: Component(), ScopedInstance {
     fun save() {
         find<TextManagerView>().model.libraryList
             .mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
-            .let {
-                if (it.isNotBlank()) config[TEXTLIB_FILES] = it
-            }
+            .let { if (it.isNotBlank()) config[TEXTLIB_FILES] = it }
         find<TextClusterView>().model.libraryList
             .mapNotNull { it.file?.toURI()?.toString() }.joinToString(",")
-            .let {
-                if (it.isNotBlank()) config[CLUSTERLIB_FILES] = it
-            }
+            .let { if (it.isNotBlank()) config[CLUSTERLIB_FILES] = it }
+        find<DocumentInsightView>().model.librarySelection.value?.file
+            .let { if (it?.exists() == true) config[DOCINSIGHT_LIB] = it.toURI() }
+        find<DocumentQaView>().model.librarySelection.value?.file
+            .let { if (it?.exists() == true) config[DOCQA_LIB] = it.toURI() }
         config.save()
     }
 
@@ -109,6 +117,8 @@ class PromptFxConfig: Component(), ScopedInstance {
 
         const val TEXTLIB_FILES = "textlib.files"
         const val CLUSTERLIB_FILES = "clusterlib.files"
+        const val DOCINSIGHT_LIB = "docinsight.textlib"
+        const val DOCQA_LIB = "docqa.textlib"
 
         const val DIR_KEY_DEFAULT = "default"
         const val DIR_KEY_TEXTLIB = "textlib"

@@ -165,5 +165,24 @@ object LocalFileManager {
             .writeValue(metadataFile(), props)
     }
 
+    /**
+     * Read metadata from a given file's associated metadata file, if it exists.
+     * Returns empty map if the metadata file does not exist or cannot be read.
+     */
+    fun File.readMetadata(): Map<String, Any> {
+        val metaFile = metadataFile()
+        return if (metaFile.exists()) {
+            try {
+                ObjectMapper()
+                    .registerModule(JavaTimeModule())
+                    .readValue(metaFile, Map::class.java) as Map<String, Any>
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        } else {
+            emptyMap()
+        }
+    }
+
     //endregion
 }

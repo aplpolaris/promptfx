@@ -43,6 +43,7 @@ import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.chunk.matchViewModel
+import tri.promptfx.ui.docs.TextLibraryViewModel
 import tri.promptfx.ui.promptfield
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -69,6 +70,7 @@ class DocumentQaView: AiPlanTaskView(
     private val multiInput = SimpleBooleanProperty(false)
     val question = SimpleStringProperty("")
 
+    val model by inject<TextLibraryViewModel>(viewScope)
     private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
     val documentFolder = SimpleObjectProperty(File(""))
     private val maxChunkSize = SimpleIntegerProperty(1000)

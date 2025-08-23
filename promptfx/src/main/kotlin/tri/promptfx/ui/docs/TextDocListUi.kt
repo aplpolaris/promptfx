@@ -29,8 +29,8 @@ import javafx.stage.Modality
 import tornadofx.*
 import tri.ai.text.chunks.TextDoc
 import tri.promptfx.docs.DocumentOpenInViewer
-import tri.promptfx.ui.DocumentListView
-import tri.promptfx.ui.DocumentListView.Companion.icon
+import tri.promptfx.ui.docs.TextDocDetailsUi.Companion.DOC_THUMBNAIL_SIZE
+import tri.promptfx.ui.docs.TextDocDetailsUi.Companion.icon
 import tri.util.ui.DocumentUtils
 import tri.util.ui.bindSelectionBidirectional
 import tri.util.ui.graphic
@@ -58,7 +58,7 @@ class TextDocListUi : Fragment() {
                 graphic = hbox(5, Pos.CENTER_LEFT) {
                     if (browsable != null) {
                         hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
-                            val thumb = DocumentUtils.documentThumbnail(browsable, DocumentListView.DOC_THUMBNAIL_SIZE)
+                            val thumb = DocumentUtils.documentThumbnail(browsable, DOC_THUMBNAIL_SIZE)
                             if (thumb != null) {
                                 tooltip { graphic = ImageView(thumb) }
                             }
