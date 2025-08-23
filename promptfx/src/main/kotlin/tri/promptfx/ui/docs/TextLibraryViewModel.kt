@@ -34,10 +34,10 @@ import tornadofx.onChange
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.TextDocMetadata
-import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
 import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.TextDocMetadata
+import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.docs.TextLibraryInfo
@@ -47,27 +47,9 @@ import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
 import tri.util.io.pdf.PdfImageCache
 import tri.util.ui.createListBinding
-import tri.util.ui.ImageCacheManager
-import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.associateBy
-import kotlin.collections.find
-import kotlin.collections.firstNotNullOfOrNull
-import kotlin.collections.firstOrNull
-import kotlin.collections.flatMap
-import kotlin.collections.forEach
-import kotlin.collections.isNotEmpty
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.set
-import kotlin.collections.toList
 
 /** Model for views that depend on a "library" of documents. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
@@ -105,9 +87,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                         runAsync {
                             PdfImageCache.getImagesFromPdf(pdfFile)
                         } ui {
-                            if (it.isEmpty()) {
-                                info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
-                            }
                             docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                         }
                     }

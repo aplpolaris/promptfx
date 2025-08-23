@@ -76,7 +76,7 @@ object ImageCacheManager {
         val result = mutableListOf<BufferedImage>()
         
         try {
-            val pageInfoList = PdfUtils.pdfPageInfo(pdfFile)
+            val pageInfoList = PdfUtils.pdfPageInfo(pdfFile, findImages = true)
             
             pageInfoList.forEachIndexed { pageIndex, pageInfo ->
                 pageInfo.images.forEachIndexed { imageIndex, imageInfo ->
