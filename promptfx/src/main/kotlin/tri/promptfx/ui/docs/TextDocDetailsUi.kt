@@ -30,7 +30,9 @@ import tri.promptfx.ui.DocumentListView
 import tri.util.ui.DocumentUtils
 
 /** View for document details, for 1 or more selected documents. */
-class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fragment() {
+class TextDocDetailsUi : Fragment() {
+
+    val selectedItems: ObservableList<TextDoc> by param()
 
     override val root = vbox(10) {
         hgrow = Priority.ALWAYS

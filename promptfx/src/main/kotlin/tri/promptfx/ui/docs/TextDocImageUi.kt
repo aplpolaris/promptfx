@@ -31,9 +31,12 @@ import tri.util.ui.copyToClipboard
 import tri.util.ui.graphic
 import tri.util.ui.saveToFile
 import tri.util.ui.showImageDialog
+import tri.util.warning
 
 /** View showing image contents for selected set of documents. */
-class TextDocImageUi(val images: ObservableList<Image>): Fragment() {
+class TextDocImageUi: Fragment() {
+
+    val images: ObservableList<Image> by param()
 
     private val thumbnailSize = SimpleDoubleProperty(128.0)
 
@@ -55,11 +58,16 @@ class TextDocImageUi(val images: ObservableList<Image>): Fragment() {
                     item("Copy to clipboard").action { copyToClipboard(image) }
                     item("Send to Image Description View", graphic = FontAwesomeIcon.SEND.graphic) {
                         action {
-                            val view = find<PromptFxWorkspace>().findTaskView("Image Description (beta)")
-                            (view as? ImageDescribeView)?.apply {
-                                setImage(image)
-                                workspace.dock(view)
+                            val workspace = scope!!.workspace as PromptFxWorkspace
+                            val view = try {
+                                workspace.findTaskView<ImageDescribeView>()!!
+                            } catch (e: Exception) {
+                                warning<TextDocImageUi>("Unable to find image description view.", e)
+                                return@action
                             }
+                            view.setImage(image)
+                            workspace.dock(view)
+                            view.runTask()
                         }
                     }
                     item("Save to file...").action { saveToFile(image) }

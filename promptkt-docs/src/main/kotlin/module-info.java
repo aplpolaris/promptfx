@@ -25,6 +25,7 @@ module tri.promptkt.docs {
     requires transitive org.apache.poi.ooxml;
     requires transitive org.apache.poi.scratchpad;
 
+    requires com.google.common;
     requires org.apache.pdfbox;
     requires org.jsoup;
 

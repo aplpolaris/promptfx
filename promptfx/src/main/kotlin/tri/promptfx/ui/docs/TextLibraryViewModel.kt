@@ -45,7 +45,7 @@ import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info
 import tri.util.io.LocalFileManager.extractMetadata
-import tri.util.io.pdf.PdfUtils
+import tri.util.io.pdf.PdfImageCache
 import tri.util.ui.createListBinding
 import tri.util.ui.ImageCacheManager
 import java.awt.image.BufferedImage
@@ -96,19 +96,19 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
-            docSelectionPdf.set(firstPdf)
-
-            docSelectionImages.clear()
-            it.list.forEach { doc ->
-                val pdfFile = doc.pdfFile()
-                if (pdfFile != null && pdfFile.exists()) {
-                    runAsync {
-                        ImageCacheManager.getImagesFromPdf(pdfFile)
-                    } ui { images ->
-                        if (images.isEmpty()) {
-                            info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
-                        } else {
-                            docSelectionImages.addAll(images.map { SwingFXUtils.toFXImage(it, null) })
+            if (docSelectionPdf.value != firstPdf) {
+                docSelectionPdf.set(firstPdf)
+                docSelectionImages.clear()
+                it.list.forEach {
+                    val pdfFile = it.pdfFile()
+                    if (pdfFile != null && pdfFile.exists()) {
+                        runAsync {
+                            PdfImageCache.getImagesFromPdf(pdfFile)
+                        } ui {
+                            if (it.isEmpty()) {
+                                info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
+                            }
+                            docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                         }
                     }
                 }

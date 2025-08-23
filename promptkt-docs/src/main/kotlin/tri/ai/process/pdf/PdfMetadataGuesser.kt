@@ -38,7 +38,7 @@ object PdfMetadataGuesser {
 
     /** Attempt to extract metadata from a PDF file, using up to [pageLimit] pages. Each page is processed by an LLM query, so this may consume a lot of tokens. */
     suspend fun guessPdfMetadata(chatEngine: TextChat, file: File, pageLimit: Int, progress: (String) -> Unit): MultipleGuessedMetadataObjects {
-        val text = PdfUtils.pdfPageInfo(file).take(pageLimit)
+        val text = PdfUtils.pdfPageInfo(file, findImages = false).take(pageLimit)
         val parsedMetadata = text.mapNotNull {
             val progressString = "Processing page ${it.pageNumber} for ${file.name}..."
             progress(progressString)
