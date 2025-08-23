@@ -52,7 +52,7 @@ class MockEmbeddingModel: EmbeddingModel, TextChunker {
     override fun chunkText(text: String, maxChunkSize: Int) =
         SmartTextChunker().chunkText(text, maxChunkSize)
 
-    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
+    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?, progressCallback: ((Int, Int) -> Unit)?): List<List<Double>> {
         return text.map { listOf(1.0) }
     }
 }
