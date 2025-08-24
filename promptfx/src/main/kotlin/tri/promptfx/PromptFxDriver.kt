@@ -33,6 +33,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.TextChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
@@ -169,7 +170,9 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 
 /** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
 fun ContextMenu.buildsendresultmenu(trace: AiPromptTraceSupport<*>, workspace: PromptFxWorkspace) {
-    val outputs = trace.output?.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
+    val outputs = trace.output?.outputs?.filterNotNull()
+        ?.map { (it as? TextChatMessage)?.content ?: it.toString() }
+        ?: listOf()
     if (outputs.size == 1) {
         buildsendresultmenu("result", outputs.first(), workspace)
     } else {

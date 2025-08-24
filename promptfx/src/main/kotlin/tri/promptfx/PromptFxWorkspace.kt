@@ -242,8 +242,34 @@ class PromptFxWorkspace : Workspace() {
     private fun Drawer.group(model: ViewGroupModel, op: EventTarget.() -> Unit = { }) {
         item(model.category, model.icon, expanded = false) {
             op()
-            model.views.forEach {
-                hyperlinkview(it.category, it)
+            if (model.category == "Custom") {
+                // Group runtime views by their actual categories with headings and separators
+                val runtimeViews = model.views.filterIsInstance<NavigableWorkspaceViewRuntime>()
+                val categoriesInCustom = runtimeViews.map { it.category }.distinct().sorted()
+                
+                var isFirstCategory = true
+                categoriesInCustom.forEach { customCategory ->
+                    if (!isFirstCategory) {
+                        separator { }
+                    }
+                    isFirstCategory = false
+                    
+                    label(customCategory) {
+                        style {
+                            fontWeight = javafx.scene.text.FontWeight.BOLD
+                            fontSize = 11.px
+                            textFill = c("#888888")
+                        }
+                    }
+                    
+                    runtimeViews.filter { it.category == customCategory }.sortedBy { it.name }.forEach {
+                        hyperlinkview(model.category, it)
+                    }
+                }
+            } else {
+                model.views.forEach {
+                    hyperlinkview(it.category, it)
+                }
             }
         }.apply {
             if (children.isEmpty()) {
