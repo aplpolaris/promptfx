@@ -34,15 +34,15 @@ interface EmbeddingModel {
     val modelId: String
 
     /** Calculate embedding for multiple texts. */
-    suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int? = null): List<List<Double>>
+    suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int? = null, progressCallback: ((Int, Int) -> Unit)? = null): List<List<Double>>
 
     /** Calculate embedding for a single text. */
     suspend fun calculateEmbedding(text: String, outputDimensionality: Int? = null): List<Double> =
-        calculateEmbedding(listOf(text), outputDimensionality).first()
+        calculateEmbedding(listOf(text), outputDimensionality, null).first()
 
     /** Calculate embedding for a single text. */
     suspend fun calculateEmbedding(vararg text: String, outputDimensionality: Int? = null): List<List<Double>> =
-        calculateEmbedding(listOf(*text), outputDimensionality)
+        calculateEmbedding(listOf(*text), outputDimensionality, null)
 
 }
 

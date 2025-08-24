@@ -30,10 +30,14 @@ class GeminiEmbeddingModel(override val modelId: String = EMBED1, val client: Ge
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 
-    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
+    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?, progressCallback: ((Int, Int) -> Unit)?): List<List<Double>> {
         val uncached = text.filter { (it to outputDimensionality) !in embeddingCache }
-        val uncachedCalc = uncached.chunked(MAX_EMBEDDING_BATCH_SIZE).flatMap {
-            client.batchEmbedContents(it, modelId, outputDimensionality).embeddings
+        var processedCount = 0
+        val uncachedCalc = uncached.chunked(MAX_EMBEDDING_BATCH_SIZE).flatMap { batch ->
+            val result = client.batchEmbedContents(batch, modelId, outputDimensionality).embeddings
+            processedCount += batch.size
+            progressCallback?.invoke(text.size - uncached.size + processedCount, text.size)
+            result
         }
         uncachedCalc.forEachIndexed { index, embedding -> embeddingCache[uncached[index] to outputDimensionality] = embedding.values }
         return text.map { embeddingCache[it to outputDimensionality]!!.map { it.toDouble() } }

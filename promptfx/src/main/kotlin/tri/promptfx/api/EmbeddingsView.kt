@@ -62,7 +62,13 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
     override suspend fun processUserInput(): AiPipelineResult<String> {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
         val ouputDim = if (customOutputDimensionality.value) outputDimensionality.value else null
-        return model.value!!.calculateEmbedding(inputs, ouputDim).let {
+        
+        // Set up progress tracking
+        val progressCallback: (Int, Int) -> Unit = { completed, total ->
+            progress.progressUpdate("Embeddings ($completed/$total)", completed.toDouble() / total.toDouble())
+        }
+        
+        return model.value!!.calculateEmbedding(inputs, ouputDim, progressCallback).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
             AiPromptTrace(
