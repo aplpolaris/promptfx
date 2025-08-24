@@ -22,13 +22,14 @@ package tri.promptfx
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
+import tri.util.ANSI_CYAN
 import tri.util.ANSI_GREEN
+import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
 import tri.util.ANSI_YELLOW
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.fireOrange
-import tri.util.ui.forestGreen
 import tri.util.ui.graphic
 
 /** Model of the view content within [PromptFx] (views, groups, etc.). */
@@ -37,62 +38,54 @@ class PromptFxWorkspaceModel(
 ) {
     companion object {
         /** Built-in categories that should have their own tabs. */
-        private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+        private val BUILT_IN_CATEGORIES = setOf("API", "Prompts", "Text", "Documents", "Multimodal", "Agents", "Fun", "Settings")
         
         /** The singleton instance of the workspace model. */
         val instance: PromptFxWorkspaceModel by lazy {
-            val builtInCategories = NavigableWorkspaceView.viewPlugins.map { it.category }.toSet()
-            
-            val viewsById = NavigableWorkspaceView.viewPlugins.associateBy { it.name }
-            val viewsRuntimeById = RuntimePromptViewConfigs.views.values.associateBy { it.prompt.title ?: it.prompt.name ?: it.prompt.id }
-            
-            // Separate runtime views into those that match built-in categories and those that don't
-            val runtimeViews = viewsRuntimeById.mapValues { NavigableWorkspaceViewRuntime(it.value) }
-            val runtimeViewsInBuiltInCategories = runtimeViews.values.filter { it.category in BUILT_IN_CATEGORIES }
-            val runtimeViewsInCustomCategories = runtimeViews.values.filter { it.category !in BUILT_IN_CATEGORIES }
+            info<PromptFxWorkspaceModel>("Loading view configuration... [${ANSI_YELLOW}plugins${ANSI_RESET}] [${ANSI_GREEN}built-in${ANSI_RESET}] [${ANSI_CYAN}runtime${ANSI_RESET}] [${ANSI_RED}user-provided${ANSI_RESET}] [${ANSI_CYAN}* overridden *${ANSI_RESET}]")
 
-            info<PromptFxWorkspaceModel>("Loading view configuration...")
-            
-            // Create view groups for built-in categories (including runtime views that match)
-            val builtInViewGroups = builtInCategories.associateWith { category ->
-                val builtInViewsInCategory = viewsById.values.filter { it.category == category }.sortedBy { it.name }
-                val runtimeViewsInCategory = runtimeViewsInBuiltInCategories.filter { it.category == category }.sortedBy { it.name }
-                val allViewsInCategory = builtInViewsInCategory + runtimeViewsInCategory
+            val viewIndex = RuntimePromptViewConfigs.viewIndex
+            val categories = viewIndex.values.map { it.viewGroup }.distinct()
+            val customCategories = categories - BUILT_IN_CATEGORIES
 
-                //region LOGGING
-                val viewLoggingInfo = allViewsInCategory.map { view ->
-                    val color = when (view.name) {
-                        in viewsById -> ANSI_YELLOW
-                        in runtimeViews -> ANSI_GREEN
-                        else -> throw IllegalStateException("Impossible.")
-                    }
-                    val viewExistsMoreThanOnce = listOfNotNull(viewsById[view.name], runtimeViews[view.name]).size > 1
-                    if (viewExistsMoreThanOnce)
-                        "$color${view.name}*$ANSI_RESET"
-                    else
-                        "$color${view.name}$ANSI_RESET"
+            // log listing of all views found, by built-in categories first then custom categories
+            fun SourcedViewConfig.viewLog(): String {
+                val allSources = RuntimePromptViewConfigs.viewConfigs.filter { it.viewId == viewId }.map { it.source }
+                return when {
+                    allSources.size > 1 -> "$ANSI_CYAN* $viewId *$ANSI_RESET"
+                    source == RuntimeViewSource.VIEW_PLUGIN -> "$ANSI_YELLOW$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.BUILT_IN_CONFIG -> "$ANSI_GREEN$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.RUNTIME_CONFIG -> "$ANSI_CYAN$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.USER_PROVIDED -> "$ANSI_RED$viewId$ANSI_RESET" // just in case we add user-provided source later
+                    else -> throw IllegalStateException("Impossible.")
                 }
-                info<NavigableWorkspaceView>("  - $category: ${viewLoggingInfo.joinToString()}")
-                //endregion
-
-                ViewGroupModel(category, groupIcon(category), allViewsInCategory)
             }
-            
-            // Create Custom tab for runtime views with non-built-in categories
-            val customViewGroups = if (runtimeViewsInCustomCategories.isNotEmpty()) {
-                val customCategories = runtimeViewsInCustomCategories.map { it.category }.distinct().sorted()
-                info<NavigableWorkspaceView>("  - Custom: ${customCategories.joinToString { cat -> 
-                    val viewsInCat = runtimeViewsInCustomCategories.filter { it.category == cat }
-                    "$ANSI_GREEN$cat (${viewsInCat.size} views)$ANSI_RESET" 
-                }}")
-                
-                listOf(ViewGroupModel("Custom", groupIcon("Custom"), runtimeViewsInCustomCategories.sortedBy { "${it.category}/${it.name}" }))
-            } else {
-                emptyList()
+            (BUILT_IN_CATEGORIES + customCategories).forEach { cat ->
+                val viewsInCategory = viewIndex.values.filter { it.viewGroup == cat }.map { it.viewLog() }
+                val catStr = if (cat in BUILT_IN_CATEGORIES) cat else "$ANSI_GREEN$cat$ANSI_RESET"
+                when {
+                    viewsInCategory.isEmpty() -> info<NavigableWorkspaceView>("  - $catStr: (no views)")
+                    else -> info<NavigableWorkspaceView>("  - $catStr: ${viewsInCategory.joinToString()}")
+                }
             }
 
-            PromptFxWorkspaceModel(builtInViewGroups.values.toList() + customViewGroups)
+            // construct view groups
+            val builtInViewGroups = BUILT_IN_CATEGORIES.map {
+                ViewGroupModel(it, groupIcon(it),
+                    viewIndex.values.filter { v -> v.viewGroup == it }
+                        .map { it.view ?: NavigableWorkspaceViewRuntime(it.config!!) }
+                        .sortedBy { it.name }
+                )
+            }
+            val customViewGroup = ViewGroupModel("Custom", groupIcon("Custom"),
+                viewIndex.values.filter { it.viewGroup !in BUILT_IN_CATEGORIES }
+                    .map { it.view ?: NavigableWorkspaceViewRuntime(it.config!!) }
+                    .sortedBy { "${it.category}/${it.name}" }
+            )
+
+            PromptFxWorkspaceModel(builtInViewGroups + customViewGroup)
         }
+
         private fun groupIcon(category: String): FontAwesomeIconView {
             return when (category) {
                 "API" -> FontAwesomeIcon.CLOUD

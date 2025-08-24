@@ -25,6 +25,8 @@ import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 
 class PromptFxWorkspaceModelTest {
 
+    private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+
     @Test
     fun testCustomCategoryHandling() {
         // Test that runtime views are properly categorized
@@ -34,10 +36,8 @@ class PromptFxWorkspaceModelTest {
         val customTab = model.viewGroups.find { it.category == "Custom" }
         
         // If runtime views exist with custom categories, Custom tab should exist
-        val runtimeViews = RuntimePromptViewConfigs.views.values
-        val customCategoryViews = runtimeViews.filter { view ->
-            val category = view.prompt.category ?: "Uncategorized"
-            category !in setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+        val customCategoryViews = RuntimePromptViewConfigs.viewConfigs.filter { view ->
+            view.viewGroup !in BUILT_IN_CATEGORIES
         }
         
         if (customCategoryViews.isNotEmpty()) {
@@ -48,7 +48,7 @@ class PromptFxWorkspaceModelTest {
         
         // Verify built-in categories contain the appropriate views
         model.viewGroups.filter { it.category != "Custom" }.forEach { group ->
-            assertTrue(group.category in setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text"),
+            assertTrue(group.category in BUILT_IN_CATEGORIES,
                 "Built-in category '${group.category}' should be a recognized category")
         }
     }
@@ -58,22 +58,18 @@ class PromptFxWorkspaceModelTest {
         // Test that runtime views with built-in categories are properly placed
         val model = PromptFxWorkspaceModel.instance
         
-        val builtInCategories = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
-        
         // Find runtime views that match built-in categories
-        val runtimeViews = RuntimePromptViewConfigs.views.values
-        val runtimeViewsInBuiltInCategories = runtimeViews.filter { view ->
-            val category = view.prompt.category ?: "Uncategorized"
-            category in builtInCategories
+        val runtimeViewsInBuiltInCategories = RuntimePromptViewConfigs.viewConfigs.filter { view ->
+            view.viewGroup in BUILT_IN_CATEGORIES
         }
         
         // Verify these runtime views are in the appropriate built-in category tabs
         runtimeViewsInBuiltInCategories.forEach { runtimeView ->
-            val category = runtimeView.prompt.category!!
+            val category = runtimeView.viewGroup
             val categoryTab = model.viewGroups.find { it.category == category }
             assertNotNull(categoryTab, "Category tab '$category' should exist for runtime view")
             
-            val runtimeViewName = runtimeView.prompt.title ?: runtimeView.prompt.name ?: runtimeView.prompt.id
+            val runtimeViewName = runtimeView.viewId
             val hasRuntimeView = categoryTab!!.views.any { it.name == runtimeViewName }
             assertTrue(hasRuntimeView, "Runtime view '$runtimeViewName' should be in category '$category'")
         }

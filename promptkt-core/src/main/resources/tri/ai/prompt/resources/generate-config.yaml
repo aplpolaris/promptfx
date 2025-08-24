@@ -17,35 +17,30 @@ prompts:
       The result schema should match the following example:
       ```yaml
       date-extraction:
-        category: Text
-        title: Date Extraction
-        description: Extract all dates from input text and provide as a list.
+        prompt:
+          id: text-extract/dates
+          category: Text
         modeOptions:
           - templateId: DATE_FORMAT
             label: Date Format
             values:
               - ISO8601 Date
               - MMM dd, yyyy
+              - yyyy/MM/dd
               - the 12th of February
-        promptConfig:
-          id: date-extraction # require unique ID for the prompt
-          template-prompt: | # jinja template for the prompt
-            Extract a list of dates from the following text, and format as {{DATE_FORMAT}}:
-            '''
-            {{info}}
-            '''
         isShowModelParameters: false
         isShowMultipleResponseOption: false
       ```
   
       Requirements:
       - Use proper YAML syntax.
-      - Use snake_case for the view ID.
-      - Include 'category', 'title', 'description'.
+      - Must include a 'prompt' section with:
+        - An 'id' of the form 'group/prompt-name'
+        - (optional) A 'category'
+        - (optional) A human-readable 'name' or 'title' if it fits naturally
+        - (optional) A human-readable 'description' if it fits naturally
+        - (optional) A 'template' field with a mustache prompt template (required if a prompt with given id is not defined elsewhere)
       - Use 'modeOptions' if helpful for guided user customization beyond the input. Otherwise, leave as an empty list.
-      - Use 'promptConfig' with a unique ID and 'template-prompt' field for the Jinja template prompt.
-        - Always include an 'input' template placeholder.
-        - Include placeholders for all specified mode options, with ids matching precise templateId values (including case).
       - Set isShowModelParameters and isShowMultipleResponseOption to false unless otherwise implied.
   
       Output:

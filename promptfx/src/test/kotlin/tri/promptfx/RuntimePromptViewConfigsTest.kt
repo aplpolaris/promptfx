@@ -26,13 +26,16 @@ class RuntimePromptViewConfigsTest {
 
     @Test
     fun testLoadViews() {
-        val views = RuntimePromptViewConfigs.views
-        views.values.groupBy { it.prompt.category!! }.toSortedMap().forEach { (category, viewList) ->
-            println("$category/")
-            viewList.sortedBy { it.prompt.title }.forEach {
-                println("  " + it.prompt.title().padEnd(30) + it.prompt.id)
+        val views = RuntimePromptViewConfigs.viewIndex
+        views.values
+            .filter { it.source != RuntimeViewSource.VIEW_PLUGIN }
+            .groupBy { it.viewGroup }.toSortedMap()
+            .forEach { (viewGroup, viewList) ->
+                println("$viewGroup/")
+                viewList.sortedBy { it.viewId }.forEach {
+                    println("  " + it.viewId.padEnd(30) + it.config!!.prompt.id)
+                }
             }
-        }
         assertTrue(views.isNotEmpty())
     }
 
