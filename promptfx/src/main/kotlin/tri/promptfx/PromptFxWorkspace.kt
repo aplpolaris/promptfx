@@ -213,8 +213,7 @@ class PromptFxWorkspace : Workspace() {
     //region HOOKS FOR SPECIFIC VIEWS
 
     /**
-     * Looks up a view by name.
-     * This may instantiate a new view if not already created.
+     * Looks up a view by name. This may instantiate a new view if not already created.
      */
     fun findTaskView(name: String): AiTaskView? {
         return views.values.map { it.entries }.flatten()
@@ -223,8 +222,7 @@ class PromptFxWorkspace : Workspace() {
     }
 
     /**
-     * Looks up a view by type.
-     * This may instantiate a new view if not already created.
+     * Looks up a view by type. This may instantiate a new view if not already created.
      */
     inline fun <reified T> findTaskView(): T? where T: AiTaskView {
         return views.values.map { it.entries }.flatten()
@@ -313,6 +311,7 @@ class PromptFxWorkspace : Workspace() {
         item(model.category, model.icon, expanded = false) {
             op()
             if (model.category == "Custom") {
+                (this as DrawerItem).padding = insets(5.0)
                 // Group runtime views by their actual categories with headings and separators
                 val runtimeViews = model.views.filterIsInstance<NavigableWorkspaceViewRuntime>()
                 val categoriesInCustom = runtimeViews.map { it.category }.distinct().sorted()
@@ -324,14 +323,8 @@ class PromptFxWorkspace : Workspace() {
                     }
                     isFirstCategory = false
                     
-                    label(customCategory) {
-                        style {
-                            fontWeight = javafx.scene.text.FontWeight.BOLD
-                            fontSize = 11.px
-                            textFill = c("#888888")
-                        }
-                    }
-                    
+                    label(customCategory)
+
                     runtimeViews.filter { it.category == customCategory }.sortedBy { it.name }.forEach {
                         hyperlinkview(model.category, it)
                     }
