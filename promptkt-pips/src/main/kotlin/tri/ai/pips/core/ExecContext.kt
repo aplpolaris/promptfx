@@ -27,4 +27,7 @@ data class ExecContext(
     val vars: MutableMap<String, JsonNode> = mutableMapOf(),
     val resources: Map<String, Any?> = emptyMap(),
     val traceId: String = UUID.randomUUID().toString()
-)
+) {
+    /** Jackson ObjectMapper for JSON operations. */
+    val mapper = MAPPER
+}

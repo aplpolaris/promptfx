@@ -63,7 +63,7 @@ class AgentExecutable(
         val executor = WorkflowExecutor(execStrategy, solvers)
         val finalState = executor.solve(request)
 
-        return MAPPER.createObjectNode().put("result", finalState.finalResult().toString())
+        return context.mapper.createObjectNode().put("result", finalState.finalResult().toString())
     }
 
 }
@@ -84,7 +84,7 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
             listOf(task.name)
         }.joinToString("\n")
         
-        val inputJson = MAPPER.createObjectNode().put("input", input)
+        val inputJson = context.mapper.createObjectNode().put("input", input)
         val resultJson = this@toSolver.execute(inputJson, context)
         val result = resultJson.get("result")?.asText() ?: resultJson.toString()
         
