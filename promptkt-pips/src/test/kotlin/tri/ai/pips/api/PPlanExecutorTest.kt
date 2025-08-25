@@ -130,7 +130,6 @@ class PPlanExecutorTest {
 
             val registry = PExecutableRegistry.create(
                 PPromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
-//                        PChatExecutable(OpenAiPlugin().chatModels().first())
                         PChatExecutable(mockChat)
             )
 
@@ -151,7 +150,7 @@ class PPlanExecutorTest {
                     },
                     { 
                       "tool": "prompt/text-summarize/summarize", 
-                      "input": { "input": { "${"$"}var": "extractedKeywords", "${"$"}ptr": "/message" }, "audience": "AI researchers", "style": "a survey paper abstract" }, 
+                      "input": { "input": { "${"$"}var": "extractedKeywords", "${"$"}ptr": "/message" }, "audience": "AI researchers", "style": "a survey paper abstract" },
                       "saveAs": "summaryPrompt" 
                     },
                     { 

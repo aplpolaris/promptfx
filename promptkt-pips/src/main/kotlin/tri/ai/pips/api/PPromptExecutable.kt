@@ -21,6 +21,7 @@ package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptDefSchema
 import tri.ai.prompt.template
 import tri.ai.tool.wf.MAPPER
 
@@ -31,8 +32,8 @@ class PPromptExecutable(private val def: PromptDef): PExecutable {
         get() = "prompt/${def.bareId}"
     override val version: String
         get() = def.version ?: "0.0.0"
-    override val inputSchema: JsonNode? = null
-    override val outputSchema: JsonNode? = null
+    override val inputSchema: JsonNode? = PromptDefSchema.generateInputSchema(def)
+    override val outputSchema: JsonNode? = PromptDefSchema.generatePromptOutputSchema()
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun execute(input: JsonNode, ctx: PExecContext): JsonNode {

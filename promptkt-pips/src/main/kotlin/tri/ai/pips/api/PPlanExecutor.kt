@@ -42,6 +42,8 @@ class PPlanExecutor(private val registry: PExecutableRegistry) {
     suspend fun execute(plan: PPlan, context: PExecContext = PExecContext()) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
+        // TODO: Enable schema validation once variable reference resolution is handled
+        // PPlanValidator.validateSchemas(plan, registry)
 
         val planner = PPlanPlanner(plan, context, registry)
         val tasks = planner.plan()
