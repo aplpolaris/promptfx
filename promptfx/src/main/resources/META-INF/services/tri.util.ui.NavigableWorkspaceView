@@ -14,6 +14,7 @@ tri.promptfx.library.TextManagerPlugin
 tri.promptfx.library.TextClusterPlugin
 tri.promptfx.apps.ListGeneratorPlugin
 tri.promptfx.apps.QuestionAnsweringPlugin
+tri.promptfx.apps.ResearchViewPlugin
 tri.promptfx.apps.StructuredDataPlugin
 tri.promptfx.apps.TextSimilarityPlugin
 tri.promptfx.fun.ChatBackPlugin
