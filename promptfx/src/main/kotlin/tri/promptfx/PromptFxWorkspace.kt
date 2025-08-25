@@ -41,6 +41,7 @@ import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
+import tri.util.warning
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
@@ -162,6 +163,8 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
+    //region VIEW LOOKUPS
+
     /** Find the view identifier (category:name) for a given component. */
     private fun findViewIdentifier(component: UIComponent): String? {
         return views.entries.flatMap { categoryEntry ->
@@ -173,6 +176,7 @@ class PromptFxWorkspace : Workspace() {
             val matchesView = viewInfo.view != null && component.javaClass == viewInfo.view
             matchesComponent || matchesView
         }?.let { (category, name, _) ->
+            println("Found view identifier for component: $category:$name")
             "$category:$name"
         }
     }
@@ -199,11 +203,12 @@ class PromptFxWorkspace : Workspace() {
             
             false
         } catch (e: Exception) {
-            // Log error and return false to trigger fallback
-            println("Failed to restore view $viewIdentifier: ${e.message}")
+            warning<PromptFxWorkspace>("Failed to restore view $viewIdentifier: ${e.message}")
             false
         }
     }
+
+    //endregion
 
     //region HOOKS FOR SPECIFIC VIEWS
 
