@@ -87,8 +87,8 @@ class AiEngineView: View() {
 
             // button for testing view driver
             button("", graphic = FontAwesomeIcon.COG.graphic) {
-//                isManaged = false
-//                isVisible = false
+                isManaged = false
+                isVisible = false
                 action { showDriverDialog() }
             }
         }
