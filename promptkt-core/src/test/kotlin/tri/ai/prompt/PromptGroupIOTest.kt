@@ -46,7 +46,7 @@ class PromptGroupIOTest {
     @Test
     fun testReadAll() {
         val groups = PromptGroupIO.readAllFromResourceDirectory()
-        assertEquals(19, groups.size)
+        assertEquals(20, groups.size)
     }
 
 }
