@@ -21,7 +21,6 @@ package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.prompt.PromptDef
-import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.template
 import tri.ai.tool.wf.MAPPER
 
@@ -41,21 +40,5 @@ class PPromptExecutable(private val def: PromptDef): PExecutable {
         val text = def.template().fill(args.filterValues { it != null } as Map<String, Any>)
         return MAPPER.createObjectNode().put("text", text)
     }
-
-}
-
-/** Creates an executable registry from a prompt library file. */
-class PPromptLibraryExecutableRegistry(private val lib: PromptLibrary): PExecutableRegistry {
-
-    private val executables by lazy {
-        lib.list().associate { def ->
-            val exec = PPromptExecutable(def)
-            exec.name to exec
-        }
-    }
-
-    override fun get(name: String) = executables[name]
-
-    override fun list() = executables.values.toList()
 
 }

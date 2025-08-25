@@ -33,14 +33,15 @@ class PChatExecutable(val chat: TextChat): PExecutable {
 
     override suspend fun execute(input: JsonNode, context: PExecContext): JsonNode {
         val result = CompletionBuilder()
-            .text(input.get("message").extractText())
+            .text(input.extractText())
             .execute(chat)
         return MAPPER.createObjectNode().put("message", result.firstValue.content)
     }
 
-    private fun JsonNode.extractText() = when {
+    private fun JsonNode.extractText(): String = when {
         isTextual -> asText()
-        has("text") -> get("text").asText()
+        has("message") -> get("message").extractText()
+        has("text") -> get("text").extractText()
         else -> toString()
     }
 

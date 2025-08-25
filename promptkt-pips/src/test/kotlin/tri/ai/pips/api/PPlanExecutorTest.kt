@@ -101,6 +101,7 @@ class PPlanExecutorTest {
         }
     }
 
+
     @Test
     fun `multi-part prompt and LLM flow with variable chaining`() {
         runBlocking {
@@ -117,9 +118,9 @@ class PPlanExecutorTest {
                 ): AiPromptTrace<TextChatMessage> {
                     val message = messages.firstOrNull()?.content ?: "unknown"
                     val response = when {
-                        "keywords" in message.lowercase() -> 
+                        "keywords" in message.lowercase() ->
                             "AI, machine learning, natural language processing"
-                        "hello" in message.lowercase() && "AI" in message ->
+                        "summarize" in message.lowercase() && "AI" in message ->
                             "This analysis covers key concepts in artificial intelligence."
                         else -> "Mock response"
                     }
@@ -144,12 +145,12 @@ class PPlanExecutorTest {
                     },
                     { 
                       "tool": "chat/mock-chat", 
-                      "input": { "message": { "${"$"}var": "keywordPrompt" } }, 
+                      "input": { "${"$"}var": "keywordPrompt" }, 
                       "saveAs": "extractedKeywords" 
                     },
                     { 
-                      "tool": "prompt/examples/hello-world", 
-                      "input": { "input": { "${"$"}var": "extractedKeywords" } }, 
+                      "tool": "prompt/text-summarize/summarize", 
+                      "input": { "input": { "${"$"}var": "extractedKeywords", "${"$"}ptr": "/message" }, "audience": "AI researchers", "style": "a survey paper abstract" },
                       "saveAs": "summaryPrompt" 
                     },
                     { 
@@ -169,25 +170,25 @@ class PPlanExecutorTest {
             // --- Assertions ---
             assertEquals("multi-step/analysis@0.1.0", plan.id)
             assertEquals(4, plan.steps.size)
-            
+
             // Verify all steps saved their results
             assertTrue("keywordPrompt" in context.vars.keys)
             assertTrue("extractedKeywords" in context.vars.keys)
             assertTrue("summaryPrompt" in context.vars.keys)
             assertTrue("finalSummary" in context.vars.keys)
-            
+
             // Verify the flow worked - keyword prompt should contain the input text
             val keywordPrompt = context.vars["keywordPrompt"]?.get("text")?.asText() ?: ""
             assertTrue("Artificial intelligence" in keywordPrompt)
-            
+
             // Verify the mock chat responses are flowing through
             val extractedKeywords = context.vars["extractedKeywords"]?.get("message")?.asText() ?: ""
             assertEquals("AI, machine learning, natural language processing", extractedKeywords)
-            
+
             // Verify the final summary prompt contains the extracted keywords
             val summaryPrompt = context.vars["summaryPrompt"]?.get("text")?.asText() ?: ""
             assertTrue("AI, machine learning, natural language processing" in summaryPrompt)
-            
+
             // Verify the final summary contains expected content
             val finalSummary = context.vars["finalSummary"]?.get("message")?.asText() ?: ""
             assertEquals("This analysis covers key concepts in artificial intelligence.", finalSummary)

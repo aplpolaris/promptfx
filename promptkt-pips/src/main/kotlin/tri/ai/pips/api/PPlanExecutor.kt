@@ -19,9 +19,12 @@
  */
 package tri.ai.pips.api
 
+import com.fasterxml.jackson.core.JsonPointer
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.convertValue
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
@@ -63,12 +66,20 @@ class PPlanPlanner(
                     inputs: Map<String, AiPromptTraceSupport<*>>,
                     monitor: AiTaskMonitor
                 ): AiPromptTraceSupport<Any?> {
-                    info<PPlanExecutor>("$ANSI_GRAY  context vars: ${context.vars}$ANSI_RESET")
+                    info<PPlanExecutor>("$ANSI_GRAY  context vars:$ANSI_RESET")
+                    context.vars.forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+
                     val inputMap = step.input.resolveRefs(context.vars)
-                    info<PPlanExecutor>("$ANSI_GRAY  input: ${inputMap}$ANSI_RESET")
-                    val inputNode = PPlan.MAPPER.valueToTree<JsonNode>(inputMap)
-                    val result = exec.execute(inputNode, context)
+                    info<PPlanExecutor>("$ANSI_GRAY  input:$ANSI_RESET")
+                    PPlan.MAPPER.convertValue<Map<String, Any>>(inputMap)
+                        .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+
+                    val result = exec.execute(inputMap, context)
                     step.saveAs?.let { context.vars[it] = result }
+                    info<PPlanExecutor>("$ANSI_GRAY  output:$ANSI_RESET")
+                    PPlan.MAPPER.convertValue<Map<String, Any?>>(result)
+                        .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+
                     return AiPromptTrace.output(result)
                 }
             }
@@ -77,40 +88,44 @@ class PPlanPlanner(
 
     /** Resolve any ref object in the tree such as { "$ref": "varName" } with a reference lookup in the vars table. */
     private fun JsonNode.resolveRefs(vars: Map<String, JsonNode>): JsonNode {
+        val mapper = ObjectMapper()
+
+        fun select(base: JsonNode, ptr: String?): JsonNode =
+            if (ptr.isNullOrEmpty()) base else base.at(JsonPointer.valueOf(ptr))
+
         fun resolve(node: JsonNode, stack: MutableSet<String>): JsonNode {
-            // Reference node? Allow "$ref" (primary) and "$var" (alias)
-            if (node.isObject && node.size() == 1) {
-                val refName = when {
-                    node.has("\$ref") && node.get("\$ref").isTextual -> node.get("\$ref").asText()
-                    node.has("\$var") && node.get("\$var").isTextual -> node.get("\$var").asText()
-                    else -> null
-                }
-                if (refName != null) {
-                    val target = vars[refName] ?: throw IllegalArgumentException("Unknown \$ref: $refName")
-                    if (!stack.add(refName)) throw IllegalStateException("Cyclic \$ref detected at: $refName")
-                    val resolved = resolve(target, stack)
-                    stack.remove(refName)
+            // Reference node?
+            if (node.isObject) {
+                // Minimal shape: {"$var":"name"} or {"$var":"name","$ptr":"/text"}
+                val varField = node.get("\$var")
+                if (varField != null && varField.isTextual) {
+                    val name = varField.asText()
+                    val target = vars[name] ?: throw IllegalArgumentException("Unknown \$var: $name")
+                    if (!stack.add(name)) error("Cyclic \$var detected at: $name")
+                    val selected = select(target, node.get("\$ptr")?.takeIf { it.isTextual }?.asText())
+                    val resolved = resolve(selected, stack) // allow nested refs inside target
+                    stack.remove(name)
                     return resolved.deepCopy<JsonNode>()
                 }
             }
-
-            return when {
-                node.isObject -> {
-                    val out: ObjectNode = PPlan.MAPPER.createObjectNode()
-                    val fields = node.fields()
-                    while (fields.hasNext()) {
-                        val (k, v) = fields.next()
-                        out.set<JsonNode>(k, resolve(v, stack))
-                    }
-                    out
+            // Recurse objects
+            if (node.isObject) {
+                val out: ObjectNode = mapper.createObjectNode()
+                val fields = node.fields()
+                while (fields.hasNext()) {
+                    val (k, v) = fields.next()
+                    out.set<JsonNode>(k, resolve(v, stack))
                 }
-                node.isArray -> {
-                    val out: ArrayNode = PPlan.MAPPER.createArrayNode()
-                    node.forEach { out.add(resolve(it, stack)) }
-                    out
-                }
-                else -> node.deepCopy() // primitives, nulls, etc.
+                return out
             }
+            // Recurse arrays
+            if (node.isArray) {
+                val out: ArrayNode = mapper.createArrayNode()
+                node.forEach { out.add(resolve(it, stack)) }
+                return out
+            }
+            // Primitives/null
+            return node.deepCopy<JsonNode>()
         }
 
         return resolve(this, mutableSetOf())
