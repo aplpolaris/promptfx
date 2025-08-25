@@ -94,7 +94,11 @@ class PromptFxWorkspace : Workspace() {
         // Track changes to the docked component to save last active view
         dockedComponentProperty.addListener { _, _, newComponent ->
             newComponent?.let { component ->
-                promptFxConfig.setLastActiveView(component::class.java.simpleName)
+                // Find the view identifier for this component
+                val viewIdentifier = findViewIdentifier(component)
+                if (viewIdentifier != null) {
+                    promptFxConfig.setLastActiveView(viewIdentifier)
+                }
             }
         }
     }
@@ -145,9 +149,9 @@ class PromptFxWorkspace : Workspace() {
 
     override fun onBeforeShow() {
         // Try to restore the last active view, fallback to DocumentQaView if not available
-        val lastActiveViewName = promptFxConfig.getLastActiveView()
-        if (lastActiveViewName != null) {
-            val restored = tryRestoreView(lastActiveViewName)
+        val lastActiveViewIdentifier = promptFxConfig.getLastActiveView()
+        if (lastActiveViewIdentifier != null) {
+            val restored = tryRestoreView(lastActiveViewIdentifier)
             if (!restored) {
                 // Fallback to default view if restore failed
                 dock<DocumentQaView>()
@@ -158,15 +162,29 @@ class PromptFxWorkspace : Workspace() {
         }
     }
 
-    /** Attempts to restore a view by its simple class name. Returns true if successful. */
-    private fun tryRestoreView(viewClassName: String): Boolean {
+    /** Find the view identifier (category:name) for a given component. */
+    private fun findViewIdentifier(component: UIComponent): String? {
+        return views.entries.flatMap { categoryEntry ->
+            categoryEntry.value.entries.map { viewEntry ->
+                Triple(categoryEntry.key, viewEntry.key, viewEntry.value)
+            }
+        }.find { (_, _, viewInfo) ->
+            val matchesComponent = viewInfo.viewComponent == component
+            val matchesView = viewInfo.view != null && component.javaClass == viewInfo.view
+            matchesComponent || matchesView
+        }?.let { (category, name, _) ->
+            "$category:$name"
+        }
+    }
+
+    /** Attempts to restore a view by its identifier (category:name). Returns true if successful. */
+    private fun tryRestoreView(viewIdentifier: String): Boolean {
         return try {
-            // Try to find the view in our registered views
-            val viewInfo = views.values.flatMap { it.values }
-                .find { viewInfo -> 
-                    viewInfo.view?.simpleName == viewClassName || 
-                    viewInfo.viewComponent?.javaClass?.simpleName == viewClassName 
-                }
+            val parts = viewIdentifier.split(":", limit = 2)
+            if (parts.size != 2) return false
+            
+            val (category, name) = parts
+            val viewInfo = views[category]?.get(name)
             
             if (viewInfo != null) {
                 if (viewInfo.viewComponent != null) {
@@ -179,23 +197,10 @@ class PromptFxWorkspace : Workspace() {
                 }
             }
             
-            // Try to restore by matching known view class names
-            when (viewClassName) {
-                "DocumentQaView" -> { dock<DocumentQaView>(); true }
-                "CompletionsView" -> { dock<CompletionsView>(); true }
-                "ChatViewBasic" -> { dock<ChatViewBasic>(); true }
-                "ChatViewAdvanced" -> { dock<ChatViewAdvanced>(); true }
-                "ModelsView" -> { dock<ModelsView>(); true }
-                "EmbeddingsView" -> { dock<EmbeddingsView>(); true }
-                "ModerationsView" -> { dock<ModerationsView>(); true }
-                "AudioView" -> { dock<AudioView>(); true }
-                "AudioSpeechView" -> { dock<AudioSpeechView>(); true }
-                "ImagesView" -> { dock<ImagesView>(); true }
-                else -> false
-            }
+            false
         } catch (e: Exception) {
             // Log error and return false to trigger fallback
-            println("Failed to restore view $viewClassName: ${e.message}")
+            println("Failed to restore view $viewIdentifier: ${e.message}")
             false
         }
     }

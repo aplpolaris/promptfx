@@ -88,12 +88,12 @@ class PromptFxConfig: Component(), ScopedInstance {
         return listOf()
     }
 
-    /** Get the last active view class name. */
+    /** Get the last active view identifier (category:name). */
     fun getLastActiveView(): String? = config.getProperty(LAST_ACTIVE_VIEW_KEY)
 
-    /** Set the last active view class name. */
-    fun setLastActiveView(viewClassName: String) {
-        config[LAST_ACTIVE_VIEW_KEY] = viewClassName
+    /** Set the last active view identifier (category:name). */
+    fun setLastActiveView(viewIdentifier: String) {
+        config[LAST_ACTIVE_VIEW_KEY] = viewIdentifier
     }
 
     /** Save configuration options before closing application. */
