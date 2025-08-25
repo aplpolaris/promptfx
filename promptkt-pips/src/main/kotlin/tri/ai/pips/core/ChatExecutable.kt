@@ -22,7 +22,6 @@ package tri.ai.pips.core
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
-import tri.ai.tool.wf.MAPPER
 
 /** Executes for simple text input/output using a chat service. */
 class ChatExecutable(val chat: TextChat): Executable {
