@@ -62,7 +62,7 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
     private val greeting
         get() = "You are chatting with $model using AgentChat. Say 'bye' to exit, 'sessions' to list sessions."
 
-    private val api = DefaultAgentChatAPI()
+    private val api: AgentChatAPI = DefaultAgentChatAPI()
     private lateinit var currentSession: AgentChatSession
 
     override fun run() {
@@ -147,13 +147,8 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
                     }
                     is AgentChatEvent.Response -> {
                         val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
-                        if (!verbose && !reasoning) {
-                            // If we haven't been printing progress/streaming, print the full response
-                            println(responseText)
-                        } else {
-                            // If we've been printing tokens, just add a newline
-                            println()
-                        }
+                        // TODO - if have been printing intermediate tokens, may not need to prin the full response
+                        println(responseText)
                         
                         if (event.response.reasoning != null) {
                             println("[Reasoning] ${event.response.reasoning}")
