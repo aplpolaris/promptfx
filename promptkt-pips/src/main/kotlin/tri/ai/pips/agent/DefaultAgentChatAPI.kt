@@ -23,16 +23,15 @@ import tri.ai.core.*
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.openai.OpenAiModelIndex
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Default implementation of [AgentChatAPI] using OpenAI's multimodal chat capabilities.
- * This provides basic chat functionality with context management and optional tool support.
+ * Default implementation of [AgentChatAPI] supporting any multimodal model from the plugin system.
+ * This provides streaming chat functionality with context management and optional tool support.
  */
-class DefaultAgentChatAPI(
-    private val adapter: OpenAiAdapter = OpenAiAdapter.INSTANCE
-) : AgentChatAPI {
+class DefaultAgentChatAPI : AgentChatAPI {
     
     private val sessions = ConcurrentHashMap<String, AgentChatSession>()
     
@@ -42,59 +41,70 @@ class DefaultAgentChatAPI(
         return session
     }
     
-    override suspend fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
-        // Add user message to session
-        session.messages.add(message)
-        session.lastModified = LocalDateTime.now()
-        
-        // Create chat instance
-        val chat = OpenAiMultimodalChat(session.config.modelId, adapter)
-        
-        // Get context messages
-        val contextMessages = session.getContextMessages()
-        
-        // Prepare chat parameters
-        val params = MChatParameters(
-            variation = MChatVariation(
-                temperature = session.config.temperature,
-                frequencyPenalty = null,
-                presencePenalty = null
-            ),
-            tokens = session.config.maxTokens,
-            responseFormat = MResponseFormat.TEXT,
-            numResponses = 1
-        )
-        
-        try {
-            // Send to OpenAI
-            val response = chat.chat(contextMessages, params)
-            
-            val responseMessage = response.output?.outputs?.firstOrNull()
-                ?: throw IllegalStateException("No response from chat API")
-            
-            // Add response to session
-            session.messages.add(responseMessage)
-            session.lastModified = LocalDateTime.now()
-            
-            // Update session name if this is the first exchange
-            if (session.messages.size == 2 && session.name == "New Chat") {
-                session.name = generateSessionName(message)
-            }
-            
-            return AgentChatResponse(
-                message = responseMessage,
-                reasoning = null, // TODO: implement reasoning mode
-                metadata = mapOf(
-                    "model" to session.config.modelId
+    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation {
+        return AgentChatOperation(flow {
+            try {
+                emit(AgentChatEvent.Progress("Processing message..."))
+                
+                // Add user message to session
+                session.messages.add(message)
+                session.lastModified = LocalDateTime.now()
+                
+                emit(AgentChatEvent.Progress("Finding model..."))
+                
+                // Get multimodal chat instance for the configured model
+                val chat = TextPlugin.multimodalModel(session.config.modelId)
+                
+                // Get context messages
+                val contextMessages = session.getContextMessages()
+                
+                emit(AgentChatEvent.Progress("Generating response..."))
+                
+                // Prepare chat parameters
+                val params = MChatParameters(
+                    variation = MChatVariation(
+                        temperature = session.config.temperature,
+                        frequencyPenalty = null,
+                        presencePenalty = null
+                    ),
+                    tokens = session.config.maxTokens,
+                    responseFormat = MResponseFormat.TEXT,
+                    numResponses = 1
                 )
-            )
-        } catch (e: Exception) {
-            // Remove the user message if we failed to process it
-            if (session.messages.lastOrNull() == message) {
-                session.messages.removeAt(session.messages.size - 1)
+                
+                // Send to model
+                val response = chat.chat(contextMessages, params)
+                
+                val responseMessage = response.output?.outputs?.firstOrNull()
+                    ?: throw IllegalStateException("No response from chat API")
+                
+                // Add response to session
+                session.messages.add(responseMessage)
+                session.lastModified = LocalDateTime.now()
+                
+                // Update session name if this is the first exchange
+                if (session.messages.size == 2 && session.name == "New Chat") {
+                    session.name = generateSessionName(message)
+                }
+                
+                val agentResponse = AgentChatResponse(
+                    message = responseMessage,
+                    reasoning = null, // TODO: implement reasoning mode
+                    metadata = mapOf(
+                        "model" to session.config.modelId
+                    )
+                )
+                
+                emit(AgentChatEvent.Response(agentResponse))
+                
+            } catch (e: Exception) {
+                // Remove the user message if we failed to process it
+                if (session.messages.lastOrNull() == message) {
+                    session.messages.removeAt(session.messages.size - 1)
+                }
+                emit(AgentChatEvent.Error(e))
             }
-            throw e
-        }
+        })
     }
     
     override fun addMessage(session: AgentChatSession, message: MultimodalChatMessage) {
@@ -117,16 +127,7 @@ class DefaultAgentChatAPI(
     
     override fun listSessions(): List<AgentChatSessionInfo> {
         return sessions.values.map { session ->
-            AgentChatSessionInfo(
-                sessionId = session.sessionId,
-                name = session.name,
-                createdAt = session.createdAt,
-                lastModified = session.lastModified,
-                messageCount = session.messages.size,
-                lastMessagePreview = session.messages.lastOrNull()?.let { msg ->
-                    msg.content?.firstOrNull()?.text?.take(50)
-                }
-            )
+            session.toSessionInfo()
         }.sortedByDescending { it.lastModified }
     }
     

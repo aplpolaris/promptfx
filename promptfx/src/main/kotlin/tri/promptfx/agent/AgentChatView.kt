@@ -186,13 +186,14 @@ class AgentChatView : Fragment("Agent Chat") {
         runAsync {
             runBlocking {
                 try {
-                    api.sendMessage(session, userMessage)
+                    val operation = api.sendMessage(session, userMessage)
+                    operation.awaitResponse()
                 } catch (e: Exception) {
                     e.printStackTrace()
                     throw e
                 }
             }
-        } ui { response ->
+        } ui { _ ->
             isProcessing.value = false
             updateChatHistory()
         } fail { error ->

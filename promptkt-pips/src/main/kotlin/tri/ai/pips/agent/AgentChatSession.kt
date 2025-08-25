@@ -24,24 +24,6 @@ import tri.ai.core.MultimodalChatMessage
 import java.time.LocalDateTime
 import java.util.*
 
-/** Configuration for an agent chat session. */
-data class AgentChatConfig(
-    /** Model ID to use for the chat. */
-    val modelId: String = "gpt-4o-mini",
-    /** Maximum number of messages to keep in context. */
-    val maxContextMessages: Int = 20,
-    /** System message for the agent. */
-    val systemMessage: String? = null,
-    /** Temperature for response generation. */
-    val temperature: Double = 0.7,
-    /** Maximum tokens for response. */
-    val maxTokens: Int = 4000,
-    /** Whether to enable tool use. */
-    val enableTools: Boolean = true,
-    /** Whether to enable reasoning/thoughts display. */
-    val enableReasoningMode: Boolean = false
-)
-
 /** Represents a chat session with an agent. */
 data class AgentChatSession(
     /** Unique identifier for the session. */
@@ -65,17 +47,21 @@ data class AgentChatSession(
         val recentMessages = messages.takeLast(config.maxContextMessages)
         return listOfNotNull(systemMsg) + recentMessages
     }
-}
 
-/** Response from sending a message to an agent chat. */
-data class AgentChatResponse(
-    /** The agent's response message. */
-    val message: MultimodalChatMessage,
-    /** Any reasoning/thought process (if enabled). */
-    val reasoning: String? = null,
-    /** Metadata about the response. */
-    val metadata: Map<String, Any> = emptyMap()
-)
+    /** Create session info for listing purposes. */
+    fun toSessionInfo(): AgentChatSessionInfo {
+        return AgentChatSessionInfo(
+            sessionId = sessionId,
+            name = name,
+            createdAt = createdAt,
+            lastModified = lastModified,
+            messageCount = messages.size,
+            lastMessagePreview = messages.lastOrNull()?.let { msg ->
+                msg.content?.firstOrNull()?.text?.take(50)
+            }
+        )
+    }
+}
 
 /** Current state of a chat session. */
 data class AgentChatSessionState(

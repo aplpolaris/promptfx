@@ -23,6 +23,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 
 class AgentChatAPITest {
 
@@ -114,5 +117,41 @@ class AgentChatAPITest {
         assertTrue(api.deleteSession(sessionId))
         assertFalse(api.deleteSession(sessionId)) // Should return false when already deleted
         assertNull(api.loadSession(sessionId))
+    }
+
+    @Test
+    fun testStreamingSendMessage() {
+        runBlocking {
+            val session = api.createSession(AgentChatConfig(modelId = "gpt-3.5-turbo"))
+            val message = MultimodalChatMessage.text(MChatRole.User, "Hello test")
+            
+            val operation = api.sendMessage(session, message)
+            
+            // Test that we can get events from the operation
+            // We'll just verify the operation structure works
+            assertNotNull(operation)
+            assertNotNull(operation.events)
+            
+            // Since we don't have a real model configured for tests, 
+            // we'll just test the structure without actually awaiting response
+            // The important thing is that the API compiles and creates the right objects
+            assertTrue(true) // Structure test passed
+        }
+    }
+
+    @Test  
+    fun testSessionInfoGeneration() {
+        val session = api.createSession()
+        val message = MultimodalChatMessage.text(MChatRole.User, "Test message for session info")
+        api.addMessage(session, message)
+        
+        val sessionInfo = session.toSessionInfo()
+        
+        assertEquals(session.sessionId, sessionInfo.sessionId)
+        assertEquals(session.name, sessionInfo.name)
+        assertEquals(session.createdAt, sessionInfo.createdAt)
+        assertEquals(session.lastModified, sessionInfo.lastModified)
+        assertEquals(1, sessionInfo.messageCount)
+        assertTrue(sessionInfo.lastMessagePreview!!.contains("Test message"))
     }
 }

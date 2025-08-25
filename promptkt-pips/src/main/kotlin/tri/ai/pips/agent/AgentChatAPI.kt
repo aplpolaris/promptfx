@@ -30,8 +30,8 @@ interface AgentChatAPI {
     /** Create a new chat session with optional configuration. */
     fun createSession(config: AgentChatConfig = AgentChatConfig()): AgentChatSession
     
-    /** Send a message to a chat session and get the response. */
-    suspend fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse
+    /** Send a message to a chat session and get a streaming operation. */
+    fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation
     
     /** Add a message to the session without processing it. */
     fun addMessage(session: AgentChatSession, message: MultimodalChatMessage)
