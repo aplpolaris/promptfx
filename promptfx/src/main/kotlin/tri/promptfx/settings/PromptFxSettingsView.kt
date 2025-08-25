@@ -90,7 +90,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                                     text = item.displayName
                                     graphic = item.icon.graphic
                                 }
-                                style = "-fx-font-size:18"
+                                style = "-fx-font-size:14"
                             }
                         }
                     }
@@ -438,80 +438,34 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
     
     private fun showViewsDetails() {
         with(detailPane) {
-            
-            // Categorize views by type
-            val builtInViews = mutableListOf<NavigableWorkspaceView>()
-            val runtimeViews = mutableListOf<NavigableWorkspaceView>()  
-            val customizedViews = mutableListOf<NavigableWorkspaceView>()
-            
-            PromptFxWorkspaceModel.instance.viewGroups.forEach { group ->
-                group.views.forEach { view ->
-                    when {
-                        view is tri.promptfx.ui.NavigableWorkspaceViewRuntime -> runtimeViews.add(view)
-                        // Check if it's a built-in view that has been customized/overridden at runtime
-                        NavigableWorkspaceView.viewPlugins.any { plugin -> 
-                            plugin.name == view.name && RuntimePromptViewConfigs.views.values.any { config ->
-                                config.prompt.title == view.name || config.prompt.name == view.name
+
+            // show views registered by source
+            val viewsBySource = RuntimePromptViewConfigs.viewConfigs.groupBy { it.source }
+            viewsBySource.forEach { (source, list) ->
+                vbox(5) {
+                    label("$source Views (${list.size}):") {
+                        style { fontWeight = FontWeight.BOLD }
+                    }
+                    list.groupBy { it.viewGroup }.forEach { (group, views) ->
+                        label("  $group:")
+                        views.forEach { view ->
+                            val isOverwritten = RuntimePromptViewConfigs.isOverwritten(view)
+                            if (isOverwritten) {
+                                label("    • ${view.viewId} (overwritten)") {
+                                    style { fontStyle = FontPosture.ITALIC }
+                                }
+                            } else {
+                                label("    • ${view.viewId}")
                             }
-                        } -> customizedViews.add(view)
-                        else -> builtInViews.add(view)
+                        }
+                    }
+                    if (list.isEmpty()) {
+                        label("  No views found")
                     }
                 }
+
+                separator()
             }
-            
-            // Built-in Views
-            vbox(5) {
-                label("Built-in Views (${builtInViews.size}):") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                builtInViews.groupBy { it.category }.forEach { (category, views) ->
-                    label("  $category:")
-                    views.forEach { view ->
-                        label("    • ${view.name}")
-                    }
-                }
-                if (builtInViews.isEmpty()) {
-                    label("  No built-in views")
-                }
-            }
-            
-            separator()
-            
-            // Runtime Views
-            vbox(5) {
-                label("Runtime Views (${runtimeViews.size}):") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                runtimeViews.groupBy { it.category }.forEach { (category, views) ->
-                    label("  $category:")
-                    views.forEach { view ->
-                        label("    • ${view.name}")
-                    }
-                }
-                if (runtimeViews.isEmpty()) {
-                    label("  No runtime views")
-                }
-            }
-            
-            separator()
-            
-            // Customized Views
-            vbox(5) {
-                label("Customized Views (${customizedViews.size}):") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                customizedViews.groupBy { it.category }.forEach { (category, views) ->
-                    label("  $category:")
-                    views.forEach { view ->
-                        label("    • ${view.name} (Built-in overridden at runtime)")
-                    }
-                }
-                if (customizedViews.isEmpty()) {
-                    label("  No customized views")
-                }
-            }
-            
-            separator()
             
             // View Plugins
             vbox(5) {
@@ -520,21 +474,6 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 }
                 NavigableWorkspaceView.viewPlugins.forEach { plugin ->
                     label("• ${plugin.name} (${plugin.category})")
-                }
-            }
-            
-            separator()
-            
-            // Runtime View Configs
-            vbox(5) {
-                label("Runtime View Configurations:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                RuntimePromptViewConfigs.views.values.forEach { config ->
-                    label("• ${config.prompt.title ?: config.prompt.name ?: config.prompt.id} (${config.prompt.category ?: "Uncategorized"})")
-                }
-                if (RuntimePromptViewConfigs.views.isEmpty()) {
-                    label("No runtime view configurations found")
                 }
             }
         }

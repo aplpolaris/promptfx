@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import tri.util.io.pdf.PdfUtils
 import tri.util.io.poi.WordDocUtils
+import tri.util.warning
 import java.io.File
 import java.io.FileFilter
 import java.net.URI
@@ -156,10 +157,31 @@ object LocalFileManager {
      * Write metadata to a given file's associated metadata file.
      */
     fun File.writeMetadata(props: Map<String, Any>) {
+        if (metadataFile().exists())
+            warning<LocalFileManager>("Overwriting existing metadata file for $absolutePath")
         ObjectMapper()
             .registerModule(JavaTimeModule())
             .writerWithDefaultPrettyPrinter()
             .writeValue(metadataFile(), props)
+    }
+
+    /**
+     * Read metadata from a given file's associated metadata file, if it exists.
+     * Returns empty map if the metadata file does not exist or cannot be read.
+     */
+    fun File.readMetadata(): Map<String, Any> {
+        val metaFile = metadataFile()
+        return if (metaFile.exists()) {
+            try {
+                ObjectMapper()
+                    .registerModule(JavaTimeModule())
+                    .readValue(metaFile, Map::class.java) as Map<String, Any>
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        } else {
+            emptyMap()
+        }
     }
 
     //endregion

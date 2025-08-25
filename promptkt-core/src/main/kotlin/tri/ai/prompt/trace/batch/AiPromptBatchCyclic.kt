@@ -25,6 +25,9 @@ import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.openai.jsonMapper
 import tri.ai.openai.yamlMapper
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.template
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.PromptInfo
 
@@ -49,7 +52,12 @@ class AiPromptBatchCyclic(id: String) : AiPromptBatch(id) {
     private fun config(i: Int, modelLookup: (String) -> TextChat): AiPromptRunConfig {
         return AiPromptRunConfig(
             PromptInfo(
-                prompt.configIndex(i) as String,
+                prompt.configIndex(i).let {
+                    it as? String
+                        ?: (it as? PromptTemplate)?.template
+                        ?: (it as? PromptDef)?.template()?.template
+                        ?: error("Unsupported prompt type: ${it::class}")
+                },
                 promptParams.entries.associate { it.key to it.value.configIndex(i) }
             ), AiModelInfo(
                 model.configIndex(i) as String,

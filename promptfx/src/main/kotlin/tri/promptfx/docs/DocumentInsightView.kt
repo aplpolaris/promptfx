@@ -19,36 +19,36 @@
  */
 package tri.promptfx.docs
 
-import javafx.beans.binding.Bindings
+import javafx.application.Platform
 import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
-import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
 import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.template
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
-import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.ui.DocumentListView
-import tri.promptfx.ui.EditablePromptUi
-import tri.promptfx.ui.chunk.TextChunkListModel
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.chunk.TextChunkListView
-import tri.promptfx.ui.chunk.asTextChunkViewModel
-import tri.promptfx.ui.editablepromptprefixui
+import tri.promptfx.ui.chunk.TextChunkViewModel
+import tri.promptfx.ui.docs.TextDocListUi
+import tri.promptfx.ui.docs.TextLibraryToolbar
+import tri.promptfx.ui.docs.TextLibraryViewModel
+import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
-import java.io.File
+import java.util.concurrent.FutureTask
 
 /** Plugin for the [DocumentQaView]. */
 class DocumentInsightPlugin : NavigableWorkspaceViewImpl<DocumentInsightView>("Documents", "Document Insights", WorkspaceViewAffordance.COLLECTION_ONLY, DocumentInsightView::class)
@@ -60,45 +60,30 @@ class DocumentInsightView: AiPlanTaskView(
 ), TextLibraryReceiver {
 
     private val viewScope = Scope(workspace)
-    private lateinit var mapPromptUi: EditablePromptUi
-    private lateinit var reducePromptUi: EditablePromptUi
 
     // selection of source documents
-    private val documentLibrary = SimpleObjectProperty<TextLibrary>(null)
-    private val documentFolder = SimpleObjectProperty(File(""))
-    private val maxChunkSize = SimpleIntegerProperty(5000)
-    private val embeddingIndex = Bindings.createObjectBinding({
-        LocalFolderEmbeddingIndex(documentFolder.value, controller.embeddingStrategy.value).apply {
-            maxChunkSize = this@DocumentInsightView.maxChunkSize.value
-        }
-    }, controller.embeddingStrategy, documentFolder, maxChunkSize)
-
-    private val docs = observableListOf<BrowsableSource>()
-    private val chunkListModel: TextChunkListModel by inject(viewScope)
+    val model by inject<TextLibraryViewModel>(viewScope)
 
     // for processing chunks to generate results
-    private val docsToProcess = SimpleIntegerProperty(2)
-    private val chunksToProcess = SimpleIntegerProperty(10)
-    private val minSnippetCharsToProcess = SimpleIntegerProperty(50)
+    private val docProcessingLimit = SimpleIntegerProperty(2)
+    private val chunkProcessingLimit = SimpleIntegerProperty(10)
+    private val minProcessingSize = SimpleIntegerProperty(50)
 
-    // result of map processing step
+    // processing operations and results
+    private val mapPrompt = PromptSelectionModel("$DOCUMENT_MAP_PREFIX/custom")
+    private val reducePrompt = PromptSelectionModel("$DOCUMENT_REDUCE_PREFIX/custom")
     private val mapResult = SimpleStringProperty("")
     private val reduceResult = SimpleStringProperty("")
 
     init {
-        preferences(PREF_APP) {
-            documentFolder.value = File(get(PREF_DOCS_FOLDER, "docs/"))
-        }
-        documentFolder.onChange {
-            preferences(PREF_APP) { put(PREF_DOCS_FOLDER, it!!.absolutePath) }
-        }
+        val prefLibraryFile = find<PromptFxConfig>().documentInsightFile()
+        if (prefLibraryFile?.exists() == true)
+            model.loadLibraryFrom(prefLibraryFile, replace = true, selectAllDocs = true)
     }
 
     init {
         input {
-            mapPromptUi = editablepromptprefixui(DOCUMENT_MAP_PREFIX, "Prompt for each snippet:")
-            reducePromptUi = editablepromptprefixui(DOCUMENT_REDUCE_PREFIX, "Prompt to summarize results:")
-            add(DocumentListView(docs, hostServices))
+            add(find<TextDocListUi>(viewScope))
             add(find<TextChunkListView>(viewScope).apply {
                 label.set("Document Snippets")
             })
@@ -106,23 +91,27 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     init {
-        documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
-            reindexOp = { embeddingIndex.value!!.reindexAll() }
-        )
-        parameters("Document Snippet Aggregation") {
+        parameters("Document Library") {
+            add(find<TextLibraryToolbar>(viewScope))
+        }
+        parameters("Prompt Processors") {
+            promptfield("For Each Chunk", mapPrompt, promptsWithPrefix(DOCUMENT_MAP_PREFIX), workspace)
+            promptfield("Combine", reducePrompt, promptsWithPrefix(DOCUMENT_REDUCE_PREFIX), workspace)
+        }
+        parameters("Processing Limits") {
             field("Limit documents to") {
                 tooltip("Max number of documents to process")
-                slider(1..50, docsToProcess)
-                label(docsToProcess)
+                slider(1..50, docProcessingLimit)
+                label(docProcessingLimit)
             }
             field("Limit snippets per doc to") {
                 tooltip("Max number of snippets per document to process")
-                slider(1..50, chunksToProcess)
-                label(chunksToProcess)
+                slider(1..50, chunkProcessingLimit)
+                label(chunkProcessingLimit)
             }
             field("Minimum snippet size (chars)") {
                 tooltip("Minimum size to process")
-                sliderwitheditablelabel(1..5000, minSnippetCharsToProcess)
+                sliderwitheditablelabel(1..5000, minProcessingSize)
             }
         }
         addDefaultChatParameters(common)
@@ -151,33 +140,34 @@ class DocumentInsightView: AiPlanTaskView(
         }
     }
 
+    override suspend fun processUserInput(): AiPipelineResult<*> {
+        updateChunkSelection()
+        return super.processUserInput()
+    }
+
     override fun plan(): AiPlanner {
         mapResult.set("")
         reduceResult.set("")
 
-        return promptBatch().aggregate()
+        return promptBatch(model.chunkListModel.chunkSelection).aggregate()
             .aitask("results-summarize") { _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
-                    .text(reducePromptUi.fill(PromptTemplate.INPUT to concat))
+                    .prompt(reducePrompt.prompt.value)
+                    .paramsInput(concat)
                     .execute(chatEngine)
-                    .mapOutput { concat to it }
+                    .mapOutput { concat to it.content }
             }.planner
     }
 
-    private fun promptBatch(): List<AiTask<String>> {
-        val snippets = updateDocs()
-        val limitedSnippets = snippets.groupBy { it.first }
-            .mapValues { it.value.take(chunksToProcess.value) }
-            .values.flatten()
-
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<String>> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
-            val names = limitedSnippets.map { "${it.second.browsable()!!.shortName} ${i++}" }
-            val inputs = limitedSnippets.map { it.first.text(it.second.all) }
+            val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }
+            val inputs = chunks.map { it.text }
             model = completionEngine.modelId
             modelParams = common.toModelParams()
-            prompt = mapPromptUi.templateText.value
+            prompt = mapPrompt.prompt.value.template()
             promptParams = mapOf(PromptTemplate.INPUT to inputs, "name" to names)
             runs = inputs.size
         }.tasks { id ->
@@ -191,30 +181,22 @@ class DocumentInsightView: AiPlanTaskView(
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {
-        documentLibrary.set(library.library)
+        model.loadTextLibrary(library)
     }
 
-    private fun updateDocs() = runBlocking {
-        val sourceDocs = if (documentLibrary.value != null)
-            documentLibrary.value!!.docs
-        else
-            embeddingIndex.value!!.calculateAndGetDocs()
-        val docList = sourceDocs.take(docsToProcess.value)
-        val chunkList = docList.flatMap { doc ->
-            doc.chunks.take(chunksToProcess.value).map { it to doc }
+    private fun updateChunkSelection() {
+        val task = FutureTask {
+            model.docSelection.setAll(model.docSelection.take(docProcessingLimit.value))
+            model.chunkListModel.setChunkList(
+                model.docSelection.flatMap { doc -> doc.chunks.take(chunkProcessingLimit.value).map { it to doc } }
+            )
+            model.chunkListModel.chunkSelection.setAll(model.chunkListModel.chunkList)
         }
-        runLater {
-            val modelId = controller.embeddingStrategy.value.modelId
-            docs.setAll(docList.map { it.browsable() })
-            chunkListModel.chunkList.setAll(chunkList.map { it.asTextChunkViewModel(modelId) })
-        }
-        chunkList
+        Platform.runLater(task)
+        task.get()
     }
 
     companion object {
-        private const val PREF_APP = "promptfx"
-        private const val PREF_DOCS_FOLDER = "document-insights.folder"
-
         private const val DOCUMENT_MAP_PREFIX = "docs-map"
         internal const val DOCUMENT_REDUCE_PREFIX = "docs-reduce"
     }

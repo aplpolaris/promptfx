@@ -28,6 +28,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import tri.util.fine
 import tri.util.io.LocalFileManager
 import tri.util.io.LocalFileManager.fileToText
+import tri.util.io.LocalFileManager.readMetadata
 import java.io.File
 import java.net.URISyntaxException
 import java.nio.charset.Charset
@@ -68,6 +69,12 @@ class TextLibrary(_id: String? = null) {
                             val file = LocalFileManager.fixPath(File(uri), parentFile)
                             doc.metadata.path = file!!.toURI()
                             doc.all = TextChunkRaw(file.fileToText(useCache = true))
+                            
+                            // Load metadata from .meta.json file if it exists
+                            val metadataFromFile = file.readMetadata()
+                            if (metadataFromFile.isNotEmpty()) {
+                                doc.metadata.mergeAll(metadataFromFile)
+                            }
                         } catch (x: URISyntaxException) {
                             fine<TextLibrary>("Failed to parse URI path syntax for ${doc.metadata}")
                         } catch (x: NullPointerException) {

@@ -24,39 +24,66 @@ import tri.ai.prompt.PromptLibrary
 import tri.promptfx.ui.RuntimePromptViewConfig
 import tri.util.fine
 import tri.util.ui.MAPPER
+import tri.util.ui.NavigableWorkspaceView
 import java.io.File
 
 /** Configs for prompt apps. */
 object RuntimePromptViewConfigs {
 
-    //region VIEW CONFIGS
+    /** Indexed cache of views configured within codebase and at runtime. */
+    val viewConfigs: List<SourcedViewConfig> by lazy { loadViewCache() }
+    /** Views indexed by id, with runtime configs taking precedence over built-in configs and plugins. */
+    val viewIndex: Map<String, SourcedViewConfig> by lazy { viewConfigs.byPrecedence() }
 
-    /** Index of configs. */
-    private val index: Map<String, RuntimePromptViewConfig> = RuntimePromptViewConfigs::class.java.getResource("resources/views.yaml")!!
-        .let { MAPPER.readValue(it) }
-    /** Index of runtime configs. */
-    private val runtimeIndex: Map<String, RuntimePromptViewConfig> = setOf(
-        File("views.yaml"),
-        File("config/views.yaml")
-    ).firstOrNull { it.exists() }?.let { MAPPER.readValue(it) } ?: mapOf()
+    /** Check if the given view config is overwritten. */
+    fun isOverwritten(viewConfig: SourcedViewConfig) =
+        viewIndex[viewConfig.viewId] != viewConfig
 
-    /** All views by name. The runtime configs override the resource configs. */
-    val views: Map<String, RuntimePromptViewConfig> by lazy {
-        mutableMapOf<String, RuntimePromptViewConfig>().apply {
-            putAll(index)
-            putAll(runtimeIndex)
-            runtimeIndex.keys.intersect(index.keys).forEach {
-                fine<RuntimePromptViewConfigs>("Runtime config for prompt view $it overrides resource config.")
-            }
+    //region VIEW CACHE LOADER
+
+    /** Loads view cache from all sources. */
+    private fun loadViewCache() = mutableListOf<SourcedViewConfig>().apply {
+        addAll(loadPluginViews())
+        addAll(loadBuiltInConfigs())
+        addAll(loadRuntimeConfigs())
+    }
+
+    /** Pulls views into an index by precedence. */
+    private fun List<SourcedViewConfig>.byPrecedence() = mutableMapOf<String, SourcedViewConfig>().also { map ->
+        // First add all view plugins
+        filter { it.source == RuntimeViewSource.VIEW_PLUGIN }.forEach { map[it.viewId] = it }
+        // Next add built-in configs, which can override plugins
+        filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }.forEach { map[it.viewId] = it }
+        // Finally add runtime configs, which can override both
+        filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }.forEach { map[it.viewId] = it }
+    }
+
+    /** Loads all views that are configured as part of view plugins. */
+    private fun loadPluginViews(): List<SourcedViewConfig> {
+        return NavigableWorkspaceView.viewPlugins.map {
+            SourcedViewConfig(viewGroup = it.category, viewId = it.name, view = it, config = null, source = RuntimeViewSource.VIEW_PLUGIN)
         }
     }
 
-    /** Get a list of categories. */
-    fun categories() = (index.values + runtimeIndex.values).map { it.prompt.category ?: "Uncategorized" }.distinct()
-    /** Get a list of configs by category. */
-    fun configs(category: String) = (index.values + runtimeIndex.values).filter { it.prompt.category == category }
-    /** Get a config by id. */
-    fun config(id: String) = runtimeIndex[id] ?: index[id]!!
+    /** Loads a set of view configs from class resource file. */
+    private fun loadBuiltInConfigs(): List<SourcedViewConfig> {
+        val foundIndex: Map<String, RuntimePromptViewConfig> = RuntimePromptViewConfigs::class.java.getResource("resources/views.yaml")!!
+            .let { MAPPER.readValue(it) }
+        return foundIndex.values.map {
+            SourcedViewConfig(viewGroup = it.prompt.category!!, viewId = it.prompt.title(), null, it, RuntimeViewSource.BUILT_IN_CONFIG)
+        }
+    }
+
+    /** Loads view configs from runtime files. */
+    private fun loadRuntimeConfigs(): List<SourcedViewConfig> {
+        val foundIndex: List<Map<String, RuntimePromptViewConfig>> = setOf(
+            File("views.yaml"),
+            File("config/views.yaml")
+        ).filter { it.exists() }.map { MAPPER.readValue(it) }
+        return foundIndex.flatMap { it.values }.map {
+            SourcedViewConfig(viewGroup = it.prompt.category!!, viewId = it.prompt.title(), null,it, RuntimeViewSource.RUNTIME_CONFIG)
+        }
+    }
 
     //endregion
 
@@ -92,7 +119,7 @@ object RuntimePromptViewConfigs {
 
     val PROMPT_LIBRARY by lazy {
         PromptLibrary().apply {
-            views.values.forEach {
+            viewIndex.values.mapNotNull { it.config }.forEach {
                 try {
                     addPrompt(it.prompt)
                 } catch (e: Exception) {
@@ -101,5 +128,31 @@ object RuntimePromptViewConfigs {
             }
         }
     }
+}
 
+/** Tracks the YAML configuration of the view along with the source. */
+class SourcedViewConfig(
+    val viewGroup: String,
+    val viewId: String,
+    val view: NavigableWorkspaceView?,
+    val config: RuntimePromptViewConfig?,
+    val source: RuntimeViewSource,
+) {
+    init {
+        require (source == RuntimeViewSource.VIEW_PLUGIN || config != null) {
+            "Config must be provided for view $viewId if source is not VIEW_PLUGIN."
+        }
+    }
+}
+
+/** Source of a [SourcedViewConfig]. */
+enum class RuntimeViewSource {
+    /** View is coded with the application. */
+    VIEW_PLUGIN,
+    /** VIew that is configured via YAML. */
+    BUILT_IN_CONFIG,
+    /** View is configured at runtime via `config/views.yaml` or another runtime file. */
+    RUNTIME_CONFIG,
+    /** View that is provided by the user. */
+    USER_PROVIDED
 }
