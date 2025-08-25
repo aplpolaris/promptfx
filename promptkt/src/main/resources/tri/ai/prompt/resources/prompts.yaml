@@ -582,3 +582,106 @@ document-guess-metadata: |
   ```
   {{{input}}}
   ```
+
+############################
+# RESEARCH WORKFLOW
+############################
+# view: Research View
+# prefix:
+#   research-plan-* - generate research plans from information requests
+#   research-questions-* - generate research questions  
+#   research-outline-* - generate outlines for reports
+#   research-write-* - write report sections
+#   research-review-* - review and edit content
+# keywords:
+#   {{{input}}} - text to process
+#   {{{instruct}}} - specific instruction
+
+research-plan-basic: |
+  You are a research planner. Given an information request, create a comprehensive research plan.
+  
+  Information Request:
+  """
+  {{{input}}}
+  """
+  
+  Create a research plan that includes:
+  1. **Research Objectives** - Clear, specific goals
+  2. **Key Research Questions** - 3-5 focused questions to investigate
+  3. **Information Sources** - Types of sources to consult (academic, news, reports, etc.)
+  4. **Research Timeline** - Suggested phases and milestones
+  5. **Expected Deliverables** - What the final report should contain
+  
+  Format your response as a structured plan with clear headings.
+
+research-questions-generate: |
+  Based on the following information request, generate 5-7 focused research questions that would need to be answered to provide a comprehensive response.
+  
+  Information Request:
+  """
+  {{{input}}}
+  """
+  
+  Research Questions:
+  1. 
+  2.
+  3.
+  4.
+  5.
+  
+  Additional questions (if needed):
+
+research-outline-basic: |
+  Based on the research plan and preliminary findings, create a detailed outline for a comprehensive report.
+  
+  Research Context:
+  """
+  {{{input}}}
+  """
+  
+  Create an outline that includes:
+  - Executive Summary
+  - Introduction and Background
+  - Main Analysis Sections (3-5 sections)
+  - Conclusions and Recommendations
+  - References
+  
+  Use a hierarchical structure with main sections and subsections.
+  
+  Report Outline:
+
+research-write-section: |
+  Write a well-researched section of a report based on the provided outline section and research findings.
+  
+  Section to Write: {{{instruct}}}
+  
+  Research Findings:
+  """
+  {{{input}}}
+  """
+  
+  Write a comprehensive section that:
+  - Addresses the key points outlined for this section
+  - Uses evidence from the research findings
+  - Maintains professional, objective tone
+  - Includes proper citations where appropriate
+  - Is well-structured with clear paragraphs and flow
+  
+  Section Content:
+
+research-review-content: |
+  Review and edit the following content for clarity, accuracy, and completeness.
+  
+  Content to Review:
+  """
+  {{{input}}}
+  """
+  
+  {{#instruct}}Focus Areas: {{{instruct}}}{{/instruct}}
+  
+  Provide:
+  1. **Overall Assessment** - Strengths and areas for improvement
+  2. **Specific Recommendations** - Concrete suggestions for enhancement
+  3. **Revised Version** - An improved version of the content
+  
+  Review and Recommendations:
