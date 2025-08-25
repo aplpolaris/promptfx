@@ -12,13 +12,13 @@ prompt-info:
       audience: a general audience
   - docs-reduce/outline
   - docs-reduce/technical-terms
-  - docs-translate/translate:
+  - text-translate/translate:
       instruct: a random language
 
 user-options:
-  docs-summarize/simplify-audience:
+  text-summarize/simplify-audience:
     audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
-  docs-translate/translate:
+  text-translate/translate:
     instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
 
 random-question:

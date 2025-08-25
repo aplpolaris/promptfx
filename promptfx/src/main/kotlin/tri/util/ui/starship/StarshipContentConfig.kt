@@ -66,7 +66,7 @@ object StarshipContentConfig {
     val userOptions = config["user-options"] as? Map<String, Map<String, List<String>>> ?:
         mapOf(
             "text-summarize/simplify-audience" to mapOf("audience" to listOf("a general audience", "elementary school students", "high school students", "software engineers", "executives")),
-            "text-translate/translate-text" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
+            "text-translate/translate" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
         )
 
     //region RANDOM QUESTION CONFIGS

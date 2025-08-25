@@ -29,35 +29,41 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 class AiPipelineExecutorTest {
 
     @Test
-    fun testExecute() = runTest {
-        val results = AiPipelineExecutor.execute(
-            listOf(GoTask("pass"), FailTask("fail")),
-            PrintMonitor()).interimResults
-        assertEquals(2, results.size)
-        assertEquals("go", results["pass"]?.firstValue!!)
-        assertNotNull(results["fail"]?.errorMessage)
+    fun testExecute() {
+        runTest {
+            val results = AiPipelineExecutor.execute(
+                listOf(GoTask("pass"), FailTask("fail")),
+                PrintMonitor()).interimResults
+            assertEquals(2, results.size)
+            assertEquals("go", results["pass"]?.firstValue!!)
+            assertNotNull(results["fail"]?.errorMessage)
+        }
     }
 
     @Test
-    fun testExecuteChain() = runTest {
-        val results = AiPipelineExecutor.execute(
-            listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).interimResults
-        assertEquals(3, results.size)
-        assertEquals("go", results["a"]?.firstValue!!)
-        assertEquals("go", results["b"]?.firstValue!!)
-        assertEquals("go", results["c"]?.firstValue!!)
+    fun testExecuteChain() {
+        runTest {
+            val results = AiPipelineExecutor.execute(
+                listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
+                PrintMonitor()).interimResults
+            assertEquals(3, results.size)
+            assertEquals("go", results["a"]?.firstValue!!)
+            assertEquals("go", results["b"]?.firstValue!!)
+            assertEquals("go", results["c"]?.firstValue!!)
+        }
     }
 
     @Test
-    fun testExecuteChainWithFailure() = runTest {
-        val results = AiPipelineExecutor.execute(
-            listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
-            PrintMonitor()).interimResults
-        assertEquals(2, results.size)
-        assertEquals("go", results["a"]?.firstValue!!)
-        assertNotNull(results["b"]?.errorMessage)
-        assertNull(results["c"]?.values)
+    fun testExecuteChainWithFailure() {
+        runTest {
+            val results = AiPipelineExecutor.execute(
+                listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
+                PrintMonitor()).interimResults
+            assertEquals(2, results.size)
+            assertEquals("go", results["a"]?.firstValue!!)
+            assertNotNull(results["b"]?.errorMessage)
+            assertNull(results["c"]?.values)
+        }
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {

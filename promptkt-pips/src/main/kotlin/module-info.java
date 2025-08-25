@@ -27,9 +27,11 @@ module tri.promptkt.pips {
     requires okhttp3;
     requires com.github.mustachejava;
 
+    opens tri.ai.pips.api to com.fasterxml.jackson.databind;
     opens tri.ai.tool.wf to com.fasterxml.jackson.databind;
 
     exports tri.ai.pips;
+    exports tri.ai.pips.api;
     exports tri.ai.tool;
     exports tri.ai.tool.wf;
 }

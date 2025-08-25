@@ -2,7 +2,6 @@
 groupId: text-translate
 defaults: { category: text }
 prompts:
-
   - id: text-translate/translate@1.0.0
     title: Translate Text
     description: Translate text from one language to another.
