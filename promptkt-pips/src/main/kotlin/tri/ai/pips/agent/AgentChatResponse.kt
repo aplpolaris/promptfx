@@ -1,15 +1,15 @@
 /*-
  * #%L
- * tri.promptfx:promptkt
+ * tri.promptfx:promptkt-pips
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,22 +17,16 @@
  * limitations under the License.
  * #L%
  */
+package tri.ai.pips.agent
 
-module tri.promptkt.pips {
-    requires transitive tri.promptkt.core;
+import tri.ai.core.MultimodalChatMessage
 
-    requires openai.core.jvm;
-    requires openai.client.jvm;
-
-    requires okhttp3;
-    requires com.github.mustachejava;
-
-    opens tri.ai.pips.api to com.fasterxml.jackson.databind;
-    opens tri.ai.tool.wf to com.fasterxml.jackson.databind;
-
-    exports tri.ai.pips;
-    exports tri.ai.pips.agent;
-    exports tri.ai.pips.api;
-    exports tri.ai.tool;
-    exports tri.ai.tool.wf;
-}
+/** Response from sending a message to an agent chat. */
+data class AgentChatResponse(
+    /** The agent's response message. */
+    val message: MultimodalChatMessage,
+    /** Any reasoning/thought process (if enabled). */
+    val reasoning: String? = null,
+    /** Metadata about the response. */
+    val metadata: Map<String, Any> = emptyMap()
+)
