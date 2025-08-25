@@ -176,7 +176,6 @@ class PromptFxWorkspace : Workspace() {
             val matchesView = viewInfo.view != null && component.javaClass == viewInfo.view
             matchesComponent || matchesView
         }?.let { (category, name, _) ->
-            println("Found view identifier for component: $category:$name")
             "$category:$name"
         }
     }

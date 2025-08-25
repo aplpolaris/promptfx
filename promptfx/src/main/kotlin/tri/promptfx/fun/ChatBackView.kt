@@ -188,7 +188,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
     }
 
     private suspend fun chatBack(): AiPromptTrace<String> {
-        val systemMessage = fillPrompt("chat-back",
+        val systemMessage = fillPrompt("chat/chat-back",
             "person" to nextPerson,
             "other persons" to otherPersons,
             "topic" to conversationTopic.value,
