@@ -38,7 +38,7 @@ import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
 
 /** Plugin for the [ResearchView]. */
-class ResearchViewPlugin : NavigableWorkspaceViewImpl<ResearchView>("Research", "Research View", WorkspaceViewAffordance.INPUT_ONLY, ResearchView::class)
+class ResearchViewPlugin : NavigableWorkspaceViewImpl<ResearchView>("Agents", "Research View", WorkspaceViewAffordance.INPUT_ONLY, ResearchView::class)
 
 /** Main research view that provides a guided process for research and report writing. */
 class ResearchView : AiPlanTaskView(
@@ -61,8 +61,8 @@ class ResearchView : AiPlanTaskView(
     private lateinit var exportButton: Button
 
     init {
-        setupWorkflowStateBindings()
         setupUI()
+        setupWorkflowStateBindings()
     }
     
     private fun setupUI() {

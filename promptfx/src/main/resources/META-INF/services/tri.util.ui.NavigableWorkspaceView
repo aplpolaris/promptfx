@@ -3,7 +3,6 @@ tri.promptfx.prompts.PromptScriptPlugin
 tri.promptfx.prompts.PromptTemplatePlugin
 tri.promptfx.prompts.PromptValidatorPlugin
 tri.promptfx.prompts.PromptTraceHistoryPlugin
-tri.promptfx.research.ResearchViewPlugin
 tri.promptfx.text.ListGeneratorPlugin
 tri.promptfx.text.QuestionAnsweringPlugin
 tri.promptfx.text.StructuredDataPlugin
@@ -21,5 +20,6 @@ tri.promptfx.fun.ColorPlugin
 tri.promptfx.fun.WeatherViewPlugin
 tri.promptfx.fun.WikipediaViewPlugin
 tri.promptfx.agents.AgenticPlugin
+tri.promptfx.research.ResearchViewPlugin
 tri.promptfx.settings.AboutPlugin
 tri.promptfx.settings.PromptFxSettingsPlugin
