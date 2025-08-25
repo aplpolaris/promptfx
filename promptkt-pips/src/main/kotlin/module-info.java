@@ -31,6 +31,7 @@ module tri.promptkt.pips {
     opens tri.ai.tool.wf to com.fasterxml.jackson.databind;
 
     exports tri.ai.pips;
+    exports tri.ai.pips.agent;
     exports tri.ai.pips.api;
     exports tri.ai.tool;
     exports tri.ai.tool.wf;
