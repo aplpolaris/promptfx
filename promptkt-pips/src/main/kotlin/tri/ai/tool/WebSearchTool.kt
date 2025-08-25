@@ -26,6 +26,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
 import tri.ai.core.CompletionBuilder
+import java.net.URLDecoder
 
 /**
  * A web search tool that uses DuckDuckGo to search the web and return structured results.
@@ -132,9 +133,10 @@ class WebSearchTool : JsonTool(
                 val url = titleUrlMatch.groupValues[1].trim()
                 val title = titleUrlMatch.groupValues[2].trim()
                 val description = snippetMatch?.groupValues?.get(1)?.trim() ?: ""
-                
+                val decodedUrl = URLDecoder.decode(url.substringAfter("uddg=").substringBefore("&amp;rut="), "UTF-8")
+
                 if (title.isNotEmpty() && url.isNotEmpty()) {
-                    results.add(SearchResult(title, url, description))
+                    results.add(SearchResult(title, decodedUrl, description))
                 }
             }
         }
