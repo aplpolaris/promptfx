@@ -20,6 +20,12 @@
             <artifactId>promptkt-docs</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptkt-pips</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.github.ajalt.clikt</groupId>

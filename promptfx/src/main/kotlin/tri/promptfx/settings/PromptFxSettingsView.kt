@@ -29,6 +29,9 @@ import javafx.scene.layout.VBox
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import javafx.util.Callback
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.gemini.GeminiAiPlugin
@@ -168,9 +171,23 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     val status = if (plugin in policyPlugins) "(Active)" else "(Inactive)"
                     label("• ${plugin.javaClass.simpleName} $status") {
                         runAsync {
-                            plugin.modelInfo().size
-                        } ui {
-                            text += " ($it models)"
+                            try {
+                                runBlocking {
+                                    withTimeout(5000) { // 5 second timeout per plugin
+                                        plugin.modelInfo().size
+                                    }
+                                }
+                            } catch (e: TimeoutCancellationException) {
+                                -1 // Indicate timeout
+                            } catch (e: Exception) {
+                                -2 // Indicate error
+                            }
+                        } ui { modelCount ->
+                            text += when (modelCount) {
+                                -1 -> " (timeout)"
+                                -2 -> " (error)"
+                                else -> " ($modelCount models)"
+                            }
                         }
                     }
                 }

@@ -22,15 +22,21 @@ package tri.promptfx.api
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
+import tri.ai.core.TextPlugin
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
+import tri.util.info
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 import tri.util.ui.sortmenu
+import tri.util.warning
 
 /** API view showing model information. */
 class ModelsView : AiTaskView("Models", "List all models from API call, sorted by creation date", showInput = false) {
@@ -119,13 +125,41 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
     //region FILTER HELPERS
 
     private fun refresh() {
+        models.clear()
+        filter.model.sortBy("Id", { it.id })
+
+        val supportedPlugins = PromptFxModels.policy.supportedPlugins()
+        if (supportedPlugins.isEmpty()) {
+            error("No plugins found", "No plugins are available or configured.")
+            return
+        } else {
+            supportedPlugins.forEach { loadModelsFromPlugin(it) }
+        }
+    }
+
+    private fun loadModelsFromPlugin(plugin: TextPlugin) {
         runAsync {
-            PromptFxModels.policy.modelInfo()
-        } ui {
-            models.setAll(it)
-            filter.model.sortBy("Id", { it.id })
-            if (it.isEmpty()) {
-                error("No models found", "No models were returned, possibly due to a missing API key or failed connection. Check the logs for more information.")
+            try {
+                info<ModelsView>("Loading models from ${plugin.modelSource()}...")
+                // Use runBlocking with timeout to prevent individual plugin from blocking too long
+                runBlocking {
+                    withTimeout(10000) {
+                        plugin.modelInfo()
+                    }
+                }
+            } catch (e: TimeoutCancellationException) {
+                warning<ModelsView>("Timeout loading models from ${plugin.modelSource()}")
+                emptyList()
+            } catch (e: Exception) {
+                warning<ModelsView>("Error loading models from ${plugin.modelSource()}: ${e.message}")
+                emptyList()
+            }
+        } ui { pluginModels ->
+            if (pluginModels.isNotEmpty()) {
+                info<ModelsView>("Loaded ${pluginModels.size} models from ${plugin.modelSource()}")
+                models.addAll(pluginModels)
+                filter.model.updateFilterOptions(models.toList())
+                refilter()
             }
         }
     }

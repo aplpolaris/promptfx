@@ -1,0 +1,210 @@
+############################
+# RESEARCH AND REPORT WRITING
+############################
+# view: Research & Reports
+# keywords:
+#   {{{topic}}} - research topic
+#   {{{input}}} - text content for processing
+#   {{{research}}} - research content/findings
+#   {{{outline}}} - report outline
+#   {{{section}}} - report section to review/edit
+
+---
+groupId: research-report
+defaults: { category: research }
+prompts:
+
+  - id: research-report/planner@1.0.0
+    title: Research Planner
+    description: Analyze research requests and generate comprehensive task plans
+    args:
+      - name: request
+        description: The research request or topic to plan for
+        required: true
+        type: string
+      - name: approach
+        description: The planning approach to use
+        required: false
+        type: string
+      - name: scope
+        description: The scope and complexity level for the research plan
+        required: false
+        type: string
+    template: |
+      Analyze the following research request and create a comprehensive, actionable research plan{{#approach}} using a {{approach}} approach{{/approach}}{{#scope}} with {{scope}} scope{{/scope}}.
+      
+      Research Request: {{{request}}}
+      
+      Please provide a detailed research plan that includes:
+      
+      1. **Research Objectives**: Clear, specific objectives that address the request
+      2. **Key Questions**: Primary research questions to guide the investigation
+      3. **Research Methodology**: Recommended approaches and methods
+      4. **Task Breakdown**: Detailed, sequential tasks organized by phases
+      5. **Resource Requirements**: Necessary sources, tools, and materials
+      6. **Timeline Estimate**: Realistic time estimates for each phase
+      7. **Deliverables**: Expected outputs and milestones
+      8. **Success Criteria**: How to measure successful completion
+      
+      Structure the task breakdown with:
+      - Phase names and descriptions
+      - Specific tasks within each phase
+      - Dependencies between tasks
+      - Estimated time for each task
+      - Priority levels (high/medium/low)
+      
+      Format the plan as a clear, actionable roadmap that can guide the research process from start to finish.
+      
+      Research Plan:
+
+  - id: research-report/questions@1.0.0
+    title: Generate Research Questions
+    description: Generate a comprehensive set of research questions for a given topic
+    args:
+      - name: topic
+        description: The research topic or subject area
+        required: true
+        type: string
+      - name: question_type
+        description: The type of research questions to generate
+        required: false
+        type: string
+      - name: depth
+        description: The depth level of questions (basic, intermediate, advanced)
+        required: false
+        type: string
+    template: |
+      Generate a comprehensive set of research questions for the following topic{{#question_type}}, focusing on {{question_type}} questions{{/question_type}}{{#depth}} at a {{depth}} level{{/depth}}.
+      
+      Topic: {{{topic}}}
+      
+      Please provide:
+      1. 3-5 primary research questions that address the core aspects of this topic
+      2. 5-8 secondary questions that explore specific dimensions or sub-topics
+      3. 2-3 methodological questions about how to approach researching this topic
+      
+      Format each question clearly and ensure they are:
+      - Specific and focused
+      - Researchable with available methods and sources
+      - Relevant to the topic
+      - Progressive in complexity where appropriate
+      
+      Research Questions:
+
+  - id: research-report/outline@1.0.0
+    title: Generate Report Outline
+    description: Generate structured outlines for reports based on topic and outline type
+    args:
+      - name: topic
+        description: The topic for the report outline
+        required: true
+        type: string
+      - name: outline_type
+        description: The type of outline to generate
+        required: false
+        type: string
+      - name: length
+        description: Expected length or scope of the report
+        required: false
+        type: string
+    template: |
+      Create a detailed {{#outline_type}}{{outline_type}} {{/outline_type}}outline for a report on the following topic{{#length}}, targeting {{length}}{{/length}}:
+      
+      Topic: {{{topic}}}
+      
+      The outline should include:
+      - A compelling title
+      - Executive summary/abstract section
+      - Main sections with clear headings
+      - Sub-sections with specific topics to cover
+      - Key points or questions to address in each section
+      - Conclusion section
+      - References/bibliography section
+      
+      Please structure the outline with proper hierarchical numbering (1.0, 1.1, 1.1.1, etc.) and provide brief descriptions of what each section should contain.
+      
+      Report Outline:
+
+  - id: research-report/draft@1.0.0
+    title: Generate Draft Report
+    description: Combine research findings and outline to create a draft report
+    args:
+      - name: topic
+        description: The report topic
+        required: true
+        type: string
+      - name: research
+        description: Research findings and data to incorporate
+        required: true
+        type: string
+      - name: outline
+        description: The report outline to follow
+        required: true
+        type: string
+      - name: tone
+        description: The writing tone for the report
+        required: false
+        type: string
+    template: |
+      Create a comprehensive draft report{{#tone}} using a {{tone}} tone{{/tone}} based on the following outline and research findings:
+      
+      Topic: {{{topic}}}
+      
+      Outline:
+      ```
+      {{{outline}}}
+      ```
+      
+      Research Findings:
+      ```
+      {{{research}}}
+      ```
+      
+      Instructions:
+      - Follow the outline structure closely
+      - Integrate the research findings appropriately throughout
+      - Write clear, coherent paragraphs for each section
+      - Include smooth transitions between sections
+      - Maintain consistency in style and tone
+      - Add section headers as specified in the outline
+      - Ensure all claims are supported by the provided research
+      - Include placeholder citations where specific sources are referenced
+      
+      Draft Report:
+
+  - id: research-report/review-edit@1.0.0
+    title: Review and Edit Report Section
+    description: Review and provide editing suggestions for report sections
+    args:
+      - name: section
+        description: The report section to review and edit
+        required: true
+        type: string
+      - name: focus
+        description: The focus area for review (e.g., clarity, structure, evidence)
+        required: false
+        type: string
+      - name: target_audience
+        description: The intended audience for the report
+        required: false
+        type: string
+    template: |
+      Review and edit the following report section{{#focus}}, focusing primarily on {{focus}}{{/focus}}{{#target_audience}} for a {{target_audience}} audience{{/target_audience}}:
+      
+      Section to Review:
+      ```
+      {{{section}}}
+      ```
+      
+      Please provide:
+      1. **Overall Assessment**: Brief summary of the section's strengths and areas for improvement
+      
+      2. **Specific Suggestions**: Detailed editing recommendations including:
+         - Content improvements (clarity, accuracy, completeness)
+         - Structural improvements (organization, flow, transitions)
+         - Style improvements (tone, word choice, sentence structure)
+         - Evidence and support improvements
+      
+      3. **Revised Version**: A complete rewrite of the section incorporating your suggestions
+      
+      Review and Editing Recommendations:

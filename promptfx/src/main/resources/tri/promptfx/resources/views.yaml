@@ -62,3 +62,80 @@ emoji:
     id: examples/emoji
     category: Fun
   isShowMultipleResponseOption: true
+
+research-planner:
+  prompt:
+    id: research-report/planner@1.0.0
+    category: Research
+    name: Research Planner
+    description: Analyze research requests and generate comprehensive task plans
+  modeOptions:
+    - id: planning-approach
+      templateId: approach
+      label: Planning Approach
+    - id: research-scope
+      templateId: scope
+      label: Research Scope
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
+
+research-questions:
+  prompt:
+    id: research-report/questions@1.0.0
+    category: Research
+    name: Generate Research Questions
+    description: Generate comprehensive research questions for any topic
+  modeOptions:
+    - id: research-question-type
+      templateId: question_type
+      label: Question Type
+    - id: research-depth
+      templateId: depth
+      label: Depth Level
+  isShowModelParameters: true
+  isShowMultipleResponseOption: true
+
+research-outline:
+  prompt:
+    id: research-report/outline@1.0.0
+    category: Research
+    name: Generate Report Outline
+    description: Create structured outlines for reports and research papers
+  modeOptions:
+    - id: outline-type
+      templateId: outline_type
+      label: Outline Type
+    - id: report-length
+      templateId: length
+      label: Report Length
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
+
+research-draft:
+  prompt:
+    id: research-report/draft@1.0.0
+    category: Research
+    name: Generate Draft Report
+    description: Combine research findings with outlines to create comprehensive draft reports
+  modeOptions:
+    - id: report-tone
+      templateId: tone
+      label: Writing Tone
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
+
+research-review:
+  prompt:
+    id: research-report/review-edit@1.0.0
+    category: Research
+    name: Review & Edit Report
+    description: Review and provide editing suggestions for report sections
+  modeOptions:
+    - id: review-focus
+      templateId: focus
+      label: Review Focus
+    - id: target-audience
+      templateId: target_audience
+      label: Target Audience
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
