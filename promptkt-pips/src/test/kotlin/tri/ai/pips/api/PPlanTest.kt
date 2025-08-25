@@ -23,10 +23,9 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import tri.ai.pips.core.MAPPER
 
 class PPlanTest {
-
-    private val mapper = PPlan.MAPPER
 
     @Test
     fun `parse valid plan with two steps`() {
@@ -112,11 +111,11 @@ class PPlanTest {
         val original = PPlan(
             id = "pipelines/rt@0.1.0",
             steps = listOf(
-                PPlanStep("util/echo", mapper.readTree("""{"msg":"hello"}"""), saveAs = "m"),
-                PPlanStep("util/merge", mapper.readTree("""{"left":{"${"$"}var":"m"}}"""))
+                PPlanStep("util/echo", MAPPER.readTree("""{"msg":"hello"}"""), saveAs = "m"),
+                PPlanStep("util/merge", MAPPER.readTree("""{"left":{"${"$"}var":"m"}}"""))
             )
         )
-        val json = mapper.writeValueAsString(original)
+        val json = MAPPER.writeValueAsString(original)
         val reparsed = PPlan.parse(json)
 
         assertEquals(original.id, reparsed.id)

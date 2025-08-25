@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.pips.core.MAPPER
 
 /** A serializable version of a plan. */
 data class PPlan(
@@ -32,7 +33,6 @@ data class PPlan(
     val steps: List<PPlanStep>
 ) {
     companion object {
-        val MAPPER = ObjectMapper().registerModule(KotlinModule.Builder().build())
         /** Construct plan from JSON. */
         fun parse(json: String) = MAPPER.readValue<PPlan>(json)
         /** An empty plan with no ID and no steps. */

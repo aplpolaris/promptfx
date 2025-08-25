@@ -27,6 +27,11 @@ import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.openai.OpenAiPlugin
+import tri.ai.pips.core.ChatExecutable
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.pips.core.ExecutableRegistry
+import tri.ai.pips.core.PromptLibraryExecutableRegistry
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 
@@ -36,14 +41,15 @@ class PPlanExecutorTest {
     fun `simple plan executes with dummy tool`() {
         runBlocking {
             // --- Define a trivial Executable that just echoes its input ---
-            val echo = object : PExecutable {
+            val echo = object : Executable {
                 override val name = "util/echo"
+                override val description = "Echoes the input as output"
                 override val version = "0.0.1"
                 override val inputSchema: JsonNode? = null
                 override val outputSchema: JsonNode? = null
-                override suspend fun execute(input: JsonNode, ctx: PExecContext) = input
+                override suspend fun execute(input: JsonNode, ctx: ExecContext) = input
             }
-            val registry = PExecutableRegistry.create(listOf(echo))
+            val registry = ExecutableRegistry.create(listOf(echo))
 
             // --- Minimal plan JSON ---
             val json = """
@@ -56,7 +62,7 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = PExecContext()
+            val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.vars}")
 
@@ -70,9 +76,9 @@ class PPlanExecutorTest {
     @Test
     fun `plan using a PromptLibrary and LLM`() {
         runBlocking {
-            val registry = PExecutableRegistry.create(
-                PPromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
-                        PChatExecutable(OpenAiPlugin().chatModels().first())
+            val registry = ExecutableRegistry.create(
+                PromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
+                        ChatExecutable(OpenAiPlugin().chatModels().first())
             )
 
             // --- Minimal plan JSON ---
@@ -87,7 +93,7 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = PExecContext()
+            val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.vars}")
             println("        Chat response: ${context.vars["chat1"]?.get("message")?.asText()}")
@@ -128,10 +134,10 @@ class PPlanExecutorTest {
                 }
             }
 
-            val registry = PExecutableRegistry.create(
-                PPromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
+            val registry = ExecutableRegistry.create(
+                PromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
 //                        PChatExecutable(OpenAiPlugin().chatModels().first())
-                        PChatExecutable(mockChat)
+                        ChatExecutable(mockChat)
             )
 
             // --- Multi-step plan JSON with variable chaining ---
@@ -164,7 +170,7 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = PExecContext()
+            val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.vars}")
 

@@ -19,6 +19,8 @@
  */
 package tri.ai.pips.api
 
+import tri.ai.pips.core.ExecutableRegistry
+
 /** Validates a [PPlan] object. */
 object PPlanValidator {
 
@@ -29,7 +31,7 @@ object PPlanValidator {
     }
 
     /** Checks that all tools exist within the registry */
-    fun validateToolsExist(plan: PPlan, registry: PExecutableRegistry) {
+    fun validateToolsExist(plan: PPlan, registry: ExecutableRegistry) {
         val missing = plan.steps.map { it.tool }.filter { registry.get(it) == null }
         require(missing.isEmpty()) {
             "Unknown tools: $missing" +

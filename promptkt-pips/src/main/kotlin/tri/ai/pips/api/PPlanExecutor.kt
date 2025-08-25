@@ -30,6 +30,9 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskMonitor
 import tri.ai.pips.PrintMonitor
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.ExecutableRegistry
+import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
@@ -37,9 +40,9 @@ import tri.util.ANSI_RESET
 import tri.util.info
 
 /** Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor]. */
-class PPlanExecutor(private val registry: PExecutableRegistry) {
+class PPlanExecutor(private val registry: ExecutableRegistry) {
 
-    suspend fun execute(plan: PPlan, context: PExecContext = PExecContext()) {
+    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext()) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
 
@@ -53,8 +56,8 @@ class PPlanExecutor(private val registry: PExecutableRegistry) {
 /** Converts a [PPlan] to a series of [AiTask<*>] objects. */
 class PPlanPlanner(
     private val plan: PPlan,
-    private val context: PExecContext = PExecContext(),
-    private val registry: PExecutableRegistry
+    private val context: ExecContext = ExecContext(),
+    private val registry: ExecutableRegistry
 ) : AiPlanner {
 
     override fun plan(): List<AiTask<*>> {
@@ -71,13 +74,13 @@ class PPlanPlanner(
 
                     val inputMap = step.input.resolveRefs(context.vars)
                     info<PPlanExecutor>("$ANSI_GRAY  input:$ANSI_RESET")
-                    PPlan.MAPPER.convertValue<Map<String, Any>>(inputMap)
+                    MAPPER.convertValue<Map<String, Any>>(inputMap)
                         .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
 
                     val result = exec.execute(inputMap, context)
                     step.saveAs?.let { context.vars[it] = result }
                     info<PPlanExecutor>("$ANSI_GRAY  output:$ANSI_RESET")
-                    PPlan.MAPPER.convertValue<Map<String, Any?>>(result)
+                    MAPPER.convertValue<Map<String, Any?>>(result)
                         .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
 
                     return AiPromptTrace.output(result)
