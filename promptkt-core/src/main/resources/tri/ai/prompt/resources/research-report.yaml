@@ -14,6 +14,49 @@ groupId: research-report
 defaults: { category: research }
 prompts:
 
+  - id: research-report/planner@1.0.0
+    title: Research Planner
+    description: Analyze research requests and generate comprehensive task plans
+    args:
+      - name: request
+        description: The research request or topic to plan for
+        required: true
+        type: string
+      - name: approach
+        description: The planning approach to use
+        required: false
+        type: string
+      - name: scope
+        description: The scope and complexity level for the research plan
+        required: false
+        type: string
+    template: |
+      Analyze the following research request and create a comprehensive, actionable research plan{{#approach}} using a {{approach}} approach{{/approach}}{{#scope}} with {{scope}} scope{{/scope}}.
+      
+      Research Request: {{{request}}}
+      
+      Please provide a detailed research plan that includes:
+      
+      1. **Research Objectives**: Clear, specific objectives that address the request
+      2. **Key Questions**: Primary research questions to guide the investigation
+      3. **Research Methodology**: Recommended approaches and methods
+      4. **Task Breakdown**: Detailed, sequential tasks organized by phases
+      5. **Resource Requirements**: Necessary sources, tools, and materials
+      6. **Timeline Estimate**: Realistic time estimates for each phase
+      7. **Deliverables**: Expected outputs and milestones
+      8. **Success Criteria**: How to measure successful completion
+      
+      Structure the task breakdown with:
+      - Phase names and descriptions
+      - Specific tasks within each phase
+      - Dependencies between tasks
+      - Estimated time for each task
+      - Priority levels (high/medium/low)
+      
+      Format the plan as a clear, actionable roadmap that can guide the research process from start to finish.
+      
+      Research Plan:
+
   - id: research-report/questions@1.0.0
     title: Generate Research Questions
     description: Generate a comprehensive set of research questions for a given topic

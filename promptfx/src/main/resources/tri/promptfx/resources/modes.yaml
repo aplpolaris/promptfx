@@ -201,3 +201,23 @@ target-audience:
   policymakers: "policymakers and government officials"
   students: "students and learners"
   stakeholders: "project stakeholders"
+
+planning-approach:
+  none: ""
+  academic: "academic research"
+  business: "business analysis"
+  technical: "technical investigation"
+  policy: "policy research"
+  market: "market research"
+  scientific: "scientific inquiry"
+  exploratory: "exploratory analysis"
+  systematic: "systematic review"
+
+research-scope:
+  none: ""
+  basic: "basic"
+  intermediate: "intermediate"
+  advanced: "advanced"
+  comprehensive: "comprehensive"
+  preliminary: "preliminary"
+  in-depth: "in-depth"

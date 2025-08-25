@@ -63,6 +63,22 @@ emoji:
     category: Fun
   isShowMultipleResponseOption: true
 
+research-planner:
+  prompt:
+    id: research-report/planner@1.0.0
+    category: Research
+    name: Research Planner
+    description: Analyze research requests and generate comprehensive task plans
+  modeOptions:
+    - id: planning-approach
+      templateId: approach
+      label: Planning Approach
+    - id: research-scope
+      templateId: scope
+      label: Research Scope
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
+
 research-questions:
   prompt:
     id: research-report/questions@1.0.0

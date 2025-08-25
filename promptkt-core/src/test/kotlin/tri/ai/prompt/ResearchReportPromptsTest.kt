@@ -25,6 +25,25 @@ import org.junit.jupiter.api.Test
 class ResearchReportPromptsTest {
 
     @Test
+    fun testResearchPlannerPromptExists() {
+        val group = PromptGroupIO.readFromResource("research-report.yaml")
+        assertEquals("research-report", group.groupId)
+        assertEquals("research", group.defaults.category)
+        
+        val plannerPrompt = group.prompts.find { it.name == "planner" }
+        assertNotNull(plannerPrompt)
+        assertEquals("research-report/planner@1.0.0", plannerPrompt!!.id)
+        assertEquals("Research Planner", plannerPrompt.title)
+        assertTrue(plannerPrompt.template!!.contains("Analyze the following research request"))
+        
+        // Check that it has the required arguments
+        val args = plannerPrompt.args
+        assertTrue(args.any { it.name == "request" && it.required })
+        assertTrue(args.any { it.name == "approach" && !it.required })
+        assertTrue(args.any { it.name == "scope" && !it.required })
+    }
+
+    @Test
     fun testResearchQuestionsPromptExists() {
         val group = PromptGroupIO.readFromResource("research-report.yaml")
         assertEquals("research-report", group.groupId)
