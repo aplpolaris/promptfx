@@ -20,23 +20,20 @@
 package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.core.CompletionBuilder
-import tri.ai.core.TextChat
+import tri.ai.core.TextCompletion
 import tri.ai.prompt.PromptDefSchema
 import tri.ai.tool.wf.MAPPER
 
-/** Executes for message-based input/output using a chat service. */
-class PChatExecutable(val chat: TextChat): PExecutable {
-    override val name = "chat/${chat.modelId}"
+/** Executes text completion for simple text input/output using a completion service. */
+class PTextCompletionExecutable(val completion: TextCompletion): PExecutable {
+    override val name = "completion/${completion.modelId}"
     override val version = "0.0.0"
     override val inputSchema: JsonNode? = PromptDefSchema.generateChatInputSchema()
-    override val outputSchema: JsonNode? = PromptDefSchema.generateChatOutputSchema()
+    override val outputSchema: JsonNode? = generateTextCompletionOutputSchema()
 
     override suspend fun execute(input: JsonNode, context: PExecContext): JsonNode {
-        val result = CompletionBuilder()
-            .text(input.extractText())
-            .execute(chat)
-        return MAPPER.createObjectNode().put("message", result.firstValue.content)
+        val result = completion.complete(input.extractText())
+        return MAPPER.createObjectNode().put("text", result.firstValue)
     }
 
     private fun JsonNode.extractText(): String = when {
@@ -45,5 +42,24 @@ class PChatExecutable(val chat: TextChat): PExecutable {
         has("text") -> get("text").extractText()
         else -> toString()
     }
-
+    
+    private fun generateTextCompletionOutputSchema(): JsonNode {
+        val schema = MAPPER.createObjectNode()
+        schema.put("\$schema", "http://json-schema.org/draft-07/schema#")
+        schema.put("type", "object")
+        
+        val properties = MAPPER.createObjectNode()
+        val textProp = MAPPER.createObjectNode()
+        textProp.put("type", "string")
+        textProp.put("description", "The completed text from the completion model")
+        properties.set<JsonNode>("text", textProp)
+        
+        val required = MAPPER.createArrayNode()
+        required.add("text")
+        
+        schema.set<JsonNode>("properties", properties)
+        schema.set<JsonNode>("required", required)
+        
+        return schema
+    }
 }
