@@ -41,6 +41,7 @@ import tri.promptfx.ui.ImmersiveChatView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.ui.*
 import tri.util.ui.starship.StarshipView
+import tri.util.warning
 
 /** View configuration for the app. */
 class PromptFxWorkspace : Workspace() {
@@ -90,6 +91,17 @@ class PromptFxWorkspace : Workspace() {
         root.bottom {
             add(find<AiProgressView>())
         }
+        
+        // Track changes to the docked component to save last active view
+        dockedComponentProperty.addListener { _, _, newComponent ->
+            newComponent?.let { component ->
+                // Find the view identifier for this component
+                val viewIdentifier = findViewIdentifier(component)
+                if (viewIdentifier != null) {
+                    promptFxConfig.setLastActiveView(viewIdentifier)
+                }
+            }
+        }
     }
 
     init {
@@ -137,8 +149,66 @@ class PromptFxWorkspace : Workspace() {
     }
 
     override fun onBeforeShow() {
-        dock<DocumentQaView>()
+        // Try to restore the last active view, fallback to DocumentQaView if not available
+        val lastActiveViewIdentifier = promptFxConfig.getLastActiveView()
+        if (lastActiveViewIdentifier != null) {
+            val restored = tryRestoreView(lastActiveViewIdentifier)
+            if (!restored) {
+                // Fallback to default view if restore failed
+                dock<DocumentQaView>()
+            }
+        } else {
+            // First time run - use default view
+            dock<DocumentQaView>()
+        }
     }
+
+    //region VIEW LOOKUPS
+
+    /** Find the view identifier (category:name) for a given component. */
+    private fun findViewIdentifier(component: UIComponent): String? {
+        return views.entries.flatMap { categoryEntry ->
+            categoryEntry.value.entries.map { viewEntry ->
+                Triple(categoryEntry.key, viewEntry.key, viewEntry.value)
+            }
+        }.find { (_, _, viewInfo) ->
+            val matchesComponent = viewInfo.viewComponent == component
+            val matchesView = viewInfo.view != null && component.javaClass == viewInfo.view
+            matchesComponent || matchesView
+        }?.let { (category, name, _) ->
+            println("Found view identifier for component: $category:$name")
+            "$category:$name"
+        }
+    }
+
+    /** Attempts to restore a view by its identifier (category:name). Returns true if successful. */
+    private fun tryRestoreView(viewIdentifier: String): Boolean {
+        return try {
+            val parts = viewIdentifier.split(":", limit = 2)
+            if (parts.size != 2) return false
+            
+            val (category, name) = parts
+            val viewInfo = views[category]?.get(name)
+            
+            if (viewInfo != null) {
+                if (viewInfo.viewComponent != null) {
+                    dock(viewInfo.viewComponent!!)
+                    return true
+                } else if (viewInfo.view != null) {
+                    val viewInstance = find(viewInfo.view!!)
+                    dock(viewInstance)
+                    return true
+                }
+            }
+            
+            false
+        } catch (e: Exception) {
+            warning<PromptFxWorkspace>("Failed to restore view $viewIdentifier: ${e.message}")
+            false
+        }
+    }
+
+    //endregion
 
     //region HOOKS FOR SPECIFIC VIEWS
 

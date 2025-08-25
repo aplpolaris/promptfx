@@ -96,6 +96,14 @@ class PromptFxConfig: Component(), ScopedInstance {
         return listOf()
     }
 
+    /** Get the last active view identifier (category:name). */
+    fun getLastActiveView(): String? = config.getProperty(LAST_ACTIVE_VIEW_KEY)
+
+    /** Set the last active view identifier (category:name). */
+    fun setLastActiveView(viewIdentifier: String) {
+        config[LAST_ACTIVE_VIEW_KEY] = viewIdentifier
+    }
+
     /** Save configuration options before closing application. */
     fun save() {
         find<TextManagerView>().model.libraryList
@@ -117,6 +125,7 @@ class PromptFxConfig: Component(), ScopedInstance {
 
         const val TEXTLIB_FILES = "textlib.files"
         const val CLUSTERLIB_FILES = "clusterlib.files"
+        const val LAST_ACTIVE_VIEW_KEY = "ui.last_active_view"
         const val DOCINSIGHT_LIB = "docinsight.textlib"
         const val DOCQA_LIB = "docqa.textlib"
 
