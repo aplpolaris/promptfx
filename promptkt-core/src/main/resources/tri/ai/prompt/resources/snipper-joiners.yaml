@@ -1,0 +1,43 @@
+############################
+# SNIPPET CONCATENATIONS
+############################
+# view: Document Q&A
+# keywords:
+#   {{matches}} - list of snippets
+#     {{prefix}} - prefix appended before text (e.g. to describe particular content of a document in more detail)
+#     {{number}} - number of match (starting at 1)
+#     {{name}} - name of snippet in match
+#     {{{text}}} - text of snippet in match
+---
+groupId: snippet-joiners
+defaults: { category: snippets }
+prompts:
+
+  - id: snippet-joiners/basic@1.0.0
+    template: |
+      {{#matches}}
+      Document: {{name}}
+      {{#prefix}}Description: {{prefix}}{{/prefix}}
+      Relevant Text: {{{text}}}
+      
+      {{/matches}}
+
+  - id: snippet-joiners/numbered@1.0.0
+    template: |
+      {{#matches}}
+      - ""{{{text}}}""
+        [{{number}}] {{name}}
+        {{#prefix}}({{prefix}}){{/prefix}}
+      
+      {{/matches}}
+
+  - id: snippet-joiners/citations@1.0.0
+    template: |
+      {{#matches}}
+      [[Citation {{number}}]] {{name}}
+      {{#prefix}}{{prefix}}{{/prefix}}
+      """
+      {{{text}}}
+      """
+      
+      {{/matches}}

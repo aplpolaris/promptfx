@@ -132,3 +132,92 @@ summarization-format:
   three main points: "a list of three main points"
   tl;dr: "a tl;dr summary"
   tweet: "formatted as a tweet"
+
+research-question-type:
+  none: ""
+  exploratory: "exploratory"
+  descriptive: "descriptive"
+  explanatory: "explanatory"
+  evaluation: "evaluation"
+  comparison: "comparison"
+  historical: "historical"
+  methodological: "methodological"
+  theoretical: "theoretical"
+
+research-depth:
+  none: ""
+  basic: "basic"
+  intermediate: "intermediate" 
+  advanced: "advanced"
+  expert: "expert"
+
+outline-type:
+  none: ""
+  academic: "academic research"
+  business: "business"
+  technical: "technical"
+  policy: "policy"
+  executive: "executive"
+  literature review: "literature review"
+  case study: "case study"
+  comparative analysis: "comparative analysis"
+  feasibility study: "feasibility study"
+  white paper: "white paper"
+
+report-length:
+  none: ""
+  brief: "a brief report (2-5 pages)"
+  standard: "a standard report (10-20 pages)"
+  comprehensive: "a comprehensive report (20+ pages)"
+  executive summary: "an executive summary (1-2 pages)"
+  white paper: "a white paper (5-15 pages)"
+
+report-tone:
+  none: ""
+  formal: "formal academic"
+  professional: "professional business"
+  neutral: "neutral and objective"
+  persuasive: "persuasive and compelling"
+  technical: "technical and precise"
+  accessible: "accessible and clear"
+
+review-focus:
+  none: ""
+  clarity: "clarity and readability"
+  structure: "structure and organization"
+  evidence: "evidence and support"
+  style: "writing style and tone"
+  accuracy: "accuracy and factual correctness"
+  completeness: "completeness and thoroughness"
+  flow: "logical flow and transitions"
+  audience: "audience appropriateness"
+
+target-audience:
+  none: ""
+  academic: "academic researchers"
+  executive: "business executives"
+  technical: "technical professionals"
+  general public: "general public"
+  policymakers: "policymakers and government officials"
+  students: "students and learners"
+  stakeholders: "project stakeholders"
+
+planning-approach:
+  none: ""
+  academic: "academic research"
+  business: "business analysis"
+  technical: "technical investigation"
+  policy: "policy research"
+  market: "market research"
+  scientific: "scientific inquiry"
+  exploratory: "exploratory analysis"
+  systematic: "systematic review"
+
+research-scope:
+  none: ""
+  basic: "basic"
+  intermediate: "intermediate"
+  advanced: "advanced"
+  comprehensive: "comprehensive"
+  preliminary: "preliminary"
+  in-depth: "in-depth"

@@ -20,21 +20,24 @@
 package tri.util.ui.starship
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextCompletion
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.TextChat
 import tri.ai.text.docs.FormattedText
 
 /** Pipeline config for [StarshipUi]. */
-class StarshipPipelineConfig(val completion: TextCompletion) {
+class StarshipPipelineConfig(val chatEngine: TextChat) {
     /** Input generator. */
     val generator: () -> String = { runBlocking { StarshipContentConfig.randomQuestion() } }
     /** Primary prompt template, with {{input}} and other parameters. */
-    val primaryPrompt = PromptWithParams("document-map-summarize")
+    val primaryPrompt = PromptWithParams("docs-map/summarize")
     /** Executor for primary prompt. */
     var promptExec: AiPromptExecutor = object : AiPromptExecutor {
         override suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult {
-            val filledPrompt = prompt.fill(input)
-            val response = completion.complete(filledPrompt)
-            return StarshipInterimResult(prompt.prompt.templateName, FormattedText(response.values!![0]), null, listOf())
+            val response = CompletionBuilder()
+                .prompt(prompt.prompt)
+                .paramsInput(input)
+                .execute(chatEngine).firstValue.textContent()
+            return StarshipInterimResult(prompt.prompt.name ?: prompt.prompt.id, FormattedText(response), null, listOf())
         }
     }
     /** Secondary prompt executors. */

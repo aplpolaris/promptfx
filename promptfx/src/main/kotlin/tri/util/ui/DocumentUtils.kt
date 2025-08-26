@@ -24,8 +24,8 @@ import javafx.scene.image.Image
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.PDFRenderer
 import tri.ai.text.chunks.BrowsableSource
-import tri.ai.text.chunks.process.LocalFileManager.PDF
-import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.util.io.LocalFileManager.PDF
+import tri.util.io.LocalFileManager.originalFile
 import java.awt.image.BufferedImage
 import java.io.File
 import kotlin.collections.set

@@ -42,10 +42,12 @@ import javafx.scene.text.TextFlow
 import javafx.stage.Modality
 import javafx.stage.StageStyle
 import tornadofx.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptLibrary
 import tri.promptfx.PromptFxConfig
-import tri.promptfx.api.ImagesView
+import tri.promptfx.PromptFxGlobals
+import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.multimodal.ImagesView
 import tri.promptfx.promptFxFileChooser
 import tri.util.loggerFor
 import tri.util.warning
@@ -124,24 +126,15 @@ val FontAwesomeIcon.graphic
     get() = icon(this)
 
 val FontAwesomeIconView.gray
-    get() = apply {
-        fill = Color.GRAY
-    }
-
+    get() = apply { fill = Color.GRAY }
 val FontAwesomeIconView.navy
-    get() = apply {
-        fill = Color.NAVY
-    }
-
+    get() = apply { fill = Color.NAVY }
 val FontAwesomeIconView.burgundy
-    get() = apply {
-        fill = Color(128.0/255, 0.0, 32.0/255, 1.0)
-    }
-
+    get() = apply { fill = Color(128.0/255, 0.0, 32.0/255, 1.0) }
 val FontAwesomeIconView.forestGreen
-    get() = apply {
-        fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0)
-    }
+    get() = apply { fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0) }
+val FontAwesomeIconView.fireOrange
+    get() = apply { fill = Color(1.0, 69.0/255, 0.0, 1.0) }
 
 //endregion
 
@@ -150,11 +143,22 @@ val FontAwesomeIconView.forestGreen
 /**
  * Creates a [menubutton] to select a template
  */
-fun EventTarget.templatemenubutton(template: SimpleStringProperty, promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean = { true }) =
-    listmenubutton(
-        items = { AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys.sorted() },
-        action = { template.set(AiPromptLibrary.lookupPrompt(it).template) }
-    )
+fun EventTarget.templatemenubutton(template: SimpleStringProperty, isNestedByCategory: Boolean = false, promptFilter: (PromptDef) -> Boolean = { true }) =
+    if (isNestedByCategory) {
+        nestedlistmenubutton(
+            items = {
+                PromptFxGlobals.promptLibrary.list(promptFilter)
+                    .groupBy { it.category ?: "Uncategorized" }
+                    .mapValues { it.value.toList().map { it.bareId }.sorted() }
+                    .toSortedMap()
+            },
+            action = { template.set(lookupPrompt(it).template) }
+        )
+    } else
+        listmenubutton(
+            items = { PromptFxGlobals.promptLibrary.list(promptFilter).map { it.id }.sorted() },
+            action = { template.set(lookupPrompt(it).template) }
+        )
 
 /**
  * Creates a [menubutton] with the provided items and action.
@@ -167,6 +171,32 @@ fun EventTarget.listmenubutton(items: () -> Collection<String>, action: (String)
             items().forEach { key ->
                 item(key) {
                     action { action(key) }
+                }
+            }
+        }
+    }
+
+/**
+ * Creates a [menubutton] with the provided nested items and action.
+ * The list is dynamically updated each time the button is shown.
+ */
+fun EventTarget.nestedlistmenubutton(items: () -> Map<String, List<String>>, action: (String) -> Unit) =
+    menubutton("", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
+        setOnShowing {
+            this.items.clear()
+            items().forEach { (category, keys) ->
+                if (keys.size == 1) {
+                    item("$category/${keys.first()}") {
+                        action { action(keys.first()) }
+                    }
+                } else {
+                    menu(category) {
+                        keys.forEach { key ->
+                            item(key) {
+                                action { action(key) }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -313,9 +343,8 @@ fun <X> ListView<X>.bindSelectionBidirectional(property: ObservableList<X>) {
     property.onChange {
         if (!isUpdating) {
             val indices = it.list.map { items.indexOf(it) }.toIntArray()
-            if (indices.isEmpty())
-                selectionModel.clearSelection()
-            else
+            selectionModel.clearSelection()
+            if (indices.isNotEmpty())
                 selectionModel.selectIndices(indices[0], *indices.drop(1).toIntArray())
         }
     }

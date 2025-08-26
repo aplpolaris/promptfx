@@ -26,6 +26,7 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.*
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.util.ifNotBlank
 
 /**
@@ -63,7 +64,7 @@ class ChatViewAdvanced : ChatView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<MultimodalChatMessage> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)

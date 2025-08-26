@@ -1,0 +1,21 @@
+---
+groupId: text-translate
+defaults: { category: text }
+prompts:
+  - id: text-translate/translate@1.0.0
+    title: Translate Text
+    description: Translate text from one language to another.
+    args:
+      - name: input
+        description: The text to be translated
+        required: true
+        type: string
+      - name: instruct
+        description: The target language for translation
+        required: true
+        type: string
+    template: |
+      Translate this text to {{instruct}}:
+      ```
+      {{{input}}}
+      ```

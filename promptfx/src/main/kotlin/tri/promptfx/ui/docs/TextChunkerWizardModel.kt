@@ -24,10 +24,15 @@ package tri.promptfx.ui.docs
 import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import tornadofx.*
+import tri.ai.core.EmbeddingModel
+import tri.ai.text.chunks.DelimiterTextChunker
+import tri.ai.text.chunks.NoOpTextChunker
+import tri.ai.text.chunks.RegexTextChunker
+import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.chunks.TextChunk
+import tri.ai.text.chunks.TextChunker
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.*
 import tri.promptfx.PromptFxController
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.promptfx.ui.chunk.asTextChunkViewModel
@@ -46,11 +51,9 @@ class TextChunkerWizardModel: ViewModel() {
 
     var isFileMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FILE.uiName)!!
     val file = SimpleObjectProperty<File>()
-    val fileName = file.stringBinding { it?.name ?: "None" }
 
     val isFolderMode = sourceToggleSelection.isEqualTo(TextChunkerSourceMode.FOLDER.uiName)!!
     val folder = SimpleObjectProperty<File>()
-    val folderName = folder.stringBinding { it?.name ?: "None" }
     val folderIncludeSubfolders = SimpleObjectProperty(false)
     val folderExtractText = SimpleObjectProperty(true)
 
@@ -91,6 +94,23 @@ class TextChunkerWizardModel: ViewModel() {
     val chunkFilterMinSize = SimpleIntegerProperty(50)
     val chunkFilterRemoveDuplicates = SimpleBooleanProperty(true)
 
+    // library location options
+    val libraryFolder = SimpleObjectProperty<File>()
+    val libraryFileName = SimpleStringProperty("embeddings2.json")
+    val isExtractMetadata = SimpleBooleanProperty(true)
+    val isGenerateEmbeddings = SimpleBooleanProperty(false)
+    val embeddingModel = SimpleObjectProperty<EmbeddingModel>()
+    
+    // computed properties for library location validation
+    val isLibraryLocationValid = libraryFolder.isNotNull
+        .and(libraryFileName.isNotEmpty)
+        .and(isGenerateEmbeddings.not().or(embeddingModel.isNotNull))
+    val libraryFile = Bindings.createObjectBinding(
+        { libraryFolder.value?.let { File(it, libraryFileName.value) } },
+        libraryFolder, libraryFileName
+    )
+    val fileExists = libraryFile.booleanBinding { it?.exists() == true }
+
     // preview of chunks
     val previewChunks = observableListOf<TextChunkViewModel>()
 
@@ -105,6 +125,13 @@ class TextChunkerWizardModel: ViewModel() {
         chunkDelimiter.onChange { updatePreview() }
         chunkRegex.onChange { updatePreview() }
         chunkFilterMinSize.onChange { updatePreview() }
+        
+        // Initialize library folder based on source selection
+        file.onChange { libraryFolder.set(it!!.parentFile) }
+        folder.onChange { libraryFolder.set(it) }
+        
+        // Initialize embedding model with default
+        embeddingModel.set(controller.embeddingStrategy.value?.model)
     }
 
     /** Get sample of input text based on current settings. */
@@ -125,7 +152,7 @@ class TextChunkerWizardModel: ViewModel() {
         val inputTextSample = inputTextSample()
         val chunker = chunker()
         val doc = TextDoc("", inputTextSample)
-        return doc to chunker.chunk(doc.all!!)
+        return doc to chunker.chunkText(doc.all!!.text, maxChunkSize.value)
     }
 
     /** Initializes chunking options based on input docs. */
@@ -145,20 +172,21 @@ class TextChunkerWizardModel: ViewModel() {
         val useChunks = chunks
             .filter(chunkFilter(doc.all!!))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingService.value?.modelId, null) })
+        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingStrategy.value?.modelId, null) })
     }
 
     /** Chunker based on current settings. */
     private fun chunker(): TextChunker = when {
         isChunkAutomatic.get() ->
-            SmartTextChunker(maxChunkSize.value)
+            SmartTextChunker()
         isChunkDelimiter.get() ->
             DelimiterTextChunker(
-                isCleanUpWhiteSpace.value, listOf(chunkDelimiter.value
-                    .replace("\\n", "\n")
-                    .replace("\\r", "\r")
-                    .replace("\\t", "\t")
-                    .ifEmpty { "\n" })
+                isCleanUpWhiteSpace.value, listOf(
+                    chunkDelimiter.value
+                        .replace("\\n", "\n")
+                        .replace("\\r", "\r")
+                        .replace("\\t", "\t")
+                        .ifEmpty { "\n" })
             )
         isChunkRegex.get() -> try {
             RegexTextChunker(isCleanUpWhiteSpace.value, chunkRegex.value.toRegex())
@@ -181,7 +209,8 @@ class TextChunkerWizardModel: ViewModel() {
         val addedChunks = mutableSetOf<String>()
         return inputDocs(progressUpdate).mapNotNull { doc ->
             val docChunk = doc.all!!
-            val docChunks = chunker.chunk(docChunk).filter(chunkFilter(docChunk))
+            val docChunks = chunker.chunkText(docChunk.text, maxChunkSize.value)
+                .filter(chunkFilter(docChunk))
             if (!chunkFilterRemoveDuplicates.value)
                 doc.chunks.addAll(docChunks)
             else

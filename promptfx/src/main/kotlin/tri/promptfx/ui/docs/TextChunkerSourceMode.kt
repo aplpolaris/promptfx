@@ -1,11 +1,31 @@
+/*-
+ * #%L
+ * tri.promptfx:promptfx
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.promptfx.ui.docs
 
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.LocalFileManager
-import tri.ai.text.chunks.process.LocalFileManager.extractTextContent
-import tri.ai.text.chunks.process.LocalFileManager.fileToText
-import tri.ai.text.chunks.process.LocalFileManager.originalFile
+import tri.util.io.LocalFileManager
+import tri.util.io.LocalFileManager.extractTextContent
+import tri.util.io.LocalFileManager.fileToText
+import tri.util.io.LocalFileManager.originalFile
+import tri.util.io.LocalFileManager.readMetadata
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -59,8 +79,10 @@ enum class TextChunkerSourceMode(val uiName: String) {
         override fun inputTextSample(model: TextChunkerWizardModel) =
             model.webScrapeModel.mainUrlText()
         override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> =
-            model.webScrapeModel.scrapeWebsite(progressUpdate).map {
-                textDocWithHeader(it.key.toString(), it.value, model.isHeaderRow.value)
+            model.webScrapeModel.scrapeWebsite(model.libraryFolder.value, model.isExtractMetadata.value, progressUpdate).map {
+                it.localFile?.let { file ->
+                    file.asTextDoc(model.isHeaderRow.value)
+                } ?: textDocWithHeader(it.url.toString(), it.contentText, model.isHeaderRow.value)
             }
     },
 
@@ -68,26 +90,6 @@ enum class TextChunkerSourceMode(val uiName: String) {
         override fun inputTextSample(model: TextChunkerWizardModel) = "" // TODO
         override fun allInputText(model: TextChunkerWizardModel, progressUpdate: (String) -> Unit): List<TextDoc> = listOf() // TODO
     };
-
-/*-
- * #%L
- * tri.promptfx:promptfx
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
 
     /** Get sample of input text based on current settings. Should read data only, not apply processing options (e.g. remove header row). */
     abstract fun inputTextSample(model: TextChunkerWizardModel): String
@@ -114,6 +116,8 @@ enum class TextChunkerSourceMode(val uiName: String) {
                 }
                 metadata.path = uri
                 metadata.relativePath = relativeTo(File(parent)).path
+                metadata.mergeAll(readMetadata())
+
                 if (isFirstLineHeader)
                     dataHeader = text.substringBefore("\n").trim()
             }

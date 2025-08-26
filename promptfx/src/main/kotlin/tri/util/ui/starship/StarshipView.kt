@@ -67,12 +67,12 @@ class StarshipView : Fragment("Starship") {
 
     private val summarizeForIndex = SimpleIntegerProperty(0)
     private val summarizeFor = summarizeForIndex.stringBinding { summarizeForOptions[it!!.toInt()] }
-    private val summarizeForOptions = StarshipContentConfig.userOptions["text-simplify-audience"]!!["audience"]!!
+    private val summarizeForOptions = StarshipContentConfig.userOptions["text-summarize/simplify-audience"]!!["audience"]!!
     private fun nextSummarizeFor() { summarizeForIndex.set((summarizeForIndex.get() + 1) % summarizeForOptions.size) }
 
     private val targetLanguageIndex = SimpleIntegerProperty(0)
     private val targetLanguage = targetLanguageIndex.stringBinding { targetLanguageOptions[it!!.toInt()] }
-    private val targetLanguageOptions = StarshipContentConfig.userOptions["translate-text"]!!["instruct"]!!
+    private val targetLanguageOptions = StarshipContentConfig.userOptions["text-translate/translate"]!!["instruct"]!!
     private fun nextTargetLanguage() { targetLanguageIndex.set((targetLanguageIndex.get() + 1) % targetLanguageOptions.size) }
 
     //endregion
@@ -286,7 +286,7 @@ class StarshipView : Fragment("Starship") {
             return
         results.clearAll()
         job = runAsync {
-            val config = StarshipPipelineConfig(controller.completionEngine.value)
+            val config = StarshipPipelineConfig(controller.chatService.value)
             config.secondaryPrompts[0].params["audience"] = summarizeFor.value
             config.secondaryPrompts[3].params["instruct"] = targetLanguage.value
             config.promptExec = object : AiPromptExecutor {

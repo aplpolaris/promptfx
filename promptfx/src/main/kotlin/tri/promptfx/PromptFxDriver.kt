@@ -33,11 +33,12 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.TextChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.toFxNodes
 import tri.util.ui.graphic
 
@@ -85,6 +86,7 @@ object PromptFxDriver {
             inputArea.text = input
             val result = taskView.processUserInput().finalResult
             val nodeResult = (result as? FormattedPromptTraceResult)?.formattedOutputs?.firstOrNull()
+                ?: (result.firstValue as? TextChatMessage)?.let { FormattedText(it.content!!) }
                 ?: FormattedText(result.firstValue.toString())
             Platform.runLater {
                 if (outputArea is TextArea) {
@@ -124,7 +126,7 @@ object PromptFxDriver {
         if (dialog.execute)
             runAsync {
                 runBlocking {
-                    find<PromptFxWorkspace>().sendInput(dialog.targetView.value, dialog.input.value) {
+                    (workspace as PromptFxWorkspace).sendInput(dialog.targetView.value, dialog.input.value) {
                         println("Callback Result: $it")
                     }
                 }
@@ -144,7 +146,7 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
         form {
             fieldset {
                 field("View Name:") {
-                    val keys = listOf(PromptFxDriver.IMMERSIVE_VIEW) + find<PromptFxWorkspace>().views.keys.toList()
+                    val keys = listOf(PromptFxDriver.IMMERSIVE_VIEW) + find<PromptFxWorkspace>().views.values.flatMap { it.keys }
                     combobox(targetView, keys) {
                         isEditable = true
                     }
@@ -168,8 +170,10 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 //region MENU BUILDERS
 
 /** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(trace: AiPromptTraceSupport<*>, workspace: PromptFxWorkspace) {
-    val outputs = trace.output?.outputs?.filterNotNull()?.map { it.toString() } ?: listOf()
+fun ContextMenu.buildsendresultmenu(trace: AiPromptTraceSupport, workspace: PromptFxWorkspace) {
+    val outputs = trace.output?.outputs?.filterNotNull()
+        ?.map { (it as? TextChatMessage)?.content ?: it.toString() }
+        ?: listOf()
     if (outputs.size == 1) {
         buildsendresultmenu("result", outputs.first(), workspace)
     } else {

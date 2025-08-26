@@ -34,46 +34,29 @@ import tornadofx.onChange
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
+import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
-import tri.ai.text.chunks.process.TextDocEmbeddings.addEmbeddingInfo
-import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.PromptFxController
 import tri.promptfx.TextLibraryReceiver
-import tri.promptfx.library.TextLibraryInfo
+import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.chunk.TextChunkListModel
 import tri.promptfx.ui.chunk.TextChunkViewModelImpl
 import tri.util.info
-import tri.util.pdf.PdfUtils
+import tri.util.io.LocalFileManager.extractMetadata
+import tri.util.io.pdf.PdfImageCache
 import tri.util.ui.createListBinding
-import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.associateBy
-import kotlin.collections.find
-import kotlin.collections.firstNotNullOfOrNull
-import kotlin.collections.firstOrNull
-import kotlin.collections.flatMap
-import kotlin.collections.forEach
-import kotlin.collections.isNotEmpty
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.set
-import kotlin.collections.toList
 
-/** Model for [TextManagerView]. */
+/** Model for views that depend on a "library" of documents. */
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
-    private val embeddingService
-        get() = controller.embeddingService
+    private val embeddingStrategy
+        get() = controller.embeddingStrategy
 
     val libraryList = observableListOf<TextLibraryInfo>()
     val librarySelection = SimpleObjectProperty<TextLibraryInfo>()
@@ -95,20 +78,17 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         // pull images from selected PDF's, add results incrementally to model
         docSelection.onChange {
             val firstPdf = it.list.firstOrNull { it.pdfFile() != null }
-            docSelectionPdf.set(firstPdf)
-
-            docSelectionImages.clear()
-            it.list.forEach {
-                val pdfFile = it.pdfFile()
-                if (pdfFile != null && pdfFile.exists()) {
-                    runAsync {
-                        PdfUtils.pdfPageInfo(pdfFile).flatMap { it.images }.mapNotNull { it.image }
-                            .deduplicated()
-                    } ui {
-                        if (it.isEmpty()) {
-                            info<TextLibraryViewModel>("No images found in ${pdfFile.name}")
+            if (docSelectionPdf.value != firstPdf) {
+                docSelectionPdf.set(firstPdf)
+                docSelectionImages.clear()
+                it.list.forEach {
+                    val pdfFile = it.pdfFile()
+                    if (pdfFile != null && pdfFile.exists()) {
+                        runAsync {
+                            PdfImageCache.getImagesFromPdf(pdfFile)
+                        } ui {
+                            docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                         }
-                        docSelectionImages.addAll(it.map { SwingFXUtils.toFXImage(it, null) })
                     }
                 }
             }
@@ -169,9 +149,6 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             docSelection.setAll(library.library.docs.first())
     }
 
-    private fun List<BufferedImage>.deduplicated() =
-        associateBy { it.hashCode() }.values.toList()
-
     //endregion
 
     //region VIEW FILTERING
@@ -226,7 +203,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         }
     }
 
-    /** Extracts metadata from all documents in selected collections, returning associated task. */
+    /** Extracts metadata from all documents in selected collections, adding to existing metadata, returning associated task. */
     fun extractMetadataTask() = runAsync {
         var count = 0
         librarySelection.value.library.docs.forEach {
@@ -235,7 +212,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 val md = File(path).extractMetadata()
                 if (md.isNotEmpty()) {
                     count++
-                    updateMetadata(it, md, isSelect = false)
+                    updateMetadata(it, md, isReplace = false, isSelect = false)
                 }
             }
         }
@@ -243,8 +220,11 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     }
 
     /** Copy new metadata values into document and update selection. */
-    fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isSelect: Boolean) {
-        doc.metadata.replaceAll(newMetadataValues)
+    fun updateMetadata(doc: TextDoc, newMetadataValues: Map<String, Any>, isReplace: Boolean, isSelect: Boolean) {
+        if (isReplace)
+            doc.metadata.replaceAll(newMetadataValues)
+        else
+            doc.metadata.mergeAll(newMetadataValues)
         if (isSelect)
             docSelection.setAll(listOf(doc))
         markChanged(doc)
@@ -273,13 +253,13 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region LONG-RUNNING TASKS
 
     /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
-    fun calculateEmbeddings(): AiTaskList<String> {
-        val service = embeddingService.value
+    fun calculateEmbeddings(): AiTaskList {
+        val service = embeddingStrategy.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {
                 if (doc.chunks.any { it.getEmbeddingInfo(service.modelId) == null })
-                    service.addEmbeddingInfo(doc)
+                    service.model.addEmbeddingInfo(doc)
                 var count = 0
                 doc.chunks.forEach {
                     val embed = it.getEmbeddingInfo(service.modelId)

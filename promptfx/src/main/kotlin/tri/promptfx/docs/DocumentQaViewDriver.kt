@@ -20,9 +20,11 @@
 package tri.promptfx.docs
 
 import javafx.application.Platform
+import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.IgnoreMonitor
+import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.docs.DocumentQaDriver
 import tri.promptfx.PromptFxModels
 import java.io.File
@@ -42,18 +44,19 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
             if (folderFile.exists())
                 view.documentFolder.set(folderFile)
         }
-    override var completionModel: String
-        get() = view.controller.completionEngine.value.modelId
+    override var chatModel: String
+        get() = view.controller.chatService.value.modelId
         set(value) {
-            view.controller.completionEngine.set(
-                PromptFxModels.policy.textCompletionModels().find { it.modelId == value }!!
+            view.controller.chatService.set(
+                PromptFxModels.policy.chatModels().find { it.modelId == value }!!
             )
         }
     override var embeddingModel: String
-        get() = view.controller.embeddingService.value.modelId
+        get() = view.controller.embeddingStrategy.value.modelId
         set(value) {
-            view.controller.embeddingService.set(
-                PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!
+            view.controller.embeddingStrategy.set(
+                EmbeddingStrategy(PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!,
+                    SmartTextChunker())
             )
         }
     override var temp: Double
@@ -75,9 +78,9 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
         Platform.exit()
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult<String> {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
         view.question.set(input)
-        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult<String>
+        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult
     }
 
 }

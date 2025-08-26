@@ -25,19 +25,19 @@ import javafx.beans.value.ObservableValue
 import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.MChatRole
+import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextCompletion
 import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskList
-import tri.ai.prompt.AiPrompt
-import tri.ai.text.chunks.GroupingTemplateJoiner
+import tri.ai.prompt.PromptDef
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -65,17 +65,17 @@ class DocumentQaPlannerFx {
 
     fun taskList(
         question: String,
-        prompt: AiPrompt?,
+        prompt: PromptDef?,
         chunksToRetrieve: Int?,
         minChunkSize: Int?,
         contextStrategy: GroupingTemplateJoiner,
         contextChunks: Int?,
-        completionEngine: TextCompletion?,
+        chatEngine: TextChat?,
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
-    ): AiTaskList<String> {
-        val p = DocumentQaPlanner(embeddingIndex.value!!, completionEngine!!, chatHistory, historySize.value).plan(
+    ): AiTaskList {
+        val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!, chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
             chunksToRetrieve = chunksToRetrieve!!,
@@ -87,13 +87,14 @@ class DocumentQaPlannerFx {
             numResponses = numResponses!!,
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
-        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask<QuestionAnswerResult>)
+        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
             .aitask("process-result") {
-                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${it.responseScore}$ANSI_RESET")
-                lastResult = it
+                val res = it.content() as QuestionAnswerResult
+                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${res.responseScore}$ANSI_RESET")
+                lastResult = res
                 chatHistory.add(TextChatMessage(MChatRole.User, question))
-                chatHistory.add(TextChatMessage(MChatRole.Assistant, it.trace.firstValue))
-                FormattedPromptTraceResult(it.trace, it.splitOutputs().map { it.formatResult() })
+                chatHistory.add(TextChatMessage(MChatRole.Assistant, res.trace.firstValue.textContent()))
+                FormattedPromptTraceResult(res.trace, res.splitOutputs().map { res.formatResult() })
             }
     }
 }

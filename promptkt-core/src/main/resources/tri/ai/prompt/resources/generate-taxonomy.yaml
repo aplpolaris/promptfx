@@ -1,0 +1,56 @@
+---
+groupId: generate-taxonomy
+defaults: { category: generate }
+prompts:
+  - id: generate-taxonomy/categories@1.0.0
+    title: Generate Categories
+    description: Generates a category or categories for a list of items.
+    template: |
+      Generate a category (or categories) for the following list of {{item_type}}.
+      Prefer selecting a single category, but multiple categories are allowed if necessary.
+      Categories should be one of the following:
+      {{{categories}}}
+      
+      Sample output:
+      ```
+      Category: [ {{sample_category}} ]
+      ```
+      
+      {{item_type}}:
+      ```
+      {{{input}}}
+      ```
+  - id: generate-taxonomy/categories-and-theme@1.0.0
+    title: Generate Categories and Theme
+    description: Generates a category or categories and a summarizing theme for a list of items.
+    template: |
+      Generate a {{#categories}}category (or categories) {{/categories}}and summarizing theme for the following list of {{item_type}}.
+      Prefer selecting a single category, but multiple categories are allowed if necessary.
+      Categories should be one of the following:
+      {{{categories}}}
+      
+      Sample output:
+      ```
+      Category: [ {{sample_category}} ]
+      Theme: {{sample_theme}}
+      ```
+      
+      {{item_type}}:
+      ```
+      {{{input}}}
+      ```
+  - id: generate-taxonomy/theme@1.0.0
+    title: Generate Theme
+    description: Generates a summarizing theme for a list of items.
+    template: |
+      Generate a summarizing theme for the following list of {{item_type}}.
+      
+      Sample output:
+      ```
+      Theme: {{sample_theme}}
+      ```
+      
+      {{item_type}}:
+      ```
+      {{{input}}}
+      ```

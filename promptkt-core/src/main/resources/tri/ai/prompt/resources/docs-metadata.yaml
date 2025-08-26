@@ -1,0 +1,63 @@
+############################
+# DOCUMENT GUESSING
+############################
+# prefix:
+#   document-guess-* - takes general text input and extracts specific content
+# keywords:
+#   {{{input}}} - text to process
+
+---
+groupId: docs-metadata
+defaults: { category: docs }
+prompts:
+
+  - id: docs-metadata/guess@1.0.0
+    title: Document Guess Metadata
+    args:
+      - name: input
+        description: Text from a document to analyze for metadata extraction
+        required: true
+        type: string
+    template: |
+      You are an AI assistant that analyzes text from documents and extracts metadata.
+      The text may be from a PDF, Word document, or other sources. Your task is to infer metadata
+      about the document based on the content provided.
+      
+      The result may include:
+        - title
+        - subtitle
+        - authors
+        - date (YYYY-MM-DD) -- if there is a clear date of publication
+        - keywords (list of strings) -- if there is a stated list of keywords
+        - abstract (string) -- omit this if there is not a labeled abstract section
+        - executive_summary (string) -- omit this if there is not a labeled executive summary section
+        - sections (list of strings) -- values should include both numbers and titles as shown in text, e.g. "1. Introduction" or "2 METHODS"
+        - captions (list of strings) -- values should include both figure/table caption number and the caption itself
+        - references (list of strings) -- values should be precise bibliographic citations found in any bibliography
+        - other (dictionary) -- any other metadata that is clearly stated in the text
+      
+      Use the following format to provide your response:
+      ```json
+      {
+        "title": "Document Title",
+        "subtitle": "Document Subtitle",
+        "authors": ["Author One", "Author Two"],
+        "date": "YYYY-MM-DD",
+        "keywords": ["keyword1", "keyword2"],
+        "abstract": "This is the abstract of the document.",
+        "executive_summary": "This is the executive summary of the document.",
+        "sections": ["1. Introduction", "2. Methods"],
+        "captions": ["Figure 1: Caption for figure 1", "Table 1: Caption for table 1"],
+        "references": ["Smith, J. (2020). Title of the reference.", "Doe, A. (2019). Another reference."],
+        "other": {
+          "publisher": "Publisher Name",
+          "language": "English"
+        }
+      }
+      
+      Values should be exact matches for the text provided. Use "NONE" or omit the object if a value is not found.
+      ```
+      Input:
+      ```
+      {{{input}}}
+      ```

@@ -21,18 +21,20 @@ package tri.promptfx.ui
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.templatePlan
-import tri.ai.prompt.AiPrompt
+import tri.ai.pips.taskPlan
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.template
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.RuntimePromptViewConfigs
 
 /**
  * A view with a single input and a single output that can be fully configured at runtime.
  */
-open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(config.title, config.description) {
+open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(
+    config.prompt.title(), config.prompt.description!!
+) {
 
     private val modeConfigs = config.modeOptions.map { ModeViewConfig(it) }
-    private val promptConfig = config.promptConfig
     private lateinit var promptModel: PromptSelectionModel
     private val input = SimpleStringProperty("")
 
@@ -47,8 +49,8 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
                     }
                 }
             }
-            if (promptConfig.isVisible) {
-                promptModel = PromptSelectionModel(promptConfig.id, promptConfig.templatePrompt)
+            if (config.isShowPrompt) {
+                promptModel = PromptSelectionModel(config.prompt.id, config.prompt.template)
                 promptfield(prompt = promptModel, workspace = workspace)
             }
             if (config.isShowMultipleResponseOption && !config.isShowModelParameters) {
@@ -58,28 +60,29 @@ open class RuntimePromptView(config: RuntimePromptViewConfig): AiPlanTaskView(co
             }
         }
         if (config.isShowModelParameters)
-            addDefaultTextCompletionParameters(common)
+            addDefaultChatParameters(common)
     }
 
-    override fun plan() = completionEngine.templatePlan(
-        prompt = promptModel.prompt.value,
-        fields = modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) } +
-                mapOf(AiPrompt.INPUT to input.get()),
-        tokenLimit = common.maxTokens.value,
-        temp = common.temp.value,
-        numResponses = common.numResponses.value
-    )
+    override fun plan() = common.completionBuilder()
+        .prompt(promptModel.prompt.value)
+        .params(modeConfigs.associate { it.templateId to modeTemplateValue(it.id, it.mode.value) })
+        .params(singleTemplateFieldName() to input.get())
+        .taskPlan(chatEngine)
+
+    /** Returns the name of the first template placeholder variable used for input, or [PromptTemplate.INPUT] as a default. */
+    private fun singleTemplateFieldName() =
+        promptModel.prompt.value.template().findFields().firstOrNull() ?: PromptTemplate.INPUT
 
     private fun modeTemplateValue(id: String?, valueOrValueId: String) =
         if (id == null) valueOrValueId else RuntimePromptViewConfigs.modeTemplateValue(id, valueOrValueId)
 
-    /** Mode config with property indicating current selection. */
-    inner class ModeViewConfig(config: ModeConfig) {
-        val id = config.id
-        val templateId = config.templateId
-        val label = config.label
-        val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
-        val mode = SimpleStringProperty(options[0])
-    }
+}
 
+/** Mode config with property indicating current selection. */
+internal class ModeViewConfig(config: ModeConfig) {
+    val id = config.id
+    val templateId = config.templateId
+    val label = config.label
+    val options: List<String> = config.values ?: RuntimePromptViewConfigs.modeOptionList(id!!)
+    val mode = SimpleStringProperty(options[0])
 }

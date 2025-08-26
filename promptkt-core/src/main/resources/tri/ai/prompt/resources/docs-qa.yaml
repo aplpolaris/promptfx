@@ -1,0 +1,135 @@
+############################
+# DOCUMENT Q&A
+############################
+# view: Document Q&A
+# prefix: question-answer-docs-*
+# keywords:
+#   {{{instruct}}} - question
+#   {{{input}}} - document sections
+
+---
+groupId: docs-qa
+defaults: { category: docs }
+prompts:
+
+  - id: docs-qa/answer@1.0.0
+    title: Answer Question from Documents (with Citations)
+    args:
+      - name: input
+        description: Document excerpts or sections to use as source material
+        required: true
+        type: string
+      - name: instruct
+        description: The question to answer using the document content
+        required: true
+        type: string
+    template: |
+      Answer the question using the provided excerpts from factual sources.
+      Include citations to all sources used, and only those sources.
+      List citations used below the response.
+      If there is no relevant content, say you don't know.
+      
+      Example:
+      """
+      Question:
+        What is the capital of the Maryland?
+      Answer:
+        The capital of Maryland is Annapolis [1], which is a beautiful city on the Chesapeake Bay [2].
+      Citations:
+        - [1] american_cities.txt
+        - [2] the_chesapeake.txt
+      """
+      
+      Question:
+        {{{instruct}}}
+      Excerpts:
+        {{{input}}}
+      Answer: 
+
+  - id: docs-qa/answer2@1.0.0
+    title: Answer Question from Documents (with Citations)
+    template: |
+      Here is a collection of document sections, to be used for a question below.
+      ```
+      {{{input}}}
+      ```
+      Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
+      Include numbered citations.
+      
+      Question: What is the capital of the Maryland?
+      Answer: The capital of Maryland is Annapolis [1,3], which is a beautiful city on the Chesapeake Bay [2,3].
+      
+      [1] american_cities.txt
+      [2] a_history_of_annapolis.txt
+      [3] maryland.txt
+    
+      Question: {{{instruct}}}
+      Answer: 
+
+  - id: docs-qa/answer-basic@1.0.0
+    title: Answer Question from Documents (Basic)
+    template: |
+      Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
+      Please also indicate the documents used to answer the question.
+      Question: {{{instruct}}}
+      ```
+      {{{input}}}
+      ```
+      Answer: 
+
+  - id: docs-qa/answer-dolly@1.0.0
+    title: Answer Question from Documents (Dolly)
+    template: |
+      Below is an instruction that includes a user question and some input. Write a response that appropriately completes the request, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations for your answer.
+      
+      ### Instruction
+      {{{instruct}}}
+    
+      Input:
+      {{{input}}}
+    
+      ### Response
+
+  - id: docs-qa/answer-falcon@1.0.0
+    title: Answer Question from Documents (Falcon)
+    template: |
+      >>INSTRUCTION<<
+      Answer the question using the provided text, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations for your answer.
+      >>CONTEXT<<
+      {{{input}}}
+      >>QUESTION<<
+      {{{instruct}}}
+      >>ANSWER<<
+
+  - id: docs-qa/answer-llama@1.0.0
+    title: Answer Question from Documents (Llama)
+    template: |
+      [INST]
+      <<SYS>>
+      You are a bot that answers questions succinctly.
+      Below is an instruction that includes a user question and some input. Write a response that appropriately completes the request, and if the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations with your answer. Do not say "Sure" or repeat the question.
+      <</SYS>>
+      
+      Question:
+      ```
+      {{{instruct}}}
+      ```
+      
+      Input:
+      ```
+      {{{input}}}
+      ```
+      [/INST]
+      
+      Answer:
+
+  - id: docs-qa/answer-vicuna@1.0.0
+    title: Answer Question from Documents (Vicuna)
+    template: |
+      ### System: You are an assistant that answers questions succinctly in English, using the context below. If the answer is not contained within the text below, respond with "I can't answer that". Provide numbered citations with your answer.
+      ### Human: Here is the context for my question:
+      ```
+      {{{input}}}
+      ```
+      ### Human: {{{instruct}}}
+      ### Assistant:

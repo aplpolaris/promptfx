@@ -27,6 +27,7 @@ import tornadofx.combobox
 import tornadofx.field
 import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
@@ -50,7 +51,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<String> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val request = ModerationRequest(
             input = listOf(input.value),
             model = model.value
@@ -61,7 +62,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
             null,
             AiModelInfo(model.value.model),
             AiExecInfo(),
-            AiOutputInfo.output(responseText)
+            AiOutputInfo.text(responseText)
         ).asPipelineResult()
     }
 

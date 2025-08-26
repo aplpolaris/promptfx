@@ -19,24 +19,30 @@
  */
 package tri.promptfx.ui.docs
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.collections.ObservableList
 import javafx.scene.layout.Priority
 import tornadofx.*
+import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextDoc
-import tri.ai.text.chunks.process.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
 import tri.promptfx.docs.DocumentOpenInViewer
-import tri.promptfx.library.fieldifnotblank
-import tri.promptfx.ui.DocumentListView
+import tri.promptfx.docs.fieldifnotblank
 import tri.util.ui.DocumentUtils
+import tri.util.ui.graphic
+import kotlin.text.startsWith
+import kotlin.text.substringAfterLast
 
 /** View for document details, for 1 or more selected documents. */
-class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fragment() {
+class TextDocDetailsUi : Fragment() {
+
+    val selectedItems: ObservableList<TextDoc> by param()
 
     override val root = vbox(10) {
         hgrow = Priority.ALWAYS
         bindChildren(selectedItems) { doc ->
             val thumb = doc.browsable()?.let {
-                DocumentUtils.documentThumbnail(it, DocumentListView.DOC_THUMBNAIL_SIZE)
+                DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE)
             }
             hbox(10) {
                 if (thumb != null) {
@@ -85,5 +91,25 @@ class TextDocDetailsUi(private val selectedItems: ObservableList<TextDoc>) : Fra
         val models = chunks.flatMap { it.getEmbeddingInfo()?.keys ?: listOf() }.toSet()
         return if (models.isEmpty()) "No embeddings calculated."
         else models.joinToString(", ") { it }
+    }
+
+    companion object {
+        const val DOC_THUMBNAIL_SIZE = 240
+
+        //** Return an icon for the document based on its file extension. */
+        fun BrowsableSource.icon() = when (path.substringAfterLast('.')) {
+            "pdf" -> FontAwesomeIcon.FILE_PDF_ALT.graphic
+            "doc", "docx" -> FontAwesomeIcon.FILE_WORD_ALT.graphic
+            "csv", "xls", "xlsx" -> FontAwesomeIcon.FILE_EXCEL_ALT.graphic
+            "ppt", "pptx" -> FontAwesomeIcon.FILE_POWERPOINT_ALT.graphic
+            "txt" -> FontAwesomeIcon.FILE_TEXT_ALT.graphic
+            "html", "htm" -> FontAwesomeIcon.GLOBE.graphic
+            else -> {
+                if (path.startsWith("html") || path.startsWith("html"))
+                    FontAwesomeIcon.GLOBE.graphic
+                else
+                    FontAwesomeIcon.FILE_ALT.graphic
+            }
+        }
     }
 }

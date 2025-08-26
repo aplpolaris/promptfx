@@ -25,12 +25,13 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextChunk
+import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TXT
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
+import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.chunk.TextChunkListView
-import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
 
 /** Wizard for generating a set of [TextChunk]s from user input. */
@@ -45,6 +46,7 @@ class TextChunkerWizard: Wizard("Create Text Library", "Generate a library of te
     init {
         add(find<TextChunkerWizardSelectData>(wizardScope))
         add(find<TextChunkerWizardMethod>(wizardScope))
+        add(find<TextChunkerWizardLocation>(wizardScope))
     }
 }
 
@@ -85,72 +87,81 @@ class TextChunkerWizardSelectData: View("Select Source") {
 
         // detailed options for the source
         vbox(10) {
-            hbox(5, alignment = Pos.CENTER_LEFT) {
-                visibleWhen(model.isFileMode)
-                managedWhen(model.isFileMode)
-                button("Select...") {
-                    action {
-                        promptFxFileChooser(
-                            dirKey = DIR_KEY_TXT,
-                            title = "Select File",
-                            filters = arrayOf(FF_ALL),
-                            mode = FileChooserMode.Single
-                        ) {
-                            model.file.value = it.firstOrNull()
-                        }
-                    }
-                }
-                label("File:")
-                label(model.fileName)
-            }
-            vbox(5) {
-                visibleWhen(model.isFolderMode)
-                managedWhen(model.isFolderMode)
-                hbox(5, Pos.CENTER_LEFT) {
-                    button("Select...") {
-                        action {
-                            promptFxDirectoryChooser(
-                                dirKey = DIR_KEY_TXT,
-                                title = "Select Directory"
-                            ) {
-                                model.folder.value = it
+            form {
+                fieldset("File Selection") {
+                    visibleWhen(model.isFileMode)
+                    managedWhen(model.isFileMode)
+                    tooltip("Select a text file (txt, pdf, docx) to chunk.")
+                    field("File") {
+                        button("Select...") {
+                            action {
+                                promptFxFileChooser(
+                                    dirKey = DIR_KEY_TXT,
+                                    title = "Select File",
+                                    filters = arrayOf(FF_ALL),
+                                    mode = FileChooserMode.Single
+                                ) {
+                                    model.file.value = it.firstOrNull()
+                                }
                             }
                         }
+                        label(model.file.stringBinding { it?.name ?: "None" })
                     }
-                    label("Folder:")
-                    label(model.folderName)
                 }
-                checkbox("Include subfolders", model.folderIncludeSubfolders) {
-                    // TODO - scripting over subfolders might be too aggressive
-                    isDisable = true
+                fieldset("Folder Selection") {
+                    visibleWhen(model.isFolderMode)
+                    managedWhen(model.isFolderMode)
+                    tooltip("Select a folder containing text files (txt, pdf, docx) to chunk.")
+                    field("Folder") {
+                        button("Select...") {
+                            action {
+                                promptFxDirectoryChooser(
+                                    dirKey = DIR_KEY_TXT,
+                                    title = "Select Directory"
+                                ) {
+                                    model.folder.value = it
+                                }
+                            }
+                        }
+                        label(model.folder.stringBinding { it?.path ?: "None" })
+                    }
+                    field("Subfolders") {
+                        checkbox("Include subfolders", model.folderIncludeSubfolders) {
+                            // TODO - scripting over subfolders might be too aggressive
+                            isDisable = true
 //                        enableWhen(model.folder.isNotNull)
+                        }
+                    }
+                    field("Text Extraction") {
+                        checkbox("Extract text from PDF, DOC files", model.folderExtractText) {
+                            enableWhen(model.folder.isNotNull)
+                        }
+                    }
                 }
-                checkbox("Extract text from PDF, DOC files", model.folderExtractText) {
-                    enableWhen(model.folder.isNotNull)
-                }
-            }
-            hbox(5) {
-                visibleWhen(model.isUserInputMode)
-                managedWhen(model.isUserInputMode)
-                textarea(model.userText) {
-                    prefColumnCount = 80
-                    prefRowCount = 20
-                    promptText = "Enter or paste text to chunk here..."
+                fieldset("User Input") {
+                    visibleWhen(model.isUserInputMode)
+                    managedWhen(model.isUserInputMode)
+                    tooltip("Enter or paste text to chunk.")
+                    textarea(model.userText) {
+                        prefColumnCount = 80
+                        prefRowCount = 20
+                        promptText = "Enter or paste text to chunk here..."
+                        vgrow = Priority.ALWAYS
+                    }
                     vgrow = Priority.ALWAYS
                 }
-                vgrow = Priority.ALWAYS
-            }
-            hbox(5) {
-                visibleWhen(model.isWebScrapeMode)
-                managedWhen(model.isWebScrapeMode)
-                add(find<WebScrapeFragment>("model" to model.webScrapeModel) {
-                    isShowLocalFolder.set(false)
-                })
-            }
-            hbox(5) {
-                visibleWhen(model.isRssMode)
-                managedWhen(model.isRssMode)
-                text("TODO")
+                hbox(5) {
+                    visibleWhen(model.isWebScrapeMode)
+                    managedWhen(model.isWebScrapeMode)
+                    add(find<WebScrapeFragment>("model" to model.webScrapeModel) {
+                        isShowLocalFolder.set(false)
+                    })
+                }
+                fieldset("RSS Options") {
+                    visibleWhen(model.isRssMode)
+                    managedWhen(model.isRssMode)
+                    text("TODO")
+                }
             }
         }
     }
@@ -286,5 +297,74 @@ class TextChunkerWizardMethod: View("Configure Chunking") {
         internal const val CHUNK_BY_DELIMITER = "Delimiter"
         internal const val CHUNK_BY_REGEX = "Regex"
         internal const val CHUNK_BY_FIELD = "Field"
+    }
+}
+
+/** Wizard step for selecting where to save the library and additional processing options. */
+class TextChunkerWizardLocation: View("Library Location") {
+
+    val model: TextChunkerWizardModel by inject()
+
+    override val complete = model.isLibraryLocationValid
+
+    override val root = vbox(10) {
+        // library location selection
+        form {
+            fieldset("Library Location") {
+                field("Folder:") {
+                    hbox(5, Pos.CENTER_LEFT) {
+                        button("Select...") {
+                            action {
+                                promptFxDirectoryChooser(
+                                    dirKey = PromptFxConfig.DIR_KEY_TEXTLIB,
+                                    title = "Select Library Folder"
+                                ) {
+                                    model.libraryFolder.set(it)
+                                }
+                            }
+                        }
+                        label(model.libraryFolder.stringBinding { it?.absolutePath ?: "None selected" })
+                    }
+                }
+                field("Index File:") {
+                    hbox(5, Pos.CENTER_LEFT) {
+                        textfield(model.libraryFileName) {
+                            promptText = "embeddings2.json"
+                            prefColumnCount = 20
+                        }
+                        label {
+                            textProperty().bind(model.fileExists.stringBinding { if (it == true) "⚠" else "" })
+                            style = "-fx-font-size:16; -fx-text-fill:red; -fx-font-weight:bold;"
+                            tooltip = tooltip("File already exists and will be overwritten")
+                            visibleWhen(model.fileExists)
+                        }
+                    }
+                }
+                field("Full path:") {
+                    label(model.libraryFile.stringBinding { it?.absolutePath ?: "" }) {
+                        style = "-fx-font-style: italic;"
+                    }
+                }
+            }
+            
+            fieldset("Processing Options") {
+                field("Metadata:") {
+                    checkbox("Extract", model.isExtractMetadata) {
+                        tooltip("Extract metadata for all documents in the library")
+                    }
+                }
+                field("Embeddings:") {
+                    checkbox("Generate", model.isGenerateEmbeddings) {
+                        tooltip("Calculate embedding vectors for all chunks in the library")
+                    }
+                    combobox(model.embeddingModel, PromptFxModels.embeddingModels()) {
+                        visibleWhen(model.isGenerateEmbeddings)
+                        managedWhen(model.isGenerateEmbeddings)
+                        cellFormat { text = it.modelId }
+                        prefWidth = 200.0
+                    }
+                }
+            }
+        }
     }
 }

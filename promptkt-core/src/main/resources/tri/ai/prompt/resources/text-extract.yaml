@@ -1,0 +1,72 @@
+---
+groupId: text-extract
+defaults: { category: text }
+prompts:
+  - id: text-extract/entities@1.0.0
+    title: Entity Extraction
+    description: Extract entities from text.
+    args:
+      - name: input
+        description: The text from which to extract entities
+        required: true
+        type: string
+      - name: mode
+        description: The type of entities to extract (e.g., people, places, organizations)
+        required: true
+        type: string
+      - name: format
+        description: The desired output format (optional)
+        required: false
+        type: string
+    template: |
+      Extract entities from the following text. The result should be a list of {{mode}}{{#format}} formatted as {{format}}{{/format}}.
+      ```
+      {{{input}}}
+      ```
+  - id: text-extract/keywords@1.0.0
+    title: Keyword Extraction
+    description: Extract keywords from text.
+    args:
+      - name: input
+        description: The text from which to extract keywords
+        required: true
+        type: string
+    template: |
+      Generate a JSON list of keywords from the following text. If there are no keywords, provide an empty list.
+      ```
+      {{{input}}}
+      ```
+      Keywords:
+  - id: text-extract/text-to-json@1.0.0
+    title: Convert Text to JSON
+    description: Convert text to JSON using given guidance/format.
+    args:
+      - name: input
+        description: The text to extract information from
+        required: true
+        type: string
+      - name: guidance
+        description: Instructions for what information to extract (optional)
+        required: false
+        type: string
+      - name: format
+        description: The specific format or schema for the output (optional)
+        required: false
+        type: string
+      - name: example
+        description: An example of the desired output structure (optional)
+        required: false
+        type: string
+    template: |
+      Extract information from the following text:
+      ```
+      {{{input}}}
+      ```
+      {{#guidance}}The result should contain {{guidance}}.{{/guidance}}
+      The result must be formatted as {{#format}}{{format}}{{/format}}{{^format}}structured data{{/format}}.
+      {{#example}}
+      The result schema should match the following example:
+      ```
+      {{{example}}}
+      ```
+      {{/example}}

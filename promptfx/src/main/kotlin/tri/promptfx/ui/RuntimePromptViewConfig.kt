@@ -19,32 +19,33 @@
  */
 package tri.promptfx.ui
 
-import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import tri.ai.prompt.PromptDef
+import tri.promptfx.PromptFxGlobals
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Configuration for a [RuntimePromptView]. */
 class RuntimePromptViewConfig(
-    val category: String,
-    val title: String,
-    val description: String,
-    val promptConfig: PromptConfig,
+    @JsonProperty("prompt")
+    val promptDef: PromptDef,
     val modeOptions: List<ModeConfig> = listOf(),
+    val isShowPrompt: Boolean = true,
     val isShowModelParameters: Boolean = false,
     val isShowMultipleResponseOption: Boolean = false,
     val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.INPUT_ONLY
-)
+) {
+
+    @get:JsonIgnore
+    val prompt by lazy {
+        val global = PromptFxGlobals.promptLibrary.get(promptDef.id)
+        global?.copyWithOverrides(promptDef) ?: promptDef
+    }
+
+}
 
 /**
  * Reference mode [id] in `modes.yaml` configuration file, associated [templateId] for use in prompt, [label] for UI.
  * Either [values] or [id] must be present.
  */
 class ModeConfig(val id: String? = null, val templateId: String, val label: String, val values: List<String>? = null)
-
-/** Prompt config for view. */
-class PromptConfig(
-    @JsonProperty("id") @JsonAlias("template-name") val id: String,
-    val isVisible: Boolean = true,
-    @JsonProperty("template-description") val templateDescription: String? = null,
-    @JsonProperty("template-prompt") val templatePrompt: String? = null
-)

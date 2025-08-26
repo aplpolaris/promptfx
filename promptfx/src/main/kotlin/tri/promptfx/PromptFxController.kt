@@ -23,12 +23,13 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
 import tri.ai.core.TextChat
-import tri.ai.embedding.EmbeddingService
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
+import tri.ai.embedding.EmbeddingStrategy
+import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.UsageUnit
-import tri.promptfx.tools.PromptTraceHistoryModel
+import tri.ai.text.chunks.SmartTextChunker
+import tri.promptfx.prompts.PromptTraceHistoryModel
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
@@ -39,8 +40,8 @@ class PromptFxController : Controller() {
         SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
     val chatService: SimpleObjectProperty<TextChat> =
         SimpleObjectProperty(PromptFxModels.chatModelDefault())
-    val embeddingService: SimpleObjectProperty<EmbeddingService> =
-        SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
+    val embeddingStrategy: SimpleObjectProperty<EmbeddingStrategy> =
+        SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
     val promptHistory = find<PromptTraceHistoryModel>()
 
@@ -51,7 +52,7 @@ class PromptFxController : Controller() {
     //region UPDATERS
 
     /** Adds a pipeline execution result to history. */
-    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult<*>) {
+    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
             it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
         }

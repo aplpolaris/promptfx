@@ -25,8 +25,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.text.docs.WebCrawler
 import tri.promptfx.promptFxDirectoryChooser
+import tri.util.io.WebCrawler
 import tri.util.ui.graphic
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
@@ -41,7 +41,7 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
     val model: WebScrapeViewModel by param()
     val isShowLocalFolder = SimpleBooleanProperty(false)
 
-    override val root = form {
+    override val root =
         fieldset("Crawl Settings") {
             field("Starting URL") {
                 textfield(model.webUrl) {
@@ -87,7 +87,6 @@ class WebScrapeFragment: Fragment("Web Scraper Settings") {
             }
         }
     }
-}
 
 /** Model for crawling web data. */
 class WebScrapeViewModel : Component() {
@@ -104,16 +103,29 @@ class WebScrapeViewModel : Component() {
 
     /** Get text of main URL. */
     fun mainUrlText() = WebCrawler.scrapeText(webUrl.value).text
-    /** Scrape the website, with the given crawl settings. */
-    fun scrapeWebsite(progressUpdate: (String) -> Unit) =
+    /** Scrape the website, with the given crawl settings. Allows overriding the target file in this model object. */
+    fun scrapeWebsite(targetFolder: File?, saveMetadata: Boolean, progressUpdate: (String) -> Unit) =
         WebCrawler.crawlWebsite(
-            link = webUrl.value,
+            url = webUrl.value,
             depth = webUrlDepth.value,
             maxLinks = webUrlMaxLinks.value,
             requireSameDomain = webUrlLimitDomain.value,
-            scraped = mutableSetOf(),
+            targetFolder = targetFolder ?: webTargetFolder.value,
+            saveMetadata = saveMetadata,
             progressUpdate = progressUpdate
         ).map { (url, content) ->
-            URI.create(url) to content.title
-        }.toMap()
+            WebScrapeResult(URI.create(url), content.localFile, content.title, content.text)
+        }
 }
+
+/** Holder for info about webscrape result. */
+data class WebScrapeResult(
+    /** Original URL. */
+    val url: URI?,
+    /** Optional local file where content was saved. May be null if not saved. */
+    val localFile: File?,
+    /** Optional title of the page. */
+    val title: String?,
+    /** Extracted text content. */
+    val contentText: String,
+)

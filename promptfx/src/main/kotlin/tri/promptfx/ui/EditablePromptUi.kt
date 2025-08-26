@@ -25,36 +25,37 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.fill
-import tri.ai.prompt.AiPromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.promptfx.PromptFxGlobals
+import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.promptfx.PromptFxWorkspace
 import tri.util.ui.templatemenubutton
 
 /** View for selecting and editing a prompt. */
-class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean, val instruction: String): Fragment() {
+class EditablePromptUi(private val promptFilter: (PromptDef) -> Boolean, val instruction: String): Fragment() {
 
     private val prompts
-        get() = AiPromptLibrary.INSTANCE.prompts.filter(promptFilter).keys
+        get() = PromptFxGlobals.promptLibrary.list(promptFilter).map { it.id }
     val templateText = SimpleStringProperty("")
 
     init {
         prompts.firstOrNull()?.let {
-            templateText.set(AiPromptLibrary.lookupPrompt(it).template)
+            templateText.set(lookupPrompt(it).template)
         }
     }
 
     /** UI for editing prompts with a given prefix. */
-    constructor(prefix: String, instruction: String) : this({ it.key.startsWith(prefix) }, instruction)
+    constructor(prefix: String, instruction: String) : this({ it.id.startsWith(prefix) }, instruction)
 
     /** Fills the template with the provided values. */
-    fun fill(vararg values: Pair<String, Any>) = templateText.value.fill(*values)
+    fun fill(vararg values: Pair<String, Any>) = PromptTemplate(templateText.value).fill(*values)
 
     override val root = vbox {
         toolbar {
             text(instruction)
             spacer()
-            templatemenubutton(templateText, promptFilter)
+            templatemenubutton(templateText, promptFilter = promptFilter)
             button("", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                 tooltip("Try out the current prompt in the Prompt Template view.")
                 action { find<PromptFxWorkspace>().launchTemplateView(templateText.value) }
@@ -71,14 +72,14 @@ class EditablePromptUi(private val promptFilter: (Map.Entry<String, AiPrompt>) -
 }
 
 /** Add a prompt field to the UI. */
-fun EventTarget.editablepromptui(promptFilter: (Map.Entry<String, AiPrompt>) -> Boolean, instruction: String): EditablePromptUi {
+fun EventTarget.editablepromptui(promptFilter: (PromptDef) -> Boolean, instruction: String): EditablePromptUi {
     val ui = EditablePromptUi(promptFilter, instruction)
     plusAssign(ui)
     return ui
 }
 
 /** Add a prompt field to the UI. */
-fun EventTarget.editablepromptui(prefix: String, instruction: String): EditablePromptUi {
+fun EventTarget.editablepromptprefixui(prefix: String, instruction: String): EditablePromptUi {
     val ui = EditablePromptUi(prefix, instruction)
     plusAssign(ui)
     return ui

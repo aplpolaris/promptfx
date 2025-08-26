@@ -165,9 +165,75 @@ class ImmersiveChatView : Fragment("Immersive Chat") {
             if (baseComponent is DocumentQaView) {
                 (baseComponent as DocumentQaView).enableHyperlinkActions(listOf(it))
             }
+            // Calculate and set automated font size based on response length
+            val fontSize = calculateOptimalFontSize(it.toString())
+            output.updateFontSize(fontSize)
             output.animateText(it.toFxNodes(), onFinished = {
                 (root.scene.lookup("#chat-input") as TextField).selectAll()
             })
+        }
+    }
+
+    //endregion
+
+    //region FONT SIZE CALCULATION
+
+    /**
+     * Calculates optimal font size for response text based on available text area and content length.
+     * Uses area-based approach to achieve optimal text density for readability.
+     */
+    private fun calculateOptimalFontSize(text: String): Double {
+        val textLength = text.length
+        
+        // Define font size bounds
+        val minFontSize = 12.0
+        val maxFontSize = 96.0
+        
+        // Get the TextFlow dimensions from the output component
+        val textFlow = try {
+            (((output.root.children[0] as javafx.scene.control.ScrollPane).content as javafx.scene.layout.HBox).children[0] as javafx.scene.text.TextFlow)
+        } catch (e: Exception) {
+            // Fallback to simple length-based calculation if we can't access dimensions
+            return calculateFontSizeByLength(textLength, minFontSize, maxFontSize)
+        }
+        
+        // Get available area (use layout bounds for actual rendered size)
+        val availableWidth = if (textFlow.width > 0) textFlow.width else textFlow.prefWidth
+        val availableHeight = if (textFlow.height > 0) textFlow.height else 300.0 // reasonable fallback
+        val availableArea = availableWidth * availableHeight
+        
+        if (availableArea <= 0 || textLength == 0) {
+            return calculateFontSizeByLength(textLength, minFontSize, maxFontSize)
+        }
+        
+        // Calculate font size to achieve target area usage
+        // Each character takes approximately font_size² * 0.72 pixels (width ratio ~0.6, height ratio ~1.2)
+        // Target: character_area * text_length * 1.5 = available_area
+        val characterAreaFactor = 0.72 * 1.5 // Character area multiplier * target density factor
+        val idealFontSizeSquared = availableArea / (textLength * characterAreaFactor)
+        val idealFontSize = kotlin.math.sqrt(idealFontSizeSquared)
+        
+        // Clamp to reasonable bounds
+        return idealFontSize.coerceIn(minFontSize, maxFontSize)
+    }
+    
+    /**
+     * Fallback font size calculation based purely on text length.
+     * Used when area-based calculation is not possible.
+     */
+    private fun calculateFontSizeByLength(textLength: Int, minFontSize: Double, maxFontSize: Double): Double {
+        // Define text length thresholds
+        val shortTextThreshold = 100    // Very short responses get max font size
+        val longTextThreshold = 2000    // Very long responses get min font size
+        
+        return when {
+            textLength <= shortTextThreshold -> maxFontSize
+            textLength >= longTextThreshold -> minFontSize
+            else -> {
+                // Linear interpolation between max and min font size
+                val ratio = (textLength - shortTextThreshold).toDouble() / (longTextThreshold - shortTextThreshold)
+                maxFontSize - (ratio * (maxFontSize - minFontSize))
+            }
         }
     }
 

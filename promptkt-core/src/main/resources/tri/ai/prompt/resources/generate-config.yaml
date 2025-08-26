@@ -1,0 +1,46 @@
+---
+groupId: generate-config
+defaults: { category: configuration }
+prompts:
+
+  - id: generate-config/promptfx-view-config@1.0.0
+    title: Generate View Config
+    description: Generates a structured view configuration YAML block based on a description of the desired capability.
+    template: |
+      You are a system configuration assistant. Given the following description, generate a prompt and a YAML view configuration compatible with the existing system.
+  
+      Description:
+      '''
+      {{{input}}}
+      '''
+      
+      The result schema should match the following example:
+      ```yaml
+      date-extraction:
+        prompt:
+          id: text-extract/dates
+          category: Text
+        modeOptions:
+          - templateId: DATE_FORMAT
+            label: Date Format
+            values:
+              - ISO8601 Date
+              - MMM dd, yyyy
+              - yyyy/MM/dd
+              - the 12th of February
+        isShowModelParameters: false
+        isShowMultipleResponseOption: false
+      ```
+  
+      Requirements:
+      - Use proper YAML syntax.
+      - Must include a 'prompt' section with:
+        - An 'id' of the form 'group/prompt-name'
+        - (optional) A 'category'
+        - (optional) A human-readable 'name' or 'title' if it fits naturally
+        - (optional) A human-readable 'description' if it fits naturally
+        - (optional) A 'template' field with a mustache prompt template (required if a prompt with given id is not defined elsewhere)
+      - Use 'modeOptions' if helpful for guided user customization beyond the input. Otherwise, leave as an empty list.
+      - Set isShowModelParameters and isShowMultipleResponseOption to false unless otherwise implied.
+  
+      Output:

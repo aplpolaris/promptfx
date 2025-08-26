@@ -23,13 +23,13 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.TextChatMessage
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.prompt.AiPromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxGlobals.fillPrompt
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
 import tri.promptfx.ui.PromptSelectionModel
@@ -147,7 +147,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 }
                 label(maxTokens.asString())
             }
-            promptfield(prompt = PromptSelectionModel("chat-back"), workspace = workspace)
+            promptfield(prompt = PromptSelectionModel("chat/chat-back"), workspace = workspace)
         }
     }
 
@@ -185,21 +185,21 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         chatHistory.setAll(history.conversations)
     }
 
-    private suspend fun chatBack(): AiPromptTrace<String> {
-        val systemMessage = AiPromptLibrary.lookupPrompt("chat-back")
-            .fill("person" to nextPerson,
-                "other persons" to otherPersons,
-                "topic" to conversationTopic.value,
-                "setting" to conversationSetting.value,
-                "tone" to conversationTone.value,
-                "script" to conversationScript.value
-            )
+    private suspend fun chatBack(): AiPromptTrace {
+        val systemMessage = fillPrompt("chat/chat-back",
+            "person" to nextPerson,
+            "other persons" to otherPersons,
+            "topic" to conversationTopic.value,
+            "setting" to conversationSetting.value,
+            "tone" to conversationTone.value,
+            "script" to conversationScript.value
+        )
         return controller.chatService.value.chat(
             listOf(TextChatMessage(MChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
-            maxTokens.value,
+            tokens = maxTokens.value,
             stop = listOf("\n")
-        ).mapOutput { it.content!! }
+        )
     }
 
 }

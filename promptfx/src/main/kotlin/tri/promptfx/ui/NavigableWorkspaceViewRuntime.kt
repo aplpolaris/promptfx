@@ -26,9 +26,9 @@ import tri.util.ui.WorkspaceViewAffordance
 /** View that is configured entirely at runtime. */
 class NavigableWorkspaceViewRuntime(val config: RuntimePromptViewConfig) : NavigableWorkspaceView {
     override val category: String
-        get() = config.category
+        get() = config.prompt.category!!
     override val name: String
-        get() = config.title
+        get() = config.prompt.title ?: config.prompt.name ?: config.prompt.id
     override val affordances: WorkspaceViewAffordance
         get() = WorkspaceViewAffordance.INPUT_ONLY // TODO - should this be added into runtime configs??
     val view by lazy {

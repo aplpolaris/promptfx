@@ -27,14 +27,15 @@ import javafx.scene.control.ButtonBar
 import javafx.scene.control.ButtonType
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocMetadata
-import tri.ai.text.chunks.process.LocalFileManager.extractMetadata
-import tri.ai.text.chunks.process.PdfMetadataGuesser
+import tri.ai.process.pdf.PdfMetadataGuesser
 import tri.promptfx.AiProgressView
 import tri.promptfx.PromptFxController
 import tri.promptfx.ui.docs.TextLibraryViewModel.Companion.mergeIn
+import tri.util.io.LocalFileManager.extractMetadata
 import tri.util.ui.graphic
 import tri.util.ui.pdf.PdfViewer
 
@@ -84,9 +85,9 @@ class PdfViewerWithMetadataUi(
                         text("or")
                         button("Guess", graphic = FontAwesomeIcon.MAGIC.graphic) {
                             tooltip("Attempt to automatically find data using an LLM to extract likely metadata from document text.")
-                            disableWhen(progress.activeProperty.or(controller.completionEngine.isNull()))
+                            disableWhen(progress.activeProperty.or(controller.chatService.isNull()))
                             action {
-                                executeMetadataGuess(controller.completionEngine.value)
+                                executeMetadataGuess(controller.chatService.value)
                             }
                         }
                         val ttp = "The number of pages to use when guessing metadata from the document."
@@ -190,10 +191,10 @@ class PdfViewerWithMetadataUi(
     }
 
     /** Execute the metadata guesser on the PDF file on a background thread. */
-    private fun executeMetadataGuess(completion: TextCompletion) {
+    private fun executeMetadataGuess(chatEngine: TextChat) {
         runAsync {
             val result = runBlocking {
-                PdfMetadataGuesser.guessPdfMetadata(completion, pdfFile, metadataGuessPageCount.value) {
+                PdfMetadataGuesser.guessPdfMetadata(chatEngine, pdfFile, metadataGuessPageCount.value) {
                     this@PdfViewerWithMetadataUi.progress.taskStarted(it)
                 }
             }

@@ -1,0 +1,88 @@
+---
+groupId: docs-reduce
+defaults: { category: docs }
+prompts:
+
+  - id: docs-reduce/author@1.0.0
+    title: Document Reduce - Author Profile
+    args:
+      - name: input
+        description: Text summaries to analyze for author profile creation
+        required: true
+        type: string
+    template: |
+      Use the following summaries to generate a profile of the author of these texts.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/keywords@1.0.0
+    title: Document Reduce - Keywords
+    args:
+      - name: input
+        description: Lists of keywords to combine and organize
+        required: true
+        type: string
+    template: |
+      Combine the following lists of keywords into a single list. Group terms that are synonyms.
+      ````
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/math-terms@1.0.0
+    title: Document Reduce - Math Terms
+    args:
+      - name: input
+        description: Lists of mathematical terms to combine and organize
+        required: true
+        type: string
+    template: |
+      Combine the following lists of mathematical terms into a single list. Group terms that are synonyms.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/outline@1.0.0
+    title: Document Reduce - Outline
+    args:
+      - name: input
+        description: Text summaries to combine into a cohesive outline
+        required: true
+        type: string
+    template: |
+      Combine the following summaries into an outline.
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/summarize@1.0.0
+    title: Document Reduce - Summarize
+    args:
+      - name: input
+        description: Text content to summarize
+        required: true
+        type: string
+    template: |
+      Create a summary of the following text:
+      ```
+      {{{input}}}
+      ```
+
+  - id: docs-reduce/technical-terms@1.0.0
+    title: Document Reduce - Technical Terms
+    args:
+      - name: input
+        description: Text content to extract technical terms from
+        required: true
+        type: string
+    template: |
+      Extract technical terms and tools from the input text into a bulleted list. Group terms that are synonyms.
+      Sample output:
+      ```
+      - Term 1: describe it
+      - Term 2: describe it
+      ```
+      Input:
+      ```
+      {{{input}}}
+      ```

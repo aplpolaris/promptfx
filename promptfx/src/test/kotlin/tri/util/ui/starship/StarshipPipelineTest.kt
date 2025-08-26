@@ -28,7 +28,7 @@ class StarshipPipelineTest {
     @Test
     @Disabled("TBD")
     fun testExec() {
-        val config = StarshipPipelineConfig(PromptFxModels.textCompletionModelDefault())
+        val config = StarshipPipelineConfig(PromptFxModels.chatModelDefault()!!)
         val results = StarshipPipelineResults().apply {
             input.addListener { _, _, newValue -> println("Input: $newValue") }
             runConfig.addListener { _, _, newValue -> println("RunConfig: $newValue") }

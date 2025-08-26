@@ -24,6 +24,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventTarget
 import tornadofx.*
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.MChatVariation
 import tri.ai.prompt.trace.AiModelInfo
 import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
@@ -51,6 +53,23 @@ class ModelParameters {
     internal val maxTokens = SimpleIntegerProperty(DEFAULT_MAX_TOKENS)
     internal val stopSequences = SimpleStringProperty(DEFAULT_STOP_SEQUENCES)
     internal val numResponses = SimpleIntegerProperty(DEFAULT_NUM_RESPONSES)
+
+    /** Create a [CompletionBuilder] with the current model parameters. */
+    fun completionBuilder() = CompletionBuilder()
+        .variation(MChatVariation(
+            temperature = temp.value,
+            topP = topP.value,
+            frequencyPenalty = freqPenalty.value,
+            presencePenalty = presPenalty.value,
+        ))
+        .tokens(maxTokens.value)
+        .stop(stopSequences.value.parseStopSequences())
+        .numResponses(numResponses.value)
+
+    private fun String.parseStopSequences() =
+        split("||").map { it.trim() }.filter { it.isNotEmpty() }.ifEmpty { null }
+
+    //region UI BUILDERS
 
     fun EventTarget.temperature() {
         field("Temperature") {
@@ -106,6 +125,10 @@ class ModelParameters {
         }
     }
 
+    //endregion
+
+    //region CONVERTERS
+
     /** Generate model parameters object for [AiModelInfo]. */
     fun toModelParams() = listOf(
         AiModelInfo.TEMPERATURE to if (temp.value == DEFAULT_TEMP) null else temp.value,
@@ -128,5 +151,7 @@ class ModelParameters {
         (modelParams[AiModelInfo.STOP] as? String)?.let { stopSequences.set(it) }
         (modelParams[AiModelInfo.NUM_RESPONSES] as? Int)?.let { numResponses.set(it) }
     }
+
+    //endregion
 
 }

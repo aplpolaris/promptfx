@@ -21,8 +21,8 @@ package tri.promptfx.ui.docs
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import tri.ai.text.chunks.process.GuessedMetadataObject
-import tri.ai.text.chunks.process.PdfMetadataGuesser.resolveConflicts
+import tri.ai.process.pdf.GuessedMetadataObject
+import tri.ai.process.pdf.PdfMetadataGuesser.resolveConflicts
 import java.time.LocalDate
 
 class GmvEditablePropertyModelTest {

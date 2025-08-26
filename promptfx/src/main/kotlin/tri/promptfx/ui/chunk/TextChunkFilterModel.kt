@@ -25,11 +25,12 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.ToggleButton
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.EmbeddingModel
+import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
-import tri.ai.embedding.EmbeddingService
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.prompt.AiPrompt
-import tri.promptfx.tools.PromptScriptView
+import tri.ai.prompt.PromptTemplate
+import tri.promptfx.prompts.PromptScriptView
 import java.util.regex.PatternSyntaxException
 import kotlin.error
 
@@ -53,10 +54,10 @@ class TextChunkFilterModel : Component(), ScopedInstance {
     //region FILTER UPDATERS
 
     /** Creates a semantic filter based on the given chunk. */
-    fun createSemanticFilter(text: String, chunkList: List<TextChunkViewModel>, embeddingService: EmbeddingService) {
+    fun createSemanticFilter(text: String, chunkList: List<TextChunkViewModel>, embeddingModel: EmbeddingModel) {
         filterText.set(text)
         filterType.set(TextFilterType.EMBEDDING)
-        updateFilter(TextFilterType.EMBEDDING, text, chunkList, embeddingService)
+        updateFilter(TextFilterType.EMBEDDING, text, chunkList, embeddingModel)
     }
 
     /** Disable filtering. */
@@ -70,14 +71,14 @@ class TextChunkFilterModel : Component(), ScopedInstance {
      * @param filterText text to filter by
      * @param chunkList list of chunks, used when filtering by embeddings to generate minimum match score
      */
-    private fun updateFilter(type: TextFilterType, filterText: String, chunkList: List<TextChunkViewModel>, embeddingService: EmbeddingService?) {
+    private fun updateFilter(type: TextFilterType, filterText: String, chunkList: List<TextChunkViewModel>, embeddingModel: EmbeddingModel?) {
         this.filterType.set(type)
         this.filterText.set(filterText)
-        updateFilter(chunkList, embeddingService)
+        updateFilter(chunkList, embeddingModel)
     }
 
     /** Update filter with current text and type. */
-    fun updateFilter(chunkList: List<TextChunkViewModel>, embeddingService: EmbeddingService?) {
+    fun updateFilter(chunkList: List<TextChunkViewModel>, embeddingModel: EmbeddingModel?) {
         val text = filterText.value
         if (text.isBlank()) {
             resetChunkScores(chunkList)
@@ -102,7 +103,7 @@ class TextChunkFilterModel : Component(), ScopedInstance {
                 }
             }
             TextFilterType.EMBEDDING -> {
-                updateChunkScores(text, chunkList, embeddingService!!) {
+                updateChunkScores(text, chunkList, embeddingModel!!) {
                     // generate predicate after score calculation, which takes place in background due to API calls
                     val predicate = predicateFromTopScores(chunkList)
                     filter.set { predicate(it) }
@@ -123,7 +124,7 @@ class TextChunkFilterModel : Component(), ScopedInstance {
 
 
     /** Updates scores of chunks using an embedding cosine similarity. */
-    private fun updateChunkScores(text: String, chunkList: List<TextChunkViewModel>, model: EmbeddingService, onComplete: () -> Unit) {
+    private fun updateChunkScores(text: String, chunkList: List<TextChunkViewModel>, model: EmbeddingModel, onComplete: () -> Unit) {
         var vector: List<Double>?
         val chunkVectors = mutableMapOf<TextChunkViewModel, Pair<List<Double>?, Float>>()
         runBlocking {
@@ -158,11 +159,11 @@ class TextChunkFilterModel : Component(), ScopedInstance {
      */
     private fun llmFilter(completionEngine: TextCompletion, prompt: String, input: String, maxTokens: Int, temp: Double): Boolean {
         val result = runBlocking {
-            AiPrompt(prompt).fill(AiPrompt.INPUT to input)
-                .let { completionEngine.complete(it, tokens = maxTokens, temperature = temp) }
+            PromptTemplate(prompt).fill(PromptTemplate.INPUT to input)
+                .let { completionEngine.complete(it, tokens = maxTokens, variation = temp(temp)) }
                 .firstValue
         }
-        return result.contains("yes", ignoreCase = true)
+        return result.textContent().contains("yes", ignoreCase = true)
     }
 
     //endregion

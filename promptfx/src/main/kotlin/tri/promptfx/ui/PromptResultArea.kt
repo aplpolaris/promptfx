@@ -35,10 +35,10 @@ import tri.promptfx.PromptFxConfig.Companion.FF_TXT
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
-import tri.promptfx.ui.trace.PromptTraceDetailsUi
-import tri.promptfx.ui.trace.exportPromptTraceDatabase
-import tri.promptfx.ui.trace.exportPromptTraceList
-import tri.promptfx.ui.trace.exportPromptTraceListCsv
+import tri.promptfx.ui.prompt.PromptTraceDetailsUi
+import tri.promptfx.ui.prompt.exportPromptTraceDatabase
+import tri.promptfx.ui.prompt.exportPromptTraceList
+import tri.promptfx.ui.prompt.exportPromptTraceListCsv
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
@@ -125,7 +125,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
 //region UI HELPERS
 
-fun AiPromptTraceSupport<*>.checkError(window: Window?) {
+fun AiPromptTraceSupport.checkError(window: Window?) {
     if (exec.error != null) {
         error(
             owner = window,
@@ -195,7 +195,7 @@ fun EventTarget.addtoolbar(model: PromptResultAreaModel, component: UIComponent)
 }
 
 /** Set up a context menu with a given prompt trace object. */
-fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport<*>?>, op: ContextMenu.() -> Unit = {}) {
+fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport?>, op: ContextMenu.() -> Unit = {}) {
     lazyContextmenu {
         val value = trace.value
         if (value != null) {
@@ -209,13 +209,13 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
                 }
             }
             item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
                 action {
                     find<PromptFxWorkspace>().launchTemplateView(value)
                 }
             }
             item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
-                enableWhen(trace.booleanBinding { it?.prompt?.prompt?.isNotBlank() == true })
+                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
                 action {
                     find<PromptFxWorkspace>().launchHistoryView(value)
                 }

@@ -1,0 +1,23 @@
+---
+groupId: text-classify
+defaults: { category: text }
+prompts:
+
+  - id: text-classify/sentiment@1.0.0
+    title: Classify Sentiment
+    description: Estimate the sentiment of the provided text.
+    args:
+      - name: input
+        description: The text to analyze for sentiment
+        required: true
+        type: string
+      - name: instruct
+        description: The sentiment categories to classify into
+        required: true
+        type: string
+        defaultValue: "positive, negative, or neutral"
+    template: |
+      Classify the sentiment in this text as {{instruct}}:
+      ```
+      {{{input}}}
+      ```

@@ -22,8 +22,9 @@ package tri.util.ui.starship
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import tri.ai.prompt.AiPrompt
-import tri.ai.prompt.AiPrompt.Companion.fill
+import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.fill
 import tri.promptfx.PromptFxModels
 import java.io.File
 
@@ -54,18 +55,18 @@ object StarshipContentConfig {
     /** Prompt info for secondary prompts in pipeline. */
     val promptInfo = config["prompt-info"] as? List<Any?> ?:
         listOf(
-            mapOf("text-simplify-audience" to mapOf("audience" to "a general audience")),
-            "document-reduce-outline",
-            "document-reduce-technical-terms",
-            mapOf("translate-text" to mapOf("instruct" to "a random language")),
+            mapOf("text-summarize/simplify-audience" to mapOf("audience" to "a general audience")),
+            "docs-reduce/outline",
+            "docs-reduce/technical-terms",
+            mapOf("text-translate/translate" to mapOf("instruct" to "a random language")),
         )
 
     /** Options that can be dropped into custom prompts. */
     @Suppress("UNCHECKED_CAST")
     val userOptions = config["user-options"] as? Map<String, Map<String, List<String>>> ?:
         mapOf(
-            "text-simplify-audience" to mapOf("audience" to listOf("a general audience", "elementary school students", "high school students", "software engineers", "executives")),
-            "translate-text" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
+            "text-summarize/simplify-audience" to mapOf("audience" to listOf("a general audience", "elementary school students", "high school students", "software engineers", "executives")),
+            "text-translate/translate" to mapOf("instruct" to listOf("a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian"))
         )
 
     //region RANDOM QUESTION CONFIGS
@@ -87,8 +88,9 @@ object StarshipContentConfig {
         val index = randomQuestionTopic.indices.random()
         val topic = randomQuestionTopic[index]
         val example = randomQuestionExample[index % randomQuestionExample.size]
-        val prompt = AiPrompt(randomQuestionTemplate.fill("topic" to topic, "example" to example))
-        val fields = prompt.fields().associateWith {
+        val template = PromptTemplate(randomQuestionTemplate)
+        val prompt = PromptDef(id = "", template = template.fill("topic" to topic, "example" to example))
+        val fields = template.findFields().associateWith {
             val rand = if (":" in it) {
                 val (key, n) = it.split(":")
                 key to n.toInt()
@@ -97,7 +99,7 @@ object StarshipContentConfig {
             }
             randomQuestionLists[rand.first]!!.random(rand.second)
         }
-        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue!!
+        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue.textContent()
     }
 
     private fun List<String>.random(n: Int) = when (n) {
