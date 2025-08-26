@@ -61,6 +61,7 @@ class WebSearchExecutableTest {
     }
 
     @Test
+    @Disabled("Disabled to avoid network calls during routine testing")
     fun testWebSearchExecutableExecution() {
         runTest {
             val searchTool = WebSearchExecutable()

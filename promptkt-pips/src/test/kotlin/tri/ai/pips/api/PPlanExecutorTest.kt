@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Tag
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
@@ -74,6 +75,7 @@ class PPlanExecutorTest {
     }
 
     @Test
+    @Tag("openai")
     fun `plan using a PromptLibrary and LLM`() {
         runBlocking {
             val registry = ExecutableRegistry.create(
