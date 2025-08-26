@@ -91,7 +91,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
             }
             
             fieldset("Prompt Configuration") {
-                field {
+                field("Prompt Source") {
                     val toggleGroup = ToggleGroup()
                     vbox(5) {
                         alignment = Pos.TOP_LEFT
@@ -107,7 +107,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
                                 isEditable = true
                                 promptText = "Select or enter prompt ID"
                                 prefWidth = 300.0
-                                enableWhen(useExistingPrompt)
+                                disableWhen(useExistingPrompt.not())
                             }
                         }
                         
@@ -126,10 +126,9 @@ class NewViewDialog : Fragment("Create New Custom View") {
             }
             
             fieldset("View Options") {
-                field {
+                field("Display Options") {
+                    alignment = Pos.TOP_LEFT
                     vbox(5) {
-                        alignment = Pos.TOP_LEFT
-                        label("Display Options:")
                         checkbox("Show Model Parameters", showModelParameters)
                         checkbox("Show Multiple Response Option", showMultipleResponses)
                     }

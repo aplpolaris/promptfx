@@ -56,39 +56,22 @@ object ViewConfigManager {
         // Ensure config directory exists
         runtimeViewsFile.parentFile?.mkdirs()
         
-        // Generate YAML content for this view
+        // Use YAML serializer to generate the content
+        val singleViewMap = mapOf(viewId to config)
+        val fullYamlContent = MAPPER.writeValueAsString(singleViewMap)
+        
+        // Extract just the content part (without the top-level key)
+        val yamlLines = fullYamlContent.lines()
         val yamlContent = buildString {
             // Add separator line if file exists and has content
             if (runtimeViewsFile.exists() && runtimeViewsFile.length() > 0) {
                 appendLine()
             }
             
-            // Add the view configuration
-            appendLine("$viewId:")
-            appendLine("  prompt:")
-            appendLine("    id: ${config.promptDef.id}")
-            appendLine("    category: ${config.promptDef.category}")
-            appendLine("    name: ${config.promptDef.name}")
-            
-            if (config.promptDef.description != null) {
-                appendLine("    description: ${config.promptDef.description}")
+            // Add the YAML content
+            yamlLines.forEach { line ->
+                appendLine(line)
             }
-            
-            if (config.promptDef.template != null) {
-                // Use pipe syntax for multiline templates
-                if (config.promptDef.template!!.contains('\n')) {
-                    appendLine("    template: |")
-                    config.promptDef.template!!.lines().forEach { line ->
-                        appendLine("      $line")
-                    }
-                } else {
-                    appendLine("    template: ${config.promptDef.template}")
-                }
-            }
-            
-            appendLine("  modeOptions: []")
-            appendLine("  isShowModelParameters: ${config.isShowModelParameters}")
-            appendLine("  isShowMultipleResponseOption: ${config.isShowMultipleResponseOption}")
         }
         
         // Append to file
