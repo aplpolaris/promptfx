@@ -148,7 +148,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 cellWidthProperty.bind(thumbnailSize)
                 cellHeightProperty.bind(thumbnailSize)
                 cellCache {
-                    imageview(it.firstValue) {
+                    imageview(it.firstValue.textContent()) {
                         fitWidthProperty().bind(thumbnailSize)
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
@@ -157,7 +157,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                             val text = text(it.prompt!!.template) {
                                 style = "-fx-fill: white;"
                             }
-                            val image = imageview(it.firstValue)
+                            val image = imageview(it.firstValue.textContent())
                             text.wrappingWidthProperty().bind(image.image.widthProperty())
                         } }
                         contextmenu {
@@ -275,7 +275,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             var success = 0
             images.forEach { trace ->
                 (trace.values ?: listOf()).forEach {
-                    val image = Image(it)
+                    val image = Image(it.textContent())
                     var file = folder.resolve("image-$i.png")
                     while (file.exists()) {
                         file = folder.resolve("image-${++i}.png")

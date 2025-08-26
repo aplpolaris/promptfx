@@ -63,14 +63,14 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         snippetCallback: (List<EmbeddingMatch>) -> Unit
     ): AiTaskList = task("load-embeddings-file-and-calculate") {
         // trigger loading of embeddings file using a similarity query
-        index.findMostSimilar("a", 1)
+        AiOutput(other = index.findMostSimilar("a", 1))
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {
             snippetCallback(it.values!!.map { it.other as EmbeddingMatch })
         }
-    }.aitaskonlist("question-answer") { outputs ->
-        val snippets = outputs.map { it.other as EmbeddingMatch }
+    }.aitask("question-answer") { output ->
+        val snippets = output.other as List<EmbeddingMatch>
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
@@ -117,7 +117,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
         return AiPromptTrace(
             modelInfo = modelId?.let { AiModelInfo(it) },
-            outputInfo = AiOutputInfo.other(matches, allowList = true)
+            outputInfo = AiOutputInfo.listSingleOutput(matches)
         )
     }
 

@@ -52,7 +52,7 @@ class PromptFxController : Controller() {
     //region UPDATERS
 
     /** Adds a pipeline execution result to history. */
-    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult<*>) {
+    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
             it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
         }

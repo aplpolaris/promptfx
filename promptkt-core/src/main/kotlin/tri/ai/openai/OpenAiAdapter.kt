@@ -80,7 +80,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
-    /** Runs an embedding using ADA embedding model. */
+    /**
+     * Runs an embedding using ADA embedding model.
+     * Generates one [AiOutput] object per input string.
+     */
     suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace {
         settings.checkApiKey()
 
@@ -95,7 +98,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         return AiPromptTrace(null,
             AiModelInfo.embedding(modelId, outputDimensionality),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.other(resp.embeddings.map { it.embedding })
+            AiOutputInfo.output(resp.embeddings.map { AiOutput(other = it.embedding) })
         )
     }
 

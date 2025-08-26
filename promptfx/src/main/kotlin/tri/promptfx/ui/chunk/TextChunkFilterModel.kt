@@ -163,7 +163,7 @@ class TextChunkFilterModel : Component(), ScopedInstance {
                 .let { completionEngine.complete(it, tokens = maxTokens, variation = temp(temp)) }
                 .firstValue
         }
-        return result.contains("yes", ignoreCase = true)
+        return result.textContent().contains("yes", ignoreCase = true)
     }
 
     //endregion

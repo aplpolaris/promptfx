@@ -110,7 +110,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
      * Loads a prompt trace into the view.
      * Will set the prompt, prompt inputs, model, and model parameters associated with the trace.
      */
-    fun importPromptTrace(prompt: AiPromptTraceSupport<*>) {
+    fun importPromptTrace(prompt: AiPromptTraceSupport) {
         val promptInfo = prompt.prompt ?: PromptInfo("N/A")
         val modelInfo = prompt.model ?: AiModelInfo("N/A")
         template.set(promptInfo.template)

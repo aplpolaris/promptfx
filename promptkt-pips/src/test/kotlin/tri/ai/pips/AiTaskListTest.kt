@@ -21,10 +21,9 @@ package tri.ai.pips
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 class AiTaskListTest {
@@ -32,7 +31,7 @@ class AiTaskListTest {
     @Test
     fun testExecute() {
         runTest {
-            val plan = task("first") {
+            val plan = tasktext("first") {
                 "go"
             }.aitask("second") {
                 val tc = it.textContent()
@@ -45,8 +44,8 @@ class AiTaskListTest {
 
     @Test
     fun testExecuteList() {
-        val plan = task("first") {
-            listOf("go", "stop")
+        val plan = tasklist("first") {
+            listOf("go", "stop").map { AiOutput(text = it) }
         }.aitaskonlist("second") {
             AiPromptTrace.outputListAsSingleResult(it)
         }.planner

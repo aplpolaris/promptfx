@@ -28,6 +28,7 @@ import javafx.scene.layout.Priority
 import javafx.stage.Popup
 import tornadofx.*
 import tri.ai.pips.*
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -75,7 +76,7 @@ class AiProgressView: View(), AiTaskMonitor {
 
     /** Start progress bar for a given task. */
     fun taskStarted(id: String) {
-        taskStarted(task(id) { "" }.lastTask)
+        taskStarted(AiTask.task(id) { AiOutput() })
     }
 
     /** End all tasks and hide progress bar. */
@@ -83,7 +84,7 @@ class AiProgressView: View(), AiTaskMonitor {
         end()
     }
 
-    override fun taskStarted(task: AiTask<*>) {
+    override fun taskStarted(task: AiTask) {
         PrintMonitor().taskStarted(task)
         Platform.runLater {
             indicator.progress = -1.0
@@ -93,7 +94,7 @@ class AiProgressView: View(), AiTaskMonitor {
         }
     }
 
-    override fun taskUpdate(task: AiTask<*>, progress: Double) {
+    override fun taskUpdate(task: AiTask, progress: Double) {
         PrintMonitor().taskUpdate(task, progress)
         progressUpdate(task.id, progress)
     }
@@ -105,22 +106,22 @@ class AiProgressView: View(), AiTaskMonitor {
         }
     }
 
-    override fun taskCompleted(task: AiTask<*>, result: Any?) {
+    override fun taskCompleted(task: AiTask, result: Any?) {
         PrintMonitor().taskCompleted(task, result)
         end()
     }
 
-    override fun taskFailed(task: AiTask<*>, error: Throwable) {
+    override fun taskFailed(task: AiTask, error: Throwable) {
         PrintMonitor().taskFailed(task, error)
         end()
     }
 
-    fun taskStarted(task: Task<AiPipelineResult<*>>, id: String) {
-        taskStarted(object : AiTask<Any>(id) {
+    fun taskStarted(task: Task<AiPipelineResult>, id: String) {
+        taskStarted(object : AiTask(id) {
             override suspend fun execute(
-                inputs: Map<String, AiPromptTraceSupport<*>>,
+                inputs: Map<String, AiPromptTraceSupport>,
                 monitor: AiTaskMonitor
-            ) = task.value as AiPromptTrace<Any>
+            ) = task.value as AiPromptTrace
         })
     }
 

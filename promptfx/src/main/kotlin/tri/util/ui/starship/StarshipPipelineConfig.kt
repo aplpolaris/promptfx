@@ -36,8 +36,8 @@ class StarshipPipelineConfig(val chatEngine: TextChat) {
             val response = CompletionBuilder()
                 .prompt(prompt.prompt)
                 .paramsInput(input)
-                .execute(chatEngine).firstValue.content
-            return StarshipInterimResult(prompt.prompt.name ?: prompt.prompt.id, FormattedText(response ?: "no response"), null, listOf())
+                .execute(chatEngine).firstValue.textContent()
+            return StarshipInterimResult(prompt.prompt.name ?: prompt.prompt.id, FormattedText(response), null, listOf())
         }
     }
     /** Secondary prompt executors. */

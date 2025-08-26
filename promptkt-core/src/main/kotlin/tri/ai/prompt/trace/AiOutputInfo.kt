@@ -41,32 +41,25 @@ data class AiOutputInfo(
         fun output(output: AiOutput) = AiOutputInfo(listOf(output))
         fun output(outputs: List<AiOutput>) = AiOutputInfo(outputs)
 
-        fun text(text: String) = AiOutputInfo(listOf(AiOutput(text = text)))
-        fun text(texts: List<String>) = AiOutputInfo(texts.map { AiOutput(text = it) })
+        fun text(text: String) = output(AiOutput(text = text))
+        fun text(texts: List<String>) = output(texts.map { AiOutput(text = it) })
 
-        fun message(message: TextChatMessage) = AiOutputInfo(listOf(AiOutput(message = message)))
-        fun messages(messages: List<TextChatMessage>) = AiOutputInfo(messages.map { AiOutput(message = it) })
+        fun message(message: TextChatMessage) = output(AiOutput(message = message))
+        fun messages(messages: List<TextChatMessage>) = output(messages.map { AiOutput(message = it) })
 
-        fun multimodalMessage(message: MultimodalChatMessage) = AiOutputInfo(listOf(AiOutput(multimodalMessage = message)))
-        fun multimodalMessages(messages: List<MultimodalChatMessage>) = AiOutputInfo(messages.map { AiOutput(multimodalMessage = it) })
+        fun multimodalMessage(message: MultimodalChatMessage) = output(AiOutput(multimodalMessage = message))
+        fun multimodalMessages(messages: List<MultimodalChatMessage>) = output(messages.map { AiOutput(multimodalMessage = it) })
 
-        /**
-         * Accepts any object type, attempting to automatically populate content based on object type.
-         * Not recommended for general use.
-         */
-        fun other(content: Any, allowList: Boolean = false) = when (content) {
+        /** Return an output where the entire list is stored as a single output. */
+        fun <T: Any> listSingleOutput(items: List<T>) = output(AiOutput(other = items))
+
+        /** Accepts any object type, attempting to automatically populate content based on object type. */
+        fun other(content: Any) = when (content) {
             is AiOutput -> output(content)
             is String -> text(content)
             is TextChatMessage -> message(content)
             is MultimodalChatMessage -> multimodalMessage(content)
-            is List<*> -> when {
-                !allowList -> error("cannot use method `other` for lists since behavior is ambiguous")
-                content.all { it is AiOutput } -> output(content.filterIsInstance<AiOutput>())
-                content.all { it is String } -> text(content.filterIsInstance<String>())
-                content.all { it is TextChatMessage } -> messages(content.filterIsInstance<TextChatMessage>())
-                content.all { it is MultimodalChatMessage } -> multimodalMessages(content.filterIsInstance<MultimodalChatMessage>())
-                else -> AiOutputInfo(listOf(AiOutput(other = content))) // don't separate list of mixed or nonstandard types
-            }
+            is List<*> -> error("use `listSingleOutput` for lists, or map to multiple outputs")
             else -> AiOutputInfo(listOf(AiOutput(other = content)))
         }
 

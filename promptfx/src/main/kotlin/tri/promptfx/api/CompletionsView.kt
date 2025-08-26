@@ -55,7 +55,7 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<String> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val id = model.value!!.modelId
         val completionModel = PromptFxModels.textCompletionModels().firstOrNull { it.modelId == id }
             ?: throw UnsupportedOperationException("Model not found: $id")

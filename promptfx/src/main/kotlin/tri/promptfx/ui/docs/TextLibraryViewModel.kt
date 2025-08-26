@@ -253,7 +253,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region LONG-RUNNING TASKS
 
     /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
-    fun calculateEmbeddings(): AiTaskList<String> {
+    fun calculateEmbeddings(): AiTaskList {
         val service = embeddingStrategy.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->

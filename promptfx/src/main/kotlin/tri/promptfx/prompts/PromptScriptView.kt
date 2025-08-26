@@ -28,6 +28,7 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregatetrace
 import tri.ai.pips.task
 import tri.ai.pips.tasks
+import tri.ai.pips.tasktext
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -75,7 +76,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX/basic")
 
     // result list
-    private val promptTraces = observableListOf<AiPromptTraceSupport<*>>()
+    private val promptTraces = observableListOf<AiPromptTraceSupport>()
 
     // result options
     private val showUniqueResults = SimpleBooleanProperty(true)
@@ -152,7 +153,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     override fun plan(): AiPlanner {
         val inputs = listModel.filteredChunkList.take(chunkLimit.value)
         if (inputs.isEmpty())
-            return task("") { "(no input provided)" }.planner
+            return tasktext("") { "(no input provided)" }.planner
         val docInputs = libraryModel.docSelection.map { doc ->
             val docChunks = doc.chunks.map { it.text(doc.all) }.toSet()
             ChunksWithHeader(doc.metadata.title, doc.dataHeader, inputs.filter { it.text in docChunks })
@@ -165,9 +166,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
-        }.aggregatetrace()
-        .aitaskonlist("process-results") {
-            postProcess(it, docInputs)
+        }.aggregatetrace().aitask("process-results") {
+            @Suppress("UNCHECKED_CAST")
+            postProcess(it.other as List<AiPromptTraceSupport>, docInputs)
         }.planner
     }
 
@@ -183,14 +184,14 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         runs = inputs.size
     }
 
-    private suspend fun postProcess(results: List<AiPromptTraceSupport<String>>, inputs: List<ChunksWithHeader>): AiPromptTrace<String> {
+    private suspend fun postProcess(results: List<AiPromptTraceSupport>, inputs: List<ChunksWithHeader>): AiPromptTrace {
         // TODO - for now assuming each trace has a single result
 
         val resultSets = mutableMapOf<String, String>()
-        val values = results.map { it.values?.first() }
+        val values = results.map { it.firstValue.textContent("") }.filter { it.isNotBlank() }
 
         if (showUniqueResults.value) {
-            val countEach = values.filterNotNull()
+            val countEach = values
                 .groupingBy { it.cleanedup() }
                 .eachCount()
             val key = "Unique Results: ${countEach.size}"
@@ -198,7 +199,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         if (showAllResults.value) {
             val key = "All Results"
-            resultSets[key] = values.joinToString("\n") { it ?: "(error or no output returned)" }
+            resultSets[key] = values.joinToString("\n")
         }
         if (outputCsv.value) {
             // TODO - how to handle multiple docs with varying headers??
@@ -209,13 +210,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerPrompt.fill("matches" to
-                results.map { mapOf("text" to it.firstValue) }
+                results.map { mapOf("text" to it.firstValue.textContent()) }
             )
             val summarizer = summaryPrompt.fill(PromptTemplate.INPUT to joined)
             val summarizerResult = common.completionBuilder()
                 .text(summarizer)
                 .execute(chatEngine)
-            resultSets[key] = summarizerResult.firstValue.content!!
+            resultSets[key] = summarizerResult.firstValue.textContent()
             promptInfo = PromptInfo(summaryPrompt.text.value, mapOf(PromptTemplate.INPUT to joined))
         } else {
             promptInfo = PromptInfo("")
@@ -231,12 +232,12 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             promptInfo,
             AiModelInfo(chatEngine.modelId, common.toModelParams()),
             AiExecInfo(),
-            AiOutputInfo.output(output)
+            AiOutputInfo.text(output)
         )
     }
 
     /** Generate CSV output (first input object only. */
-    private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiPromptTraceSupport<String>>): String {
+    private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiPromptTraceSupport>): String {
         val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
         val csv = results.joinToString("\n") { "${it.prompt!!.params[PromptTemplate.INPUT]},${it.firstValue}" }
         return "$csvHeader\n$csv".trim()

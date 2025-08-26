@@ -21,15 +21,14 @@ package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import tornadofx.*
-import tri.ai.core.promptTask
+import tornadofx.clear
+import tornadofx.onChange
 import tri.ai.pips.aitask
-import tri.ai.pips.taskPlan
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.EditablePromptUi
+import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -43,8 +42,8 @@ class PromptValidatorView : AiPlanTaskView(
 ) {
 
     val prompt = SimpleStringProperty("")
-    private val promptOutput = SimpleObjectProperty<AiPromptTraceSupport<*>>()
-    private val validatorOutput = SimpleObjectProperty<AiPromptTraceSupport<*>>()
+    private val promptOutput = SimpleObjectProperty<AiPromptTraceSupport>()
+    private val validatorOutput = SimpleObjectProperty<AiPromptTraceSupport>()
     private lateinit var validatorPromptUi: EditablePromptUi
 
     init {
@@ -75,7 +74,7 @@ class PromptValidatorView : AiPlanTaskView(
             })
         }
         onCompleted {
-            validatorOutput.set(it.finalResult as AiPromptTrace<*>)
+            validatorOutput.set(it.finalResult as AiPromptTrace)
         }
     }
 
@@ -85,7 +84,7 @@ class PromptValidatorView : AiPlanTaskView(
             .template(prompt.value)
             .execute(chatEngine)
     }.aitask("validate-result") {
-        val validatorPromptText = validatorPromptUi.fill("result" to it.content!!)
+        val validatorPromptText = validatorPromptUi.fill("result" to it.textContent())
         common.completionBuilder()
             .template(validatorPromptText)
             .execute(chatEngine)

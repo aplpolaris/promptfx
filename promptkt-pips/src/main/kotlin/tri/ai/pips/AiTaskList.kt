@@ -19,11 +19,7 @@
  */
 package tri.ai.pips
 
-import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.*
 
 /** Stores a list of tasks that can be executed in order. */
 class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
@@ -34,24 +30,37 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
             override fun plan() = plan
         }
 
-    constructor(firstTaskId: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): this(listOf(),
-        object: AiTask(firstTaskId, description) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
-        })
-
     //region BUILDER METHODS
 
     /**
      * Adds a task to the end of the list, where invoking the task performs the given operation.
-     * The input to the task is the first output from the final task in this [AiTaskList]. (Use [taskonlist] to apply to the full output list.)
+     * The input to the task is the first output from the final task in this [AiTaskList]. (Use [aitaskonlist] to apply to the full output list.)
      * The result will be wrapped in an [AiPromptTrace] object with a single result.
-     * @throws IllegalArgumentException if the result is an [AiPromptTraceSupport] object, instead use [aitask]
      */
     fun task(id: String, description: String? = null, op: suspend (AiOutput) -> String) =
         aitask(id, description) {
             val t0 = System.currentTimeMillis()
             val res = op(it)
             AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.text(res))
+        }
+
+    /**
+     * Adds a task to the end of the list, where invoking the task performs the given operation.
+     * The input to the task is the first output from the final task in this [AiTaskList]. (Use [taskonlist] to apply to the full output list.)
+     * The result will be wrapped in an [AiPromptTrace] object with a single result.
+     * @throws ClassCastException if the output cannot be cast to the expected type
+     * @throws IllegalArgumentException if the result is an [AiPromptTraceSupport] object, instead use [aitask]
+     */
+    inline fun <reified S, T : Any> objtask(id: String, description: String? = null, crossinline op: suspend (S) -> T?) =
+        aitask(id, description) {
+            val t0 = System.currentTimeMillis()
+            val castContent = it.content() as S
+            val res = op(castContent)
+            when (res) {
+                is AiPromptTraceSupport -> throw IllegalArgumentException("Use aitask() for AiTaskResult")
+                null -> AiPromptTrace.error(modelInfo = null, message = "Null result", duration = System.currentTimeMillis() - t0)
+                else -> AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res))
+            }
         }
 
     /**
@@ -89,31 +98,37 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
 
 //region BUILDER METHODS
 
-/**
- * Creates a sequential task list using provided tasks.
- * @throws NoSuchElementException if the list is empty
- */
-fun <T> aitasklist(tasks: List<AiTask>) =
-    AiTaskList(tasks.dropLast(1), tasks.last())
-
-/** Creates a sequential task list with a single task. */
-fun <T : Any> task(id: String, description: String? = null, op: suspend () -> T): AiTaskList =
+/** Initializes [AiTaskList] with a single task that returns an [AiOutput]. */
+fun task(id: String, description: String? = null, op: suspend () -> AiOutput): AiTaskList =
     aitask(id, description) {
         val t0 = System.currentTimeMillis()
         val res = op()
-        if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiTaskResult")
-        AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res, allowList = true))
+        AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.output(res))
+    }
+
+/** Initializes [AiTaskList] with a single task that returns a [String]. */
+fun tasktext(id: String, description: String? = null, op: suspend () -> String): AiTaskList =
+    task(id, description) { AiOutput(text = op()) }
+
+/** Initializes [AiTaskList] with a single task that returns a list of [AiOutput]s. */
+fun tasklist(id: String, description: String? = null, op: suspend () -> List<AiOutput>): AiTaskList =
+    aitask(id, description) {
+        val t0 = System.currentTimeMillis()
+        val res = op()
+        AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.output(res))
     }
 
 /** Creates a sequential task list with a single task. */
-fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): AiTaskList =
-    AiTaskList(id, description, op)
+fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport) = AiTaskList(listOf(),
+    object: AiTask(id, description) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
+    })
 
 /**
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
  * @throws IllegalArgumentException if there are duplicate task IDs
  */
-inline fun List<AiTask>.aggregate(): AiTaskList {
+fun List<AiTask>.aggregate(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTrace {

@@ -31,7 +31,7 @@ abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(t
 
     val common = ModelParameters()
 
-    override suspend fun processUserInput(): AiPipelineResult<*> =
+    override suspend fun processUserInput(): AiPipelineResult =
         AiPipelineExecutor.execute(plan().plan(), progress)
 
     abstract fun plan(): AiPlanner

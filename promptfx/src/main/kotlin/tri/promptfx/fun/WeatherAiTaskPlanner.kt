@@ -51,8 +51,8 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
                 .paramsInput(input)
                 .tokens(500)
                 .executeJson<WeatherRequest>(chatEngine)
-        }.task("weather-api") {
-            weatherService.getWeather(it!!)
+        }.objtask<WeatherRequest, WeatherResult>("weather-api") {
+            weatherService.getWeather(it)
         }.aitask("weather-response-formatter") {
             val json = jsonMapper.writeValueAsString(it)
             CompletionBuilder()
@@ -68,7 +68,7 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
     private suspend inline fun <reified T> CompletionBuilder.executeJson(completion: TextChat) =
         requestJson(true).execute(completion).mapOutput {
             try {
-                AiOutput(other = JSON_MAPPER.readValue<T>(it.textContent()!!.trim()))
+                AiOutput(other = JSON_MAPPER.readValue<T>(it.textContent().trim()))
             } catch (x: JsonMappingException) {
                 fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
                 AiOutput(text = "Failed to parse response as JSON: ${x.message}")

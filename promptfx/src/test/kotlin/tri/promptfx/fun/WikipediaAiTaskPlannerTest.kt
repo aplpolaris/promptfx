@@ -32,7 +32,7 @@ import tri.promptfx.ModelParameters
 
 class WikipediaAiTaskPlannerTest {
 
-    val engine = OpenAiChat(OpenAiModelIndex.GPT35_TURBO_INSTRUCT)
+    val engine = OpenAiChat(OpenAiModelIndex.GPT35_TURBO)
 
     @Test
     fun testPlanner() {
@@ -46,6 +46,7 @@ class WikipediaAiTaskPlannerTest {
     fun testExecute() = runTest {
         val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
         val result = AiPipelineExecutor.execute(tasks, PrintMonitor())
+        println(result.interimResults)
         assertEquals(4, result.interimResults.size)
         println(result.finalResult)
     }

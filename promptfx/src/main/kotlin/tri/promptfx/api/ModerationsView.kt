@@ -51,7 +51,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<String> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val request = ModerationRequest(
             input = listOf(input.value),
             model = model.value
@@ -62,7 +62,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
             null,
             AiModelInfo(model.value.model),
             AiExecInfo(),
-            AiOutputInfo.output(responseText)
+            AiOutputInfo.text(responseText)
         ).asPipelineResult()
     }
 

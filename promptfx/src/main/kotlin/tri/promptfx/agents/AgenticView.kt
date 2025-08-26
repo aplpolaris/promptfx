@@ -178,20 +178,20 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         runLater {
             pfxWorkspace.dock(this)
         }
-        AiPromptTrace(outputInfo = AiOutputInfo.Companion.output(result))
+        AiPromptTrace(outputInfo = AiOutputInfo.text(result))
     }.planner
 
     //region WORKFLOW EXECUTION METHODS
 
     /** Executes using [tri.ai.tool.ToolChainExecutor]. */
     private fun executeToolChain(task: String, selectedTools: List<Executable>) =
-        ToolChainExecutor(controller.completionEngine.value)
+        ToolChainExecutor(controller.chatService.value)
             .executeChain(task, selectedTools)
 
     /** Executes using [tri.ai.tool.JsonToolExecutor]. */
     private fun executeJsonTool(task: String, selectedTools: List<Executable>): String {
-        // TODO - remove dependence on specific OpenAI adapter
-        val exec = JsonToolExecutor(OpenAiAdapter.Companion.INSTANCE,controller.chatService.value.modelId, selectedTools)
+        val chat = PromptFxModels.multimodalModels().first { it.modelId == controller.chatService.value.modelId }
+        val exec = JsonToolExecutor(chat, selectedTools)
         return runBlocking {
             exec.execute(task)
         }
@@ -235,14 +235,8 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                     view.processUserInput()
                 }
                 view.taskCompleted(task)
-                task.finalResult.let {
-                    val finalResult = when (val first = it.values?.firstOrNull()) {
-                        is String -> first
-                        is TextChatMessage -> first.content!!
-                        else -> it.toString()
-                    }
-                    result.complete(finalResult)
-                }
+                val finalResult = task.finalResult.values?.firstOrNull()?.textContent()
+                result.complete(finalResult ?: "(no final result)")
             }
         }
         val res = runBlocking { result.await() }

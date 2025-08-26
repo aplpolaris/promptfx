@@ -25,7 +25,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /** Model for history of prompts throughout the application. */
 class PromptTraceHistoryModel : Component() {
-    val prompts = observableListOf<AiPromptTraceSupport<*>>()
+    val prompts = observableListOf<AiPromptTraceSupport>()
     val maxHistorySize = SimpleIntegerProperty(1000)
 
     init {

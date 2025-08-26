@@ -39,7 +39,7 @@ class PrintMonitor: AiTaskMonitor {
         if (value is Iterable<*> && value.count() > 1) {
             printGray("  result:")
             value.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
-        } else if (value is Iterable<*>) {
+        } else if (value is Iterable<*> && value.count() == 1) {
             printGray("  result: \u001B[1m${value.first().pretty()}")
         } else {
             printGray("  result: \u001B[1m${value.pretty()}")

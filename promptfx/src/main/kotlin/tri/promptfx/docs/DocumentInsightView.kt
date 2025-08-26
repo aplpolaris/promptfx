@@ -31,6 +31,7 @@ import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
@@ -140,7 +141,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<*> {
+    override suspend fun processUserInput(): AiPipelineResult {
         updateChunkSelection()
         return super.processUserInput()
     }
@@ -156,11 +157,11 @@ class DocumentInsightView: AiPlanTaskView(
                     .prompt(reducePrompt.prompt.value)
                     .paramsInput(concat)
                     .execute(chatEngine)
-                    .mapOutput { concat to it.content }
+                    .mapOutput { AiOutput(other = concat to it.content()) }
             }.planner
     }
 
-    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<String>> {
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }

@@ -120,7 +120,7 @@ object TextClustering {
                 )
                 .execute(chatEngine)
         }.map {
-            val lines = it.firstValue.content!!.lines()
+            val lines = it.firstValue.textContent().lines()
             val foundCategory = lines.findLine("category")?.parseList() ?: listOf()
             val foundTheme = lines.findLine("theme") ?: ""
             foundTheme to foundCategory
