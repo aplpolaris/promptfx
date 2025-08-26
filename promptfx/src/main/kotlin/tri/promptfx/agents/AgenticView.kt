@@ -145,7 +145,14 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         override val inputSchema = null
         override val outputSchema = null
         override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-            val dict = MAPPER.convertValue<Map<String, String>>(input)
+            // More robust input handling - extract input text from JsonNode
+            val inputText = when {
+                input.has("input") -> input.get("input").asText()
+                input.isTextual -> input.asText()
+                else -> input.toString()
+            }
+            val dict = mapOf("input" to inputText)
+            
             val result = runBlocking {
                 executeTask(this@executable, dict)
             }
