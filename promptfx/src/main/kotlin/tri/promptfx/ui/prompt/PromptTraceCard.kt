@@ -31,9 +31,9 @@ class PromptTraceCard : Fragment() {
 
     val result = SimpleObjectProperty<Any>("")
 
-    private var trace: AiPromptTraceSupport<*>? = null
+    private var trace: AiPromptTraceSupport? = null
 
-    fun setTrace(trace: AiPromptTraceSupport<*>) {
+    fun setTrace(trace: AiPromptTraceSupport) {
         result.value = trace.values?.firstOrNull() ?: "No result"
         this.trace = trace
     }

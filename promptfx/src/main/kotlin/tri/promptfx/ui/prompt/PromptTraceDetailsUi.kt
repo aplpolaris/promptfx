@@ -42,7 +42,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     // TODO - add a PromptDetailsUi dialog or view
 
-    var trace = SimpleObjectProperty<AiPromptTraceSupport<*>>()
+    var trace = SimpleObjectProperty<AiPromptTraceSupport>()
 
     val prompt = SimpleStringProperty("")
     val promptParams = SimpleObjectProperty<Map<String, Any>>(null)
@@ -57,7 +57,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     lateinit var playButton: Button
     private var player: MediaPlayer? = null
 
-    fun setTrace(trace: AiPromptTraceSupport<*>?) {
+    fun setTrace(trace: AiPromptTraceSupport?) {
         this.trace.set(trace)
         prompt.value = trace?.prompt?.template
         promptParams.value = trace?.prompt?.params

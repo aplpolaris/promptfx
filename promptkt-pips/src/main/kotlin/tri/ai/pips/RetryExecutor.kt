@@ -42,7 +42,7 @@ class RetryExecutor(
      * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
      * related to the number of attempts and total duration.
      */
-    suspend fun <T> execute(task: AiTask<T>, inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
+    suspend fun execute(task: AiTask, inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
         return retry.execute({
             task.execute(inputs, monitor)
         }, onSuccess = { it ->
@@ -58,7 +58,7 @@ class RetryExecutor(
             AiPromptTrace.error(
                 modelInfo = null,
                 message = it.error!!.message,
-                throwable = it.error!!,
+                throwable = it.error,
                 duration = it.attemptTime,
                 durationTotal = it.totalTime,
                 attempts = it.attempts

@@ -34,7 +34,7 @@ interface TextChat {
         stop: List<String>? = null,
         numResponses: Int? = null,
         requestJson: Boolean? = null
-    ): AiPromptTrace<TextChatMessage>
+    ): AiPromptTrace
 
 }
 
@@ -45,6 +45,8 @@ data class TextChatMessage(val role: MChatRole, val content: String?) {
         fun system(content: String?) = TextChatMessage(MChatRole.System, content)
         fun assistant(content: String?) = TextChatMessage(MChatRole.Assistant, content)
         fun tool(content: String?) = TextChatMessage(MChatRole.Tool, content)
+        /** Message with no role - useful for text completions. */
+        fun none(content: String?) = TextChatMessage(MChatRole.None, content)
     }
 }
 

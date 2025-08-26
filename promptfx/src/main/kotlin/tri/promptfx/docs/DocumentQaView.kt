@@ -166,7 +166,7 @@ class DocumentQaView: AiPlanTaskView(
      * Executes task on a background thread and updates progress info.
      * Overwrites parent method to allow for batch execution.
      */
-    override fun runTask(op: suspend () -> AiPipelineResult<*>) {
+    override fun runTask(op: suspend () -> AiPipelineResult) {
         formattedResultArea.model.clearTraces()
         val questionInput = question.value
         val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
@@ -212,7 +212,7 @@ class DocumentQaView: AiPlanTaskView(
 
     //endregion
 
-    override fun addTrace(trace: AiPromptTraceSupport<*>) {
+    override fun addTrace(trace: AiPromptTraceSupport) {
         if (trace is FormattedPromptTraceResult) {
             enableHyperlinkActions(trace.formattedOutputs)
         }

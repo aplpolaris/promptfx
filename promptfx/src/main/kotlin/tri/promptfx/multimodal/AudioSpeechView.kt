@@ -108,8 +108,8 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<ByteArray> {
-        val trace: AiPromptTraceSupport<ByteArray> = when {
+    override suspend fun processUserInput(): AiPipelineResult {
+        val trace: AiPromptTraceSupport = when {
             input.value.isNullOrBlank() ->
                 AiPromptTrace.invalidRequest(model.value, "No input provided")
             else -> {
@@ -123,7 +123,7 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
                 controller.openAiPlugin.client.speech(request)
                     .also {
                         controller.updateUsage()
-                        file.set(it.firstValue)
+                        file.set(it.firstValue.content() as ByteArray)
                     }
             }
         }

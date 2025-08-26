@@ -93,7 +93,7 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
         model.loadTextLibrary(library, replace = false, selectAllDocs = false)
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo<String>()
+    override suspend fun processUserInput() = AiPipelineResult.todo()
 }
 
 /** Track a library with where it was loaded from, null indicates not saved to a file. */

@@ -170,7 +170,7 @@ internal class PromptFxDriverDialog: Fragment("PromptFxDriver test dialog") {
 //region MENU BUILDERS
 
 /** Context menu for sending result in an [AiPromptTrace] to a view that accepts a text input. */
-fun ContextMenu.buildsendresultmenu(trace: AiPromptTraceSupport<*>, workspace: PromptFxWorkspace) {
+fun ContextMenu.buildsendresultmenu(trace: AiPromptTraceSupport, workspace: PromptFxWorkspace) {
     val outputs = trace.output?.outputs?.filterNotNull()
         ?.map { (it as? TextChatMessage)?.content ?: it.toString() }
         ?: listOf()

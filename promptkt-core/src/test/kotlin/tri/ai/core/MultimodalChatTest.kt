@@ -28,7 +28,7 @@ fun MultimodalChat.testChat_Simple() = runTest {
         text("What is 2+3?")
     }
     val response = chat(request)
-    val responseText = response.firstValue.content!![0].text!!
+    val responseText = response.firstValue.textContent()
     println(responseText)
 }
 
@@ -38,7 +38,7 @@ fun MultimodalChat.testChat_Multiple(responseCheck: (List<String>) -> Unit) = ru
     }
     val params = MChatParameters(numResponses = 2)
     val response = chat(request, params)
-    val responseText = response.values!!.map { it.content!![0].text!! }
+    val responseText = response.values!!.map { it.textContent() }
     responseCheck(responseText)
     println(responseText)
 }
@@ -55,7 +55,7 @@ fun MultimodalChat.testChat_Roles() = runTest {
         }
     )
     val response = chat(request)
-    val responseText = response.firstValue.content!![0].text!!
+    val responseText = response.firstValue.textContent()
     println(responseText)
 }
 
@@ -65,7 +65,7 @@ fun MultimodalChat.testChat_Image() = runTest {
         image(BASE64_IMAGE_SAMPLE)
     }
     val response = chat(request)
-    val responseText = response.firstValue.content!![0].text!!
+    val responseText = response.firstValue.textContent()
     println(responseText)
 }
 
@@ -79,7 +79,7 @@ fun MultimodalChat.testChat_Tools() = runTest {
     )))
 
     // in the first call, the AI will provide a response indicating what tool to use
-    val toolCallMessage = chat(query, params).firstValue
+    val toolCallMessage = chat(query, params).firstValue.multimodalMessage!!
     assertEquals(MChatRole.Assistant, toolCallMessage.role)
     assertTrue(toolCallMessage.content.isNullOrEmpty())
 
@@ -93,6 +93,6 @@ fun MultimodalChat.testChat_Tools() = runTest {
     val toolResultMessage = MultimodalChatMessage.tool("V", calls[0].id.ifEmpty { calls[0].name })
     val finalResponse = chat(listOf(query, toolCallMessage, toolResultMessage), params)
 
-    println(finalResponse.firstValue.content!![0].text)
-    assertTrue(finalResponse.firstValue.content!![0].text!!.contains("V"))
+    println(finalResponse.firstValue.multimodalMessage!!.content!![0].text)
+    assertTrue(finalResponse.firstValue.multimodalMessage!!.content!![0].text!!.contains("V"))
 }

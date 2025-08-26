@@ -86,14 +86,14 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
                     managedWhen(isShowDetailedOutput)
                 }
                 promptListUi.selectedPrompt.onChange {
-                    setTrace(it ?: AiPromptTrace<String>())
+                    setTrace(it ?: AiPromptTrace())
                 }
                 this@output.add(this)
             }
         }
     }
 
-    fun selectPromptTrace(prompt: AiPromptTraceSupport<*>) {
+    fun selectPromptTrace(prompt: AiPromptTraceSupport) {
         // TODO - objects are edited when they reach history, this could be done better
         val foundPrompt = promptListUi.prompts.firstOrNull {
             it.prompt == prompt.prompt && it.model == prompt.model && it.output == prompt.output
@@ -101,6 +101,6 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
         promptListUi.selectPromptTrace(foundPrompt ?: prompt)
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo<String>()
+    override suspend fun processUserInput() = AiPipelineResult.todo()
 }
 

@@ -26,20 +26,20 @@ import tri.util.warning
 /** Task monitor that prints to console. */
 class PrintMonitor: AiTaskMonitor {
 
-    override fun taskStarted(task: AiTask<*>) {
+    override fun taskStarted(task: AiTask) {
         printGray("Started: ${task.id}")
     }
 
-    override fun taskUpdate(task: AiTask<*>, progress: Double) {
+    override fun taskUpdate(task: AiTask, progress: Double) {
         printGray("Update: ${task.id} $progress")
     }
 
-    override fun taskCompleted(task: AiTask<*>, result: Any?) {
-        val value = (result as? AiPromptTrace<*>)?.output?.outputs ?: result
+    override fun taskCompleted(task: AiTask, result: Any?) {
+        val value = (result as? AiPromptTrace)?.output?.outputs ?: result
         if (value is Iterable<*> && value.count() > 1) {
             printGray("  result:")
             value.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
-        } else if (value is Iterable<*>) {
+        } else if (value is Iterable<*> && value.count() == 1) {
             printGray("  result: \u001B[1m${value.first().pretty()}")
         } else {
             printGray("  result: \u001B[1m${value.pretty()}")
@@ -50,7 +50,7 @@ class PrintMonitor: AiTaskMonitor {
     private fun Any?.pretty(): String = when (this) {
         null -> "null"
         is Unit -> "✓"
-        is AiPromptTrace<*> -> output?.outputs?.let { if (it.size == 1) it[0].pretty() else it.joinToString(", ") { it.pretty() } } ?: "null"
+        is AiPromptTrace -> output?.outputs?.let { if (it.size == 1) it[0].pretty() else it.joinToString(", ") { it.pretty() } } ?: "null"
         else -> toString()
     }
 
@@ -59,7 +59,7 @@ class PrintMonitor: AiTaskMonitor {
         printGray("  completed: $id")
     }
 
-    override fun taskFailed(task: AiTask<*>, error: Throwable) {
+    override fun taskFailed(task: AiTask, error: Throwable) {
         printRed("  failed: ${task.id} with error $error")
     }
 

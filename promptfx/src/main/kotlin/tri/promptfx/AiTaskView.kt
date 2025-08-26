@@ -70,7 +70,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val formattedResultArea = PromptResultAreaFormatted()
 
     val runTooltip = SimpleStringProperty("")
-    val onCompleted: MutableList<(AiPipelineResult<*>) -> Unit> = mutableListOf()
+    val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
 
     val chatEngine: TextChat
         get() = controller.chatService.value
@@ -334,9 +334,9 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Adds trace of an execution to the output area. */
-    protected open fun addTrace(trace: AiPromptTraceSupport<*>) {
+    protected open fun addTrace(trace: AiPromptTraceSupport) {
         when (trace) {
-            is AiPromptTrace<*> ->
+            is AiPromptTrace ->
                 resultArea.model.addTrace(trace)
             is FormattedPromptTraceResult ->
                 formattedResultArea.model.addTrace(trace)
@@ -348,7 +348,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Sets the output to display the result of the given execution. */
-    protected fun setFinalTrace(trace: AiPromptTraceSupport<*>) {
+    protected fun setFinalTrace(trace: AiPromptTraceSupport) {
         trace.checkError(currentWindow)
         resultArea.model.clearTraces()
         formattedResultArea.model.clearTraces()
@@ -384,18 +384,18 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Processes whatever input user has provided. */
-    abstract suspend fun processUserInput(): AiPipelineResult<*>
+    abstract suspend fun processUserInput(): AiPipelineResult
 
     /** Adds a hook to be called when the task has completed. */
-    fun onCompleted(op: (AiPipelineResult<*>) -> Unit) {
+    fun onCompleted(op: (AiPipelineResult) -> Unit) {
         onCompleted.add(op)
     }
 
     /** Called when the task has completed. */
-    internal fun taskCompleted(message: AiPipelineResult<*>) = onCompleted.forEach { it(message) }
+    internal fun taskCompleted(message: AiPipelineResult) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
-    internal open fun runTask(op: suspend () -> AiPipelineResult<*> = ::processUserInput) {
+    internal open fun runTask(op: suspend () -> AiPipelineResult = ::processUserInput) {
         val task = executeTask {
             op()
         }
@@ -418,13 +418,13 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Run task on a background thread. */
-    private fun executeTask(block: suspend () -> AiPipelineResult<*>) = runAsync {
+    private fun executeTask(block: suspend () -> AiPipelineResult) = runAsync {
         runBlocking {
             try {
                 block()
             } catch (x: Exception) {
                 x.printStackTrace()
-                AiPipelineResult(AiPromptTrace.error<Any>(null, x.message ?: "Unknown error", x), mapOf())
+                AiPipelineResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
             }
         }
     }

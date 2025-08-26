@@ -91,20 +91,6 @@ class CompletionBuilder {
             numResponses = numResponses,
         ).copy(promptInfo = PromptInfo(template!!.template, params.toMap()))
 
-    /**
-     * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.
-     * Fails silently, returning null without throwing an exception if parsing fails.
-     */
-    suspend inline fun <reified T> executeJson(completion: TextChat) =
-        requestJson(true).execute(completion).mapOutput {
-            try {
-                JSON_MAPPER.readValue<T>(it.content!!.trim())
-            } catch (x: JsonMappingException) {
-                fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
-                null
-            }
-        }
-
     /** Validates the completion object before execution. */
     private fun TextCompletion.validate(): TextCompletion {
         require(template != null) { "Template/text must be set before execution." }

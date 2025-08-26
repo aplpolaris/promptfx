@@ -23,26 +23,23 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /** Result of a pipeline execution. */
-class AiPipelineResult<T>(val finalResult: AiPromptTraceSupport<T>, val interimResults: Map<String, AiPromptTraceSupport<*>>) {
+class AiPipelineResult(val finalResult: AiPromptTraceSupport, val interimResults: Map<String, AiPromptTraceSupport>) {
 
     companion object {
         /** Return a result object indicating an error was thrown during execution. */
-        fun <T> error(message: String?, error: Throwable?) : AiPipelineResult<T> {
-            val trace = AiPromptTrace.error<T>(null, message, error)
+        fun error(message: String?, error: Throwable?) : AiPipelineResult {
+            val trace = AiPromptTrace.error(null, message, error)
             return AiPipelineResult(trace, mapOf("result" to trace))
         }
 
         /** Return a result object indicating the pipeline has not been implemented. */
-        fun <T> todo() = "This pipeline is not yet implemented.".let {
-            error<T>(it, UnsupportedOperationException(it))
+        fun todo() = "This pipeline is not yet implemented.".let {
+            error(it, UnsupportedOperationException(it))
         }
     }
 
 }
 
-/**
- * Wraps this as a pipeline result.
- * If [prompt] and [model] are provided, result will also be wrapped in [AiPromptTrace].
- */
-fun <T> AiPromptTraceSupport<T>.asPipelineResult() = AiPipelineResult(this, mapOf("result" to this))
+/** Wraps this as a pipeline result. */
+fun AiPromptTraceSupport.asPipelineResult() = AiPipelineResult(this, mapOf("result" to this))
 

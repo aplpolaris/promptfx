@@ -50,7 +50,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         addInputTextArea(secondText)
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<*> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val chunks = secondText.get().splitIntoChunks()
         val mod = controller.embeddingStrategy.get().model
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
@@ -61,7 +61,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         return if (chunks.size == 1) {
             AiPromptTrace(
                 modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.output(scoreText)
+                outputInfo = AiOutputInfo.text(scoreText)
             )
         } else {
             val scores = chunks.mapIndexed { index, line ->
@@ -74,7 +74,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
             AiPromptTrace(
                 modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.output("$scoreText\n\n$highestText\n\n$secondText")
+                outputInfo = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
             )
         }.asPipelineResult()
     }

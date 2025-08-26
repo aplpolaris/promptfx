@@ -33,6 +33,7 @@ module tri.promptkt.pips {
     exports tri.ai.pips;
     exports tri.ai.pips.agent;
     exports tri.ai.pips.api;
+    exports tri.ai.pips.core;
     exports tri.ai.tool;
     exports tri.ai.tool.wf;
 }

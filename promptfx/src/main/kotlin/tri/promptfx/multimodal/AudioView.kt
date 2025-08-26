@@ -154,7 +154,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
         input.value = "Audio file: ${f.name}"
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<String> {
+    override suspend fun processUserInput(): AiPipelineResult {
         return when (val f = file.value) {
             null -> AiPromptTrace.invalidRequest(model.value, "No audio file dropped")
             else -> processAudio(model.value, f)
@@ -163,7 +163,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
 
     private val GEMINI_PROMPT = "Transcribe this audio"
 
-    private suspend fun processAudio(modelId: String, f: File): AiPromptTrace<String> {
+    private suspend fun processAudio(modelId: String, f: File): AiPromptTrace {
         return when (modelId) {
             in OpenAiModelIndex.audioModels() -> {
                 controller.openAiPlugin.client.quickTranscribe(modelId, f)
@@ -184,7 +184,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
                     PromptInfo(GEMINI_PROMPT),
                     AiModelInfo(modelId),
                     AiExecInfo(),
-                    AiOutputInfo.output(response.candidates!![0].content.parts[0].text!!)
+                    AiOutputInfo.text(response.candidates!![0].content.parts[0].text!!)
                 )
             }
             else -> return AiPromptTrace.invalidRequest(modelId, "Unknown audio model")

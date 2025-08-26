@@ -40,11 +40,11 @@ class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParamete
                 .params(PromptTemplate.INPUT to input)
                 .execute(chatEngine)
         }.task("wikipedia-page-search") {
-            firstMatchingPage(it.content!!).also {
+            firstMatchingPage(it.textContent()).also {
                 pageTitle?.value = it
             }
         }.task("retrieve-page-text") {
-            getWikipediaPage(it).also {
+            getWikipediaPage(it.textContent()).also {
                 pageTitle?.apply { value = "$value\n\n$it" }
             }
         }.aitask("question-answer") {

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
+import tri.ai.core.TextChatMessage
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
@@ -105,7 +106,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
         }
 
         onCompleted {
-            val rawText = it.finalResult.firstValue.toString()
+            val rawText = it.finalResult.firstValue.textContent()
             val codeText = if ("```json" in rawText)
                 rawText.substringAfter("```json").substringBefore("```").trim()
             else

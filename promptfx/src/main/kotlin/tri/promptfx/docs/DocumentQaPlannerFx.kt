@@ -74,7 +74,7 @@ class DocumentQaPlannerFx {
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
-    ): AiTaskList<String> {
+    ): AiTaskList {
         val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!, chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
@@ -87,13 +87,14 @@ class DocumentQaPlannerFx {
             numResponses = numResponses!!,
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
-        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask<QuestionAnswerResult>)
+        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
             .aitask("process-result") {
-                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${it.responseScore}$ANSI_RESET")
-                lastResult = it
+                val res = it.content() as QuestionAnswerResult
+                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${res.responseScore}$ANSI_RESET")
+                lastResult = res
                 chatHistory.add(TextChatMessage(MChatRole.User, question))
-                chatHistory.add(TextChatMessage(MChatRole.Assistant, it.trace.firstValue))
-                FormattedPromptTraceResult(it.trace, it.splitOutputs().map { it.formatResult() })
+                chatHistory.add(TextChatMessage(MChatRole.Assistant, res.trace.firstValue.textContent()))
+                FormattedPromptTraceResult(res.trace, res.splitOutputs().map { res.formatResult() })
             }
     }
 }

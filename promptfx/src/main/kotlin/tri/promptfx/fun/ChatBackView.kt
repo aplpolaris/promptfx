@@ -23,14 +23,12 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.TextChatMessage
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.PromptFx
 import tri.promptfx.PromptFxGlobals.fillPrompt
 import tri.promptfx.ui.ChatEntry
 import tri.promptfx.ui.ChatPanel
@@ -187,7 +185,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         chatHistory.setAll(history.conversations)
     }
 
-    private suspend fun chatBack(): AiPromptTrace<String> {
+    private suspend fun chatBack(): AiPromptTrace {
         val systemMessage = fillPrompt("chat/chat-back",
             "person" to nextPerson,
             "other persons" to otherPersons,
@@ -201,7 +199,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
             tokens = maxTokens.value,
             stop = listOf("\n")
-        ).mapOutput { it.content!! }
+        )
     }
 
 }

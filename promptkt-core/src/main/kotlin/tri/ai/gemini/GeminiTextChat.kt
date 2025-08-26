@@ -42,7 +42,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_15_FLASH, val client:
         stop: List<String>?,
         numResponses: Int?,
         requestJson: Boolean?
-    ): AiPromptTrace<TextChatMessage> {
+    ): AiPromptTrace {
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson, numResponses = numResponses)
         val t0 = System.currentTimeMillis()
         val resp = client.generateContent(
@@ -58,7 +58,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_15_FLASH, val client:
 
     companion object {
         /** Create trace for chat message response, with given model info and start query time. */
-        internal fun GenerateContentResponse.trace(modelInfo: AiModelInfo, t0: Long): AiPromptTrace<TextChatMessage> {
+        internal fun GenerateContentResponse.trace(modelInfo: AiModelInfo, t0: Long): AiPromptTrace {
             val pf = promptFeedback
             return if (pf?.blockReason != null) {
                 val msg = "Gemini blocked response: ${pf.blockReason}"
@@ -73,7 +73,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_15_FLASH, val client:
                     null,
                     modelInfo,
                     AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                    AiOutputInfo(msgs)
+                    AiOutputInfo.messages(msgs)
                 )
             }
         }

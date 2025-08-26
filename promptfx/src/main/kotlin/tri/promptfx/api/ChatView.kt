@@ -119,7 +119,7 @@ abstract class ChatView(title: String, instruction: String, private val roles: L
 
     private fun initChatResponse() {
         onCompleted {
-            addChatsToHistory(it.finalResult.output?.outputs ?: listOf())
+            addChatsToHistory(it.finalResult.output?.outputs?.map { it.content() } ?: listOf())
         }
     }
 

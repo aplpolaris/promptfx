@@ -31,6 +31,7 @@ import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
@@ -134,13 +135,13 @@ class DocumentInsightView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val pairResult = it.finalResult.firstValue as Pair<*, *>
+            val pairResult = it.finalResult.firstValue.content() as Pair<*, *>
             mapResult.value = pairResult.first.toString()
             reduceResult.value = pairResult.second.toString()
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult<*> {
+    override suspend fun processUserInput(): AiPipelineResult {
         updateChunkSelection()
         return super.processUserInput()
     }
@@ -149,18 +150,19 @@ class DocumentInsightView: AiPlanTaskView(
         mapResult.set("")
         reduceResult.set("")
 
-        return promptBatch(model.chunkListModel.chunkSelection).aggregate()
+        return promptBatch(model.chunkListModel.chunkSelection)
+            .aggregate()
             .aitask("results-summarize") { _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
                     .prompt(reducePrompt.prompt.value)
                     .paramsInput(concat)
                     .execute(chatEngine)
-                    .mapOutput { concat to it.content }
+                    .mapOutput { AiOutput(other = concat to it.message!!.content) }
             }.planner
     }
 
-    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<String>> {
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }
@@ -175,7 +177,7 @@ class DocumentInsightView: AiPlanTaskView(
         }.map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->
-                runLater { mapResult.value += "\n\n${res.first()}" }
+                runLater { mapResult.value += "\n\n${res.first().textContent()}" }
             }
         }
     }

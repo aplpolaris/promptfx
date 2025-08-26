@@ -54,7 +54,7 @@ class WExecutorChat(val completionEngine: TextCompletion, val maxTokens: Int, va
 
         // parse the response and use it to build a set of subtasks to solve
         val taskDecomp = try {
-            parseTaskDecomp(response.firstValue)
+            parseTaskDecomp(response.firstValue.textContent())
         } catch (x: IllegalStateException) {
             throw x
         }

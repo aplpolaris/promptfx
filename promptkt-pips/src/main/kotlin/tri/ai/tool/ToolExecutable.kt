@@ -17,28 +17,24 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.api
+package tri.ai.tool
 
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
-import tri.ai.tool.Tool
-import tri.ai.tool.TOOL_DICT_INPUT
+import tri.ai.tool.ToolExecutableResult
 
 /**
- * Bridge class that wraps a legacy [Tool] to be used as an [Executable].
- * Converts JsonNode input/output to the Tool's ToolDict format.
+ * Base class for tool-like executables that work with simple string input/output.
+ * This replaces the deprecated Tool class by implementing Executable directly.
  */
-class ToolExecutable(
-    private val tool: Tool
-) : Executable {
-    
-    override val name: String = tool.name
-    override val description: String = tool.description
-    override val version: String = "1.0.0"
-    override val inputSchema: JsonNode? = null
+abstract class ToolExecutable(
+    override val name: String,
+    override val description: String,
+    override val version: String = "1.0.0",
+    override val inputSchema: JsonNode? = null,
     override val outputSchema: JsonNode? = null
+) : Executable {
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
         // Extract input text from JsonNode
@@ -49,22 +45,21 @@ class ToolExecutable(
             input.has("text") -> input.get("text").asText()
             else -> input.toString()
         }
-        
-        // Create ToolDict input
-        val toolDict = mapOf(TOOL_DICT_INPUT to inputText)
-        
-        // Execute the tool
-        val result = tool.run(toolDict)
-        
+
+        // Execute the tool logic
+        val result = run(inputText, context)
+
         // Convert result back to JsonNode
-        return MAPPER.createObjectNode().apply {
-            put("result", result.finalResult ?: result.result[tri.ai.tool.TOOL_DICT_RESULT] ?: "")
+        return context.mapper.createObjectNode().apply {
+            put("result", result.result)
             put("isTerminal", result.isTerminal)
+            result.finalResult?.let { put("finalResult", it) }
         }
     }
-    
-    companion object {
-        /** Creates a ToolExecutable wrapper for the given Tool. */
-        fun wrap(tool: Tool): ToolExecutable = ToolExecutable(tool)
-    }
+
+    /**
+     * Execute the tool with string input and context.
+     * Returns a ToolResult with the output, terminal status, and optional final result.
+     */
+    abstract suspend fun run(input: String, context: ExecContext): ToolExecutableResult
 }

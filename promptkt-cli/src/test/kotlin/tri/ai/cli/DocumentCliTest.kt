@@ -32,7 +32,7 @@ class DocumentCliTest {
             .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
             .main(args)
 
-    private val path = Path("C:\\data\\chatgpt")
+    private val path = Path("D:\\data\\chatgpt")
     private val folder = Path("test3")
 
     @Test

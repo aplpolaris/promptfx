@@ -26,13 +26,16 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
 import tri.ai.core.CompletionBuilder
+import tri.ai.pips.core.ExecContext
 import java.net.URLDecoder
 
 /**
  * A web search tool that uses DuckDuckGo to search the web and return structured results.
  * This tool provides access to web search capabilities without requiring API keys.
+ * 
+ * This is the new Executable-based implementation that replaces the deprecated JsonTool-based version.
  */
-class WebSearchTool : JsonTool(
+class WebSearchExecutable : JsonToolExecutable(
     name = "web_search",
     description = "Search the web using DuckDuckGo and return a list of relevant results with titles, URLs, and descriptions.",
     jsonSchema = """{
@@ -64,7 +67,7 @@ class WebSearchTool : JsonTool(
     /**
      * Executes a web search using DuckDuckGo and returns structured results.
      */
-    override suspend fun run(input: JsonObject): String {
+    override suspend fun run(input: JsonObject, context: ExecContext): String {
         val query = input["query"]?.jsonPrimitive?.content
             ?: throw IllegalArgumentException("Query parameter is required")
         

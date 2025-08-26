@@ -61,14 +61,14 @@ class PromptTraceCardList: Fragment() {
     private val isRemovable: Boolean by param(false)
     private val isShowFilter: Boolean by param(false)
     private val toolbarLabel: String by param("Results:")
-    val prompts: ObservableList<AiPromptTraceSupport<*>> by param()
+    val prompts: ObservableList<AiPromptTraceSupport> by param()
 
     private val controller: PromptFxController by inject()
     private val isGlobalHistoryView = controller.promptHistory.prompts === prompts
     private val promptFilter: PromptTraceFilter = find<PromptTraceFilter>()
-    private val filteredPrompts = observableListOf<AiPromptTraceSupport<*>>()
-    private lateinit var promptSelectionModel: MultipleSelectionModel<AiPromptTraceSupport<*>>
-    val selectedPrompt = SimpleObjectProperty<AiPromptTraceSupport<*>>()
+    private val filteredPrompts = observableListOf<AiPromptTraceSupport>()
+    private lateinit var promptSelectionModel: MultipleSelectionModel<AiPromptTraceSupport>
+    val selectedPrompt = SimpleObjectProperty<AiPromptTraceSupport>()
 
     init {
         prompts.onChange {
@@ -227,14 +227,14 @@ class PromptTraceCardList: Fragment() {
         }
     }
 
-    fun selectPromptTrace(prompt: AiPromptTraceSupport<*>) {
+    fun selectPromptTrace(prompt: AiPromptTraceSupport) {
         promptSelectionModel.select(prompt)
     }
 
 }
 
 /** Exports the given list of prompt traces to a JSON file. */
-fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport<*>>) {
+fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as JSON/YAML List",
@@ -246,7 +246,7 @@ fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport<*>>) {
 }
 
 /** Exports the given list of prompt traces as a [AiPromptTraceDatabase] to a user-selected file. */
-fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport<*>>) {
+fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as JSON/YAML Database",
@@ -258,7 +258,7 @@ fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport<*>>)
 }
 
 /** Exports the given list of prompt traces as a CSV file. */
-fun UIComponent.exportPromptTraceListCsv(traces: List<AiPromptTraceSupport<*>>) {
+fun UIComponent.exportPromptTraceListCsv(traces: List<AiPromptTraceSupport>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as CSV",
@@ -318,7 +318,7 @@ data class DocQaCsvRow(
 )
 
 /** Writes the given [AiPromptTraceDatabase] to the specified CSV file. */
-fun writeTraceListCsv(traces: List<AiPromptTraceSupport<*>>, file: File) {
+fun writeTraceListCsv(traces: List<AiPromptTraceSupport>, file: File) {
     val mapper = CsvMapper().apply {
         registerKotlinModule()
     }

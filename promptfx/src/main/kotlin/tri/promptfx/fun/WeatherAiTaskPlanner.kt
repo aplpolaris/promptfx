@@ -19,7 +19,10 @@
  */
 package tri.promptfx.`fun`
 
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
+import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
@@ -28,10 +31,12 @@ import tri.ai.openai.jsonMapper
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.util.fine
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
@@ -46,8 +51,8 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
                 .paramsInput(input)
                 .tokens(500)
                 .executeJson<WeatherRequest>(chatEngine)
-        }.task("weather-api") {
-            weatherService.getWeather(it!!)
+        }.objtask<WeatherRequest, WeatherResult>("weather-api") {
+            weatherService.getWeather(it)
         }.aitask("weather-response-formatter") {
             val json = jsonMapper.writeValueAsString(it)
             CompletionBuilder()
@@ -56,7 +61,21 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
                 .execute(chatEngine)
         }.plan
 
-    private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace<String> {
+    /**
+     * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.
+     * Fails silently, returning null without throwing an exception if parsing fails.
+     */
+    private suspend inline fun <reified T> CompletionBuilder.executeJson(completion: TextChat) =
+        requestJson(true).execute(completion).mapOutput {
+            try {
+                AiOutput(other = JSON_MAPPER.readValue<T>(it.textContent().trim()))
+            } catch (x: JsonMappingException) {
+                fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
+                AiOutput(text = "Failed to parse response as JSON: ${x.message}")
+            }
+        }
+
+    private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace {
         val embeddings = embeddingModel.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
         val similarity = cosineSimilarity(embeddings[0], embeddings[1])
         info<WeatherAiTaskPlanner>("Input alignment to weather: $similarity")
@@ -65,7 +84,7 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
 
         return AiPromptTrace(
             modelInfo = AiModelInfo(embeddingModel.modelId),
-            outputInfo = AiOutputInfo.output(input)
+            outputInfo = AiOutputInfo.text(input)
         )
     }
 

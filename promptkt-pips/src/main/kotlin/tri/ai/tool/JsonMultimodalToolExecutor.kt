@@ -23,6 +23,9 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.*
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.template
 import tri.util.*
 
@@ -31,9 +34,17 @@ import tri.util.*
  * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
  * query if needed.
  */
-class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<JsonTool>) {
+class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Executable>) {
 
-    private val chatTools = tools.map { it.tool }
+    private val chatTools = tools.mapNotNull { executable ->
+        executable.inputSchema?.let { schema ->
+            MTool(
+                executable.name,
+                executable.description,
+                MAPPER.writeValueAsString(schema)
+            )
+        }
+    }
 
     suspend fun execute(query: String): String {
         info<JsonMultimodalToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
@@ -46,7 +57,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
         var response = model.chat(
             messages,
             MChatParameters(tools = MChatTools(tools = chatTools))
-        ).firstValue
+        ).firstValue.multimodalMessage!!
         messages += response
         var toolCalls = response.toolCalls
 
@@ -54,7 +65,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
             // print interim results
             toolCalls.forEach { call ->
                 info<JsonMultimodalToolExecutor>("Call Function: $ANSI_CYAN${call.name}$ANSI_RESET with parameters $ANSI_CYAN${call.argumentsAsJson}$ANSI_RESET")
-                val tool = tools.firstOrNull { it.tool.name == call.name }
+                val tool = tools.firstOrNull { it.name == call.name }
                 if (tool == null) {
                     info<JsonMultimodalToolExecutor>("${ANSI_RED}Unknown tool: ${call.name}$ANSI_RESET")
                 }
@@ -63,18 +74,18 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
                     info<JsonMultimodalToolExecutor>("${ANSI_RED}Invalid JSON: ${call.name}$ANSI_RESET")
                 }
                 if (tool != null && json != null) {
-                    val result = tool.run(json)
-                    info<JsonMultimodalToolExecutor>("Result: $ANSI_GREEN${result}$ANSI_RESET")
+                    val context = ExecContext()
+                    val result = tool.execute(json, context)
+                    val resultText = result.get("result")?.asText() ?: result.toString()
+                    info<JsonMultimodalToolExecutor>("Result: $ANSI_GREEN${resultText}$ANSI_RESET")
 
                     // add result to message history and call again
-                    messages += MultimodalChatMessage.tool(result, call.id)
+                    messages += MultimodalChatMessage.tool(resultText, call.id)
                 }
             }
 
-            response = model.chat(
-                messages,
-                MChatParameters(tools = MChatTools(tools = chatTools))
-            ).firstValue
+            response = model.chat(messages, MChatParameters(tools = MChatTools(tools = chatTools)))
+                .firstValue.multimodalMessage!!
             messages += response
             toolCalls = response.toolCalls
         }
@@ -84,9 +95,16 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Json
     }
 
     companion object {
-        private fun MToolCall.tryJson() = try {
-            Json.parseToJsonElement(argumentsAsJson) as? JsonObject
+        fun MToolCall.tryJson(): com.fasterxml.jackson.databind.JsonNode? = try {
+            val jsonObject = Json.parseToJsonElement(argumentsAsJson) as? JsonObject
+            // Convert kotlinx JsonObject to Jackson JsonNode
+            jsonObject?.let {
+                val jsonString = it.toString()
+                MAPPER.readTree(jsonString)
+            }
         } catch (x: SerializationException) {
+            null
+        } catch (x: Exception) {
             null
         }
     }

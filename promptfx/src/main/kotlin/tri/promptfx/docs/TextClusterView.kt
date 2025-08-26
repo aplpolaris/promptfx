@@ -31,8 +31,6 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.openai.jsonMapper
-import tri.ai.pips.AiTask
-import tri.ai.pips.aitasklist
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
@@ -251,8 +249,8 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
         filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
     }
 
-    override fun plan() =
-        aitasklist(model.calculateEmbeddings().plan as List<AiTask<String>>)
+    override fun plan() = model
+        .calculateEmbeddings()
         .aitask("clustering") {
             val t0 = System.currentTimeMillis()
             val chunks = model.chunkListModel.filteredChunkList.toList().take(maxChunksToCluster.value)
@@ -277,12 +275,13 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                     info<TextClusterView>("  $msg: %.2f%%".format(pct * 100))
                 }
             )
-            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.output(hierarchy))
+            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.listSingleOutput(hierarchy))
         }
         .aitask("formatting-results") {
-            runLater { resultClusters.setAll(it) }
-            val ft = FormattedText(it.map { printCluster(it, "\n") }.flatten())
-            FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.output("")), listOf(ft))
+            val list = it.content() as List<EmbeddingCluster>
+            runLater { resultClusters.setAll(list) }
+            val ft = FormattedText(list.map { printCluster(it, "\n") }.flatten())
+            FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.text("")), listOf(ft))
         }.planner
 
     //region PRETTY PRINT

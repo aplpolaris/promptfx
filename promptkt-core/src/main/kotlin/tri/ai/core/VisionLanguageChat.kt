@@ -36,7 +36,7 @@ interface VisionLanguageChat {
         tokens: Int? = 1000,
         stop: List<String>? = null,
         requestJson: Boolean? = null
-    ): AiPromptTrace<TextChatMessage>
+    ): AiPromptTrace
 
 }
 

@@ -30,7 +30,7 @@ import tri.ai.pips.asPipelineResult
 class ChatViewBasic :
     ChatView("Chat", "Testing AI Assistant chat.", listOf(MChatRole.User, MChatRole.Assistant), showInput = false) {
 
-    override suspend fun processUserInput(): AiPipelineResult<MultimodalChatMessage> {
+    override suspend fun processUserInput(): AiPipelineResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)

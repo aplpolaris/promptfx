@@ -41,11 +41,11 @@ class AiPromptRunConfig(
      * @param chat the chat model
      * @return trace of the execution
      */
-    suspend fun execute(chat: TextChat): AiPromptTrace<String> {
+    suspend fun execute(chat: TextChat): AiPromptTrace {
         modelInfo.modelId = chat.modelId
         val promptText = promptInfo.filled()
         val result = chat.chat(promptText, modelInfo)
-        return result.copy(promptInfo = promptInfo).mapOutput { it.content!! }
+        return result.copy(promptInfo = promptInfo).mapOutput { AiOutput(text = it.message!!.content!!) }
     }
 
     /**

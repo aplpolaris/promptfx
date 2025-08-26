@@ -125,7 +125,7 @@ class PromptResultArea : Fragment("Prompt Result Area") {
 
 //region UI HELPERS
 
-fun AiPromptTraceSupport<*>.checkError(window: Window?) {
+fun AiPromptTraceSupport.checkError(window: Window?) {
     if (exec.error != null) {
         error(
             owner = window,
@@ -195,7 +195,7 @@ fun EventTarget.addtoolbar(model: PromptResultAreaModel, component: UIComponent)
 }
 
 /** Set up a context menu with a given prompt trace object. */
-fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport<*>?>, op: ContextMenu.() -> Unit = {}) {
+fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSupport?>, op: ContextMenu.() -> Unit = {}) {
     lazyContextmenu {
         val value = trace.value
         if (value != null) {

@@ -20,15 +20,16 @@
 package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import tri.ai.core.TextChatMessage
 
 /** Details of an executed prompt, including prompt configuration, model configuration, execution metadata, and output. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-class AiPromptTrace<T>(
+class AiPromptTrace(
     promptInfo: PromptInfo? = null,
     modelInfo: AiModelInfo? = null,
     execInfo: AiExecInfo = AiExecInfo(),
-    outputInfo: AiOutputInfo<T>? = null
-) : AiPromptTraceSupport<T>(promptInfo, modelInfo, execInfo, outputInfo) {
+    outputInfo: AiOutputInfo? = null
+) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo, outputInfo) {
 
     override fun toString() =
         "AiPromptTrace(promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
@@ -37,10 +38,10 @@ class AiPromptTrace<T>(
         promptInfo: PromptInfo?,
         modelInfo: AiModelInfo?,
         execInfo: AiExecInfo
-    ): AiPromptTrace<T> = AiPromptTrace(promptInfo, modelInfo, execInfo, output)
+    ): AiPromptTrace = AiPromptTrace(promptInfo, modelInfo, execInfo, output)
 
     /** Convert output using a provided function, without modifying any other parts of the response. */
-    fun <S> mapOutput(transform: (T) -> S) = AiPromptTrace<S>(
+    fun mapOutput(transform: (AiOutput) -> AiOutput) = AiPromptTrace(
         prompt,
         model,
         exec,
@@ -49,24 +50,30 @@ class AiPromptTrace<T>(
 
     companion object {
         /** Create an execution info with an error. */
-        fun <T> error(modelInfo: AiModelInfo?, message: String?, throwable: Throwable? = null, duration: Long? = null, durationTotal: Long? = null, attempts: Int? = null) =
-            AiPromptTrace<T>(null, modelInfo,
+        fun error(modelInfo: AiModelInfo?, message: String?, throwable: Throwable? = null, duration: Long? = null, durationTotal: Long? = null, attempts: Int? = null) =
+            AiPromptTrace(null, modelInfo,
                 AiExecInfo(message, throwable, responseTimeMillis = duration, responseTimeMillisTotal = durationTotal, attempts = attempts)
             )
-
         /** Task not attempted because input was invalid. */
-        fun <T> invalidRequest(modelId: String, message: String) =
-            invalidRequest<T>(AiModelInfo(modelId), message)
-
+        fun invalidRequest(modelId: String, message: String) =
+            invalidRequest(AiModelInfo(modelId), message)
         /** Task not attempted because input was invalid. */
-        fun <T> invalidRequest(modelInfo: AiModelInfo?, message: String) =
-            error<T>(modelInfo, message, IllegalArgumentException(message))
+        fun  invalidRequest(modelInfo: AiModelInfo?, message: String) =
+            error(modelInfo, message, IllegalArgumentException(message))
 
-        /** Generate trace for given output. */
-        fun <T> output(output: T) = AiPromptTrace(outputInfo = AiOutputInfo(listOf(output)))
+        /** Generate trace for single output. */
+        fun output(output: AiOutput) = AiPromptTrace(outputInfo = AiOutputInfo(listOf(output)))
 
-        /** Generate trace for given list of outputs. */
-        fun <T> output(output: List<T>) = AiPromptTrace(outputInfo = AiOutputInfo(output))
+        /** Generate trace for single output. */
+        fun output(output: String) = AiPromptTrace(outputInfo = AiOutputInfo.text(output))
+        /** Generate trace for list of outputs. */
+        fun output(output: List<String>) = AiPromptTrace(outputInfo = AiOutputInfo.text(output))
+        /** Generate trace for single output message. */
+        fun outputMessage(output: TextChatMessage) = AiPromptTrace(outputInfo = AiOutputInfo.message(output))
+
+        /** Wraps a series of outputs within a single list output object. */
+        fun outputListAsSingleResult(list: List<AiOutput>) =
+            output(AiOutput(other = list.map { it.content() }))
 
     }
 

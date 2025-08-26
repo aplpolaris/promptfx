@@ -37,7 +37,7 @@ import tri.util.ANSI_RESET
 class PromptResultAreaModel {
 
     /** The trace being represented in the result area. */
-    val traces = observableListOf<AiPromptTraceSupport<*>>()
+    val traces = observableListOf<AiPromptTraceSupport>()
 
     /** Whether there are multiple traces to display. */
     val multiTrace = traces.sizeProperty.greaterThan(1)
@@ -110,7 +110,7 @@ class PromptResultAreaModel {
     }
 
     /** Adds a trace to the result, and selects it. */
-    fun addTrace(trace: AiPromptTraceSupport<*>) {
+    fun addTrace(trace: AiPromptTraceSupport) {
         traces.add(trace)
         traceIndex.set(traces.size - 1)
     }

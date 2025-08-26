@@ -38,14 +38,12 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
         tokens: Int?,
         stop: List<String>?,
         numResponses: Int?
-    ): AiPromptTrace<String> = OpenAiChat(modelId, client).chat(
+    ): AiPromptTrace = OpenAiChat(modelId, client).chat(
         listOf(TextChatMessage(MChatRole.User, text)),
         variation = variation,
         tokens = tokens ?: 1000,
         stop = stop,
         numResponses = numResponses ?: 1,
-    ).mapOutput {
-        it.content!!
-    }
+    )
 
 }

@@ -33,25 +33,29 @@ class GeminiTextCompletionTest {
 
     @Test
     @Tag("gemini")
-    fun testComplete() = runTest {
-        val res = client.complete("Translate Hello, world! into French.",
-            variation = temp(0.5),
-            tokens = 100
-        )
-        println(res)
-        assertTrue("monde" in res.firstValue.lowercase())
+    fun testComplete() {
+        runTest {
+            val res = client.complete("Translate Hello, world! into French.",
+                variation = temp(0.5),
+                tokens = 100
+            )
+            println(res)
+            assertTrue("monde" in res.firstValue.text!!.lowercase())
+        }
     }
 
     @Test
     @Tag("gemini")
-    fun testCompleteMultiple() = runTest {
-        val res = client.complete("Translate Hello, world! into French.",
-            variation = temp(0.5),
-            tokens = 100,
-            numResponses = 2
-        )
-        assertEquals(2, res.output!!.outputs.size)
-        println(res)
+    fun testCompleteMultiple() {
+        runTest {
+            val res = client.complete("Translate Hello, world! into French.",
+                variation = temp(0.5),
+                tokens = 100,
+                numResponses = 2
+            )
+            assertEquals(2, res.output!!.outputs.size)
+            println(res)
+        }
     }
 
 }

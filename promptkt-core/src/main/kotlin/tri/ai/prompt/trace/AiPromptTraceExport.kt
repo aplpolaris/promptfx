@@ -30,19 +30,19 @@ fun writeTraceDatabase(database: AiPromptTraceDatabase, file: File) {
 }
 
 /** Writes the given [AiPromptTraceDatabase] to the specified file. */
-fun writeTraceDatabase(traces: List<AiPromptTraceSupport<*>>, file: File) {
+fun writeTraceDatabase(traces: List<AiPromptTraceSupport>, file: File) {
     val writer = if (file.extension == "json") jsonWriter else yamlWriter
     writer.writeValue(file, AiPromptTraceDatabase(traces))
 }
 
 /** Writes the given [AiPromptTraceSupport] to the specified file. */
-fun writeTrace(trace: AiPromptTraceSupport<*>, file: File) {
+fun writeTrace(trace: AiPromptTraceSupport, file: File) {
     val writer = if (file.extension == "json") jsonWriter else yamlWriter
     writer.writeValue(file, trace)
 }
 
 /** Writes a list of [AiPromptTraceSupport]s to the specified file. */
-fun writeTraces(traces: List<AiPromptTraceSupport<*>>, file: File) {
+fun writeTraces(traces: List<AiPromptTraceSupport>, file: File) {
     val writer = if (file.extension == "json") jsonWriter else yamlWriter
     writer.writeValue(file, traces)
 }

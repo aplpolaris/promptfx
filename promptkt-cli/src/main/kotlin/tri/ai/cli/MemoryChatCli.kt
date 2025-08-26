@@ -93,9 +93,9 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(MChatRole.System, persona.getSystemMessage()))
         val response = chatModelInst.chat(personaMessage + contextualHistory).firstValue
-        memory.addChat(MemoryItem(response))
+        memory.addChat(MemoryItem(response.message!!))
         memory.saveMemory(interimSave = true)
-        return response
+        return response.message!!
     }
 
     //region INPUT/OUTPUT

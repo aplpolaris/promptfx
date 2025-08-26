@@ -78,9 +78,9 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
         Platform.exit()
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult<String> {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
         view.question.set(input)
-        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult<String>
+        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult
     }
 
 }

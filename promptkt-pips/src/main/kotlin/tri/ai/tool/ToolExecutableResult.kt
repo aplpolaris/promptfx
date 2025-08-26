@@ -19,19 +19,11 @@
  */
 package tri.ai.tool
 
-import kotlinx.serialization.json.JsonObject
-import tri.ai.core.MTool
-
-/** A tool that has an explicit JSON schema description. */
-abstract class JsonTool(
-    val tool: MTool
-) {
-    constructor(
-        name: String,
-        description: String,
-        jsonSchema: String
-    ) : this(MTool(name, description, jsonSchema))
-
-    abstract suspend fun run(input: JsonObject): String
-
-}
+/**
+ * Result of a tool executable execution.
+ */
+data class ToolExecutableResult(
+    val result: String,
+    val isTerminal: Boolean = false,
+    val finalResult: String? = null
+)

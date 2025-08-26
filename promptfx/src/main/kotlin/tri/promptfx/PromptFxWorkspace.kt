@@ -230,14 +230,14 @@ class PromptFxWorkspace : Workspace() {
     }
 
     /** Launches the template view with the given prompt trace. */
-    fun launchHistoryView(prompt: AiPromptTraceSupport<*>) {
+    fun launchHistoryView(prompt: AiPromptTraceSupport) {
         val view = find<PromptTraceHistoryView>()
         view.selectPromptTrace(prompt)
         workspace.dock(view)
     }
 
     /** Launches the template view with the given prompt trace. */
-    fun launchTemplateView(prompt: AiPromptTraceSupport<*>) {
+    fun launchTemplateView(prompt: AiPromptTraceSupport) {
         val view = find<PromptTemplateView>()
         view.importPromptTrace(prompt)
         workspace.dock(view)

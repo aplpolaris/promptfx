@@ -99,7 +99,7 @@ object StarshipContentConfig {
             }
             randomQuestionLists[rand.first]!!.random(rand.second)
         }
-        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue
+        return PromptFxModels.textCompletionModelDefault().complete(prompt.fill(fields)).firstValue.textContent()
     }
 
     private fun List<String>.random(n: Int) = when (n) {

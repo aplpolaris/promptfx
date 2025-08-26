@@ -20,6 +20,7 @@
 package tri.ai.pips
 
 import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
@@ -29,7 +30,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
  * A task may have an arbitrary number of inputs that must be calculated prior to the task being executable.
  * The types of these inputs are not specified.
  */
-abstract class AiTask<T>(
+abstract class AiTask(
     val id: String,
     val description: String? = null,
     val dependencies: Set<String> = setOf()
@@ -38,19 +39,19 @@ abstract class AiTask<T>(
      * A task that can be executed, using a table of input results indexed by key.
      * Input types are not specified.
      */
-    abstract suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T>
+    abstract suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport
 
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
-    fun monitor(callback: (List<T>) -> Unit): AiTask<T> = object : AiTask<T>(id) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
+    fun monitor(callback: (List<AiOutput>) -> Unit): AiTask = object : AiTask(id) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
             val res = this@AiTask.execute(inputs, monitor)
             res.output?.outputs?.let { callback(it) }
             return res
         }
     }
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
-    fun monitorTrace(callback: (AiPromptTraceSupport<T>) -> Unit): AiTask<T> = object : AiTask<T>(id) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor): AiPromptTraceSupport<T> {
+    fun monitorTrace(callback: (AiPromptTraceSupport) -> Unit): AiTask = object : AiTask(id) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
             val res = this@AiTask.execute(inputs, monitor)
             callback(res)
             return res
@@ -59,33 +60,33 @@ abstract class AiTask<T>(
 
     companion object {
         /** Creates a task. */
-        fun <T> task(id: String, description: String? = null, op: suspend () -> T): AiTask<T> =
+        fun <T : Any> task(id: String, description: String? = null, op: suspend () -> T): AiTask =
             aitask(id, description) {
                 val t0 = System.currentTimeMillis()
                 val res = op()
-                if (res is AiPromptTraceSupport<*>) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
-                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
+                if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
+                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res))
             }
 
         /** Creates a task. */
-        fun <T> aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport<T>): AiTask<T> =
-            object: AiTask<T>(id, description) {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) = op()
+        fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): AiTask =
+            object: AiTask(id, description) {
+                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
             }
 
         /** Creates a task that depends on a provided list of tasks. */
-        fun <T> List<AiTask<*>>.task(id: String, description: String? = null, op: suspend (Map<String, AiPromptTraceSupport<*>>) -> T): AiTask<T> =
+        fun <T : Any> List<AiTask>.task(id: String, description: String? = null, op: suspend (Map<String, AiPromptTraceSupport>) -> T): AiTask =
             aitask(id, description) {
                 val t0 = System.currentTimeMillis()
                 val res = op(it)
-                if (res is AiPromptTraceSupport<*>) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
-                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo(listOf(res)))
+                if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
+                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res))
             }
 
         /** Creates a task that depends on a provided list of tasks. */
-        fun <T> List<AiTask<*>>.aitask(id: String, description: String? = null, op: suspend (Map<String, AiPromptTraceSupport<*>>) -> AiPromptTraceSupport<T>): AiTask<T> =
-            object : AiTask<T>(id, description, map { it.id }.toSet()) {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
+        fun List<AiTask>.aitask(id: String, description: String? = null, op: suspend (Map<String, AiPromptTraceSupport>) -> AiPromptTraceSupport): AiTask =
+            object : AiTask(id, description, map { it.id }.toSet()) {
+                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
                     op(inputs)
             }
     }

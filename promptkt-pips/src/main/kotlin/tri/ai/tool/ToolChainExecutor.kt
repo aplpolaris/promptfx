@@ -20,23 +20,26 @@
 package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextCompletion
+import tri.ai.core.TextChat
+import tri.ai.core.TextChatMessage
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
-import tri.ai.prompt.template
 import tri.util.*
 
 val PROMPTS = PromptLibrary.readFromResourceDirectory<ToolChainExecutor>()
 
 /** Executes a series of tools using planning operations. */
-class ToolChainExecutor(val completionEngine: TextCompletion) {
+class ToolChainExecutor(val chatEngine: TextChat) {
 
     val logPrompts = false
     val iterationLimit = 5
     val completionTokens = 500
 
     /** Answers a question while leveraging a series of tools to get to the answer. */
-    fun executeChain(question: String, tools: List<Tool>): String {
+    fun executeChain(question: String, tools: List<Executable>): String {
         info<ToolChainExecutor>("User Question: $ANSI_YELLOW$question$ANSI_RESET")
 
         val templateForQuestion = PROMPTS.get("tools/chain-executor")!!.fill(
@@ -48,7 +51,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
 
         return runBlocking {
             val scratchpad = ToolScratchpad()
-            var result: ToolResult? = null
+            var result: ToolExecutableResult? = null
             var iterations = 0
             while (result?.isTerminal != true && iterations++ < iterationLimit) {
                 result = runExecChain(templateForQuestion, tools, scratchpad)
@@ -58,13 +61,13 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     }
 
     /** Runs a single step of an execution chain. */
-    private suspend fun runExecChain(promptTemplate: String, tools: List<Tool>, scratchpad: ToolScratchpad): ToolResult {
+    private suspend fun runExecChain(promptTemplate: String, tools: List<Executable>, scratchpad: ToolScratchpad): ToolExecutableResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = listOf("Observation: "), tokens = completionTokens)
-            .firstValue.trim()
+        val textCompletion = chatEngine.chat(listOf(TextChatMessage.user(prompt)), stop = listOf("Observation: "), tokens = completionTokens)
+            .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
         scratchpad.steps.add(textCompletion)
@@ -75,7 +78,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             .associate { it[0].trim() to it[1].trim() }
         if ("Final Answer:" in textCompletion) {
             val answer = textCompletion.substringAfter("Final Answer:").trim()
-            return ToolResult(mapOf(), isTerminal = true, finalResult = answer)
+            return ToolExecutableResult("", isTerminal = true, finalResult = answer)
         }
 
         val toolName = responseOp["Action"]?.trim()
@@ -87,13 +90,20 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             val fallback = "Tool input missing or malformed."
             info<ToolChainExecutor>("Result: $ANSI_RED$fallback$ANSI_RESET")
             scratchpad.data[tool.name + " Result"] = fallback
-            return ToolResult(mapOf())
+            return ToolExecutableResult("", false, fallback)
         }
 
-        val toolResult = tool.run(mapOf(TOOL_DICT_INPUT to toolInput))
-        info<ToolChainExecutor>("Result: $ANSI_CYAN${toolResult.result[TOOL_DICT_RESULT]}$ANSI_RESET")
-        scratchpad.data[tool.name + " Result"] = toolResult.result[TOOL_DICT_RESULT] ?: toolResult.result.toString()
-        return toolResult
+        // Create input JsonNode for the Executable
+        val context = ExecContext()
+        val inputJson = MAPPER.createObjectNode().put("input", toolInput)
+        val executionResult = tool.execute(inputJson, context)
+        val resultText = executionResult.get("result")?.asText() ?: ""
+        val isTerminal = executionResult.get("isTerminal")?.asBoolean() ?: false
+        val finalResult = executionResult.get("finalResult")?.asText()
+        
+        info<ToolChainExecutor>("Result: $ANSI_CYAN$resultText$ANSI_RESET")
+        scratchpad.data[tool.name + " Result"] = resultText
+        return ToolExecutableResult(resultText, isTerminal, finalResult)
     }
 
 }

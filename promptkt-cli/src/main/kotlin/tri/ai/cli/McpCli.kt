@@ -228,8 +228,9 @@ class McpCli : CliktCommand(
                         echo("Model returned an empty response.")
                     } else {
                         completed.values!!.forEach { message ->
-                            echo("Role: ${message.role}")
-                            message.content?.forEach { part ->
+                            val mm = message.multimodalMessage!!
+                            echo("Role: ${mm.role}")
+                            mm.content?.forEach { part ->
                                 when (part.partType) {
                                     tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
                                     else -> echo("${part.partType}: ${part.text ?: part}")

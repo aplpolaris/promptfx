@@ -21,7 +21,7 @@ package tri.promptfx.`fun`
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.task
+import tri.ai.pips.tasktext
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.AudioPanel
@@ -46,16 +46,16 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
         addInputTextArea(input)
     }
 
-    override fun plan() = task("audio-transcribe") {
+    override fun plan() = tasktext("audio-transcribe") {
         userInput()
-    }.task("weather") {
-        WeatherAiTaskPlanner(chatEngine, common, embeddingModel, it).execute(progress)
+    }.aitask("weather") {
+        WeatherAiTaskPlanner(chatEngine, common, embeddingModel, it.textContent()).execute(progress).finalResult
     }.planner
 
     private suspend fun userInput(): String {
         var text = input.get()
         audio.file.value?.let {
-            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).firstValue!!
+            text = controller.openAiPlugin.client.quickTranscribe(audioFile = it).firstValue.textContent()
             input.set(text)
         }
         return text

@@ -24,7 +24,7 @@ import javafx.scene.image.Image
 import tornadofx.*
 import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.pips.task
+import tri.ai.pips.tasktext
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
@@ -68,7 +68,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
         }
     }
 
-    override fun plan() = task("Describe Image") {
+    override fun plan() = tasktext("Describe Image") {
         describeImage(prompt.text.value)
     }.planner
 
@@ -76,7 +76,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
         this.image.value = image
     }
 
-    private suspend fun describeImage(prompt: String): String? {
+    private suspend fun describeImage(prompt: String): String {
         val res = model.value.chat(
             listOf(
                 VisionLanguageChatMessage(MChatRole.User, prompt, URI.create(image.value.imageUri()))
@@ -86,7 +86,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
             null,
             false
         )
-        return res.firstValue.content!!
+        return res.firstValue.textContent()
     }
 
 }

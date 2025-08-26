@@ -19,23 +19,72 @@
  */
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.TextChatMessage
 
 /** Text inference output info. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class AiOutputInfo<T>(
-    var outputs: List<T>
+data class AiOutputInfo(
+    var outputs: List<AiOutput>
 ) {
     /** Convert output using a provided function. */
-    fun <S> map(transform: (T) -> S) =
+    fun map(transform: (AiOutput) -> AiOutput) =
         AiOutputInfo(outputs.map(transform))
 
     /** Convert list of output to a single output. */
-    fun <S> mapList(transform: (List<T>) -> S) =
+    fun reduce(transform: (List<AiOutput>) -> AiOutput) =
         AiOutputInfo(listOf(transform(outputs)))
 
     companion object {
-        /** Create output info with a single output. */
-        fun <T> output(output: T) = AiOutputInfo(listOf(output))
+        fun output(output: AiOutput) = AiOutputInfo(listOf(output))
+        fun output(outputs: List<AiOutput>) = AiOutputInfo(outputs)
+
+        fun text(text: String) = output(AiOutput(text = text))
+        fun text(texts: List<String>) = output(texts.map { AiOutput(text = it) })
+
+        fun message(message: TextChatMessage) = output(AiOutput(message = message))
+        fun messages(messages: List<TextChatMessage>) = output(messages.map { AiOutput(message = it) })
+
+        fun multimodalMessage(message: MultimodalChatMessage) = output(AiOutput(multimodalMessage = message))
+        fun multimodalMessages(messages: List<MultimodalChatMessage>) = output(messages.map { AiOutput(multimodalMessage = it) })
+
+        /** Return an output where the entire list is stored as a single output. */
+        fun <T: Any> listSingleOutput(items: List<T>) = output(AiOutput(other = items))
+
+        /** Accepts any object type, attempting to automatically populate content based on object type. */
+        fun other(content: Any) = when (content) {
+            is AiOutput -> output(content)
+            is String -> text(content)
+            is TextChatMessage -> message(content)
+            is MultimodalChatMessage -> multimodalMessage(content)
+            is List<*> -> error("use `listSingleOutput` for lists, or map to multiple outputs")
+            else -> AiOutputInfo(listOf(AiOutput(other = content)))
+        }
+
     }
+}
+
+/** Encapsulates outputs from an AI processing step. */
+class AiOutput(
+    val text: String? = null,
+    val message: TextChatMessage? = null,
+    val multimodalMessage: MultimodalChatMessage? = null,
+    @get:JsonIgnore
+    val other: Any? = null
+) {
+
+    override fun toString(): String = textContent(ifNone = other?.toString() ?: "(no output)")
+
+    /** Finds text content where possible in the output. */
+    fun textContent(ifNone: String? = null): String = text
+        ?: message?.content
+        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
+        ?: other?.toString()
+        ?: ifNone
+        ?: error("No text content available in output: $this")
+
+    /** Gets whichever message content is provided. */
+    fun content(): Any = message ?: multimodalMessage ?: text ?: other ?: error("No content available in output: $this")
 }

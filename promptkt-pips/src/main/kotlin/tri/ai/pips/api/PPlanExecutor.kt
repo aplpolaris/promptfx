@@ -33,6 +33,7 @@ import tri.ai.pips.PrintMonitor
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.ExecutableRegistry
 import tri.ai.pips.core.MAPPER
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
@@ -60,15 +61,15 @@ class PPlanPlanner(
     private val registry: ExecutableRegistry
 ) : AiPlanner {
 
-    override fun plan(): List<AiTask<*>> {
+    override fun plan(): List<AiTask> {
         return plan.steps.map { step ->
             val exec = registry.get(step.tool)
                 ?: throw IllegalArgumentException("No executable found for ${step.tool}")
-            object : AiTask<Any?>(step.tool, description = null, dependencies = setOf()) {
+            object : AiTask(step.tool, description = null, dependencies = setOf()) {
                 override suspend fun execute(
-                    inputs: Map<String, AiPromptTraceSupport<*>>,
+                    inputs: Map<String, AiPromptTraceSupport>,
                     monitor: AiTaskMonitor
-                ): AiPromptTraceSupport<Any?> {
+                ): AiPromptTraceSupport {
                     info<PPlanExecutor>("$ANSI_GRAY  context vars:$ANSI_RESET")
                     context.vars.forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
 
@@ -83,7 +84,7 @@ class PPlanPlanner(
                     MAPPER.convertValue<Map<String, Any?>>(result)
                         .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
 
-                    return AiPromptTrace.output(result)
+                    return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
                 }
             }
         }

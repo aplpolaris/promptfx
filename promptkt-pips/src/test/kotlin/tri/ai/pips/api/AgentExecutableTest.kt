@@ -26,6 +26,8 @@ import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
 import tri.ai.pips.core.MAPPER
 import com.fasterxml.jackson.databind.JsonNode
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.fail
 
 class AgentExecutableTest {
 
@@ -66,25 +68,27 @@ class AgentExecutableTest {
     }
 
     @Test
-    fun testAgentExecutableContextValidation() = runTest {
-        val agent = AgentExecutable(
-            name = "TestAgent",
-            description = "A test agent",
-            version = "1.0.0",
-            inputSchema = null,
-            outputSchema = null,
-            tools = listOf(calculatorExecutable)
-        )
-        
-        // Test with empty context (should throw exception)
-        val context = ExecContext()
-        val input = MAPPER.createObjectNode().put("request", "What is 2+2?")
-        
-        try {
-            agent.execute(input, context)
-            org.junit.jupiter.api.Assertions.fail("Expected IllegalArgumentException")
-        } catch (e: IllegalArgumentException) {
-            org.junit.jupiter.api.Assertions.assertTrue(e.message!!.contains("TextCompletion"))
+    fun testAgentExecutableContextValidation() {
+        runTest {
+            val agent = AgentExecutable(
+                name = "TestAgent",
+                description = "A test agent",
+                version = "1.0.0",
+                inputSchema = null,
+                outputSchema = null,
+                tools = listOf(calculatorExecutable)
+            )
+
+            // Test with empty context (should throw exception)
+            val context = ExecContext()
+            val input = MAPPER.createObjectNode().put("request", "What is 2+2?")
+
+            try {
+                agent.execute(input, context)
+                fail("Expected IllegalArgumentException")
+            } catch (e: IllegalArgumentException) {
+                assertTrue(e.message!!.contains("TextCompletion"))
+            }
         }
     }
 }

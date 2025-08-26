@@ -32,29 +32,34 @@ class OpenAiMultimodalChatTest {
 
     @Test
     @Tag("openai")
-    fun testChat_Simple() =
+    fun testChat_Simple() {
         chat.testChat_Simple()
+    }
 
     @Test
     @Tag("openai")
-    fun testChat_Multiple() =
+    fun testChat_Multiple() {
         chat.testChat_Multiple {
             assertEquals(2, it.size)
         }
+    }
 
     @Test
     @Tag("openai")
-    fun testChat_Roles() =
+    fun testChat_Roles() {
         chat.testChat_Roles()
+    }
 
     @Test
     @Tag("openai")
-    fun testChat_Image() =
+    fun testChat_Image() {
         chatVision.testChat_Image()
+    }
 
     @Test
     @Tag("openai")
-    fun testChat_Tools() =
+    fun testChat_Tools() {
         chat.testChat_Tools()
+    }
 
 }

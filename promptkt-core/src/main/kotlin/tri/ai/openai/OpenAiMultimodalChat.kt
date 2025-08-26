@@ -33,10 +33,9 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters
-    ): AiPromptTrace<MultimodalChatMessage> {
+    ): AiPromptTrace {
         val request = chatCompletionRequest(modelId, messages, parameters)
-        val response = client.chat(request)
-        return response.mapOutput { it.toMultimodalChatMessage() }
+        return client.chat(request, multimodal = true)
     }
 
     companion object {
@@ -60,19 +59,12 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             tools = parameters.tools?.tools?.map { it.openAi() }
         )
 
-        private fun ChatMessage.toMultimodalChatMessage() = MultimodalChatMessage(
-            role = role.fromOpenAiRole(),
-            content = messageContent?.fromOpenAiContent(),
-            toolCalls = toolCalls?.map { (it as ToolCall.Function).fromOpenAi() },
-            toolCallId = toolCallId?.id
-        )
-
         private fun MResponseFormat.openAi() = when (this) {
             MResponseFormat.JSON -> ChatResponseFormat.JsonObject
             else -> null
         }
 
-        private fun MultimodalChatMessage.openAi(): ChatMessage {
+        fun MultimodalChatMessage.openAi(): ChatMessage {
             return ChatMessageBuilder().apply {
                 role = this@openAi.role.openAi()
                 content {
@@ -92,35 +84,17 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
             }.build()
         }
 
-        private fun Content.fromOpenAiContent(): List<MChatMessagePart> {
-            return when (this) {
-                is TextContent -> listOf(MChatMessagePart(text = content))
-                is ListContent -> content.map {
-                    MChatMessagePart(
-                        partType = if (it is TextPart) MPartType.TEXT else if (it is ImagePart) MPartType.IMAGE else throw IllegalStateException(),
-                        text = (it as? TextPart)?.text,
-                        inlineData = (it as? ImagePart)?.imageUrl?.url
-                    )
-                }
-            }
-        }
-
         private fun MChatRole.openAi() = when (this) {
             MChatRole.User -> ChatRole.User
             MChatRole.System -> ChatRole.System
             MChatRole.Assistant -> ChatRole.Assistant
             MChatRole.Tool -> ChatRole.Tool
+            MChatRole.None -> ChatRole.User // default to user if no role specified
         }
 
         private fun MToolCall.openAi() = ToolCall.Function(
             id = ToolId(id),
             function = FunctionCall(name, argumentsAsJson)
-        )
-
-        private fun ToolCall.Function.fromOpenAi() = MToolCall(
-            id = id.id,
-            name = function.name,
-            argumentsAsJson = function.arguments
         )
 
         private fun MToolChoice.openAi() = when (this) {

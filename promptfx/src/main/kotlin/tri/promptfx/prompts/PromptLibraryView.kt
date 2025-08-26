@@ -128,5 +128,5 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
         filteredPromptEntries.setAll(promptEntries.filter { promptIdFilter(it.id) })
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo<String>()
+    override suspend fun processUserInput() = AiPipelineResult.todo()
 }
