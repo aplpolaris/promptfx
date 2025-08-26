@@ -26,13 +26,9 @@ import tri.ai.pips.core.Executable
 import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
-import tri.ai.prompt.template
 import tri.util.*
 
 val PROMPTS = PromptLibrary.readFromResourceDirectory<ToolChainExecutor>()
-
-/** Result of an executable execution for tool chain purposes. */
-data class ExecutableResult(val result: String, val isTerminal: Boolean = false, val finalResult: String? = null)
 
 /** Executes a series of tools using planning operations. */
 class ToolChainExecutor(val completionEngine: TextCompletion) {
@@ -54,7 +50,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
 
         return runBlocking {
             val scratchpad = ToolScratchpad()
-            var result: ExecutableResult? = null
+            var result: ToolExecutableResult? = null
             var iterations = 0
             while (result?.isTerminal != true && iterations++ < iterationLimit) {
                 result = runExecChain(templateForQuestion, tools, scratchpad)
@@ -64,7 +60,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
     }
 
     /** Runs a single step of an execution chain. */
-    private suspend fun runExecChain(promptTemplate: String, tools: List<Executable>, scratchpad: ToolScratchpad): ExecutableResult {
+    private suspend fun runExecChain(promptTemplate: String, tools: List<Executable>, scratchpad: ToolScratchpad): ToolExecutableResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
@@ -81,7 +77,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             .associate { it[0].trim() to it[1].trim() }
         if ("Final Answer:" in textCompletion) {
             val answer = textCompletion.substringAfter("Final Answer:").trim()
-            return ExecutableResult("", isTerminal = true, finalResult = answer)
+            return ToolExecutableResult("", isTerminal = true, finalResult = answer)
         }
 
         val toolName = responseOp["Action"]?.trim()
@@ -93,7 +89,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
             val fallback = "Tool input missing or malformed."
             info<ToolChainExecutor>("Result: $ANSI_RED$fallback$ANSI_RESET")
             scratchpad.data[tool.name + " Result"] = fallback
-            return ExecutableResult("", false, fallback)
+            return ToolExecutableResult("", false, fallback)
         }
 
         // Create input JsonNode for the Executable
@@ -106,7 +102,7 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         
         info<ToolChainExecutor>("Result: $ANSI_CYAN$resultText$ANSI_RESET")
         scratchpad.data[tool.name + " Result"] = resultText
-        return ExecutableResult(resultText, isTerminal, finalResult)
+        return ToolExecutableResult(resultText, isTerminal, finalResult)
     }
 
 }

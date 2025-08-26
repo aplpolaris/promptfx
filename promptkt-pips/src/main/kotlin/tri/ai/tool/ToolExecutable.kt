@@ -1,25 +1,9 @@
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.ai.pips.core
+package tri.ai.tool
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.tool.ToolExecutableResult
 
 /**
  * Base class for tool-like executables that work with simple string input/output.
@@ -42,10 +26,10 @@ abstract class ToolExecutable(
             input.has("text") -> input.get("text").asText()
             else -> input.toString()
         }
-        
+
         // Execute the tool logic
         val result = run(inputText, context)
-        
+
         // Convert result back to JsonNode
         return context.mapper.createObjectNode().apply {
             put("result", result.result)
@@ -60,12 +44,3 @@ abstract class ToolExecutable(
      */
     abstract suspend fun run(input: String, context: ExecContext): ToolExecutableResult
 }
-
-/**
- * Result of a tool executable execution.
- */
-data class ToolExecutableResult(
-    val result: String, 
-    val isTerminal: Boolean = false, 
-    val finalResult: String? = null
-)

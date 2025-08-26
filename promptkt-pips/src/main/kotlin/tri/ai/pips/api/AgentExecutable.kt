@@ -22,7 +22,6 @@ package tri.ai.pips.api
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
 import tri.ai.tool.wf.WExecutorChat
 import tri.ai.tool.wf.WorkflowExecutor
 import tri.ai.tool.wf.WorkflowSolveStep

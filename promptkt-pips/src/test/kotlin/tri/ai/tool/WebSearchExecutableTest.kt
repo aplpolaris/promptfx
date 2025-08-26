@@ -20,9 +20,14 @@
 package tri.ai.tool
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import tri.ai.core.CompletionBuilder
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.MAPPER
 
@@ -44,31 +49,31 @@ class WebSearchExecutableTest {
         val searchTool = WebSearchExecutable()
         
         // Check that input schema is parsed correctly
-        val inputSchema = searchTool.inputSchema!!
+        val inputSchema = searchTool.inputSchema
         assertEquals("object", inputSchema.get("type").asText())
         assertNotNull(inputSchema.get("properties"))
         assertNotNull(inputSchema.get("properties").get("query"))
         
         // Check that output schema exists
-        val outputSchema = searchTool.outputSchema!!
+        val outputSchema = searchTool.outputSchema
         assertEquals("object", outputSchema.get("type").asText())
         assertNotNull(outputSchema.get("properties").get("result"))
     }
 
     @Test
-    fun testWebSearchExecutableExecution() = runTest {
-        val searchTool = WebSearchExecutable()
-        val context = ExecContext()
-        
-        // Test with simple search query - we can't easily test actual web search without network
-        // but we can test that the interface works correctly
-        val inputJson = MAPPER.createObjectNode().put("query", "test query")
-        val result = searchTool.execute(inputJson, context)
-        
-        // Should return a JSON result with query and results (even if search fails)
-        assertNotNull(result.get("result"))
-        
-        // Clean up
-        searchTool.close()
+    fun testWebSearchExecutableExecution() {
+        runTest {
+            val searchTool = WebSearchExecutable()
+            val context = ExecContext()
+
+            val inputJson = MAPPER.createObjectNode().put("query", "test query").put("max_results", 3)
+            val result = searchTool.execute(inputJson, context)
+            println(result.get("result").asText())
+
+            // Should return a JSON result with query and results (even if search fails or no network connection)
+            assertNotNull(result.get("result"))
+
+            searchTool.close()
+        }
     }
 }

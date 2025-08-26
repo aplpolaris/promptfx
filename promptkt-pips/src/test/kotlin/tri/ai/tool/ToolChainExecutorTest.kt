@@ -27,8 +27,8 @@ import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.ToolExecutable
-import tri.ai.pips.core.ToolExecutableResult
+import tri.ai.tool.ToolExecutable
+import tri.ai.tool.ToolExecutableResult
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 

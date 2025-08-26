@@ -27,7 +27,6 @@ import io.ktor.http.*
 import kotlinx.serialization.json.*
 import tri.ai.core.CompletionBuilder
 import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.JsonToolExecutable
 import java.net.URLDecoder
 
 /**
@@ -156,4 +155,11 @@ class WebSearchExecutable : JsonToolExecutable(
     }
 }
 
-// SearchResult is already defined in WebSearchTool.kt
+/**
+ * Represents a single search result.
+ */
+data class SearchResult(
+    val title: String,
+    val url: String,
+    val description: String
+)
