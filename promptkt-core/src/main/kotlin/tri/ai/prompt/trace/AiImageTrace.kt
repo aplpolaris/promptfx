@@ -27,8 +27,8 @@ class AiImageTrace(
     promptInfo: PromptInfo?,
     modelInfo: AiModelInfo?,
     execInfo: AiExecInfo = AiExecInfo(),
-    outputInfo: AiOutputInfo<String>? = AiOutputInfo(listOf())
-) : AiPromptTraceSupport<String>(promptInfo, modelInfo, execInfo, outputInfo) {
+    outputInfo: AiOutputInfo? = AiOutputInfo(listOf())
+) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo, outputInfo) {
 
     override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
 

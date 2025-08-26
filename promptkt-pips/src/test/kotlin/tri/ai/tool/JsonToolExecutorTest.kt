@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 
 @Tag("openai")
@@ -33,7 +34,7 @@ class JsonToolExecutorTest {
     @Test
     fun testExecute() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
-        val exec = JsonToolExecutor(OpenAiAdapter.INSTANCE, GPT35_TURBO, SAMPLE_EXECUTABLES)
+        val exec = JsonToolExecutor(OpenAiMultimodalChat(GPT35_TURBO, OpenAiAdapter.INSTANCE),SAMPLE_EXECUTABLES)
 
         runBlocking {
             exec.execute("Multiply 21 times 2 and then convert it to Roman numerals.")

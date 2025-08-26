@@ -32,30 +32,35 @@ class GeminiMultimodalChatTest {
 
     @Test
     @Tag("gemini")
-    fun testChat_Simple() =
+    fun testChat_Simple() {
         chat.testChat_Simple()
+    }
 
     @Test
     @Tag("gemini")
-    fun testChat_Multiple() =
+    fun testChat_Multiple() {
         chat.testChat_Multiple {
             assertEquals(1, it.size) { "Gemini only supports a single response" }
         }
+    }
 
     @Test
     @Tag("gemini")
-    fun testChat_Roles() =
+    fun testChat_Roles() {
         chat.testChat_Roles()
+    }
 
     @Test
     @Tag("gemini")
-    fun testChat_Image() =
+    fun testChat_Image() {
         chat.testChat_Image()
+    }
 
     @Test
     @Tag("gemini")
-    fun testChat_Tools() =
+    fun testChat_Tools() {
         // note - Gemini does not always get this test right (sometimes refuses to use the tool)
         chat.testChat_Tools()
+    }
 
 }

@@ -32,9 +32,9 @@ class AiPromptTraceDatabase() {
     var prompts = mutableSetOf<PromptInfo>()
     var models = mutableSetOf<AiModelInfo>()
     var execs = mutableSetOf<AiExecInfo>()
-    var outputs = mutableSetOf<AiOutputInfo<*>>()
+    var outputs = mutableSetOf<AiOutputInfo>()
 
-    constructor(traces: Iterable<AiPromptTraceSupport<*>>) : this() {
+    constructor(traces: Iterable<AiPromptTraceSupport>) : this() {
         addTraces(traces)
     }
 
@@ -50,12 +50,12 @@ class AiPromptTraceDatabase() {
     )
 
     /** Add all provided traces to the database. */
-    fun addTraces(result: Iterable<AiPromptTraceSupport<*>>) {
+    fun addTraces(result: Iterable<AiPromptTraceSupport>) {
         result.forEach { addTrace(it) }
     }
 
     /** Adds the trace to the database, updating object references as needed and returning the object added. */
-    fun addTrace(trace: AiPromptTraceSupport<*>): AiPromptTraceId {
+    fun addTrace(trace: AiPromptTraceSupport): AiPromptTraceId {
         val prompt = addOrGet(prompts, trace.prompt)
         val model = addOrGet(models, trace.model)
         val exec = addOrGet(execs, trace.exec)

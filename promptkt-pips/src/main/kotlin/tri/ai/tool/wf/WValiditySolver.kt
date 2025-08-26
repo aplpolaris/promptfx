@@ -54,7 +54,7 @@ class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, 
         val response = completionEngine.complete(prompt, tokens = maxTokens, variation = temp(temp))
 
         // parse the response and use it to build a set of subtasks to solve
-        val validity = parseValidity(response.firstValue)
+        val validity = parseValidity(response.firstValue.textContent())
 
         // return a result object
         val t1 = System.currentTimeMillis()

@@ -74,8 +74,8 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
             while (input != "bye") {
                 chatHistory.add(TextChatMessage(MChatRole.User, input))
                 val response = chatModelInst.chat(chatHistory)
-                val message = response.firstValue
-                println(message.content)
+                val message = response.firstValue.message!!
+                println(message)
                 chatHistory.add(TextChatMessage(MChatRole.Assistant, message.content))
                 while (chatHistory.size > historySize) {
                     chatHistory.removeAt(0)

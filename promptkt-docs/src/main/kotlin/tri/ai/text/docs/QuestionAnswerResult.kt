@@ -30,7 +30,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 data class QuestionAnswerResult(
     val query: SemanticTextQuery,
     val matches: List<EmbeddingMatch>,
-    val trace: AiPromptTrace<String>,
+    val trace: AiPromptTrace,
     val responseEmbeddings: List<List<Double>>
 ) {
     override fun toString() = trace.output?.outputs?.joinToString() ?: "No response. Question: ${query.query}"

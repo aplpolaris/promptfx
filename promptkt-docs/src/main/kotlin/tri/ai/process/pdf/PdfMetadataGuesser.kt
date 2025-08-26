@@ -47,7 +47,7 @@ object PdfMetadataGuesser {
                 .temperature(0.2)
                 .template(PROMPT.template())
                 .paramsInput(it.text)
-                .execute(chatEngine).firstValue.content!!
+                .execute(chatEngine).firstValue.textContent()
             val parsed = result
                 .betweenTripleTicks()
                 .betweenBraces()

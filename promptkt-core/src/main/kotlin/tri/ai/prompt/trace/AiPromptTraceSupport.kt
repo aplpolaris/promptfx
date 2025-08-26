@@ -23,11 +23,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.UUID.randomUUID
 
 /** Common elements of a prompt trace. */
-abstract class AiPromptTraceSupport<T>(
+abstract class AiPromptTraceSupport(
     var prompt: PromptInfo?,
     var model: AiModelInfo?,
     var exec: AiExecInfo,
-    var output: AiOutputInfo<T>? = null
+    var output: AiOutputInfo? = null
 ) {
 
     /** Unique identifier for this trace. */
@@ -38,16 +38,16 @@ abstract class AiPromptTraceSupport<T>(
         promptInfo: PromptInfo? = this.prompt,
         modelInfo: AiModelInfo? = this.model,
         execInfo: AiExecInfo = this.exec
-    ): AiPromptTraceSupport<T>
+    ): AiPromptTraceSupport
 
     /** Get all outputs, if present. */
     @get:JsonIgnore
-    val values: List<T>?
+    val values: List<AiOutput>?
         get() = output?.outputs
 
     /** Get the first output value, if it exists, otherwise throw [NoSuchElementException]. */
     @get:JsonIgnore
-    val firstValue: T
+    val firstValue: AiOutput
         get() = output?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
 
     /** Get error message, if present. */

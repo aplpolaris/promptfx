@@ -39,14 +39,14 @@ interface TextCompletion {
         tokens: Int? = 1000,
         stop: List<String>? = null,
         numResponses: Int? = 1
-    ): AiPromptTrace<String>
+    ): AiPromptTrace
 
 }
 
 //region ALTERNATE EXECUTIONS
 
 /** Generate a task that adds user input to a prompt. */
-suspend fun TextCompletion.promptTask(prompt: PromptDef, input: String, tokenLimit: Int, temp: Double?, stop: List<String>? = null, numResponses: Int? = null): AiPromptTrace<String> {
+suspend fun TextCompletion.promptTask(prompt: PromptDef, input: String, tokenLimit: Int, temp: Double?, stop: List<String>? = null, numResponses: Int? = null): AiPromptTrace {
     val promptInfo = PromptInfo(prompt.template!!, defaultInputParams(input))
     return promptTask(promptInfo, tokenLimit, temp, stop, numResponses)
 }
@@ -70,7 +70,7 @@ suspend fun TextCompletion.templateTask(prompt: PromptDef, fields: Map<String, A
     promptTask(PromptInfo(prompt.template!!, fields), tokenLimit, temp, null, numResponses)
 
 /** Generate a task that fills inputs into a prompt. */
-suspend fun TextCompletion.templateTask(prompt: PromptDef, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace<String> =
+suspend fun TextCompletion.templateTask(prompt: PromptDef, vararg fields: Pair<String, Any>, tokenLimit: Int, temp: Double?, numResponses: Int? = null): AiPromptTrace =
     templateTask(prompt, mapOf(*fields), tokenLimit, temp, numResponses)
 
 //endregion

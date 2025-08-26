@@ -55,7 +55,7 @@ abstract class JsonToolExecutable(
     companion object {
         private const val OUTPUT_SCHEMA = """{"type":"object","properties":{"result":{"type":"string"}}}"""
 
-        private fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
+        fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
             val jsonString = MAPPER.writeValueAsString(input)
             return Json.parseToJsonElement(jsonString) as JsonObject
         }

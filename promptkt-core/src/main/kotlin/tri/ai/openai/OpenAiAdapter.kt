@@ -75,13 +75,13 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     //region QUICK API CALLS
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiPromptTrace<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String = EMBEDDING_ADA, outputDimensionality: Int? = null, inputs: List<String>): AiPromptTrace {
         settings.checkApiKey()
         return quickEmbedding(modelId, outputDimensionality, *inputs.toTypedArray())
     }
 
     /** Runs an embedding using ADA embedding model. */
-    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace<List<List<Double>>> {
+    suspend fun quickEmbedding(modelId: String, outputDimensionality: Int? = null, vararg inputs: String): AiPromptTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -95,12 +95,12 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         return AiPromptTrace(null,
             AiModelInfo.embedding(modelId, outputDimensionality),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.output(resp.embeddings.map { it.embedding })
+            AiOutputInfo.other(resp.embeddings.map { it.embedding })
         )
     }
 
     /** Runs a quick audio transcription for a given file. */
-    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace<String> {
+    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace {
         settings.checkApiKey()
         if (!audioFile.isAudioFile())
             return AiPromptTrace.invalidRequest(modelId, "Audio file not provided.")
@@ -117,7 +117,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         return AiPromptTrace(null,
             AiModelInfo(modelId),
             AiExecInfo.durationSince(t0),
-            AiOutputInfo.output(resp.text)
+            AiOutputInfo.text(resp.text)
         )
     }
 
@@ -126,7 +126,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     //region DIRECT API CALLS
 
     /** Runs a text completion request. */
-    suspend fun completion(completionRequest: CompletionRequest): AiPromptTrace<String> {
+    suspend fun completion(completionRequest: CompletionRequest): AiPromptTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -137,16 +137,18 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             completionRequest.prompt?.let { PromptInfo(it) },
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            AiOutputInfo(resp.choices.map { it.text })
+            AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
-    /** Runs a text completion request using a chat model. */
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
-        chat(completionRequest).mapOutput { it.content ?: "(no response)" }
+        chat(completionRequest, multimodal = false).mapOutput { AiOutput(text = it.textContent(ifNone = "(no response)")) }
 
-    /** Runs a chat response. */
-    suspend fun chat(completionRequest: ChatCompletionRequest): AiPromptTrace<ChatMessage> {
+    /**
+     * Runs a chat response.
+     * If [multimodal] is true, converts to a [MultimodalChatMessage], otherwise to a [TextChatMessage].
+     */
+    suspend fun chat(completionRequest: ChatCompletionRequest, multimodal: Boolean): AiPromptTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -162,17 +164,22 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.chatCompletion(completionRequest)
         usage.increment(resp.usage)
 
+        val outputInfo = when {
+            multimodal -> AiOutputInfo.multimodalMessages(resp.choices.map { it.message.fromOpenAiMessageToMultimodal() })
+            else -> AiOutputInfo.messages(resp.choices.map { it.message.fromOpenAiMessage() })
+        }
+
         return AiPromptTrace(
             prompt?.let { PromptInfo(it) },
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            AiOutputInfo(resp.choices.map { it.message })
+            outputInfo
         )
     }
 
     /** Runs an edit request (deprecated API). */
     @Suppress("DEPRECATION")
-    suspend fun edit(request: EditsRequest): AiPromptTrace<String> {
+    suspend fun edit(request: EditsRequest): AiPromptTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -183,12 +190,12 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             request.toPromptInfo(),
             request.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo(resp.choices.map { it.text })
+            AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace<String> {
+    suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -199,12 +206,12 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             null,
             imageCreation.toModelInfo(),
             AiExecInfo.durationSince(t0),
-            AiOutputInfo(resp.map { it.url })
+            AiOutputInfo.text(resp.map { it.url })
         )
     }
 
     /** Runs a speech request. */
-    suspend fun speech(request: SpeechRequest): AiPromptTraceSupport<ByteArray> {
+    suspend fun speech(request: SpeechRequest): AiPromptTraceSupport {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -214,7 +221,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             null,
             request.toModelInfo(),
             AiExecInfo.durationSince(t0),
-            AiOutputInfo.output(resp)
+            AiOutputInfo.other(resp)
         )
     }
 
@@ -361,6 +368,33 @@ fun ChatMessage.fromOpenAiMessage(): TextChatMessage {
     }
     return TextChatMessage(role.fromOpenAiRole(), usePrompt)
 }
+
+/** Convert from OpenAI [ChatMessage] to [MultimodalChatMessage]. */
+fun ChatMessage.fromOpenAiMessageToMultimodal() = MultimodalChatMessage(
+    role = role.fromOpenAiRole(),
+    content = messageContent?.fromOpenAiContent(),
+    toolCalls = toolCalls?.map { (it as ToolCall.Function).fromOpenAi() },
+    toolCallId = toolCallId?.id
+)
+
+private fun Content.fromOpenAiContent(): List<MChatMessagePart> {
+    return when (this) {
+        is TextContent -> listOf(MChatMessagePart(text = content))
+        is ListContent -> content.map {
+            MChatMessagePart(
+                partType = if (it is TextPart) MPartType.TEXT else if (it is ImagePart) MPartType.IMAGE else throw IllegalStateException(),
+                text = (it as? TextPart)?.text,
+                inlineData = (it as? ImagePart)?.imageUrl?.url
+            )
+        }
+    }
+}
+
+private fun ToolCall.Function.fromOpenAi() = MToolCall(
+    id = id.id,
+    name = function.name,
+    argumentsAsJson = function.arguments
+)
 
 /** Convert from OpenAI [Model] to [ModelInfo]. */
 fun Model.toModelInfo(source: String): ModelInfo {

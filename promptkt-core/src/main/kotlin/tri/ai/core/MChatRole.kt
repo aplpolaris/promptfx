@@ -24,5 +24,7 @@ enum class MChatRole {
     System,
     User,
     Assistant,
-    Tool
+    Tool,
+    /** Message with no role - useful for text completions. */
+    None
 }

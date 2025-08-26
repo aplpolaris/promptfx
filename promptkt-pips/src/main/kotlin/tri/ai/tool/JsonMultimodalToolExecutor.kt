@@ -57,7 +57,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Exec
         var response = model.chat(
             messages,
             MChatParameters(tools = MChatTools(tools = chatTools))
-        ).firstValue
+        ).firstValue.multimodalMessage!!
         messages += response
         var toolCalls = response.toolCalls
 
@@ -84,10 +84,8 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Exec
                 }
             }
 
-            response = model.chat(
-                messages,
-                MChatParameters(tools = MChatTools(tools = chatTools))
-            ).firstValue
+            response = model.chat(messages, MChatParameters(tools = MChatTools(tools = chatTools)))
+                .firstValue.multimodalMessage!!
             messages += response
             toolCalls = response.toolCalls
         }
@@ -97,7 +95,7 @@ class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Exec
     }
 
     companion object {
-        private fun MToolCall.tryJson(): com.fasterxml.jackson.databind.JsonNode? = try {
+        fun MToolCall.tryJson(): com.fasterxml.jackson.databind.JsonNode? = try {
             val jsonObject = Json.parseToJsonElement(argumentsAsJson) as? JsonObject
             // Convert kotlinx JsonObject to Jackson JsonNode
             jsonObject?.let {

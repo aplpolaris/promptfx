@@ -33,7 +33,7 @@ class OpenAiEmbeddingModel(override val modelId: String = EMBEDDING_ADA, val cli
     override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
         val uncached = text.filter { (it to outputDimensionality) !in embeddingCache }
         val uncachedCalc = uncached.chunked(MAX_EMBEDDING_BATCH_SIZE).flatMap {
-            client.quickEmbedding(modelId, outputDimensionality, it).firstValue
+            client.quickEmbedding(modelId, outputDimensionality, it).firstValue.other as List<List<Double>>
         }
         uncachedCalc.forEachIndexed { index, embedding -> embeddingCache[uncached[index] to outputDimensionality] = embedding }
         return text.map { embeddingCache[it to outputDimensionality]!! }

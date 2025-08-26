@@ -40,8 +40,8 @@ class AiPromptTraceTest {
 
     @Test
     fun testSerializeTrace() {
-        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiExecInfo(), AiOutputInfo.output("test output"))))
-        println(jsonWriter.writeValueAsString(AiPromptTrace<String>(promptInfo, modelInfo, AiExecInfo.error("test error"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiExecInfo(), AiOutputInfo.text("test output"))))
+        println(jsonWriter.writeValueAsString(AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("test error"))))
     }
 
 }

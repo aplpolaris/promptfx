@@ -20,7 +20,8 @@
 package tri.ai.tool
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextCompletion
+import tri.ai.core.TextChat
+import tri.ai.core.TextChatMessage
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
 import tri.ai.pips.core.MAPPER
@@ -31,7 +32,7 @@ import tri.util.*
 val PROMPTS = PromptLibrary.readFromResourceDirectory<ToolChainExecutor>()
 
 /** Executes a series of tools using planning operations. */
-class ToolChainExecutor(val completionEngine: TextCompletion) {
+class ToolChainExecutor(val chatEngine: TextChat) {
 
     val logPrompts = false
     val iterationLimit = 5
@@ -65,8 +66,8 @@ class ToolChainExecutor(val completionEngine: TextCompletion) {
         if (logPrompts)
             prompt.lines().forEach { info<ToolChainExecutor>("$ANSI_GRAY        $it$ANSI_RESET") }
 
-        val textCompletion = completionEngine.complete(prompt, stop = listOf("Observation: "), tokens = completionTokens)
-            .firstValue.trim()
+        val textCompletion = chatEngine.chat(listOf(TextChatMessage.user(prompt)), stop = listOf("Observation: "), tokens = completionTokens)
+            .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         info<ToolChainExecutor>("$ANSI_GREEN$textCompletion$ANSI_RESET")
         scratchpad.steps.add(textCompletion)

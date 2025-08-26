@@ -20,9 +20,6 @@
 package tri.ai.pips.agent
 
 import tri.ai.core.*
-import tri.ai.openai.OpenAiAdapter
-import tri.ai.openai.OpenAiMultimodalChat
-import tri.ai.openai.OpenAiModelIndex
 import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
@@ -75,7 +72,7 @@ class DefaultAgentChatAPI : AgentChatAPI {
                 // Send to model
                 val response = chat.chat(contextMessages, params)
                 
-                val responseMessage = response.output?.outputs?.firstOrNull()
+                val responseMessage = response.output?.outputs?.firstOrNull()?.multimodalMessage
                     ?: throw IllegalStateException("No response from chat API")
                 
                 // Add response to session

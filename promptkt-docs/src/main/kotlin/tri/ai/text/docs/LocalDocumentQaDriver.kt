@@ -27,7 +27,6 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.PromptLibrary
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.SmartTextChunker
 import java.io.File
 
@@ -84,7 +83,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         TextPlugin.orderedPlugins.forEach { it.close() }
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult<String> {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
         val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
             question = input,
@@ -99,7 +98,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
             snippetCallback = { }
         )
         val monitor = PrintMonitor()
-        val result = AiPipelineExecutor.execute(planner.plan, monitor).finalResult as AiPromptTraceSupport<String>
+        val result = AiPipelineExecutor.execute(planner.plan, monitor).finalResult
         return result.asPipelineResult()
     }
 

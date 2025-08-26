@@ -35,7 +35,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters
-    ): AiPromptTrace<MultimodalChatMessage> {
+    ): AiPromptTrace {
         val modelInfo = AiModelInfo.info(modelId, tokens = parameters.tokens, stop = parameters.stop, requestJson = parameters.responseFormat == MResponseFormat.JSON)
         val t0 = System.currentTimeMillis()
 
@@ -66,7 +66,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
         private const val DEFAULT_MAX_TOKENS = 500
 
         /** Create trace for chat message response, with given model info and start query time. */
-        internal fun GenerateContentResponse.trace(modelInfo: AiModelInfo, t0: Long): AiPromptTrace<MultimodalChatMessage> {
+        internal fun GenerateContentResponse.trace(modelInfo: AiModelInfo, t0: Long): AiPromptTrace {
             val pf = promptFeedback
             return if (pf?.blockReason != null) {
                 val msg = "Gemini blocked response: ${pf.blockReason}"
@@ -80,7 +80,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
                     null,
                     modelInfo,
                     AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                    AiOutputInfo.output(msg)
+                    AiOutputInfo.multimodalMessage(msg)
                 )
             }
         }

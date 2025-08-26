@@ -121,7 +121,7 @@ class PPlanExecutorTest {
                     stop: List<String>?,
                     numResponses: Int?,
                     requestJson: Boolean?
-                ): AiPromptTrace<TextChatMessage> {
+                ): AiPromptTrace {
                     val message = messages.firstOrNull()?.content ?: "unknown"
                     val response = when {
                         "keywords" in message.lowercase() ->
@@ -130,7 +130,7 @@ class PPlanExecutorTest {
                             "This analysis covers key concepts in artificial intelligence."
                         else -> "Mock response"
                     }
-                    return AiPromptTrace.output(TextChatMessage.assistant(response))
+                    return AiPromptTrace.outputMessage(TextChatMessage.assistant(response))
                 }
             }
 

@@ -61,15 +61,16 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         temp: Double,
         numResponses: Int,
         snippetCallback: (List<EmbeddingMatch>) -> Unit
-    ): AiTaskList<String> = task("load-embeddings-file-and-calculate") {
+    ): AiTaskList = task("load-embeddings-file-and-calculate") {
         // trigger loading of embeddings file using a similarity query
         index.findMostSimilar("a", 1)
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {
-            snippetCallback(it.values!!)
+            snippetCallback(it.values!!.map { it.other as EmbeddingMatch })
         }
-    }.aitaskonlist("question-answer") { snippets ->
+    }.aitaskonlist("question-answer") { outputs ->
+        val snippets = outputs.map { it.other as EmbeddingMatch }
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
@@ -78,8 +79,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val response = chat.chat(messages, MChatVariation.temp(temp), maxTokens, null, numResponses, null)
         val embeddingModel = index.embeddingStrategy.model
         val questionEmbedding = embeddingModel.calculateEmbedding(question)
-        val responseEmbeddings = response.values?.map { it: TextChatMessage ->
-            embeddingModel.calculateEmbedding(it.content!!)
+        val responseEmbeddings = response.values?.map {
+            embeddingModel.calculateEmbedding(it.textContent())
         } ?: listOf()
         // TODO - make this support more than one response embedding
         // add snippet response scores for first response embedding only
@@ -95,27 +96,28 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
         )
         response.mapOutput {
-            QuestionAnswerResult(
+            AiOutput(other = QuestionAnswerResult(
                 query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
                 matches = snippets,
-                trace = response.mapOutput { it.content!! },
+                trace = response.mapOutput { AiOutput(text = it.textContent()) },
                 responseEmbeddings = responseEmbeddings
-            )
+            ))
         }
     }.aitask("process-result") {
-        info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${it.responseScore}$ANSI_RESET")
-        FormattedPromptTraceResult(it.trace, it.splitOutputs().map { it.formatResult() })
+        val result = it.content() as QuestionAnswerResult
+        info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
+        FormattedPromptTraceResult(result.trace, result.splitOutputs().map { result.formatResult() })
     }
 
     //region SIMILARITY CALCULATIONS
 
     /** Finds the most relevant section to the query. */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace<EmbeddingMatch> {
+    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace {
         val matches = index.findMostSimilar(query, maxChunks)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
         return AiPromptTrace(
             modelInfo = modelId?.let { AiModelInfo(it) },
-            outputInfo = AiOutputInfo(matches)
+            outputInfo = AiOutputInfo.other(matches, allowList = true)
         )
     }
 

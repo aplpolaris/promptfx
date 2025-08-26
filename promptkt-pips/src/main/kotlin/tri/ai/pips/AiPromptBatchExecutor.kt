@@ -30,7 +30,7 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
  * Generate executable list of tasks for a prompt batch.
  * These can be passed to [AiPipelineExecutor] for execution.
  */
-fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat): List<AiTask<String>> =
+fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat): List<AiTask> =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
 /** Get an [AiPlanner] for executing this batch of prompts. */
@@ -38,11 +38,11 @@ fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
     tasks(modelLookup).aggregate().planner
 
 /** Create task for executing a run config. */
-fun AiPromptRunConfig.task(id: String) = object : AiTask<String>(id) {
+fun AiPromptRunConfig.task(id: String) = object : AiTask(id) {
     override suspend fun execute(
-        inputs: Map<String, AiPromptTraceSupport<*>>,
+        inputs: Map<String, AiPromptTraceSupport>,
         monitor: AiTaskMonitor
-    ): AiPromptTrace<String> = try {
+    ): AiPromptTrace = try {
         execute(modelLookup(modelInfo.modelId))
     } catch (x: NoSuchElementException) {
         AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))

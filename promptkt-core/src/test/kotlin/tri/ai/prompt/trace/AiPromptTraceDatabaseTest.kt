@@ -35,8 +35,8 @@ class AiPromptTraceDatabaseTest {
     )
     private val execInfo1 = AiExecInfo()
     private val execInfo2 = AiExecInfo.error("test error")
-    private val outputInfo1 = AiOutputInfo.output("test output")
-    private val outputInfo2 = AiOutputInfo<String>(listOf())
+    private val outputInfo1 = AiOutputInfo.text("test output")
+    private val outputInfo2 = AiOutputInfo(listOf())
 
     @Test
     fun testSerialize() {

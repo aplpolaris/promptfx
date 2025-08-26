@@ -39,7 +39,7 @@ class GeminiVisionLanguageChat(override val modelId: String = GEMINI_PRO_VISION,
         tokens: Int?,
         stop: List<String>?,
         requestJson: Boolean?
-    ): AiPromptTrace<TextChatMessage> {
+    ): AiPromptTrace {
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
         val t0 = System.currentTimeMillis()
         val resp = client.generateContentVision(messages, modelId,

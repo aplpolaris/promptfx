@@ -35,7 +35,7 @@ class ChatExecutable(val chat: TextChat): Executable {
         val result = CompletionBuilder()
             .text(input.extractText())
             .execute(chat)
-        return MAPPER.createObjectNode().put("message", result.firstValue.content)
+        return MAPPER.createObjectNode().put("message", result.firstValue.textContent())
     }
 
     private fun JsonNode.extractText(): String = when {

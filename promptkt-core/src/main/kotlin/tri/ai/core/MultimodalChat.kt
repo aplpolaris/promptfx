@@ -36,12 +36,12 @@ interface MultimodalChat {
     suspend fun chat(
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters = MChatParameters()
-    ): AiPromptTrace<MultimodalChatMessage>
+    ): AiPromptTrace
 
     /** Provide a response to a single chat message. */
     suspend fun chat(
         message: MultimodalChatMessage,
         parameters: MChatParameters = MChatParameters()
-    ): AiPromptTrace<MultimodalChatMessage> =
+    ): AiPromptTrace =
         chat(listOf(message), parameters)
 }

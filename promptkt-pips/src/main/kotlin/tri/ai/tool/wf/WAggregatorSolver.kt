@@ -45,7 +45,7 @@ class WAggregatorSolver(val completionEngine: TextCompletion, val maxTokens: Int
         )
         val result = OpenAiCompletionChat().complete(prompt, tokens = 1000)
         // find answer between <<< and >>> if they exist
-        val quotedResult = result.firstValue.findCode()
+        val quotedResult = result.firstValue.textContent().findCode()
 
         return solveStep(
             task,

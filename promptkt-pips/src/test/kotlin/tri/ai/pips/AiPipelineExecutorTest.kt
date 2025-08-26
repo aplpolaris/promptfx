@@ -35,7 +35,7 @@ class AiPipelineExecutorTest {
                 listOf(GoTask("pass"), FailTask("fail")),
                 PrintMonitor()).interimResults
             assertEquals(2, results.size)
-            assertEquals("go", results["pass"]?.firstValue!!)
+            assertEquals("go", results["pass"]?.firstValue!!.textContent())
             assertNotNull(results["fail"]?.errorMessage)
         }
     }
@@ -47,9 +47,9 @@ class AiPipelineExecutorTest {
                 listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
                 PrintMonitor()).interimResults
             assertEquals(3, results.size)
-            assertEquals("go", results["a"]?.firstValue!!)
-            assertEquals("go", results["b"]?.firstValue!!)
-            assertEquals("go", results["c"]?.firstValue!!)
+            assertEquals("go", results["a"]?.firstValue!!.textContent())
+            assertEquals("go", results["b"]?.firstValue!!.textContent())
+            assertEquals("go", results["c"]?.firstValue!!.textContent())
         }
     }
 
@@ -60,20 +60,20 @@ class AiPipelineExecutorTest {
                 listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
                 PrintMonitor()).interimResults
             assertEquals(2, results.size)
-            assertEquals("go", results["a"]?.firstValue!!)
+            assertEquals("go", results["a"]?.firstValue!!.textContent())
             assertNotNull(results["b"]?.errorMessage)
             assertNull(results["c"]?.values)
         }
     }
 
-    class GoTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
-            AiPromptTrace(outputInfo = AiOutputInfo(listOf("go")))
+    class GoTask(id: String, deps: Set<String> = setOf()): AiTask(id, null, deps) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+            AiPromptTrace(outputInfo = AiOutputInfo.text("go"))
     }
 
-    class FailTask(id: String, deps: Set<String> = setOf()): AiTask<String>(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport<*>>, monitor: AiTaskMonitor) =
-            AiPromptTrace.error<String>(null, "fail", Exception("fail"))
+    class FailTask(id: String, deps: Set<String> = setOf()): AiTask(id, null, deps) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+            AiPromptTrace.error(null, "fail", Exception("fail"))
     }
 
 }

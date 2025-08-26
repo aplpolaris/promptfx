@@ -19,12 +19,9 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.chatCompletionRequest
 import com.aallam.openai.api.model.ModelId
-import tri.ai.core.TextChatMessage
-import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
@@ -41,9 +38,9 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiA
         tokens: Int?,
         stop: List<String>?,
         requestJson: Boolean?
-    ): AiPromptTrace<TextChatMessage> {
-        val response = client.chat(
-            chatCompletionRequest {
+    ): AiPromptTrace {
+        val response = client.chat(multimodal = false,
+            completionRequest = chatCompletionRequest {
                 model = ModelId(modelId)
                 temperature = temp
                 maxTokens = tokens
@@ -62,9 +59,7 @@ class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiA
                 responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
             }
         )
-        return response.mapOutput { TextChatMessage(MChatRole.Assistant, it.content!!) }
+        return response
     }
-
-    private fun VisionLanguageChatMessage.openAiMessage() = ChatMessage(role.toOpenAiRole(), content)
 
 }

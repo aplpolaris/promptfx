@@ -27,6 +27,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
@@ -41,7 +42,7 @@ class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiA
         stop: List<String>?,
         numResponses: Int?,
         requestJson: Boolean?
-    ): AiPromptTrace<TextChatMessage> =
+    ): AiPromptTrace =
         client.chatCompletion(ChatCompletionRequest(
             model = ModelId(modelId),
             messages = messages.map { it.toOpenAiMessage() },
@@ -54,6 +55,6 @@ class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiA
             stop = stop,
             n = numResponses,
             responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
-        )).mapOutput { TextChatMessage(MChatRole.Assistant, it) }
+        )).mapOutput { AiOutput(message = TextChatMessage(MChatRole.Assistant, it.text!!)) }
 
 }
