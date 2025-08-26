@@ -459,7 +459,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
             // Add "Create New Custom View" button
             hbox(10) {
                 paddingBottom = 15.0
-                button("Create New Custom View") {
+                button("Create New Custom View...") {
                     graphic = FontAwesomeIcon.PLUS.graphic
                     action {
                         val dialog = find<NewViewDialog>()

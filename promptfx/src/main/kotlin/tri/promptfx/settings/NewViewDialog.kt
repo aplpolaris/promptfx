@@ -91,15 +91,16 @@ class NewViewDialog : Fragment("Create New Custom View") {
             }
             
             fieldset("Prompt Configuration") {
-                field("Prompt Source") {
+                field {
                     val toggleGroup = ToggleGroup()
                     vbox(5) {
+                        alignment = Pos.TOP_LEFT
                         radiobutton("Use Existing Prompt", toggleGroup, value = useExistingPrompt) {
                             isSelected = true
                         }
                         hbox(5) {
                             alignment = Pos.CENTER_LEFT
-                            label("Prompt ID:")
+                            label("Use Existing Prompt:")
                             combobox<String>(selectedPromptId) {
                                 items = getAvailablePromptIds().asObservable()
                                 isEditable = true
@@ -123,8 +124,10 @@ class NewViewDialog : Fragment("Create New Custom View") {
             }
             
             fieldset("View Options") {
-                field("Display Options") {
+                field {
                     vbox(5) {
+                        alignment = Pos.TOP_LEFT
+                        label("Display Options:")
                         checkbox("Show Model Parameters", showModelParameters)
                         checkbox("Show Multiple Response Option", showMultipleResponses)
                     }

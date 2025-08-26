@@ -33,6 +33,7 @@ class RuntimePromptViewConfig(
     val isShowPrompt: Boolean = true,
     val isShowModelParameters: Boolean = false,
     val isShowMultipleResponseOption: Boolean = false,
+    @get:JsonIgnore
     val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.INPUT_ONLY
 ) {
 
