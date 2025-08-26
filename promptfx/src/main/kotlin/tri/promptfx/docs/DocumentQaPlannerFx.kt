@@ -94,7 +94,7 @@ class DocumentQaPlannerFx {
                 lastResult = res
                 chatHistory.add(TextChatMessage(MChatRole.User, question))
                 chatHistory.add(TextChatMessage(MChatRole.Assistant, res.trace.firstValue.textContent()))
-                FormattedPromptTraceResult(res.trace, res.splitOutputs().map { res.formatResult() })
+                FormattedPromptTraceResult(res.trace, res.splitOutputs().map { it.formatResult() })
             }
     }
 }
