@@ -106,7 +106,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
     }.aitask("process-result") {
         val result = it.content() as QuestionAnswerResult
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
-        FormattedPromptTraceResult(result.trace, result.splitOutputs().map { result.formatResult() })
+        FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
     }
 
     //region SIMILARITY CALCULATIONS
