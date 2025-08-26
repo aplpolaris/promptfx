@@ -19,7 +19,12 @@
  */
 package tri.ai.core
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import kotlinx.serialization.Serializable
+
 /** Generic representation of a multimodal chat message. */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Serializable
 data class MultimodalChatMessage(
     /** Role for what generated the message. */
     val role: MChatRole,

@@ -19,10 +19,14 @@
  */
 package tri.ai.prompt.server
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class McpServerCapabilities(
     val prompts: McpServerPromptCapability
 )
 
+@Serializable
 data class McpServerPromptCapability(
     val listChanged: Boolean = false
 )

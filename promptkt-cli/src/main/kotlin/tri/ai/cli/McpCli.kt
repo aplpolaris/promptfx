@@ -32,10 +32,7 @@ import tri.ai.gemini.GeminiMultimodalChat
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.prompt.PromptLibrary
-import tri.ai.prompt.server.LocalMcpServer
-import tri.ai.prompt.server.McpServerAdapter
-import tri.ai.prompt.server.McpServerException
-import tri.ai.prompt.server.RemoteMcpServer
+import tri.ai.prompt.server.*
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
@@ -65,7 +62,7 @@ class McpCli : CliktCommand(
     }
 
     init {
-        subcommands(ListCommand(), GetCommand(), ExecuteCommand())
+        subcommands(ListCommand(), GetCommand(), ExecuteCommand(), ServeCommand())
     }
 
     private fun createAdapter(): McpServerAdapter {
@@ -252,6 +249,18 @@ class McpCli : CliktCommand(
         }
     }
 
+    /** Starts an MCP server on stdio. */
+    inner class ServeCommand : CliktCommand(
+        name = "start",
+        help = "Start an MCP server on stdio, with locally provided prompts"
+    ) {
+        override fun run() {
+            runBlocking {
+                LocalMcpStdioServer().startServer(System.`in`, System.out)
+            }
+        }
+    }
+
     private fun parseArguments(args: List<String>): Map<String, String> {
         return args.associate { arg ->
             val parts = arg.split('=', limit = 2)
@@ -262,3 +271,4 @@ class McpCli : CliktCommand(
         }
     }
 }
+

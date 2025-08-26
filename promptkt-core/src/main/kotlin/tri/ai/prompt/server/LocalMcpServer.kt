@@ -20,6 +20,7 @@
 package tri.ai.prompt.server
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import kotlinx.serialization.Serializable
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.core.MPartType
@@ -35,7 +36,7 @@ class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAd
     override fun toString() = "LocalMcpServer"
 
     /** List prompt information. */
-    override suspend fun listPrompts() =
+    override suspend fun listPrompts(): List<McpPrompt> =
         library.list().map { it.toMcpContract() }
 
     /** Gets result of filling a prompt with arguments. */
@@ -51,11 +52,9 @@ class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAd
         )))
     }
 
-    override suspend fun getCapabilities(): McpServerCapabilities {
-        return McpServerCapabilities(
-            prompts = McpServerPromptCapability(listChanged = false)
-        )
-    }
+    override suspend fun getCapabilities() = McpServerCapabilities(
+        prompts = McpServerPromptCapability(listChanged = false)
+    )
 
     override suspend fun close() {
         // Nothing to close for local adapter
@@ -65,6 +64,7 @@ class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAd
 
 /** Response returned from a prompt request. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Serializable
 data class McpGetPromptResponse(
     val description: String? = null,
     val messages: List<MultimodalChatMessage>

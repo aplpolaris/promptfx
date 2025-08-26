@@ -20,6 +20,7 @@
 package tri.ai.prompt.server
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import kotlinx.serialization.Serializable
 import tri.ai.prompt.PromptDef
 
 /**
@@ -27,6 +28,7 @@ import tri.ai.prompt.PromptDef
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Serializable
 data class McpPrompt(
     val id: String,
     val name: String,
@@ -36,6 +38,7 @@ data class McpPrompt(
 )
 
 /** An argument for an MCP prompt. */
+@Serializable
 data class McpPromptArg(
     val name: String,
     val description: String,
@@ -45,8 +48,8 @@ data class McpPromptArg(
 /** Converts a prompt to an MCP contract prompt. */
 fun PromptDef.toMcpContract() = McpPrompt(
     id = id,
-    name = name ?: id.substringAfterLast('/').substringBefore("@"),
-    title = title,
+    name = bareId,
+    title = title ?: name ?: bareId.substringAfter('/'),
     description = description,
     arguments = args.map { arg ->
         McpPromptArg(

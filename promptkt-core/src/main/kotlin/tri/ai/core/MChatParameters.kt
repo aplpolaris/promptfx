@@ -19,6 +19,7 @@
  */
 package tri.ai.core
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -116,6 +117,7 @@ class MTool(
 )
 
 /** Reference to a function to execute. */
+@Serializable
 class MToolCall(
     val id: String,
     val name: String,
@@ -127,6 +129,8 @@ enum class MResponseFormat {
     TEXT
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Serializable
 data class MChatMessagePart(
     val partType: MPartType = MPartType.TEXT,
     val text: String? = null,
