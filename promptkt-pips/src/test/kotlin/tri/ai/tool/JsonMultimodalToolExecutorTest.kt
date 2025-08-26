@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.openai.OpenAiMultimodalChat
-import tri.ai.tool.JsonToolTest.Companion.SAMPLE_TOOLS
+import tri.ai.tool.JsonToolTest.Companion.SAMPLE_EXECUTABLES
 
 @Tag("openai")
 class JsonMultimodalToolExecutorTest {
@@ -38,13 +38,13 @@ class JsonMultimodalToolExecutorTest {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
         runBlocking {
-            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_EXECUTABLES)
                 .execute("Multiply 21 times 2 and then convert it to Roman numerals.")
 
-            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_EXECUTABLES)
                 .execute("Convert 5 to a Roman numeral.")
 
-            JsonMultimodalToolExecutor(model, SAMPLE_TOOLS)
+            JsonMultimodalToolExecutor(model, SAMPLE_EXECUTABLES)
                 .execute("What year was Jurassic Park?")
         }
     }

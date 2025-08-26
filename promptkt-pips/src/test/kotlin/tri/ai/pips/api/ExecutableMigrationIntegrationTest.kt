@@ -20,7 +20,11 @@
 package tri.ai.pips.api
 
 import org.junit.jupiter.api.Test
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.JsonToolExecutable
 import tri.ai.pips.core.MAPPER
+import tri.ai.pips.core.ToolExecutable
+import tri.ai.pips.core.ToolExecutableResult
 import tri.ai.tool.JsonTool
 import tri.ai.tool.Tool
 import tri.ai.tool.ToolDict
@@ -69,8 +73,17 @@ class ExecutableMigrationIntegrationTest {
         assertEquals("Calculator", legacyTool.name)
         assertEquals("Use this to do math", legacyTool.description)
         
-        // New way: Tool wrapped as Executable
-        val modernExecutable = ToolExecutable.wrap(calculatorTool)
+        // New way: Create Executable directly
+        val modernExecutable = object : ToolExecutable("Calculator", "Use this to do math") {
+            override suspend fun run(input: String, context: ExecContext): ToolExecutableResult {
+                return when {
+                    "2+2" in input -> ToolExecutableResult("4")
+                    "42" in input -> ToolExecutableResult("42")
+                    "multiply 21 times 2" in input -> ToolExecutableResult("42")
+                    else -> ToolExecutableResult("Unknown calculation")
+                }
+            }
+        }
         assertEquals("Calculator", modernExecutable.name)
         assertEquals("Use this to do math", modernExecutable.description)
         assertEquals("1.0.0", modernExecutable.version) // Added versioning
@@ -84,8 +97,19 @@ class ExecutableMigrationIntegrationTest {
         val legacyJsonTool = romanizerTool
         assertEquals("Romanizer", legacyJsonTool.tool.name)
         
-        // New way: JsonTool wrapped as Executable
-        val modernExecutable = JsonToolExecutable.wrap(romanizerTool)
+        // New way: Create JsonToolExecutable directly
+        val modernExecutable = object : JsonToolExecutable("Romanizer", "Converts numbers to Roman numerals",
+            """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+            override suspend fun run(input: JsonObject, context: ExecContext): String {
+                val value = input["input"]?.toString()?.toIntOrNull() ?: 0
+                return when (value) {
+                    4 -> "IV"
+                    42 -> "XLII" 
+                    84 -> "LXXXIV"
+                    else -> "Unknown number"
+                }
+            }
+        }
         assertEquals("Romanizer", modernExecutable.name)
         assertEquals("Converts numbers to Roman numerals", modernExecutable.description)
         assertNotNull(modernExecutable.inputSchema)
@@ -100,8 +124,19 @@ class ExecutableMigrationIntegrationTest {
         val legacyTools = listOf(calculatorTool)
         assertEquals(1, legacyTools.size)
         
-        // New way: Convert Tools to Executables and use with AgentExecutable
-        val modernExecutables = legacyTools.map { ToolExecutable.wrap(it) }
+        // New way: Convert to Executables and use with AgentExecutable
+        val modernExecutables = listOf(
+            object : ToolExecutable("Calculator", "Use this to do math") {
+                override suspend fun run(input: String, context: ExecContext): ToolExecutableResult {
+                    return when {
+                        "2+2" in input -> ToolExecutableResult("4")
+                        "42" in input -> ToolExecutableResult("42")
+                        "multiply 21 times 2" in input -> ToolExecutableResult("42")
+                        else -> ToolExecutableResult("Unknown calculation")
+                    }
+                }
+            }
+        )
         
         val agent = AgentExecutable(
             name = "MathAgent",
@@ -121,10 +156,19 @@ class ExecutableMigrationIntegrationTest {
 
     @Test
     fun testMixedToolTypesToAgent() {
-        // Show that both Tool and JsonTool can be used together in an agent
+        // Show that both ToolExecutable and JsonToolExecutable can be used together in an agent
         val mixedExecutables = listOf(
-            ToolExecutable.wrap(calculatorTool),      // From legacy Tool
-            JsonToolExecutable.wrap(romanizerTool)    // From legacy JsonTool
+            object : ToolExecutable("Calculator", "Use this to do math") {
+                override suspend fun run(input: String, context: ExecContext): ToolExecutableResult {
+                    return ToolExecutableResult("42")
+                }
+            },
+            object : JsonToolExecutable("Romanizer", "Converts numbers to Roman numerals",
+                """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+                override suspend fun run(input: JsonObject, context: ExecContext): String {
+                    return "XLII"
+                }
+            }
         )
         
         val multiToolAgent = AgentExecutable(
@@ -146,7 +190,10 @@ class ExecutableMigrationIntegrationTest {
     @Test
     fun testSchemaValidation() {
         // Test that schemas are properly preserved in the migration
-        val jsonToolExecutable = JsonToolExecutable.wrap(romanizerTool)
+        val jsonToolExecutable = object : JsonToolExecutable("Romanizer", "Converts numbers to Roman numerals",
+            """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+            override suspend fun run(input: JsonObject, context: ExecContext) = "XLII"
+        }
         
         val inputSchema = jsonToolExecutable.inputSchema!!
         assertEquals("object", inputSchema.get("type").asText())

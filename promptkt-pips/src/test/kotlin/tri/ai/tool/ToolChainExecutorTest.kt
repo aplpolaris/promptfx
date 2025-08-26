@@ -26,6 +26,9 @@ import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiPlugin
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.ToolExecutable
+import tri.ai.pips.core.ToolExecutableResult
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
@@ -39,15 +42,15 @@ class ToolChainExecutorTest {
     fun testTools() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
-        val tool1 = object : Tool("Calculator", "Use this to do math") {
-            override suspend fun run(input: ToolDict) = ToolResult("42")
+        val tool1 = object : ToolExecutable("Calculator", "Use this to do math") {
+            override suspend fun run(input: String, context: ExecContext) = ToolExecutableResult("42")
         }
-        val tool2 = object : Tool("Romanizer", "Converts numbers to Roman numerals") {
-            override suspend fun run(input: ToolDict) = input.input.toInt().let {
+        val tool2 = object : ToolExecutable("Romanizer", "Converts numbers to Roman numerals") {
+            override suspend fun run(input: String, context: ExecContext) = input.toInt().let {
                 when (it) {
-                    42 -> ToolResult("XLII")
-                    84 -> ToolResult("LXXXIV")
-                    else -> ToolResult("I don't know")
+                    42 -> ToolExecutableResult("XLII")
+                    84 -> ToolExecutableResult("LXXXIV")
+                    else -> ToolExecutableResult("I don't know")
                 }
             }
         }
@@ -60,17 +63,17 @@ class ToolChainExecutorTest {
     fun testTools2() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
 
-        val tool1 = object : Tool("Data Query", "Use this to search for data that is needed to answer a question") {
-            override suspend fun run(input: ToolDict) = OpenAiCompletionChat().complete(input.input, tokens = 500).firstValue.let { ToolResult(it) }
+        val tool1 = object : ToolExecutable("Data Query", "Use this to search for data that is needed to answer a question") {
+            override suspend fun run(input: String, context: ExecContext) = OpenAiCompletionChat().complete(input, tokens = 500).firstValue.let { ToolExecutableResult(it) }
         }
-        val tool2 = object : Tool("Timeline", "Use this once you have all the data needed to show the result on a timeline. Provide structured data as input.", isTerminal = true) {
-            override suspend fun run(input: ToolDict) = OpenAiCompletionChat().complete("""
+        val tool2 = object : ToolExecutable("Timeline", "Use this once you have all the data needed to show the result on a timeline. Provide structured data as input.") {
+            override suspend fun run(input: String, context: ExecContext) = OpenAiCompletionChat().complete("""
                 Create a JSON object that can be used to plot a timeline of the following information:
                 $input
                 The result should confirm to the vega-lite spec, using either a Gantt chart or a dot plot.
                 Each event, date, or date range should be shown as a separate entry on the y-axis, sorted by date.
                 Provide the JSON result only, no explanation.
-            """.trimIndent(), tokens = 1000).firstValue.let { ToolResult(it) }
+            """.trimIndent(), tokens = 1000).firstValue.let { ToolExecutableResult(it, isTerminal = true) }
         }
         ToolChainExecutor(OpenAiCompletionChat())
             .executeChain("Look up data with the birth years of the first 10 US presidents along with the order of their presidency, and then visualize the results.", listOf(tool1, tool2))
@@ -151,8 +154,8 @@ class ToolChainExecutorTest {
                 tool_list)
     }
 
-    fun tool(name: String, description: String, op: (String) -> String) = object : Tool(name, description) {
-        override suspend fun run(input: ToolDict) = op(input.input).let { ToolResult(it) }
+    fun tool(name: String, description: String, op: (String) -> String) = object : ToolExecutable(name, description) {
+        override suspend fun run(input: String, context: ExecContext) = op(input).let { ToolExecutableResult(it) }
     }
 
 }

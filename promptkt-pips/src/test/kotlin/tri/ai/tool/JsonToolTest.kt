@@ -23,6 +23,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.JsonToolExecutable
 
 class JsonToolTest {
 
@@ -53,6 +55,29 @@ class JsonToolTest {
             "I don't know"
         }
         val SAMPLE_TOOLS = listOf(SAMPLE_TOOL1, SAMPLE_TOOL2, SAMPLE_TOOL4)
+
+        // Executable versions for the new system
+        val SAMPLE_EXECUTABLE1 = object : JsonToolExecutable("calc", "Use this to do math",
+            """{"type":"object","properties":{"input":{"type":"string"}}}""") {
+            override suspend fun run(input: JsonObject, context: ExecContext) = "42"
+        }
+        val SAMPLE_EXECUTABLE2 = object : JsonToolExecutable("romanize", "Converts numbers to Roman numerals",
+            """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+            override suspend fun run(input: JsonObject, context: ExecContext): String {
+                val value = input["input"]?.jsonPrimitive?.int ?: throw RuntimeException("No input")
+                return when (value) {
+                    5 -> "V"
+                    42 -> "XLII"
+                    84 -> "LXXXIV"
+                    else -> "I don't know"
+                }
+            }
+        }
+        val SAMPLE_EXECUTABLE4 = object : JsonToolExecutable("other", "Answer a question that cannot be answered by the other tools",
+            """{"type":"object","properties":{"input":{"type":"string"}}}""") {
+            override suspend fun run(input: JsonObject, context: ExecContext) = "I don't know"
+        }
+        val SAMPLE_EXECUTABLES = listOf(SAMPLE_EXECUTABLE1, SAMPLE_EXECUTABLE2, SAMPLE_EXECUTABLE4)
 
         private fun tool(name: String, description: String, schema: String, op: (JsonObject) -> String) = object : JsonTool(name, description, schema) {
             override suspend fun run(input: JsonObject) = op(input)

@@ -13,6 +13,12 @@ import tornadofx.*
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.pips.core.JsonToolExecutable
+import tri.ai.pips.core.MAPPER
+import tri.ai.pips.core.ToolExecutable
+import tri.ai.pips.core.ToolExecutableResult
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.tool.JsonMultimodalToolExecutor
@@ -149,7 +155,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     /** Executes using [tri.ai.tool.ToolChainExecutor]. */
     private fun executeToolChain(task: String, selectedTools: List<Tool>): String {
         val exec = ToolChainExecutor(controller.completionEngine.value)
-        return exec.executeChain(task, selectedTools)
+        return exec.executeChain(task, selectedTools.map { it.toExecutable() })
     }
 
     /** Executes using [tri.ai.tool.JsonToolExecutor]. */
@@ -158,7 +164,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         val exec = JsonToolExecutor(
             OpenAiAdapter.Companion.INSTANCE,
             controller.chatService.value.modelId,
-            selectedTools.map { it.toJsonTool() })
+            selectedTools.map { it.toExecutable() })
         return runBlocking {
             exec.execute(task)
         }
@@ -166,7 +172,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     /** Executes using [tri.ai.tool.JsonMultimodalToolExecutor]. */
     private fun executeJsonMultimodalTool(task: String, selectedTools: List<Tool>): String {
-        val exec = JsonMultimodalToolExecutor(model.value!!, selectedTools.map { it.toJsonTool() })
+        val exec = JsonMultimodalToolExecutor(model.value!!, selectedTools.map { it.toExecutable() })
         return runBlocking {
             exec.execute(task)
         }
@@ -216,11 +222,11 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     companion object {
         private val JSON_SCHEMA_STRING_INPUT = """{"type":"object","properties":{"input":{"type":"string"}}}"""
 
-        /** Converts a [Tool] to a [tri.ai.tool.JsonTool]. */
-        private fun Tool.toJsonTool() = object : JsonTool(name, description, JSON_SCHEMA_STRING_INPUT) {
-            override suspend fun run(input: JsonObject): String {
+        /** Converts a [Tool] to an [Executable]. */
+        private fun Tool.toExecutable(): Executable = object : JsonToolExecutable(name, description, JSON_SCHEMA_STRING_INPUT) {
+            override suspend fun run(input: JsonObject, context: ExecContext): String {
                 val dict = input.toToolDict()
-                return this@toJsonTool.run(dict).finalResult!!
+                return this@toExecutable.run(dict).finalResult!!
             }
         }
 
