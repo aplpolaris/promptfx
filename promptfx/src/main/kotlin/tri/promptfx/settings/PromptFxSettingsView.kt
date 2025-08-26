@@ -455,6 +455,22 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
     
     private fun showViewsDetails() {
         with(detailPane) {
+            
+            // Add "Create New Custom View" button
+            hbox(10) {
+                paddingBottom = 15.0
+                button("Create New Custom View") {
+                    graphic = FontAwesomeIcon.PLUS.graphic
+                    action {
+                        val dialog = find<NewViewDialog>()
+                        dialog.openModal()
+                        // Refresh the view details after dialog closes
+                        runLater {
+                            updateCategoryDetails()
+                        }
+                    }
+                }
+            }
 
             // show views registered by source
             val viewsBySource = RuntimePromptViewConfigs.viewConfigs.groupBy { it.source }

@@ -31,13 +31,21 @@ import java.io.File
 object RuntimePromptViewConfigs {
 
     /** Indexed cache of views configured within codebase and at runtime. */
-    val viewConfigs: List<SourcedViewConfig> by lazy { loadViewCache() }
+    var viewConfigs: List<SourcedViewConfig> = loadViewCache()
+        private set
     /** Views indexed by id, with runtime configs taking precedence over built-in configs and plugins. */
-    val viewIndex: Map<String, SourcedViewConfig> by lazy { viewConfigs.byPrecedence() }
+    var viewIndex: Map<String, SourcedViewConfig> = viewConfigs.byPrecedence()
+        private set
 
     /** Check if the given view config is overwritten. */
     fun isOverwritten(viewConfig: SourcedViewConfig) =
         viewIndex[viewConfig.viewId] != viewConfig
+
+    /** Reload all view configurations from their sources. */
+    fun reload() {
+        viewConfigs = loadViewCache()
+        viewIndex = viewConfigs.byPrecedence()
+    }
 
     //region VIEW CACHE LOADER
 
