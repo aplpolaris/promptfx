@@ -29,8 +29,7 @@ import java.io.PrintStream
  * Handles JSON-RPC 2.0 message routing and protocol-level concerns.
  * Separates message parsing, routing, and response writing from business logic.
  */
-class JsonRpcMessageRouter(
-    private val serializer: JsonRpcSerializer,
+class StdioJsonRpcMessageRouter(
     private val businessLogic: JsonRpcBusinessLogic
 ) {
     
@@ -42,7 +41,7 @@ class JsonRpcMessageRouter(
             val line = reader.readLine() ?: break
             if (line.isBlank()) continue
 
-            val req = runCatching { serializer.parseRequest(line) }.getOrElse {
+            val req = runCatching { JsonRpcSerializer.parseRequest(line) }.getOrElse {
                 // Malformed JSON → JSON-RPC parse error (-32700)
                 writeError(out, null, -32700, "Parse error")
                 null
@@ -77,7 +76,7 @@ class JsonRpcMessageRouter(
             if (id != null) put("id", id)
             put("result", result)
         }
-        out.println(serializer.serialize(resp))
+        out.println(JsonRpcSerializer.serialize(resp))
         out.flush()
     }
 
@@ -90,7 +89,7 @@ class JsonRpcMessageRouter(
                 put("message", JsonPrimitive(message))
             })
         }
-        out.println(serializer.serialize(err))
+        out.println(JsonRpcSerializer.serialize(err))
         out.flush()
     }
 }

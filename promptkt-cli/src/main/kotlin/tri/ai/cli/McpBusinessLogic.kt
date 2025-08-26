@@ -31,148 +31,182 @@ import tri.ai.prompt.server.McpGetPromptResponse
  * Focuses on MCP protocol implementation without JSON-RPC concerns.
  */
 class McpBusinessLogic(
-    private val server: LocalMcpServer,
-    private val serializer: JsonRpcSerializer
+    private val server: LocalMcpServer
 ) : JsonRpcBusinessLogic {
 
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
             // --- Required handshake (advertise prompts capability only) ---
-            "initialize" -> {
-                val capabilities = server.getCapabilities()
-                buildJsonObject {
-                    put("protocolVersion", "2025-06-18")
-                    put("serverInfo", buildJsonObject {
-                        put("name", "promptfx-prompts")
-                        put("version", "0.1.0")
-                    })
-                    put("capabilities", serializer.toJsonElement(capabilities))
-                }
-            }
+            "initialize" -> handleInitialize()
 
             // --- Prompts surfaces ---
-            "prompts/list" -> {
-                val prompts = server.listPrompts()
-                buildJsonObject {
-                    put("prompts", serializer.toJsonElement(prompts))
-                }
-            }
-
-            "prompts/get" -> {
-                val name = params?.get("name")?.jsonPrimitive?.content
-                if (name.isNullOrBlank()) {
-                    throw IllegalArgumentException("Invalid params: 'name' is required")
-                }
-                val argsMap = params["arguments"]?.jsonObject?.let { serializer.toStringMap(it) } ?: emptyMap()
-                runBlocking {
-                    server.getPrompt(name, argsMap).toJsonElement()
-                }
-            }
+            "prompts/list" -> handlePromptsList()
+            "prompts/get" -> handlePromptsGet(params)
 
             // --- Optional surfaces with empty responses ---
-            "tools/list" -> buildJsonObject { put("tools", buildJsonArray { }) }
-            "tools/call" -> buildJsonObject { put("content", buildJsonArray { }) }
-            "resources/list" -> buildJsonObject { put("resources", buildJsonArray { }) }
-            "resources/read" -> buildJsonObject { put("contents", buildJsonArray { }) }
+            "tools/list" -> handleToolsList()
+            "tools/call" -> handleToolsCall()
+            "resources/list" -> handleResourcesList()
+            "resources/read" -> handleResourcesRead()
 
             // --- Notifications with no responses ---
-            "notifications/initialized" -> null
+            "notifications/initialized" -> handleNotificationsInitialized()
             
             // --- Graceful shutdown notification ---
-            "notifications/close" -> {
-                runCatching { server.close() }
-                null // No response for notifications; caller should exit
-            }
+            "notifications/close" -> handleNotificationsClose()
 
             // Unknown/unsupported method
             else -> null
         }
     }
 
-    /** Convert McpPrompt to JsonElement */
-    private fun McpGetPromptResponse.toJsonElement() = buildJsonObject {
-        description?.let { put("description", JsonPrimitive(it)) }
-        put("messages", buildJsonArray {
-            for (msg in messages) {
-                val parts = msg.content.orEmpty()
-                when (parts.size) {
-                    0 -> add(
-                        buildJsonObject {
-                            put("role", JsonPrimitive(msg.role.asMcpRole()))
-                            put("content", buildJsonObject {
-                                put("type", JsonPrimitive("text"))
-                                put("text", JsonPrimitive(""))
-                            })
-                        }
-                    )
-
-                    1 -> add(
-                        buildJsonObject {
-                            put("role", JsonPrimitive(msg.role.asMcpRole()))
-                            put("content", parts.first().toMcpContent())
-                        }
-                    )
-
-                    else -> {
-                        // Split multiple parts into multiple messages (same role), each with one content object.
-                        for (part in parts) {
-                            add(
-                                buildJsonObject {
-                                    put("role", JsonPrimitive(msg.role.asMcpRole()))
-                                    put("content", part.toMcpContent())
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        })
-    }
-
-    /** Map your chat role enum to MCP's lowercase roles. Adjust as needed for your enum. */
-    private fun MChatRole.asMcpRole(): String = when (name.lowercase()) {
-        "user" -> "user"
-        "assistant" -> "assistant"
-        // If you have "system" or others, default to "user" for prompts.
-        else -> "user"
-    }
-    
-    /** Convert one of your message parts to a single MCP content object. */
-    private fun MChatMessagePart.toMcpContent(): JsonObject {
-        val kind = partType.name.uppercase()
-
-        return when (kind) {
-            "TEXT" -> textContent(text.orEmpty())
-
-            // If you're embedding base64 data (no mime in your type), provide a sensible default.
-            "IMAGE" -> buildJsonObject {
-                put("type", JsonPrimitive("image"))
-                put("data", JsonPrimitive(inlineData.orEmpty()))
-                put("mimeType", JsonPrimitive("image/png"))
-            }
-            "AUDIO" -> buildJsonObject {
-                put("type", JsonPrimitive("audio"))
-                put("data", JsonPrimitive(inlineData.orEmpty()))
-                put("mimeType", JsonPrimitive("audio/wav"))
-            }
-
-            // You don't have a resource URI field; degrade to text so clients don't reject it.
-            "RESOURCE" -> textContent(text ?: "[resource omitted: no URI/mimeType in part]")
-
-            // If your part encodes a function/tool call, flatten it into text for prompts.
-            "FUNCTION", "TOOL", "FUNCTION_CALL" -> {
-                val argsStr = functionArgs?.entries
-                    ?.joinToString(", ") { (k, v) -> "$k=$v" }
-                    ?.let { "($it)" } ?: ""
-                textContent("function:${functionName ?: "unknown"}$argsStr")
-            }
-
-            else -> textContent(text ?: "[unsupported part: $kind]")
+    private suspend fun handleInitialize(): JsonElement {
+        val capabilities = server.getCapabilities()
+        return buildJsonObject {
+            put("protocolVersion", "2025-06-18")
+            put("serverInfo", buildJsonObject {
+                put("name", "promptfx-prompts")
+                put("version", "0.1.0")
+            })
+            put("capabilities", JsonRpcSerializer.toJsonElement(capabilities))
         }
     }
 
-    private fun textContent(s: String) = buildJsonObject {
-        put("type", JsonPrimitive("text"))
-        put("text", JsonPrimitive(s))
+    private suspend fun handlePromptsList(): JsonElement {
+        val prompts = server.listPrompts()
+        return buildJsonObject {
+            put("prompts", JsonRpcSerializer.toJsonElement(prompts))
+        }
     }
+
+    private suspend fun handlePromptsGet(params: JsonObject?): JsonElement {
+        val name = params?.get("name")?.jsonPrimitive?.content
+        if (name.isNullOrBlank()) {
+            throw IllegalArgumentException("Invalid params: 'name' is required")
+        }
+        val argsMap = params["arguments"]?.jsonObject?.let { JsonRpcSerializer.toStringMap(it) } ?: emptyMap()
+        return runBlocking {
+            server.getPrompt(name, argsMap).toJsonElement()
+        }
+    }
+
+    private suspend fun handleToolsList(): JsonElement {
+        return buildJsonObject { put("tools", buildJsonArray { }) }
+    }
+
+    private suspend fun handleToolsCall(): JsonElement {
+        return buildJsonObject { put("content", buildJsonArray { }) }
+    }
+
+    private suspend fun handleResourcesList(): JsonElement {
+        return buildJsonObject { put("resources", buildJsonArray { }) }
+    }
+
+    private suspend fun handleResourcesRead(): JsonElement {
+        return buildJsonObject { put("contents", buildJsonArray { }) }
+    }
+
+    private suspend fun handleNotificationsInitialized(): JsonElement? {
+        return null
+    }
+    
+    private suspend fun handleNotificationsClose(): JsonElement? {
+        runCatching { server.close() }
+        return null // No response for notifications; caller should exit
+    }
+
+    /** Convert McpPrompt to JsonElement */
+    private fun McpGetPromptResponse.toJsonElement() = 
+        ResponseConverter.convertPromptResponse(this)
+
+    //region Response Conversion Logic
+    companion object ResponseConverter {
+        /** Convert McpPrompt to JsonElement */
+        fun convertPromptResponse(response: McpGetPromptResponse): JsonElement = buildJsonObject {
+            response.description?.let { put("description", JsonPrimitive(it)) }
+            put("messages", buildJsonArray {
+                for (msg in response.messages) {
+                    val parts = msg.content.orEmpty()
+                    when (parts.size) {
+                        0 -> add(
+                            buildJsonObject {
+                                put("role", JsonPrimitive(msg.role.asMcpRole()))
+                                put("content", buildJsonObject {
+                                    put("type", JsonPrimitive("text"))
+                                    put("text", JsonPrimitive(""))
+                                })
+                            }
+                        )
+
+                        1 -> add(
+                            buildJsonObject {
+                                put("role", JsonPrimitive(msg.role.asMcpRole()))
+                                put("content", parts.first().toMcpContent())
+                            }
+                        )
+
+                        else -> {
+                            // Split multiple parts into multiple messages (same role), each with one content object.
+                            for (part in parts) {
+                                add(
+                                    buildJsonObject {
+                                        put("role", JsonPrimitive(msg.role.asMcpRole()))
+                                        put("content", part.toMcpContent())
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+        }
+
+        /** Map your chat role enum to MCP's lowercase roles. Adjust as needed for your enum. */
+        private fun MChatRole.asMcpRole(): String = when (name.lowercase()) {
+            "user" -> "user"
+            "assistant" -> "assistant"
+            // If you have "system" or others, default to "user" for prompts.
+            else -> "user"
+        }
+        
+        /** Convert one of your message parts to a single MCP content object. */
+        private fun MChatMessagePart.toMcpContent(): JsonObject {
+            val kind = partType.name.uppercase()
+
+            return when (kind) {
+                "TEXT" -> textContent(text.orEmpty())
+
+                // If you're embedding base64 data (no mime in your type), provide a sensible default.
+                "IMAGE" -> buildJsonObject {
+                    put("type", JsonPrimitive("image"))
+                    put("data", JsonPrimitive(inlineData.orEmpty()))
+                    put("mimeType", JsonPrimitive("image/png"))
+                }
+                "AUDIO" -> buildJsonObject {
+                    put("type", JsonPrimitive("audio"))
+                    put("data", JsonPrimitive(inlineData.orEmpty()))
+                    put("mimeType", JsonPrimitive("audio/wav"))
+                }
+
+                // You don't have a resource URI field; degrade to text so clients don't reject it.
+                "RESOURCE" -> textContent(text ?: "[resource omitted: no URI/mimeType in part]")
+
+                // If your part encodes a function/tool call, flatten it into text for prompts.
+                "FUNCTION", "TOOL", "FUNCTION_CALL" -> {
+                    val argsStr = functionArgs?.entries
+                        ?.joinToString(", ") { (k, v) -> "$k=$v" }
+                        ?.let { "($it)" } ?: ""
+                    textContent("function:${functionName ?: "unknown"}$argsStr")
+                }
+
+                else -> textContent(text ?: "[unsupported part: $kind]")
+            }
+        }
+
+        private fun textContent(s: String) = buildJsonObject {
+            put("type", JsonPrimitive("text"))
+            put("text", JsonPrimitive(s))
+        }
+    }
+    //endregion
 }

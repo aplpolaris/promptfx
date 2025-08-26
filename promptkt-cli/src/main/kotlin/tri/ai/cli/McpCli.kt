@@ -68,17 +68,21 @@ class McpCli : CliktCommand(
 
     private fun createAdapter(): McpServerAdapter {
         return if (serverUrl == "local") {
-            val library = if (promptLibrary != null) {
-                if (verbose) echo("Loading custom prompt library from: $promptLibrary")
-                PromptLibrary.loadFromPath(promptLibrary!!)
-            } else {
-                if (verbose) echo("Using default local MCP server with PromptLibrary")
-                PromptLibrary.INSTANCE
-            }
+            val library = loadPromptLibrary()
             LocalMcpServer(library)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
             RemoteMcpServer(serverUrl)
+        }
+    }
+
+    private fun loadPromptLibrary(): PromptLibrary {
+        return if (promptLibrary != null) {
+            if (verbose) echo("Loading custom prompt library from: $promptLibrary")
+            PromptLibrary.loadFromPath(promptLibrary!!)
+        } else {
+            if (verbose) echo("Using default local MCP server with PromptLibrary")
+            PromptLibrary.INSTANCE
         }
     }
 
@@ -263,14 +267,8 @@ class McpCli : CliktCommand(
     ) {
         override fun run() {
             runBlocking {
-                val library = if (this@McpCli.promptLibrary != null) {
-                    if (this@McpCli.verbose) echo("Loading custom prompt library from: ${this@McpCli.promptLibrary}")
-                    PromptLibrary.loadFromPath(this@McpCli.promptLibrary!!)
-                } else {
-                    if (this@McpCli.verbose) echo("Using default prompt library")
-                    PromptLibrary.INSTANCE
-                }
-                LocalMcpStdioServer(library).startServer(System.`in`, System.out)
+                val library = this@McpCli.loadPromptLibrary()
+                StdioMcpServer(library).startServer(System.`in`, System.out)
             }
         }
     }

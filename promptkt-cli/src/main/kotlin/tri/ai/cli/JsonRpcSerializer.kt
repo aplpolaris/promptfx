@@ -27,7 +27,7 @@ import tri.ai.pips.core.MAPPER
  * Handles JSON serialization and deserialization for JSON-RPC messages.
  * Centralizes all JSON processing concerns.
  */
-class JsonRpcSerializer {
+object JsonRpcSerializer {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = false
