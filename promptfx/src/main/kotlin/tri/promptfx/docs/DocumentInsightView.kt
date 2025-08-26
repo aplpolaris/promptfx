@@ -135,7 +135,7 @@ class DocumentInsightView: AiPlanTaskView(
             }
         }
         onCompleted {
-            val pairResult = it.finalResult.firstValue as Pair<*, *>
+            val pairResult = it.finalResult.firstValue.content() as Pair<*, *>
             mapResult.value = pairResult.first.toString()
             reduceResult.value = pairResult.second.toString()
         }
@@ -150,14 +150,15 @@ class DocumentInsightView: AiPlanTaskView(
         mapResult.set("")
         reduceResult.set("")
 
-        return promptBatch(model.chunkListModel.chunkSelection).aggregate()
+        return promptBatch(model.chunkListModel.chunkSelection)
+            .aggregate()
             .aitask("results-summarize") { _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
                     .prompt(reducePrompt.prompt.value)
                     .paramsInput(concat)
                     .execute(chatEngine)
-                    .mapOutput { AiOutput(other = concat to it.content()) }
+                    .mapOutput { AiOutput(other = concat to it.message!!.content) }
             }.planner
     }
 
@@ -176,7 +177,7 @@ class DocumentInsightView: AiPlanTaskView(
         }.map {
             // wrap each task to monitor output and update the UI with interim results
             it.monitor { res ->
-                runLater { mapResult.value += "\n\n${res.first()}" }
+                runLater { mapResult.value += "\n\n${res.first().textContent()}" }
             }
         }
     }

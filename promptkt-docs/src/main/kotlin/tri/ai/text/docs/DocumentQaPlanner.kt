@@ -62,12 +62,12 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         numResponses: Int,
         snippetCallback: (List<EmbeddingMatch>) -> Unit
     ): AiTaskList = task("load-embeddings-file-and-calculate") {
-        // trigger loading of embeddings file using a similarity query
+        // trigger loading of embeddings file using a similarity query, the result is ignored
         AiOutput(other = index.findMostSimilar("a", 1))
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {
-            snippetCallback(it.values!!.map { it.other as EmbeddingMatch })
+            snippetCallback(it.firstValue.content() as List<EmbeddingMatch>)
         }
     }.aitask("question-answer") { output ->
         val snippets = output.other as List<EmbeddingMatch>
@@ -111,7 +111,10 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
 
     //region SIMILARITY CALCULATIONS
 
-    /** Finds the most relevant section to the query. */
+    /**
+     * Finds the most relevant section to the query.
+     * Result is encoded as a list of [EmbeddingMatch] in a single [AiOutput].
+     */
     private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace {
         val matches = index.findMostSimilar(query, maxChunks)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId

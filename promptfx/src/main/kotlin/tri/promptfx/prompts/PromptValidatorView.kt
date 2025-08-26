@@ -83,6 +83,7 @@ class PromptValidatorView : AiPlanTaskView(
             .numResponses(1)
             .template(prompt.value)
             .execute(chatEngine)
+            .also { promptOutput.set(it) }
     }.aitask("validate-result") {
         val validatorPromptText = validatorPromptUi.fill("result" to it.textContent())
         common.completionBuilder()

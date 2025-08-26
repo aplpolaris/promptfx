@@ -106,7 +106,7 @@ class ListGeneratorView: AiPlanTaskView("List Generator",
         }
 
         onCompleted {
-            val rawText = (it.finalResult.firstValue as TextChatMessage).content.toString()
+            val rawText = it.finalResult.firstValue.textContent()
             val codeText = if ("```json" in rawText)
                 rawText.substringAfter("```json").substringBefore("```").trim()
             else
