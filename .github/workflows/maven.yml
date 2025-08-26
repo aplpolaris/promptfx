@@ -36,7 +36,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-m2-
           
-    - name: Build with Maven (PromptKt)
-      run: mvn -B clean install --file promptkt/pom.xml
-    - name: Build with Maven (PromptFx)
-      run: mvn -B clean install --file promptfx/pom.xml
+    - name: Compile with Maven (PromptFx meta-project)
+      run: mvn -B compile --file pom.xml
+      
+    - name: Test with Maven (PromptFx meta-project)
+      run: mvn -B compile --file pom.xml
+      
+    - name: Package with Maven (PromptFx meta-project)
+      run: mvn -B install --file pom.xml
