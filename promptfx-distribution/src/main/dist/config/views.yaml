@@ -1,11 +1,9 @@
 # Library of view configurations
 ---
 date-extraction:
-  category: Text
-  title: Date Extraction
-  description: Extract all dates from input text and provide as a list.
-  promptConfig:
-    id: date-extraction
+  prompt:
+    id: text-extract/dates
+    category: Text
   modeOptions:
     - templateId: DATE_FORMAT
       label: Date Format
@@ -18,11 +16,10 @@ date-extraction:
   isShowMultipleResponseOption: false
 
 entity-extraction:
-  category: Text
-  title: Entity Extraction
-  description: Extract entities from text (testing runtime override)
-  promptConfig:
-    id: entity-extraction
+  prompt:
+    id: text-extract/entities
+    category: Text
+    description: Extract entities from text (testing runtime override)
   modeOptions:
     - id: entities
       templateId: mode
@@ -31,3 +28,23 @@ entity-extraction:
       templateId: format
       label: Format as
   isShowModelParameters: true
+
+code-review:
+  prompt:
+    id: code/code-review@1.0.0
+    category: Code
+    name: Code Review
+    title: Request Code Review
+    description: Asks the LLM to analyze provided code and suggest improvements or bug fixes
+    args:
+      - name: code
+        description: The code to review
+        required: true
+    template: |
+      Please review the following code and provide suggestions for improvements or bug fixes:
+      ```
+      {{{code}}}
+      ```
+  modeOptions: []
+  isShowModelParameters: true
+  isShowMultipleResponseOption: true

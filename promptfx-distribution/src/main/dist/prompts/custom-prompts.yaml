@@ -1,0 +1,63 @@
+# Sample runtime prompt file that overrides the default prompt file.
+---
+prompts:
+  - id: text-extract/dates@1.0.0
+    title: Extract Dates
+    description: Extract all dates from input text and provide as a list.
+    template: |
+      Extract a list of dates from the following text, and format as {{DATE_FORMAT}}.
+      '''
+      {{{input}}}
+      '''
+  - id: text-extract/author@1.0.0
+    title: Extract Author
+    template: |
+      Input: {{{input}}}
+      Author:
+  - id: text-extract/date@1.0.0
+    title: Extract Date
+    template: |
+      Input: {{{input}}}
+      Date (mm/dd/yyyy):
+  - id: text-extract/topic@1.0.0
+    title: Extract Topic
+    template: |
+      Input: {{{input}}}
+      Topic:
+  - id: text-summarize/simplify-audience@1.0.0
+    title: Simplify Text for Audience
+    template: |
+      Simplify the following text into 1-2 short sentences explaining the main idea.
+      Write it for {{audience}}.
+      For younger audiences, keep it short with minimal jargon. For more technical audiences, use precise technical terminology.
+      ```
+      {{{input}}}
+      ```
+  - id: docs-reduce/bluey@1.0.0
+    title: Convert to Bluey Episode
+    template: |
+      Combine the following summaries into an outline of a script for a Bluey episode.
+      Provide three main scenes, and for each scene include a brief description of the setting and the main events.
+      ```
+      {{{input}}}
+      ```
+  - # docs-map/* prompts are used in the Document Insights view to run against all snippets
+    # keywords:
+    #   {{{input}}} - text to process
+    id: docs-map/custom@1.0.0
+    title: Three Main Points
+    template: |
+      Extract three main points from this text:
+      ```
+      {{{input}}}
+      ```
+  - # docs-reduce/* prompts are used in the Document Insights view to combine snippet results
+    # keywords:
+    #   {{{input}}} - text to process
+    id: docs-reduce/custom@1.0.0
+    title: Five Key Takeaways
+    template: |
+      Combine all of the provided points into a list of five most important takeaways.
+      ```
+      {{{input}}}
+      ```
