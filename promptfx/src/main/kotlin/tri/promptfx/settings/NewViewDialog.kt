@@ -27,6 +27,7 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.PromptDef
+import tri.promptfx.PromptFxWorkspaceModel
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.ModeConfig
 import tri.promptfx.ui.RuntimePromptViewConfig
@@ -216,7 +217,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
         return if (confirmDialog.result == ButtonType.YES) {
             try {
                 createAndSaveViewConfig()
-                information("Success", "View '${viewName.value}' has been created successfully!")
+                information("Success", "View '${viewName.value}' has been created successfully!\n\nNote: You may need to restart PromptFx to see the new view in the navigation menu.")
                 true
             } catch (e: Exception) {
                 error("Error Creating View", "Failed to create view: ${e.message}")
@@ -259,6 +260,9 @@ class NewViewDialog : Fragment("Create New Custom View") {
         
         // Reload runtime configurations to make the new view available
         RuntimePromptViewConfigs.reload()
+        
+        // Refresh workspace model to update navigation
+        PromptFxWorkspaceModel.reload()
         
         result = config
     }

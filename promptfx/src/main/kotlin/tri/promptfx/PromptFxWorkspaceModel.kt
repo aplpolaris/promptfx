@@ -41,7 +41,15 @@ class PromptFxWorkspaceModel(
         private val BUILT_IN_CATEGORIES = setOf("API", "Prompts", "Text", "Documents", "Multimodal", "Agents", "Fun", "Settings")
         
         /** The singleton instance of the workspace model. */
-        val instance: PromptFxWorkspaceModel by lazy {
+        var instance: PromptFxWorkspaceModel = loadWorkspaceModel()
+            private set
+
+        /** Reload the workspace model to pick up new runtime views. */
+        fun reload() {
+            instance = loadWorkspaceModel()
+        }
+
+        private fun loadWorkspaceModel(): PromptFxWorkspaceModel {
             info<PromptFxWorkspaceModel>("Loading view configuration... [${ANSI_YELLOW}plugins${ANSI_RESET}] [${ANSI_GREEN}built-in${ANSI_RESET}] [${ANSI_CYAN}runtime${ANSI_RESET}] [${ANSI_RED}user-provided${ANSI_RESET}] [${ANSI_CYAN}* overridden *${ANSI_RESET}]")
 
             val viewIndex = RuntimePromptViewConfigs.viewIndex
@@ -83,7 +91,7 @@ class PromptFxWorkspaceModel(
                     .sortedBy { "${it.category}/${it.name}" }
             )
 
-            PromptFxWorkspaceModel(builtInViewGroups + customViewGroup)
+            return PromptFxWorkspaceModel(builtInViewGroups + customViewGroup)
         }
 
         private fun groupIcon(category: String): FontAwesomeIconView {
