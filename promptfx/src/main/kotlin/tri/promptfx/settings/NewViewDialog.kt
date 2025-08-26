@@ -95,12 +95,13 @@ class NewViewDialog : Fragment("Create New Custom View") {
                     val toggleGroup = ToggleGroup()
                     vbox(5) {
                         alignment = Pos.TOP_LEFT
-                        radiobutton("Use Existing Prompt", toggleGroup, value = useExistingPrompt) {
-                            isSelected = true
-                        }
+                        
+                        // Use existing prompt option
                         hbox(5) {
                             alignment = Pos.CENTER_LEFT
-                            label("Use Existing Prompt:")
+                            radiobutton("Use Existing Prompt:", toggleGroup, value = useExistingPrompt) {
+                                isSelected = true
+                            }
                             combobox<String>(selectedPromptId) {
                                 items = getAvailablePromptIds().asObservable()
                                 isEditable = true
@@ -110,7 +111,8 @@ class NewViewDialog : Fragment("Create New Custom View") {
                             }
                         }
                         
-                        radiobutton("Create New Prompt", toggleGroup, value = useExistingPrompt.not()) 
+                        // Create new prompt option
+                        radiobutton("Create New Prompt", toggleGroup, value = useExistingPrompt.not())
                         
                         textarea(customTemplate) {
                             promptText = "Enter your prompt template here..."

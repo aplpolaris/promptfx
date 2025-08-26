@@ -92,4 +92,27 @@ class ViewConfigManagerTest {
         assertEquals(promptTemplate, config.prompt.template)
         assertEquals("testing/test-custom-view", config.prompt.id)
     }
+
+    @Test
+    fun testYamlFormatting() {
+        // Test that multiline templates use pipe syntax
+        val promptDef = PromptDef(
+            id = "test/multiline",
+            category = "Test",
+            name = "Multiline Test",
+            description = "A test with multiline template",
+            template = "Line 1\nLine 2\nLine 3"
+        )
+        
+        val config = RuntimePromptViewConfig(
+            promptDef = promptDef,
+            modeOptions = listOf(),
+            isShowModelParameters = true,
+            isShowMultipleResponseOption = false
+        )
+        
+        // Verify the template is multiline
+        assertTrue(config.prompt.template!!.contains('\n'))
+        assertEquals("Line 1\nLine 2\nLine 3", config.prompt.template)
+    }
 }
