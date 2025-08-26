@@ -1,18 +1,18 @@
 # Tool to Executable Migration Guide
 
-This document shows how to migrate from the legacy `Tool` and `JsonTool` classes to the new `Executable` interface, and how to use them with the new `AgentExecutable` class.
+This document shows how to migrate from the legacy `Tool` and `JsonTool` classes to the new `Executable` base classes.
 
 ## Overview
 
-The new `Executable` interface provides:
-- Consistent JsonNode input/output format
-- Schema support for input/output validation
-- Shared execution context (ExecContext)
-- Better integration with the workflow system
+The new approach eliminates adapter classes and provides direct `Executable` implementations:
+- `tri.ai.pips.core.ToolExecutable`: Base class for simple string-based tools
+- `tri.ai.pips.core.JsonToolExecutable`: Base class for JSON schema-based tools
+- Both implement the `Executable` interface directly
+- Legacy `Tool` and `JsonTool` classes are now deprecated
 
 ## Migration Examples
 
-### Converting Tool to Executable
+### Converting Tool to ToolExecutable
 
 **Before (Legacy Tool):**
 ```kotlin
@@ -27,14 +27,19 @@ val calculatorTool = object : Tool("Calculator", "Use this to do math") {
 }
 ```
 
-**After (Wrapped as Executable):**
+**After (Direct ToolExecutable):**
 ```kotlin
-val calculatorExecutable = ToolExecutable.wrap(calculatorTool)
-// or directly:
-val calculatorExecutable = ToolExecutable(calculatorTool)
+val calculatorTool = object : ToolExecutable("Calculator", "Use this to do math") {
+    override suspend fun run(input: String, context: ExecContext): ToolExecutableResult {
+        return when {
+            "2+2" in input -> ToolExecutableResult("4")
+            else -> ToolExecutableResult("Unknown calculation")
+        }
+    }
+}
 ```
 
-### Converting JsonTool to Executable
+### Converting JsonTool to JsonToolExecutable
 
 **Before (Legacy JsonTool):**
 ```kotlin
@@ -50,11 +55,18 @@ val romanizerTool = object : JsonTool("Romanizer", "Converts numbers to Roman nu
 }
 ```
 
-**After (Wrapped as Executable):**
+**After (Direct JsonToolExecutable):**
 ```kotlin
-val romanizerExecutable = JsonToolExecutable.wrap(romanizerTool)
-// or directly:
-val romanizerExecutable = JsonToolExecutable(romanizerTool)
+val romanizerTool = object : JsonToolExecutable("Romanizer", "Converts numbers to Roman numerals",
+    """{"type":"object","properties":{"input":{"type":"integer"}}}""") {
+    override suspend fun run(input: JsonObject, context: ExecContext): String {
+        val value = input["input"]?.toString()?.toIntOrNull() ?: 0
+        return when (value) {
+            42 -> "XLII"
+            else -> "Unknown number"
+        }
+    }
+}
 ```
 
 ### Creating Agents with Executables
