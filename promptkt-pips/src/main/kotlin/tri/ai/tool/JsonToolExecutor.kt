@@ -22,8 +22,12 @@ package tri.ai.tool
 import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.core.Parameters
 import com.aallam.openai.api.model.ModelId
+import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.SerializationException
 import tri.ai.openai.OpenAiAdapter
+import tri.ai.pips.core.ExecContext
+import tri.ai.pips.core.Executable
+import tri.ai.pips.core.MAPPER
 import tri.util.*
 
 /**
@@ -31,17 +35,17 @@ import tri.util.*
  * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
  * query if needed.
  */
-class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: List<JsonTool>) {
+class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: List<Executable>) {
 
     private val chatTools = tools.mapNotNull {
         val params = try {
-            Parameters.fromJsonString(it.tool.jsonSchema)
+            it.inputSchema?.let { schema -> Parameters.fromJsonString(MAPPER.writeValueAsString(schema)) }
         } catch (x: SerializationException) {
-            warning<JsonToolExecutor>("Invalid JSON schema: ${it.tool.jsonSchema}", x)
+            warning<JsonToolExecutor>("Invalid JSON schema: ${it.inputSchema}", x)
             null
         }
         if (params == null) null else
-            com.aallam.openai.api.chat.Tool.function(it.tool.name, it.tool.description, params)
+            com.aallam.openai.api.chat.Tool.function(it.name, it.description, params)
     }
 
     suspend fun execute(query: String): String {
@@ -67,7 +71,7 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
             // print interim results
             toolCalls.forEach { call ->
                 info<JsonToolExecutor>("Call Function: $ANSI_CYAN${call.function.name}$ANSI_RESET with parameters $ANSI_CYAN${call.function.arguments}$ANSI_RESET")
-                val tool = tools.firstOrNull { it.tool.name == call.function.name }
+                val tool = tools.firstOrNull { it.name == call.function.name }
                 if (tool == null) {
                     info<JsonToolExecutor>("${ANSI_RED}Unknown tool: ${call.function.name}$ANSI_RESET")
                 }
@@ -76,11 +80,13 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
                     info<JsonToolExecutor>("${ANSI_RED}Invalid JSON: ${call.function.name}$ANSI_RESET")
                 }
                 if (tool != null && json != null) {
-                    val result = tool.run(json)
-                    info<JsonToolExecutor>("Result: $ANSI_GREEN${result}$ANSI_RESET")
+                    val context = ExecContext()
+                    val result = tool.execute(json, context)
+                    val resultText = result.get("result")?.asText() ?: result.toString()
+                    info<JsonToolExecutor>("Result: $ANSI_GREEN${resultText}$ANSI_RESET")
 
                     // add result to message history and call again
-                    messages += ChatMessage(ChatRole.Tool, toolCallId = call.id, name = call.function.name, content = result)
+                    messages += ChatMessage(ChatRole.Tool, toolCallId = call.id, name = call.function.name, content = resultText)
                 }
             }
 
@@ -98,9 +104,14 @@ class JsonToolExecutor(val client: OpenAiAdapter, val model: String, val tools: 
     }
 
     companion object {
-        private fun FunctionCall.tryJson() = try {
-            argumentsAsJson()
+        private fun FunctionCall.tryJson(): JsonNode? = try {
+            val jsonObject = argumentsAsJson()
+            // Convert kotlinx JsonObject to Jackson JsonNode
+            val jsonString = jsonObject.toString()
+            MAPPER.readTree(jsonString)
         } catch (x: SerializationException) {
+            null
+        } catch (x: Exception) {
             null
         }
     }

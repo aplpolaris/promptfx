@@ -22,7 +22,11 @@ package tri.ai.tool
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.MTool
 
-/** A tool that has an explicit JSON schema description. */
+/** 
+ * A tool that has an explicit JSON schema description.
+ * @deprecated Use tri.ai.pips.core.Executable instead. This class will be removed in a future version.
+ */
+@Deprecated("Use tri.ai.pips.core.Executable instead", ReplaceWith("tri.ai.pips.core.Executable"))
 abstract class JsonTool(
     val tool: MTool
 ) {

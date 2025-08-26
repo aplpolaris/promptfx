@@ -19,7 +19,11 @@
  */
 package tri.ai.tool
 
-/** General purpose functionality that can be leveraged by an LLM agent or prompt. */
+/** 
+ * General purpose functionality that can be leveraged by an LLM agent or prompt.
+ * @deprecated Use tri.ai.pips.core.Executable instead. This class will be removed in a future version.
+ */
+@Deprecated("Use tri.ai.pips.core.Executable instead", ReplaceWith("tri.ai.pips.core.Executable"))
 abstract class Tool(
     /** Simple name of tool. */
     val name: String,
