@@ -27,6 +27,7 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.PromptDef
+import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxWorkspaceModel
 import tri.promptfx.RuntimePromptViewConfigs
 import tri.promptfx.ui.ModeConfig
@@ -158,9 +159,9 @@ class NewViewDialog : Fragment("Create New Custom View") {
         }
     }
 
-    private fun getAvailablePromptIds(): List<String> {
-        return RuntimePromptViewConfigs.PROMPT_LIBRARY.list().map { it.id }.sorted()
-    }
+    /** Include prompts from global library, not from custom views. */
+    private fun getAvailablePromptIds() =
+        PromptFxGlobals.promptLibrary.list().map { it.bareId }.sorted()
 
     private fun validateInput() {
         val errors = mutableListOf<String>()
