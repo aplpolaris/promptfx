@@ -51,7 +51,7 @@ object DocumentCliRunner {
     @JvmStatic
     fun main(args: Array<out String>) =
         DocumentCli()
-            .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
+            .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa(), DocumentRestServer())
             .main(args)
 }
 
