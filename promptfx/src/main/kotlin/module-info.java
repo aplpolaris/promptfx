@@ -19,6 +19,7 @@
  */
 import tri.ai.core.TextPlugin;
 import tri.promptfx.agents.*;
+import tri.promptfx.research.ResearchViewPlugin;
 import tri.promptfx.settings.AboutPlugin;
 import tri.promptfx.settings.PromptFxSettingsPlugin;
 import tri.promptfx.text.*;
@@ -67,6 +68,7 @@ module tri.promptfx {
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
     opens tri.promptfx.multimodal to com.fasterxml.jackson.databind;
     opens tri.promptfx.prompts to com.fasterxml.jackson.databind;
+    opens tri.promptfx.research to com.fasterxml.jackson.databind;
     opens tri.promptfx.settings to com.fasterxml.jackson.databind;
     opens tri.promptfx.text to com.fasterxml.jackson.databind;
     opens tri.promptfx.ui to com.fasterxml.jackson.databind;
@@ -80,6 +82,7 @@ module tri.promptfx {
     exports tri.promptfx.fun;
     exports tri.promptfx.multimodal;
     exports tri.promptfx.prompts;
+    exports tri.promptfx.research;
     exports tri.promptfx.settings;
     exports tri.promptfx.text;
     exports tri.promptfx.ui;
@@ -129,6 +132,7 @@ module tri.promptfx {
 
             // 6 - agents
             AgenticPlugin,
+            ResearchViewPlugin,
 
             // 7 - settings
             AboutPlugin,
