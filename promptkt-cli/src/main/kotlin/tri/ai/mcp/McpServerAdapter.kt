@@ -17,7 +17,23 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.server
+package tri.ai.mcp
 
-/** Exception thrown when a prompt is not found. */
-class McpServerException(message: String, x: Throwable? = null) : Exception(message, x)
+/**
+ * Interface for connecting to MCP prompt servers, supporting both local and remote connections.
+ * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+ */
+interface McpServerAdapter {
+    
+    /** List all available prompts from the server. */
+    suspend fun listPrompts(): List<McpPrompt>
+    
+    /** Get a filled prompt with the given arguments. */
+    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
+    
+    /** Get server capabilities. */
+    suspend fun getCapabilities(): McpServerCapabilities?
+    
+    /** Close the connection to the server. */
+    suspend fun close()
+}

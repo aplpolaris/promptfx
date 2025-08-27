@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.server
+package tri.ai.mcp
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule

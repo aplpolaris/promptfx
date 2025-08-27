@@ -147,6 +147,22 @@ class PromptLibrary {
             file.writeText(PromptLibrary::class.java.getResource("resources/custom-prompts.yaml.template")!!.readText())
         }
 
+        /** Load a custom prompt library from a specific file or directory path. */
+        fun loadFromPath(path: String): PromptLibrary = PromptLibrary().apply {
+            val targetPath = Path(path)
+            when {
+                targetPath.exists() && targetPath.isDirectory() -> {
+                    PromptGroupIO.readFromDirectory(targetPath, recursive = true).forEach {
+                        addGroup(it.resolved())
+                    }
+                }
+                targetPath.exists() -> {
+                    addGroup(PromptGroupIO.readFromFile(targetPath).resolved())
+                }
+                else -> throw IllegalArgumentException("Prompt library path does not exist: $path")
+            }
+        }
+
         //endregion
 
     }

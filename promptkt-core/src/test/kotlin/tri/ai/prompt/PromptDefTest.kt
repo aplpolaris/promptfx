@@ -20,17 +20,13 @@
 package tri.ai.prompt
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import tri.ai.prompt.server.McpPrompt
-import tri.ai.prompt.server.McpPromptArg
-import tri.ai.prompt.server.toMcpContract
 
 class PromptDefTest {
 
     val TEST_PROMPT = PromptDef(
-        id = "test-prompt-id",
+        id = "test/prompt-id@1.00",
         category = "category",
         name = "test-prompt",
         title = "Test Prompt",
@@ -43,7 +39,7 @@ class PromptDefTest {
     fun testPromptWrite() {
         val json = PromptGroupIO.MAPPER.writeValueAsString(TEST_PROMPT)
         println(json)
-        Assertions.assertTrue(json.isNotEmpty())
+        assertTrue(json.isNotEmpty())
     }
 
     @Test
@@ -62,17 +58,56 @@ class PromptDefTest {
     }
 
     @Test
-    fun testToMcpContract() {
-        val mcp = TEST_PROMPT.toMcpContract()
-        println(PromptGroupIO.MAPPER.writeValueAsString(mcp))
-        val expected = McpPrompt(
-            id = "test-prompt-id",
-            name = "test-prompt",
-            title = "Test Prompt",
-            description = "This is a test prompt template.",
-            arguments = listOf(McpPromptArg("color", "Provide a color", true))
+    fun testPromptWithArguments() {
+        val prompt = PromptDef(
+            id = "test/example@1.0.0",
+            title = "Test Prompt with Arguments",
+            args = listOf(
+                PromptArgDef("input", "The input text", true, PromptArgType.string),
+                PromptArgDef("style", "The writing style", false, PromptArgType.string, "casual")
+            ),
+            template = "Convert the following text to {{style}} style: {{{input}}}"
         )
-        assertEquals(expected, mcp)
+
+        // Test argument definitions
+        assertEquals(2, prompt.args.size)
+        assertEquals("input", prompt.args[0].name)
+        assertEquals("The input text", prompt.args[0].description)
+        assertTrue(prompt.args[0].required)
+        assertEquals(PromptArgType.string, prompt.args[0].type)
+
+        assertEquals("style", prompt.args[1].name)
+        assertEquals("The writing style", prompt.args[1].description)
+        assertFalse(prompt.args[1].required)
+        assertEquals("casual", prompt.args[1].defaultValue)
+
+        // Test template filling
+        val result = prompt.fill(
+            "input" to "Hello world!",
+            "style" to "formal"
+        )
+        assertEquals("Convert the following text to formal style: Hello world!", result)
+    }
+
+    @Test
+    fun testEnumerationArgumentType() {
+        val prompt = PromptDef(
+            id = "test/enum-example@1.0.0",
+            title = "Test with Enumeration",
+            args = listOf(
+                PromptArgDef(
+                    name = "sentiment",
+                    description = "The sentiment category",
+                    required = true,
+                    type = PromptArgType.enumeration,
+                    allowedValues = listOf("positive", "negative", "neutral")
+                )
+            ),
+            template = "Classify as {{sentiment}}"
+        )
+
+        assertEquals(PromptArgType.enumeration, prompt.args[0].type)
+        assertEquals(listOf("positive", "negative", "neutral"), prompt.args[0].allowedValues)
     }
 
 }

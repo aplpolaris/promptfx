@@ -29,12 +29,15 @@ import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.gemini.GeminiMultimodalChat
+import tri.ai.mcp.LocalMcpServer
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerException
+import tri.ai.mcp.RemoteMcpServer
+import tri.ai.mcp.StdioMcpServer
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.prompt.PromptLibrary
-import tri.ai.prompt.server.*
 import tri.util.ANSI_BOLD
-import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import kotlin.system.exitProcess
@@ -48,10 +51,11 @@ fun main(args: Array<String>) =
  */
 class McpCli : CliktCommand(
     name = "mcp-prompt",
-    help = "Interface to MCP prompt servers - list, fill, and execute prompts"
+    help = "Interface to MCP prompt servers - list, fill, and execute prompts, or start a local server"
 ) {
     private val serverUrl by option("--server", "-s", help = "MCP server URL (use 'local' for local server)")
         .default("local")
+    private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for local server only)")
     private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
 
     override fun run() {
@@ -67,11 +71,21 @@ class McpCli : CliktCommand(
 
     private fun createAdapter(): McpServerAdapter {
         return if (serverUrl == "local") {
-            if (verbose) echo("Using local MCP server with PromptLibrary")
-            LocalMcpServer(PromptLibrary.INSTANCE)
+            val library = loadPromptLibrary()
+            LocalMcpServer(library)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
             RemoteMcpServer(serverUrl)
+        }
+    }
+
+    private fun loadPromptLibrary(): PromptLibrary {
+        return if (promptLibrary != null) {
+            if (verbose) echo("Loading custom prompt library from: $promptLibrary")
+            PromptLibrary.loadFromPath(promptLibrary!!)
+        } else {
+            if (verbose) echo("Using default local MCP server with PromptLibrary")
+            PromptLibrary.INSTANCE
         }
     }
 
@@ -95,7 +109,6 @@ class McpCli : CliktCommand(
                 echo("=".repeat(50))
                 
                 prompts.forEach { prompt ->
-                    echo("${ANSI_BOLD}ID$ANSI_RESET: $ANSI_CYAN${prompt.id}$ANSI_RESET")
                     echo("${ANSI_BOLD}Name$ANSI_RESET: ${prompt.name}")
                     if (prompt.title != null) echo("${ANSI_BOLD}Title$ANSI_RESET: ${prompt.title}")
                     if (prompt.description != null) echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${prompt.description}$ANSI_RESET")
@@ -188,17 +201,23 @@ class McpCli : CliktCommand(
                     }
                     
                     val filledPrompt = adapter.getPrompt(promptName, args)
-                    
-                    echo("Filled prompt:")
-                    echo("=".repeat(50))
-                    
-                    if (filledPrompt.description != null) {
-                        echo("Description: ${filledPrompt.description}")
-                        echo("-".repeat(40))
+
+                    if (this@McpCli.verbose) {
+                        echo("Filled prompt:")
+                        echo("=".repeat(50))
+                        if (filledPrompt.description != null) {
+                            echo("Description: ${filledPrompt.description}")
+                            echo("-".repeat(40))
+                        }
                     }
-                    
+
+
                     filledPrompt.messages.forEach { message ->
-                        echo("Role: ${message.role}")
+                        if (this@McpCli.verbose) {
+                            if (filledPrompt.description != null) {
+                                echo("Role: ${message.role}")
+                            }
+                        }
                         message.content?.forEach { part ->
                             when (part.partType) {
                                 tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
@@ -211,13 +230,19 @@ class McpCli : CliktCommand(
                     val model = try {
                         TextPlugin.multimodalModel(model)
                     } catch (x: NoSuchElementException) {
-                        throw McpServerException("Model '$model' not found. Available models: ${TextPlugin.chatModels().joinToString { it.modelId }}", x)
+                        throw McpServerException(
+                            "Model '$model' not found. Available models: ${
+                                TextPlugin.chatModels().joinToString { it.modelId }
+                            }", x
+                        )
                     }
 
                     val completed = model.chat(filledPrompt.messages)
 
-                    echo("=".repeat(50))
-                    echo("Response from model '${model.modelId}':")
+                    if (this@McpCli.verbose) {
+                        echo("=".repeat(50))
+                        echo("Response from model '${model.modelId}':")
+                    }
 
                     if (completed.values == null) {
                         echo("No response received from the model.")
@@ -226,7 +251,9 @@ class McpCli : CliktCommand(
                     } else {
                         completed.values!!.forEach { message ->
                             val mm = message.multimodalMessage!!
-                            echo("Role: ${mm.role}")
+                            if (this@McpCli.verbose) {
+                                echo("Role: ${mm.role}")
+                            }
                             mm.content?.forEach { part ->
                                 when (part.partType) {
                                     tri.ai.core.MPartType.TEXT -> echo(part.text ?: "")
@@ -256,7 +283,8 @@ class McpCli : CliktCommand(
     ) {
         override fun run() {
             runBlocking {
-                LocalMcpStdioServer().startServer(System.`in`, System.out)
+                val library = this@McpCli.loadPromptLibrary()
+                StdioMcpServer(library).startServer(System.`in`, System.out)
             }
         }
     }

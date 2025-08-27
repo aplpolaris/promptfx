@@ -17,23 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.server
+package tri.ai.mcp
 
-/**
- * Interface for connecting to MCP prompt servers, supporting both local and remote connections.
- * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
- */
-interface McpServerAdapter {
-    
-    /** List all available prompts from the server. */
-    suspend fun listPrompts(): List<McpPrompt>
-    
-    /** Get a filled prompt with the given arguments. */
-    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
-    
-    /** Get server capabilities. */
-    suspend fun getCapabilities(): McpServerCapabilities?
-    
-    /** Close the connection to the server. */
-    suspend fun close()
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class McpServerCapabilities(
+    val prompts: McpServerPromptCapability
+)
+
+@Serializable
+data class McpServerPromptCapability(
+    val listChanged: Boolean = false
+)
