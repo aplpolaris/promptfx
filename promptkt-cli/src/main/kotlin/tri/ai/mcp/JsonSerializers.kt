@@ -8,7 +8,7 @@ import tri.ai.pips.core.MAPPER
  * Handles JSON serialization and deserialization for JSON-RPC messages.
  * Centralizes all JSON processing concerns.
  */
-object JsonRpcSerializer {
+object JsonSerializers {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = false
@@ -31,4 +31,8 @@ object JsonRpcSerializer {
     /** Convert a JsonObject like {"k":"v"} into Map<String,String> */
     fun toStringMap(jsonObject: JsonObject): Map<String, String> =
         jsonObject.entries.associate { (k, v) -> k to v.jsonPrimitive.content }
+
+    /** Convert a kotlinx JsonElement to Jackson JsonNode */
+    fun JsonElement.toJsonNode() =
+        MAPPER.readTree(json.encodeToString(this))
 }

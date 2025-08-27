@@ -34,6 +34,7 @@ import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
 import tri.ai.mcp.RemoteMcpServer
 import tri.ai.mcp.StdioMcpServer
+import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.prompt.PromptLibrary
@@ -72,7 +73,8 @@ class McpCli : CliktCommand(
     private fun createAdapter(): McpServerAdapter {
         return if (serverUrl == "local") {
             val library = loadPromptLibrary()
-            LocalMcpServer(library)
+            val toolLibrary = StarterToolLibrary()
+            LocalMcpServer(library, toolLibrary)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
             RemoteMcpServer(serverUrl)
@@ -284,7 +286,8 @@ class McpCli : CliktCommand(
         override fun run() {
             runBlocking {
                 val library = this@McpCli.loadPromptLibrary()
-                StdioMcpServer(library).startServer(System.`in`, System.out)
+                val locServer = LocalMcpServer(library, StarterToolLibrary())
+                StdioMcpServer(locServer).startServer(System.`in`, System.out)
             }
         }
     }

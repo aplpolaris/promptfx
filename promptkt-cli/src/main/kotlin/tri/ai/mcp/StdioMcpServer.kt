@@ -1,13 +1,11 @@
 package tri.ai.mcp
 
-import tri.ai.prompt.PromptLibrary
 import java.io.InputStream
 import java.io.PrintStream
 
 /** Local MCP server running on stdio -- switch out for a library when possible. */
-class StdioMcpServer(private val library: PromptLibrary = PromptLibrary.INSTANCE) {
+class StdioMcpServer(private val server: McpServerAdapter) {
 
-    private val server = LocalMcpServer(library)
     private val businessLogic = McpHandler(server)
     private val router = StdioJsonRpcMessageRouter(businessLogic)
 

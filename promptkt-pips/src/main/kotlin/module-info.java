@@ -24,7 +24,10 @@ module tri.promptkt.pips {
     requires openai.core.jvm;
     requires openai.client.jvm;
 
+    requires io.ktor.client.core;
+    requires io.ktor.client.okhttp;
     requires okhttp3;
+
     requires com.github.mustachejava;
 
     opens tri.ai.pips.api to com.fasterxml.jackson.databind;

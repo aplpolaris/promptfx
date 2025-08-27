@@ -22,7 +22,9 @@ module tri.promptkt.cli {
     requires transitive tri.promptkt.docs;
 
     requires clikt.jvm;
+    requires okhttp3;
 
     opens tri.ai.cli to com.fasterxml.jackson.databind;
     opens tri.ai.mcp to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp.tool to com.fasterxml.jackson.databind;
 }

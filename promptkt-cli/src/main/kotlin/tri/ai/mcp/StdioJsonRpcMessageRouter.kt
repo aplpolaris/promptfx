@@ -25,7 +25,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
             val line = reader.readLine() ?: break
             if (line.isBlank()) continue
 
-            val req = runCatching { JsonRpcSerializer.parseRequest(line) }.getOrElse {
+            val req = runCatching { JsonSerializers.parseRequest(line) }.getOrElse {
                 // Malformed JSON → JSON-RPC parse error (-32700)
                 writeError(out, null, -32700, "Parse error")
                 null
@@ -60,7 +60,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
             if (id != null) put("id", id)
             put("result", result)
         }
-        out.println(JsonRpcSerializer.serialize(resp))
+        out.println(JsonSerializers.serialize(resp))
         out.flush()
     }
 
@@ -73,7 +73,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                 put("message", JsonPrimitive(message))
             })
         }
-        out.println(JsonRpcSerializer.serialize(err))
+        out.println(JsonSerializers.serialize(err))
         out.flush()
     }
 }
