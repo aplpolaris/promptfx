@@ -17,16 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.server
+package tri.ai.mcp
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class McpServerCapabilities(
-    val prompts: McpServerPromptCapability
-)
-
-@Serializable
-data class McpServerPromptCapability(
-    val listChanged: Boolean = false
-)
+/** Exception thrown when a prompt is not found. */
+class McpServerException(message: String, x: Throwable? = null) : Exception(message, x)

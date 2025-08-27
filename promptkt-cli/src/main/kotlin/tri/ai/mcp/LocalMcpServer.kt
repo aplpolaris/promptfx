@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.prompt.server
+package tri.ai.mcp
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import kotlinx.serialization.Serializable

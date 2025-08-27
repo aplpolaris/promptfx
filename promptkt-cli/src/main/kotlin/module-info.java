@@ -24,4 +24,5 @@ module tri.promptkt.cli {
     requires clikt.jvm;
 
     opens tri.ai.cli to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp to com.fasterxml.jackson.databind;
 }

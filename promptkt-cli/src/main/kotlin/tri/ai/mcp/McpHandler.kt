@@ -1,38 +1,15 @@
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.ai.cli
+package tri.ai.mcp
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
-import tri.ai.prompt.server.LocalMcpServer
-import tri.ai.prompt.server.McpGetPromptResponse
 
 /**
  * Handles MCP-specific business logic for JSON-RPC requests.
  * Focuses on MCP protocol implementation without JSON-RPC concerns.
  */
-class McpBusinessLogic(
-    private val server: LocalMcpServer
-) : JsonRpcBusinessLogic {
+class McpHandler(private val server: LocalMcpServer) : JsonRpcHandler {
 
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
@@ -51,7 +28,7 @@ class McpBusinessLogic(
 
             // --- Notifications with no responses ---
             "notifications/initialized" -> handleNotificationsInitialized()
-            
+
             // --- Graceful shutdown notification ---
             "notifications/close" -> handleNotificationsClose()
 
@@ -90,37 +67,26 @@ class McpBusinessLogic(
         }
     }
 
-    private suspend fun handleToolsList(): JsonElement {
-        return buildJsonObject { put("tools", buildJsonArray { }) }
-    }
-
-    private suspend fun handleToolsCall(): JsonElement {
-        return buildJsonObject { put("content", buildJsonArray { }) }
-    }
-
-    private suspend fun handleResourcesList(): JsonElement {
-        return buildJsonObject { put("resources", buildJsonArray { }) }
-    }
-
-    private suspend fun handleResourcesRead(): JsonElement {
-        return buildJsonObject { put("contents", buildJsonArray { }) }
-    }
-
-    private suspend fun handleNotificationsInitialized(): JsonElement? {
+    private suspend fun handleToolsList() = objwithemptylist("tools")
+    private suspend fun handleToolsCall() = objwithemptylist("content")
+    private suspend fun handleResourcesList() = objwithemptylist("resources")
+    private suspend fun handleResourcesRead() = objwithemptylist("contents")
+    private suspend fun handleNotificationsInitialized() = null
+    private suspend fun handleNotificationsClose(): JsonElement? {
+        // No response for notifications, caller should exit
+        runCatching { server.close() }
         return null
     }
-    
-    private suspend fun handleNotificationsClose(): JsonElement? {
-        runCatching { server.close() }
-        return null // No response for notifications; caller should exit
-    }
+
+    private fun objwithemptylist(id: String) = buildJsonObject { put(id, buildJsonArray { }) }
 
     /** Convert McpPrompt to JsonElement */
-    private fun McpGetPromptResponse.toJsonElement() = 
-        ResponseConverter.convertPromptResponse(this)
+    private fun McpGetPromptResponse.toJsonElement() =
+        convertPromptResponse(this)
 
     //region Response Conversion Logic
-    companion object ResponseConverter {
+
+    companion object {
         /** Convert McpPrompt to JsonElement */
         fun convertPromptResponse(response: McpGetPromptResponse): JsonElement = buildJsonObject {
             response.description?.let { put("description", JsonPrimitive(it)) }
@@ -168,7 +134,7 @@ class McpBusinessLogic(
             // If you have "system" or others, default to "user" for prompts.
             else -> "user"
         }
-        
+
         /** Convert one of your message parts to a single MCP content object. */
         private fun MChatMessagePart.toMcpContent(): JsonObject {
             val kind = partType.name.uppercase()
@@ -208,5 +174,6 @@ class McpBusinessLogic(
             put("text", JsonPrimitive(s))
         }
     }
+
     //endregion
 }

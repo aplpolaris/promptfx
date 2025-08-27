@@ -20,6 +20,8 @@
 package tri.ai.prompt
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class PromptGroupIOTest {
@@ -47,6 +49,66 @@ class PromptGroupIOTest {
     fun testReadAll() {
         val groups = PromptGroupIO.readAllFromResourceDirectory()
         assertEquals(20, groups.size)
+    }
+
+    @Test
+    fun testLoadingPromptResourcesWithArguments() {
+        // Load the library which includes the resource files we've updated
+        val library = PromptLibrary().apply {
+            addGroup(PromptGroupIO.readFromResource("examples.yaml"))
+            addGroup(PromptGroupIO.readFromResource("text-translate.yaml"))
+            addGroup(PromptGroupIO.readFromResource("text-summarize.yaml"))
+        }
+
+        // Test that some of the prompts we updated have the argument metadata
+        val examplePrompt = library.get("examples/hello-world@1.0.0")
+        assertNotNull(examplePrompt, "Hello world example prompt should exist")
+        assertEquals(1, examplePrompt!!.args.size)
+        assertEquals("input", examplePrompt.args[0].name)
+        assertEquals("The input text to include in the example", examplePrompt.args[0].description)
+        assertTrue(examplePrompt.args[0].required)
+
+        val translatePrompt = library.get("text-translate/translate@1.0.0")
+        assertNotNull(translatePrompt, "Translate prompt should exist")
+        assertEquals(2, translatePrompt!!.args.size)
+
+        val inputArg = translatePrompt.args.find { it.name == "input" }
+        val instructArg = translatePrompt.args.find { it.name == "instruct" }
+        assertNotNull(inputArg)
+        assertNotNull(instructArg)
+        assertEquals("The text to be translated", inputArg!!.description)
+        assertEquals("The target language for translation", instructArg!!.description)
+        assertTrue(inputArg.required)
+        assertTrue(instructArg.required)
+
+        val summarizePrompt = library.get("text-summarize/summarize@1.0.0")
+        assertNotNull(summarizePrompt, "Summarize prompt should exist")
+        assertEquals(4, summarizePrompt!!.args.size)
+
+        val requiredArgs = summarizePrompt.args.filter { it.required }
+        val optionalArgs = summarizePrompt.args.filter { !it.required }
+        assertEquals(1, requiredArgs.size) // Only input should be required
+        assertEquals(3, optionalArgs.size) // audience, style, format should be optional
+        assertEquals("input", requiredArgs[0].name)
+    }
+
+    @Test
+    fun testPromptResourcesCanFillTemplates() {
+        val library = PromptLibrary().apply {
+            addGroup(PromptGroupIO.readFromResource("text-translate.yaml"))
+        }
+
+        val translatePrompt = library.get("text-translate/translate@1.0.0")
+        assertNotNull(translatePrompt)
+
+        val result = translatePrompt!!.fill(
+            "input" to "Hello, world!",
+            "instruct" to "Spanish"
+        )
+
+        assertTrue(result.contains("Hello, world!"))
+        assertTrue(result.contains("Spanish"))
+        assertTrue(result.contains("Translate"))
     }
 
 }
