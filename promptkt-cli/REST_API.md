@@ -2,6 +2,8 @@
 
 This REST API provides access to the Document Q&A functionality for asking questions against a fixed document set.
 
+✅ **TESTED**: Basic server functionality and endpoints are working correctly.
+
 ## Starting the Server
 
 ### Option 1: Using the CLI command
@@ -77,14 +79,17 @@ Ask a question against the document set.
 ```bash
 # Check server status
 curl http://localhost:8080/
+# Response: {"service": "PromptFx Document Q&A API", "version": "1.0.0", "endpoints": ["/folders", "/qa"]}
 
 # List available folders
 curl http://localhost:8080/folders
+# Response: {"folders": [], "currentFolder": ""}
 
-# Ask a question
+# Ask a question (requires OpenAI API key)
 curl -X POST http://localhost:8080/qa \
   -H "Content-Type: application/json" \
   -d '{"question": "What is artificial intelligence?"}'
+# Response: {"answer": "...", "question": "What is artificial intelligence?", "folder": "", "success": true}
 ```
 
 ### Using Python
