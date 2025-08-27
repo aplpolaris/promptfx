@@ -154,7 +154,27 @@ class McpHandler(private val server: LocalMcpServer) : JsonRpcHandler {
                     put("mimeType", JsonPrimitive("audio/wav"))
                 }
 
-                // You don't have a resource URI field; degrade to text so clients don't reject it.
+                // You don't have a resource URI field;
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+                // degrade to text so clients don't reject it.
                 "RESOURCE" -> textContent(text ?: "[resource omitted: no URI/mimeType in part]")
 
                 // If your part encodes a function/tool call, flatten it into text for prompts.
