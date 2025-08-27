@@ -31,13 +31,39 @@ import java.io.File
 object RuntimePromptViewConfigs {
 
     /** Indexed cache of views configured within codebase and at runtime. */
-    val viewConfigs: List<SourcedViewConfig> by lazy { loadViewCache() }
+    var viewConfigs: List<SourcedViewConfig> = listOf()
+        private set
     /** Views indexed by id, with runtime configs taking precedence over built-in configs and plugins. */
-    val viewIndex: Map<String, SourcedViewConfig> by lazy { viewConfigs.byPrecedence() }
+    var viewIndex: Map<String, SourcedViewConfig> = mapOf()
+        private set
+
+    /** Prompts arising from views. */
+    var promptLibrary = PromptLibrary()
+        private set
+
 
     /** Check if the given view config is overwritten. */
     fun isOverwritten(viewConfig: SourcedViewConfig) =
         viewIndex[viewConfig.viewId] != viewConfig
+
+    /** Reload all view configurations from their sources. */
+    fun reload() {
+        viewConfigs = loadViewCache()
+        viewIndex = viewConfigs.byPrecedence()
+        promptLibrary = PromptLibrary().apply {
+            viewIndex.values.mapNotNull { it.config }.forEach {
+                try {
+                    addPrompt(it.prompt)
+                } catch (e: Exception) {
+                    fine<RuntimePromptViewConfigs>("Error adding prompt ${it.prompt.id} from view config: ${e.message}")
+                }
+            }
+        }
+    }
+
+    init {
+        reload()
+    }
 
     //region VIEW CACHE LOADER
 
@@ -116,18 +142,6 @@ object RuntimePromptViewConfigs {
     fun modeOptionMap(modeId: String) = (runtimeModes[modeId] ?: modes[modeId]) ?: error("Mode $modeId not found in index.")
 
     //endregion
-
-    val PROMPT_LIBRARY by lazy {
-        PromptLibrary().apply {
-            viewIndex.values.mapNotNull { it.config }.forEach {
-                try {
-                    addPrompt(it.prompt)
-                } catch (e: Exception) {
-                    fine<RuntimePromptViewConfigs>("Error adding prompt ${it.prompt.id} from view config: ${e.message}")
-                }
-            }
-        }
-    }
 }
 
 /** Tracks the YAML configuration of the view along with the source. */
