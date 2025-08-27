@@ -1,11 +1,33 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MPartType
+import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.prompt.PromptArgDef
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptGroupIO
@@ -16,7 +38,7 @@ class LocalMcpServerTest {
     @Test
     fun testListPrompts() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE)
+            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
             val prompts = server.listPrompts()
             println(prompts)
             assertTrue(prompts.isNotEmpty(), "Should have at least one prompt")
@@ -27,7 +49,7 @@ class LocalMcpServerTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE)
+            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             // Test getting a prompt that exists
             val firstPrompt = server.listPrompts().first()
@@ -51,7 +73,7 @@ class LocalMcpServerTest {
     @Test
     fun testGetPrompt_arguments() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE)
+            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             val response = server.getPrompt(
                 "text-qa/answer", mapOf(
@@ -87,7 +109,7 @@ class LocalMcpServerTest {
     @Test
     fun testCapabilities() {
         runTest {
-            val adapter = LocalMcpServer(PromptLibrary.Companion.INSTANCE)
+            val adapter = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             val capabilities = adapter.getCapabilities()
             println(capabilities)

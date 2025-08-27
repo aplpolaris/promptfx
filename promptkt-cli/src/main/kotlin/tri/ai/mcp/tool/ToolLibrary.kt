@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp.tool
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -20,7 +39,7 @@ interface ToolLibrary {
 
 class StarterToolLibrary: ToolLibrary {
     private val tools: List<Executable> = listOf(
-        FakeTools.fakeInternetSearch,
+//        FakeTools.fakeInternetSearch,
         FakeTools.fakeSentimentAnalysis,
         FakeTools.echo,
         WebSearchExecutable()
@@ -43,36 +62,65 @@ class StarterToolLibrary: ToolLibrary {
 }
 
 object FakeTools {
+    private fun buildSchemaWithOneRequiredParam(paramName: String, paramDescription: String) = MAPPER.readTree(
+        """
+        {
+          "type": "object",
+          "properties": {
+            "$paramName": { "type": "string", "description": "$paramDescription" }
+          },
+          "required": ["$paramName"]
+        }
+    """.trimIndent()
+    )
+    private fun buildSchemaWithOneOptionalParam(paramName: String, paramDescription: String) = MAPPER.readTree(
+        """
+        {
+          "type": "object",
+          "properties": {
+            "$paramName": { "type": "string", "description": "$paramDescription" }
+          }
+        }
+    """.trimIndent()
+    )
+
     val echo = object : Executable {
-        override val name = "test/echo"
+        override val name = "test_echo"
         override val description: String = "An echo tool that returns the input as output."
         override val version: String = "1.0.0"
-        override val inputSchema: JsonNode? = MAPPER.readTree(
-            """
-            {
-              "type": "object",
-              "properties": {
-                "message": { "type": "string", "description": "The message to echo." }
-              },
-              "required": ["message"]
-            }
-        """.trimIndent()
-        )
-        override val outputSchema: JsonNode? = MAPPER.readTree(
-            """
-            {
-              "type": "object",
-              "properties": {
-                "echoed_message": { "type": "string", "description": "The echoed message." }
-              }
-            }
-        """.trimIndent()
-        )
+        override val inputSchema: JsonNode? =
+            buildSchemaWithOneRequiredParam("message", "The message to echo.")
+        override val outputSchema: JsonNode? =
+            buildSchemaWithOneOptionalParam("echoed_message", "The echoed message.")
         override suspend fun execute(input: JsonNode, context: ExecContext) = input
     }
     val fakeInternetSearch = StubTool(
-        name = "test/internet-search",
+        name = "test_internet_search",
         description = "A fake internet search tool that returns a fixed result.",
+        inputSchema = buildSchemaWithOneRequiredParam("query", "The search query."),
+        outputSchema = MAPPER.readTree("""
+            {
+              "type": "object",
+              "properties": {
+                "query": { "type": "string", "description": "The search query." },
+                "num_results": { "type": "integer", "description": "Number of results returned." },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string", "description": "Title of the result." },
+                      "url": { "type": "string", "description": "URL of the result." },
+                      "snippet": { "type": "string", "description": "Short description or snippet." }
+                    },
+                    "required": ["title", "url"]
+                  },
+                  "description": "List of search results."
+                }
+              },
+              "required": ["results"]
+            }
+        """.trimIndent()),
         hardCodedOutput = buildJsonObject {
             put("query", "example query")
             put("num_results", 3)
@@ -96,8 +144,29 @@ object FakeTools {
         }
     )
     val fakeSentimentAnalysis = StubTool(
-        name = "test/sentiment-analysis",
+        name = "test_sentiment_analysis",
         description = "A fake sentiment analysis tool that returns a fixed sentiment.",
+        inputSchema = buildSchemaWithOneRequiredParam("input_text", "The text to analyze."),
+        outputSchema = MAPPER.readTree("""
+            {
+              "type": "object",
+              "properties": {
+                "input_text": { "type": "string", "description": "The input text that was analyzed." },
+                "sentiment": { 
+                  "type": "string", 
+                  "description": "The detected sentiment.", 
+                  "enum": ["positive", "negative", "neutral"] 
+                },
+                "confidence": { 
+                  "type": "number", 
+                  "description": "Confidence score between 0 and 1." ,
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["input_text", "sentiment", "confidence"]
+            }
+        """.trimIndent()),
         hardCodedOutput = buildJsonObject {
             put("input_text", "I love programming!")
             put("sentiment", "positive")
@@ -111,8 +180,8 @@ class StubTool(
     override val name: String,
     override val description: String,
     override val version: String = "1.0.0",
-    override val inputSchema: JsonNode? = null,
-    override val outputSchema: JsonNode? = null,
+    override val inputSchema: JsonNode, // required for Claude Desktop to work
+    override val outputSchema: JsonNode, // required for Claude Desktop to work
     @get:JsonIgnore
     val hardCodedOutput: JsonElement
 ) : Executable {
