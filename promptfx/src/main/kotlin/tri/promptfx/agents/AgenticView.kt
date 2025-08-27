@@ -21,9 +21,11 @@ package tri.promptfx.agents
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.convertValue
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.collections.transformation.FilteredList
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
@@ -47,6 +49,7 @@ import tri.promptfx.*
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.graphic
 
 /** Plugin for the [AgenticView]. */
 class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Agents", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
@@ -62,12 +65,41 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     private val input = SimpleStringProperty("")
     private val engine = SimpleObjectProperty(WorkflowEngine.TOOL_CHAIN)
     private val tools = observableListOf<SelectableTool>()
+    private val searchText = SimpleStringProperty("")
+    private val filteredTools = FilteredList(tools) { true }
 
     init {
         addInputTextArea(input)
 
         input {
-            listview(tools) {
+            // Toolbar for selection and filtering
+            toolbar {
+                // Menu button for Select All/None
+                menubutton("Selection") {
+                    item("Select All") {
+                        action {
+                            tools.forEach { it.selected = true }
+                        }
+                    }
+                    item("Select None") {
+                        action {
+                            tools.forEach { it.selected = false }
+                        }
+                    }
+                }
+                
+                spacer()
+                
+                // Search field
+                label("Quick Search:")
+                textfield(searchText) {
+                    promptText = "Filter by name, category, or description..."
+                    prefWidth = 250.0
+                }
+            }
+            
+            // Tools list view
+            listview(filteredTools) {
                 cellFormat {
                     graphic = hbox(5) {
                         checkbox(property = it.selectedProperty)
@@ -114,6 +146,23 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                     engine.isEqualTo(WorkflowEngine.JSON_TOOL_MULTIMODAL)
                 }
                 combobox(model, modelList)
+            }
+        }
+        
+        // Setup filtering logic
+        searchText.onChange { updateFilter() }
+    }
+    
+    /** Updates the filter based on search text. */
+    private fun updateFilter() {
+        val query = searchText.value?.lowercase() ?: ""
+        filteredTools.setPredicate { tool ->
+            if (query.isEmpty()) {
+                true
+            } else {
+                tool.category.lowercase().contains(query) ||
+                tool.tool.name.lowercase().contains(query) ||
+                tool.tool.description.lowercase().contains(query)
             }
         }
     }

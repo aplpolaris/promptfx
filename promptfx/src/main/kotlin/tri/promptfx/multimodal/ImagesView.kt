@@ -233,10 +233,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         val modelInfo = AiModelInfo(
             model.value, mapOf(
                 "n" to numProperty.value,
-                "size" to imageSize.value,
+                "size" to imageSize.value
+            ) + if (model.value == DALLE3_ID) mapOf(
                 "quality" to quality.value,
                 "style" to imageStyle.value
-            )
+            ) else emptyMap()
         )
         val result = try {
             val images = controller.openAiPlugin.client.imageURL(
@@ -245,8 +246,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                     prompt = input.value,
                     n = numProperty.value,
                     size = imageSize.value,
-                    quality = quality.value,
-                    style = imageStyle.value
+                    quality = if (model.value == DALLE3_ID) quality.value else null,
+                    style = if (model.value == DALLE3_ID) imageStyle.value else null
                 )
             )
             AiImageTrace(
