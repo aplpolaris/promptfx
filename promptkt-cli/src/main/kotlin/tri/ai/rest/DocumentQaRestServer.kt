@@ -58,11 +58,14 @@ class DocumentQaRestServer(
             
             routing {
                 get("/") {
-                    call.respond(mapOf(
-                        "service" to "PromptFx Document Q&A API",
-                        "version" to "1.0.0",
-                        "endpoints" to listOf("/folders", "/qa")
-                    ))
+                    val info = """
+                    {
+                        "service": "PromptFx Document Q&A API",
+                        "version": "1.0.0",
+                        "endpoints": ["/folders", "/qa"]
+                    }
+                    """.trimIndent()
+                    call.respondText(info, ContentType.Application.Json)
                 }
                 
                 get("/folders") {
