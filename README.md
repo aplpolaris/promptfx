@@ -104,6 +104,54 @@ The PromptKt library provides a number of features for working with LLM APIs, in
 
 Many of these features resemble features of [LangChain](https://python.langchain.com/).
 
+## Command-Line Tools
+
+### `McpCli` (0.12.0+)
+
+`tri.ai.cli.McpCli` provides an MCP-compatible prompt server, supporting both local (built-in prompt libraries) and remote servers.
+
+```
+Usage: mcp-prompt [<options>] <command> [<args>]...
+
+  Interface to MCP prompt servers - list, fill, and execute prompts, or start a local server
+
+Options:
+  -s, --server=<text>           MCP server URL (use 'local' for local server)
+  -p, --prompt-library=<text>   Custom prompt library file or directory path (for local server only)
+  -v, --verbose                 Verbose output
+  -h, --help                    Show this message and exit
+
+Commands:
+  list     List all available prompts from the MCP server
+  get      Get a prompt filled with arguments
+  execute  Execute a prompt - fill it with arguments and display the result after calling an LLM
+  start    Start an MCP server on stdio, with locally provided prompts
+```
+
+Sample usage:
+```bash
+# Show help
+java -cp XX tri.ai.cli.McpCli --help
+
+# List available prompts  
+java -cp XX tri.ai.cli.McpCli list
+
+# Get filled prompt
+java -cp XX tri.ai.cli.McpCli get "text-translate/translate" input="Hello world" instruct="French"
+
+# Translate text with verbose output
+java -cp XX tri.ai.cli.McpCli --verbose execute "text-translate/translate" input="Hello world" instruct="French"
+
+# Execute with custom model
+java -cp XX tri.ai.cli.McpCli execute --model "gpt-4" "examples/hello-world" name="World"
+
+# Start local MCP server on stdio
+java -cp XX tri.ai.cli.McpCli start
+
+# Use custom prompt library
+java -cp XX tri.ai.cli.McpCli --prompt-library ./my-prompts list
+```
+
 # Building PromptKt and PromptFx
 
 System requirements:
