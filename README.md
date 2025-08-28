@@ -1,7 +1,7 @@
 # PromptFx
 
 This project provides a prototype Kotlin module for AI prompt chaining (`promptkt`) and an associated JavaFx demonstration UI (`promptfx`).
-It is intended primarily for demonstration and exploration purposes, and is designed to be primarily used with the [OpenAI API](https://platform.openai.com/docs/api-reference) or a compatible LLM API.
+It is intended primarily for demonstration and exploration purposes, and is designed to work with multiple LLM APIs including [OpenAI API](https://platform.openai.com/docs/api-reference), [Anthropic Claude API](https://docs.anthropic.com/claude/reference/getting-started), and other compatible LLM APIs.
 
 See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-and-promptfx) and [the wiki](https://github.com/aplpolaris/promptfx/wiki) for instructions to build and run PromptFx and troubleshooting.
 
@@ -14,9 +14,10 @@ See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-a
 
 ## API Key
 
-PromptFx currently supports OpenAI and Google Gemini models, though more can be added as plugins.
+PromptFx currently supports OpenAI, Anthropic Claude, and Google Gemini models, though more can be added as plugins.
 
 - To set the OpenAI API key, click on the key button in the toolbar. Alternately, save your key in an `apikey.txt` file in the same folder you use to run PromptFx, or in a system registry variable `OPENAI_API_KEY`.
+- To set the Anthropic API key, save your key in a `anthropic-apikey.txt` file in the same folder you use to run PromptFx, or set the environment variable `ANTHROPIC_API_KEY`.
 - To set the Gemini API key, save your key in a `apikey-gemini.txt` file in the same folder you use to run PromptFx.
 
 ## PromptFx UI Features
