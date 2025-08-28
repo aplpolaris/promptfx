@@ -87,7 +87,11 @@ class McpCli : CliktCommand(
             PromptLibrary.loadFromPath(promptLibrary!!)
         } else {
             if (verbose) echo("Using default local MCP server with PromptLibrary")
-            PromptLibrary.INSTANCE
+            PromptLibrary().apply {
+                PromptLibrary.INSTANCE
+                    .list { it.category?.startsWith("research") == true }
+                    .forEach { addPrompt(it) }
+            }
         }
     }
 
