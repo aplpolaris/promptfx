@@ -26,5 +26,5 @@ module tri.promptkt.cli {
 
     opens tri.ai.cli to com.fasterxml.jackson.databind;
     opens tri.ai.mcp to com.fasterxml.jackson.databind;
-    opens tri.ai.mcp.tool to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp.tool to com.fasterxml.jackson.databind, kotlin.reflect;
 }
