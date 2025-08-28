@@ -28,11 +28,15 @@ import javafx.scene.text.Text
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
+import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxWorkspace
+import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.prompt.PromptDetailsUi
 import tri.util.ui.NavigableWorkspaceViewImpl
+import java.io.File
 
 /** Plugin for the [PromptTemplateView]. */
 class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Prompts", "Prompt Library", type = PromptLibraryView::class)
@@ -84,6 +88,12 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                         hostServices.showDocument(file.toURI().toString())
                     }
                 }
+                button("", FontAwesomeIconView(FontAwesomeIcon.FILTER)) {
+                    tooltip("Configure prompt library filters.")
+                    action {
+                        configureFilters()
+                    }
+                }
             }
             listview(filteredPromptEntries) {
                 vgrow = Priority.ALWAYS
@@ -122,6 +132,47 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
 
     private fun sendToTemplateView() {
         find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.template!!)
+    }
+    
+    private fun configureFilters() {
+        val config = find<PromptFxConfig>()
+        val currentFile = config.promptLibraryConfigFile()
+        
+        confirmation(
+            "Configure Prompt Library Filters",
+            "Would you like to select a configuration file to filter which prompts are loaded?",
+            ButtonType.YES, ButtonType.NO, ButtonType.CANCEL
+        ) { result ->
+            when (result) {
+                ButtonType.YES -> {
+                    promptFxFileChooser(
+                        "Select Prompt Library Configuration File",
+                        arrayOf(PromptFxConfig.FF_YAML, PromptFxConfig.FF_ALL),
+                        dirKey = PromptFxConfig.DIR_KEY_DEFAULT
+                    ) { files ->
+                        if (files.isNotEmpty()) {
+                            config.setPromptLibraryConfigFile(files.first())
+                            information(
+                                "Configuration Updated", 
+                                "Prompt library configuration has been updated. Please restart the application for changes to take effect."
+                            )
+                        }
+                    }
+                }
+                ButtonType.NO -> {
+                    if (currentFile != null) {
+                        config.setPromptLibraryConfigFile(null)
+                        information(
+                            "Configuration Cleared", 
+                            "Prompt library configuration has been cleared. All prompts will be loaded. Please restart the application for changes to take effect."
+                        )
+                    } else {
+                        information("No Configuration", "No configuration file was previously selected.")
+                    }
+                }
+                // CANCEL - do nothing
+            }
+        }
     }
 
     private fun refilter() {
