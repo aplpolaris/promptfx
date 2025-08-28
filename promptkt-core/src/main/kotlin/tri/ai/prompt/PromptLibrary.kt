@@ -28,7 +28,7 @@ import kotlin.io.path.isDirectory
  * Manages collections of prompt templates.
  * TODO - versioning is not implemented, even though there's a placeholder for it in prompt id conventions
  */
-class PromptLibrary {
+class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
 
     // indices (id is full id = group/name@x.y.z, bare = group/name only)
     // category and tag indices are lists of ids
@@ -49,13 +49,16 @@ class PromptLibrary {
     /** Adds a prompt to the library, indexing it by id, bare id, category, and tags. */
     fun addPrompt(prompt: PromptDef) {
         prompt.resolved(PromptGroup("Uncategorized")).let {
-            byId[it.id] = it
-            byBare.getOrPut(it.bareId) { mutableListOf() }.add(it)
-            it.category?.let { category ->
-                byCategory.getOrPut(category) { mutableListOf() }.add(it.id)
-            }
-            it.tags.forEach { tag ->
-                byTag.getOrPut(tag) { mutableListOf() }.add(it.id)
+            // Apply configuration filtering
+            if (config.shouldInclude(it)) {
+                byId[it.id] = it
+                byBare.getOrPut(it.bareId) { mutableListOf() }.add(it)
+                it.category?.let { category ->
+                    byCategory.getOrPut(category) { mutableListOf() }.add(it.id)
+                }
+                it.tags.forEach { tag ->
+                    byTag.getOrPut(tag) { mutableListOf() }.add(it.id)
+                }
             }
         }
     }
@@ -113,6 +116,23 @@ class PromptLibrary {
         private fun loadRuntimePromptLibrary() = PromptLibrary().apply {
             readFromRuntimeDirectory()
         }
+        
+        /** Load a PromptLibrary with configuration from resource directory. */
+        fun loadWithConfig(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT): PromptLibrary = 
+            PromptLibrary(config).apply {
+                readFromResourceDirectory()
+                readFromRuntimeDirectory()
+            }
+        
+        /** Load a PromptLibrary with configuration from a config file. */
+        fun loadWithConfigFile(configPath: String): PromptLibrary {
+            val config = PromptGroupIO.loadConfigFromFile(Path(configPath))
+            return loadWithConfig(config)
+        }
+        
+        /** Load the default configuration from resources. */
+        fun loadDefaultConfig(): PromptLibraryConfig =
+            PromptGroupIO.loadConfigFromResource("prompt-library-config.yaml")
 
         // load from resource directory
         private fun PromptLibrary.readFromResourceDirectory() {

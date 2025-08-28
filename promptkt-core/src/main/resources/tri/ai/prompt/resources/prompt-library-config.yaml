@@ -1,0 +1,27 @@
+# Default PromptLibrary Configuration
+# This file controls which prompts are loaded from the built-in prompt library.
+# Pattern matching supports simple wildcards using '*'.
+#
+# If includeIds or includeCategories are specified, only prompts matching these patterns will be loaded.
+# Then, any prompts matching excludeIds or excludeCategories patterns will be filtered out.
+# If no includes are specified, all prompts are loaded by default, then excludes are applied.
+
+# Include specific prompt IDs by pattern (optional)
+includeIds: []
+#  - "text-*"           # Include all text-related prompts
+#  - "docs-qa/*"        # Include all document Q&A prompts
+
+# Include specific categories by pattern (optional)  
+includeCategories: []
+#  - "text"             # Include all prompts in the text category
+#  - "docs"             # Include all prompts in the docs category
+
+# Exclude specific prompt IDs by pattern (optional)
+excludeIds: []
+#  - "*beta*"           # Exclude any prompts with 'beta' in the ID
+#  - "experimental/*"   # Exclude all experimental prompts
+
+# Exclude specific categories by pattern (optional)
+excludeCategories: []
+#  - "deprecated"       # Exclude all deprecated prompts
+#  - "internal"         # Exclude internal-use prompts

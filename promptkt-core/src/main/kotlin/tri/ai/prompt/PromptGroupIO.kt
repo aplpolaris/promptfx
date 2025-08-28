@@ -141,5 +141,33 @@ object PromptGroupIO {
     }
 
     //endregion
+    
+    //region CONFIG LOADING
+    
+    /** Load PromptLibraryConfig from a classpath resource. */
+    fun loadConfigFromResource(resourcePath: String, cl: ClassLoader = Thread.currentThread().contextClassLoader): PromptLibraryConfig {
+        fine<PromptGroupIO>("Loading prompt library config from resource: $resourcePath")
+        val isr = cl.getResourceAsStream(resourcePath)
+            ?: PromptGroupIO::class.java.getResourceAsStream(resourcePath)
+            ?: PromptGroupIO::class.java.getResourceAsStream("resources/$resourcePath")
+            ?: return PromptLibraryConfig.DEFAULT
+        InputStreamReader(isr, StandardCharsets.UTF_8).use { reader ->
+            return MAPPER.readValue(reader, PromptLibraryConfig::class.java)
+        }
+    }
+    
+    /** Load PromptLibraryConfig from a file path. */
+    fun loadConfigFromFile(path: Path): PromptLibraryConfig {
+        if (!Files.exists(path)) {
+            fine<PromptGroupIO>("Config file not found: $path, using default config")
+            return PromptLibraryConfig.DEFAULT
+        }
+        Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
+            fine<PromptGroupIO>("Loading prompt library config from file: $path")
+            return MAPPER.readValue(reader, PromptLibraryConfig::class.java)
+        }
+    }
+    
+    //endregion
 
 }
