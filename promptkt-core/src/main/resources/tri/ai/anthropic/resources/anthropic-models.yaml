@@ -1,0 +1,75 @@
+# Library of Anthropic Models
+# See https://docs.anthropic.com/claude/docs/models-overview
+---
+chat: [ claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022, claude-3-sonnet-20240229, claude-3-opus-20240229, claude-3-haiku-20240307 ]
+multimodal: [ claude-3-5-sonnet-20241022, claude-3-sonnet-20240229, claude-3-opus-20240229 ]
+vision_language: [ claude-3-5-sonnet-20241022, claude-3-sonnet-20240229, claude-3-opus-20240229 ]
+
+models:
+
+  CLAUDE-3-5:
+
+    - id: claude-3-5-sonnet-20241022
+      name: Claude 3.5 Sonnet
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: Anthropic
+      description: >
+        Most intelligent model. Strongest performance on highly complex tasks, such as math, coding, and reasoning.
+        Strong vision capabilities.
+      lifecycle: PRODUCTION
+      totalTokenLimit: 200000
+      outputTokenLimit: 8192
+
+    - id: claude-3-5-haiku-20241022
+      name: Claude 3.5 Haiku  
+      type: TEXT_CHAT
+      inputs: [ text ]
+      outputs: [ text ]
+      source: Anthropic
+      description: >
+        Fastest model. Quick and accurate targeted performance for daily tasks.
+      lifecycle: PRODUCTION
+      totalTokenLimit: 200000
+      outputTokenLimit: 8192
+
+  CLAUDE-3:
+
+    - id: claude-3-opus-20240229
+      name: Claude 3 Opus
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: Anthropic
+      description: >
+        Powerful model for highly complex tasks. Top-level performance, intelligence, fluency, and understanding.
+        Strong vision capabilities.
+      lifecycle: PRODUCTION
+      totalTokenLimit: 200000
+      outputTokenLimit: 4096
+
+    - id: claude-3-sonnet-20240229
+      name: Claude 3 Sonnet
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: Anthropic
+      description: >
+        Balanced model for a wide range of tasks. Strong performance for generative and conversational tasks.
+        Vision capabilities.
+      lifecycle: PRODUCTION
+      totalTokenLimit: 200000
+      outputTokenLimit: 4096
+
+    - id: claude-3-haiku-20240307
+      name: Claude 3 Haiku
+      type: TEXT_CHAT
+      inputs: [ text ]
+      outputs: [ text ]
+      source: Anthropic
+      description: >
+        Fastest and most compact model for near-instant responsiveness.
+      lifecycle: PRODUCTION
+      totalTokenLimit: 200000
+      outputTokenLimit: 4096
