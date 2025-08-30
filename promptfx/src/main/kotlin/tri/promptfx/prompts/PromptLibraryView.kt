@@ -108,6 +108,8 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 }
             }
             find<PromptDetailsUi>().apply {
+                visibleWhen(promptSelection.isNotNull)
+                managedWhen(visibleProperty())
                 promptSelection.onChange { prompt.set(it) }
                 this@output.add(this)
             }

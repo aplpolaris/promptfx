@@ -19,20 +19,28 @@
  */
 package tri.ai.gemini
 
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GeminiModelIndexTest {
 
     @Test
     fun testModels() {
+        println(GeminiModelIndex.audioModels())
         println(GeminiModelIndex.chatModels())
         println(GeminiModelIndex.completionModels())
         println(GeminiModelIndex.embeddingModels())
+        println(GeminiModelIndex.multimodalModels())
         println(GeminiModelIndex.moderationModels())
-        println(GeminiModelIndex.audioModels())
         println(GeminiModelIndex.ttsModels())
         println(GeminiModelIndex.imageGeneratorModels())
         println(GeminiModelIndex.visionLanguageModels())
+
+        assertTrue(GeminiModelIndex.javaClass.getResourceAsStream("resources/gemini-models.yaml") != null)
+        assertTrue(GeminiModelIndex.multimodalModels().isNotEmpty())
+
+        // no additional model info has been configured
+        assertTrue(GeminiModelIndex.modelInfoIndex.isEmpty())
     }
 
 }
