@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.text
+package tri.promptfx.docs
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
@@ -31,7 +31,7 @@ import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [TextSimilarityView]. */
-class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Text", "Text Similarity", type = TextSimilarityView::class)
+class TextSimilarityPlugin : NavigableWorkspaceViewImpl<TextSimilarityView>("Documents", "Text Similarity", type = TextSimilarityView::class)
 
 /** View designed to calculate text similarity. */
 class TextSimilarityView: AiTaskView("Text Similarity",
