@@ -496,18 +496,6 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                         label("  No views found")
                     }
                 }
-
-                separator()
-            }
-            
-            // View Plugins
-            vbox(5) {
-                label("Registered View Plugins:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                NavigableWorkspaceView.viewPlugins.forEach { plugin ->
-                    label("• ${plugin.name} (${plugin.category})")
-                }
             }
         }
     }

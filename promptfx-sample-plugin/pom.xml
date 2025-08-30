@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.googlecode.blaisemath</groupId>
+        <artifactId>promptfx-meta</artifactId>
+        <version>0.12.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>promptfx-sample-plugin</artifactId>
+    <packaging>jar</packaging>
+
+    <name>${project.artifactId}-${project.version}</name>
+    <description>Sample plugin demonstrating NavigableWorkspaceView.</description>
+    <url>https://github.com/aplpolaris/promptfx</url>
+    <inceptionYear>2023</inceptionYear>
+
+    <!-- configuration of the default license to use -->
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Johns Hopkins University Applied Physics Laboratory</name>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Elisha Peterson</name>
+            <email>triathematician+blaise@gmail.com</email>
+            <url>https://github.com/triathematician</url>
+            <organization>JHU-APL</organization>
+            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aplpolaris/promptfx</url>
+        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
+        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/aplpolaris/promptfx/issues</url>
+    </issueManagement>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
+        <license.licenseName>apache_v2</license.licenseName>
+
+        <javafx.version>21.0.4</javafx.version>
+        <tornadofx.version>2.0.3</tornadofx.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+
+        <!-- PromptFx core dependency -->
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptfx</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- TornadoFX for JavaFX UI -->
+        <dependency>
+            <groupId>com.googlecode.blaisemath.tornado</groupId>
+            <artifactId>tornadofx-fx21k18</artifactId>
+            <version>${tornadofx.version}</version>
+        </dependency>
+
+        <!-- JavaFX dependencies -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+    </build>
+</project>

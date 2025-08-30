@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptfx-sample-plugin
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,17 +17,20 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.ui
+import tri.promptfx.sample.SamplePlugin;
+import tri.util.ui.NavigableWorkspaceView;
 
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+module tri.promptfx.sample.plugin {
+    requires transitive tri.promptfx;
+    requires kotlin.stdlib;
+    requires tornadofx;
+    requires javafx.controls;
+    requires javafx.fxml;
+    requires javafx.graphics;
 
-class NavigableWorkspaceViewTest {
-    @Test
-    fun testPlugins() {
-        NavigableWorkspaceView.viewPlugins.forEach {
-            println(it.category + " - " + it.name)
-        }
-        assertTrue(NavigableWorkspaceView.viewPlugins.isNotEmpty())
-    }
+    exports tri.promptfx.sample;
+
+    // services (service loader API)
+    uses tri.util.ui.NavigableWorkspaceView;
+    provides NavigableWorkspaceView with SamplePlugin;
 }

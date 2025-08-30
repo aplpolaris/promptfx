@@ -28,7 +28,7 @@ class RuntimePromptViewConfigsTest {
     fun testLoadViews() {
         val views = RuntimePromptViewConfigs.viewIndex
         views.values
-            .filter { it.source != RuntimeViewSource.VIEW_PLUGIN }
+            .filter { it.source != RuntimeViewSource.RUNTIME_PLUGIN }
             .groupBy { it.viewGroup }.toSortedMap()
             .forEach { (viewGroup, viewList) ->
                 println("$viewGroup/")
