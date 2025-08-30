@@ -19,124 +19,40 @@
  */
 package tri.ai.pips.agent
 
-import tri.ai.core.*
-import kotlinx.coroutines.flow.flow
-import java.time.LocalDateTime
-import java.util.concurrent.ConcurrentHashMap
+import tri.ai.core.MultimodalChatMessage
 
 /**
- * Default implementation of [AgentChatAPI] supporting any multimodal model from the plugin system.
- * This provides streaming chat functionality with context management and optional tool support.
+ * Default implementation of [AgentChatAPI] using composition.
+ * Combines a session manager and chat implementation for simplified code structure.
  */
-class DefaultAgentChatAPI : AgentChatAPI {
+class DefaultAgentChatAPI(
+    private val sessionManager: AgentSessionManager = DefaultAgentSessionManager(),
+    private val chat: AgentChat = DefaultAgentChat()
+) : AgentChatAPI {
     
-    private val sessions = ConcurrentHashMap<String, AgentChatSession>()
+    // Delegate session management to sessionManager
+    override fun createSession(config: AgentChatConfig): AgentChatSession = 
+        sessionManager.createSession(config)
     
-    override fun createSession(config: AgentChatConfig): AgentChatSession {
-        val session = AgentChatSession(config = config)
-        sessions[session.sessionId] = session
-        return session
-    }
+    override fun loadSession(sessionId: String): AgentChatSession? = 
+        sessionManager.loadSession(sessionId)
     
-    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation {
-        return AgentChatOperation(flow {
-            try {
-                emit(AgentChatEvent.Progress("Processing message..."))
-                
-                // Add user message to session
-                session.messages.add(message)
-                session.lastModified = LocalDateTime.now()
-                
-                emit(AgentChatEvent.Progress("Finding model..."))
-                
-                // Get multimodal chat instance for the configured model
-                val chat = TextPlugin.multimodalModel(session.config.modelId)
-                
-                // Get context messages
-                val contextMessages = session.getContextMessages()
-                
-                emit(AgentChatEvent.Progress("Generating response..."))
-                
-                // Prepare chat parameters
-                val params = MChatParameters(
-                    variation = MChatVariation(
-                        temperature = session.config.temperature,
-                        frequencyPenalty = null,
-                        presencePenalty = null
-                    ),
-                    tokens = session.config.maxTokens,
-                    responseFormat = MResponseFormat.TEXT,
-                    numResponses = 1
-                )
-                
-                // Send to model
-                val response = chat.chat(contextMessages, params)
-                
-                val responseMessage = response.output?.outputs?.firstOrNull()?.multimodalMessage
-                    ?: throw IllegalStateException("No response from chat API")
-                
-                // Add response to session
-                session.messages.add(responseMessage)
-                session.lastModified = LocalDateTime.now()
-                
-                // Update session name if this is the first exchange
-                if (session.messages.size == 2 && session.name == "New Chat") {
-                    session.name = generateSessionName(message)
-                }
-                
-                val agentResponse = AgentChatResponse(
-                    message = responseMessage,
-                    reasoning = null, // TODO: implement reasoning mode
-                    metadata = mapOf(
-                        "model" to session.config.modelId
-                    )
-                )
-                
-                emit(AgentChatEvent.Response(agentResponse))
-                
-            } catch (e: Exception) {
-                // Remove the user message if we failed to process it
-                if (session.messages.lastOrNull() == message) {
-                    session.messages.removeAt(session.messages.size - 1)
-                }
-                emit(AgentChatEvent.Error(e))
-            }
-        })
-    }
+    override fun listSessions(): List<AgentChatSessionInfo> = 
+        sessionManager.listSessions()
     
-    override fun addMessage(session: AgentChatSession, message: MultimodalChatMessage) {
-        session.messages.add(message)
-        session.lastModified = LocalDateTime.now()
-    }
+    override fun saveSession(session: AgentChatSession): String = 
+        sessionManager.saveSession(session)
     
-    override fun getSessionState(session: AgentChatSession): AgentChatSessionState {
-        return AgentChatSessionState(session = session)
-    }
+    override fun deleteSession(sessionId: String): Boolean = 
+        sessionManager.deleteSession(sessionId)
     
-    override fun saveSession(session: AgentChatSession): String {
-        sessions[session.sessionId] = session
-        return session.sessionId
-    }
+    // Delegate chat functionality to chat
+    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation = 
+        chat.sendMessage(session, message)
     
-    override fun loadSession(sessionId: String): AgentChatSession? {
-        return sessions[sessionId]
-    }
+    override fun addMessage(session: AgentChatSession, message: MultimodalChatMessage) = 
+        chat.addMessage(session, message)
     
-    override fun listSessions(): List<AgentChatSessionInfo> {
-        return sessions.values.map { session ->
-            session.toSessionInfo()
-        }.sortedByDescending { it.lastModified }
-    }
-    
-    override fun deleteSession(sessionId: String): Boolean {
-        return sessions.remove(sessionId) != null
-    }
-    
-    /** Generate a session name from the first user message. */
-    private fun generateSessionName(message: MultimodalChatMessage): String {
-        val text = message.content?.firstOrNull()?.text ?: "Chat"
-        val words = text.split("\\s+".toRegex()).take(5)
-        val name = words.joinToString(" ")
-        return if (name.length > 30) name.take(27) + "..." else name
-    }
+    override fun getSessionState(session: AgentChatSession): AgentChatSessionState = 
+        chat.getSessionState(session)
 }

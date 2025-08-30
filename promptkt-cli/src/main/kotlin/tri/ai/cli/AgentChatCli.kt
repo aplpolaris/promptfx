@@ -37,7 +37,7 @@ import java.util.logging.Level
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
-    AgentChatCli().main(args + "--verbose")
+    AgentChatCli().main(args)
 
 /**
  * Command-line interface for agent-based chat with contextual reasoning capabilities.
@@ -56,11 +56,11 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
         .int()
         .default(4000)
     private val reasoning by option("--reasoning", help = "Enable reasoning mode").flag()
-    private val verbose by option("--verbose", help = "Verbose logging and progress").flag()
+    private val verbose by option("--verbose", help = "Verbose logging and progress").flag(default = true)
     private val systemMessage by option("--system", help = "System message for the agent")
 
     private val greeting
-        get() = "You are chatting with $model using AgentChat. Say 'bye' to exit, 'sessions' to list sessions."
+        get() = "You are chatting with $model using AgentChat. Say 'bye' to exit, '/sessions' to list sessions, '/help' for commands."
 
     private val api: AgentChatAPI = DefaultAgentChatAPI()
     private lateinit var currentSession: AgentChatSession
@@ -101,20 +101,39 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
             print("> ")
             var input = readln()
             while (input != "bye") {
-                when (input.lowercase()) {
-                    "sessions" -> {
+                when {
+                    input.lowercase() == "/sessions" -> {
                         listSessions()
                     }
-                    "clear" -> {
+                    input.lowercase() == "/clear" -> {
                         clearSession()
                     }
-                    "help" -> {
+                    input.lowercase() == "/help" -> {
                         showHelp()
                     }
-                    else -> {
-                        if (input.isNotBlank()) {
-                            sendMessage(input)
-                        }
+                    input.lowercase() == "/api" -> {
+                        showApiInfo()
+                    }
+                    input.lowercase().startsWith("/switch ") -> {
+                        switchSession(input.removePrefix("/switch ").trim())
+                    }
+                    input.lowercase().startsWith("/load ") -> {
+                        loadSessionById(input.removePrefix("/load ").trim())
+                    }
+                    input.lowercase().startsWith("/delete ") -> {
+                        deleteSessionById(input.removePrefix("/delete ").trim())
+                    }
+                    input.lowercase() == "/save" -> {
+                        saveCurrentSession()
+                    }
+                    input.lowercase() == "/info" -> {
+                        showSessionInfo()
+                    }
+                    input.startsWith("/") -> {
+                        println("Unknown command: $input. Type '/help' for available commands.")
+                    }
+                    input.isNotBlank() -> {
+                        sendMessage(input)
                     }
                 }
                 print("> ")
@@ -194,16 +213,100 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
 
     private fun showHelp() {
         println("Commands:")
-        println("  bye      - Exit the chat")
-        println("  sessions - List all sessions")  
-        println("  clear    - Clear current session and start new")
-        println("  help     - Show this help")
+        println("  bye         - Exit the chat")
+        println("  /sessions   - List all sessions")  
+        println("  /clear      - Clear current session and start new")
+        println("  /help       - Show this help")
+        println("  /api        - Show API information")
+        println("  /switch <id> - Switch to a different session by ID")
+        println("  /load <id>  - Load a session by ID")
+        println("  /delete <id> - Delete a session by ID") 
+        println("  /save       - Save current session")
+        println("  /info       - Show current session information")
         println("\nOptions:")
         println("  --model      Multimodal model to use")
         println("  --maxContext Maximum context messages") 
         println("  --temperature Response temperature")
         println("  --reasoning  Enable reasoning mode")
-        println("  --verbose    Show progress and detailed output")
+        println("  --verbose    Show progress and detailed output (default on)")
         println("  --system     Set system message")
+    }
+
+    private fun showApiInfo() {
+        println("AgentChat API Information:")
+        println("  API Implementation: ${api.javaClass.simpleName}")
+        println("  Model: $model")
+        println("  Max Context: $maxContext")
+        println("  Temperature: $temperature") 
+        println("  Max Tokens: $maxTokens")
+        println("  Reasoning Mode: $reasoning")
+        println("  System Message: ${systemMessage ?: "None"}")
+        println("  Current Session: ${currentSession.sessionId}")
+        println("  Session Name: ${currentSession.name}")
+        println("  Messages in Session: ${currentSession.messages.size}")
+    }
+
+    private fun switchSession(sessionId: String) {
+        val session = api.loadSession(sessionId)
+        if (session != null) {
+            currentSession = session
+            println("Switched to session: ${session.name} (${session.sessionId})")
+            println("Messages: ${session.messages.size}")
+        } else {
+            println("Session not found: $sessionId")
+        }
+    }
+
+    private fun loadSessionById(sessionId: String) {
+        val session = api.loadSession(sessionId)
+        if (session != null) {
+            currentSession = session
+            println("Loaded session: ${session.name}")
+            println("Session ID: ${session.sessionId}")
+            println("Created: ${session.createdAt}")
+            println("Last Modified: ${session.lastModified}")
+            println("Messages: ${session.messages.size}")
+            if (session.messages.isNotEmpty()) {
+                println("Last message preview: ${session.messages.last().content?.firstOrNull()?.text?.take(50) ?: "N/A"}...")
+            }
+        } else {
+            println("Session not found: $sessionId")
+        }
+    }
+
+    private fun deleteSessionById(sessionId: String) {
+        if (sessionId == currentSession.sessionId) {
+            println("Cannot delete the current active session. Switch to another session first.")
+            return
+        }
+        val deleted = api.deleteSession(sessionId)
+        if (deleted) {
+            println("Session deleted: $sessionId")
+        } else {
+            println("Session not found or could not be deleted: $sessionId")
+        }
+    }
+
+    private fun saveCurrentSession() {
+        val sessionId = api.saveSession(currentSession)
+        println("Session saved: $sessionId")
+        println("Session name: ${currentSession.name}")
+    }
+
+    private fun showSessionInfo() {
+        println("Current Session Information:")
+        println("  Session ID: ${currentSession.sessionId}")
+        println("  Name: ${currentSession.name}")
+        println("  Created: ${currentSession.createdAt}")
+        println("  Last Modified: ${currentSession.lastModified}")
+        println("  Messages: ${currentSession.messages.size}")
+        println("  Configuration:")
+        println("    Model: ${currentSession.config.modelId}")
+        println("    Max Context: ${currentSession.config.maxContextMessages}")
+        println("    Temperature: ${currentSession.config.temperature}")
+        println("    Max Tokens: ${currentSession.config.maxTokens}")
+        println("    Enable Tools: ${currentSession.config.enableTools}")
+        println("    Reasoning Mode: ${currentSession.config.enableReasoningMode}")
+        println("    System Message: ${currentSession.config.systemMessage ?: "None"}")
     }
 }

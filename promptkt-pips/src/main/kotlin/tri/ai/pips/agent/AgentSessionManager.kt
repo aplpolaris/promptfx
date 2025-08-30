@@ -19,11 +19,24 @@
  */
 package tri.ai.pips.agent
 
-import tri.ai.core.MultimodalChatMessage
-
 /**
- * API for managing agent chat sessions with contextual and reasoning capabilities.
- * This API is designed to be independent of UI concerns and can support CLI, MCP, or REST interfaces.
- * Combines session management and chat functionality through composition.
+ * Interface for managing agent chat sessions.
+ * Handles session creation, persistence, and lifecycle management.
  */
-interface AgentChatAPI : AgentSessionManager, AgentChat
+interface AgentSessionManager {
+    
+    /** Create a new chat session with optional configuration. */
+    fun createSession(config: AgentChatConfig = AgentChatConfig()): AgentChatSession
+
+    /** Load a chat session by ID. */
+    fun loadSession(sessionId: String): AgentChatSession?
+
+    /** List available chat sessions. */
+    fun listSessions(): List<AgentChatSessionInfo>
+
+    /** Save a chat session. */
+    fun saveSession(session: AgentChatSession): String
+
+    /** Delete a chat session. */
+    fun deleteSession(sessionId: String): Boolean
+}
