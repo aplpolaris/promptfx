@@ -174,7 +174,7 @@ class McpHandler(private val server: LocalMcpServer) : JsonRpcHandler {
  * limitations under the License.
  * #L%
  */
- degrade to text so clients don't reject it.
+                // You don't have a resource URI field; degrade to text so clients don't reject it.
                 "RESOURCE" -> textContent(text ?: "[resource omitted: no URI/mimeType in part]")
 
                 // If your part encodes a function/tool call, flatten it into text for prompts.
