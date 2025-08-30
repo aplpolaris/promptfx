@@ -21,14 +21,13 @@ package tri.promptfx.prompts
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
-import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.control.ButtonType
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.PromptDef
-import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig
@@ -36,7 +35,6 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.prompt.PromptDetailsUi
 import tri.util.ui.NavigableWorkspaceViewImpl
-import java.io.File
 
 /** Plugin for the [PromptTemplateView]. */
 class PromptLibraryPlugin : NavigableWorkspaceViewImpl<PromptLibraryView>("Prompts", "Prompt Library", type = PromptLibraryView::class)

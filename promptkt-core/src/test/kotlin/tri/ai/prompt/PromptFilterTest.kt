@@ -22,7 +22,7 @@ package tri.ai.prompt
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class PromptLibraryConfigTest {
+class PromptFilterTest {
 
     private val testPrompt1 = PromptDef(
         id = "text-summarize/basic@1.0.0",
@@ -44,104 +44,104 @@ class PromptLibraryConfigTest {
 
     @Test
     fun testDefaultConfigIncludesAll() {
-        val config = PromptLibraryConfig.DEFAULT
+        val filter = PromptFilter.ACCEPT_ALL
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertTrue(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertTrue(filter(testPrompt3))
     }
 
     @Test
     fun testIncludeIdPatterns() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             includeIds = listOf("text-*", "docs-qa/*")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testIncludeCategoryPatterns() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             includeCategories = listOf("text", "docs")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testExcludeIdPatterns() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             excludeIds = listOf("*beta*", "experimental/*")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testExcludeCategoryPatterns() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             excludeCategories = listOf("experimental")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testCombinedIncludeAndExclude() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             includeCategories = listOf("*"), // Include all categories
             excludeIds = listOf("*beta*") // But exclude beta features
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testWildcardPatterns() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             includeIds = listOf("*")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertTrue(config.shouldInclude(testPrompt2))
-        assertTrue(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertTrue(filter(testPrompt2))
+        assertTrue(filter(testPrompt3))
     }
 
     @Test
     fun testExactMatch() {
-        val config = PromptLibraryConfig(
+        val filter = PromptFilter(
             includeIds = listOf("text-summarize/basic@1.0.0")
         )
         
-        assertTrue(config.shouldInclude(testPrompt1))
-        assertFalse(config.shouldInclude(testPrompt2))
-        assertFalse(config.shouldInclude(testPrompt3))
+        assertTrue(filter(testPrompt1))
+        assertFalse(filter(testPrompt2))
+        assertFalse(filter(testPrompt3))
     }
 
     @Test
     fun testPatternMatching() {
-        val config = PromptLibraryConfig()
+        val filter = PromptFilter()
         
         // Test private matchesPattern method via shouldInclude
         val testPromptA = PromptDef(id = "test-abc", template = "test")
         val testPromptB = PromptDef(id = "test-xyz", template = "test")
         val testPromptC = PromptDef(id = "other-abc", template = "test")
         
-        val configPattern = PromptLibraryConfig(includeIds = listOf("test-*"))
+        val configPattern = PromptFilter(includeIds = listOf("test-*"))
         
-        assertTrue(configPattern.shouldInclude(testPromptA))
-        assertTrue(configPattern.shouldInclude(testPromptB))
-        assertFalse(configPattern.shouldInclude(testPromptC))
+        assertTrue(configPattern(testPromptA))
+        assertTrue(configPattern(testPromptB))
+        assertFalse(configPattern(testPromptC))
     }
 }

@@ -37,17 +37,17 @@ class PromptDefTest {
 
     @Test
     fun testPromptWrite() {
-        val json = PromptGroupIO.MAPPER.writeValueAsString(TEST_PROMPT)
+        val json = PromptIO.MAPPER.writeValueAsString(TEST_PROMPT)
         println(json)
         assertTrue(json.isNotEmpty())
     }
 
     @Test
     fun testPromptRead() {
-        val json = PromptGroupIO.MAPPER.writeValueAsString(TEST_PROMPT)
-        val prompt = PromptGroupIO.MAPPER.readValue<PromptDef>(json)
+        val json = PromptIO.MAPPER.writeValueAsString(TEST_PROMPT)
+        val prompt = PromptIO.MAPPER.readValue<PromptDef>(json)
         assertEquals(TEST_PROMPT, prompt)
-        assertEquals(json, PromptGroupIO.MAPPER.writeValueAsString(prompt))
+        assertEquals(json, PromptIO.MAPPER.writeValueAsString(prompt))
     }
 
     @Test

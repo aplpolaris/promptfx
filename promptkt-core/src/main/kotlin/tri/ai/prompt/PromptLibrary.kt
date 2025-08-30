@@ -19,6 +19,7 @@
  */
 package tri.ai.prompt
 
+import tri.ai.prompt.PromptFilter.Companion.ACCEPT_ALL
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.exists
@@ -39,20 +40,15 @@ class PromptLibrary {
 
     //region INDEXING
 
-    /** Adds a group to the library, indexing its prompts. */
-    fun addGroup(group: PromptGroup) {
-        group.resolved().prompts.forEach {
-            addPrompt(it)
-        }
-    }
-
-    /** Adds a group to the library with config filtering, indexing its prompts. */
-    private fun addGroup(group: PromptGroup, config: PromptLibraryConfig) {
-        group.resolved().prompts.forEach {
-            if (config.shouldInclude(it)) {
-                addPrompt(it)
-            }
-        }
+    /**
+     * Adds a group to the library with config filtering, indexing its prompts.
+     * @param group the prompt group to add
+     * @param config optional configuration to filter prompts (by default allows all)
+     */
+    fun addGroup(group: PromptGroup, config: PromptFilter = ACCEPT_ALL) {
+        group.resolved().prompts
+            .filter { config(it) }
+            .forEach { addPrompt(it) }
     }
 
     /** Adds a prompt to the library, indexing it by id, bare id, category, and tags. */
@@ -93,91 +89,63 @@ class PromptLibrary {
 
     /** List all prompts (optionally filter). */
     fun list(category: String? = null, tag: String? = null, prefix: String? = null): List<PromptDef> {
-        val foundCategory = if (category == null) byId.values else byCategory[category]?.mapNotNull { byId[it] } ?: listOf<PromptDef>()
+        val foundCategory = if (category == null) byId.values else byCategory[category]?.mapNotNull { byId[it] } ?: listOf()
         val foundTag = if (tag == null) byId.values else byTag[tag]?.mapNotNull { byId[it] } ?: listOf<PromptDef>()
         return foundCategory.intersect(foundTag)
             .filter { prefix == null || it.id.startsWith(prefix) }
             .sortedBy { it.id }
     }
 
-    /** List all prompts with a custom filter. */
+    /** List all prompts with a custom filter or a [PromptFilter]. */
     fun list(filter: (PromptDef) -> Boolean) =
         byId.values.filter(filter).sortedBy { it.id }
 
     companion object {
 
+        /** The singleton instance of the runtime prompt library (loaded from prompts/ directory). */
         val RUNTIME_INSTANCE: PromptLibrary = loadRuntimePromptLibrary()
+        /** The singleton instance of the default prompt library (loaded from resources folder). */
         val INSTANCE: PromptLibrary = loadDefaultPromptLibrary()
 
-        fun refreshRuntimePrompts() {
-            INSTANCE.reindex(loadDefaultPromptLibrary().list())
-            RUNTIME_INSTANCE.reindex(loadRuntimePromptLibrary().list())
+        /** Refresh the runtime prompt library (reloads from prompts/ directory, with optional filter). */
+        fun refreshRuntimePrompts(config: PromptFilter = ACCEPT_ALL) {
+            INSTANCE.reindex(loadDefaultPromptLibrary(config).list())
+            RUNTIME_INSTANCE.reindex(loadRuntimePromptLibrary(config).list())
         }
 
-        private fun loadDefaultPromptLibrary() = PromptLibrary().apply {
-            readFromResourceDirectory()
-            readFromRuntimeDirectory()
+        /** Load the default prompt library from resources and runtime directories. */
+        fun loadDefaultPromptLibrary(config: PromptFilter = ACCEPT_ALL) = PromptLibrary().apply {
+            readFromResourceDirectory(config)
+            readFromRuntimeDirectory(config)
         }
 
-        private fun loadRuntimePromptLibrary() = PromptLibrary().apply {
-            readFromRuntimeDirectory()
+        /** Load only the runtime prompt library from prompts/ directory. */
+        private fun loadRuntimePromptLibrary(config: PromptFilter = ACCEPT_ALL) = PromptLibrary().apply {
+            readFromRuntimeDirectory(config)
         }
-        
-        /** Load a PromptLibrary with configuration from resource directory. */
-        fun loadWithConfig(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT): PromptLibrary = 
-            PromptLibrary().apply {
-                readFromResourceDirectory(config)
-                readFromRuntimeDirectory(config)
-            }
-        
-        /** Load a PromptLibrary with configuration from a config file. */
-        fun loadWithConfigFile(configPath: String): PromptLibrary {
-            val config = PromptGroupIO.loadConfigFromFile(Path(configPath))
-            return loadWithConfig(config)
-        }
-        
-        /** Load the default configuration from resources. */
-        fun loadDefaultConfig(): PromptLibraryConfig =
-            PromptGroupIO.loadConfigFromResource("config/prompt-library-config.yaml")
 
-        // load from resource directory
-        private fun PromptLibrary.readFromResourceDirectory(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
-            PromptGroupIO.readAllFromResourceDirectory().forEach {
+        /** load from resources/ directory in the classpath */
+        private fun PromptLibrary.readFromResourceDirectory(config: PromptFilter = ACCEPT_ALL) {
+            PromptIO.readAllFromResourceDirectory().forEach {
                 addGroup(it, config)
             }
         }
 
-        // load from resource directory without config filtering
-        private fun PromptLibrary.readFromResourceDirectory() {
-            PromptGroupIO.readAllFromResourceDirectory().forEach {
-                addGroup(it)
-            }
-        }
-
-        // load from prompts/ directory, recursively, if it exists
-        private fun PromptLibrary.readFromRuntimeDirectory(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
+        /** load from prompts/ directory in the working directory */
+        private fun PromptLibrary.readFromRuntimeDirectory(config: PromptFilter = ACCEPT_ALL) {
             Path("prompts/").let {
                 if (it.exists() && it.isDirectory())
-                    PromptGroupIO.readFromDirectory(it, recursive = true).forEach {
+                    PromptIO.readFromDirectory(it, recursive = true).forEach {
                         addGroup(it.resolved(), config)
                     }
             }
         }
 
-        // load from prompts/ directory without config filtering
-        private fun PromptLibrary.readFromRuntimeDirectory() {
-            Path("prompts/").let {
-                if (it.exists() && it.isDirectory())
-                    PromptGroupIO.readFromDirectory(it, recursive = true).forEach {
-                        addGroup(it.resolved())
-                    }
-            }
-        }
-
-        inline fun <reified T> readFromResourceDirectory() =
+        /** Load a prompt library from resources in the same package as T. */
+        inline fun <reified T> readFromResourceDirectory(config: PromptFilter = ACCEPT_ALL) =
             PromptLibrary().apply {
-                PromptGroupIO.readAllFromResourceDirectory(T::class.java.`package`.name+".resources").forEach {
-                    addGroup(it)
+                PromptIO.readAllFromResourceDirectory(T::class.java.`package`.name+".resources").forEach {
+                    addGroup(it, config)
                 }
             }
 
@@ -195,12 +163,12 @@ class PromptLibrary {
             val targetPath = Path(path)
             when {
                 targetPath.exists() && targetPath.isDirectory() -> {
-                    PromptGroupIO.readFromDirectory(targetPath, recursive = true).forEach {
+                    PromptIO.readFromDirectory(targetPath, recursive = true).forEach {
                         addGroup(it.resolved())
                     }
                 }
                 targetPath.exists() -> {
-                    addGroup(PromptGroupIO.readFromFile(targetPath).resolved())
+                    addGroup(PromptIO.readFromFile(targetPath).resolved())
                 }
                 else -> throw IllegalArgumentException("Prompt library path does not exist: $path")
             }

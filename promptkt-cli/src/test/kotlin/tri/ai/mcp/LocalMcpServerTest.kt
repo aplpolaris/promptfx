@@ -22,12 +22,14 @@ package tri.ai.mcp
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MPartType
 import tri.ai.prompt.PromptArgDef
 import tri.ai.prompt.PromptDef
-import tri.ai.prompt.PromptGroupIO
+import tri.ai.prompt.PromptIO
 import tri.ai.prompt.PromptLibrary
 
 class LocalMcpServerTest {
@@ -130,7 +132,7 @@ class LocalMcpServerTest {
     @Test
     fun testToMcpContract() {
         val mcp = TEST_PROMPT.toMcpContract()
-        println(PromptGroupIO.MAPPER.writeValueAsString(mcp))
+        println(PromptIO.MAPPER.writeValueAsString(mcp))
         val expected = McpPrompt(
             name = "test/prompt-id",
             title = "Test Prompt",

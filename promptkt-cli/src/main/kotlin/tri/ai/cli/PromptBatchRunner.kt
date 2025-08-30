@@ -28,7 +28,6 @@ import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.pips.*
-import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.util.*
@@ -48,18 +47,8 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         .validate { checkExtension(it, "json", "yaml", "yml") }
     private val database by option("--database", help = "Output as database format")
         .flag()
-    private val promptConfigFile by option("--prompt-config", help = "Prompt library configuration file")
-        .file(mustExist = true, canBeDir = false)
 
     override fun run() {
-        // Initialize prompt library with config if provided
-        if (promptConfigFile != null) {
-            val config = PromptGroupIO.loadConfigFromFile(promptConfigFile!!.toPath())
-            println("${ANSI_CYAN}Using prompt library config from ${promptConfigFile}...$ANSI_RESET")
-            println("${ANSI_CYAN}Config: includes=${config.includeIds + config.includeCategories}, excludes=${config.excludeIds + config.excludeCategories}$ANSI_RESET")
-            // Note: The actual filtering will happen when PromptLibrary is used within the batch execution
-        }
-
         val jsonIn = inputFile.extension == "json"
 
         println("${ANSI_CYAN}Reading prompt batch from ${inputFile}...$ANSI_RESET")

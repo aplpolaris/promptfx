@@ -33,8 +33,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-/** Tools for loading a [PromptGroup] from a resource file with support for reading some legacy definitions. */
-object PromptGroupIO {
+/** Tools for loading [PromptGroup], [PromptFilter] from a resource file with support for reading some legacy definitions. */
+object PromptIO {
 
     /** ObjectMapper for loading prompts. */
     val MAPPER = ObjectMapper(YAMLFactory()).apply {
@@ -46,10 +46,10 @@ object PromptGroupIO {
 
     /** Load a single PromptGroup from a classpath resource. */
     fun readFromResource(resourcePath: String, cl: ClassLoader = Thread.currentThread().contextClassLoader): PromptGroup {
-        fine<PromptGroupIO>("Loading prompt group from resource: $resourcePath")
+        fine<PromptIO>("Loading prompt group from resource: $resourcePath")
         val isr = cl.getResourceAsStream(resourcePath)
-            ?: PromptGroupIO::class.java.getResourceAsStream(resourcePath)
-            ?: PromptGroupIO::class.java.getResourceAsStream("resources/$resourcePath")
+            ?: PromptIO::class.java.getResourceAsStream(resourcePath)
+            ?: PromptIO::class.java.getResourceAsStream("resources/$resourcePath")
             ?: error("Resource not found on classpath: $resourcePath")
         InputStreamReader(isr, StandardCharsets.UTF_8).use { reader ->
             return MAPPER.readValue(reader, PromptGroup::class.java).resolved()
@@ -67,7 +67,7 @@ object PromptGroupIO {
     /** Load a single PromptGroup from a runtime file. */
     fun readFromFile(path: Path) =
         Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
-            fine<PromptGroupIO>("Loading prompt group from file: $path")
+            fine<PromptIO>("Loading prompt group from file: $path")
             MAPPER.readValue(reader, PromptGroup::class.java).resolved()
         }
 
@@ -115,7 +115,7 @@ object PromptGroupIO {
      * Load all [PromptGroup]s from a classpath resource directory.
      */
     fun readAllFromResourceDirectory(
-        basePackage: String = PromptGroupIO::class.java.`package`.name + ".resources",
+        basePackage: String = PromptIO::class.java.`package`.name + ".resources",
         recursive: Boolean = true,
         cl: ClassLoader = Thread.currentThread().contextClassLoader
     ): List<PromptGroup> {
@@ -132,7 +132,7 @@ object PromptGroupIO {
                     // resources inside a JAR
                     jarResourcePaths += collectYamlResourcesFromJarDir(url, recursive)
                 else ->
-                    warning<PromptGroupIO>("Unsupported resource protocol: ${url.protocol}. " +
+                    warning<PromptIO>("Unsupported resource protocol: ${url.protocol}. " +
                         "Only 'file' and 'jar' protocols are supported for loading prompt groups.")
             }
         }
@@ -142,29 +142,29 @@ object PromptGroupIO {
 
     //endregion
     
-    //region CONFIG LOADING
+    //region FILTER LOADING
     
     /** Load PromptLibraryConfig from a classpath resource. */
-    fun loadConfigFromResource(resourcePath: String, cl: ClassLoader = Thread.currentThread().contextClassLoader): PromptLibraryConfig {
-        fine<PromptGroupIO>("Loading prompt library config from resource: $resourcePath")
+    fun loadFilterFromResource(resourcePath: String, cl: ClassLoader = Thread.currentThread().contextClassLoader): PromptFilter {
+        fine<PromptIO>("Loading prompt library config from resource: $resourcePath")
         val isr = cl.getResourceAsStream(resourcePath)
-            ?: PromptGroupIO::class.java.getResourceAsStream(resourcePath)
-            ?: PromptGroupIO::class.java.getResourceAsStream("resources/$resourcePath")
-            ?: return PromptLibraryConfig.DEFAULT
+            ?: PromptIO::class.java.getResourceAsStream(resourcePath)
+            ?: PromptIO::class.java.getResourceAsStream("resources/$resourcePath")
+            ?: return PromptFilter.ACCEPT_ALL
         InputStreamReader(isr, StandardCharsets.UTF_8).use { reader ->
-            return MAPPER.readValue(reader, PromptLibraryConfig::class.java)
+            return MAPPER.readValue(reader, PromptFilter::class.java)
         }
     }
     
     /** Load PromptLibraryConfig from a file path. */
-    fun loadConfigFromFile(path: Path): PromptLibraryConfig {
+    fun loadFilterFromPath(path: Path): PromptFilter {
         if (!Files.exists(path)) {
-            fine<PromptGroupIO>("Config file not found: $path, using default config")
-            return PromptLibraryConfig.DEFAULT
+            fine<PromptIO>("Config file not found: $path, using default config")
+            return PromptFilter.ACCEPT_ALL
         }
         Files.newBufferedReader(path, StandardCharsets.UTF_8).use { reader ->
-            fine<PromptGroupIO>("Loading prompt library config from file: $path")
-            return MAPPER.readValue(reader, PromptLibraryConfig::class.java)
+            fine<PromptIO>("Loading prompt library config from file: $path")
+            return MAPPER.readValue(reader, PromptFilter::class.java)
         }
     }
     

@@ -19,10 +19,8 @@
  */
 package tri.ai.prompt
 
-import java.nio.file.Paths
-
 /** Demo class to show PromptLibrary configuration functionality. */
-class PromptLibraryConfigDemo {
+class PromptLibrary_FilteredDemo {
     
     companion object {
         @JvmStatic
@@ -30,7 +28,7 @@ class PromptLibraryConfigDemo {
             println("=== PromptLibrary Configuration Demo ===")
             
             // Load default library (no filtering)
-            val defaultLibrary = PromptLibrary.loadWithConfig()
+            val defaultLibrary = PromptLibrary.INSTANCE
             val allPrompts = defaultLibrary.list()
             println("Default library loaded ${allPrompts.size} prompts")
             
@@ -44,35 +42,22 @@ class PromptLibraryConfigDemo {
             println("- Docs prompts: ${docsPrompts.size}")
             
             // Test filtering with configuration
-            val config1 = PromptLibraryConfig(includeCategories = listOf("text-*"))
-            val filteredLibrary1 = PromptLibrary.loadWithConfig(config1)
+            val config1 = PromptFilter(includeCategories = listOf("text-*"))
+            val filteredLibrary1 = PromptLibrary.loadDefaultPromptLibrary(config1)
             val filteredPrompts1 = filteredLibrary1.list()
             println()
             println("With text-* filter: ${filteredPrompts1.size} prompts")
             filteredPrompts1.forEach { println("  - ${it.id} (${it.category})") }
             
             // Test exclusion filtering
-            val config2 = PromptLibraryConfig(excludeCategories = listOf("examples"))
-            val filteredLibrary2 = PromptLibrary.loadWithConfig(config2)
+            val config2 = PromptFilter(excludeCategories = listOf("examples"))
+            val filteredLibrary2 = PromptLibrary.loadDefaultPromptLibrary(config2)
             val filteredPrompts2 = filteredLibrary2.list()
             println()
             println("Excluding examples: ${filteredPrompts2.size} prompts (should be ${allPrompts.size - examplePrompts.size})")
             
             println()
             println("Configuration functionality is working correctly!")
-            
-            // Show usage information
-            println()
-            println("=== Usage ===")
-            println("1. Create a configuration file (YAML format)")
-            println("2. Use with CLI: --prompt-config /path/to/config.yaml")
-            println("3. Use with PromptFx UI: Filter button in Prompt Library view")
-            println()
-            println("=== Config Format ===")
-            println("includeIds: [\"text-*\", \"docs-*\"]     # Include ID patterns")
-            println("includeCategories: [\"text\", \"docs\"]   # Include category patterns")
-            println("excludeIds: [\"*test*\"]                # Exclude ID patterns")
-            println("excludeCategories: [\"experimental\"]    # Exclude category patterns")
         }
     }
 }

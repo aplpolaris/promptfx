@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
  * Supports pattern-based filtering of prompts by ID and category.
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-data class PromptLibraryConfig(
+data class PromptFilter(
     /** Prompt ID patterns to include (if specified, only these will be loaded). */
     val includeIds: List<String> = emptyList(),
     /** Prompt category patterns to include (if specified, only these will be loaded). */
@@ -35,14 +35,14 @@ data class PromptLibraryConfig(
     val excludeIds: List<String> = emptyList(),
     /** Prompt category patterns to exclude (applied after includes). */
     val excludeCategories: List<String> = emptyList()
-) {
+): (PromptDef) -> Boolean {
     
     /**
      * Check if a prompt should be included based on this configuration.
      * @param prompt The prompt to check
      * @return true if the prompt should be included, false otherwise
      */
-    fun shouldInclude(prompt: PromptDef): Boolean {
+    override fun invoke(prompt: PromptDef): Boolean {
         val hasIncludes = includeIds.isNotEmpty() || includeCategories.isNotEmpty()
         
         if (hasIncludes) {
@@ -72,9 +72,9 @@ data class PromptLibraryConfig(
         val regex = pattern.replace("*", ".*")
         return text.matches(Regex("^$regex$"))
     }
-    
+
     companion object {
         /** Default configuration that includes all prompts. */
-        val DEFAULT = PromptLibraryConfig()
+        val ACCEPT_ALL = PromptFilter()
     }
 }
