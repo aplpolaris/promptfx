@@ -31,5 +31,6 @@ module tri.promptfx.sample.plugin {
     exports tri.promptfx.sample;
 
     // services (service loader API)
+    uses tri.util.ui.NavigableWorkspaceView;
     provides NavigableWorkspaceView with SamplePlugin;
 }

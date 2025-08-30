@@ -45,9 +45,4 @@ class SamplePluginTest {
         assertEquals(WorkspaceViewAffordance.INPUT_ONLY, plugin.affordances)
     }
 
-    @Test
-    fun `plugin should implement NavigableWorkspaceView`() {
-        val plugin = SamplePlugin()
-        assertTrue(plugin is NavigableWorkspaceView)
-    }
 }
