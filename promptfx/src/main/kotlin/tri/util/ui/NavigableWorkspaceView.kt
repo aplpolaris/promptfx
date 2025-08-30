@@ -20,6 +20,7 @@
 package tri.util.ui
 
 import tornadofx.*
+import tri.promptfx.PromptFxPlugins
 import tri.util.info
 import java.util.*
 import kotlin.io.path.Path
@@ -38,26 +39,7 @@ interface NavigableWorkspaceView {
     companion object {
         // load view plugins from classpath and from config/plugins/ folder
         val viewPlugins: List<NavigableWorkspaceView> by lazy {
-            ServiceLoader.load(NavigableWorkspaceView::class.java).toList() +
-                loadViewsInConfigFolder(NavigableWorkspaceView::class.java)
-        }
-
-        private fun loadViewsInConfigFolder(type: Class<NavigableWorkspaceView>): List<NavigableWorkspaceView> {
-            val pluginFiles = listOf(Path("config/plugins/"))
-                .flatMap { it.listDirectoryEntries("*.jar") }
-            if (pluginFiles.isNotEmpty()) {
-                val urls = pluginFiles.map { it.toUri().toURL() }.toTypedArray()
-                info<NavigableWorkspaceView>("Loading plugins from config/plugins/ - " + pluginFiles.joinToString(", ") { it.fileName.toString() })
-                val loader = java.net.URLClassLoader(urls, type.classLoader)
-                val serviceLoader = ServiceLoader.load(type, loader)
-                return mutableListOf<NavigableWorkspaceView>().apply {
-                    serviceLoader.forEach { add(it) }
-                    info<NavigableWorkspaceView>("Loaded $size ${type.simpleName} plugins.")
-                }
-            } else {
-                info<NavigableWorkspaceView>("No ${type.simpleName} plugins found.")
-            }
-            return listOf()
+            PromptFxPlugins.loadPlugins(NavigableWorkspaceView::class.java)
         }
     }
 }
