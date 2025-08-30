@@ -11,7 +11,8 @@ if [ $? -eq 0 ]; then
     
     # Copy to config directory
     echo "Deploying plugin to config directory..."
-    cp promptfx-sample-plugin/target/promptfx-sample-plugin-*.jar promptfx/config/
+    mkdir -p promptfx/config/plugins
+    cp promptfx-sample-plugin/target/promptfx-sample-plugin-*[!javadoc][!sources].jar promptfx/config/plugins/
     
     echo "Plugin deployed successfully!"
     echo "The plugin JAR is now in promptfx/config/ and will be loaded automatically when PromptFx starts."
