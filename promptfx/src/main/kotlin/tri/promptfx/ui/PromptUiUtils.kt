@@ -60,9 +60,14 @@ fun EventTarget.promptfield(
             tooltip("Toggle visibility of the prompt text.")
             action { promptFieldVisible.set(!promptFieldVisible.value) }
         }
-        button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-            tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
-            action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
+        menubutton(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+            tooltip("Template and library options for this prompt.")
+            item("Send to Prompt Template View", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
+            }
+            item("View in Prompt Library", graphic = FontAwesomeIconView(FontAwesomeIcon.BOOK)) {
+                action { find<PromptFxWorkspace>().launchLibraryView() }
+            }
         }
     }
     field(null, forceLabelIndent = true) {
