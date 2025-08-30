@@ -43,7 +43,9 @@ object PromptFxPlugins {
     /** Load all plugins including built-in and external plugins with source information. */
     fun <C> loadAllPluginsWithSource(type: Class<C>): List<PluginInfo<C>> {
         val builtInPlugins = loadBuiltInPlugins(type)
-        val externalPlugins = loadExternalPlugins(type)
+        val builtInPluginTypes = builtInPlugins.map { it.plugin!!::class.java }
+        val externalPlugins = loadExternalPlugins(type).filter { it.plugin!!::class.java !in builtInPluginTypes }
+        info<PromptFxPlugins>("Found ${builtInPlugins.size} built-in and ${externalPlugins.size} external ${type.simpleName} plugins.")
         return builtInPlugins + externalPlugins
     }
 
@@ -61,12 +63,12 @@ object PromptFxPlugins {
             .flatMap { it.listDirectoryEntries("*.jar") }
         if (pluginFiles.isNotEmpty()) {
             val urls = pluginFiles.map { it.toUri().toURL() }.toTypedArray()
-            info<PromptFxPlugins>("Loading plugins from $PLUGIN_DIR - " + pluginFiles.joinToString(", ") { it.fileName.toString() })
+            info<PromptFxPlugins>("Loading plugins from $PLUGIN_DIR")
+            pluginFiles.forEach { info<PromptFxPlugins>("  - ${it.fileName}") }
             val loader = java.net.URLClassLoader(urls, type.classLoader)
             val serviceLoader = ServiceLoader.load(type, loader)
             return mutableListOf<PluginInfo<C>>().apply {
                 serviceLoader.forEach { add(PluginInfo(it, PluginSource.EXTERNAL_JAR)) }
-                info<PromptFxPlugins>("Loaded $size ${type.simpleName} plugins from config/plugins/ jar files.")
             }
         } else {
             info<PromptFxPlugins>("No ${type.simpleName} plugin jar files found in $PLUGIN_DIR.")
@@ -74,8 +76,4 @@ object PromptFxPlugins {
         return listOf()
     }
 
-    /** Load plugins from config/plugins/ folder. (Legacy method for compatibility) */
-    fun <C> loadPlugins(type: Class<C>): List<C> {
-        return loadExternalPlugins(type).map { it.plugin }
-    }
 }

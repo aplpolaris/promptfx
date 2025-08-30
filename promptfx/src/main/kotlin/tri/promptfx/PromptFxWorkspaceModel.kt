@@ -57,8 +57,8 @@ class PromptFxWorkspaceModel(
             val customCategories = categories - BUILT_IN_CATEGORIES
 
             // Log summary counts
-            val pluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.VIEW_PLUGIN }
-            val builtInPluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN }
+            val pluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.RUNTIME_PLUGIN }
+            val builtInPluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.BUILT_IN_PLUGIN }
             val builtInViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }
             val runtimeViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }
             info<PromptFxWorkspaceModel>("Found ${pluginViews.size} external plugin views, ${builtInPluginViews.size} built-in plugin views, ${builtInViews.size} built-in config views, ${runtimeViews.size} runtime config views")
@@ -68,8 +68,8 @@ class PromptFxWorkspaceModel(
                 val allSources = RuntimePromptViewConfigs.viewConfigs.filter { it.viewId == viewId }.map { it.source }
                 return when {
                     allSources.size > 1 -> "$ANSI_CYAN* $viewId *$ANSI_RESET"
-                    source == RuntimeViewSource.VIEW_PLUGIN -> "$ANSI_YELLOW$viewId$ANSI_RESET"
-                    source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN -> "$ANSI_GREEN$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.RUNTIME_PLUGIN -> "$ANSI_YELLOW$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.BUILT_IN_PLUGIN -> "$ANSI_GREEN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.BUILT_IN_CONFIG -> "$ANSI_GREEN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.RUNTIME_CONFIG -> "$ANSI_CYAN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.USER_PROVIDED -> "$ANSI_RED$viewId$ANSI_RESET" // just in case we add user-provided source later
