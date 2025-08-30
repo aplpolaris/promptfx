@@ -6,7 +6,6 @@ tri.promptfx.prompts.PromptTraceHistoryPlugin
 tri.promptfx.text.ListGeneratorPlugin
 tri.promptfx.text.QuestionAnsweringPlugin
 tri.promptfx.text.StructuredDataPlugin
-tri.promptfx.text.TextSimilarityPlugin
 tri.promptfx.multimodal.AudioApiPlugin
 tri.promptfx.multimodal.AudioSpeechApiPlugin
 tri.promptfx.multimodal.ImagesApiPlugin
@@ -15,6 +14,7 @@ tri.promptfx.docs.DocumentQaPlugin
 tri.promptfx.docs.DocumentInsightPlugin
 tri.promptfx.docs.TextManagerPlugin
 tri.promptfx.docs.TextClusterPlugin
+tri.promptfx.docs.TextSimilarityPlugin
 tri.promptfx.fun.ChatBackPlugin
 tri.promptfx.fun.ColorPlugin
 tri.promptfx.fun.WeatherViewPlugin

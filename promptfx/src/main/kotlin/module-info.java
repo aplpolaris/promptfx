@@ -107,7 +107,6 @@ module tri.promptfx {
             ListGeneratorPlugin,
             QuestionAnsweringPlugin,
             StructuredDataPlugin,
-            TextSimilarityPlugin,
 
             // 3 - multimodal
             AudioApiPlugin,
@@ -120,6 +119,7 @@ module tri.promptfx {
             DocumentInsightPlugin,
             TextManagerPlugin,
             TextClusterPlugin,
+            TextSimilarityPlugin,
 
             // 5 - fun/integrations
             ChatBackPlugin,

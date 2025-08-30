@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.promptfx.text
+package tri.promptfx.docs
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
