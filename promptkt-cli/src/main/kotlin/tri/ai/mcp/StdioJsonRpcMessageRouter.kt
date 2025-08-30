@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp
 
 import kotlinx.serialization.json.JsonElement
@@ -25,7 +44,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
             val line = reader.readLine() ?: break
             if (line.isBlank()) continue
 
-            val req = runCatching { JsonRpcSerializer.parseRequest(line) }.getOrElse {
+            val req = runCatching { JsonSerializers.parseRequest(line) }.getOrElse {
                 // Malformed JSON → JSON-RPC parse error (-32700)
                 writeError(out, null, -32700, "Parse error")
                 null
@@ -60,7 +79,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
             if (id != null) put("id", id)
             put("result", result)
         }
-        out.println(JsonRpcSerializer.serialize(resp))
+        out.println(JsonSerializers.serialize(resp))
         out.flush()
     }
 
@@ -73,7 +92,7 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                 put("message", JsonPrimitive(message))
             })
         }
-        out.println(JsonRpcSerializer.serialize(err))
+        out.println(JsonSerializers.serialize(err))
         out.flush()
     }
 }

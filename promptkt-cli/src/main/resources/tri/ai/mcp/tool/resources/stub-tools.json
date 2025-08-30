@@ -1,0 +1,446 @@
+{
+  "tools" : [ {
+    "name" : "test_sentiment_analysis",
+    "description" : "A fake sentiment analysis tool that returns a fixed sentiment.",
+    "version" : "1.0.0",
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "input_text" : {
+          "type" : "string",
+          "description" : "The text to analyze."
+        }
+      },
+      "required" : [ "input_text" ]
+    },
+    "outputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "input_text" : {
+          "type" : "string",
+          "description" : "The input text that was analyzed."
+        },
+        "sentiment" : {
+          "type" : "string",
+          "description" : "The detected sentiment.",
+          "enum" : [ "positive", "negative", "neutral" ]
+        },
+        "confidence" : {
+          "type" : "number",
+          "description" : "Confidence score between 0 and 1.",
+          "minimum" : 0,
+          "maximum" : 1
+        }
+      },
+      "required" : [ "input_text", "sentiment", "confidence" ]
+    },
+    "hardCodedOutput" : {
+      "input_text" : "I love programming!",
+      "sentiment" : "positive",
+      "confidence" : 0.95
+    }
+  }, {
+    "name" : "test_aircraft_type_lookup",
+    "description" : "Looks up (fake) reference data for an aircraft type/model.",
+    "version" : "1.0.0",
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "type_code" : {
+          "type" : "string",
+          "description" : "Aircraft type designator or common code (e.g., B738 for 737-800)."
+        }
+      },
+      "required" : [ "type_code" ]
+    },
+    "outputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "type_code" : {
+          "type" : "string"
+        },
+        "manufacturer" : {
+          "type" : "string"
+        },
+        "model" : {
+          "type" : "string"
+        },
+        "engine_type" : {
+          "type" : "string",
+          "enum" : [ "Turbofan", "Turboprop", "Piston", "Turbojet", "Electric" ]
+        },
+        "engines" : {
+          "type" : "integer"
+        },
+        "range_nm" : {
+          "type" : "integer"
+        },
+        "ceiling_ft" : {
+          "type" : "integer"
+        },
+        "cruise_speed_kts" : {
+          "type" : "integer"
+        },
+        "wake_category" : {
+          "type" : "string",
+          "enum" : [ "L", "M", "H", "J" ]
+        },
+        "first_flight" : {
+          "type" : "string",
+          "format" : "date"
+        },
+        "notes" : {
+          "type" : "string"
+        },
+        "image_url" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "type_code", "manufacturer", "model", "engine_type", "engines", "range_nm", "ceiling_ft", "cruise_speed_kts", "wake_category" ]
+    },
+    "hardCodedOutput" : {
+      "type_code" : "B738",
+      "manufacturer" : "Boeing",
+      "model" : "737-800",
+      "engine_type" : "Turbofan",
+      "engines" : 2,
+      "range_nm" : 2935,
+      "ceiling_ft" : 41000,
+      "cruise_speed_kts" : 450,
+      "wake_category" : "M",
+      "first_flight" : "1997-07-31",
+      "notes" : "Best-selling NG variant; commonly configured 160–189 seats.",
+      "image_url" : "https://img.example.com/types/b738.jpg"
+    }
+  }, {
+    "name" : "test_aviation_news_search",
+    "description" : "Searches a (fake) database of recent aviation news and returns top matching headlines.",
+    "version" : "1.0.0",
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "query" : {
+          "type" : "string",
+          "description" : "Keywords to search for (airlines, models, topics, people)."
+        },
+        "since" : {
+          "type" : "string",
+          "format" : "date",
+          "description" : "Only include news on or after this date (YYYY-MM-DD)."
+        },
+        "limit" : {
+          "type" : "integer",
+          "minimum" : 1,
+          "maximum" : 50,
+          "default" : 5,
+          "description" : "Max number of results to return."
+        }
+      },
+      "required" : [ "query" ]
+    },
+    "outputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "query" : {
+          "type" : "string"
+        },
+        "since" : {
+          "type" : "string"
+        },
+        "results" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "title" : {
+                "type" : "string"
+              },
+              "date" : {
+                "type" : "string",
+                "format" : "date"
+              },
+              "source" : {
+                "type" : "string"
+              },
+              "summary" : {
+                "type" : "string"
+              },
+              "url" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "title", "date", "source", "summary", "url" ]
+          }
+        }
+      },
+      "required" : [ "query", "results" ]
+    },
+    "hardCodedOutput" : {
+      "query" : "Boeing 737 MAX",
+      "since" : "2025-08-01",
+      "results" : [ {
+        "title" : "FAA proposes updated inspection intervals for 737 MAX nacelle components",
+        "date" : "2025-08-20",
+        "source" : "Aviation Daily",
+        "summary" : "Draft directive outlines revised checks after operators reported accelerated wear; no immediate fleet grounding.",
+        "url" : "https://news.example.com/av/737max-inspection-intervals"
+      }, {
+        "title" : "Major carrier adds six new 737-8 routes for winter season",
+        "date" : "2025-08-18",
+        "source" : "Routes Watch",
+        "summary" : "Network update focuses on high-demand leisure markets and frees widebodies for long-haul growth.",
+        "url" : "https://news.example.com/routes/737-8-winter-adds"
+      }, {
+        "title" : "Suppliers signal stabilization in narrowbody production lines",
+        "date" : "2025-08-14",
+        "source" : "AeroBiz Journal",
+        "summary" : "Tier-1 suppliers report improved on-time delivery metrics; analysts remain cautious on ramp targets.",
+        "url" : "https://news.example.com/aero/suppliers-stabilize"
+      } ]
+    }
+  }, {
+    "name" : "test_aircraft_tracks_search",
+    "description" : "Searches a (fake) database of ADS-B/MLAT tracks for a specific aircraft and returns recent positions.",
+    "version" : "1.0.0",
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "tail_number" : {
+          "type" : "string",
+          "description" : "Tail number, e.g., N123AB."
+        },
+        "icao24" : {
+          "type" : "string",
+          "description" : "Hex ICAO24 identifier, e.g., A1B2C3.",
+          "pattern" : "^[0-9A-Fa-f]{6}$"
+        },
+        "start_time" : {
+          "type" : "string",
+          "format" : "date-time",
+          "description" : "ISO 8601 start time."
+        },
+        "end_time" : {
+          "type" : "string",
+          "format" : "date-time",
+          "description" : "ISO 8601 end time."
+        },
+        "limit" : {
+          "type" : "integer",
+          "minimum" : 1,
+          "maximum" : 2000,
+          "default" : 250,
+          "description" : "Max number of points."
+        }
+      },
+      "oneOf" : [ {
+        "required" : [ "tail_number" ]
+      }, {
+        "required" : [ "icao24" ]
+      } ]
+    },
+    "outputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "tail_number" : {
+          "type" : "string"
+        },
+        "icao24" : {
+          "type" : "string"
+        },
+        "callsign" : {
+          "type" : "string"
+        },
+        "track" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "time" : {
+                "type" : "string",
+                "format" : "date-time"
+              },
+              "lat" : {
+                "type" : "number"
+              },
+              "lon" : {
+                "type" : "number"
+              },
+              "alt_ft" : {
+                "type" : "integer"
+              },
+              "gs_kts" : {
+                "type" : "number"
+              },
+              "track_deg" : {
+                "type" : "number"
+              },
+              "src" : {
+                "type" : "string",
+                "enum" : [ "ADS-B", "MLAT", "FUSED" ]
+              }
+            },
+            "required" : [ "time", "lat", "lon", "alt_ft", "gs_kts", "track_deg", "src" ]
+          }
+        },
+        "stats" : {
+          "type" : "object",
+          "properties" : {
+            "points" : {
+              "type" : "integer"
+            },
+            "first_seen" : {
+              "type" : "string",
+              "format" : "date-time"
+            },
+            "last_seen" : {
+              "type" : "string",
+              "format" : "date-time"
+            }
+          },
+          "required" : [ "points", "first_seen", "last_seen" ]
+        }
+      },
+      "required" : [ "track", "stats" ]
+    },
+    "hardCodedOutput" : {
+      "tail_number" : "N123AB",
+      "icao24" : "A1B2C3",
+      "callsign" : "EXM123",
+      "track" : [ {
+        "time" : "2025-08-26T13:04:10Z",
+        "lat" : 39.175,
+        "lon" : -76.668,
+        "alt_ft" : 1200,
+        "gs_kts" : 165.0,
+        "track_deg" : 95.0,
+        "src" : "ADS-B"
+      }, {
+        "time" : "2025-08-26T13:07:40Z",
+        "lat" : 39.0,
+        "lon" : -76.3,
+        "alt_ft" : 7500,
+        "gs_kts" : 240.0,
+        "track_deg" : 110.0,
+        "src" : "FUSED"
+      }, {
+        "time" : "2025-08-26T13:15:05Z",
+        "lat" : 38.85,
+        "lon" : -76.05,
+        "alt_ft" : 18000,
+        "gs_kts" : 430.0,
+        "track_deg" : 125.0,
+        "src" : "ADS-B"
+      }, {
+        "time" : "2025-08-26T13:42:33Z",
+        "lat" : 38.51,
+        "lon" : -75.32,
+        "alt_ft" : 36000,
+        "gs_kts" : 455.0,
+        "track_deg" : 130.0,
+        "src" : "ADS-B"
+      } ],
+      "stats" : {
+        "points" : 4,
+        "first_seen" : "2025-08-26T13:04:10Z",
+        "last_seen" : "2025-08-26T13:42:33Z"
+      }
+    }
+  }, {
+    "name" : "test_aviation_person_lookup",
+    "description" : "Looks up (fake) profile info for a person of interest in the aviation industry.",
+    "version" : "1.0.0",
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "description" : "Full name of the person to look up."
+        }
+      },
+      "required" : [ "name" ]
+    },
+    "outputSchema" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "role" : {
+          "type" : "string"
+        },
+        "organization" : {
+          "type" : "string"
+        },
+        "bio" : {
+          "type" : "string"
+        },
+        "areas_of_focus" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "recent_mentions" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "properties" : {
+              "date" : {
+                "type" : "string",
+                "format" : "date"
+              },
+              "source" : {
+                "type" : "string"
+              },
+              "headline" : {
+                "type" : "string"
+              },
+              "url" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "date", "source", "headline", "url" ]
+          }
+        },
+        "contacts" : {
+          "type" : "object",
+          "properties" : {
+            "website" : {
+              "type" : "string"
+            },
+            "linkedin" : {
+              "type" : "string"
+            },
+            "twitter" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "required" : [ "name", "role", "organization" ]
+    },
+    "hardCodedOutput" : {
+      "name" : "Avery Chen",
+      "role" : "Chief Strategy Officer",
+      "organization" : "SkyBridge Aerospace",
+      "bio" : "Leads fleet strategy and sustainability initiatives, with prior roles in network planning and OEM partnerships.",
+      "areas_of_focus" : [ "Sustainable aviation fuel", "Narrowbody fleet renewal", "Route optimization" ],
+      "recent_mentions" : [ {
+        "date" : "2025-08-21",
+        "source" : "AeroBiz Journal",
+        "headline" : "SkyBridge targets 10% SAF blend on transcon routes by 2027",
+        "url" : "https://news.example.com/people/avery-chen-saf-plan"
+      }, {
+        "date" : "2025-08-09",
+        "source" : "Routes Watch",
+        "headline" : "Interview: Balancing upgauge and frequency in post-peak demand",
+        "url" : "https://news.example.com/interviews/chen-network-tradeoffs"
+      } ],
+      "contacts" : {
+        "website" : "https://www.skybridge.example.com/leadership/avery-chen",
+        "linkedin" : "https://www.linkedin.com/in/avery-chen-example",
+        "twitter" : "https://twitter.com/averychen_air"
+      }
+    }
+  } ]
+}

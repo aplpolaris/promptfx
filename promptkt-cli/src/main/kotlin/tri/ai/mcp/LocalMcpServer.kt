@@ -25,23 +25,25 @@ import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
+import tri.ai.mcp.tool.ToolLibrary
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
 /**
  * Implements basic functionality of MCP prompt server based on a local prompt library.
  */
-class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAdapter {
+class LocalMcpServer(val prompts: PromptLibrary = PromptLibrary(), val tools: ToolLibrary) :
+    McpServerAdapter, ToolLibrary by tools {
 
     override fun toString() = "LocalMcpServer"
 
     /** List prompt information. */
     override suspend fun listPrompts(): List<McpPrompt> =
-        library.list().map { it.toMcpContract() }
+        prompts.list().map { it.toMcpContract() }
 
     /** Gets result of filling a prompt with arguments. */
     override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
-        val prompt = library.get(name)
+        val prompt = prompts.get(name)
             ?: throw McpServerException("Prompt with name '$name' not found")
         val filled = prompt.fill(args)
         return McpGetPromptResponse(
@@ -53,7 +55,8 @@ class LocalMcpServer(val library: PromptLibrary = PromptLibrary()) : McpServerAd
     }
 
     override suspend fun getCapabilities() = McpServerCapabilities(
-        prompts = McpServerPromptCapability(listChanged = false)
+        prompts = McpServerCapability(listChanged = false),
+        tools = if (tools.listTools().isEmpty()) null else McpServerCapability(listChanged = false)
     )
 
     override suspend fun close() {

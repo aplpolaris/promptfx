@@ -1,0 +1,136 @@
+############################
+# RESEARCH QUALITY PRINCIPLES
+############################
+# view: Research Quality Review
+# keywords:
+#   {{{input}}} - research product or section / key findings or assessments
+#   {{{topic}}} - subject/topic under analysis
+#   {{{sources}}} - list of sources used
+#   {{{claims}}} - specific claims or statements
+
+---
+groupId: research-quality
+defaults: { category: research }
+prompts:
+
+  - id: research-quality/objectivity-check@1.0.0
+    title: Neutrality and Independence Review
+    description: Evaluate research text for neutrality, independence from external agendas, and avoidance of bias.
+    args:
+      - name: input
+        description: The research text to review
+        required: true
+        type: string
+    template: |
+      Review the following research text for **neutrality and independence**.
+      
+      Input:
+      ```
+      {{{input}}}
+      ```
+      
+      Please provide:
+      1. **Assessment**: Identify signs of bias, agenda-driven language, or lack of objectivity.
+      2. **Examples**: Highlight phrases or wording that may indicate bias.
+      3. **Recommendations**: Suggest specific revisions to improve neutrality and balanced perspective.
+      4. **Revised Version**: Provide a revised version that better reflects independence and objectivity.
+
+  - id: research-quality/evidence-sourcing@1.0.0
+    title: Evidence and Source Integrity Review
+    description: Check research claims for sufficient sourcing, clear attribution, and traceability to credible sources.
+    args:
+      - name: input
+        description: The research text or findings to review
+        required: true
+        type: string
+      - name: sources
+        description: List of sources referenced in the research
+        required: true
+        type: string
+    template: |
+      Review the following research content for **evidence and source integrity**.
+      
+      Research Text:
+      ```
+      {{{input}}}
+      ```
+      
+      Sources Provided:
+      ```
+      {{{sources}}}
+      ```
+      
+      Please provide:
+      1. **Completeness**: Does each major claim have clear supporting evidence?
+      2. **Traceability**: Are sources clearly linked to findings or conclusions?
+      3. **Credibility**: Assess the reliability of the sources provided.
+      4. **Gaps**: Identify unsupported claims and recommend additional sourcing.
+      5. **Annotated Version**: Return the text with inline source notes or placeholders where citations are missing.
+
+  - id: research-quality/assumptions-transparency@1.0.0
+    title: Assumptions and Clarity Review
+    description: Identify assumptions, uncertainties, and confidence levels in findings to improve clarity and transparency.
+    args:
+      - name: input
+        description: The key findings or assessments
+        required: true
+        type: string
+    template: |
+      Review the following findings for **assumptions, uncertainties, and clarity**.
+      
+      Findings:
+      ```
+      {{{input}}}
+      ```
+      
+      Please provide:
+      1. **Assumptions**: Identify explicit or implicit assumptions and whether they are stated clearly.
+      2. **Confidence Language**: Assess whether confidence levels are expressed in a consistent, understandable way.
+      3. **Uncertainty**: Highlight areas where uncertainty should be acknowledged but is missing.
+      4. **Recommendations**: Suggest revisions to improve transparency and clarity.
+      5. **Revised Findings**: Rewrite the findings with assumptions, uncertainty, and confidence levels clearly stated.
+
+  - id: research-quality/logical-review@1.0.0
+    title: Logical Consistency Review
+    description: Evaluate research reasoning for internal consistency, clarity of logic, and support from evidence.
+    args:
+      - name: input
+        description: Research section or argument to review
+        required: true
+        type: string
+    template: |
+      Assess the following research text for **logical consistency and reasoning quality**.
+      
+      Input:
+      ```
+      {{{input}}}
+      ```
+      
+      Please provide:
+      1. **Consistency Check**: Identify contradictions or logical gaps.
+      2. **Reasoning Assessment**: Evaluate whether evidence clearly supports the conclusions.
+      3. **Methodological Suggestions**: Suggest structured approaches (e.g., comparative analysis, alternative scenarios) that could strengthen the reasoning.
+      4. **Revised Version**: Provide a refined version of the text that addresses logical or reasoning issues.
+
+  - id: research-quality/final-eval@1.0.0
+    title: Research Quality Evaluation
+    description: Comprehensive evaluation of a research product against core research quality principles.
+    args:
+      - name: input
+        description: Full research product to evaluate
+        required: true
+        type: string
+    template: |
+      Evaluate the following research product against **core research quality principles**.
+      
+      Input:
+      ```
+      {{{input}}}
+      ```
+      
+      Please provide:
+      1. **Principle-by-Principle Evaluation**: Assess compliance with key quality principles (neutrality, evidence, clarity, logic, transparency, timeliness, usefulness).
+      2. **Strengths**: Identify areas of strong performance.
+      3. **Weaknesses**: Highlight gaps, risks, or areas for improvement.
+      4. **Actionable Recommendations**: Provide clear steps to raise quality.
+      5. **Overall Rating**: Give an overall quality rating (Excellent / Satisfactory / Needs Improvement).
