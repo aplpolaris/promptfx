@@ -35,7 +35,7 @@ open class RuntimePromptView(private val viewConfig: RuntimePromptViewConfig): A
 ) {
 
     private val argConfigs = viewConfig.allArgOptions.map { ArgViewConfig(it) }
-    private lateinit var promptModel: PromptSelectionModel
+    private val promptModel = PromptSelectionModel(viewConfig.prompt.id, viewConfig.prompt.template)
     private val textAreaInputs = mutableMapOf<String, SimpleStringProperty>()
 
     init {
@@ -81,7 +81,6 @@ open class RuntimePromptView(private val viewConfig: RuntimePromptViewConfig): A
             }
             
             if (viewConfig.isShowPrompt) {
-                promptModel = PromptSelectionModel(viewConfig.prompt.id, viewConfig.prompt.template)
                 promptfield(prompt = promptModel, workspace = workspace)
             }
             if (viewConfig.isShowMultipleResponseOption && !viewConfig.isShowModelParameters) {
