@@ -19,12 +19,8 @@
  */
 package tri.util.ui
 
-import tornadofx.*
+import tornadofx.Workspace
 import tri.promptfx.PromptFxPlugins
-import tri.util.info
-import java.util.*
-import kotlin.io.path.Path
-import kotlin.io.path.listDirectoryEntries
 
 /** A view that can be added to a workspace. */
 interface NavigableWorkspaceView {
