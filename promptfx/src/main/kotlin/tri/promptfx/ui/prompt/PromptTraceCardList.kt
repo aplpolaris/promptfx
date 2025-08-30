@@ -128,7 +128,12 @@ class PromptTraceCardList: Fragment() {
                     }
                     item("View in Prompt Library", graphic = FontAwesomeIcon.BOOK.graphic) {
                         action {
-                            find<PromptFxWorkspace>().launchLibraryView()
+                            val selected = selectionModel.selectedItem
+                            if (selected != null && selected.prompt?.template != null) {
+                                find<PromptFxWorkspace>().launchLibraryView(selected.prompt!!.template)
+                            } else {
+                                find<PromptFxWorkspace>().launchLibraryView()
+                            }
                         }
                     }
                 }

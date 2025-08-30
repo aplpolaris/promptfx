@@ -217,7 +217,12 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
                 }
                 item("View in Prompt Library", graphic = FontAwesomeIcon.BOOK.graphic) {
                     action {
-                        find<PromptFxWorkspace>().launchLibraryView()
+                        val value = trace.value
+                        if (value != null && value.prompt?.template != null) {
+                            find<PromptFxWorkspace>().launchLibraryView(value.prompt!!.template)
+                        } else {
+                            find<PromptFxWorkspace>().launchLibraryView()
+                        }
                     }
                 }
             }

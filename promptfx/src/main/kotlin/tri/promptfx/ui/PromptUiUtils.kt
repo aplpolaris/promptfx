@@ -66,7 +66,7 @@ fun EventTarget.promptfield(
                 action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
             }
             item("View in Prompt Library", graphic = FontAwesomeIconView(FontAwesomeIcon.BOOK)) {
-                action { find<PromptFxWorkspace>().launchLibraryView() }
+                action { find<PromptFxWorkspace>().launchLibraryView(prompt.text.value) }
             }
         }
     }

@@ -257,6 +257,16 @@ class PromptFxWorkspace : Workspace() {
         workspace.dock(view)
     }
 
+    /** Launches the prompt library view and selects the prompt matching the given template text. */
+    fun launchLibraryView(templateText: String) {
+        val view = find<PromptLibraryView>()
+        workspace.dock(view)
+        // Select the prompt after docking
+        runLater {
+            view.selectPromptByTemplate(templateText)
+        }
+    }
+
     /** Launches the text manager view with the given library. */
     fun launchTextManagerView(library: TextLibrary) {
         val view = find<TextManagerView>()
