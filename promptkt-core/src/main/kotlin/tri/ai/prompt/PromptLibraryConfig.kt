@@ -43,36 +43,18 @@ data class PromptLibraryConfig(
      * @return true if the prompt should be included, false otherwise
      */
     fun shouldInclude(prompt: PromptDef): Boolean {
-        // Apply includes first - if any includes are specified, prompt must match at least one
-        val hasIdIncludes = includeIds.isNotEmpty()
-        val hasCategoryIncludes = includeCategories.isNotEmpty()
-        val hasIncludes = hasIdIncludes || hasCategoryIncludes
+        val hasIncludes = includeIds.isNotEmpty() || includeCategories.isNotEmpty()
         
         if (hasIncludes) {
-            var matches = false
+            val idMatches = includeIds.isNotEmpty() && includeIds.any { matchesPattern(prompt.id, it) }
+            val categoryMatches = includeCategories.isNotEmpty() && prompt.category != null && 
+                includeCategories.any { matchesPattern(prompt.category, it) }
             
-            // Check ID includes if specified
-            if (hasIdIncludes) {
-                matches = includeIds.any { pattern -> matchesPattern(prompt.id, pattern) }
-            }
-            
-            // Check category includes if specified (OR condition with ID includes)
-            if (hasCategoryIncludes && !matches) {
-                matches = prompt.category != null && includeCategories.any { pattern -> matchesPattern(prompt.category, pattern) }
-            }
-            
-            if (!matches) {
-                return false
-            }
+            if (!idMatches && !categoryMatches) return false
         }
         
-        // Apply excludes - if prompt matches any exclude pattern, it should not be included
-        val idExcluded = excludeIds.any { pattern -> matchesPattern(prompt.id, pattern) }
-        if (idExcluded) return false
-        
-        val categoryExcluded = prompt.category != null && 
-            excludeCategories.any { pattern -> matchesPattern(prompt.category, pattern) }
-        if (categoryExcluded) return false
+        if (excludeIds.any { matchesPattern(prompt.id, it) }) return false
+        if (prompt.category != null && excludeCategories.any { matchesPattern(prompt.category, it) }) return false
         
         return true
     }

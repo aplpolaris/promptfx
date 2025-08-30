@@ -28,7 +28,7 @@ import kotlin.io.path.isDirectory
  * Manages collections of prompt templates.
  * TODO - versioning is not implemented, even though there's a placeholder for it in prompt id conventions
  */
-class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
+class PromptLibrary {
 
     // indices (id is full id = group/name@x.y.z, bare = group/name only)
     // category and tag indices are lists of ids
@@ -46,19 +46,25 @@ class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfi
         }
     }
 
+    /** Adds a group to the library with config filtering, indexing its prompts. */
+    private fun addGroup(group: PromptGroup, config: PromptLibraryConfig) {
+        group.resolved().prompts.forEach {
+            if (config.shouldInclude(it)) {
+                addPrompt(it)
+            }
+        }
+    }
+
     /** Adds a prompt to the library, indexing it by id, bare id, category, and tags. */
     fun addPrompt(prompt: PromptDef) {
         prompt.resolved(PromptGroup("Uncategorized")).let {
-            // Apply configuration filtering
-            if (config.shouldInclude(it)) {
-                byId[it.id] = it
-                byBare.getOrPut(it.bareId) { mutableListOf() }.add(it)
-                it.category?.let { category ->
-                    byCategory.getOrPut(category) { mutableListOf() }.add(it.id)
-                }
-                it.tags.forEach { tag ->
-                    byTag.getOrPut(tag) { mutableListOf() }.add(it.id)
-                }
+            byId[it.id] = it
+            byBare.getOrPut(it.bareId) { mutableListOf() }.add(it)
+            it.category?.let { category ->
+                byCategory.getOrPut(category) { mutableListOf() }.add(it.id)
+            }
+            it.tags.forEach { tag ->
+                byTag.getOrPut(tag) { mutableListOf() }.add(it.id)
             }
         }
     }
@@ -119,9 +125,9 @@ class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfi
         
         /** Load a PromptLibrary with configuration from resource directory. */
         fun loadWithConfig(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT): PromptLibrary = 
-            PromptLibrary(config).apply {
-                readFromResourceDirectory()
-                readFromRuntimeDirectory()
+            PromptLibrary().apply {
+                readFromResourceDirectory(config)
+                readFromRuntimeDirectory(config)
             }
         
         /** Load a PromptLibrary with configuration from a config file. */
@@ -132,9 +138,16 @@ class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfi
         
         /** Load the default configuration from resources. */
         fun loadDefaultConfig(): PromptLibraryConfig =
-            PromptGroupIO.loadConfigFromResource("prompt-library-config.yaml")
+            PromptGroupIO.loadConfigFromResource("config/prompt-library-config.yaml")
 
         // load from resource directory
+        private fun PromptLibrary.readFromResourceDirectory(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
+            PromptGroupIO.readAllFromResourceDirectory().forEach {
+                addGroup(it, config)
+            }
+        }
+
+        // load from resource directory without config filtering
         private fun PromptLibrary.readFromResourceDirectory() {
             PromptGroupIO.readAllFromResourceDirectory().forEach {
                 addGroup(it)
@@ -142,6 +155,16 @@ class PromptLibrary(private val config: PromptLibraryConfig = PromptLibraryConfi
         }
 
         // load from prompts/ directory, recursively, if it exists
+        private fun PromptLibrary.readFromRuntimeDirectory(config: PromptLibraryConfig = PromptLibraryConfig.DEFAULT) {
+            Path("prompts/").let {
+                if (it.exists() && it.isDirectory())
+                    PromptGroupIO.readFromDirectory(it, recursive = true).forEach {
+                        addGroup(it.resolved(), config)
+                    }
+            }
+        }
+
+        // load from prompts/ directory without config filtering
         private fun PromptLibrary.readFromRuntimeDirectory() {
             Path("prompts/").let {
                 if (it.exists() && it.isDirectory())

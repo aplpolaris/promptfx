@@ -28,7 +28,7 @@ class PromptLibraryConfigIOTest {
 
     @Test
     fun testLoadDefaultConfigFromResource() {
-        val config = PromptGroupIO.loadConfigFromResource("prompt-library-config.yaml")
+        val config = PromptGroupIO.loadConfigFromResource("config/prompt-library-config.yaml")
         
         assertNotNull(config)
         assertTrue(config.includeIds.isEmpty())
