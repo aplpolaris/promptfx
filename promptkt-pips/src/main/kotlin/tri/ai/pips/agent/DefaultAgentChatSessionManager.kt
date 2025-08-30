@@ -22,9 +22,9 @@ package tri.ai.pips.agent
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Default implementation of [AgentSessionManager] that keeps sessions in memory.
+ * Default implementation of [AgentChatSessionManager] that keeps sessions in memory.
  */
-class DefaultAgentSessionManager : AgentSessionManager {
+class DefaultAgentChatSessionManager : AgentChatSessionManager {
     
     private val sessions = ConcurrentHashMap<String, AgentChatSession>()
     

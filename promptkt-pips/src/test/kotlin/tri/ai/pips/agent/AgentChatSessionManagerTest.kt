@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 
-class AgentSessionManagerTest {
+class AgentChatSessionManagerTest {
 
     @Test
     fun testDefaultAgentSessionManager() {
-        val sessionManager = DefaultAgentSessionManager()
+        val sessionManager = DefaultAgentChatSessionManager()
         
         // Test creating session
         val config = AgentChatConfig(modelId = "gpt-4")
@@ -80,7 +80,7 @@ class AgentSessionManagerTest {
 
     @Test
     fun testCompositionInDefaultAgentChatAPI() {
-        val sessionManager = DefaultAgentSessionManager()
+        val sessionManager = DefaultAgentChatSessionManager()
         val chat = DefaultAgentChat()
         val api = DefaultAgentChatAPI(sessionManager, chat)
         

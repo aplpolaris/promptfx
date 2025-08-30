@@ -41,15 +41,11 @@ sealed class AgentChatEvent {
  * Represents an ongoing agent chat operation that can be monitored for progress.
  * Allows streaming of interim results, reasoning, and progress updates.
  */
-class AgentChatOperation(
-    /** Stream of events from the operation. */
-    val events: Flow<AgentChatEvent>
-) {
+class AgentChatOperation(val events: Flow<AgentChatEvent>) {
     /** 
      * Await the final response from the operation.
      * This suspends until a Response event is emitted.
      */
-    suspend fun awaitResponse(): AgentChatResponse {
-        return events.filterIsInstance<AgentChatEvent.Response>().first().response
-    }
+    suspend fun awaitResponse() =
+        events.filterIsInstance<AgentChatEvent.Response>().first().response
 }

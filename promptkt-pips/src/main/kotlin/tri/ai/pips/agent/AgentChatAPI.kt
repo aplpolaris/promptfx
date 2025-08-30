@@ -19,11 +19,17 @@
  */
 package tri.ai.pips.agent
 
-import tri.ai.core.MultimodalChatMessage
-
 /**
  * API for managing agent chat sessions with contextual and reasoning capabilities.
  * This API is designed to be independent of UI concerns and can support CLI, MCP, or REST interfaces.
  * Combines session management and chat functionality through composition.
  */
-interface AgentChatAPI : AgentSessionManager, AgentChat
+interface AgentChatAPI : AgentChatSessionManager, AgentChat
+
+/**
+ * Default implementation of [AgentChatAPI] using separate [AgentChatSessionManager] and [AgentChat] implementations.
+ */
+class DefaultAgentChatAPI(
+    private val sessionManager: AgentChatSessionManager = DefaultAgentChatSessionManager(),
+    private val chat: AgentChat = DefaultAgentChat()
+) : AgentChatAPI, AgentChat by chat, AgentChatSessionManager by sessionManager

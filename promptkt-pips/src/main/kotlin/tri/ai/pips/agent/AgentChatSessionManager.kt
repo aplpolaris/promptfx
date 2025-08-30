@@ -23,7 +23,7 @@ package tri.ai.pips.agent
  * Interface for managing agent chat sessions.
  * Handles session creation, persistence, and lifecycle management.
  */
-interface AgentSessionManager {
+interface AgentChatSessionManager {
     
     /** Create a new chat session with optional configuration. */
     fun createSession(config: AgentChatConfig = AgentChatConfig()): AgentChatSession
