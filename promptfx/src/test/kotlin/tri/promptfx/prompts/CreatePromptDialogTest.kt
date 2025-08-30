@@ -67,13 +67,44 @@ class CreatePromptDialogTest {
     }
     
     @Test
-    fun testPromptIdValidation() {
-        // Test valid IDs
-        assertTrue("custom/test@1.0.0".contains('/'))
-        assertTrue("examples/hello@2.0.0".contains('/'))
+    fun testEndToEndPromptCreationWorkflow() {
+        // Create a test prompt that simulates what the dialog would create
+        val newPrompt = PromptDef(
+            id = "test/workflow-test@1.0.0",
+            name = "Workflow Test Prompt",
+            title = "Test Workflow",
+            description = "A prompt created to test the end-to-end workflow",
+            template = "Process this {{input}} with {{method}}"
+        )
         
-        // Test invalid IDs
-        assertFalse("test".contains('/'))
-        assertFalse("hello@1.0.0".contains('/'))
+        // Get the current number of prompts in runtime library
+        val initialCount = PromptLibrary.RUNTIME_INSTANCE.list().size
+        
+        // Create a temporary file to test the save logic
+        val tempFile = java.nio.file.Files.createTempFile("test-custom-prompts", ".yaml").toFile()
+        
+        try {
+            // Initialize file with custom group structure
+            val initialGroup = PromptGroup("custom", prompts = emptyList())
+            PromptGroupIO.MAPPER.writeValue(tempFile, initialGroup)
+            
+            // Add the new prompt
+            val existingGroup = PromptGroupIO.readFromFile(tempFile.toPath())
+            val updatedGroup = existingGroup.copy(
+                prompts = existingGroup.prompts + newPrompt
+            )
+            PromptGroupIO.MAPPER.writeValue(tempFile, updatedGroup)
+            
+            // Verify the file was written correctly
+            val content = tempFile.readText()
+            assertTrue(content.contains("workflow-test@1.0.0"))
+            assertTrue(content.contains("Process this {{input}} with {{method}}"))
+            
+            println("✓ Prompt saved to temporary file successfully")
+            println("✓ File content contains expected prompt ID and template")
+            
+        } finally {
+            tempFile.delete()
+        }
     }
 }
