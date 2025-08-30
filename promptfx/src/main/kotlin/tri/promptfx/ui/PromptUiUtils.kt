@@ -34,6 +34,10 @@ import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.FormattedTextNode
 import tri.promptfx.PromptFxWorkspace
 
+const val SEND_TO_PROMPT_TEMPLATE = "Send to Prompt Template View"
+const val LOCATE_IN_PROMPT_LIBRARY = "Locate in Prompt Library View"
+const val LOCATE_IN_PROMPT_HISTORY = "Locate in Prompt History View"
+
 /**
  * Adds a combobox for selecting a prompt, a text for seeing the prompt,
  * and an option to send the prompt to the template view.
@@ -61,11 +65,11 @@ fun EventTarget.promptfield(
             action { promptFieldVisible.set(!promptFieldVisible.value) }
         }
         menubutton(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-            tooltip("Template and library options for this prompt.")
-            item("Send to Prompt Template View", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+            tooltip("Navigate to other views with this prompt template.")
+            item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
                 action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
             }
-            item("View in Prompt Library", graphic = FontAwesomeIconView(FontAwesomeIcon.BOOK)) {
+            item(LOCATE_IN_PROMPT_LIBRARY, graphic = FontAwesomeIconView(FontAwesomeIcon.BOOK)) {
                 action { find<PromptFxWorkspace>().launchLibraryView(prompt.text.value) }
             }
         }

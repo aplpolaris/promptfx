@@ -51,9 +51,12 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.prompts.PromptTraceFilter
+import tri.promptfx.ui.LOCATE_IN_PROMPT_HISTORY
+import tri.promptfx.ui.SEND_TO_PROMPT_TEMPLATE
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 import java.io.File
+import kotlin.text.isNotBlank
 
 /** UI for a list of [AiPromptTrace]s. */
 class PromptTraceCardList: Fragment() {
@@ -104,7 +107,7 @@ class PromptTraceCardList: Fragment() {
             }
             // add context menu
             lazyContextmenu {
-                item("Details...") {
+                item("Prompt trace details...") {
                     enableWhen(selectionModel.selectedItemProperty().isNotNull)
                     action {
                         val selected = selectionModel.selectedItem
@@ -115,30 +118,18 @@ class PromptTraceCardList: Fragment() {
                             }
                     }
                 }
-                menu("Try in template view") {
+                item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                         it?.prompt?.template?.isNotBlank() == true
                     })
-                    item("Send to Prompt Template View", graphic = FontAwesomeIcon.SEND.graphic) {
-                        action {
-                            val selected = selectionModel.selectedItem
-                            if (selected != null)
-                                find<PromptFxWorkspace>().launchTemplateView(selected)
-                        }
-                    }
-                    item("View in Prompt Library", graphic = FontAwesomeIcon.BOOK.graphic) {
-                        action {
-                            val selected = selectionModel.selectedItem
-                            if (selected != null && selected.prompt?.template != null) {
-                                find<PromptFxWorkspace>().launchLibraryView(selected.prompt!!.template)
-                            } else {
-                                find<PromptFxWorkspace>().launchLibraryView()
-                            }
-                        }
+                    action {
+                        val selected = selectionModel.selectedItem
+                        if (selected != null)
+                            find<PromptFxWorkspace>().launchTemplateView(selected)
                     }
                 }
                 if (!isGlobalHistoryView) {
-                    item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+                    item(LOCATE_IN_PROMPT_HISTORY, graphic = FontAwesomeIcon.SEARCH.graphic) {
                         enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                             it?.prompt?.template?.isNotBlank() == true
                         })
