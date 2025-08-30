@@ -76,18 +76,28 @@ object RuntimePromptViewConfigs {
 
     /** Pulls views into an index by precedence. */
     private fun List<SourcedViewConfig>.byPrecedence() = mutableMapOf<String, SourcedViewConfig>().also { map ->
-        // First add all view plugins
+        // First add built-in view plugins from main application JAR
+        filter { it.source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN }.forEach { map[it.viewId] = it }
+        // Next add external view plugins from config/plugins/ JARs
         filter { it.source == RuntimeViewSource.VIEW_PLUGIN }.forEach { map[it.viewId] = it }
-        // Next add built-in configs, which can override plugins
+        // Then add built-in configs, which can override plugins
         filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }.forEach { map[it.viewId] = it }
-        // Finally add runtime configs, which can override both
+        // Finally add runtime configs, which can override all others
         filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }.forEach { map[it.viewId] = it }
     }
 
     /** Loads all views that are configured as part of view plugins. */
     private fun loadPluginViews(): List<SourcedViewConfig> {
-        return NavigableWorkspaceView.viewPlugins.map {
-            SourcedViewConfig(viewGroup = it.category, viewId = it.name, view = it, config = null, source = RuntimeViewSource.VIEW_PLUGIN)
+        val allPlugins = NavigableWorkspaceView.allViewPluginsWithSource
+        val pluginViewsFromExternalJars = allPlugins.filter { it.source == tri.promptfx.PluginSource.EXTERNAL_JAR }
+        val pluginViewsFromBuiltIn = allPlugins.filter { it.source == tri.promptfx.PluginSource.BUILT_IN }
+        
+        return allPlugins.map { pluginInfo ->
+            val source = when (pluginInfo.source) {
+                tri.promptfx.PluginSource.EXTERNAL_JAR -> RuntimeViewSource.VIEW_PLUGIN
+                tri.promptfx.PluginSource.BUILT_IN -> RuntimeViewSource.VIEW_PLUGIN_BUILTIN
+            }
+            SourcedViewConfig(viewGroup = pluginInfo.plugin.category, viewId = pluginInfo.plugin.name, view = pluginInfo.plugin, config = null, source = source)
         }
     }
 
@@ -153,16 +163,18 @@ class SourcedViewConfig(
     val source: RuntimeViewSource,
 ) {
     init {
-        require (source == RuntimeViewSource.VIEW_PLUGIN || config != null) {
-            "Config must be provided for view $viewId if source is not VIEW_PLUGIN."
+        require (source == RuntimeViewSource.VIEW_PLUGIN || source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN || config != null) {
+            "Config must be provided for view $viewId if source is not VIEW_PLUGIN or VIEW_PLUGIN_BUILTIN."
         }
     }
 }
 
 /** Source of a [SourcedViewConfig]. */
 enum class RuntimeViewSource {
-    /** View is coded with the application. */
+    /** View is coded with the application and loaded as an external plugin. */
     VIEW_PLUGIN,
+    /** View is coded with the application and loaded from the main application JAR. */
+    VIEW_PLUGIN_BUILTIN,
     /** VIew that is configured via YAML. */
     BUILT_IN_CONFIG,
     /** View is configured at runtime via `config/views.yaml` or another runtime file. */

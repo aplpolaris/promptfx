@@ -41,9 +41,11 @@ class PromptFxWorkspaceModelTest {
         }
         
         if (customCategoryViews.isNotEmpty()) {
-            assertNotNull(customTab, "Custom tab should exist when there are runtime views with non-built-in categories")
-            assertTrue(customTab!!.views.all { it is NavigableWorkspaceViewRuntime }, 
-                "All views in Custom tab should be runtime views")
+            assertNotNull(customTab, "Custom tab should exist when there are views with non-built-in categories")
+            // Custom tab can now contain both runtime views and plugin views with custom categories
+            assertTrue(customTab!!.views.all { 
+                it is NavigableWorkspaceViewRuntime || !BUILT_IN_CATEGORIES.contains(it.category) 
+            }, "All views in Custom tab should be runtime views or plugin views with custom categories")
         }
         
         // Verify built-in categories contain the appropriate views

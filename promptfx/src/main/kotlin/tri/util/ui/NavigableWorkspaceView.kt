@@ -20,6 +20,7 @@
 package tri.util.ui
 
 import tornadofx.Workspace
+import tri.promptfx.PluginInfo
 import tri.promptfx.PromptFxPlugins
 
 /** A view that can be added to a workspace. */
@@ -35,7 +36,13 @@ interface NavigableWorkspaceView {
     companion object {
         // load view plugins from classpath and from config/plugins/ folder
         val viewPlugins: List<NavigableWorkspaceView> by lazy {
-            PromptFxPlugins.loadPlugins(NavigableWorkspaceView::class.java)
+            // Load all plugins (both built-in and external) for backward compatibility
+            allViewPluginsWithSource.map { it.plugin }
+        }
+        
+        // load all plugins with source information
+        val allViewPluginsWithSource: List<PluginInfo<NavigableWorkspaceView>> by lazy {
+            PromptFxPlugins.loadAllPluginsWithSource(NavigableWorkspaceView::class.java)
         }
     }
 }

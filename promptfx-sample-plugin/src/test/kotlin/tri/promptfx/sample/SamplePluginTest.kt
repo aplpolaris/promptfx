@@ -40,7 +40,7 @@ class SamplePluginTest {
     fun `plugin should have correct properties`() {
         val plugin = SamplePlugin()
         
-        assertEquals("Fun", plugin.category)
+        assertEquals("Sample Plugin", plugin.category)
         assertEquals("Hello World", plugin.name)
         assertEquals(WorkspaceViewAffordance.INPUT_ONLY, plugin.affordances)
     }

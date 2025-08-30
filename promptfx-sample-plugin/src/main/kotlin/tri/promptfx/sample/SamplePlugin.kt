@@ -30,7 +30,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Sample plugin demonstrating NavigableWorkspaceView implementation. */
-class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>("Fun", "Hello World", WorkspaceViewAffordance.INPUT_ONLY, SampleView::class)
+class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>("Sample Plugin", "Hello World", WorkspaceViewAffordance.INPUT_ONLY, SampleView::class)
 
 /** Simple view demonstrating basic functionality. */
 class SampleView : View("Sample Plugin Demo") {
@@ -98,7 +98,7 @@ class SampleView : View("Sample Plugin Demo") {
         }
         
         label("• This plugin demonstrates how to create a custom NavigableWorkspaceView")
-        label("• It shows up in the 'Fun' category alongside other built-in fun views")
+        label("• It shows up in the 'Sample Plugin' category in the Custom tab")
         label("• The plugin can be packaged as a JAR and loaded dynamically")
     }
 

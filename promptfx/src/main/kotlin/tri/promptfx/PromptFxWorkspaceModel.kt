@@ -58,9 +58,10 @@ class PromptFxWorkspaceModel(
 
             // Log summary counts
             val pluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.VIEW_PLUGIN }
+            val builtInPluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN }
             val builtInViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }
             val runtimeViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }
-            info<PromptFxWorkspaceModel>("Found ${pluginViews.size} external plugin views, ${builtInViews.size} built-in views, ${runtimeViews.size} runtime config views")
+            info<PromptFxWorkspaceModel>("Found ${pluginViews.size} external plugin views, ${builtInPluginViews.size} built-in plugin views, ${builtInViews.size} built-in config views, ${runtimeViews.size} runtime config views")
 
             // log listing of all views found, by built-in categories first then custom categories
             fun SourcedViewConfig.viewLog(): String {
@@ -68,6 +69,7 @@ class PromptFxWorkspaceModel(
                 return when {
                     allSources.size > 1 -> "$ANSI_CYAN* $viewId *$ANSI_RESET"
                     source == RuntimeViewSource.VIEW_PLUGIN -> "$ANSI_YELLOW$viewId$ANSI_RESET"
+                    source == RuntimeViewSource.VIEW_PLUGIN_BUILTIN -> "$ANSI_GREEN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.BUILT_IN_CONFIG -> "$ANSI_GREEN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.RUNTIME_CONFIG -> "$ANSI_CYAN$viewId$ANSI_RESET"
                     source == RuntimeViewSource.USER_PROVIDED -> "$ANSI_RED$viewId$ANSI_RESET" // just in case we add user-provided source later

@@ -24,12 +24,39 @@ import java.util.ServiceLoader
 import kotlin.io.path.Path
 import kotlin.io.path.listDirectoryEntries
 
+/** Information about a plugin and its source. */
+data class PluginInfo<T>(
+    val plugin: T,
+    val source: PluginSource
+)
+
+/** Source type for a plugin. */
+enum class PluginSource {
+    BUILT_IN, // Plugin from the main application JAR
+    EXTERNAL_JAR // Plugin loaded from config/plugins/ JAR files
+}
+
 object PromptFxPlugins {
 
     private const val PLUGIN_DIR = "config/plugins/"
 
+    /** Load all plugins including built-in and external plugins with source information. */
+    fun <C> loadAllPluginsWithSource(type: Class<C>): List<PluginInfo<C>> {
+        val builtInPlugins = loadBuiltInPlugins(type)
+        val externalPlugins = loadExternalPlugins(type)
+        return builtInPlugins + externalPlugins
+    }
+
+    /** Load plugins from the main application classpath. */
+    fun <C> loadBuiltInPlugins(type: Class<C>): List<PluginInfo<C>> {
+        val serviceLoader = ServiceLoader.load(type)
+        return mutableListOf<PluginInfo<C>>().apply {
+            serviceLoader.forEach { add(PluginInfo(it, PluginSource.BUILT_IN)) }
+        }
+    }
+
     /** Load plugins from config/plugins/ folder. */
-    fun <C> loadPlugins(type: Class<C>): List<C> {
+    fun <C> loadExternalPlugins(type: Class<C>): List<PluginInfo<C>> {
         val pluginFiles = listOf(Path(PLUGIN_DIR))
             .flatMap { it.listDirectoryEntries("*.jar") }
         if (pluginFiles.isNotEmpty()) {
@@ -37,13 +64,18 @@ object PromptFxPlugins {
             info<PromptFxPlugins>("Loading plugins from $PLUGIN_DIR - " + pluginFiles.joinToString(", ") { it.fileName.toString() })
             val loader = java.net.URLClassLoader(urls, type.classLoader)
             val serviceLoader = ServiceLoader.load(type, loader)
-            return mutableListOf<C>().apply {
-                serviceLoader.forEach { add(it) }
+            return mutableListOf<PluginInfo<C>>().apply {
+                serviceLoader.forEach { add(PluginInfo(it, PluginSource.EXTERNAL_JAR)) }
                 info<PromptFxPlugins>("Loaded $size ${type.simpleName} plugins from config/plugins/ jar files.")
             }
         } else {
             info<PromptFxPlugins>("No ${type.simpleName} plugin jar files found in $PLUGIN_DIR.")
         }
         return listOf()
+    }
+
+    /** Load plugins from config/plugins/ folder. (Legacy method for compatibility) */
+    fun <C> loadPlugins(type: Class<C>): List<C> {
+        return loadExternalPlugins(type).map { it.plugin }
     }
 }
