@@ -26,28 +26,33 @@ import tri.ai.core.MultimodalChatMessage
  * This API is designed to be independent of UI concerns and can support CLI, MCP, or REST interfaces.
  */
 interface AgentChatAPI {
-    
+
+    // sessions
+
     /** Create a new chat session with optional configuration. */
     fun createSession(config: AgentChatConfig = AgentChatConfig()): AgentChatSession
+
+    /** Load a chat session by ID. */
+    fun loadSession(sessionId: String): AgentChatSession?
+
+    /** List available chat sessions. */
+    fun listSessions(): List<AgentChatSessionInfo>
+
+    /** Get the current session state including message history. */
+    fun getSessionState(session: AgentChatSession): AgentChatSessionState
+
+    /** Save a chat session. */
+    fun saveSession(session: AgentChatSession): String
+
+    /** Delete a chat session. */
+    fun deleteSession(sessionId: String): Boolean
+
+    // messages
     
     /** Send a message to a chat session and get a streaming operation. */
     fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation
     
     /** Add a message to the session without processing it. */
     fun addMessage(session: AgentChatSession, message: MultimodalChatMessage)
-    
-    /** Get the current session state including message history. */
-    fun getSessionState(session: AgentChatSession): AgentChatSessionState
-    
-    /** Save a chat session. */
-    fun saveSession(session: AgentChatSession): String
-    
-    /** Load a chat session by ID. */
-    fun loadSession(sessionId: String): AgentChatSession?
-    
-    /** List available chat sessions. */
-    fun listSessions(): List<AgentChatSessionInfo>
-    
-    /** Delete a chat session. */
-    fun deleteSession(sessionId: String): Boolean
+
 }

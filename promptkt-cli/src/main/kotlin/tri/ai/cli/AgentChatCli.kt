@@ -37,7 +37,7 @@ import java.util.logging.Level
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
-    AgentChatCli().main(args)
+    AgentChatCli().main(args + "--verbose")
 
 /**
  * Command-line interface for agent-based chat with contextual reasoning capabilities.
@@ -148,7 +148,7 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
                     is AgentChatEvent.Response -> {
                         val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
                         // TODO - if have been printing intermediate tokens, may not need to prin the full response
-                        println(responseText)
+                        println("[Response] $responseText")
                         
                         if (event.response.reasoning != null) {
                             println("[Reasoning] ${event.response.reasoning}")
