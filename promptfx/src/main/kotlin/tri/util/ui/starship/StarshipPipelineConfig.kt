@@ -23,11 +23,49 @@ import kotlinx.coroutines.runBlocking
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
 import tri.ai.text.docs.FormattedText
+import tri.ai.pips.api.PPlan
+import tri.ai.pips.api.PPlanExecutor
+import tri.ai.pips.core.ChatExecutable
+import tri.ai.pips.core.ExecutableRegistry
+import tri.ai.pips.core.MergedExecutableRegistry
+import tri.ai.pips.core.PromptLibraryExecutableRegistry
+import tri.ai.prompt.PromptLibrary
 
 /** Pipeline config for [StarshipUi]. */
 class StarshipPipelineConfig(val chatEngine: TextChat) {
     /** Input generator. */
     val generator: () -> String = { runBlocking { StarshipContentConfig.randomQuestion() } }
+    
+    /** JSON-based pipeline configuration. */
+    val pipeline: PPlan by lazy {
+        loadPipelineConfig()
+    }
+    
+    /** Executable registry for the pipeline. */
+    val executableRegistry: ExecutableRegistry by lazy {
+        MergedExecutableRegistry(listOf(
+            PromptLibraryExecutableRegistry(PromptLibrary.INSTANCE),
+            ExecutableRegistry.create(listOf(ChatExecutable(chatEngine)))
+        ))
+    }
+    
+    /** Pipeline executor. */
+    val pipelineExecutor: PPlanExecutor by lazy {
+        PPlanExecutor(executableRegistry)
+    }
+    
+    private fun loadPipelineConfig(): PPlan {
+        return try {
+            val resourceStream = javaClass.getResourceAsStream("/tri/util/ui/starship/resources/starship-default-pipeline.json")
+            val configJson = resourceStream?.bufferedReader()?.use { it.readText() }
+                ?: throw IllegalStateException("Could not load starship pipeline configuration")
+            PPlan.parse(configJson)
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to load starship pipeline configuration", e)
+        }
+    }
+    
+    // Legacy support - kept for backward compatibility
     /** Primary prompt template, with {{input}} and other parameters. */
     val primaryPrompt = PromptWithParams("docs-map/summarize")
     /** Executor for primary prompt. */

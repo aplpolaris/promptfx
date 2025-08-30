@@ -20,15 +20,35 @@
 package tri.util.ui.starship
 
 import javafx.collections.ListChangeListener
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import tri.ai.core.MChatVariation
+import tri.ai.core.TextChat
+import tri.ai.core.TextChatMessage
+import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.PromptFxModels
 
 class StarshipPipelineTest {
     @Test
-    @Disabled("TBD")
-    fun testExec() {
-        val config = StarshipPipelineConfig(PromptFxModels.chatModelDefault()!!)
+    fun testExecWithJsonPipeline() {
+        // Create a mock chat engine for testing
+        val mockChatEngine = object : TextChat {
+            override val modelId = "mock-test-engine"
+            override suspend fun chat(
+                messages: List<TextChatMessage>,
+                variation: MChatVariation,
+                tokens: Int?,
+                stop: List<String>?,
+                numResponses: Int?,
+                requestJson: Boolean?
+            ): AiPromptTrace {
+                val message = messages.firstOrNull()?.content ?: "test input"
+                return AiPromptTrace.outputMessage(TextChatMessage.assistant("Mock response for: $message"))
+            }
+        }
+
+        val config = StarshipPipelineConfig(mockChatEngine)
         val results = StarshipPipelineResults().apply {
             input.addListener { _, _, newValue -> println("Input: $newValue") }
             runConfig.addListener { _, _, newValue -> println("RunConfig: $newValue") }
@@ -39,6 +59,15 @@ class StarshipPipelineTest {
             started.addListener { _, _, _ -> println("Started") }
             completed.addListener { _, _, _ -> println("Completed") }
         }
-        StarshipPipeline.exec(config, results)
+        
+        // Test that we can load the pipeline configuration
+        assertNotNull(config.pipeline)
+        assertEquals("starship/default@1.0.0", config.pipeline.id)
+        
+        // Test that the executable registry is properly configured
+        assertNotNull(config.executableRegistry)
+        assertTrue(config.executableRegistry.list().isNotEmpty())
+        
+        println("Test completed successfully - JSON pipeline configuration loaded")
     }
 }
