@@ -106,8 +106,6 @@ module tri.promptfx {
 
             // 2 - text
             ListGeneratorPlugin,
-            QuestionAnsweringPlugin,
-            StructuredDataPlugin,
 
             // 3 - multimodal
             AudioApiPlugin,

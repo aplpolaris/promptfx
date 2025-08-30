@@ -4,7 +4,8 @@ defaults: { category: text }
 prompts:
 
   - id: text-qa/answer@1.0.0
-    title: Question Answer Example
+    title: Question Answering
+    description: Answer a question based on the provided text.
     args:
       - name: input
         description: The text to answer questions about
@@ -21,45 +22,3 @@ prompts:
       ```
       Question: {{{instruct}}}
       Answer:
-
-  - id: examples/text-summarize@1.0.0
-    title: Text Summarization Example
-    args:
-      - name: input
-        description: The text to be summarized
-        required: true
-        type: string
-      - name: audience
-        description: The intended audience for the summary (optional)
-        required: false
-        type: string
-      - name: style
-        description: The writing style for the summary (optional)
-        required: false
-        type: string
-      - name: format
-        description: The structural format for the summary (optional)
-        required: false
-        type: string
-    template: |
-      Summarize the following{{#audience}}, written for {{audience}}{{/audience}}{{#style}}, in the style of {{style}}{{/style}}{{#format}}, structured as {{format}}{{/format}}:
-      ```
-      {{{input}}}
-      ```
-
-  - id: examples/translate-text@1.0.0
-    title: Translate Text Example
-    args:
-      - name: input
-        description: The text to be translated
-        required: true
-        type: string
-      - name: instruct
-        description: The target language for translation
-        required: true
-        type: string
-    template: |
-      Translate this text to {{instruct}}:
-      ```
-      {{{input}}}
-      ```
