@@ -19,7 +19,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "To use the plugin:"
     echo "1. Start PromptFx"
-    echo "2. Look for 'Hello World' under the 'Sample' category in the UI"
+    echo "2. Look for 'Hello World' under the 'Fun' category in the UI"
 else
     echo "Build failed! Please check the Maven output above for errors."
     exit 1

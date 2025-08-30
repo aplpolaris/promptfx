@@ -56,6 +56,12 @@ class PromptFxWorkspaceModel(
             val categories = viewIndex.values.map { it.viewGroup }.distinct()
             val customCategories = categories - BUILT_IN_CATEGORIES
 
+            // Log summary counts
+            val pluginViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.VIEW_PLUGIN }
+            val builtInViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }
+            val runtimeViews = RuntimePromptViewConfigs.viewConfigs.filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }
+            info<PromptFxWorkspaceModel>("Found ${pluginViews.size} external plugin views, ${builtInViews.size} built-in views, ${runtimeViews.size} runtime config views")
+
             // log listing of all views found, by built-in categories first then custom categories
             fun SourcedViewConfig.viewLog(): String {
                 val allSources = RuntimePromptViewConfigs.viewConfigs.filter { it.viewId == viewId }.map { it.source }
