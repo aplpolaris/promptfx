@@ -22,21 +22,12 @@ package tri.ai.pips.agent
 import tri.ai.core.*
 import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
-import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Default implementation of [AgentChatAPI] supporting any multimodal model from the plugin system.
- * This provides streaming chat functionality with context management and optional tool support.
+ * Default implementation of [AgentChat] supporting any multimodal model from the plugin system.
+ * This provides streaming chat functionality with context management.
  */
-class DefaultAgentChatAPI : AgentChatAPI {
-    
-    private val sessions = ConcurrentHashMap<String, AgentChatSession>()
-    
-    override fun createSession(config: AgentChatConfig): AgentChatSession {
-        val session = AgentChatSession(config = config)
-        sessions[session.sessionId] = session
-        return session
-    }
+class DefaultAgentChat : AgentChat {
     
     override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatOperation {
         return AgentChatOperation(flow {
@@ -111,25 +102,6 @@ class DefaultAgentChatAPI : AgentChatAPI {
     
     override fun getSessionState(session: AgentChatSession): AgentChatSessionState {
         return AgentChatSessionState(session = session)
-    }
-    
-    override fun saveSession(session: AgentChatSession): String {
-        sessions[session.sessionId] = session
-        return session.sessionId
-    }
-    
-    override fun loadSession(sessionId: String): AgentChatSession? {
-        return sessions[sessionId]
-    }
-    
-    override fun listSessions(): List<AgentChatSessionInfo> {
-        return sessions.values.map { session ->
-            session.toSessionInfo()
-        }.sortedByDescending { it.lastModified }
-    }
-    
-    override fun deleteSession(sessionId: String): Boolean {
-        return sessions.remove(sessionId) != null
     }
     
     /** Generate a session name from the first user message. */

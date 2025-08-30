@@ -24,8 +24,6 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 
 class AgentChatAPITest {
 
@@ -120,22 +118,15 @@ class AgentChatAPITest {
     }
 
     @Test
-    fun testStreamingSendMessage() {
+    fun testSendMessage() {
         runBlocking {
             val session = api.createSession(AgentChatConfig(modelId = "gpt-3.5-turbo"))
             val message = MultimodalChatMessage.text(MChatRole.User, "Hello test")
             
             val operation = api.sendMessage(session, message)
-            
-            // Test that we can get events from the operation
-            // We'll just verify the operation structure works
             assertNotNull(operation)
             assertNotNull(operation.events)
-            
-            // Since we don't have a real model configured for tests, 
-            // we'll just test the structure without actually awaiting response
-            // The important thing is that the API compiles and creates the right objects
-            assertTrue(true) // Structure test passed
+            // TODO - ensure it gets a response
         }
     }
 
