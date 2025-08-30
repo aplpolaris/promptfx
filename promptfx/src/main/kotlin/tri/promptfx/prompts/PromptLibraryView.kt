@@ -55,10 +55,10 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     init {
         input {
             toolbar {
-                // TODO - tools for prompt CRUD
-//                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-//                    action { onCreate() }
-//                }
+                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+                    tooltip("Create a new prompt")
+                    action { onCreate() }
+                }
                 // add search bar here to update promptFilter when you hit enter
                 textfield("") {
                     promptText = "Search"
@@ -121,7 +121,25 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     }
 
     override fun onCreate() {
-        TODO()
+        val dialog = find<CreatePromptDialog>()
+        dialog.openModal(block = true)
+        
+        val newPrompt = dialog.getResult()
+        if (newPrompt != null) {
+            // Refresh the runtime prompts to pick up the new prompt
+            PromptLibrary.refreshRuntimePrompts()
+            
+            // Update the prompt entries list
+            promptEntries.setAll(lib.list().toMutableList())
+            refilter()
+            
+            // Select the new prompt
+            val createdPrompt = filteredPromptEntries.find { it.id == newPrompt.id }
+            if (createdPrompt != null) {
+                promptListView.selectionModel.select(createdPrompt)
+                promptListView.scrollTo(createdPrompt)
+            }
+        }
     }
 
     private fun sendToTemplateView() {
