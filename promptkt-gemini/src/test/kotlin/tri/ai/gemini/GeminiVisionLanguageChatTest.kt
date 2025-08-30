@@ -50,14 +50,16 @@ class GeminiVisionLanguageChatTest {
 
     @Test
     @Tag("gemini")
-    fun testChat() = runTest {
-        val message = VisionLanguageChatMessage(
-            MChatRole.User,
-            "Describe this image in 6 words.",
-            URI.create(BASE64_IMAGE_SAMPLE)
-        )
-        val resp = client.chat(listOf(message))
-        println(resp.output!!.outputs.first())
+    fun testChat() {
+        runTest {
+            val message = VisionLanguageChatMessage(
+                MChatRole.User,
+                "Describe this image in 6 words.",
+                URI.create(BASE64_IMAGE_SAMPLE)
+            )
+            val resp = client.chat(listOf(message))
+            println(resp.output!!.outputs.first())
+        }
     }
 
 }

@@ -61,6 +61,10 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             response.trace(modelInfo, t0)
     }
 
+    override fun close() {
+        client.close()
+    }
+
     companion object {
 
         private const val DEFAULT_MAX_TOKENS = 500
