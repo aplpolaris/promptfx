@@ -1,0 +1,35 @@
+# PromptLibrary Filter Example
+# This file filters which prompts are loaded from the built-in prompt library.
+# Pattern matching supports simple wildcards using '*'.
+#
+# If includeIds or includeCategories are specified, only prompts matching these patterns will be loaded.
+# Then, any prompts matching excludeIds or excludeCategories patterns will be filtered out.
+# If no includes are specified, all prompts are loaded by default, then excludes are applied.
+
+# Include specific prompt IDs by pattern (optional)
+includeIds: []
+  # Examples:
+  # - "text-*"           # Include all text-related prompts
+  # - "docs-qa/*"        # Include all document Q&A prompts
+  # - "generate-*"       # Include all generation prompts
+
+# Include specific categories by pattern (optional)  
+includeCategories: []
+  # Examples:
+  # - "text"             # Include all prompts in the text category
+  # - "docs"             # Include all prompts in the docs category
+  # - "generate"         # Include all generation-related prompts
+
+# Exclude specific prompt IDs by pattern (optional)
+excludeIds: []
+  # Examples:
+  # - "*beta*"           # Exclude any prompts with 'beta' in the ID
+  # - "experimental/*"   # Exclude all experimental prompts
+  # - "*-test@*"         # Exclude all test versions
+
+# Exclude specific categories by pattern (optional)
+excludeCategories: []
+  # Examples:
+  # - "experimental"     # Exclude all experimental prompts
+  # - "internal"         # Exclude internal-use prompts
+  # - "deprecated"       # Exclude deprecated prompts

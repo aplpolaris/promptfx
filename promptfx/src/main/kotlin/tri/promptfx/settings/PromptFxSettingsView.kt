@@ -558,6 +558,69 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     label("  • ${file.path} (${if (file.exists()) "${file.length()} bytes" else "missing"})")
                 }
             }
+            
+            separator()
+            
+            // Prompt Library Filter
+            vbox(5) {
+                label("Prompt Library Filter:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                val filterFile = promptFxConfig.promptLibraryFilterFile()
+                if (filterFile != null) {
+                    label("Current Filter: ${filterFile.path}")
+                    hbox(10) {
+                        button("Change Filter") {
+                            action {
+                                promptFxFileChooser(
+                                    "Select Prompt Library Filter File",
+                                    arrayOf(PromptFxConfig.FF_YAML, PromptFxConfig.FF_ALL),
+                                    dirKey = PromptFxConfig.DIR_KEY_DEFAULT
+                                ) { files ->
+                                    if (files.isNotEmpty()) {
+                                        promptFxConfig.setPromptLibraryFilterFile(files.first())
+                                        information(
+                                            "Filter Updated", 
+                                            "Prompt library filter has been updated. Please restart the application for changes to take effect."
+                                        )
+                                        updateCategoryDetails() // Refresh view
+                                    }
+                                }
+                            }
+                        }
+                        button("Clear Filter") {
+                            action {
+                                promptFxConfig.setPromptLibraryFilterFile(null)
+                                information(
+                                    "Filter Cleared", 
+                                    "Prompt library filter has been cleared. All prompts will be loaded. Please restart the application for changes to take effect."
+                                )
+                                updateCategoryDetails() // Refresh view
+                            }
+                        }
+                    }
+                } else {
+                    label("No filter configured - all prompts will be loaded.")
+                    button("Select Filter") {
+                        action {
+                            promptFxFileChooser(
+                                "Select Prompt Library Filter File",
+                                arrayOf(PromptFxConfig.FF_YAML, PromptFxConfig.FF_ALL),
+                                dirKey = PromptFxConfig.DIR_KEY_DEFAULT
+                            ) { files ->
+                                if (files.isNotEmpty()) {
+                                    promptFxConfig.setPromptLibraryFilterFile(files.first())
+                                    information(
+                                        "Filter Selected", 
+                                        "Prompt library filter has been selected. Please restart the application for changes to take effect."
+                                    )
+                                    updateCategoryDetails() // Refresh view
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
