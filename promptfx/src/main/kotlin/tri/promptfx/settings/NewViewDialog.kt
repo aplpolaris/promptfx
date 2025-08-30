@@ -30,7 +30,7 @@ import tri.ai.prompt.PromptDef
 import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxWorkspaceModel
 import tri.promptfx.RuntimePromptViewConfigs
-import tri.promptfx.ui.ModeConfig
+
 import tri.promptfx.ui.RuntimePromptViewConfig
 import tri.util.ui.WorkspaceViewAffordance
 
