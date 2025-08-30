@@ -20,6 +20,7 @@
 
 module tri.promptkt.cli {
     requires transitive tri.promptkt.docs;
+    requires transitive tri.promptkt.gemini;
 
     requires clikt.jvm;
 

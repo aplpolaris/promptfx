@@ -22,6 +22,7 @@ package tri.ai.openai.api
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
 import tri.ai.openai.*
+import tri.util.warning
 
 /**
  * Implementation of [TextPlugin] using OpenAI-compatible API.
@@ -48,7 +49,7 @@ class OpenAiApiPlugin : TextPlugin {
                 }
             }
         } catch (x: Exception) {
-            x.printStackTrace()
+            warning<OpenAiApiPlugin>("Failed to retrieve model info from ${e.source} - ${x.message}")
             null
         }
     }.toMap()
