@@ -310,24 +310,19 @@ class PromptFxWorkspace : Workspace() {
         item(model.category, model.icon, expanded = false) {
             op()
             if (model.category == "Custom") {
-                (this as DrawerItem).padding = insets(5.0)
-                // Group runtime views by their actual categories with headings and separators
-                val runtimeViews = model.views.filterIsInstance<NavigableWorkspaceViewRuntime>()
-                val categoriesInCustom = runtimeViews.map { it.category }.distinct().sorted()
-                
+                padding = insets(5.0)
                 var isFirstCategory = true
-                categoriesInCustom.forEach { customCategory ->
-                    if (!isFirstCategory) {
-                        separator { }
-                    }
-                    isFirstCategory = false
-                    
-                    label(customCategory)
 
-                    runtimeViews.filter { it.category == customCategory }.sortedBy { it.name }.forEach {
-                        hyperlinkview(model.category, it)
+                model.views.filter { it.category !in PromptFxWorkspaceModel.BUILT_IN_CATEGORIES }
+                    .groupBy { it.category }.toSortedMap()
+                    .forEach { cat, views ->
+                        if (!isFirstCategory) separator { }
+                        isFirstCategory = false
+                        label(cat)
+                        views.sortedBy { it.name }.forEach {
+                            hyperlinkview(model.category, it)
+                        }
                     }
-                }
             } else {
                 model.views.forEach {
                     hyperlinkview(it.category, it)

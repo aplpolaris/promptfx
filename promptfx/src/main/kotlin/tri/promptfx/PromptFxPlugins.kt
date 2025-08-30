@@ -19,6 +19,7 @@
  */
 package tri.promptfx
 
+import tri.util.fine
 import tri.util.info
 import java.util.ServiceLoader
 import kotlin.io.path.Path
@@ -45,7 +46,7 @@ object PromptFxPlugins {
         val builtInPlugins = loadBuiltInPlugins(type)
         val builtInPluginTypes = builtInPlugins.map { it.plugin!!::class.java }
         val externalPlugins = loadExternalPlugins(type).filter { it.plugin!!::class.java !in builtInPluginTypes }
-        info<PromptFxPlugins>("Found ${builtInPlugins.size} built-in and ${externalPlugins.size} external ${type.simpleName} plugins.")
+        fine<PromptFxPlugins>("Found ${builtInPlugins.size} built-in and ${externalPlugins.size} external ${type.simpleName} plugins.")
         return builtInPlugins + externalPlugins
     }
 

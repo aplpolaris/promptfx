@@ -76,30 +76,21 @@ object RuntimePromptViewConfigs {
 
     /** Pulls views into an index by precedence. */
     private fun List<SourcedViewConfig>.byPrecedence() = mutableMapOf<String, SourcedViewConfig>().also { map ->
-        // First add built-in view plugins from main application JAR
         filter { it.source == RuntimeViewSource.BUILT_IN_PLUGIN }.forEach { map[it.viewId] = it }
-        // Next add external view plugins from config/plugins/ JARs
-        filter { it.source == RuntimeViewSource.RUNTIME_PLUGIN }.forEach { map[it.viewId] = it }
-        // Then add built-in configs, which can override plugins
         filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }.forEach { map[it.viewId] = it }
-        // Finally add runtime configs, which can override all others
+        filter { it.source == RuntimeViewSource.RUNTIME_PLUGIN }.forEach { map[it.viewId] = it }
         filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }.forEach { map[it.viewId] = it }
     }
 
     /** Loads all views that are configured as part of view plugins. */
-    private fun loadPluginViews(): List<SourcedViewConfig> {
-        val allPlugins = NavigableWorkspaceView.allViewPluginsWithSource
-        val pluginViewsFromExternalJars = allPlugins.filter { it.source == tri.promptfx.PluginSource.EXTERNAL_JAR }
-        val pluginViewsFromBuiltIn = allPlugins.filter { it.source == tri.promptfx.PluginSource.BUILT_IN }
-        
-        return allPlugins.map { pluginInfo ->
+    private fun loadPluginViews(): List<SourcedViewConfig> =
+        NavigableWorkspaceView.allViewPluginsWithSource.map { pluginInfo ->
             val source = when (pluginInfo.source) {
                 PluginSource.EXTERNAL_JAR -> RuntimeViewSource.RUNTIME_PLUGIN
                 PluginSource.BUILT_IN -> RuntimeViewSource.BUILT_IN_PLUGIN
             }
             SourcedViewConfig(viewGroup = pluginInfo.plugin.category, viewId = pluginInfo.plugin.name, view = pluginInfo.plugin, config = null, source = source)
         }
-    }
 
     /** Loads a set of view configs from class resource file. */
     private fun loadBuiltInConfigs(): List<SourcedViewConfig> {
