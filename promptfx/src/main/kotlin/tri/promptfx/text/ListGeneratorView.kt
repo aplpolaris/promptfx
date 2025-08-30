@@ -37,10 +37,10 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Plugin for the [ListGeneratorView]. */
-class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "List Generator", WorkspaceViewAffordance.INPUT_ONLY, ListGeneratorView::class)
+class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "Convert to List", WorkspaceViewAffordance.INPUT_ONLY, ListGeneratorView::class)
 
 /** View designed to convert text to JSON. */
-class ListGeneratorView: AiPlanTaskView("List Generator",
+class ListGeneratorView: AiPlanTaskView("Convert to List",
     "Enter text in the top box to generate a list of items/themes/topics.") {
 
     companion object {
