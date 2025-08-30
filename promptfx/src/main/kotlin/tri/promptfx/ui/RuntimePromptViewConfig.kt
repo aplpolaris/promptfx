@@ -29,13 +29,21 @@ import tri.util.ui.WorkspaceViewAffordance
 class RuntimePromptViewConfig(
     @JsonProperty("prompt")
     val promptDef: PromptDef,
-    val modeOptions: List<ModeConfig> = listOf(),
+    val argOptions: List<ArgConfig> = listOf(),
+    // Backward compatibility - deprecated in favor of argOptions
+    @Deprecated("Use argOptions instead") 
+    val modeOptions: List<ArgConfig> = listOf(),
     val isShowPrompt: Boolean = true,
     val isShowModelParameters: Boolean = false,
     val isShowMultipleResponseOption: Boolean = false,
+    val requestJson: Boolean = false,
     @get:JsonIgnore
     val affordances: WorkspaceViewAffordance = WorkspaceViewAffordance.INPUT_ONLY
 ) {
+
+    /** Get all argument configurations, combining argOptions and legacy modeOptions. */
+    @get:JsonIgnore
+    val allArgOptions: List<ArgConfig> get() = argOptions + modeOptions
 
     @get:JsonIgnore
     val prompt by lazy {
@@ -46,7 +54,26 @@ class RuntimePromptViewConfig(
 }
 
 /**
- * Reference mode [id] in `modes.yaml` configuration file, associated [templateId] for use in prompt, [label] for UI.
- * Either [values] or [id] must be present.
+ * Configuration for arguments in a prompt view, supporting different display types.
+ * Either [values] or [id] must be present for combo box type.
  */
-class ModeConfig(val id: String? = null, val templateId: String, val label: String, val values: List<String>? = null)
+class ArgConfig(
+    val id: String? = null,
+    val templateId: String,
+    val label: String,
+    val values: List<String>? = null,
+    val description: String? = null,
+    @JsonProperty("displayType") 
+    val displayType: ArgDisplayType = ArgDisplayType.COMBO_BOX,
+    val defaultValue: String? = null
+)
+
+/** How an argument should be displayed in the UI. */
+enum class ArgDisplayType {
+    /** Show as an input text area on the left side */
+    TEXT_AREA,
+    /** Show as a combo box in the parameters panel */
+    COMBO_BOX,
+    /** Use default value and hide from UI */
+    HIDDEN
+}

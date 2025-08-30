@@ -1,0 +1,37 @@
+# Prompts for new flexible view configurations
+---
+prompts:
+  - id: docs-qa/answer
+    title: Question Answering
+    description: Answer questions based on provided context
+    args:
+      - name: question
+        description: The question to answer
+        required: true
+        type: string
+      - name: context
+        description: Relevant context or documents for answering the question
+        required: true
+        type: string
+      - name: answer_style
+        description: How detailed should the answer be
+        required: false
+        type: string
+      - name: include_sources
+        description: Whether to include source references
+        required: false
+        type: string
+    template: |
+      {{#context}}
+      Based on the following context:
+      ```
+      {{{context}}}
+      ```
+      {{/context}}
+      
+      Answer the following question{{#answer_style}} in a {{answer_style}} manner{{/answer_style}}:
+      {{{question}}}
+      
+      {{#include_sources}}{{#context}}Please cite specific parts of the context when relevant.{{/context}}{{/include_sources}}
+      
+      Answer:

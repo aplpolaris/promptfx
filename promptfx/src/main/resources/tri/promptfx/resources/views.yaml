@@ -139,3 +139,62 @@ research-review:
       label: Target Audience
   isShowModelParameters: true
   isShowMultipleResponseOption: false
+
+# Example of new ArgConfig system - Structured Data Extraction
+structured-data-extraction:
+  prompt:
+    id: text-extract/text-to-json
+    category: Text
+    title: Structured Data Extraction
+    description: Convert text to JSON or other structured formats using flexible argument configuration
+  argOptions:
+    - templateId: input
+      label: Source Text
+      description: The text to extract structured information from
+      displayType: TEXT_AREA
+    - templateId: example
+      label: Sample Output
+      description: Example JSON, YAML, XML, CSV, or other structured format
+      displayType: TEXT_AREA
+    - templateId: guidance
+      label: Guidance
+      description: If not blank, adds 'The result should contain X' to the instruction
+      displayType: COMBO_BOX
+      values: ["", "entities and relationships", "key statistics", "main topics", "contact information"]
+    - templateId: format
+      label: Format as
+      description: The specific output format
+      displayType: COMBO_BOX
+      id: structured-format
+  isShowModelParameters: true
+  requestJson: true
+
+# Example of Question Answering configuration
+question-answering:
+  prompt:
+    id: docs-qa/answer
+    category: RAG QA 
+    title: Question Answering
+    description: Answer questions based on provided context
+  argOptions:
+    - templateId: question
+      label: Question
+      description: Enter your question here
+      displayType: TEXT_AREA
+    - templateId: context
+      label: Context
+      description: Relevant context or documents for answering the question
+      displayType: TEXT_AREA
+    - templateId: answer_style
+      label: Answer Style
+      description: How detailed should the answer be
+      displayType: COMBO_BOX
+      values: ["brief", "detailed", "comprehensive"]
+      defaultValue: "detailed"
+    - templateId: include_sources
+      label: Include Sources
+      description: Whether to include source references
+      displayType: HIDDEN
+      defaultValue: "yes"
+  isShowModelParameters: true
+  isShowMultipleResponseOption: false
