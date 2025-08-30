@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.prompt.PromptDef
 import tri.promptfx.ui.RuntimePromptViewConfig
+import tri.promptfx.ui.RuntimeUserControls
 
 class ViewConfigManagerTest {
 
@@ -47,9 +48,12 @@ class ViewConfigManagerTest {
 
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = false,
-            isShowMultipleResponseOption = false
+            args = listOf(),
+            userControls = RuntimeUserControls(
+                prompt = true,
+                modelParameters = false,
+                multipleResponses = false
+            )
         )
 
         assertNotNull(config)
@@ -80,9 +84,12 @@ class ViewConfigManagerTest {
         // Create config
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = false,
-            isShowMultipleResponseOption = false
+            args = listOf(),
+            userControls = RuntimeUserControls(
+                prompt = true,
+                modelParameters = false,
+                multipleResponses = false
+            )
         )
         
         // Verify the config is properly constructed
@@ -106,9 +113,12 @@ class ViewConfigManagerTest {
         
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = true,
-            isShowMultipleResponseOption = false
+            args = listOf(),
+            userControls = RuntimeUserControls(
+                prompt = true,
+                modelParameters = true,
+                multipleResponses = false
+            )
         )
         
         // Verify the template is multiline

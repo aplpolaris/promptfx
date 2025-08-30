@@ -33,7 +33,8 @@ class RuntimePromptViewConfigsTest {
             .forEach { (viewGroup, viewList) ->
                 println("$viewGroup/")
                 viewList.sortedBy { it.viewId }.forEach {
-                    println("  " + it.viewId.padEnd(30) + it.config!!.prompt.id)
+                    val promptId = it.config?.prompt?.id ?: "(no config)"
+                    println("  " + it.viewId.padEnd(30) + promptId)
                 }
             }
         assertTrue(views.isNotEmpty())
