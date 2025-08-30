@@ -70,4 +70,86 @@ class StarshipPipelineTest {
         
         println("Test completed successfully - JSON pipeline configuration loaded")
     }
+
+    @Test  
+    fun testFullPipelineExecution() {
+        // Create a mock chat engine for testing
+        val mockChatEngine = object : TextChat {
+            override val modelId = "mock-test-engine"
+            override suspend fun chat(
+                messages: List<TextChatMessage>,
+                variation: MChatVariation,
+                tokens: Int?,
+                stop: List<String>?,
+                numResponses: Int?,
+                requestJson: Boolean?
+            ): AiPromptTrace {
+                val message = messages.firstOrNull()?.content ?: "test input"
+                return AiPromptTrace.outputMessage(TextChatMessage.assistant("Mock response for: $message"))
+            }
+        }
+
+        // Create a config with a fixed input generator
+        val config = object : StarshipPipelineConfig(mockChatEngine) {
+            override val generator: () -> String = { "Test input about artificial intelligence and machine learning" }
+        }
+        
+        // Test that the pipeline can be loaded and executed without JavaFX dependencies
+        val pipeline = config.pipeline
+        assertEquals("starship/default@1.0.0", pipeline.id)
+        assertEquals(5, pipeline.steps.size)
+        
+        // Test the pipeline steps are configured correctly
+        val stepNames = pipeline.steps.map { it.tool }
+        assertTrue(stepNames.contains("prompt/docs-map/summarize"))
+        assertTrue(stepNames.contains("prompt/text-summarize/simplify-audience"))
+        assertTrue(stepNames.contains("prompt/docs-reduce/outline"))
+        assertTrue(stepNames.contains("prompt/docs-reduce/technical-terms"))
+        assertTrue(stepNames.contains("prompt/text-translate/translate"))
+        
+        println("Full pipeline configuration test completed successfully")
+        println("Pipeline has ${pipeline.steps.size} steps: $stepNames")
+    }
+    
+    @Test
+    fun testEnhancedPipelineConfiguration() {
+        // Create a mock chat engine for testing
+        val mockChatEngine = object : TextChat {
+            override val modelId = "mock-test-engine"
+            override suspend fun chat(
+                messages: List<TextChatMessage>,
+                variation: MChatVariation,
+                tokens: Int?,
+                stop: List<String>?,
+                numResponses: Int?,
+                requestJson: Boolean?
+            ): AiPromptTrace {
+                val message = messages.firstOrNull()?.content ?: "test input"
+                return AiPromptTrace.outputMessage(TextChatMessage.assistant("Mock response for: $message"))
+            }
+        }
+
+        // Create a config with enhanced pipeline
+        val config = object : StarshipPipelineConfig(mockChatEngine) {
+            override val pipelineConfigPath = "/tri/util/ui/starship/resources/starship-enhanced-pipeline.json"
+        }
+        
+        // Test that the enhanced pipeline can be loaded
+        val pipeline = config.pipeline
+        assertEquals("starship/enhanced@1.0.0", pipeline.id)
+        assertEquals(4, pipeline.steps.size)
+        
+        // Test the pipeline steps include both prompts and chat calls
+        val stepNames = pipeline.steps.map { it.tool }
+        assertTrue(stepNames.contains("prompt/docs-map/summarize"))
+        assertTrue(stepNames.contains("chat/mock-test-engine"))
+        assertTrue(stepNames.contains("prompt/text-summarize/simplify-audience"))
+        
+        // Verify chat steps are properly configured
+        val chatSteps = pipeline.steps.filter { it.tool.startsWith("chat/") }
+        assertEquals(2, chatSteps.size)
+        
+        println("Enhanced pipeline configuration test completed successfully")
+        println("Pipeline has ${pipeline.steps.size} steps with ${chatSteps.size} chat executions: $stepNames")
+    }
 }

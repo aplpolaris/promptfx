@@ -32,14 +32,17 @@ import tri.ai.pips.core.PromptLibraryExecutableRegistry
 import tri.ai.prompt.PromptLibrary
 
 /** Pipeline config for [StarshipUi]. */
-class StarshipPipelineConfig(val chatEngine: TextChat) {
+open class StarshipPipelineConfig(val chatEngine: TextChat) {
     /** Input generator. */
-    val generator: () -> String = { runBlocking { StarshipContentConfig.randomQuestion() } }
+    open val generator: () -> String = { runBlocking { StarshipContentConfig.randomQuestion() } }
     
     /** JSON-based pipeline configuration. */
     val pipeline: PPlan by lazy {
         loadPipelineConfig()
     }
+    
+    /** Allow specifying a different pipeline configuration file. */
+    protected open val pipelineConfigPath: String = "/tri/util/ui/starship/resources/starship-default-pipeline.json"
     
     /** Executable registry for the pipeline. */
     val executableRegistry: ExecutableRegistry by lazy {
@@ -56,12 +59,12 @@ class StarshipPipelineConfig(val chatEngine: TextChat) {
     
     private fun loadPipelineConfig(): PPlan {
         return try {
-            val resourceStream = javaClass.getResourceAsStream("/tri/util/ui/starship/resources/starship-default-pipeline.json")
+            val resourceStream = javaClass.getResourceAsStream(pipelineConfigPath)
             val configJson = resourceStream?.bufferedReader()?.use { it.readText() }
-                ?: throw IllegalStateException("Could not load starship pipeline configuration")
+                ?: throw IllegalStateException("Could not load starship pipeline configuration from $pipelineConfigPath")
             PPlan.parse(configJson)
         } catch (e: Exception) {
-            throw IllegalStateException("Failed to load starship pipeline configuration", e)
+            throw IllegalStateException("Failed to load starship pipeline configuration from $pipelineConfigPath", e)
         }
     }
     
