@@ -208,10 +208,17 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
                     }
                 }
             }
-            item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+            menu("Try in template view") {
                 enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
-                action {
-                    find<PromptFxWorkspace>().launchTemplateView(value)
+                item("Send to Prompt Template View", graphic = FontAwesomeIcon.SEND.graphic) {
+                    action {
+                        find<PromptFxWorkspace>().launchTemplateView(value)
+                    }
+                }
+                item("View in Prompt Library", graphic = FontAwesomeIcon.BOOK.graphic) {
+                    action {
+                        find<PromptFxWorkspace>().launchLibraryView()
+                    }
                 }
             }
             item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {

@@ -115,14 +115,21 @@ class PromptTraceCardList: Fragment() {
                             }
                     }
                 }
-                item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+                menu("Try in template view") {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                         it?.prompt?.template?.isNotBlank() == true
                     })
-                    action {
-                        val selected = selectionModel.selectedItem
-                        if (selected != null)
-                            find<PromptFxWorkspace>().launchTemplateView(selected)
+                    item("Send to Prompt Template View", graphic = FontAwesomeIcon.SEND.graphic) {
+                        action {
+                            val selected = selectionModel.selectedItem
+                            if (selected != null)
+                                find<PromptFxWorkspace>().launchTemplateView(selected)
+                        }
+                    }
+                    item("View in Prompt Library", graphic = FontAwesomeIcon.BOOK.graphic) {
+                        action {
+                            find<PromptFxWorkspace>().launchLibraryView()
+                        }
                     }
                 }
                 if (!isGlobalHistoryView) {

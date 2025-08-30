@@ -35,6 +35,7 @@ import tri.promptfx.docs.TextManagerView
 import tri.promptfx.multimodal.AudioSpeechView
 import tri.promptfx.multimodal.AudioView
 import tri.promptfx.prompts.PromptTemplateView
+import tri.promptfx.prompts.PromptLibraryView
 import tri.promptfx.multimodal.ImagesView
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
@@ -247,6 +248,12 @@ class PromptFxWorkspace : Workspace() {
     fun launchTemplateView(prompt: String) {
         val view = find<PromptTemplateView>()
         view.template.set(prompt)
+        workspace.dock(view)
+    }
+
+    /** Launches the prompt library view. */
+    fun launchLibraryView() {
+        val view = find<PromptLibraryView>()
         workspace.dock(view)
     }
 
