@@ -112,11 +112,12 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
 
         fun MultimodalChatMessage.gemini(): Content {
             return if (!toolCalls.isNullOrEmpty()) {
-                val args = toolCalls.first().argumentsAsJson
+                val toolCallsList = toolCalls!! // explicit cast
+                val args = toolCallsList.first().argumentsAsJson
                 val toolCallArgs = Json.decodeFromString<Map<String, String>>(args)
                 Content(
                     role = role.gemini(),
-                    parts = listOf(MChatMessagePart.toolCall(toolCalls.first().name, toolCallArgs).gemini())
+                    parts = listOf(MChatMessagePart.toolCall(toolCallsList.first().name, toolCallArgs).gemini())
                 )
             } else if (role == MChatRole.Tool) {
                 Content(
