@@ -51,8 +51,6 @@ module tri.promptkt.core {
     requires io.ktor.utils;
     requires io.ktor.client.logging;
 
-
-
     opens tri.ai.core to com.fasterxml.jackson.databind;
     opens tri.ai.openai to com.fasterxml.jackson.databind;
     opens tri.ai.openai.api to com.fasterxml.jackson.databind;
