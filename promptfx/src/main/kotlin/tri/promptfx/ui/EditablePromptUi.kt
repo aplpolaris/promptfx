@@ -35,6 +35,9 @@ import tri.util.ui.templatemenubutton
 /** View for selecting and editing a prompt. */
 class EditablePromptUi(private val promptFilter: (PromptDef) -> Boolean, val instruction: String): Fragment() {
 
+    /** UI for editing prompts with a given prefix. */
+    constructor(prefix: String, instruction: String) : this({ it.id.startsWith(prefix) }, instruction)
+
     private val prompts
         get() = PromptFxGlobals.promptLibrary.list(promptFilter).map { it.id }
     val templateText = SimpleStringProperty("")
@@ -44,9 +47,6 @@ class EditablePromptUi(private val promptFilter: (PromptDef) -> Boolean, val ins
             templateText.set(lookupPrompt(it).template)
         }
     }
-
-    /** UI for editing prompts with a given prefix. */
-    constructor(prefix: String, instruction: String) : this({ it.id.startsWith(prefix) }, instruction)
 
     /** Fills the template with the provided values. */
     fun fill(vararg values: Pair<String, Any>) = PromptTemplate(templateText.value).fill(*values)
