@@ -44,4 +44,8 @@ interface MultimodalChat {
         parameters: MChatParameters = MChatParameters()
     ): AiPromptTrace =
         chat(listOf(message), parameters)
+
+    /** Release any resources for the chat. */
+    fun close()
+
 }

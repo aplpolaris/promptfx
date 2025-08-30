@@ -51,9 +51,12 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.prompts.PromptTraceFilter
+import tri.promptfx.ui.LOCATE_IN_PROMPT_HISTORY
+import tri.promptfx.ui.SEND_TO_PROMPT_TEMPLATE
 import tri.util.ui.checklistmenu
 import tri.util.ui.graphic
 import java.io.File
+import kotlin.text.isNotBlank
 
 /** UI for a list of [AiPromptTrace]s. */
 class PromptTraceCardList: Fragment() {
@@ -104,7 +107,7 @@ class PromptTraceCardList: Fragment() {
             }
             // add context menu
             lazyContextmenu {
-                item("Details...") {
+                item("Prompt trace details...") {
                     enableWhen(selectionModel.selectedItemProperty().isNotNull)
                     action {
                         val selected = selectionModel.selectedItem
@@ -115,7 +118,7 @@ class PromptTraceCardList: Fragment() {
                             }
                     }
                 }
-                item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+                item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                         it?.prompt?.template?.isNotBlank() == true
                     })
@@ -126,7 +129,7 @@ class PromptTraceCardList: Fragment() {
                     }
                 }
                 if (!isGlobalHistoryView) {
-                    item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+                    item(LOCATE_IN_PROMPT_HISTORY, graphic = FontAwesomeIcon.SEARCH.graphic) {
                         enableWhen(selectionModel.selectedItemProperty().booleanBinding {
                             it?.prompt?.template?.isNotBlank() == true
                         })

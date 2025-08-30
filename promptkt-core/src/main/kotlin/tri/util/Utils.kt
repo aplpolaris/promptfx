@@ -25,8 +25,11 @@ import java.util.logging.Logger
 
 const val ANSI_RESET = "\u001B[0m"
 const val ANSI_RED = "\u001B[31m"
+const val ANSI_ORANGE = "\u001B[38;2;255;165;0m"
 const val ANSI_YELLOW = "\u001B[33m"
 const val ANSI_GREEN = "\u001B[32m"
+const val ANSI_LIGHTGREEN = "\u001B[92m"
+const val ANSI_LIGHTBLUE = "\u001B[94m"
 const val ANSI_CYAN = "\u001B[36m"
 const val ANSI_GRAY = "\u001B[37m"
 const val ANSI_BOLD = "\u001B[1m"

@@ -38,6 +38,10 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
         return client.chat(request, multimodal = true)
     }
 
+    override fun close() {
+        client.client.close()
+    }
+
     companion object {
         private const val DEFAULT_MAX_TOKENS = 500
 

@@ -76,20 +76,21 @@ object RuntimePromptViewConfigs {
 
     /** Pulls views into an index by precedence. */
     private fun List<SourcedViewConfig>.byPrecedence() = mutableMapOf<String, SourcedViewConfig>().also { map ->
-        // First add all view plugins
-        filter { it.source == RuntimeViewSource.VIEW_PLUGIN }.forEach { map[it.viewId] = it }
-        // Next add built-in configs, which can override plugins
+        filter { it.source == RuntimeViewSource.BUILT_IN_PLUGIN }.forEach { map[it.viewId] = it }
         filter { it.source == RuntimeViewSource.BUILT_IN_CONFIG }.forEach { map[it.viewId] = it }
-        // Finally add runtime configs, which can override both
+        filter { it.source == RuntimeViewSource.RUNTIME_PLUGIN }.forEach { map[it.viewId] = it }
         filter { it.source == RuntimeViewSource.RUNTIME_CONFIG }.forEach { map[it.viewId] = it }
     }
 
     /** Loads all views that are configured as part of view plugins. */
-    private fun loadPluginViews(): List<SourcedViewConfig> {
-        return NavigableWorkspaceView.viewPlugins.map {
-            SourcedViewConfig(viewGroup = it.category, viewId = it.name, view = it, config = null, source = RuntimeViewSource.VIEW_PLUGIN)
+    private fun loadPluginViews(): List<SourcedViewConfig> =
+        NavigableWorkspaceView.allViewPluginsWithSource.map { pluginInfo ->
+            val source = when (pluginInfo.source) {
+                PluginSource.EXTERNAL_JAR -> RuntimeViewSource.RUNTIME_PLUGIN
+                PluginSource.BUILT_IN -> RuntimeViewSource.BUILT_IN_PLUGIN
+            }
+            SourcedViewConfig(viewGroup = pluginInfo.plugin.category, viewId = pluginInfo.plugin.name, view = pluginInfo.plugin, config = null, source = source)
         }
-    }
 
     /** Loads a set of view configs from class resource file. */
     private fun loadBuiltInConfigs(): List<SourcedViewConfig> {
@@ -153,16 +154,18 @@ class SourcedViewConfig(
     val source: RuntimeViewSource,
 ) {
     init {
-        require (source == RuntimeViewSource.VIEW_PLUGIN || config != null) {
-            "Config must be provided for view $viewId if source is not VIEW_PLUGIN."
+        require (source == RuntimeViewSource.RUNTIME_PLUGIN || source == RuntimeViewSource.BUILT_IN_PLUGIN || config != null) {
+            "Config must be provided for view $viewId if source is not VIEW_PLUGIN or VIEW_PLUGIN_BUILTIN."
         }
     }
 }
 
 /** Source of a [SourcedViewConfig]. */
 enum class RuntimeViewSource {
-    /** View is coded with the application. */
-    VIEW_PLUGIN,
+    /** View is coded with the application and loaded from the main application JAR. */
+    BUILT_IN_PLUGIN,
+    /** View is coded with the application and loaded as an external plugin. */
+    RUNTIME_PLUGIN,
     /** VIew that is configured via YAML. */
     BUILT_IN_CONFIG,
     /** View is configured at runtime via `config/views.yaml` or another runtime file. */

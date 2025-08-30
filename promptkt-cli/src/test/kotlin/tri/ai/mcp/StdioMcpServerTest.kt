@@ -19,6 +19,14 @@
  */
 package tri.ai.mcp
 
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import tri.ai.prompt.PromptLibrary
+import java.nio.file.Files
+import java.nio.file.Path
+
 class StdioMcpServerTest {
 
     @TempDir

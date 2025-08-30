@@ -34,6 +34,9 @@ import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.*
 import tri.promptfx.prompts.PromptTraceHistoryView
+import tri.promptfx.ui.LOCATE_IN_PROMPT_HISTORY
+import tri.promptfx.ui.LOCATE_IN_PROMPT_LIBRARY
+import tri.promptfx.ui.SEND_TO_PROMPT_TEMPLATE
 import tri.util.ui.graphic
 import tri.util.ui.loadAudio
 
@@ -73,8 +76,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     override val root = vbox {
         toolbar {
-            // add button to close dialog and open trace in template view
-            button("Open in template view", graphic = FontAwesomeIcon.SEND.graphic) {
+            button(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIcon.SEND.graphic) {
                 enableWhen(trace.isNotNull.and(prompt.isNotBlank()))
                 tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
                 action {
@@ -83,8 +85,8 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                     find<PromptFxWorkspace>().launchTemplateView(trace.value!!)
                 }
             }
-            // add button to close dialog and open trace in template view
-            button("Open in history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+
+            button(LOCATE_IN_PROMPT_HISTORY, graphic = FontAwesomeIcon.SEARCH.graphic) {
                 val isHistoryDocked = workspace.dockedComponentProperty.booleanBinding { it is PromptTraceHistoryView }
                 enableWhen(trace.isNotNull.and(exec.isNotNull).and(isHistoryDocked.not()))
                 tooltip("Open this prompt in the prompt history view (if available).")
@@ -92,6 +94,16 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                     if (currentWindow != workspace.currentWindow)
                         close()
                     find<PromptFxWorkspace>().launchHistoryView(trace.value!!)
+                }
+            }
+
+            button(LOCATE_IN_PROMPT_LIBRARY, graphic = FontAwesomeIcon.BOOK.graphic) {
+                enableWhen(trace.isNotNull.and(prompt.isNotBlank()))
+                tooltip("Copy this prompt to the Prompt Library view under Tools and open that view.")
+                action {
+                    if (currentWindow != workspace.currentWindow)
+                        close()
+                    find<PromptFxWorkspace>().launchLibraryView(prompt.value)
                 }
             }
         }

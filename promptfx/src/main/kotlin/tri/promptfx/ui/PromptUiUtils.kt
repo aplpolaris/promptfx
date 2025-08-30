@@ -34,6 +34,10 @@ import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.FormattedTextNode
 import tri.promptfx.PromptFxWorkspace
 
+const val SEND_TO_PROMPT_TEMPLATE = "Send to Prompt Template View"
+const val LOCATE_IN_PROMPT_LIBRARY = "Locate in Prompt Library View"
+const val LOCATE_IN_PROMPT_HISTORY = "Locate in Prompt History View"
+
 /**
  * Adds a combobox for selecting a prompt, a text for seeing the prompt,
  * and an option to send the prompt to the template view.
@@ -60,9 +64,14 @@ fun EventTarget.promptfield(
             tooltip("Toggle visibility of the prompt text.")
             action { promptFieldVisible.set(!promptFieldVisible.value) }
         }
-        button(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-            tooltip("Copy this prompt to the Prompt Template view under Tools and open that view.")
-            action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
+        menubutton(text = "", graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+            tooltip("Navigate to other views with this prompt template.")
+            item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIconView(FontAwesomeIcon.SEND)) {
+                action { find<PromptFxWorkspace>().launchTemplateView(prompt.text.value) }
+            }
+            item(LOCATE_IN_PROMPT_LIBRARY, graphic = FontAwesomeIconView(FontAwesomeIcon.BOOK)) {
+                action { find<PromptFxWorkspace>().launchLibraryView(prompt.text.value) }
+            }
         }
     }
     field(null, forceLabelIndent = true) {
