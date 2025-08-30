@@ -1,19 +1,19 @@
-# PromptLibrary Configuration
+# PromptLibrary Filter
 
-This document describes the PromptLibrary configuration feature that allows filtering prompts by patterns.
+This document describes the PromptLibrary filter feature that allows filtering prompts by patterns.
 
 ## Overview
 
-The PromptLibrary configuration feature allows you to control which prompts are loaded from the built-in prompt library using pattern-based filtering. This is useful for:
+The PromptLibrary filter feature allows you to control which prompts are loaded from the built-in prompt library using pattern-based filtering. This is useful for:
 
 - Focusing on specific types of prompts (e.g., only text-related prompts)
 - Excluding experimental or deprecated prompts
 - Creating custom prompt sets for different use cases
 - Reducing memory usage by loading only needed prompts
 
-## Configuration File Format
+## Filter File Format
 
-The configuration file uses YAML format:
+The filter file uses YAML format:
 
 ```yaml
 # Include specific prompt IDs by pattern (optional)
@@ -59,34 +59,35 @@ The filtering logic works as follows:
 
 ### Command Line Interface
 
-Use the `--prompt-config` option with CLI tools:
+Use the `--prompt-filter` option with CLI tools:
 
 ```bash
-java -cp ... tri.ai.cli.PromptBatchRunner --prompt-config /path/to/config.yaml input.yaml output.yaml
+java -cp ... tri.ai.cli.McpCli --prompt-filter /path/to/filter.yaml list
 ```
 
 ### PromptFx UI
 
-1. Open the Prompt Library view
-2. Click the Filter button (🔽) in the toolbar
-3. Select a configuration file
+1. Open the Settings view (PromptFx Settings)
+2. Navigate to the Session section
+3. Configure the Prompt Library Filter
 4. Restart the application for changes to take effect
 
 ### Programmatic Usage
 
 ```kotlin
-// Load with default configuration (all prompts)
-val defaultLibrary = PromptLibrary.loadWithConfig()
+// Load with default filter (all prompts)
+val defaultLibrary = PromptLibrary.loadDefaultPromptLibrary()
 
-// Load with custom configuration
-val config = PromptLibraryConfig(
+// Load with custom filter
+val filter = PromptFilter(
     includeCategories = listOf("text-*"),
     excludeCategories = listOf("experimental")
 )
-val filteredLibrary = PromptLibrary.loadWithConfig(config)
+val filteredLibrary = PromptLibrary.loadDefaultPromptLibrary(filter)
 
-// Load from configuration file
-val libraryFromFile = PromptLibrary.loadWithConfigFile("/path/to/config.yaml")
+// Load from filter file
+val filterFromFile = PromptIO.readObject(Path("/path/to/filter.yaml"), PromptFilter::class.java)
+val libraryFromFile = PromptLibrary.loadDefaultPromptLibrary(filterFromFile)
 ```
 
 ## Examples
@@ -126,16 +127,16 @@ This includes all document-related categories plus specific text processing prom
 
 ## File Locations
 
-- **Built-in default**: `promptkt-core/src/main/resources/tri/ai/prompt/resources/prompt-library-config.yaml`
-- **Distribution example**: `config/prompt-library-config.yaml` 
-- **Development example**: `promptfx/config/prompt-library-config.yaml`
+- **CLI default filter**: `promptkt-cli/config/prompt-library-filter.yaml`
+- **Distribution example**: `config/prompt-library-filter.yaml` 
+- **Development example**: `promptfx/config/prompt-library-filter.yaml`
 
 ## Available Categories and IDs
 
 To see what prompts and categories are available, you can run:
 
 ```kotlin
-val library = PromptLibrary.loadWithConfig()
+val library = PromptLibrary.loadDefaultPromptLibrary()
 library.list().forEach { prompt ->
     println("ID: ${prompt.id}, Category: ${prompt.category}")
 }

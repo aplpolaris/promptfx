@@ -36,10 +36,12 @@ import tri.ai.mcp.RemoteMcpServer
 import tri.ai.mcp.StdioMcpServer
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.openai.OpenAiMultimodalChat
+import tri.ai.prompt.PromptFilter
 import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
+import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
@@ -56,6 +58,7 @@ class McpCli : CliktCommand(
     private val serverUrl by option("--server", "-s", help = "MCP server URL (use 'local' for local server)")
         .default("local")
     private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for local server only)")
+    private val promptFilter by option("--prompt-filter", "-f", help = "Prompt filter configuration file (for local server only)")
     private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
 
     override fun run() {
@@ -80,12 +83,40 @@ class McpCli : CliktCommand(
     }
 
     private fun loadPromptLibrary(): PromptLibrary {
+        val filter = loadPromptFilter()
         return if (promptLibrary != null) {
             if (verbose) echo("Loading custom prompt library from: $promptLibrary")
             PromptLibrary.loadFromPath(promptLibrary!!)
         } else {
             if (verbose) echo("Using default local MCP server with PromptLibrary")
-            PromptLibrary.INSTANCE
+            if (filter != PromptFilter.ACCEPT_ALL) {
+                if (verbose) echo("Applying prompt filter: $promptFilter")
+                PromptLibrary.loadDefaultPromptLibrary(filter)
+            } else {
+                PromptLibrary.INSTANCE
+            }
+        }
+    }
+
+    private fun loadPromptFilter(): PromptFilter {
+        return if (promptFilter != null) {
+            if (verbose) echo("Loading prompt filter from: $promptFilter")
+            val file = File(promptFilter!!)
+            if (file.exists()) {
+                tri.ai.prompt.PromptIO.loadFilterFromPath(file.toPath())
+            } else {
+                echo("Warning: Prompt filter file not found: $promptFilter", err = true)
+                PromptFilter.ACCEPT_ALL
+            }
+        } else {
+            // Try to load default filter from config directory
+            val defaultFilter = File("promptkt-cli/config/prompt-library-filter.yaml")
+            if (defaultFilter.exists()) {
+                if (verbose) echo("Using default prompt filter from: ${defaultFilter.path}")
+                tri.ai.prompt.PromptIO.loadFilterFromPath(defaultFilter.toPath())
+            } else {
+                PromptFilter.ACCEPT_ALL
+            }
         }
     }
 

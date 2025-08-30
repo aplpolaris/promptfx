@@ -1,5 +1,5 @@
-# PromptLibrary Configuration Example
-# This file controls which prompts are loaded from the built-in prompt library.
+# PromptLibrary Filter for CLI Runtime
+# This file filters which prompts are loaded by the MCP CLI server.
 # Pattern matching supports simple wildcards using '*'.
 #
 # If includeIds or includeCategories are specified, only prompts matching these patterns will be loaded.

@@ -82,16 +82,16 @@ class PromptFxConfig: Component(), ScopedInstance {
     fun documentQaFile(): File? = config.getProperty(DOCQA_LIB)
         ?.let { File(URI.create(it)).takeIf { it.exists() } }
         
-    /** Get prompt library config file from configuration. */
-    fun promptLibraryConfigFile(): File? = config.getProperty(PROMPTLIB_CONFIG)
+    /** Get prompt library filter file from configuration. */
+    fun promptLibraryFilterFile(): File? = config.getProperty(PROMPTLIB_FILTER)
         ?.let { File(URI.create(it)).takeIf { it.exists() } }
     
-    /** Set the prompt library config file. */
-    fun setPromptLibraryConfigFile(file: File?) {
+    /** Set the prompt library filter file. */
+    fun setPromptLibraryFilterFile(file: File?) {
         if (file?.exists() == true) {
-            config[PROMPTLIB_CONFIG] = file.toURI().toString()
+            config[PROMPTLIB_FILTER] = file.toURI().toString()
         } else {
-            config.remove(PROMPTLIB_CONFIG)
+            config.remove(PROMPTLIB_FILTER)
         }
     }
 
@@ -141,7 +141,7 @@ class PromptFxConfig: Component(), ScopedInstance {
         const val LAST_ACTIVE_VIEW_KEY = "ui.last_active_view"
         const val DOCINSIGHT_LIB = "docinsight.textlib"
         const val DOCQA_LIB = "docqa.textlib"
-        const val PROMPTLIB_CONFIG = "promptlib.config"
+        const val PROMPTLIB_FILTER = "promptlib.filter"
 
         const val DIR_KEY_DEFAULT = "default"
         const val DIR_KEY_TEXTLIB = "textlib"

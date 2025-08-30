@@ -1,5 +1,5 @@
-# PromptLibrary Configuration Example
-# This file controls which prompts are loaded from the built-in prompt library.
+# PromptLibrary Filter Example
+# This file filters which prompts are loaded from the built-in prompt library.
 # Pattern matching supports simple wildcards using '*'.
 #
 # If includeIds or includeCategories are specified, only prompts matching these patterns will be loaded.
