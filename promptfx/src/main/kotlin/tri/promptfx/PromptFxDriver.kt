@@ -218,11 +218,13 @@ private fun Menu.buildviewsubmenus(value: ObservableStringValue, workspace: Prom
         if (map.isNotEmpty()) {
             menu(group) {
                 map.forEach { (_, info) ->
-                    val view = info.viewComponent ?: workspace.find(info.view!!, scope = workspace.scope) as AiTaskView
-                    item(view.title) {
-                        action {
-                            with(PromptFxDriver) {
-                                workspace.setInputAndRun(view, value.value)
+                    val view = info.viewComponent ?: workspace.find(info.view!!, scope = workspace.scope) as? AiTaskView
+                    if (view != null) {
+                        item(view.title) {
+                            action {
+                                with(PromptFxDriver) {
+                                    workspace.setInputAndRun(view, value.value)
+                                }
                             }
                         }
                     }

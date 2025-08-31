@@ -4,8 +4,6 @@ tri.promptfx.prompts.PromptTemplatePlugin
 tri.promptfx.prompts.PromptValidatorPlugin
 tri.promptfx.prompts.PromptTraceHistoryPlugin
 tri.promptfx.text.ListGeneratorPlugin
-tri.promptfx.text.QuestionAnsweringPlugin
-tri.promptfx.text.StructuredDataPlugin
 tri.promptfx.multimodal.AudioApiPlugin
 tri.promptfx.multimodal.AudioSpeechApiPlugin
 tri.promptfx.multimodal.ImagesApiPlugin

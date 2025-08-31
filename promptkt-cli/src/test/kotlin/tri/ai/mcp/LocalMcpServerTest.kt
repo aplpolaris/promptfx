@@ -81,7 +81,7 @@ class LocalMcpServerTest {
                 )
             )
             println(response)
-            Assertions.assertEquals("Question Answer Example", response.description)
+            Assertions.assertEquals("Answer a question based on the provided text.", response.description)
             Assertions.assertEquals(1, response.messages.size)
             Assertions.assertEquals(1, response.messages[0].content!!.size)
             Assertions.assertEquals(

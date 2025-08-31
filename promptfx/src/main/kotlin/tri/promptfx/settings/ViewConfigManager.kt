@@ -61,7 +61,8 @@ object ViewConfigManager {
         val fullYamlContent = MAPPER.writeValueAsString(singleViewMap)
         
         // Extract just the content part (without the top-level key)
-        val yamlLines = fullYamlContent.lines()
+        // drop the first line which is the "---" separator
+        val yamlLines = fullYamlContent.lines().drop(1)
         val yamlContent = buildString {
             // Add separator line if file exists and has content
             if (runtimeViewsFile.exists() && runtimeViewsFile.length() > 0) {

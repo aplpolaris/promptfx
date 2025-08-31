@@ -24,14 +24,13 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonType
 import javafx.scene.control.ToggleGroup
-import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.prompt.PromptDef
 import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxWorkspaceModel
 import tri.promptfx.RuntimePromptViewConfigs
-import tri.promptfx.ui.ModeConfig
 import tri.promptfx.ui.RuntimePromptViewConfig
+import tri.promptfx.ui.RuntimeUserControls
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Dialog for creating a new custom view configuration. */
@@ -44,7 +43,8 @@ class NewViewDialog : Fragment("Create New Custom View") {
     private val useExistingPrompt = SimpleBooleanProperty(true)
     private val selectedPromptId = SimpleStringProperty("")
     private val customTemplate = SimpleStringProperty("")
-    
+
+    private val showPrompt = SimpleBooleanProperty(true)
     private val showModelParameters = SimpleBooleanProperty(false)
     private val showMultipleResponses = SimpleBooleanProperty(false)
     
@@ -125,10 +125,11 @@ class NewViewDialog : Fragment("Create New Custom View") {
                 }
             }
             
-            fieldset("View Options") {
+            fieldset("User Controls") {
                 field("Display Options") {
                     alignment = Pos.TOP_LEFT
                     vbox(5) {
+                        checkbox("Show Prompt Selection", showPrompt)
                         checkbox("Show Model Parameters", showModelParameters)
                         checkbox("Show Multiple Response Option", showMultipleResponses)
                     }
@@ -253,9 +254,12 @@ class NewViewDialog : Fragment("Create New Custom View") {
         
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            modeOptions = listOf(), // For now, keep it simple
-            isShowModelParameters = showModelParameters.value,
-            isShowMultipleResponseOption = showMultipleResponses.value,
+            args = listOf(), // For now, keep it simple
+            userControls = RuntimeUserControls(
+                prompt = showPrompt.value,
+                modelParameters = showModelParameters.value,
+                multipleResponses = showMultipleResponses.value,
+            ),
             affordances = WorkspaceViewAffordance.INPUT_ONLY
         )
         

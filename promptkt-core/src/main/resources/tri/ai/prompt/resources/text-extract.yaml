@@ -3,7 +3,7 @@ groupId: text-extract
 defaults: { category: text }
 prompts:
   - id: text-extract/entities@1.0.0
-    title: Entity Extraction
+    title: Extract Entities
     description: Extract entities from text.
     args:
       - name: input
@@ -38,8 +38,8 @@ prompts:
       ```
       Keywords:
   - id: text-extract/text-to-json@1.0.0
-    title: Convert Text to JSON
-    description: Convert text to JSON using given guidance/format.
+    title: Convert to Structured Data
+    description: Convert text to JSON, XML, etc. using given guidance/format.
     args:
       - name: input
         description: The text to extract information from
