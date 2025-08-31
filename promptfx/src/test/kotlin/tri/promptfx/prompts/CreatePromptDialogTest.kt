@@ -25,18 +25,14 @@ import org.junit.jupiter.api.io.TempDir
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptGroup
 import tri.ai.prompt.PromptGroupIO
-import tri.ai.prompt.PromptLibrary
-import java.io.File
 import java.nio.file.Path
 
 class CreatePromptDialogTest {
 
     @Test
     fun testSavePromptToCustomFile(@TempDir tempDir: Path) {
-        // Create a temporary custom-prompts.yaml file
         val customFile = tempDir.resolve("custom-prompts.yaml").toFile()
         
-        // Create a test prompt
         val testPrompt = PromptDef(
             id = "test/sample@1.0.0",
             name = "Sample Prompt",
@@ -44,18 +40,13 @@ class CreatePromptDialogTest {
             description = "A test prompt for validation",
             template = "Hello {{name}}!"
         )
-        
-        // Initialize file with empty group
         val initialGroup = PromptGroup("custom", prompts = emptyList())
         PromptGroupIO.MAPPER.writeValue(customFile, initialGroup)
         
-        // Read existing content and add new prompt
         val existingGroup = PromptGroupIO.readFromFile(customFile.toPath())
         val updatedGroup = existingGroup.copy(
             prompts = existingGroup.prompts + testPrompt
         )
-        
-        // Write back to file
         PromptGroupIO.MAPPER.writeValue(customFile, updatedGroup)
         
         // Verify the prompt was saved correctly
@@ -65,46 +56,5 @@ class CreatePromptDialogTest {
         assertEquals("Sample Prompt", savedGroup.prompts[0].name)
         assertEquals("Hello {{name}}!", savedGroup.prompts[0].template)
     }
-    
-    @Test
-    fun testEndToEndPromptCreationWorkflow() {
-        // Create a test prompt that simulates what the dialog would create
-        val newPrompt = PromptDef(
-            id = "test/workflow-test@1.0.0",
-            name = "Workflow Test Prompt",
-            title = "Test Workflow",
-            description = "A prompt created to test the end-to-end workflow",
-            template = "Process this {{input}} with {{method}}"
-        )
-        
-        // Get the current number of prompts in runtime library
-        val initialCount = PromptLibrary.RUNTIME_INSTANCE.list().size
-        
-        // Create a temporary file to test the save logic
-        val tempFile = java.nio.file.Files.createTempFile("test-custom-prompts", ".yaml").toFile()
-        
-        try {
-            // Initialize file with custom group structure
-            val initialGroup = PromptGroup("custom", prompts = emptyList())
-            PromptGroupIO.MAPPER.writeValue(tempFile, initialGroup)
-            
-            // Add the new prompt
-            val existingGroup = PromptGroupIO.readFromFile(tempFile.toPath())
-            val updatedGroup = existingGroup.copy(
-                prompts = existingGroup.prompts + newPrompt
-            )
-            PromptGroupIO.MAPPER.writeValue(tempFile, updatedGroup)
-            
-            // Verify the file was written correctly
-            val content = tempFile.readText()
-            assertTrue(content.contains("workflow-test@1.0.0"))
-            assertTrue(content.contains("Process this {{input}} with {{method}}"))
-            
-            println("✓ Prompt saved to temporary file successfully")
-            println("✓ File content contains expected prompt ID and template")
-            
-        } finally {
-            tempFile.delete()
-        }
-    }
+
 }
