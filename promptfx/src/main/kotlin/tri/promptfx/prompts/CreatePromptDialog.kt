@@ -28,6 +28,7 @@ import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptGroup
 import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.generateArgs
 import java.io.File
 
 /** Dialog for creating a new prompt definition. */
@@ -59,14 +60,17 @@ class CreatePromptDialog : Fragment("Create New Prompt") {
             
             fieldset("Prompt Information") {
                 field("Prompt ID*") {
-                    textfield(promptId) {
-                        promptText = "e.g., custom/my-prompt@1.0.0"
-                        prefColumnCount = 40
-                    }
-                    label("Full ID including category and version (e.g., custom/my-prompt@1.0.0)") {
-                        style {
-                            fontSize = 10.px
-                            textFill = c("#666666")
+                    labelContainer.alignment = Pos.TOP_LEFT
+                    vbox {
+                        textfield(promptId) {
+                            promptText = "e.g., custom/my-prompt@1.0.0"
+                            prefColumnCount = 40
+                        }
+                        label("Full ID including category and version (e.g., custom/my-prompt@1.0.0)") {
+                            style {
+                                fontSize = 10.px
+                                textFill = c("#666666")
+                            }
                         }
                     }
                 }
@@ -83,6 +87,7 @@ class CreatePromptDialog : Fragment("Create New Prompt") {
                     }
                 }
                 field("Description") {
+                    labelContainer.alignment = Pos.TOP_LEFT
                     textarea(promptDescription) {
                         promptText = "Brief description of what this prompt does"
                         prefRowCount = 2
@@ -91,23 +96,25 @@ class CreatePromptDialog : Fragment("Create New Prompt") {
                     }
                 }
                 field("Template*") {
-                    textarea(promptTemplate) {
-                        promptText = "Enter the prompt template using {{variable}} syntax..."
-                        prefRowCount = 8
-                        prefColumnCount = 40
-                        isWrapText = true
-                        vgrow = Priority.ALWAYS
-                    }
-                    label("Use {{variable}} for template variables (e.g., {{input}}, {{instruct}})") {
-                        style {
-                            fontSize = 10.px
-                            textFill = c("#666666")
+                    labelContainer.alignment = Pos.TOP_LEFT
+                    vbox {
+                        textarea(promptTemplate) {
+                            promptText = "Enter the prompt template using {{variable}} syntax..."
+                            prefRowCount = 8
+                            prefColumnCount = 40
+                            isWrapText = true
+                            vgrow = Priority.ALWAYS
+                        }
+                        label("Use {{variable}} for template variables (e.g., {{input}}, {{instruct}})") {
+                            style {
+                                fontSize = 10.px
+                                textFill = c("#666666")
+                            }
                         }
                     }
                 }
             }
             
-            // Validation message area
             label(validationMessage) {
                 style {
                     textFill = c("#cc0000")
@@ -138,22 +145,18 @@ class CreatePromptDialog : Fragment("Create New Prompt") {
     private fun validateInput() {
         val errors = mutableListOf<String>()
         
-        // Check prompt ID
         if (promptId.value.isNullOrBlank()) {
             errors.add("Prompt ID is required")
         } else {
-            // Check if prompt ID already exists
-            if (PromptLibrary.INSTANCE.get(promptId.value) != null || 
+            if (PromptLibrary.INSTANCE.get(promptId.value) != null ||
                 PromptLibrary.RUNTIME_INSTANCE.get(promptId.value) != null) {
                 errors.add("Prompt ID already exists")
             }
-            // Basic ID format validation
             if (!promptId.value.contains('/')) {
                 errors.add("Prompt ID should include category (e.g., custom/my-prompt@1.0.0)")
             }
         }
         
-        // Check template
         if (promptTemplate.value.isNullOrBlank()) {
             errors.add("Template is required")
         }
@@ -183,46 +186,46 @@ class CreatePromptDialog : Fragment("Create New Prompt") {
     }
 
     private fun createAndSavePrompt() {
-        val prompt = PromptDef(
+        result = PromptDef(
             id = promptId.value,
             name = promptName.value.ifBlank { null },
             title = promptTitle.value.ifBlank { null },
             description = promptDescription.value.ifBlank { null },
             template = promptTemplate.value
-        )
-        
-        // Save to custom-prompts.yaml
-        savePromptToCustomFile(prompt)
-        
-        result = prompt
+        ).resolved().also {
+            savePromptToCustomFile(it)
+        }
+    }
+
+    /** Resolve a single prompt definition, applying defaults from the group and inferring name/version/category from the id. */
+    private fun PromptDef.resolved(): PromptDef {
+        val resolvedCategory = category ?: id.substringBefore('/', "").ifBlank { null } ?: "Uncategorized"
+        val resolvedName = name ?: id.substringAfter('/').substringBefore('@')
+        val resolvedVersion = version ?: id.substringAfter('@', "").ifBlank { null } ?: "0.0.1"
+        val resolvedArgs = args.ifEmpty { generateArgs() }
+        return copy(category = resolvedCategory, name = resolvedName, args = resolvedArgs, version = resolvedVersion)
     }
 
     private fun savePromptToCustomFile(prompt: PromptDef) {
         val file = PromptLibrary.RUNTIME_PROMPTS_FILE
-        
-        // Ensure the file exists
         if (!file.exists()) {
             PromptLibrary.createRuntimePromptsFile()
         }
         
-        // Read existing content
         val existingGroup = if (file.length() > 0) {
             try {
                 PromptGroupIO.readFromFile(file.toPath())
             } catch (e: Exception) {
-                // If file is corrupted or empty, create a new group
                 PromptGroup("custom", prompts = emptyList())
             }
         } else {
             PromptGroup("custom", prompts = emptyList())
         }
         
-        // Add new prompt to existing prompts
         val updatedGroup = existingGroup.copy(
             prompts = existingGroup.prompts + prompt
         )
         
-        // Write back to file
         PromptGroupIO.MAPPER.writeValue(file, updatedGroup)
     }
 

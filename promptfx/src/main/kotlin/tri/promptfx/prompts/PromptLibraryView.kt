@@ -55,10 +55,6 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     init {
         input {
             toolbar {
-                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-                    tooltip("Create a new prompt")
-                    action { onCreate() }
-                }
                 // add search bar here to update promptFilter when you hit enter
                 textfield("") {
                     promptText = "Search"
@@ -68,6 +64,10 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
                 spacer()
+                button("", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+                    tooltip("Create a new prompt")
+                    action { onCreate() }
+                }
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the prompt list.")
                     action {
