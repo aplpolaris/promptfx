@@ -81,6 +81,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
                     }
                 }
                 field("Description") {
+                    labelContainer.alignment = Pos.TOP_LEFT
                     textarea(viewDescription) {
                         promptText = "Optional description of what this view does"
                         prefRowCount = 2
@@ -92,6 +93,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
             
             fieldset("Prompt Configuration") {
                 field("Prompt Source") {
+                    labelContainer.alignment = Pos.TOP_LEFT
                     val toggleGroup = ToggleGroup()
                     vbox(5) {
                         alignment = Pos.TOP_LEFT
@@ -127,7 +129,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
             
             fieldset("User Controls") {
                 field("Display Options") {
-                    alignment = Pos.TOP_LEFT
+                    labelContainer.alignment = Pos.TOP_LEFT
                     vbox(5) {
                         checkbox("Show Prompt Selection", showPrompt)
                         checkbox("Show Model Parameters", showModelParameters)
@@ -267,10 +269,8 @@ class NewViewDialog : Fragment("Create New Custom View") {
         val viewId = ViewConfigManager.generateViewId(viewCategory.value, viewName.value)
         ViewConfigManager.addView(viewId, config)
         
-        // Reload runtime configurations to make the new view available
+        // Reload caches to include new view
         RuntimePromptViewConfigs.reload()
-        
-        // Refresh workspace model to update navigation
         PromptFxWorkspaceModel.reload()
         
         result = config

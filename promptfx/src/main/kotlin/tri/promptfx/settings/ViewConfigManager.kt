@@ -44,19 +44,14 @@ object ViewConfigManager {
 
     /** Save runtime view configurations to views.yaml file. */
     fun saveRuntimeViews(views: Map<String, RuntimePromptViewConfig>) {
-        // Ensure config directory exists
         runtimeViewsFile.parentFile?.mkdirs()
-        
-        // Save the views map as YAML
         MAPPER.writeValue(runtimeViewsFile, views)
     }
 
     /** Add a new view configuration and save to file by appending to the end. */
     fun addView(viewId: String, config: RuntimePromptViewConfig) {
-        // Ensure config directory exists
         runtimeViewsFile.parentFile?.mkdirs()
         
-        // Use YAML serializer to generate the content
         val singleViewMap = mapOf(viewId to config)
         val fullYamlContent = MAPPER.writeValueAsString(singleViewMap)
         
@@ -64,15 +59,10 @@ object ViewConfigManager {
         // drop the first line which is the "---" separator
         val yamlLines = fullYamlContent.lines().drop(1)
         val yamlContent = buildString {
-            // Add separator line if file exists and has content
             if (runtimeViewsFile.exists() && runtimeViewsFile.length() > 0) {
                 appendLine()
             }
-            
-            // Add the YAML content
-            yamlLines.forEach { line ->
-                appendLine(line)
-            }
+            yamlLines.forEach { appendLine(it) }
         }
         
         // Append to file

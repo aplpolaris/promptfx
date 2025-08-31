@@ -179,9 +179,9 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         val views: List<PromptFxViewInfo> = pfxWorkspace.viewsWithInputs.values
             .map { it.entries }.flatten().map { it.value }
             .filter { it.view != AgenticView::class.java }
-        val tools = views.map { info ->
-            val view = (info.viewComponent ?: find(info.view!!)) as AiTaskView
-            SelectableTool(info.group, view.executable())
+        val tools = views.mapNotNull { info ->
+            val view = (info.viewComponent ?: find(info.view!!)) as? AiTaskView
+            view?.let { SelectableTool(info.group, it.executable()) }
         }
         return tools
     }

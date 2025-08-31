@@ -21,6 +21,7 @@ package tri.ai.prompt
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import tri.util.fine
@@ -37,7 +38,11 @@ import java.nio.file.Paths
 object PromptGroupIO {
 
     /** ObjectMapper for loading prompts. */
-    val MAPPER = ObjectMapper(YAMLFactory()).apply {
+    val MAPPER = ObjectMapper(YAMLFactory()
+        .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+        .enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE)
+        .enable(YAMLGenerator.Feature.INDENT_ARRAYS)
+    ).apply {
         registerModule(KotlinModule.Builder().build())
         registerModule(JavaTimeModule())
     }
