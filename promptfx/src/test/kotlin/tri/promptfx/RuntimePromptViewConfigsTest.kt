@@ -33,7 +33,7 @@ class RuntimePromptViewConfigsTest {
             .forEach { (viewGroup, viewList) ->
                 println("$viewGroup/")
                 viewList.sortedBy { it.viewId }.forEach {
-                    println("  " + it.viewId.padEnd(30) + it.config!!.prompt.id)
+                    println("  " + it.viewId.padEnd(35) + (it.config?.prompt?.id ?: "--"))
                 }
             }
         assertTrue(views.isNotEmpty())
