@@ -29,7 +29,11 @@ import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextCompletion
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.impl.ToolChainExecutor
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.pips.core.ExecContext
@@ -39,7 +43,6 @@ import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.tool.JsonMultimodalToolExecutor
 import tri.ai.tool.JsonToolExecutor
-import tri.ai.tool.ToolChainExecutor
 import tri.ai.tool.ToolExecutableResult
 import tri.ai.tool.wf.*
 import tri.promptfx.*
@@ -214,7 +217,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
         val tools = selectedTools.map { it.tool }
         val result = when (engine.value) {
-            WorkflowEngine.TOOL_CHAIN -> executeToolChain(task, tools)
+            WorkflowEngine.TOOL_CHAIN -> executeToolChain(task, tools).awaitResponse().message.content!!.first().text!!
             WorkflowEngine.JSON_TOOL -> executeJsonTool(task, tools)
             WorkflowEngine.JSON_TOOL_MULTIMODAL -> executeJsonMultimodalTool(task, tools)
             WorkflowEngine.WORKFLOW_PLANNER -> executeWorkflowPlanner(task, tools)
@@ -230,8 +233,9 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     /** Executes using [tri.ai.tool.ToolChainExecutor]. */
     private fun executeToolChain(task: String, selectedTools: List<Executable>) =
-        ToolChainExecutor(controller.chatService.value)
-            .executeChain(task, selectedTools)
+        ToolChainExecutor(selectedTools)
+            .sendMessage(AgentChatSession(config = AgentChatConfig(modelId = controller.chatService.value.modelId)),
+                MultimodalChatMessage.user(task))
 
     /** Executes using [tri.ai.tool.JsonToolExecutor]. */
     private fun executeJsonTool(task: String, selectedTools: List<Executable>): String {
