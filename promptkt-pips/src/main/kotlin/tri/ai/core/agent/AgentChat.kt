@@ -1,6 +1,8 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import tri.ai.core.MultimodalChat
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
@@ -39,20 +41,18 @@ abstract class BaseAgentChat : AgentChat {
         session.lastModified = LocalDateTime.now()
     }
 
-    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage) = agentflow {
-        try {
+    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage) = AgentChatFlow(
+        flow {
             val agentResponse = sendMessageSafe(session, message)
             emit(AgentChatEvent.Response(agentResponse))
-        } catch (e: Exception) {
+        }.catch { e ->
             // Remove the user message if we failed to process it
             if (session.messages.lastOrNull() == message) {
                 session.messages.removeAt(session.messages.size - 1)
             }
-            println("sendMessage failed with error: ${e.message}")
             e.printStackTrace()
             emit(AgentChatEvent.Error(e))
-        }
-    }
+        })
 
     /**
      * Perform send message task while emitting intermediate events.

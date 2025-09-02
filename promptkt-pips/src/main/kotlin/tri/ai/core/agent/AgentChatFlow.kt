@@ -36,10 +36,6 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
 
 }
 
-/** Helper to create an [AgentChatFlow] from a flow builder. */
-fun agentflow(block: suspend FlowCollector<AgentChatEvent>.() -> Unit) =
-    AgentChatFlow(flow(block))
-
 /** Events emitted during an agent chat operation. */
 sealed class AgentChatEvent {
     /** Progress update during processing. */

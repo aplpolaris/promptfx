@@ -27,12 +27,14 @@ import javafx.collections.transformation.FilteredList
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextCompletion
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentFlowLogger
 import tri.ai.core.agent.impl.ToolChainExecutor
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
@@ -217,7 +219,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
         val tools = selectedTools.map { it.tool }
         val result = when (engine.value) {
-            WorkflowEngine.TOOL_CHAIN -> executeToolChain(task, tools).awaitResponse().message.content!!.first().text!!
+            WorkflowEngine.TOOL_CHAIN -> executeToolChain(task, tools)
             WorkflowEngine.JSON_TOOL -> executeJsonTool(task, tools)
             WorkflowEngine.JSON_TOOL_MULTIMODAL -> executeJsonMultimodalTool(task, tools)
             WorkflowEngine.WORKFLOW_PLANNER -> executeWorkflowPlanner(task, tools)
@@ -231,11 +233,14 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     //region WORKFLOW EXECUTION METHODS
 
-    /** Executes using [tri.ai.tool.ToolChainExecutor]. */
-    private fun executeToolChain(task: String, selectedTools: List<Executable>) =
-        ToolChainExecutor(selectedTools)
+    /** Executes using [tri.ai.core.agent.impl.ToolChainExecutor]. */
+    private suspend fun executeToolChain(task: String, selectedTools: List<Executable>): String {
+        val flow = ToolChainExecutor(selectedTools)
             .sendMessage(AgentChatSession(config = AgentChatConfig(modelId = controller.chatService.value.modelId)),
                 MultimodalChatMessage.user(task))
+        flow.events.collect(AgentFlowLogger())
+        return flow.awaitResponse().message.content!!.first().text!!
+    }
 
     /** Executes using [tri.ai.tool.JsonToolExecutor]. */
     private fun executeJsonTool(task: String, selectedTools: List<Executable>): String {

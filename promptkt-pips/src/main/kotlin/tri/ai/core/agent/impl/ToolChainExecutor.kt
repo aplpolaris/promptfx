@@ -49,7 +49,7 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
         while (result?.isTerminal != true && iterations++ < iterationLimit) {
             result = runExecChain(chat, templateForQuestion(question), tools, scratchpad)
         }
-        val final = result?.finalResult ?: "I was unable to determine a final answer."
+        val final = result?.result ?: "I was unable to determine a final answer."
         val responseMessage = MultimodalChatMessage.text(MChatRole.Assistant, final)
 
         // store and log response, maybe update session name
@@ -82,21 +82,25 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
             .associate { it[0].trim() to it[1].trim() }
         if ("Final Answer:" in completion) {
             val answer = completion.substringAfter("Final Answer:").trim()
-            return ToolExecutableResult("", isTerminal = true, finalResult = answer)
+            return ToolExecutableResult(answer, true)
         }
 
         val toolName = responseOp["Action"]?.trim()
-        val tool = tools.find { it.name == toolName } ?: error("Tool $toolName not found.")
+        val tool = tools.find { it.name == toolName }
+        if (tool == null) {
+            val fallback = "Invalid or missing tool name."
+            emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
+            (scratchpad.vars["steps"] as ArrayNode).add("Observation: $fallback")
+            return ToolExecutableResult(fallback, false)
+        }
         val toolInput = responseOp["Action Input"]?.trim()
             ?.ifBlank { completion.substringAfter("Action Input:").trim() }
             ?.ifBlank { null }
-
-        scratchpad.vars[tool.name + " Input"] = TextNode(toolInput ?: "") // this is optional
         if (toolInput.isNullOrBlank()) {
             val fallback ="Tool input missing or malformed."
             emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
-            scratchpad.vars[tool.name + " Result"] = TextNode(fallback) // this is optional
-            return ToolExecutableResult("", false, fallback)
+            (scratchpad.vars["steps"] as ArrayNode).add("Observation: $fallback")
+            return ToolExecutableResult(fallback, false)
         }
 
         // execute tool
@@ -106,14 +110,12 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
-        emit(AgentChatEvent.Progress("Tool Result:\n$ANSI_CYAN${resultText.replace("\n","\n  ")}$ANSI_RESET"))
+        emit(AgentChatEvent.Progress("Tool Result:\n  $ANSI_CYAN${resultText.replace("\n","\n  ")}$ANSI_RESET"))
         (scratchpad.vars["steps"] as ArrayNode).add("Observation: $resultText")
-        scratchpad.vars[tool.name + " Result"] = TextNode(resultText) // this is optional
 
         return ToolExecutableResult(
             resultText,
             isTerminal = executionResult.get("isTerminal")?.asBoolean() ?: false,
-            finalResult = executionResult.get("finalResult")?.asText()
         )
     }
 

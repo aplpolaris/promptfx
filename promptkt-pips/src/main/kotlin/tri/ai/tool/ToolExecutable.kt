@@ -52,7 +52,6 @@ abstract class ToolExecutable(
         return context.mapper.createObjectNode().apply {
             put("result", result.result)
             put("isTerminal", result.isTerminal)
-            result.finalResult?.let { put("finalResult", it) }
         }
     }
 
@@ -69,6 +68,5 @@ abstract class ToolExecutable(
  */
 data class ToolExecutableResult(
     val result: String,
-    val isTerminal: Boolean = false,
-    val finalResult: String? = null
+    val isTerminal: Boolean = false
 )

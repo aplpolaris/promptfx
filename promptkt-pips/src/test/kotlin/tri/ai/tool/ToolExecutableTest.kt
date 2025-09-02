@@ -71,7 +71,7 @@ class ToolExecutableTest {
         runTest {
             val terminalTool = object : ToolExecutable("Terminal", "Terminal tool") {
                 override suspend fun run(input: String, context: ExecContext) =
-                    ToolExecutableResult("done", isTerminal = true, finalResult = "Final answer")
+                    ToolExecutableResult("Final answer", isTerminal = true)
             }
 
             val context = ExecContext()
