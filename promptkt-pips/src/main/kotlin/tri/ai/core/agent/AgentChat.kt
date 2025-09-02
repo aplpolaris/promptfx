@@ -48,6 +48,8 @@ abstract class BaseAgentChat : AgentChat {
             if (session.messages.lastOrNull() == message) {
                 session.messages.removeAt(session.messages.size - 1)
             }
+            println("sendMessage failed with error: ${e.message}")
+            e.printStackTrace()
             emit(AgentChatEvent.Error(e))
         }
     }
@@ -80,7 +82,13 @@ abstract class BaseAgentChat : AgentChat {
     /** Looks up a multimodal model for a given session. */
     protected suspend fun findMultimodalChat(session: AgentChatSession, collector: FlowCollector<AgentChatEvent>): MultimodalChat {
         collector.emit(AgentChatEvent.Progress("Finding model..."))
-        return TextPlugin.multimodalModel(session.config.modelId)
+        return try {
+            TextPlugin.multimodalModel(session.config.modelId)
+        } catch (e: Exception) {
+            val first = TextPlugin.multimodalModels().first()
+            collector.emit(AgentChatEvent.Error(NullPointerException("Model ${session.config.modelId} not found, defaulting to first available model ${first.modelId}.")))
+            first
+        }
     }
 
     /** Looks up a multimodal model for a given session. */

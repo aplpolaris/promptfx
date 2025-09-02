@@ -90,7 +90,7 @@ class CompletionBuilder {
                 tokens = tokens,
                 variation = variation
             )
-        ).copy(promptInfo = PromptInfo(template!!.template, params.toMap()))
+        ).copy(promptInfo = PromptInfo(messages?.let { it.first().content!!.first().text } ?: template!!.template, params.toMap()))
 
     /** Executes a [TextCompletion] task with the provided parameters. */
     suspend fun execute(completion: TextCompletion) =

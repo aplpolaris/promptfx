@@ -20,7 +20,7 @@ import tri.util.*
 
 /**
  * Executes a user prompt using a set of tools using a planning operation.
- * Uses a [TextCompletion] to complete a Question/Thought/Action/Action Input/Observation/.../Thought/Final Answer loop.
+ * Uses a [tri.ai.core.TextCompletion] to complete a Question/Thought/Action/Action Input/Observation/.../Thought/Final Answer loop.
  * Depending on the model, this approach may frequently repeat or fail to terminate.
  */
 class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
@@ -38,6 +38,7 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
 
         // store and log message
         processMessage(session, message, this)
+        emit(AgentChatEvent.Progress("Using tools: ${tools.joinToString(", ") { it.name }}"))
         val chat = findChat(session, this)
 
         val scratchpad = ExecContext().apply {
@@ -87,6 +88,8 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
         val toolName = responseOp["Action"]?.trim()
         val tool = tools.find { it.name == toolName } ?: error("Tool $toolName not found.")
         val toolInput = responseOp["Action Input"]?.trim()
+            ?.ifBlank { completion.substringAfter("Action Input:").trim() }
+            ?.ifBlank { null }
 
         scratchpad.vars[tool.name + " Input"] = TextNode(toolInput ?: "") // this is optional
         if (toolInput.isNullOrBlank()) {
@@ -103,7 +106,7 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
-        emit(AgentChatEvent.Progress("Tool Result: $ANSI_CYAN$resultText$ANSI_RESET"))
+        emit(AgentChatEvent.Progress("Tool Result:\n$ANSI_CYAN${resultText.replace("\n","\n  ")}$ANSI_RESET"))
         (scratchpad.vars["steps"] as ArrayNode).add("Observation: $resultText")
         scratchpad.vars[tool.name + " Result"] = TextNode(resultText) // this is optional
 

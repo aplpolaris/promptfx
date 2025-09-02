@@ -19,19 +19,8 @@
  */
 package tri.ai.core.agent
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import tri.util.ANSI_BLUISH_GRAY
-import tri.util.ANSI_GRAY
-import tri.util.ANSI_LIGHTBLUE
-import tri.util.ANSI_LIGHTGREEN
-import tri.util.ANSI_ORANGE
-import tri.util.ANSI_RED
-import tri.util.ANSI_RESET
-import tri.util.ANSI_YELLOW
+import kotlinx.coroutines.flow.*
+import tri.util.*
 
 /**
  * Represents an ongoing agent chat operation that can be monitored for progress.
@@ -96,10 +85,6 @@ class AgentFlowLogger(var verbose: Boolean = false) : FlowCollector<AgentChatEve
 
     private fun printlnResponse(text: String) {
         println("${ANSI_LIGHTBLUE}$text$ANSI_RESET")
-    }
-
-    private fun printlnInfo(text: String) {
-        println("${ANSI_GRAY}$text$ANSI_RESET")
     }
 
     private fun printlnProgress(text: String) {
