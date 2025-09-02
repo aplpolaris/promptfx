@@ -23,6 +23,7 @@ import com.aallam.openai.api.chat.FunctionCall
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.SerializationException
 import tri.ai.core.*
+import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
 import tri.ai.pips.core.MAPPER
@@ -49,6 +50,7 @@ class JsonToolExecutor(val chat: MultimodalChat, val tools: List<Executable>) {
 
     suspend fun execute(query: String): String {
         info<JsonToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
+        println(PROMPTS.list().map { it.id }.joinToString())
         val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template!!
         val messages = mutableListOf(
             MultimodalChatMessage.text(MChatRole.System, systemMessage),

@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptkt
+ * tri.promptfx:promptkt-pips
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,13 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.agent
 
-/**
- * Result of a tool executable execution.
- */
-data class ToolExecutableResult(
-    val result: String,
-    val isTerminal: Boolean = false,
-    val finalResult: String? = null
+import tri.ai.core.MultimodalChatMessage
+
+/** Response from sending a message to an agent chat. */
+data class AgentChatResponse(
+    /** The agent's response message. */
+    val message: MultimodalChatMessage,
+    /** Any reasoning/thought process (if enabled). */
+    val reasoning: String? = null,
+    /** Metadata about the response. */
+    val metadata: Map<String, Any> = emptyMap()
 )

@@ -17,13 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent.api
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.agent.AgentChatConfig
 
 class AgentChatAPITest {
 
@@ -65,7 +66,7 @@ class AgentChatAPITest {
             api.addMessage(session, message)
         }
         
-        val contextMessages = session.getContextMessages()
+        val contextMessages = session.messagesInCurrentContext()
         
         // Should include system message + last 3 messages
         assertEquals(4, contextMessages.size)

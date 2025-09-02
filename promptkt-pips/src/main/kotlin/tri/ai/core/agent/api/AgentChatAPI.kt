@@ -17,7 +17,10 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent.api
+
+import tri.ai.core.agent.AgentChat
+import tri.ai.core.agent.DefaultAgentChat
 
 /**
  * API for managing agent chat sessions with contextual and reasoning capabilities.

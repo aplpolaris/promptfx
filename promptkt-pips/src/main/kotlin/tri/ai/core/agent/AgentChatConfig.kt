@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent
 
 /** Configuration for an agent chat session. */
 data class AgentChatConfig(

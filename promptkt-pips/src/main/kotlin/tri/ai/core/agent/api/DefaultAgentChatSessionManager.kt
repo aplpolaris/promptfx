@@ -17,8 +17,9 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent.api
 
+import tri.ai.core.agent.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent
 
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
@@ -40,7 +40,7 @@ data class AgentChatSession(
     val messages: MutableList<MultimodalChatMessage> = mutableListOf()
 ) {
     /** Get messages in context based on config limits. */
-    fun getContextMessages(): List<MultimodalChatMessage> {
+    fun messagesInCurrentContext(): List<MultimodalChatMessage> {
         val systemMsg = config.systemMessage?.let { 
             MultimodalChatMessage.text(MChatRole.System, it) 
         }
@@ -48,30 +48,18 @@ data class AgentChatSession(
         return listOfNotNull(systemMsg) + recentMessages
     }
 
-    /** Create session info for listing purposes. */
-    fun toSessionInfo(): AgentChatSessionInfo {
-        return AgentChatSessionInfo(
-            sessionId = sessionId,
-            name = name,
-            createdAt = createdAt,
-            lastModified = lastModified,
-            messageCount = messages.size,
-            lastMessagePreview = messages.lastOrNull()?.let { msg ->
-                msg.content?.firstOrNull()?.text?.take(50)
-            }
-        )
-    }
+    /** Create info object for limited preview of chat session. */
+    fun toSessionInfo() = AgentChatSessionInfo(
+        sessionId = sessionId,
+        name = name,
+        createdAt = createdAt,
+        lastModified = lastModified,
+        messageCount = messages.size,
+        lastMessagePreview = messages.lastOrNull()?.let { msg ->
+            msg.content?.firstOrNull()?.text?.take(50)
+        }
+    )
 }
-
-/** Current state of a chat session. */
-data class AgentChatSessionState(
-    /** The session this state represents. */
-    val session: AgentChatSession,
-    /** Whether the agent is currently processing. */
-    val isProcessing: Boolean = false,
-    /** Any error message. */
-    val error: String? = null
-)
 
 /** Brief info about a chat session for listing purposes. */
 data class AgentChatSessionInfo(

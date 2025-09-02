@@ -36,6 +36,8 @@ data class MultimodalChatMessage(
     val toolCallId: String? = null
 ) {
     companion object {
+        /** Chat with just a user message. */
+        fun user(text: String) = text(MChatRole.User, text)
         /** Chat message with just text. */
         fun text(role: MChatRole, text: String) = MultimodalChatMessage(
             role,

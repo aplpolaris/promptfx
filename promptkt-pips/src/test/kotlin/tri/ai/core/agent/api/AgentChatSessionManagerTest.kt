@@ -17,12 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent.api
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.DefaultAgentChat
+import kotlin.collections.get
 
 class AgentChatSessionManagerTest {
 
@@ -68,7 +72,7 @@ class AgentChatSessionManagerTest {
         
         // Test getting session state
         val state = chat.getSessionState(session)
-        assertEquals(session, state.session)
+        assertEquals(session.sessionId, state.sessionId)
         assertFalse(state.isProcessing)
         assertNull(state.error)
         
@@ -97,6 +101,6 @@ class AgentChatSessionManagerTest {
         assertEquals(1, session.messages.size)
         
         val state = api.getSessionState(session)
-        assertEquals(session, state.session)
+        assertEquals(session.sessionId, state.sessionId)
     }
 }

@@ -87,7 +87,7 @@ class AgentExecutableTest {
                 agent.execute(input, context)
                 fail("Expected IllegalArgumentException")
             } catch (e: IllegalArgumentException) {
-                assertTrue(e.message!!.contains("TextCompletion"))
+                assertTrue(e.message!!.contains("Text completion"))
             }
         }
     }

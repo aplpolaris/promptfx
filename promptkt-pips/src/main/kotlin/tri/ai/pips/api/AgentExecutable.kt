@@ -53,10 +53,10 @@ class AgentExecutable(
         val request = WorkflowUserRequest(input.get("request")?.asText() ?: input.toString())
         
         // Get completion service from context resources
-        val completionService = context.resources["completionService"] as? tri.ai.core.TextCompletion
-            ?: throw IllegalArgumentException("TextCompletion service not found in context resources")
+        val textCompletion = context.resources["textCompletion"] as? tri.ai.core.TextCompletion
+            ?: throw IllegalArgumentException("Text completion service not found in context resources")
             
-        val execStrategy = WExecutorChat(completionService, maxTokens = 2000, temp = 0.5)
+        val execStrategy = WExecutorChat(textCompletion, maxTokens = 2000, temp = 0.5)
         val solvers = tools.map { it.toSolver(context) }
 
         val executor = WorkflowExecutor(execStrategy, solvers)

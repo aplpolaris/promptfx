@@ -17,7 +17,11 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.agent
+package tri.ai.core.agent.api
+
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentChatSessionInfo
 
 /**
  * Interface for managing agent chat sessions.
@@ -39,4 +43,5 @@ interface AgentChatSessionManager {
 
     /** Delete a chat session. */
     fun deleteSession(sessionId: String): Boolean
+
 }

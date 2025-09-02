@@ -20,6 +20,7 @@
 package tri.ai.tool.wf
 
 import tri.ai.core.TextCompletion
+import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.prompt.fill
 

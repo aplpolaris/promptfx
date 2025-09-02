@@ -23,6 +23,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.*
+import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
 import tri.ai.pips.core.MAPPER

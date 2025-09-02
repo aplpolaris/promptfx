@@ -23,6 +23,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.MChatVariation
 import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
+import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
 import java.io.IOException
 

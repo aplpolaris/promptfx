@@ -20,8 +20,6 @@
 package tri.promptfx.agents
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.convertValue
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -31,8 +29,7 @@ import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextChatMessage
-import tri.ai.openai.OpenAiAdapter
+import tri.ai.core.TextCompletion
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.pips.core.ExecContext
@@ -49,7 +46,6 @@ import tri.promptfx.*
 import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
-import tri.util.ui.graphic
 
 /** Plugin for the [AgenticView]. */
 class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Agents", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
@@ -137,7 +133,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         parameters("Workflow Options") {
             field("Engine") {
                 combobox<WorkflowEngine>(engine) {
-                    items.setAll(WorkflowEngine.values().toList())
+                    items.setAll(WorkflowEngine.entries)
                     value = WorkflowEngine.TOOL_CHAIN
                 }
             }
@@ -239,8 +235,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     /** Executes using [tri.ai.tool.JsonToolExecutor]. */
     private fun executeJsonTool(task: String, selectedTools: List<Executable>): String {
-        val chat = PromptFxModels.multimodalModels().first { it.modelId == controller.chatService.value.modelId }
-        val exec = JsonToolExecutor(chat, selectedTools)
+        val exec = JsonToolExecutor(model.value!!, selectedTools)
         return runBlocking {
             exec.execute(task)
         }
@@ -254,9 +249,10 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     /** Executes using [tri.ai.tool.wf.WorkflowExecutor]. */
     private fun executeWorkflowPlanner(task: String, selectedTools: List<Executable>): String {
+        val textCompletion = controller.completionEngine.value
         val exec = WorkflowExecutor(
-            WExecutorChat(controller.completionEngine.value, maxTokens = 2000, temp = 0.5),
-            selectedTools.map { it.toSolver() }
+            WExecutorChat(textCompletion, maxTokens = 2000, temp = 0.5),
+            selectedTools.map { it.toSolver(textCompletion) }
         )
         val request = WorkflowUserRequest(task)
         return exec.solve(request).finalResult().toString()
@@ -294,14 +290,17 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     companion object {
         /** Converts a [SelectableTool] to a [tri.ai.tool.wf.WorkflowSolver]. */
-        private fun Executable.toSolver() = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
+        private fun Executable.toSolver(textCompletion: TextCompletion) = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
                 val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
                     listOf(task.name)
                 }.joinToString("\n")
                 val result = runBlocking {
-                    this@toSolver.execute(MAPPER.createObjectNode().put("input", input), ExecContext())
+                    this@toSolver.execute(
+                        MAPPER.createObjectNode().put("input", input),
+                        ExecContext(resources = mapOf("textCompletion" to textCompletion))
+                    )
                 }
                 val tt = System.currentTimeMillis() - t0
                 return solveStep(task, inputs(input), outputs(result), tt, true)

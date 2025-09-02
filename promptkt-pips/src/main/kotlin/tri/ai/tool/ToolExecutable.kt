@@ -22,7 +22,6 @@ package tri.ai.tool
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
-import tri.ai.tool.ToolExecutableResult
 
 /**
  * Base class for tool-like executables that work with simple string input/output.
@@ -62,4 +61,14 @@ abstract class ToolExecutable(
      * Returns a ToolResult with the output, terminal status, and optional final result.
      */
     abstract suspend fun run(input: String, context: ExecContext): ToolExecutableResult
+
 }
+
+/**
+ * Result of a tool executable execution.
+ */
+data class ToolExecutableResult(
+    val result: String,
+    val isTerminal: Boolean = false,
+    val finalResult: String? = null
+)
