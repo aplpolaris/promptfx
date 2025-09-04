@@ -33,12 +33,93 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
 import tri.ai.text.docs.FormattedText
 import tri.promptfx.PromptFxGlobals.lookupPrompt
 import tri.util.ui.DocumentThumbnail
+import tri.ai.pips.core.ExecContext
+import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.pips.core.MAPPER
 
 /** Pipeline execution for [StarshipUi]. */
 object StarshipPipeline {
 
+    /** Execute a pipeline using the new JSON-configurable approach. */
+    fun execWithJsonPipeline(config: StarshipPipelineConfig, results: StarshipPipelineResults, delayMillis: Long = 0L) {
+        results.started.set(true)
+        results.activeStep.set(0)
+        results.activeStep.set(1)
+
+        val input = config.generator()
+        results.input.set(input)
+
+        // Create execution context with user input
+        val context = ExecContext()
+        context.vars["userInput"] = MAPPER.valueToTree(input)
+
+        // Create a basic run config for UI display purposes
+        val runConfig = AiPromptRunConfig(
+            PromptInfo(config.primaryPrompt.prompt.template!!, mapOf(PromptTemplate.INPUT to input) + config.primaryPrompt.params),
+            AiModelInfo(config.chatEngine.modelId)
+        )
+        results.runConfig.set(runConfig)
+
+        runBlocking {
+            delay(delayMillis)
+            results.activeStep.set(2)
+            
+            // Execute the JSON pipeline
+            config.pipelineExecutor.execute(config.pipeline, context)
+            
+            delay(delayMillis)
+            results.activeStep.set(3)
+
+            // Extract primary output from pipeline results
+            context.vars["primaryOutput"]?.let { primaryOutputNode ->
+                val primaryText = primaryOutputNode.get("text")?.asText() ?: primaryOutputNode.toString()
+                val primaryResult = StarshipInterimResult(
+                    "Primary Analysis",
+                    FormattedText(primaryText),
+                    null,
+                    listOf()
+                )
+                results.output.set(primaryResult)
+            }
+
+            // Extract secondary outputs
+            val secondarySteps = listOf("simplifiedOutput", "outlineOutput", "technicalTermsOutput", "translatedOutput")
+            secondarySteps.forEachIndexed { index, stepKey ->
+                context.vars[stepKey]?.let { outputNode ->
+                    val outputText = outputNode.get("text")?.asText() ?: outputNode.toString()
+                    val secondaryResult = StarshipInterimResult(
+                        stepKey.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                        FormattedText(outputText),
+                        null,
+                        listOf()
+                    )
+                    
+                    delay(delayMillis)
+                    runLater {
+                        if (index == 0) {
+                            results.activeStep.set(4)
+                            results.outputHighlight.set(secondaryResult)
+                        } else {
+                            results.activeStep.set(6)
+                            results.activeStep.set(5)
+                            results.secondaryOutputs.add(secondaryResult)
+                        }
+                    }
+                }
+            }
+        }
+
+        results.completed.set(true)
+    }
+
     /** Execute a pipeline, adding interim results to the [results] object. */
     fun exec(config: StarshipPipelineConfig, results: StarshipPipelineResults, delayMillis: Long = 0L) {
+        // Use the new JSON pipeline by default
+        execWithJsonPipeline(config, results, delayMillis)
+    }
+
+    /** Legacy execution method for backward compatibility. */
+    fun execLegacy(config: StarshipPipelineConfig, results: StarshipPipelineResults, delayMillis: Long = 0L) {
         results.started.set(true)
         results.activeStep.set(0)
         results.activeStep.set(1)

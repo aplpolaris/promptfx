@@ -1,0 +1,42 @@
+{
+  "id": "starship/default@1.0.0",
+  "steps": [
+    {
+      "tool": "prompt/docs-map/summarize",
+      "input": {
+        "input": {"$var": "userInput"}
+      },
+      "saveAs": "primaryOutput"
+    },
+    {
+      "tool": "prompt/text-summarize/simplify-audience",
+      "input": {
+        "input": {"$var": "primaryOutput", "$ptr": "/text"},
+        "audience": "a general audience"
+      },
+      "saveAs": "simplifiedOutput"
+    },
+    {
+      "tool": "prompt/docs-reduce/outline",
+      "input": {
+        "input": {"$var": "primaryOutput", "$ptr": "/text"}
+      },
+      "saveAs": "outlineOutput"
+    },
+    {
+      "tool": "prompt/docs-reduce/technical-terms",
+      "input": {
+        "input": {"$var": "primaryOutput", "$ptr": "/text"}
+      },
+      "saveAs": "technicalTermsOutput"
+    },
+    {
+      "tool": "prompt/text-translate/translate",
+      "input": {
+        "input": {"$var": "primaryOutput", "$ptr": "/text"},
+        "instruct": "a random language"
+      },
+      "saveAs": "translatedOutput"
+    }
+  ]
+}

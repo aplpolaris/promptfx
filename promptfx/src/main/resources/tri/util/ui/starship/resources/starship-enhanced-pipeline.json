@@ -1,0 +1,34 @@
+{
+  "id": "starship/enhanced@1.0.0",
+  "steps": [
+    {
+      "tool": "prompt/docs-map/summarize",
+      "input": {
+        "input": {"$var": "userInput"}
+      },
+      "saveAs": "primaryPrompt"
+    },
+    {
+      "tool": "chat/mock-test-engine",
+      "input": {
+        "text": {"$var": "primaryPrompt", "$ptr": "/text"}
+      },
+      "saveAs": "primaryOutput"
+    },
+    {
+      "tool": "prompt/text-summarize/simplify-audience",
+      "input": {
+        "input": {"$var": "primaryOutput", "$ptr": "/message"},
+        "audience": "a general audience"
+      },
+      "saveAs": "simplifiedPrompt"
+    },
+    {
+      "tool": "chat/mock-test-engine",
+      "input": {
+        "text": {"$var": "simplifiedPrompt", "$ptr": "/text"}
+      },
+      "saveAs": "simplifiedOutput"
+    }
+  ]
+}
