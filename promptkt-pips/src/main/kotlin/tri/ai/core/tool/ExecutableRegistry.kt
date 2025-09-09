@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.tool
 
 /** Registry so plan names resolve to code. */
 interface ExecutableRegistry {

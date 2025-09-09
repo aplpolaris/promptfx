@@ -22,12 +22,12 @@ package tri.ai.pips.api
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
 import com.fasterxml.jackson.databind.JsonNode
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.fail
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
 
 class AgentExecutableTest {
 

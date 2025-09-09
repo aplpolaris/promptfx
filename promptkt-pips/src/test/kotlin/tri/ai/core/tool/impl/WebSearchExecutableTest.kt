@@ -17,19 +17,15 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.tool.impl
 
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import tri.ai.core.CompletionBuilder
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
 
 class WebSearchExecutableTest {
 

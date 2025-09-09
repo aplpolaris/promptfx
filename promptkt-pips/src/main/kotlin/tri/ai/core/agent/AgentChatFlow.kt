@@ -20,7 +20,6 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.*
-import tri.util.*
 
 /**
  * Represents an ongoing agent chat operation that can be monitored for progress.
@@ -38,65 +37,24 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
 
 /** Events emitted during an agent chat operation. */
 sealed class AgentChatEvent {
+    /** User message received. */
+    data class User(val message: String) : AgentChatEvent()
     /** Progress update during processing. */
-    data class Progress(val message: String) : AgentChatEvent()
+    data class Progress(val message: String) : AgentChatEvent() {
+        constructor(stage: String, detail: String) : this("$stage: $detail")
+    }
     /** Interim reasoning/thought process. */
     data class Reasoning(val reasoning: String) : AgentChatEvent()
+    /** Task planning. */
+    data class PlanningTask(val taskId: String, val description: String) : AgentChatEvent()
     /** Tool invocation. */
     data class UsingTool(val toolName: String, val input: String) : AgentChatEvent()
+    /** Result from a tool invocation. */
+    data class ToolResult(val toolName: String, val result: String) : AgentChatEvent()
     /** Streaming token from response generation. */
     data class StreamingToken(val token: String) : AgentChatEvent()
     /** Final response from the agent. */
     data class Response(val response: AgentChatResponse) : AgentChatEvent()
     /** Error occurred during processing. */
     data class Error(val error: Throwable) : AgentChatEvent()
-}
-
-/** A basic collector that prints all events to standard out. */
-class AgentFlowLogger(var verbose: Boolean = false) : FlowCollector<AgentChatEvent> {
-
-    override suspend fun emit(event: AgentChatEvent) {
-        when (event) {
-            is AgentChatEvent.Progress -> printlnProgress(event.message)
-            is AgentChatEvent.Reasoning -> printlnThought(event.reasoning)
-            is AgentChatEvent.UsingTool -> printlnTool("${event.toolName} (${event.input})")
-            is AgentChatEvent.StreamingToken -> print(event.token)
-            is AgentChatEvent.Response -> {
-                val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
-                // TODO - if have been printing intermediate tokens, may not need to print the full response
-                printlnResponse("[Response] $responseText")
-
-                if (event.response.reasoning != null) {
-                    printlnProgress("[Reasoning] ${event.response.reasoning}")
-                }
-            }
-            is AgentChatEvent.Error -> {
-                printlnError(event.error.message)
-                if (verbose) {
-                    event.error.printStackTrace()
-                }
-            }
-        }
-    }
-
-    private fun printlnResponse(text: String) {
-        println("${ANSI_LIGHTBLUE}$text$ANSI_RESET")
-    }
-
-    private fun printlnProgress(text: String) {
-        println("$ANSI_BLUISH_GRAY[Progress] $text$ANSI_RESET")
-    }
-
-    private fun printlnThought(text: String) {
-        println("$ANSI_LIGHTGREEN[Thought]  ${text.replace("\n","\n           ")}$ANSI_RESET")
-    }
-
-    private fun printlnTool(text: String) {
-        println("$ANSI_ORANGE[Tool]     $text$ANSI_RESET")
-    }
-
-    private fun printlnError(text: String?) {
-        println("${ANSI_RED}ERROR: $text$ANSI_RESET")
-    }
-
 }

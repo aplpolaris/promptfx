@@ -26,12 +26,11 @@ import tri.ai.core.*
  * Default implementation of [AgentChat] supporting any multimodal model from the plugin system.
  * This provides streaming chat functionality with context management.
  */
-class DefaultAgentChat : BaseAgentChat() {
+class DefaultAgentChat : AgentChatSupport() {
 
     override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
-        // store and log message
-        processMessage(session, message, this)
-        val chat = findMultimodalChat(session, this)
+        emit(AgentChatEvent.Progress("Processing message..."))
+        updateSession(message, session)
 
         // get messages in context and prepare to execute model
         emit(AgentChatEvent.Progress("Gathering context..."))
@@ -43,15 +42,15 @@ class DefaultAgentChat : BaseAgentChat() {
             .temperature(session.config.temperature)
 
         // generate response
+        val chat = findMultimodalChat(session, this)
         emit(AgentChatEvent.Progress("Generating response..."))
         val response = builder.execute(chat, contextMessages)
         val responseMessage = response.output?.outputs?.firstOrNull()?.multimodalMessage
             ?: throw IllegalStateException("No response from chat API")
 
         // store and log response, maybe update session name
-        processMessageResponse(session, responseMessage, this)
-
-        return AgentChatResponse(responseMessage, null, metadata = mapOf("model" to session.config.modelId))
+        updateSession(responseMessage, session, updateName = true)
+        return agentChatResponse(responseMessage, session)
     }
 
 }

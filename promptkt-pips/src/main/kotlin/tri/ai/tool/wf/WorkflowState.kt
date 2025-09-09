@@ -60,26 +60,26 @@ class WorkflowState(_request: WorkflowUserRequest) {
         printTaskPlan(plan.decomp)
     }
 
-    internal fun printTaskPlan(trees: List<WorkflowTaskTree>, indent: String = "") {
+    internal fun printTaskPlan(trees: List<WorkflowTaskTree>, indent: String = ""): String = StringBuilder().apply {
         trees.forEach { tree ->
-            print(ANSI_GRAY)
-            print(indent)
+            append(ANSI_GRAY)
+            append(indent)
             if (tree.root.isDone)
-                print("${ANSI_GREEN}✔${ANSI_RESET} ")
+                append("${ANSI_GREEN}✔${ANSI_RESET} ")
             else
-                print("❓")
+                append("❓")
             if ((tree.root as? WorkflowTaskTool)?.id != null)
-                print("[${tree.root.id}] ")
-            print(tree.root.name)
+                append("[${tree.root.id}] ")
+            append(tree.root.name)
             if (!tree.root.description.isNullOrBlank())
-                print(": ${tree.root.description}")
+                append(": ${tree.root.description}")
             if ((tree.root as? WorkflowTaskTool)?.inputs.let { it != null && !it.isEmpty() })
-                print(", Inputs: ${(tree.root as WorkflowTaskTool).inputs}")
-            println("")
-            printTaskPlan(tree.tasks, indent = indent.removeSuffix("- ") + "  - ")
+                append(", Inputs: ${(tree.root as WorkflowTaskTool).inputs}")
+            append(ANSI_RESET)
+            appendLine()
+            append(printTaskPlan(tree.tasks, indent = indent.removeSuffix("- ") + "  - "))
         }
-        print(ANSI_RESET)
-    }
+    }.toString().trim()
 
     /** Using the current plan, look up all the inputs associated with the given tool. */
     fun aggregateInputsFor(toolName: String) =

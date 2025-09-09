@@ -54,6 +54,10 @@ data class MultimodalChatMessage(
 
 //region BUILDERS
 
+/** Gets text content from first message, if present, otherwise null. */
+fun MultimodalChatMessage.textContent() =
+    content?.getOrNull(0)?.text
+
 /** Build a [MultimodalChatMessage] from a builder. */
 fun chatMessage(role: MChatRole? = null, block: MChatMessageBuilder.() -> Unit) =
     MChatMessageBuilder().apply(block).also {

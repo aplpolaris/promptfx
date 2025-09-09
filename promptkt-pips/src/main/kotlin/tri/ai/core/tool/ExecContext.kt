@@ -17,9 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.tool
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.core.agent.MAPPER
+import java.util.UUID
 
-val MAPPER: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+/** Runtime context available to every executable. */
+data class ExecContext(
+    val vars: MutableMap<String, JsonNode> = mutableMapOf(),
+    val resources: Map<String, Any?> = emptyMap(),
+    val traceId: String = UUID.randomUUID().toString()
+) {
+    /** Jackson ObjectMapper for JSON operations. */
+    val mapper = MAPPER
+}

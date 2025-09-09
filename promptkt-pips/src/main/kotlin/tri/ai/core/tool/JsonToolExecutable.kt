@@ -17,14 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.MAPPER
 
 /**
  * Base class for JSON schema-based executables.

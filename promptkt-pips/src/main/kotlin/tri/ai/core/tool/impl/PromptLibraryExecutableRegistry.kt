@@ -17,17 +17,23 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.tool.impl
 
-import com.fasterxml.jackson.databind.JsonNode
-import java.util.UUID
+import tri.ai.core.tool.ExecutableRegistry
+import tri.ai.prompt.PromptLibrary
 
-/** Runtime context available to every executable. */
-data class ExecContext(
-    val vars: MutableMap<String, JsonNode> = mutableMapOf(),
-    val resources: Map<String, Any?> = emptyMap(),
-    val traceId: String = UUID.randomUUID().toString()
-) {
-    /** Jackson ObjectMapper for JSON operations. */
-    val mapper = MAPPER
+/** Creates an executable registry from a prompt library file. */
+class PromptLibraryExecutableRegistry(private val lib: PromptLibrary): ExecutableRegistry {
+
+    private val executables by lazy {
+        lib.list().associate { def ->
+            val exec = PromptExecutable(def)
+            exec.name to exec
+        }
+    }
+
+    override fun get(name: String) = executables[name]
+
+    override fun list() = executables.values.toList()
+
 }

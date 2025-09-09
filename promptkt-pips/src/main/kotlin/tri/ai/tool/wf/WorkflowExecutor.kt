@@ -19,14 +19,13 @@
  */
 package tri.ai.tool.wf
 
-import kotlinx.coroutines.runBlocking
-import tri.ai.pips.RetryExecutor
+import kotlinx.coroutines.flow.flow
+import tri.ai.core.MChatRole
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatEvent
+import tri.ai.core.agent.AgentChatFlow
+import tri.ai.core.agent.AgentChatResponse
 import tri.ai.pips.SimpleRetryExecutor
-import tri.util.ANSI_CYAN
-import tri.util.ANSI_GRAY
-import tri.util.ANSI_GREEN
-import tri.util.ANSI_RED
-import tri.util.ANSI_RESET
 
 /**
  * Dynamic workflow executor, works by handing off execution to various solvers, which might perform task decomposition
@@ -37,91 +36,67 @@ class WorkflowExecutor(
     val solvers: List<WorkflowSolver>
 ) {
     private var maxSteps = 8
-    private val LOGGER = WorkflowLogger
 
     /** Solve the given problem using a dynamic workflow execution. */
-    fun solve(problem: WorkflowUserRequest): WorkflowState {
+    fun solve(problem: WorkflowUserRequest) = AgentChatFlow(flow {
         val state = WorkflowState(problem)
-        LOGGER.executionStep("Workflow Planning")
-        LOGGER.executionProgress("User Request", "\n${problem.request}".replace("\n", "\n  "))
+        emit(AgentChatEvent.Progress("Workflow Planning"))
+        emit(AgentChatEvent.User(problem.request))
 
-        runBlocking {
-            var i = 1
-            val t0 = System.currentTimeMillis()
-            while (!state.isDone) {
-                if (i > maxSteps) {
-                    LOGGER.failedExecutionMajor("Too many steps, stopping execution.")
-                    break
-                }
-
-                // 1. Do a planning step, which may involve breaking up a task into smaller tasks
-                val updatedTasks = SimpleRetryExecutor().execute(
-                    { strategy.decomposeTask(state, solvers) },
-                    onSuccess = { it.value!! },
-                    onFailure = { it ->
-                        LOGGER.failedExecutionMajor("Failed to decompose task: ${it.error}")
-                        throw it.error!!
-                    }
-                )
-
-                if (updatedTasks.decomp.isNotEmpty())
-                    state.updateTasking(updatedTasks)
-
-                // 2. Select a solver and task to work on
-                LOGGER.executionStep("\nWorkflow Step ${i++}")
-                val (solver, task) = strategy.nextSolver(state, solvers)
-                LOGGER.executionProgress("Task", "[${task.id}] ${task.name}" + (task.description?.let { " - $it" } ?: ""))
-                LOGGER.executionProgress("  Solver", "${solver.name} (${solver.description})")
-
-                // 3. Use the selected solver to solve part of the task
-                val step = solver.solve(state, task)
-                if (step.inputs.isEmpty())
-                    LOGGER.executionProgress("  Inputs", "None")
-                else
-                    LOGGER.executionProgress("  Inputs", "\n${step.inputs.joinToString("\n") { "${it.name}: ${it.value}" }}".replace("\n", "\n    "))
-
-                if (step.isSuccess) {
-                    state.taskTree.setTaskDone(task)
-                    state.scratchpad.addResults(task, step.outputs)
-                    LOGGER.executionProgress("  Outputs", "\n${step.outputs.joinToString("\n") { "${it.name}: ${it.value}" }}".replace("\n", "\n    "))
-                } else {
-                    LOGGER.failedExecutionMinor("  Solve Failed")
-                }
-                state.solveHistory.add(step)
-
-                // 4. Finally, check if the workflow has been completed
-                state.checkDone()
-                if (!state.isDone)
-                    LOGGER.executionComment("Workflow execution not yet complete.")
-                state.printTaskPlan(listOf(state.taskTree))
+        var i = 1
+        val t0 = System.currentTimeMillis()
+        while (!state.isDone) {
+            if (i > maxSteps) {
+                emit(AgentChatEvent.Error(Exception("Too many steps, stopping execution.")))
+                break
             }
-            if (i <= maxSteps) {
-                val execTime = System.currentTimeMillis() - t0
-                LOGGER.executionStep("\nWorkflow execution complete in ${execTime}ms and ${i-1} steps!")
-                LOGGER.execution("Final Result:")
-                LOGGER.executionStep(state.finalResult())
+
+            // 1. Do a planning step, which may involve breaking up a task into smaller tasks
+            val execResult: Any = SimpleRetryExecutor().execute(
+                { strategy.decomposeTask(state, solvers) },
+                onSuccess = { it.value!! },
+                onFailure = { it.error!! }
+            )
+
+            if (execResult is Exception) {
+                emit(AgentChatEvent.Error(execResult))
+                break
             }
+            assert(execResult is WorkflowTaskPlan)
+            if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty())
+                state.updateTasking(execResult)
+
+            // 2. Select a solver and task to work on
+            emit(AgentChatEvent.Progress("Workflow Step ${i++}"))
+            val (solver, task) = strategy.nextSolver(state, solvers)
+            emit(AgentChatEvent.PlanningTask(task.id, task.name + (task.description?.let { " - $it" } ?: "")))
+
+            // 3. Use the selected solver to solve part of the task
+            val step = solver.solve(state, task)
+            emit(AgentChatEvent.UsingTool(solver.name, if (step.inputs.isEmpty()) "None" else
+                step.inputs.joinToString("\n") { "${it.name}: ${it.value}" }))
+
+            if (step.isSuccess) {
+                state.taskTree.setTaskDone(task)
+                state.scratchpad.addResults(task, step.outputs)
+                emit(AgentChatEvent.ToolResult(solver.name, step.outputs.joinToString("\n") { "${it.name}: ${it.value}" }))
+            } else {
+                emit(AgentChatEvent.Error(Exception("Step failed, see logs for details.")))
+            }
+            state.solveHistory.add(step)
+
+            // 4. Finally, check if the workflow has been completed
+            state.checkDone()
+            emit(AgentChatEvent.Progress(state.printTaskPlan(listOf(state.taskTree))))
+            if (!state.isDone)
+                emit(AgentChatEvent.Progress("Continuing workflow execution..."))
         }
-        return state
-    }
+        if (i <= maxSteps) {
+            val execTime = System.currentTimeMillis() - t0
+            emit(AgentChatEvent.Progress("Workflow execution complete in ${execTime}ms and ${i-1} steps!"))
+            emit(AgentChatEvent.Response(AgentChatResponse(MultimodalChatMessage.text(MChatRole.Assistant, state.finalResult().toString()))))
+        }
+    })
 
-}
-
-/** Manages logging for [WorkflowExecutor]. */
-internal object WorkflowLogger {
-    var isEnabled = true
-
-    fun failedExecutionMajor(msg: Any) = println("$ANSI_RED$msg$ANSI_RESET")
-    fun failedExecutionMinor(msg: Any) = println("$ANSI_RED$msg$ANSI_RESET")
-
-    fun executionStep(msg: Any) = println("$ANSI_GREEN$msg$ANSI_RESET")
-    fun execution(msg: Any) = println(msg)
-    fun executionComment(msg: Any) = println("$ANSI_GRAY$msg$ANSI_RESET")
-    fun executionProgress(key: String, value: Any) = println("$key: $ANSI_CYAN$value$ANSI_RESET")
-
-    fun println(string: String) {
-        if (isEnabled)
-            kotlin.io.println(string)
-    }
 }
 

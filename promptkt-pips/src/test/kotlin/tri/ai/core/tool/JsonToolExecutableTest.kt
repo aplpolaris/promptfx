@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.tool
 
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
@@ -28,8 +28,7 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.MAPPER
 
 class JsonToolExecutableTest {
 
@@ -96,11 +95,11 @@ class JsonToolExecutableTest {
 
     @Test
     fun testJsonToolExecutableSchemas() {
-        val inputSchema = testJsonTool.inputSchema!!
+        val inputSchema = testJsonTool.inputSchema
         assertEquals("object", inputSchema.get("type").asText())
         assertNotNull(inputSchema.get("properties"))
 
-        val outputSchema = testJsonTool.outputSchema!!
+        val outputSchema = testJsonTool.outputSchema
         assertEquals("object", outputSchema.get("type").asText())
         assertNotNull(outputSchema.get("properties").get("result"))
     }

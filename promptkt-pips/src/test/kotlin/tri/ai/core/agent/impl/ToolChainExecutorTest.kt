@@ -21,7 +21,6 @@ package tri.ai.core.agent.impl
 
 import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -30,14 +29,14 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.ToolExecutable
+import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
-import tri.ai.pips.core.ExecContext
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
-import tri.ai.tool.ToolExecutable
-import tri.ai.tool.ToolExecutableResult
 
 @Tag("openai")
 class ToolChainExecutorTest {

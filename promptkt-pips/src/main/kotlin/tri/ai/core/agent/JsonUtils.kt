@@ -17,25 +17,9 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.agent
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 
-/**
- * An executable unit in a Pips pipeline, such as a tool or an AI model.
- */
-interface Executable {
-    /** Tool name. */
-    val name: String
-    /** Tool description. */
-    val description: String
-    /** Tool version. */
-    val version: String
-    /** Schema for input. */
-    val inputSchema: JsonNode?
-    /** Schema for output. */
-    val outputSchema: JsonNode?
-
-    /** Execute the tool with given input and context. */
-    suspend fun execute(input: JsonNode, context: ExecContext): JsonNode
-}
+val MAPPER: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())

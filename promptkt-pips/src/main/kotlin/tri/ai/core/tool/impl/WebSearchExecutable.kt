@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.tool.impl
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
@@ -26,7 +26,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
 import tri.ai.core.CompletionBuilder
-import tri.ai.pips.core.ExecContext
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.JsonToolExecutable
 import java.net.URLDecoder
 
 /**

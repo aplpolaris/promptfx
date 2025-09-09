@@ -17,9 +17,11 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.tool.impl
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
 import tri.ai.tool.wf.MAPPER

@@ -27,7 +27,6 @@ import javafx.collections.transformation.FilteredList
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.MultimodalChatMessage
@@ -40,7 +39,6 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.pips.core.ExecContext
 import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.tool.JsonMultimodalToolExecutor

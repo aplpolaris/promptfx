@@ -17,14 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.tool
 
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.MAPPER
 
 class ToolExecutableTest {
 

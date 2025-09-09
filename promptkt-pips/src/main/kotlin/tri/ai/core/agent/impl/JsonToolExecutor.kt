@@ -17,86 +17,94 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.agent.impl
 
+import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.*
-import tri.ai.core.agent.impl.PROMPTS
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
-import tri.ai.prompt.template
+import tri.ai.core.agent.AgentChatEvent
+import tri.ai.core.agent.AgentChatResponse
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentToolChatSupport
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
 import tri.util.*
 
 /**
- * Executes a prompt using tools and OpenAI. This will attempt to use tools in sequence as needed until a response
- * is achieved, at which point the system will return the final response. This may also ask the user to clarify their
- * query if needed.
+ * Executes a prompt using tools and a [MultimodalChat]. This will attempt to use tools in sequence as needed until a response
+ * is achieved, at which point the system will return the final response.
  */
-class JsonMultimodalToolExecutor(val model: MultimodalChat, val tools: List<Executable>) {
+class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
-    private val chatTools = tools.mapNotNull { executable ->
-        executable.inputSchema?.let { schema ->
-            MTool(
-                executable.name,
-                executable.description,
-                MAPPER.writeValueAsString(schema)
-            )
+    private val chatTools = tools.mapNotNull {
+        val schema = try {
+            it.inputSchema?.let { MAPPER.writeValueAsString(it) }
+        } catch (x: SerializationException) {
+            warning<JsonToolExecutor>("Invalid JSON schema: ${it.inputSchema}", x)
+            null
         }
+        if (schema == null) null else
+            MTool(it.name, it.description, schema)
     }
 
-    suspend fun execute(query: String): String {
-        info<JsonMultimodalToolExecutor>("User Question: $ANSI_YELLOW$query$ANSI_RESET")
+    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+        val question = logTextContent(message)
+        updateSession(message, session)
+        logToolUsage()
+
+        // prepare chat and message history
+        val chat = findMultimodalChat(session, this)
         val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template!!
         val messages = mutableListOf(
             MultimodalChatMessage.text(MChatRole.System, systemMessage),
-            MultimodalChatMessage.text(MChatRole.User, query)
+            MultimodalChatMessage.text(MChatRole.User, question)
         )
 
-        var response = model.chat(
-            messages,
-            MChatParameters(tools = MChatTools(tools = chatTools))
-        ).firstValue.multimodalMessage!!
+        var response = chat.chat(messages, MChatParameters(tools = MChatTools(tools = chatTools)))
+            .firstValue.multimodalMessage!!
         messages += response
         var toolCalls = response.toolCalls
 
         while (!toolCalls.isNullOrEmpty()) {
             // print interim results
             toolCalls.forEach { call ->
-                info<JsonMultimodalToolExecutor>("Call Function: $ANSI_CYAN${call.name}$ANSI_RESET with parameters $ANSI_CYAN${call.argumentsAsJson}$ANSI_RESET")
+                emit(AgentChatEvent.UsingTool(call.name, call.argumentsAsJson))
                 val tool = tools.firstOrNull { it.name == call.name }
                 if (tool == null) {
-                    info<JsonMultimodalToolExecutor>("${ANSI_RED}Unknown tool: ${call.name}$ANSI_RESET")
+                    emit(AgentChatEvent.Error(NullPointerException("Unknown tool: ${call.name}")))
                 }
                 val json = call.tryJson()
                 if (json == null) {
-                    info<JsonMultimodalToolExecutor>("${ANSI_RED}Invalid JSON: ${call.name}$ANSI_RESET")
+                    emit(AgentChatEvent.Error(IllegalArgumentException("Invalid or missing json: $json")))
                 }
                 if (tool != null && json != null) {
                     val context = ExecContext()
                     val result = tool.execute(json, context)
                     val resultText = result.get("result")?.asText() ?: result.toString()
-                    info<JsonMultimodalToolExecutor>("Result: $ANSI_GREEN${resultText}$ANSI_RESET")
+                    emit(AgentChatEvent.ToolResult(call.name, resultText))
 
                     // add result to message history and call again
                     messages += MultimodalChatMessage.tool(resultText, call.id)
                 }
             }
 
-            response = model.chat(messages, MChatParameters(tools = MChatTools(tools = chatTools)))
+            response = chat.chat(messages = messages, MChatParameters(tools = MChatTools(tools = chatTools)))
                 .firstValue.multimodalMessage!!
             messages += response
             toolCalls = response.toolCalls
         }
 
-        info<JsonMultimodalToolExecutor>("Final Response: $ANSI_GREEN${response.content?.first()?.text}$ANSI_RESET")
-        return response.content?.first()?.text ?: "(unable to generate response)"
+        // store and log response, maybe update session name
+        updateSession(response, session, updateName = true)
+        return agentChatResponse(response, session)
     }
 
     companion object {
-        fun MToolCall.tryJson(): com.fasterxml.jackson.databind.JsonNode? = try {
+        fun MToolCall.tryJson(): JsonNode? = try {
             val jsonObject = Json.parseToJsonElement(argumentsAsJson) as? JsonObject
             // Convert kotlinx JsonObject to Jackson JsonNode
             jsonObject?.let {

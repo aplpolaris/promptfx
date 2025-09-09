@@ -17,22 +17,25 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.pips.core
+package tri.ai.core.tool
 
-import tri.ai.prompt.PromptLibrary
+import com.fasterxml.jackson.databind.JsonNode
 
-/** Creates an executable registry from a prompt library file. */
-class PromptLibraryExecutableRegistry(private val lib: PromptLibrary): ExecutableRegistry {
+/**
+ * An executable unit in a Pips pipeline, such as a tool or an AI model.
+ */
+interface Executable {
+    /** Tool name. */
+    val name: String
+    /** Tool description. */
+    val description: String
+    /** Tool version. */
+    val version: String
+    /** Schema for input. */
+    val inputSchema: JsonNode?
+    /** Schema for output. */
+    val outputSchema: JsonNode?
 
-    private val executables by lazy {
-        lib.list().associate { def ->
-            val exec = PromptExecutable(def)
-            exec.name to exec
-        }
-    }
-
-    override fun get(name: String) = executables[name]
-
-    override fun list() = executables.values.toList()
-
+    /** Execute the tool with given input and context. */
+    suspend fun execute(input: JsonNode, context: ExecContext): JsonNode
 }

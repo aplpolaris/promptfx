@@ -17,31 +17,42 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool
+package tri.ai.core.agent.impl
 
 import com.aallam.openai.api.logging.LogLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
-import tri.ai.openai.OpenAiMultimodalChat
-import tri.ai.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 
 @Tag("openai")
-class JsonMultimodalToolExecutorTest {
+class JsonToolExecutorTest {
 
-    val model = OpenAiMultimodalChat(GPT35_TURBO)
+    private val MODEL_ID = GPT35_TURBO
+    private val CHAT_CONFIG = AgentChatConfig(modelId = MODEL_ID)
 
     @Test
     fun testExecute() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
-        val exec = JsonMultimodalToolExecutor(model, SAMPLE_EXECUTABLES)
+        val exec = JsonToolExecutor(SAMPLE_EXECUTABLES)
 
-        runBlocking {
-            exec.execute("Multiply 21 times 2 and then convert it to Roman numerals.")
-            exec.execute("Convert 5 to a Roman numeral.")
-            exec.execute("What year was Jurassic Park?")
+        println()
+        listOf(
+            "Multiple 21 times 2 and then convert it to Roman numerals.",
+            "Convert 5 to a Roman numeral.",
+            "What year was Jurassic Park?"
+        ).forEach {
+            val flow = exec.sendMessage(AgentChatSession(config = CHAT_CONFIG), MultimodalChatMessage.user(it))
+            runBlocking {
+                flow.events.collect(AgentFlowLogger(verbose = true))
+                println()
+            }
         }
     }
 

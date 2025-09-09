@@ -1,7 +1,6 @@
 package tri.ai.core.agent.impl
 
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.TextNode
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
@@ -10,12 +9,12 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.agent.AgentChatEvent
 import tri.ai.core.agent.AgentChatResponse
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.BaseAgentChat
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.AgentToolChatSupport
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.prompt.fill
-import tri.ai.tool.ToolExecutableResult
 import tri.util.*
 
 /**
@@ -23,7 +22,7 @@ import tri.util.*
  * Uses a [tri.ai.core.TextCompletion] to complete a Question/Thought/Action/Action Input/Observation/.../Thought/Final Answer loop.
  * Depending on the model, this approach may frequently repeat or fail to terminate.
  */
-class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
+class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
     companion object {
         private val TOOL_CHAIN_PROMPT = PROMPTS.get("tools/chain-executor")!!
@@ -33,28 +32,26 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
     val completionTokens = 500
 
     override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
-        // require a single text message for input, otherwise trigger an error
-        val question = ensureTextContent(message)
+        val question = logTextContent(message)
+        updateSession(message, session)
+        logToolUsage()
 
-        // store and log message
-        processMessage(session, message, this)
-        emit(AgentChatEvent.Progress("Using tools: ${tools.joinToString(", ") { it.name }}"))
+        // prepare chat and scratchpad
         val chat = findChat(session, this)
-
         val scratchpad = ExecContext().apply {
             vars["steps"] = MAPPER.createArrayNode()
         }
         var result: ToolExecutableResult? = null
         var iterations = 0
         while (result?.isTerminal != true && iterations++ < iterationLimit) {
-            result = runExecChain(chat, templateForQuestion(question), tools, scratchpad)
+            result = runExecChain(chat, templateForQuestion(question), scratchpad)
         }
         val final = result?.result ?: "I was unable to determine a final answer."
-        val responseMessage = MultimodalChatMessage.text(MChatRole.Assistant, final)
+        val response = MultimodalChatMessage.text(MChatRole.Assistant, final)
 
         // store and log response, maybe update session name
-        processMessageResponse(session, responseMessage, this)
-        return AgentChatResponse(responseMessage, null, metadata = mapOf("model" to session.config.modelId))
+        updateSession(response, session, updateName = true)
+        return agentChatResponse(response, session)
     }
 
     private fun templateForQuestion(question: String) = TOOL_CHAIN_PROMPT.fill(
@@ -67,7 +64,7 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
     fun ExecContext.summary() = (vars["steps"] as ArrayNode).values().asSequence().joinToString("\n") { it.asText() }
 
     /** Runs a single step of an execution chain. */
-    private suspend fun FlowCollector<AgentChatEvent>.runExecChain(chat: TextChat, promptTemplate: String, tools: List<Executable>, scratchpad: ExecContext): ToolExecutableResult {
+    private suspend fun FlowCollector<AgentChatEvent>.runExecChain(chat: TextChat, promptTemplate: String, scratchpad: ExecContext): ToolExecutableResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
 
         val completion = chat.chat(listOf(TextChatMessage.user(prompt)), stop = listOf("Observation: "), tokens = completionTokens)
@@ -110,7 +107,7 @@ class ToolChainExecutor(val tools: List<Executable>) : BaseAgentChat() {
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
-        emit(AgentChatEvent.Progress("Tool Result:\n  $ANSI_CYAN${resultText.replace("\n","\n  ")}$ANSI_RESET"))
+        emit(AgentChatEvent.ToolResult(tool.name, resultText))
         (scratchpad.vars["steps"] as ArrayNode).add("Observation: $resultText")
 
         return ToolExecutableResult(

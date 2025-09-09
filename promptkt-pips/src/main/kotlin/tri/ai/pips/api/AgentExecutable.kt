@@ -20,8 +20,9 @@
 package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
+import tri.ai.core.textContent
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
 import tri.ai.tool.wf.WExecutorChat
 import tri.ai.tool.wf.WorkflowExecutor
 import tri.ai.tool.wf.WorkflowSolveStep
@@ -60,9 +61,9 @@ class AgentExecutable(
         val solvers = tools.map { it.toSolver(context) }
 
         val executor = WorkflowExecutor(execStrategy, solvers)
-        val finalState = executor.solve(request)
+        val finalState = executor.solve(request).awaitResponse()
 
-        return context.mapper.createObjectNode().put("result", finalState.finalResult().toString())
+        return context.mapper.createObjectNode().put("result", finalState.message.textContent())
     }
 
 }

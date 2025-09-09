@@ -19,8 +19,10 @@
  */
 package tri.ai.tool.wf
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.agent.AgentFlowLogger
 import tri.ai.openai.OpenAiPlugin
 
 @Tag("openai")
@@ -63,7 +65,10 @@ class WorkflowExecutorTest {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
         val problem = WorkflowUserRequest("I need a Roman numeral that represents the product 21 times 2.")
-        exec.solve(problem)
+        runBlocking {
+            exec.solve(problem)
+                .events.collect(AgentFlowLogger(verbose = true))
+        }
     }
 
     //region QUERY/TIMELINE SOLVERS
