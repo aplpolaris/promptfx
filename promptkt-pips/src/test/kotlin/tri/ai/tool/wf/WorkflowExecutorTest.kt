@@ -65,10 +65,7 @@ class WorkflowExecutorTest {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
         val problem = WorkflowUserRequest("I need a Roman numeral that represents the product 21 times 2.")
-        runBlocking {
-            exec.solve(problem)
-                .events.collect(AgentFlowLogger(verbose = true))
-        }
+        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
     //region QUERY/TIMELINE SOLVERS
@@ -96,7 +93,7 @@ class WorkflowExecutorTest {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = WorkflowUserRequest("What is the timeline of the life of Albert Einstein?")
-        exec.solve(problem)
+        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
     @Test
@@ -104,7 +101,7 @@ class WorkflowExecutorTest {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = WorkflowUserRequest("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
-        exec.solve(problem)
+        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
     //region SUMMARIZATION SOLVERS
@@ -146,7 +143,7 @@ class WorkflowExecutorTest {
             NASA announced on Tuesday that its Artemis II mission, scheduled for launch on November 2024, will be the first crewed lunar flyby in over 50 years. The four astronauts—Reid Wiseman, Victor Glover, Christina Hammock Koch, and Jeremy Hansen—will orbit the Moon without landing before returning to Earth. The mission is a critical step toward Artemis III, which aims to land astronauts on the lunar surface as early as 2026. NASA Administrator Bill Nelson stated that this represents a pivotal moment in humanity’s return to deep space exploration. Artemis I, the uncrewed test mission, successfully orbited the Moon in December 2022.
             \"\"\"
         """.trimIndent())
-        exec.solve(problem)
+        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
 }

@@ -76,9 +76,8 @@ class ToolExecutableTest {
             val inputJson = MAPPER.createObjectNode().put("input", "test")
             val result = terminalTool.execute(inputJson, context)
 
-            assertEquals("done", result.get("result").asText())
+            assertEquals("Final answer", result.get("result").asText())
             assertEquals(true, result.get("isTerminal").asBoolean())
-            assertEquals("Final answer", result.get("finalResult").asText())
         }
     }
 }
