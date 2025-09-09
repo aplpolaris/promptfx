@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createResult
 
 /**
  * Base class for JSON schema-based executables.
@@ -39,23 +40,19 @@ abstract class JsonToolExecutable(
     override val outputSchema: JsonNode by lazy { MAPPER.readTree(OUTPUT_SCHEMA) }
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-        val jsonObjectInput = convertToKotlinxJsonObject(input)
-        val result = run(jsonObjectInput, context)
-        return context.mapper.createObjectNode().put("result", result)
+        val result = run(input, context)
+        return createResult(result)
     }
 
     /**
      * Execute the tool with JsonObject input and context.
      * Returns a string result.
      */
-    abstract suspend fun run(input: JsonObject, context: ExecContext): String
+    abstract suspend fun run(input: JsonNode, context: ExecContext): String
 
     companion object {
+        const val STRING_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"string"}}}"""
+        const val INTEGER_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"integer"}}}"""
         private const val OUTPUT_SCHEMA = """{"type":"object","properties":{"result":{"type":"string"}}}"""
-
-        fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
-            val jsonString = MAPPER.writeValueAsString(input)
-            return Json.parseToJsonElement(jsonString) as JsonObject
-        }
     }
 }

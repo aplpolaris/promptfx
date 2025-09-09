@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import tri.ai.core.TextCompletion
 import tri.ai.core.agent.impl.PROMPTS

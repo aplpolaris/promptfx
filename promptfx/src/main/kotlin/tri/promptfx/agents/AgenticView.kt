@@ -35,6 +35,14 @@ import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentFlowLogger
 import tri.ai.core.agent.impl.ToolChainExecutor
+import tri.ai.core.agent.wf.MAPPER
+import tri.ai.core.agent.wf.WExecutorChat
+import tri.ai.core.agent.wf.WorkflowExecutor
+import tri.ai.core.agent.wf.WorkflowSolveStep
+import tri.ai.core.agent.wf.WorkflowSolver
+import tri.ai.core.agent.wf.WorkflowState
+import tri.ai.core.agent.wf.WorkflowTask
+import tri.ai.core.agent.wf.WorkflowUserRequest
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.pips.core.ExecContext
@@ -254,7 +262,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             .execute(task)
     }
 
-    /** Executes using [tri.ai.tool.wf.WorkflowExecutor]. */
+    /** Executes using [tri.ai.core.agent.wf.WorkflowExecutor]. */
     private fun executeWorkflowPlanner(task: String, selectedTools: List<Executable>): String {
         val textCompletion = controller.completionEngine.value
         val exec = WorkflowExecutor(
@@ -296,7 +304,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
     companion object {
-        /** Converts a [SelectableTool] to a [tri.ai.tool.wf.WorkflowSolver]. */
+        /** Converts a [SelectableTool] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
         private fun Executable.toSolver(textCompletion: TextCompletion) = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()

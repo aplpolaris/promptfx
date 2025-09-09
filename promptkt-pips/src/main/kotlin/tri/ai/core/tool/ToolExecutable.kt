@@ -20,6 +20,8 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.core.agent.createResult
+import tri.ai.core.agent.inputText
 
 /**
  * Base class for tool-like executables that work with simple string input/output.
@@ -34,23 +36,8 @@ abstract class ToolExecutable(
 ) : Executable {
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-        // Extract input text from JsonNode
-        val inputText = when {
-            input.isTextual -> input.asText()
-            input.has("input") -> input.get("input").asText()
-            input.has("request") -> input.get("request").asText()
-            input.has("text") -> input.get("text").asText()
-            else -> input.toString()
-        }
-
-        // Execute the tool logic
-        val result = run(inputText, context)
-
-        // Convert result back to JsonNode
-        return context.mapper.createObjectNode().apply {
-            put("result", result.result)
-            put("isTerminal", result.isTerminal)
-        }
+        val result = run(input.inputText, context)
+        return createResult(result = result.result, isTerminal = result.isTerminal)
     }
 
     /**

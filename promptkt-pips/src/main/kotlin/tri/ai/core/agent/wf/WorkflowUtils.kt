@@ -17,13 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
-/** General exception within dynamic workflow execution. */
-open class WorkflowException(message: String, cause: Throwable? = null) : Exception(message, cause)
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 
-/** Workflow exception caused by tool not available/not found. */
-class WorkflowToolNotFoundException(message: String, cause: Throwable? = null) : WorkflowException(message, cause)
-
-/** Workflow exception caused by task not available/not found. */
-class WorkflowTaskNotFoundException(message: String, cause: Throwable? = null) : WorkflowException(message, cause)
+internal val MAPPER = ObjectMapper(YAMLFactory()).apply {
+    registerModule(KotlinModule.Builder().build())
+    registerModule(JavaTimeModule())
+}

@@ -19,20 +19,12 @@
  */
 package tri.ai.core.agent.impl
 
-import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import tri.ai.core.*
-import tri.ai.core.agent.AgentChatEvent
-import tri.ai.core.agent.AgentChatResponse
-import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.AgentToolChatSupport
-import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.util.*
+import tri.ai.core.tool.createTool
 
 /**
  * Executes a prompt using tools and a [MultimodalChat]. This will attempt to use tools in sequence as needed until a response
@@ -40,16 +32,7 @@ import tri.util.*
  */
 class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
-    private val chatTools = tools.mapNotNull {
-        val schema = try {
-            it.inputSchema?.let { MAPPER.writeValueAsString(it) }
-        } catch (x: SerializationException) {
-            warning<JsonToolExecutor>("Invalid JSON schema: ${it.inputSchema}", x)
-            null
-        }
-        if (schema == null) null else
-            MTool(it.name, it.description, schema)
-    }
+    val params = MChatParameters(tools = MChatTools(tools = tools.mapNotNull { it.createTool() }))
 
     override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
@@ -64,36 +47,34 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             MultimodalChatMessage.text(MChatRole.User, question)
         )
 
-        var response = chat.chat(messages, MChatParameters(tools = MChatTools(tools = chatTools)))
-            .firstValue.multimodalMessage!!
+        var response = chat.chat(messages, params).firstValue.multimodalMessage!!
         messages += response
         var toolCalls = response.toolCalls
 
         while (!toolCalls.isNullOrEmpty()) {
             // print interim results
             toolCalls.forEach { call ->
-                emit(AgentChatEvent.UsingTool(call.name, call.argumentsAsJson))
+                emitUsingTool(call.name, call.argumentsAsJson)
                 val tool = tools.firstOrNull { it.name == call.name }
+                val json = call.argumentsAsJson.tryJson()
                 if (tool == null) {
-                    emit(AgentChatEvent.Error(NullPointerException("Unknown tool: ${call.name}")))
+                    emitError(NullPointerException("Unknown tool: ${call.name}"))
                 }
-                val json = call.tryJson()
                 if (json == null) {
-                    emit(AgentChatEvent.Error(IllegalArgumentException("Invalid or missing json: $json")))
+                    emitError(IllegalArgumentException("Invalid or missing json: $json"))
                 }
                 if (tool != null && json != null) {
                     val context = ExecContext()
                     val result = tool.execute(json, context)
                     val resultText = result.get("result")?.asText() ?: result.toString()
-                    emit(AgentChatEvent.ToolResult(call.name, resultText))
+                    emitToolResult(call.name, resultText)
 
                     // add result to message history and call again
                     messages += MultimodalChatMessage.tool(resultText, call.id)
                 }
             }
 
-            response = chat.chat(messages = messages, MChatParameters(tools = MChatTools(tools = chatTools)))
-                .firstValue.multimodalMessage!!
+            response = chat.chat(messages = messages, params).firstValue.multimodalMessage!!
             messages += response
             toolCalls = response.toolCalls
         }
@@ -101,21 +82,6 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         // store and log response, maybe update session name
         updateSession(response, session, updateName = true)
         return agentChatResponse(response, session)
-    }
-
-    companion object {
-        fun MToolCall.tryJson(): JsonNode? = try {
-            val jsonObject = Json.parseToJsonElement(argumentsAsJson) as? JsonObject
-            // Convert kotlinx JsonObject to Jackson JsonNode
-            jsonObject?.let {
-                val jsonString = it.toString()
-                MAPPER.readTree(jsonString)
-            }
-        } catch (x: SerializationException) {
-            null
-        } catch (x: Exception) {
-            null
-        }
     }
 
 }

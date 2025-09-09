@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 /** Solver that takes a single input, provides a single output, based on a runner. */
 class RunSolver(

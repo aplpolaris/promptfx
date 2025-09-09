@@ -35,14 +35,22 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
 
 }
 
+suspend fun FlowCollector<AgentChatEvent>.emitUser(message: String) = emit(AgentChatEvent.User(message))
+suspend fun FlowCollector<AgentChatEvent>.emitProgress(message: String) = emit(AgentChatEvent.Progress(message))
+suspend fun FlowCollector<AgentChatEvent>.emitReasoning(reasoning: String) = emit(AgentChatEvent.Reasoning(reasoning))
+suspend fun FlowCollector<AgentChatEvent>.emitPlanningTask(taskId: String, description: String) = emit(AgentChatEvent.PlanningTask(taskId, description))
+suspend fun FlowCollector<AgentChatEvent>.emitUsingTool(toolName: String, input: String) = emit(AgentChatEvent.UsingTool(toolName, input))
+suspend fun FlowCollector<AgentChatEvent>.emitToolResult(toolName: String, result: String) = emit(AgentChatEvent.ToolResult(toolName, result))
+suspend fun FlowCollector<AgentChatEvent>.emitStreamingToken(token: String) = emit(AgentChatEvent.StreamingToken(token))
+suspend fun FlowCollector<AgentChatEvent>.emitResponse(response: AgentChatResponse) = emit(AgentChatEvent.Response(response))
+suspend fun FlowCollector<AgentChatEvent>.emitError(error: Throwable) = emit(AgentChatEvent.Error(error))
+
 /** Events emitted during an agent chat operation. */
 sealed class AgentChatEvent {
     /** User message received. */
     data class User(val message: String) : AgentChatEvent()
     /** Progress update during processing. */
-    data class Progress(val message: String) : AgentChatEvent() {
-        constructor(stage: String, detail: String) : this("$stage: $detail")
-    }
+    data class Progress(val message: String) : AgentChatEvent()
     /** Interim reasoning/thought process. */
     data class Reasoning(val reasoning: String) : AgentChatEvent()
     /** Task planning. */

@@ -30,15 +30,16 @@ import tri.ai.core.agent.AgentChatResponse
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentToolChatSupport
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.prompt.fill
-import tri.util.*
 
 /**
  * Executes a user prompt using a set of tools using a planning operation.
- * Uses a [tri.ai.core.TextCompletion] to complete a Question/Thought/Action/Action Input/Observation/.../Thought/Final Answer loop.
+ * Uses a [TextChat] to complete a Question/Thought/Action/Action Input/Observation/.../Thought/Final Answer loop.
+ * Tools should support getting input of the form {"input":"xxx"}, e.g. [tri.ai.core.tool.ToolExecutable].
  * Depending on the model, this approach may frequently repeat or fail to terminate.
  */
 class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
@@ -48,7 +49,11 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     }
 
     val iterationLimit = 5
-    val completionTokens = 500
+    val completionTokens = 2000
+
+    private fun createScratchpad() = ExecContext().apply { vars["steps"] = MAPPER.createArrayNode() }
+    private fun ExecContext.steps() = vars["steps"] as ArrayNode
+    private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 
     override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
@@ -57,9 +62,9 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
         // prepare chat and scratchpad
         val chat = findChat(session, this)
-        val scratchpad = ExecContext().apply {
-            vars["steps"] = MAPPER.createArrayNode()
-        }
+        val scratchpad = createScratchpad()
+
+        // run execution chain until we get a final answer or hit the iteration limit
         var result: ToolExecutableResult? = null
         var iterations = 0
         while (result?.isTerminal != true && iterations++ < iterationLimit) {
@@ -80,8 +85,6 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         "agent_scratchpad" to "{{agent_scratchpad}}" // must be this exact string for replacement later
     )
 
-    fun ExecContext.summary() = (vars["steps"] as ArrayNode).values().asSequence().joinToString("\n") { it.asText() }
-
     /** Runs a single step of an execution chain. */
     private suspend fun FlowCollector<AgentChatEvent>.runExecChain(chat: TextChat, promptTemplate: String, scratchpad: ExecContext): ToolExecutableResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
@@ -90,49 +93,50 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         emit(AgentChatEvent.Reasoning(completion))
-        (scratchpad.vars["steps"] as ArrayNode).add(completion)
+        scratchpad.steps().add(completion)
 
-        val responseOp = completion.split("\n")
-            .map { it.split(":", limit = 2) }
-            .filter { it.size == 2 }
-            .associate { it[0].trim() to it[1].trim() }
         if ("Final Answer:" in completion) {
             val answer = completion.substringAfter("Final Answer:").trim()
             return ToolExecutableResult(answer, true)
         }
 
-        val toolName = responseOp["Action"]?.trim()
-        val tool = tools.find { it.name == toolName }
+        val responseOp = completion.parseKeyValuePairs()
+        val tool = tools.find { it.name == responseOp["Action"] }
         if (tool == null) {
             val fallback = "Invalid or missing tool name."
             emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
-            (scratchpad.vars["steps"] as ArrayNode).add("Observation: $fallback")
+            scratchpad.steps().add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
-        val toolInput = responseOp["Action Input"]?.trim()
+        val toolInput = responseOp["Action Input"]
             ?.ifBlank { completion.substringAfter("Action Input:").trim() }
             ?.ifBlank { null }
         if (toolInput.isNullOrBlank()) {
             val fallback ="Tool input missing or malformed."
             emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
-            (scratchpad.vars["steps"] as ArrayNode).add("Observation: $fallback")
+            scratchpad.steps().add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
 
         // execute tool
-        val inputJson = MAPPER.createObjectNode().put("input", toolInput)
+        val inputJson = createObject("input", toolInput)
         emit(AgentChatEvent.UsingTool(tool.name, toolInput))
         val executionResult = tool.execute(inputJson, ExecContext())
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
         emit(AgentChatEvent.ToolResult(tool.name, resultText))
-        (scratchpad.vars["steps"] as ArrayNode).add("Observation: $resultText")
+        scratchpad.steps().add("Observation: $resultText")
 
         return ToolExecutableResult(
             resultText,
             isTerminal = executionResult.get("isTerminal")?.asBoolean() ?: false,
         )
     }
+
+    private fun String.parseKeyValuePairs() = split("\n")
+        .map { it.split(":", limit = 2) }
+        .filter { it.size == 2 }
+        .associate { it[0].trim() to it[1].trim() }
 
 }

@@ -17,14 +17,23 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+const val REQUEST = "request"
+const val INPUT = "input"
+const val INTERMEDIATE_RESULTS = "intermediate_results"
+const val RESULT = "result"
 
-internal val MAPPER = ObjectMapper(YAMLFactory()).apply {
-    registerModule(KotlinModule.Builder().build())
-    registerModule(JavaTimeModule())
-}
+const val ANSWERED = "answered"
+const val RATIONALE = "rationale"
+
+const val PLANNER_PROMPT_ID = "workflow/planning"
+
+const val AGGREGATOR_PROMPT_ID = "workflow/aggregation"
+const val USER_REQUEST_PARAM = "user_request"
+const val INPUTS_PARAM = "inputs"
+
+const val VALIDATOR_PROMPT_ID = "workflow/validation"
+const val PROPOSED_RESULT_PARAM = "proposed_result"
+const val VALIDATED_RESULT = "validated_result"
+const val FINAL_RESULT_ID = "${WorkflowValidatorTask.TASK_ID}.$VALIDATED_RESULT"

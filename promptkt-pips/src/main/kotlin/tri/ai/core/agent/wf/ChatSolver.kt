@@ -17,11 +17,10 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.openai.OpenAiCompletionChat
-import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.template
 
 /** Solver that takes a single input, provides a single output, based on an LLM chat request. */

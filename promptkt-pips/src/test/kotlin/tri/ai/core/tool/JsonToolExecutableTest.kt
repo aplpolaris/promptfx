@@ -19,54 +19,50 @@
  */
 package tri.ai.core.tool
 
+import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
+import tri.ai.core.agent.inputText
 
 class JsonToolExecutableTest {
 
     companion object {
-        val SAMPLE_EXECUTABLE1 = object : JsonToolExecutable(
-            "calc", "Use this to do math",
-            """{"type":"object","properties":{"input":{"type":"string"}}}"""
-        ) {
-            override suspend fun run(input: JsonObject, context: ExecContext) = "42"
-        }
-        val SAMPLE_EXECUTABLE2 = object : JsonToolExecutable(
-            "romanize", "Converts numbers to Roman numerals",
-            """{"type":"object","properties":{"input":{"type":"integer"}}}"""
-        ) {
-            override suspend fun run(input: JsonObject, context: ExecContext): String {
-                val value = input["input"]?.jsonPrimitive?.int ?: throw RuntimeException("No input")
-                return when (value) {
-                    5 -> "V"
-                    42 -> "XLII"
-                    84 -> "LXXXIV"
-                    else -> "I don't know"
-                }
+        private fun stringInputTool(name: String, description: String, op: (String) -> String) = object : JsonToolExecutable(name, description, STRING_INPUT_SCHEMA) {
+            override suspend fun run(input: JsonNode, context: ExecContext): String {
+                val inputText = input.inputText
+                return op(inputText)
             }
         }
-        val SAMPLE_EXECUTABLE4 = object : JsonToolExecutable(
-            "other", "Answer a question that cannot be answered by the other tools",
-            """{"type":"object","properties":{"input":{"type":"string"}}}"""
-        ) {
-            override suspend fun run(input: JsonObject, context: ExecContext) = "I don't know"
+        private fun intInputTool(name: String, description: String, op: (Int) -> String) = object : JsonToolExecutable(name, description, INTEGER_INPUT_SCHEMA) {
+            override suspend fun run(input: JsonNode, context: ExecContext): String {
+                val value = input["input"]?.asInt() ?: throw RuntimeException("No input")
+                return op(value)
+            }
+        }
+
+        val SAMPLE_EXECUTABLE1 = stringInputTool("calc", "Use this to do math") {
+            "42"
+        }
+        val SAMPLE_EXECUTABLE2 = intInputTool("romanize", "Converts numbers to Roman numerals") {
+            when (it) {
+                5 -> "V"
+                42 -> "XLII"
+                84 -> "LXXXIV"
+                else -> "I don't know"
+            }
+        }
+        val SAMPLE_EXECUTABLE4 = stringInputTool("other", "Answer a question that cannot be answered by the other tools") {
+            "I don't know"
         }
         val SAMPLE_EXECUTABLES = listOf(SAMPLE_EXECUTABLE1, SAMPLE_EXECUTABLE2, SAMPLE_EXECUTABLE4)
-    }
 
-    private val testJsonTool = object : JsonToolExecutable("Calculator", "Does math calculations",
-        """{"type":"object","properties":{"input":{"type":"string"}}}""") {
-        override suspend fun run(input: JsonObject, context: ExecContext): String {
-            val inputText = input["input"]?.toString()?.removeSurrounding("\"") ?: ""
-            return when {
+        private val TEST_JSON_TOOL = stringInputTool("Calculator", "Does math calculations") {
+            val inputText = it.trim().removeSurrounding("\"")
+            when {
                 "2+2" in inputText -> "4"
                 "multiply" in inputText -> "42"
                 else -> "Unknown calculation"
@@ -79,27 +75,27 @@ class JsonToolExecutableTest {
         runTest {
             val context = ExecContext()
             val inputJson = MAPPER.createObjectNode().put("input", "2+2")
-            val result = testJsonTool.execute(inputJson, context)
+            val result = TEST_JSON_TOOL.execute(inputJson, context)
             assertEquals("4", result.get("result").asText())
         }
     }
 
     @Test
     fun testJsonToolExecutableProperties() {
-        assertEquals("Calculator", testJsonTool.name)
-        assertEquals("Does math calculations", testJsonTool.description)
-        assertEquals("1.0.0", testJsonTool.version)
-        assertNotNull(testJsonTool.inputSchema)
-        assertNotNull(testJsonTool.outputSchema)
+        assertEquals("Calculator", TEST_JSON_TOOL.name)
+        assertEquals("Does math calculations", TEST_JSON_TOOL.description)
+        assertEquals("1.0.0", TEST_JSON_TOOL.version)
+        assertNotNull(TEST_JSON_TOOL.inputSchema)
+        assertNotNull(TEST_JSON_TOOL.outputSchema)
     }
 
     @Test
     fun testJsonToolExecutableSchemas() {
-        val inputSchema = testJsonTool.inputSchema
+        val inputSchema = TEST_JSON_TOOL.inputSchema
         assertEquals("object", inputSchema.get("type").asText())
         assertNotNull(inputSchema.get("properties"))
 
-        val outputSchema = testJsonTool.outputSchema
+        val outputSchema = TEST_JSON_TOOL.outputSchema
         assertEquals("object", outputSchema.get("type").asText())
         assertNotNull(outputSchema.get("properties").get("result"))
     }
@@ -107,24 +103,15 @@ class JsonToolExecutableTest {
     @Test
     fun testTools() {
         runTest {
-            assertEquals(42, SAMPLE_EXECUTABLE1.run(
-                buildJsonObject { put("input", "2+3") },
-                ExecContext()
-            ).toInt())
+            assertEquals(42, SAMPLE_EXECUTABLE1.run(createObject("input", "2+3"), ExecContext()).toInt())
         }
 
         runTest {
-            assertEquals("XLII", SAMPLE_EXECUTABLE2.run(
-                buildJsonObject { put("input", 42) },
-                ExecContext()
-            ))
+            assertEquals("XLII", SAMPLE_EXECUTABLE2.run(createObject("input", 42), ExecContext()))
         }
 
         runTest {
-            assertEquals("I don't know", SAMPLE_EXECUTABLE4.run(
-                buildJsonObject { put("input", 100) },
-                ExecContext()
-            ))
+            assertEquals("I don't know", SAMPLE_EXECUTABLE4.run(createObject("input", 100), ExecContext()))
         }
     }
 }

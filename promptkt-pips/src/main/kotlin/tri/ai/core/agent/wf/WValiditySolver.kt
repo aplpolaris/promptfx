@@ -17,10 +17,9 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.MChatVariation
 import tri.ai.core.MChatVariation.Companion.temp
 import tri.ai.core.TextCompletion
 import tri.ai.core.agent.impl.PROMPTS

@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 /** A task that can be "solved" within the workflow. */
 abstract class WorkflowTask(

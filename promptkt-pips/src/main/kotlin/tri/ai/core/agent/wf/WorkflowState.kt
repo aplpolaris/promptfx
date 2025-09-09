@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN

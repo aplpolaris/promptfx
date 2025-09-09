@@ -23,17 +23,17 @@ import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.ai.tool.wf.WExecutorChat
-import tri.ai.tool.wf.WorkflowExecutor
-import tri.ai.tool.wf.WorkflowSolveStep
-import tri.ai.tool.wf.WorkflowSolver
-import tri.ai.tool.wf.WorkflowState
-import tri.ai.tool.wf.WorkflowTask
-import tri.ai.tool.wf.WorkflowUserRequest
+import tri.ai.core.agent.wf.WExecutorChat
+import tri.ai.core.agent.wf.WorkflowExecutor
+import tri.ai.core.agent.wf.WorkflowSolveStep
+import tri.ai.core.agent.wf.WorkflowSolver
+import tri.ai.core.agent.wf.WorkflowState
+import tri.ai.core.agent.wf.WorkflowTask
+import tri.ai.core.agent.wf.WorkflowUserRequest
 
 /**
  * An agent-based executable unit in a Pips pipeline, built using plan-and-act logic with a set of tools.
- * Uses [tri.ai.tool.wf.WorkflowExecutor] to decompose and execute tasks.
+ * Uses [WorkflowExecutor] to decompose and execute tasks.
  *
  * input: { "request" : "user request text" }
  * output: { "result" : "final result text" }

@@ -17,12 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.agent.wf.ChatSolver
+import tri.ai.core.agent.wf.InstructSolver
+import tri.ai.core.agent.wf.RunSolver
+import tri.ai.core.agent.wf.WExecutorChat
+import tri.ai.core.agent.wf.WorkflowExecutor
+import tri.ai.core.agent.wf.WorkflowUserRequest
 import tri.ai.openai.OpenAiPlugin
 
 @Tag("openai")
@@ -100,7 +106,8 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_timeline2() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
         val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
-        val problem = WorkflowUserRequest("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
+        val problem =
+            WorkflowUserRequest("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
         runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
@@ -135,14 +142,19 @@ class WorkflowExecutorTest {
     @Test
     fun testWorkflowExecutor_article() {
         val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
-        val exec = WorkflowExecutor(executor, listOf(SOLVER_SUMMARY, SOLVER_TITLEGEN, SOLVER_KEYDATES, SOLVER_QUERY, SOLVER_TIMELINE))
-        val problem = WorkflowUserRequest("""
+        val exec = WorkflowExecutor(
+            executor,
+            listOf(SOLVER_SUMMARY, SOLVER_TITLEGEN, SOLVER_KEYDATES, SOLVER_QUERY, SOLVER_TIMELINE)
+        )
+        val problem = WorkflowUserRequest(
+            """
             Provide a quick look on this article, including a short summary, key dates, and a title.
 
             \"\"\"
             NASA announced on Tuesday that its Artemis II mission, scheduled for launch on November 2024, will be the first crewed lunar flyby in over 50 years. The four astronauts—Reid Wiseman, Victor Glover, Christina Hammock Koch, and Jeremy Hansen—will orbit the Moon without landing before returning to Earth. The mission is a critical step toward Artemis III, which aims to land astronauts on the lunar surface as early as 2026. NASA Administrator Bill Nelson stated that this represents a pivotal moment in humanity’s return to deep space exploration. Artemis I, the uncrewed test mission, successfully orbited the Moon in December 2022.
             \"\"\"
-        """.trimIndent())
+        """.trimIndent()
+        )
         runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 

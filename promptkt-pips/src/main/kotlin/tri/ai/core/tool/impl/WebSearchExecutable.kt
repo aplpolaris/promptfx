@@ -19,13 +19,14 @@
  */
 package tri.ai.core.tool.impl
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.json.*
-import tri.ai.core.CompletionBuilder
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.inputText
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.JsonToolExecutable
 import java.net.URLDecoder
@@ -68,21 +69,23 @@ class WebSearchExecutable : JsonToolExecutable(
     /**
      * Executes a web search using DuckDuckGo and returns structured results.
      */
-    override suspend fun run(input: JsonObject, context: ExecContext): String {
-        val query = input["query"]?.jsonPrimitive?.content
-            ?: throw IllegalArgumentException("Query parameter is required")
-        
-        val maxResults = input["max_results"]?.jsonPrimitive?.intOrNull ?: 5
+    override suspend fun run(input: JsonNode, context: ExecContext): String {
+        val query = when {
+            input.has("query") -> input.get("query").asText("")
+            else -> input.inputText
+        } ?: throw IllegalArgumentException("Query parameter missing or malformed.")
+
+        val maxResults = input.get("max_results").asInt(5)
         val clampedMaxResults = maxResults.coerceIn(1, 10)
 
         return try {
             val searchResults = performDuckDuckGoSearch(query, clampedMaxResults)
-            CompletionBuilder.JSON_MAPPER.writeValueAsString(mapOf(
+            MAPPER.writeValueAsString(mapOf(
                 "query" to query,
                 "results" to searchResults
             ))
         } catch (e: Exception) {
-            CompletionBuilder.JSON_MAPPER.writeValueAsString(mapOf(
+            MAPPER.writeValueAsString(mapOf(
                 "query" to query,
                 "error" to "Search failed: ${e.message}",
                 "results" to emptyList<SearchResult>()

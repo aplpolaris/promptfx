@@ -19,7 +19,57 @@
  */
 package tri.ai.core.agent
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 val MAPPER: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+
+//region JsonNode HELPERS
+
+fun createObject(key: String, value: String?) = MAPPER.createObjectNode().put(key, value)
+fun createObject(key: String, value: Int) = MAPPER.createObjectNode().put(key, value)
+
+/** Try to parse a string as JSON, returning null if it fails. */
+fun String.tryJson(): JsonNode? = try {
+    val jsonObject = Json.parseToJsonElement(this) as? JsonObject
+    // Convert kotlinx JsonObject to Jackson JsonNode
+    jsonObject?.let {
+        val jsonString = it.toString()
+        MAPPER.readTree(jsonString)
+    }
+} catch (x: SerializationException) {
+    null
+} catch (x: Exception) {
+    null
+}
+
+fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
+    val jsonString = MAPPER.writeValueAsString(input)
+    return Json.parseToJsonElement(jsonString) as JsonObject
+}
+
+//endregion
+
+//region FIELD CONVENTIONS
+
+/** Extracts the most likely text input from a JsonNode, checking common fields. */
+val JsonNode.inputText: String
+    get() = when {
+        isTextual -> asText()
+        has("input") -> get("input").asText()
+        has("request") -> get("request").asText()
+        has("text") -> get("text").asText()
+        else -> toString()
+    }
+
+/** Creates a standard result JsonNode with "result" and "isTerminal" fields. */
+fun createResult(result: String, isTerminal: Boolean = false) =
+    MAPPER.createObjectNode()
+        .put("result", result)
+        .put("isTerminal", isTerminal)
+
+//endregion

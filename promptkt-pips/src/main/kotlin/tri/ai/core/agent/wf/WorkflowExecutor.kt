@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.tool.wf
+package tri.ai.core.agent.wf
 
 import kotlinx.coroutines.flow.flow
 import tri.ai.core.MChatRole
