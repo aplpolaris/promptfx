@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 
@@ -38,7 +39,7 @@ class ChatExecutable(val chat: TextChat): Executable {
         val result = CompletionBuilder()
             .text(input.extractText())
             .execute(chat)
-        return MAPPER.createObjectNode().put("message", result.firstValue.textContent())
+        return createObject("message", result.firstValue.textContent())
     }
 
     private fun JsonNode.extractText(): String = when {

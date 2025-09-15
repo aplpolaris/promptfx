@@ -63,7 +63,9 @@ class WebSearchExecutableTest {
             val searchTool = WebSearchExecutable()
             val context = ExecContext()
 
-            val inputJson = MAPPER.createObjectNode().put("query", "what's the best hike in the US?").put("max_results", 3)
+            val inputJson = MAPPER.createObjectNode()
+                .put("query", "what's the best hike in the US?")
+                .put("max_results", 3)
             val result = searchTool.execute(inputJson, context)
             println(result.get("result").asText())
 

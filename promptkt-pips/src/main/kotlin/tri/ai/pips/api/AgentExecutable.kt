@@ -20,6 +20,7 @@
 package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.core.agent.createObject
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
@@ -63,7 +64,7 @@ class AgentExecutable(
         val executor = WorkflowExecutor(execStrategy, solvers)
         val finalState = executor.solve(request).awaitResponse()
 
-        return context.mapper.createObjectNode().put("result", finalState.message.textContent())
+        return createObject("result", finalState.message.textContent())
     }
 
 }
@@ -84,7 +85,7 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
             listOf(task.name)
         }.joinToString("\n")
         
-        val inputJson = context.mapper.createObjectNode().put("input", input)
+        val inputJson = createObject("input", input)
         val resultJson = this@toSolver.execute(inputJson, context)
         val result = resultJson.get("result")?.asText() ?: resultJson.toString()
         

@@ -36,6 +36,7 @@ import tri.ai.core.agent.AgentChatFlow
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentFlowLogger
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
 import tri.ai.core.agent.impl.JsonToolExecutor
 import tri.ai.core.agent.impl.ToolChainExecutor
 import tri.ai.core.agent.wf.WExecutorChat
@@ -214,7 +215,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             val result = runBlocking {
                 executeTask(this@executable, dict)
             }
-            return MAPPER.createObjectNode().put("result", result.result)
+            return createObject("result", result.result)
         }
     }
 
@@ -313,10 +314,10 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 }.joinToString("\n")
                 val result = runBlocking {
                     this@toSolver.execute(
-                        MAPPER.createObjectNode().put("input", input),
+                        createObject("input", input),
                         ExecContext(resources = mapOf("textCompletion" to textCompletion))
                     )
-                }
+                }.get("result").asText()
                 val tt = System.currentTimeMillis() - t0
                 return solveStep(task, inputs(input), outputs(result), tt, true)
             }

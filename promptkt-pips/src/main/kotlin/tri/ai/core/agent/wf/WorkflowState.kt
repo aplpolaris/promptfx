@@ -77,7 +77,10 @@ class WorkflowState(_request: WorkflowUserRequest) {
                 append(", Inputs: ${(tree.root as WorkflowTaskTool).inputs}")
             append(ANSI_RESET)
             appendLine()
-            append(printTaskPlan(tree.tasks, indent = indent.removeSuffix("- ") + "  - "))
+            if (tree.tasks.isNotEmpty()) {
+                append(printTaskPlan(tree.tasks, indent = indent.removeSuffix("- ") + "  - "))
+                appendLine()
+            }
         }
     }.toString().trim()
 

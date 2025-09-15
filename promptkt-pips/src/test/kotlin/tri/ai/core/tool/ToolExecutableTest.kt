@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
 
 class ToolExecutableTest {
 
@@ -40,7 +41,7 @@ class ToolExecutableTest {
     fun testToolExecutableBasicExecution() {
         runTest {
             val context = ExecContext()
-            val inputJson = MAPPER.createObjectNode().put("input", "2+2")
+            val inputJson = createObject("input", "2+2")
             val result = testTool.execute(inputJson, context)
             assertEquals("4", result.get("result").asText())
             assertEquals(false, result.get("isTerminal").asBoolean())
@@ -51,7 +52,7 @@ class ToolExecutableTest {
     fun testToolExecutableWithRequestField() {
         runTest {
             val context = ExecContext()
-            val inputJson = MAPPER.createObjectNode().put("request", "Can you multiply 21 times 2?")
+            val inputJson = createObject("request", "Can you multiply 21 times 2?")
             val result = testTool.execute(inputJson, context)
             assertEquals("42", result.get("result").asText())
         }
@@ -73,7 +74,7 @@ class ToolExecutableTest {
             }
 
             val context = ExecContext()
-            val inputJson = MAPPER.createObjectNode().put("input", "test")
+            val inputJson = createObject("input", "test")
             val result = terminalTool.execute(inputJson, context)
 
             assertEquals("Final answer", result.get("result").asText())

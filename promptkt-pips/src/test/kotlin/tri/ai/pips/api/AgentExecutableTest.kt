@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.fail
 import tri.ai.core.agent.MAPPER
+import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 
@@ -46,7 +47,7 @@ class AgentExecutableTest {
                 "21*2" in inputText || "21 * 2" in inputText -> "42"
                 else -> "Calculation complete"
             }
-            return MAPPER.createObjectNode().put("result", result)
+            return createObject("result", result)
         }
     }
 
@@ -81,7 +82,7 @@ class AgentExecutableTest {
 
             // Test with empty context (should throw exception)
             val context = ExecContext()
-            val input = MAPPER.createObjectNode().put("request", "What is 2+2?")
+            val input = createObject("request", "What is 2+2?")
 
             try {
                 agent.execute(input, context)

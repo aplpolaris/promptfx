@@ -63,8 +63,10 @@ class WorkflowExecutor(
                 break
             }
             assert(execResult is WorkflowTaskPlan)
-            if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty())
+            if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty()) {
                 state.updateTasking(execResult)
+                emit(AgentChatEvent.Progress(state.printTaskPlan(listOf(state.taskTree))))
+            }
 
             // 2. Select a solver and task to work on
             emit(AgentChatEvent.Progress("Workflow Step ${i++}"))

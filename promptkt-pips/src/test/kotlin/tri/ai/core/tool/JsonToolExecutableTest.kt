@@ -74,7 +74,7 @@ class JsonToolExecutableTest {
     fun testJsonToolExecutableBasicExecution() {
         runTest {
             val context = ExecContext()
-            val inputJson = MAPPER.createObjectNode().put("input", "2+2")
+            val inputJson = createObject("input", "2+2")
             val result = TEST_JSON_TOOL.execute(inputJson, context)
             assertEquals("4", result.get("result").asText())
         }
