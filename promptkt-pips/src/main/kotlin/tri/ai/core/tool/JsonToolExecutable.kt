@@ -53,6 +53,6 @@ abstract class JsonToolExecutable(
     companion object {
         const val STRING_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"string"}}}"""
         const val INTEGER_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"integer"}}}"""
-        private const val OUTPUT_SCHEMA = """{"type":"object","properties":{"result":{"type":"string"}}}"""
+        const val OUTPUT_SCHEMA = """{"type":"object","properties":{"result":{"type":"string"}}}"""
     }
 }
