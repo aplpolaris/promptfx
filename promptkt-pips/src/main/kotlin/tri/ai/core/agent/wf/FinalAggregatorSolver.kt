@@ -26,7 +26,7 @@ import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
 
 /** A solver used to aggregate/finalize a response for an original user question. */
-class WAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
+class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
     "Aggregator",
     "Combines results from multiple tasks to produce a final answer.",
     mapOf(REQUEST to "User's initial request", INTERMEDIATE_RESULTS to "Workflow's intermediate results"),

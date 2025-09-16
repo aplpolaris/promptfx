@@ -216,7 +216,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         val executor: AgentChat =  when (engine.value) {
             WorkflowEngine.TOOL_CHAIN -> ToolChainExecutor(tools)
             WorkflowEngine.JSON_TOOL -> JsonToolExecutor(tools)
-            WorkflowEngine.WORKFLOW_PLANNER -> WorkflowExecutor(WExecutorChat(config), tools.map { it.toSolver(controller.chatService.value) })
+            WorkflowEngine.WORKFLOW_PLANNER -> WorkflowExecutor(WorkflowExecutorChat(config), tools.map { it.toSolver(controller.chatService.value) })
         }
 
         // set up task execution flow

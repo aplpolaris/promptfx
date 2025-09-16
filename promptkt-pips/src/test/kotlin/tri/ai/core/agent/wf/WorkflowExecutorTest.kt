@@ -32,7 +32,7 @@ import tri.ai.openai.OpenAiPlugin
 class WorkflowExecutorTest {
 
     private val GPT35 = OpenAiPlugin().textCompletionModels()[0]
-    private val EXEC = WExecutorChat(AgentChatConfig(GPT35.modelId, maxTokens = 1000, temperature = 0.3))
+    private val EXEC = WorkflowExecutorChat(AgentChatConfig(GPT35.modelId, maxTokens = 1000, temperature = 0.3))
 
 
     //region CALC SOLVERS

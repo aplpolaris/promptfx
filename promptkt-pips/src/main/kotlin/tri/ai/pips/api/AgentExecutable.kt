@@ -28,13 +28,12 @@ import tri.ai.core.agent.createObject
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.ai.core.agent.wf.WExecutorChat
+import tri.ai.core.agent.wf.WorkflowExecutorChat
 import tri.ai.core.agent.wf.WorkflowExecutor
 import tri.ai.core.agent.wf.WorkflowSolveStep
 import tri.ai.core.agent.wf.WorkflowSolver
 import tri.ai.core.agent.wf.WorkflowState
 import tri.ai.core.agent.wf.WorkflowTask
-import tri.ai.core.agent.wf.WorkflowUserRequest
 
 /**
  * An agent-based executable unit in a Pips pipeline, built using plan-and-act logic with a set of tools.
@@ -63,7 +62,7 @@ class AgentExecutable(
         val textChatId = (textChatResource as? TextChat)?.modelId ?: textChatResource as? String
             ?: throw IllegalArgumentException("Text completion service not found in context resources or invalid: $textChatResource")
             
-        val execStrategy = WExecutorChat(AgentChatConfig(modelId = textChatId, maxTokens = 2000, temperature = 0.5))
+        val execStrategy = WorkflowExecutorChat(AgentChatConfig(modelId = textChatId, maxTokens = 2000, temperature = 0.5))
         val solvers = tools.map { it.toSolver(context) }
 
         val executor = WorkflowExecutor(execStrategy, solvers)

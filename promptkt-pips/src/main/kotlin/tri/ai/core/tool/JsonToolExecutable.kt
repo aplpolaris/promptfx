@@ -20,8 +20,6 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import tri.ai.core.agent.MAPPER
 import tri.ai.core.agent.createResult
 
@@ -45,7 +43,7 @@ abstract class JsonToolExecutable(
     }
 
     /**
-     * Execute the tool with JsonObject input and context.
+     * Execute the tool with JsonNode input and context.
      * Returns a string result.
      */
     abstract suspend fun run(input: JsonNode, context: ExecContext): String

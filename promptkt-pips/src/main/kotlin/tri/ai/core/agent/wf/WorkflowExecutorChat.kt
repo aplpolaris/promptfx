@@ -21,8 +21,6 @@ package tri.ai.core.agent.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
@@ -33,7 +31,7 @@ import java.io.IOException
 /**
  * Uses an LLM for workflow planning and tool (solver) selection.
  */
-class WExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrategy {
+class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrategy {
 
     // use the LLM and the known set of solvers to select a sequence of tasks for a task in the workflow
     // for now to simplify things, we'll just limit this to the root "problem" in the workflow
@@ -71,10 +69,10 @@ class WExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrategy {
             taskDecomp.subtasks.isEmpty() ->
                 error("Empty task decomposition: ${taskDecomp.problem}")
             taskDecomp.subtasks.size == 1 && taskDecomp.subtasks.first().task == taskDecomp.problem -> {
-                warning<WExecutorChat>("Task decomposition only has one task, using it directly: ${taskDecomp.problem}")
-                warning<WExecutorChat>("Not sure if we should include the final task in this tree, or if this is a common outcome produced by the LLM...")
-                warning<WExecutorChat>("Right now the code is ignoring the final task...")
-                warning<WExecutorChat>("The final task is: ${taskDecomp.final_response}")
+                warning<WorkflowExecutorChat>("Task decomposition only has one task, using it directly: ${taskDecomp.problem}")
+                warning<WorkflowExecutorChat>("Not sure if we should include the final task in this tree, or if this is a common outcome produced by the LLM...")
+                warning<WorkflowExecutorChat>("Right now the code is ignoring the final task...")
+                warning<WorkflowExecutorChat>("The final task is: ${taskDecomp.final_response}")
                 WorkflowTaskTree(rootTask, listOf())
             }
             else ->
@@ -92,9 +90,9 @@ class WExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrategy {
             ?: throw WorkflowTaskNotFoundException("Unable to find task in workflow state")
         val solver = when {
             task is WorkflowValidatorTask ->
-                WValiditySolver(config)
+                FinalValiditySolver(config)
             task is WorkflowTaskTool && task.id == "final" && task.tool == "Aggregator" ->
-                WAggregatorSolver(config)
+                FinalAggregatorSolver(config)
             task is WorkflowTaskTool ->
                 solvers.find { it.name == task.tool }
                     ?: throw WorkflowToolNotFoundException("Unable to find solver for task: ${task.tool}")

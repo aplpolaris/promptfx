@@ -28,7 +28,7 @@ import tri.ai.prompt.fill
 import java.io.IOException
 
 /** A solver used to validate that a computed result answers the actual user question. */
-class WValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
+class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
     "Validate Final Result",
     "Checks if the final result answers the user's request",
     mapOf(REQUEST to "User's initial request", RESULT to "Workflow's final result"),

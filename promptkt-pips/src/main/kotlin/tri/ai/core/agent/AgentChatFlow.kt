@@ -20,7 +20,6 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.*
-import tri.ai.core.textContent
 
 /**
  * Represents an ongoing agent chat operation that can be monitored for progress.
