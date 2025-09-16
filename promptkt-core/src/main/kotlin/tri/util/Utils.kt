@@ -34,6 +34,7 @@ const val ANSI_GRAY = "\u001B[37m"
 const val ANSI_LIGHTGREEN = "\u001B[92m"
 const val ANSI_LIGHTBLUE = "\u001B[94m"
 const val ANSI_BLUISH_GRAY = "\u001B[38;2;102;153;204m"
+const val ANSI_SUN_YELLOW = "\u001B[38;2;255;223;0m"
 const val ANSI_ORANGE = "\u001B[38;2;255;165;0m"
 
 fun <X> String?.ifNotBlank(op: (String) -> X): X? =

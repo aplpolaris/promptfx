@@ -36,6 +36,8 @@ data class MultimodalChatMessage(
     val toolCallId: String? = null
 ) {
     companion object {
+        /** Chat with just a user message. */
+        fun user(text: String) = text(MChatRole.User, text)
         /** Chat message with just text. */
         fun text(role: MChatRole, text: String) = MultimodalChatMessage(
             role,
@@ -51,6 +53,10 @@ data class MultimodalChatMessage(
 }
 
 //region BUILDERS
+
+/** Gets text content from first message, if present, otherwise null. */
+fun MultimodalChatMessage.textContent() =
+    content?.getOrNull(0)?.text
 
 /** Build a [MultimodalChatMessage] from a builder. */
 fun chatMessage(role: MChatRole? = null, block: MChatMessageBuilder.() -> Unit) =

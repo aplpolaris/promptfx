@@ -20,19 +20,24 @@
 package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.tool.wf.WExecutorChat
-import tri.ai.tool.wf.WorkflowExecutor
-import tri.ai.tool.wf.WorkflowSolveStep
-import tri.ai.tool.wf.WorkflowSolver
-import tri.ai.tool.wf.WorkflowState
-import tri.ai.tool.wf.WorkflowTask
-import tri.ai.tool.wf.WorkflowUserRequest
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.TextChat
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.createObject
+import tri.ai.core.textContent
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.ai.core.agent.wf.WorkflowExecutorChat
+import tri.ai.core.agent.wf.WorkflowExecutor
+import tri.ai.core.agent.wf.WorkflowSolveStep
+import tri.ai.core.agent.wf.WorkflowSolver
+import tri.ai.core.agent.wf.WorkflowState
+import tri.ai.core.agent.wf.WorkflowTask
 
 /**
  * An agent-based executable unit in a Pips pipeline, built using plan-and-act logic with a set of tools.
- * Uses [tri.ai.tool.wf.WorkflowExecutor] to decompose and execute tasks.
+ * Uses [WorkflowExecutor] to decompose and execute tasks.
  *
  * input: { "request" : "user request text" }
  * output: { "result" : "final result text" }
@@ -50,19 +55,20 @@ class AgentExecutable(
         input: JsonNode,
         context: ExecContext
     ): JsonNode {
-        val request = WorkflowUserRequest(input.get("request")?.asText() ?: input.toString())
+        val request = MultimodalChatMessage.user(input.get("request")?.asText() ?: input.toString())
         
         // Get completion service from context resources
-        val completionService = context.resources["completionService"] as? tri.ai.core.TextCompletion
-            ?: throw IllegalArgumentException("TextCompletion service not found in context resources")
+        val textChatResource = context.resources["textChat"]
+        val textChatId = (textChatResource as? TextChat)?.modelId ?: textChatResource as? String
+            ?: throw IllegalArgumentException("Text completion service not found in context resources or invalid: $textChatResource")
             
-        val execStrategy = WExecutorChat(completionService, maxTokens = 2000, temp = 0.5)
+        val execStrategy = WorkflowExecutorChat(AgentChatConfig(modelId = textChatId, maxTokens = 2000, temperature = 0.5))
         val solvers = tools.map { it.toSolver(context) }
 
         val executor = WorkflowExecutor(execStrategy, solvers)
-        val finalState = executor.solve(request)
+        val finalState = executor.sendMessage(AgentChatSession(), request).awaitResponse()
 
-        return context.mapper.createObjectNode().put("result", finalState.finalResult().toString())
+        return createObject("result", finalState.message.textContent())
     }
 
 }
@@ -83,7 +89,7 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
             listOf(task.name)
         }.joinToString("\n")
         
-        val inputJson = context.mapper.createObjectNode().put("input", input)
+        val inputJson = createObject("input", input)
         val resultJson = this@toSolver.execute(inputJson, context)
         val result = resultJson.get("result")?.asText() ?: resultJson.toString()
         

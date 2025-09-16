@@ -96,4 +96,19 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- update surefire plugin for junit 5 -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <!-- TODO - set up profiles so we can run different test sets from command line -->
+                    <!--                    <excludedGroups>gemini</excludedGroups>-->
+                    <excludedGroups>gemini | openai</excludedGroups>
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

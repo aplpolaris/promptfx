@@ -20,8 +20,6 @@
 package tri.promptfx.agents
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.convertValue
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -31,25 +29,25 @@ import javafx.scene.text.FontWeight
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.core.TextChatMessage
-import tri.ai.openai.OpenAiAdapter
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.TextChat
+import tri.ai.core.agent.*
+import tri.ai.core.agent.impl.JsonToolExecutor
+import tri.ai.core.agent.impl.ToolChainExecutor
+import tri.ai.core.agent.wf.*
+import tri.ai.core.textContent
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.ai.core.tool.JsonToolExecutable.Companion.OUTPUT_SCHEMA
+import tri.ai.core.tool.JsonToolExecutable.Companion.STRING_INPUT_SCHEMA
+import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.tool.JsonMultimodalToolExecutor
-import tri.ai.tool.JsonToolExecutor
-import tri.ai.tool.ToolChainExecutor
-import tri.ai.tool.ToolExecutableResult
-import tri.ai.tool.wf.*
 import tri.promptfx.*
-import tri.util.info
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
-import tri.util.ui.graphic
 
 /** Plugin for the [AgenticView]. */
 class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Agents", "Agentic Workflow", WorkspaceViewAffordance.INPUT_ONLY, AgenticView::class)
@@ -58,9 +56,6 @@ class AgenticPlugin : NavigableWorkspaceViewImpl<AgenticView>("Agents", "Agentic
 class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any necessary input to use multiple views within a common workflow.") {
 
     val pfxWorkspace: PromptFxWorkspace by inject()
-
-    private val modelList = PromptFxModels.policy.multimodalModels()
-    private val model = SimpleObjectProperty(PromptFxModels.policy.multimodalModelDefault())
 
     private val input = SimpleStringProperty("")
     private val engine = SimpleObjectProperty(WorkflowEngine.TOOL_CHAIN)
@@ -137,22 +132,19 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         parameters("Workflow Options") {
             field("Engine") {
                 combobox<WorkflowEngine>(engine) {
-                    items.setAll(WorkflowEngine.values().toList())
+                    items.setAll(WorkflowEngine.entries)
                     value = WorkflowEngine.TOOL_CHAIN
                 }
             }
             field("Model") {
-                enableWhen {
-                    engine.isEqualTo(WorkflowEngine.JSON_TOOL_MULTIMODAL)
-                }
-                combobox(model, modelList)
+                combobox(controller.chatService, PromptFxModels.policy.chatModels())
             }
         }
         
         // Setup filtering logic
         searchText.onChange { updateFilter() }
     }
-    
+
     /** Updates the filter based on search text. */
     private fun updateFilter() {
         val query = searchText.value?.lowercase() ?: ""
@@ -188,11 +180,11 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
     /** Convert [AiTaskView] to [Executable]. */
     fun AiTaskView.executable() = object : Executable {
-        override val name: String = title
+        override val name: String = title.asToolName()
         override val description: String = instruction
         override val version: String = "1.0"
-        override val inputSchema = null
-        override val outputSchema = null
+        override val inputSchema = MAPPER.readTree(STRING_INPUT_SCHEMA)
+        override val outputSchema = MAPPER.readTree(OUTPUT_SCHEMA)
         override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
             // More robust input handling - extract input text from JsonNode
             val inputText = when {
@@ -201,68 +193,40 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 else -> input.toString()
             }
             val dict = mapOf("input" to inputText)
-            
+
             val result = runBlocking {
                 executeTask(this@executable, dict)
             }
-            return MAPPER.createObjectNode().put("result", result.result)
+            return createObject("result", result.result)
         }
     }
+
+    /** Converts a general name to a tool-compatible name. */
+    // replace all spaces and punctuation that is not a dash with underscore, then replace multiple underscores with single, and lowercase
+    private fun String.asToolName() = replace(" ", "_")
+        .replace(Regex("_+"), "_")
+        .lowercase()
 
     override fun plan(): AiPlanner = aitask("agent") {
         tools.onEach { it.state = ToolState.NONE }
+
+        // pick the right executor
+        val tools = tools.filter { it.selected }.map { it.tool }
+        val config = AgentChatConfig(modelId = controller.chatService.value!!.modelId)
+        val executor: AgentChat =  when (engine.value) {
+            WorkflowEngine.TOOL_CHAIN -> ToolChainExecutor(tools)
+            WorkflowEngine.JSON_TOOL -> JsonToolExecutor(tools)
+            WorkflowEngine.WORKFLOW_PLANNER -> WorkflowExecutor(WorkflowExecutorChat(config), tools.map { it.toSolver(controller.chatService.value) })
+        }
+
+        // set up task execution flow
         val task = input.value
-        info<AgenticView>("Executing task using ${engine.value}: $task")
-        val selectedTools = tools.filter { it.selected }
-        info<AgenticView>("  > Tools available: ${selectedTools.map { it.tool.name }}")
+        val flow = executor.sendMessage(AgentChatSession(config = config), MultimodalChatMessage.user(task))
+        val result = flow.awaitResponseWithLogging().message.textContent()!!
 
-        val tools = selectedTools.map { it.tool }
-        val result = when (engine.value) {
-            WorkflowEngine.TOOL_CHAIN -> executeToolChain(task, tools)
-            WorkflowEngine.JSON_TOOL -> executeJsonTool(task, tools)
-            WorkflowEngine.JSON_TOOL_MULTIMODAL -> executeJsonMultimodalTool(task, tools)
-            WorkflowEngine.WORKFLOW_PLANNER -> executeWorkflowPlanner(task, tools)
-        }
-
-        runLater {
-            pfxWorkspace.dock(this)
-        }
+        runLater { pfxWorkspace.dock(this) }
         AiPromptTrace(outputInfo = AiOutputInfo.text(result))
     }.planner
-
-    //region WORKFLOW EXECUTION METHODS
-
-    /** Executes using [tri.ai.tool.ToolChainExecutor]. */
-    private fun executeToolChain(task: String, selectedTools: List<Executable>) =
-        ToolChainExecutor(controller.chatService.value)
-            .executeChain(task, selectedTools)
-
-    /** Executes using [tri.ai.tool.JsonToolExecutor]. */
-    private fun executeJsonTool(task: String, selectedTools: List<Executable>): String {
-        val chat = PromptFxModels.multimodalModels().first { it.modelId == controller.chatService.value.modelId }
-        val exec = JsonToolExecutor(chat, selectedTools)
-        return runBlocking {
-            exec.execute(task)
-        }
-    }
-
-    /** Executes using [tri.ai.tool.JsonMultimodalToolExecutor]. */
-    private fun executeJsonMultimodalTool(task: String, selectedTools: List<Executable>) = runBlocking {
-        JsonMultimodalToolExecutor(model.value!!, selectedTools)
-            .execute(task)
-    }
-
-    /** Executes using [tri.ai.tool.wf.WorkflowExecutor]. */
-    private fun executeWorkflowPlanner(task: String, selectedTools: List<Executable>): String {
-        val exec = WorkflowExecutor(
-            WExecutorChat(controller.completionEngine.value, maxTokens = 2000, temp = 0.5),
-            selectedTools.map { it.toSolver() }
-        )
-        val request = WorkflowUserRequest(task)
-        return exec.solve(request).finalResult().toString()
-    }
-
-    //endregion
 
     /** Executes a view's tool with specified input. Switches to show the view while executing. */
     private fun executeTask(view: AiTaskView, input: Map<String, String>): ToolExecutableResult {
@@ -273,7 +237,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 if (it.state == ToolState.ACTIVE)
                     it.state = ToolState.USED
             }
-            tools.firstOrNull { it.tool.name == view.title }?.let {
+            tools.firstOrNull { it.tool.name == view.title.asToolName() }?.let {
                 it.state = ToolState.ACTIVE
             }
         }
@@ -293,16 +257,19 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
     companion object {
-        /** Converts a [SelectableTool] to a [tri.ai.tool.wf.WorkflowSolver]. */
-        private fun Executable.toSolver() = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
+        /** Converts a [SelectableTool] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
+        private fun Executable.toSolver(textChat: TextChat) = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
                 val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
                     listOf(task.name)
                 }.joinToString("\n")
                 val result = runBlocking {
-                    this@toSolver.execute(MAPPER.createObjectNode().put("input", input), ExecContext())
-                }
+                    this@toSolver.execute(
+                        createObject("input", input),
+                        ExecContext(resources = mapOf("textChat" to textChat))
+                    )
+                }.get("result").asText()
                 val tt = System.currentTimeMillis() - t0
                 return solveStep(task, inputs(input), outputs(result), tt, true)
             }
@@ -323,7 +290,6 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         private enum class WorkflowEngine(val text: String) {
             TOOL_CHAIN("Tool Chain"),
             JSON_TOOL("Tool Chain with JSON Schemas"),
-            JSON_TOOL_MULTIMODAL("Tool Chain with JSON Schemas (Multimodal model)"),
             WORKFLOW_PLANNER("Workflow Planner");
 
             override fun toString() = text

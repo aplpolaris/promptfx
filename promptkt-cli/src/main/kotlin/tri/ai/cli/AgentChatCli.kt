@@ -27,16 +27,15 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.agent.api.AgentChatAPI
+import tri.ai.core.agent.api.DefaultAgentChatAPI
 import tri.ai.openai.OpenAiAdapter
-import tri.ai.pips.agent.*
-import tri.util.ANSI_BLUISH_GRAY
-import tri.util.ANSI_GRAY
-import tri.util.ANSI_LIGHTBLUE
-import tri.util.ANSI_RED
-import tri.util.ANSI_RESET
-import tri.util.MIN_LEVEL_TO_LOG
+import tri.util.*
 import java.time.LocalDateTime
 import java.util.logging.Level
 import kotlin.system.exitProcess
@@ -135,36 +134,7 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
     private suspend fun sendMessage(userInput: String) {
         val message = MultimodalChatMessage.text(MChatRole.User, userInput)
         val operation = api.sendMessage(currentSession, message)
-        
-        try {
-            operation.events.collect { event ->
-                when (event) {
-                    is AgentChatEvent.Progress -> printlnProgress("[Progress] ${event.message}")
-                    is AgentChatEvent.Reasoning -> printlnProgress("[Thinking] ${event.reasoning}")
-                    is AgentChatEvent.StreamingToken -> print(event.token)
-                    is AgentChatEvent.Response -> {
-                        val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
-                        // TODO - if have been printing intermediate tokens, may not need to print the full response
-                        printlnResponse("[Response] $responseText")
-                        
-                        if (event.response.reasoning != null) {
-                            printlnProgress("[Reasoning] ${event.response.reasoning}")
-                        }
-                    }
-                    is AgentChatEvent.Error -> {
-                        printlnError(event.error.message)
-                        if (verbose) {
-                            event.error.printStackTrace()
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            printlnError("${e.message}")
-            if (verbose) {
-                e.printStackTrace()
-            }
-        }
+        operation.events.collect(AgentFlowLogger(verbose))
     }
 
     private fun listSessions() {
@@ -191,10 +161,6 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
 
     private fun printlnInfo(text: String) {
         kotlin.io.println("${ANSI_GRAY}$text$ANSI_RESET")
-    }
-
-    private fun printlnProgress(text: String) {
-        kotlin.io.println("$ANSI_BLUISH_GRAY$text$ANSI_RESET")
     }
 
     private fun printlnError(text: String?) {
