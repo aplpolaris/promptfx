@@ -20,14 +20,15 @@
 package tri.ai.core.agent.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.MChatVariation.Companion.temp
-import tri.ai.core.TextCompletion
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.TextPlugin
+import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
 import java.io.IOException
 
 /** A solver used to validate that a computed result answers the actual user question. */
-class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) : WorkflowSolver(
+class WValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
     "Validate Final Result",
     "Checks if the final result answers the user's request",
     mapOf(REQUEST to "User's initial request", RESULT to "Workflow's final result"),
@@ -51,7 +52,12 @@ class WValiditySolver(val completionEngine: TextCompletion, val maxTokens: Int, 
         )
 
         // use LLM to generate a response
-        val response = completionEngine.complete(prompt, tokens = maxTokens, variation = temp(temp))
+        val chat = TextPlugin.Companion.chatModel(config.modelId)
+        val response = CompletionBuilder()
+            .tokens(config.maxTokens)
+            .temperature(config.temperature)
+            .text(prompt)
+            .execute(chat)
 
         // parse the response and use it to build a set of subtasks to solve
         val validity = parseValidity(response.firstValue.textContent())

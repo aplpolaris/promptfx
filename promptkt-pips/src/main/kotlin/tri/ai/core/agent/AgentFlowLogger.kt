@@ -32,6 +32,7 @@ import tri.util.ANSI_SUN_YELLOW
 class AgentFlowLogger(var verbose: Boolean = false) : FlowCollector<AgentChatEvent> {
 
     override suspend fun emit(event: AgentChatEvent) {
+
         when (event) {
             is AgentChatEvent.User -> log(ANSI_SUN_YELLOW, "User", event.message)
             is AgentChatEvent.Progress -> log(ANSI_BLUISH_GRAY, "Progress", event.message)

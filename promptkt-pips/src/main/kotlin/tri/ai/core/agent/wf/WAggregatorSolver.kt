@@ -19,13 +19,14 @@
  */
 package tri.ai.core.agent.wf
 
-import tri.ai.core.TextCompletion
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.TextPlugin
+import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
-import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.prompt.fill
 
 /** A solver used to aggregate/finalize a response for an original user question. */
-class WAggregatorSolver(val completionEngine: TextCompletion, val maxTokens: Int, val temp: Double) : WorkflowSolver(
+class WAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
     "Aggregator",
     "Combines results from multiple tasks to produce a final answer.",
     mapOf(REQUEST to "User's initial request", INTERMEDIATE_RESULTS to "Workflow's intermediate results"),
@@ -44,15 +45,22 @@ class WAggregatorSolver(val completionEngine: TextCompletion, val maxTokens: Int
             USER_REQUEST_PARAM to userRequest,
             INPUTS_PARAM to inputData
         )
-        val result = OpenAiCompletionChat().complete(prompt, tokens = 1000)
+
+        val chat = TextPlugin.Companion.chatModel(config.modelId)
+        val response = CompletionBuilder()
+            .tokens(config.maxTokens)
+            .temperature(config.temperature)
+            .text(prompt)
+            .execute(chat)
+
         // find answer between <<< and >>> if they exist
-        val quotedResult = result.firstValue.textContent().findCode()
+        val quotedResult = response.firstValue.textContent().findCode()
 
         return solveStep(
             task,
             inputs(userRequest, inputData),
             outputs(quotedResult),
-            result.exec.responseTimeMillisTotal ?: 0L,
+            response.exec.responseTimeMillisTotal ?: 0L,
             true
         )
     }

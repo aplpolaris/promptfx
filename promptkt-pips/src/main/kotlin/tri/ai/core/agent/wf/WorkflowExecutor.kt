@@ -19,12 +19,13 @@
  */
 package tri.ai.core.agent.wf
 
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatEvent
-import tri.ai.core.agent.AgentChatFlow
 import tri.ai.core.agent.AgentChatResponse
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentChatSupport
 import tri.ai.pips.SimpleRetryExecutor
 
 /**
@@ -34,14 +35,30 @@ import tri.ai.pips.SimpleRetryExecutor
 class WorkflowExecutor(
     val strategy: WorkflowExecutorStrategy,
     val solvers: List<WorkflowSolver>
-) {
+): AgentChatSupport() {
     private var maxSteps = 8
 
     /** Solve the given problem using a dynamic workflow execution. */
-    fun solve(problem: WorkflowUserRequest) = AgentChatFlow(flow {
+    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+        val question = logTextContent(message)
+        updateSession(message, session)
+        logToolUsage()
+
+        val response = solve(WorkflowUserRequest(question))
+
+        // store and log response, maybe update session name
+        updateSession(response, session, updateName = true)
+        return agentChatResponse(response, session)
+    }
+
+    /** Logs tool usage. */
+    suspend fun FlowCollector<AgentChatEvent>.logToolUsage() {
+        emit(AgentChatEvent.Progress("Using solvers: ${solvers.joinToString(", ") { it.name }}"))
+    }
+
+    private suspend fun FlowCollector<AgentChatEvent>.solve(problem: WorkflowUserRequest): MultimodalChatMessage {
         val state = WorkflowState(problem)
-        emit(AgentChatEvent.Progress("Workflow Planning"))
-        emit(AgentChatEvent.User(problem.request))
+        emit(AgentChatEvent.Progress("Workflow Planning..."))
 
         var i = 1
         val t0 = System.currentTimeMillis()
@@ -96,9 +113,12 @@ class WorkflowExecutor(
         if (i <= maxSteps) {
             val execTime = System.currentTimeMillis() - t0
             emit(AgentChatEvent.Progress("Workflow execution complete in ${execTime}ms and ${i-1} steps!"))
-            emit(AgentChatEvent.Response(AgentChatResponse(MultimodalChatMessage.text(MChatRole.Assistant, state.finalResult().toString()))))
+            val message = MultimodalChatMessage.text(MChatRole.Assistant, state.finalResult().toString())
+            return message
+        } else {
+            throw IllegalStateException("Workflow execution failed after $maxSteps steps.")
         }
-    })
+    }
 
 }
 

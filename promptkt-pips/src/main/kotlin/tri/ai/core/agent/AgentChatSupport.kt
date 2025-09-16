@@ -37,18 +37,21 @@ abstract class AgentChatSupport : AgentChat {
         session.lastModified = LocalDateTime.now()
     }
 
-    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage) = AgentChatFlow(
-        flow {
-            val agentResponse = sendMessageSafe(session, message)
-            emit(AgentChatEvent.Response(agentResponse))
-        }.catch { e ->
-            // Remove the user message if we failed to process it
-            if (session.messages.lastOrNull() == message) {
-                session.messages.removeAt(session.messages.size - 1)
-            }
-            e.printStackTrace()
-            emit(AgentChatEvent.Error(e))
-        })
+    override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatFlow {
+        println("send message")
+        return AgentChatFlow(
+            flow {
+                val agentResponse = sendMessageSafe(session, message)
+                emit(AgentChatEvent.Response(agentResponse))
+            }.catch { e ->
+                // Remove the user message if we failed to process it
+                if (session.messages.lastOrNull() == message) {
+                    session.messages.removeAt(session.messages.size - 1)
+                }
+                e.printStackTrace()
+                emit(AgentChatEvent.Error(e))
+            })
+    }
 
     /**
      * Perform send message task while emitting intermediate events.

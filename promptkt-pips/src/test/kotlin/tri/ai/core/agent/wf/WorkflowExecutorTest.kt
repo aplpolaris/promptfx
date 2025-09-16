@@ -22,19 +22,18 @@ package tri.ai.core.agent.wf
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentFlowLogger
-import tri.ai.core.agent.wf.ChatSolver
-import tri.ai.core.agent.wf.InstructSolver
-import tri.ai.core.agent.wf.RunSolver
-import tri.ai.core.agent.wf.WExecutorChat
-import tri.ai.core.agent.wf.WorkflowExecutor
-import tri.ai.core.agent.wf.WorkflowUserRequest
 import tri.ai.openai.OpenAiPlugin
 
 @Tag("openai")
 class WorkflowExecutorTest {
 
     private val GPT35 = OpenAiPlugin().textCompletionModels()[0]
+    private val EXEC = WExecutorChat(AgentChatConfig(GPT35.modelId, maxTokens = 1000, temperature = 0.3))
+
 
     //region CALC SOLVERS
 
@@ -68,10 +67,11 @@ class WorkflowExecutorTest {
 
     @Test
     fun testWorkflowExecutor_calc() {
-        val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
-        val exec = WorkflowExecutor(executor, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
-        val problem = WorkflowUserRequest("I need a Roman numeral that represents the product 21 times 2.")
-        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
+        val exec = WorkflowExecutor(EXEC, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
+        val problem = MultimodalChatMessage.user("I need a Roman numeral that represents the product 21 times 2.")
+        runBlocking {
+            exec.sendMessage(AgentChatSession(), problem).events.collect(AgentFlowLogger(verbose = true))
+        }
     }
 
     //region QUERY/TIMELINE SOLVERS
@@ -96,19 +96,16 @@ class WorkflowExecutorTest {
 
     @Test
     fun testWorkflowExecutor_timeline() {
-        val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
-        val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
-        val problem = WorkflowUserRequest("What is the timeline of the life of Albert Einstein?")
-        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
+        val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
+        val problem = MultimodalChatMessage.user("What is the timeline of the life of Albert Einstein?")
+        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
     @Test
     fun testWorkflowExecutor_timeline2() {
-        val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
-        val exec = WorkflowExecutor(executor, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
-        val problem =
-            WorkflowUserRequest("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
-        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
+        val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
+        val problem = MultimodalChatMessage.user("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
+        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
     //region SUMMARIZATION SOLVERS
@@ -141,12 +138,8 @@ class WorkflowExecutorTest {
 
     @Test
     fun testWorkflowExecutor_article() {
-        val executor = WExecutorChat(GPT35, maxTokens = 1000, temp = 0.3)
-        val exec = WorkflowExecutor(
-            executor,
-            listOf(SOLVER_SUMMARY, SOLVER_TITLEGEN, SOLVER_KEYDATES, SOLVER_QUERY, SOLVER_TIMELINE)
-        )
-        val problem = WorkflowUserRequest(
+        val exec = WorkflowExecutor(EXEC, listOf(SOLVER_SUMMARY, SOLVER_TITLEGEN, SOLVER_KEYDATES, SOLVER_QUERY, SOLVER_TIMELINE))
+        val problem = MultimodalChatMessage.user(
             """
             Provide a quick look on this article, including a short summary, key dates, and a title.
 
@@ -155,7 +148,7 @@ class WorkflowExecutorTest {
             \"\"\"
         """.trimIndent()
         )
-        runBlocking { exec.solve(problem).events.collect(AgentFlowLogger(verbose = true)) }
+        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(AgentFlowLogger(verbose = true)) }
     }
 
 }

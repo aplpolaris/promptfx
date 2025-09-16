@@ -20,6 +20,10 @@
 package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.TextChat
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.createObject
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
@@ -52,17 +56,18 @@ class AgentExecutable(
         input: JsonNode,
         context: ExecContext
     ): JsonNode {
-        val request = WorkflowUserRequest(input.get("request")?.asText() ?: input.toString())
+        val request = MultimodalChatMessage.user(input.get("request")?.asText() ?: input.toString())
         
         // Get completion service from context resources
-        val textCompletion = context.resources["textCompletion"] as? tri.ai.core.TextCompletion
-            ?: throw IllegalArgumentException("Text completion service not found in context resources")
+        val textChatResource = context.resources["textChat"]
+        val textChatId = (textChatResource as? TextChat)?.modelId ?: textChatResource as? String
+            ?: throw IllegalArgumentException("Text completion service not found in context resources or invalid: $textChatResource")
             
-        val execStrategy = WExecutorChat(textCompletion, maxTokens = 2000, temp = 0.5)
+        val execStrategy = WExecutorChat(AgentChatConfig(modelId = textChatId, maxTokens = 2000, temperature = 0.5))
         val solvers = tools.map { it.toSolver(context) }
 
         val executor = WorkflowExecutor(execStrategy, solvers)
-        val finalState = executor.solve(request).awaitResponse()
+        val finalState = executor.sendMessage(AgentChatSession(), request).awaitResponse()
 
         return createObject("result", finalState.message.textContent())
     }

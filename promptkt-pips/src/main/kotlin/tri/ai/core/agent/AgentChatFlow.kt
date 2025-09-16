@@ -20,6 +20,7 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.*
+import tri.ai.core.textContent
 
 /**
  * Represents an ongoing agent chat operation that can be monitored for progress.
@@ -33,6 +34,14 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
     suspend fun awaitResponse() =
         events.filterIsInstance<AgentChatEvent.Response>().first().response
 
+    /**
+     * Await the final response from the operation, while logging all events to the console.
+     */
+    suspend fun awaitResponseWithLogging() =
+        events
+        .onEach { event -> AgentFlowLogger().emit(event) }
+        .filterIsInstance<AgentChatEvent.Response>().first()
+        .response
 }
 
 suspend fun FlowCollector<AgentChatEvent>.emitUser(message: String) = emit(AgentChatEvent.User(message))

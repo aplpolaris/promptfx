@@ -21,7 +21,10 @@ package tri.ai.core.agent.wf
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
+import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
+import tri.ai.core.TextPlugin
+import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
 import tri.util.warning
@@ -30,7 +33,7 @@ import java.io.IOException
 /**
  * Uses an LLM for workflow planning and tool (solver) selection.
  */
-class WExecutorChat(val chatService: TextCompletion, val maxTokens: Int, val temp: Double) :  WorkflowExecutorStrategy {
+class WExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrategy {
 
     // use the LLM and the known set of solvers to select a sequence of tasks for a task in the workflow
     // for now to simplify things, we'll just limit this to the root "problem" in the workflow
@@ -50,11 +53,12 @@ class WExecutorChat(val chatService: TextCompletion, val maxTokens: Int, val tem
         )
 
         // use LLM to generate a response
+        val chat = TextPlugin.Companion.chatModel(config.modelId)
         val response = CompletionBuilder()
-            .tokens(maxTokens)
-            .temperature(temp)
+            .tokens(config.maxTokens)
+            .temperature(config.temperature)
             .text(prompt)
-            .execute(chatService)
+            .execute(chat)
 
         // parse the response and use it to build a set of subtasks to solve
         val taskDecomp = try {
@@ -88,9 +92,9 @@ class WExecutorChat(val chatService: TextCompletion, val maxTokens: Int, val tem
             ?: throw WorkflowTaskNotFoundException("Unable to find task in workflow state")
         val solver = when {
             task is WorkflowValidatorTask ->
-                WValiditySolver(chatService, maxTokens, temp)
+                WValiditySolver(config)
             task is WorkflowTaskTool && task.id == "final" && task.tool == "Aggregator" ->
-                WAggregatorSolver(chatService, maxTokens, temp)
+                WAggregatorSolver(config)
             task is WorkflowTaskTool ->
                 solvers.find { it.name == task.tool }
                     ?: throw WorkflowToolNotFoundException("Unable to find solver for task: ${task.tool}")
