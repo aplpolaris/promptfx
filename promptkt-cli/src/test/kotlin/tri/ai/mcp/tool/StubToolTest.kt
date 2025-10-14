@@ -50,7 +50,7 @@ class StubToolTest {
             name = "stub-tool",
             description = "A stub tool for testing",
             inputSchema = buildSchemaWithOneRequiredParam("input_text", "The text to analyze."),
-            outputSchema = tri.ai.pips.core.MAPPER.readTree("""
+            outputSchema = MAPPER.readTree("""
                 {
                   "type": "object",
                   "properties": {

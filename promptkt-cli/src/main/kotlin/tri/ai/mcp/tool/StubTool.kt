@@ -25,12 +25,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
-import tri.ai.mcp.JsonSerializers
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
 import tri.ai.mcp.JsonSerializers.toJsonElement
 import tri.ai.mcp.JsonSerializers.toJsonNode
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
 
 /** A tool that returns a fixed result, useful for testing. */
 data class StubTool(

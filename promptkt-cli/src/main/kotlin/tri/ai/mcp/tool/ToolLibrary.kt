@@ -24,15 +24,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.ai.core.tool.impl.WebSearchExecutable
 import tri.ai.mcp.JsonSerializers.toJsonElement
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.MAPPER
-import tri.ai.tool.WebSearchExecutable
 import kotlin.String
 
 interface ToolLibrary {
     suspend fun listTools(): List<Executable>
+    suspend fun getTool(name: String): Executable?
     suspend fun callTool(name: String, args: Map<String, String>): McpToolResult
 }
 
@@ -42,8 +43,11 @@ class StarterToolLibrary: ToolLibrary {
         FakeTools.load()
     override suspend fun listTools(): List<Executable> = tools
 
+    override suspend fun getTool(name: String): Executable? =
+        tools.find { it.name == name }
+
     override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
-        val tool = tools.find { it.name == name }
+        val tool = getTool(name)
             ?: return McpToolResult.error(name, "Tool with name '$name' not found")
 
         val inputNode = MAPPER.valueToTree<JsonNode>(args)
