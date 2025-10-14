@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Tag
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.ai.core.tool.ExecutableRegistry
+import tri.ai.core.tool.impl.ChatExecutable
+import tri.ai.core.tool.impl.PromptLibraryExecutableRegistry
 import tri.ai.openai.OpenAiPlugin
-import tri.ai.pips.core.ChatExecutable
-import tri.ai.pips.core.ExecContext
-import tri.ai.pips.core.Executable
-import tri.ai.pips.core.ExecutableRegistry
-import tri.ai.pips.core.PromptLibraryExecutableRegistry
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 

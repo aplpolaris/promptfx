@@ -20,31 +20,28 @@
 package tri.ai.core
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.PromptTemplate.Companion.defaultInputParams
 import tri.ai.prompt.PromptTemplate.Companion.defaultInstructParams
 import tri.ai.prompt.template
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.PromptInfo
-import tri.util.fine
 import tri.util.warning
 
 /** Builder object for [TextCompletion] and [TextChat] tasks. */
 class CompletionBuilder {
     var id: String? = null
+    var numResponses: Int? = null
     var template: PromptTemplate? = null
     var params = mutableMapOf<String, Any>()
+    var requestJson: Boolean? = null
+    var responseFormat: MResponseFormat? = null
+    var stop: List<String>? = null
     var tokens: Int? = null
     var variation: MChatVariation = MChatVariation()
-    var stop: List<String>? = null
-    var numResponses: Int? = null
-    var requestJson: Boolean? = null
 
     //region BUILDERS
 
@@ -60,6 +57,7 @@ class CompletionBuilder {
     fun params(vararg pairs: Pair<String, Any>) = apply { params.putAll(mapOf(*pairs)) }
     fun paramsInput(input: String) = apply { params.putAll(defaultInputParams(input)) }
     fun paramsInstruct(input: String, instruct: String) = apply { params.putAll(defaultInstructParams(input = input, instruct = instruct)) }
+    fun responseFormat(format: MResponseFormat) = apply { this.responseFormat = format }
     fun tokens(tokens: Int?) = apply { this.tokens = tokens }
     fun variation(variation: MChatVariation) = apply { this.variation = variation }
     fun temperature(temp: Double) = apply { this.variation = this.variation.copy(temperature = temp) }
@@ -78,8 +76,21 @@ class CompletionBuilder {
             tokens = tokens,
             stop = stop,
             numResponses = numResponses,
-            requestJson = requestJson
+            requestJson = requestJson ?: (if (responseFormat == MResponseFormat.JSON) true else null)
         ).copy(promptInfo = PromptInfo(template!!.template, params.toMap()))
+
+    /** Executes a [MultimodalChat] task with the provided parameters. */
+    suspend fun execute(chat: MultimodalChat, messages: List<MultimodalChatMessage>? = null) =
+        chat.validate(messages).chat(
+            messages = messages ?: listOf(MultimodalChatMessage.text(MChatRole.User, template!!.fill(params))),
+            parameters = MChatParameters(
+                numResponses = numResponses,
+                responseFormat = responseFormat ?: (if (requestJson == true) MResponseFormat.JSON else MResponseFormat.TEXT),
+                stop = stop,
+                tokens = tokens,
+                variation = variation
+            )
+        ).copy(promptInfo = PromptInfo(messages?.let { it.first().content!!.first().text } ?: template!!.template, params.toMap()))
 
     /** Executes a [TextCompletion] task with the provided parameters. */
     suspend fun execute(completion: TextCompletion) =
@@ -102,6 +113,13 @@ class CompletionBuilder {
     /** Validates the chat object before execution. */
     private fun TextChat.validate(): TextChat {
         require(template != null) { "Template/text must be set before execution." }
+        return this
+    }
+
+    /** Validates the chat object before execution. */
+    private fun MultimodalChat.validate(messages: List<MultimodalChatMessage>?): MultimodalChat {
+        require(template != null || messages != null) { "Template/text or messages must be set before execution." }
+        require(!(template != null && messages != null)) { "Cannot set both template/text and messages." }
         return this
     }
 

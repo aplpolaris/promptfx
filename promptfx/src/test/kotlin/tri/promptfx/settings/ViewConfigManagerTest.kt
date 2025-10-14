@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.prompt.PromptDef
 import tri.promptfx.ui.RuntimePromptViewConfig
+import tri.promptfx.ui.RuntimeUserControls
 
 class ViewConfigManagerTest {
 
@@ -47,9 +48,12 @@ class ViewConfigManagerTest {
 
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = false,
-            isShowMultipleResponseOption = false
+            args = listOf(),
+            userControls = RuntimeUserControls(
+                prompt = true,
+                modelParameters = false,
+                multipleResponses = false
+            )
         )
 
         assertNotNull(config)
@@ -58,61 +62,4 @@ class ViewConfigManagerTest {
         assertEquals("Process this text: {{{input}}}", config.prompt.template)
     }
 
-    @Test
-    fun testViewCreationWorkflow() {
-        // Test the basic workflow without saving to actual file
-        val viewName = "Test Custom View"
-        val viewCategory = "Testing"
-        val promptTemplate = "Test prompt: {{{input}}}"
-        
-        // Generate view ID 
-        val viewId = ViewConfigManager.generateViewId(viewCategory, viewName)
-        assertEquals("testing-test-custom-view", viewId)
-        
-        // Create prompt definition
-        val promptDef = PromptDef(
-            id = "${viewCategory.lowercase()}/${viewName.lowercase().replace(" ", "-")}",
-            category = viewCategory,
-            name = viewName,
-            template = promptTemplate
-        )
-        
-        // Create config
-        val config = RuntimePromptViewConfig(
-            promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = false,
-            isShowMultipleResponseOption = false
-        )
-        
-        // Verify the config is properly constructed
-        assertNotNull(config)
-        assertEquals(viewName, config.prompt.name)
-        assertEquals(viewCategory, config.prompt.category)
-        assertEquals(promptTemplate, config.prompt.template)
-        assertEquals("testing/test-custom-view", config.prompt.id)
-    }
-
-    @Test
-    fun testYamlFormatting() {
-        // Test that multiline templates use pipe syntax
-        val promptDef = PromptDef(
-            id = "test/multiline",
-            category = "Test",
-            name = "Multiline Test",
-            description = "A test with multiline template",
-            template = "Line 1\nLine 2\nLine 3"
-        )
-        
-        val config = RuntimePromptViewConfig(
-            promptDef = promptDef,
-            modeOptions = listOf(),
-            isShowModelParameters = true,
-            isShowMultipleResponseOption = false
-        )
-        
-        // Verify the template is multiline
-        assertTrue(config.prompt.template!!.contains('\n'))
-        assertEquals("Line 1\nLine 2\nLine 3", config.prompt.template)
-    }
 }

@@ -30,9 +30,6 @@ rag_qa_prefilter_json:
       ```
 
       Today is {{today}}.
-  modeOptions: []
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
 
 math_unit_conversion:
   prompt:
@@ -47,21 +44,19 @@ math_unit_conversion:
       Convert from: {{UNIT_TYPE}}
       Convert to: {{CONVERT_TO_UNIT}}
       '''
-  modeOptions:
-    - templateId: UNIT_TYPE
+  args:
+    - fieldId: UNIT_TYPE
       label: Unit Type
       values:
         - Length
         - Mass
         - Volume
-    - templateId: CONVERT_TO_UNIT
+    - fieldId: CONVERT_TO_UNIT
       label: Convert To Unit
       values:
         - Meter
         - Kilogram
         - Liter
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
 
 math_calculations:
   prompt:
@@ -74,45 +69,43 @@ math_calculations:
       '''
       {{{input}}}
       '''
-  modeOptions:
-    - templateId: OPERATION_TYPE
+  args:
+    - fieldId: OPERATION_TYPE
       label: Operation Type
       values:
         - Addition
         - Subtraction
         - Multiplication
         - Division
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
 
 date-extraction:
   prompt:
     id: text-extract/dates
     category: Text
-  modeOptions:
-    - templateId: DATE_FORMAT
+  args:
+    - fieldId: DATE_FORMAT
       label: Date Format
       values:
         - ISO8601 Date
         - MMM dd, yyyy
         - yyyy/MM/dd
         - the 12th of February
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
 
 entity-extraction:
   prompt:
     id: text-extract/entities
     category: Text
     description: Extract entities from text (testing runtime override)
-  modeOptions:
-    - id: entities
-      templateId: mode
+  args:
+    - modeId: entities
+      fieldId: mode
       label: Mode
-    - id: structured-format
-      templateId: format
+    - modeId: structured-format
+      fieldId: format
       label: Format as
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 code-review:
   prompt:
@@ -130,6 +123,6 @@ code-review:
       ```
       {{{code}}}
       ```
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true

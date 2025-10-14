@@ -26,7 +26,7 @@ class NavigableWorkspaceViewTest {
     @Test
     fun testPlugins() {
         NavigableWorkspaceView.viewPlugins.forEach {
-            println(it)
+            println(it.category + " - " + it.name)
         }
         assertTrue(NavigableWorkspaceView.viewPlugins.isNotEmpty())
     }

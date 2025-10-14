@@ -19,7 +19,7 @@
  */
 package tri.ai.pips.api
 
-import tri.ai.pips.core.ExecutableRegistry
+import tri.ai.core.tool.ExecutableRegistry
 
 /** Validates a [PPlan] object. */
 object PPlanValidator {

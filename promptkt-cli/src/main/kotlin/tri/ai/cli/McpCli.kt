@@ -28,7 +28,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
-import tri.ai.gemini.GeminiMultimodalChat
 import tri.ai.mcp.LocalMcpServer
 import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
@@ -36,7 +35,6 @@ import tri.ai.mcp.RemoteMcpServer
 import tri.ai.mcp.StdioMcpServer
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
-import tri.ai.openai.OpenAiMultimodalChat
 import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
@@ -270,8 +268,7 @@ class McpCli : CliktCommand(
                         }
                     }
 
-                    (model as? OpenAiMultimodalChat)?.client?.client?.close()
-                    (model as? GeminiMultimodalChat)?.client?.close()
+                    model.close()
                 } catch (e: McpServerException) {
                     echo("Error: ${e.message}", err = true)
                     exitProcess(1)

@@ -113,9 +113,9 @@ class PromptLibraryTest {
         val prompt = PromptDef(id = "a template", description = "description", name = "name", template = "")
         assertEquals("""
             ---
-            id: "a template"
-            name: "name"
-            description: "description"
+            id: a template
+            name: name
+            description: description
             
         """.trimIndent(), PromptGroupIO.MAPPER.writeValueAsString(prompt))
     }

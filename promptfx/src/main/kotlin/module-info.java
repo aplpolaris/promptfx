@@ -34,6 +34,7 @@ import tri.util.ui.NavigableWorkspaceView;
 // --add-opens javafx.graphics/javafx.scene=tornadofx
 module tri.promptfx {
     requires transitive tri.promptkt.docs;
+    requires transitive tri.promptkt.gemini;
 
     requires openai.core.jvm;
     requires openai.client.jvm;
@@ -105,9 +106,6 @@ module tri.promptfx {
 
             // 2 - text
             ListGeneratorPlugin,
-            QuestionAnsweringPlugin,
-            StructuredDataPlugin,
-            TextSimilarityPlugin,
 
             // 3 - multimodal
             AudioApiPlugin,
@@ -120,6 +118,7 @@ module tri.promptfx {
             DocumentInsightPlugin,
             TextManagerPlugin,
             TextClusterPlugin,
+            TextSimilarityPlugin,
 
             // 5 - fun/integrations
             ChatBackPlugin,
