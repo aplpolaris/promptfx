@@ -19,6 +19,7 @@
  */
 package tri.ai.cli
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -29,6 +30,9 @@ import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import org.jsoup.nodes.TextNode
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.MAPPER
 import tri.ai.mcp.JsonSerializers
@@ -374,7 +378,30 @@ class McpCli : CliktCommand(
                 } else {
                     if (this@McpCli.verbose)
                         echo("Tool Output:")
-                    echo(Json { prettyPrint = true }.encodeToString(result.output))
+                    val output = result.output
+                    if ((output as? JsonObject)?.get("result") != null) {
+                        val text = output["result"]!!
+                        var printed = false
+                        if (text is JsonPrimitive) {
+                            // try to parse JSON and pretty print top-level key-value pairs
+                            try {
+                                val parsed = MAPPER.readTree(text.content)
+                                if (parsed is ObjectNode) {
+                                    parsed.properties().forEach { (k, v) ->
+                                        echo("  - $k: $v")
+                                    }
+                                }
+                                printed = true
+                            } catch (e: Exception) {
+                                // Ignore parse errors, just print raw text
+                            }
+                        }
+                        if (!printed)
+                            echo(Json { prettyPrint = true }.encodeToString(text))
+                    } else {
+                        // Print the whole output as pretty JSON
+                        echo(Json { prettyPrint = true }.encodeToString(output))
+                    }
                 }
             } catch (e: McpServerException) {
                 echo("Error: ${e.message}", err = true)
