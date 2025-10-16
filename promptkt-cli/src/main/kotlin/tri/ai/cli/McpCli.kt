@@ -19,6 +19,7 @@
  */
 package tri.ai.cli
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
@@ -326,7 +327,8 @@ class McpCli : CliktCommand(
                 tools.forEach { tool ->
                     echo("${ANSI_BOLD}Name$ANSI_RESET: ${tool.name}")
                     echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${tool.description}$ANSI_RESET")
-                    // TODO - consider showing input/output schema
+                    this@McpCli.printSchema(tool.inputSchema, "Input parameters")
+                    this@McpCli.printSchema(tool.outputSchema, "Output properties")
                     echo("-".repeat(30))
                 }
             } catch (e: McpServerException) {
@@ -334,6 +336,21 @@ class McpCli : CliktCommand(
                 exitProcess(1)
             } finally {
                 adapter.close()
+            }
+        }
+    }
+
+    private fun printSchema(schema: JsonNode?, label: String) {
+        if (schema != null && schema is ObjectNode) {
+            val properties = schema.get("properties") as? ObjectNode
+            val required = schema.get("required")?.mapNotNull { it.asText() }?.toSet() ?: emptySet()
+            if (properties != null) {
+                echo("${ANSI_BOLD}$label$ANSI_RESET:")
+                properties.fields().forEach { (propName, propSchema) ->
+                    val propDesc = propSchema.get("description")?.asText() ?: "No description"
+                    val isRequired = if (required.contains(propName)) " (required)" else " (optional)"
+                    echo("  - ${propName}$isRequired: $ANSI_GRAY${propDesc}$ANSI_RESET")
+                }
             }
         }
     }
