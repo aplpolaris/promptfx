@@ -38,19 +38,20 @@ import tri.ai.prompt.trace.AiPromptTrace
 
 class PPlanExecutorTest {
 
+    // --- Define a trivial Executable that just echoes its input ---
+    private val ECHO = object : Executable {
+        override val name = "util/echo"
+        override val description = "Echoes the input as output"
+        override val version = "0.0.1"
+        override val inputSchema: JsonNode? = null
+        override val outputSchema: JsonNode? = null
+        override suspend fun execute(input: JsonNode, ctx: ExecContext) = input
+    }
+
     @Test
     fun `simple plan executes with dummy tool`() {
         runBlocking {
-            // --- Define a trivial Executable that just echoes its input ---
-            val echo = object : Executable {
-                override val name = "util/echo"
-                override val description = "Echoes the input as output"
-                override val version = "0.0.1"
-                override val inputSchema: JsonNode? = null
-                override val outputSchema: JsonNode? = null
-                override suspend fun execute(input: JsonNode, ctx: ExecContext) = input
-            }
-            val registry = ExecutableRegistry.create(listOf(echo))
+            val registry = ExecutableRegistry.create(listOf(ECHO))
 
             // --- Minimal plan JSON ---
             val json = """
@@ -63,6 +64,33 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
+            val context = ExecContext()
+            PPlanExecutor(registry).execute(plan, context)
+            println("        Context: ${context.vars}")
+
+            // --- Assertions ---
+            assertEquals("smoke/demo@0.0.1", plan.id)
+            assertTrue("out" in context.vars.keys)
+            assertEquals("hi", (context.vars["out"] as JsonNode).get("msg").asText())
+        }
+    }
+
+    @Test
+    fun `simple plan executes with dummy tool (YAML)`() {
+        runBlocking {
+            val registry = ExecutableRegistry.create(listOf(ECHO))
+
+            // --- Minimal plan YAML ---
+            val yaml = """
+                id: smoke/demo@0.0.1
+                steps:
+                  - tool: util/echo
+                    input:
+                      msg: hi
+                    saveAs: out
+            """.trimIndent()
+
+            val plan = PPlan.parseYaml(yaml)
             val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.vars}")
