@@ -90,7 +90,7 @@ object StarshipContentConfig {
         val example = randomQuestionExample[index % randomQuestionExample.size]
         val template = PromptTemplate(randomQuestionTemplate)
         val prompt = PromptDef(id = "", template = template.fill("topic" to topic, "example" to example))
-        val fields = template.findFields().associateWith {
+        val fields = PromptTemplate(prompt.template!!).findFields().associateWith {
             val rand = if (":" in it) {
                 val (key, n) = it.split(":")
                 key to n.toInt()

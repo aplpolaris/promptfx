@@ -67,12 +67,14 @@ class StarshipView : Fragment("Starship") {
 
     private val summarizeForIndex = SimpleIntegerProperty(0)
     private val summarizeFor = summarizeForIndex.stringBinding { summarizeForOptions[it!!.toInt()] }
-    private val summarizeForOptions = StarshipContentConfig.userOptions["text-summarize/simplify-audience"]!!["audience"]!!
+    private val summarizeForOptions = StarshipContentConfig.userOptions["text-summarize/simplify-audience"]?.get("audience")
+        ?: throw IllegalStateException("No summarize-for options found for text-summarize/simplify-audience")
     private fun nextSummarizeFor() { summarizeForIndex.set((summarizeForIndex.get() + 1) % summarizeForOptions.size) }
 
     private val targetLanguageIndex = SimpleIntegerProperty(0)
     private val targetLanguage = targetLanguageIndex.stringBinding { targetLanguageOptions[it!!.toInt()] }
-    private val targetLanguageOptions = StarshipContentConfig.userOptions["text-translate/translate"]!!["instruct"]!!
+    private val targetLanguageOptions = StarshipContentConfig.userOptions["text-translate/translate"]?.get("instruct")
+        ?: throw IllegalStateException("No summarize-for options found for text-summarize/simplify-audience")
     private fun nextTargetLanguage() { targetLanguageIndex.set((targetLanguageIndex.get() + 1) % targetLanguageOptions.size) }
 
     //endregion

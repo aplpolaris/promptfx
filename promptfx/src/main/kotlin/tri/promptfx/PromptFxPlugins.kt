@@ -23,6 +23,8 @@ import tri.util.fine
 import tri.util.info
 import java.util.ServiceLoader
 import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
 /** Information about a plugin and its source. */
@@ -61,7 +63,7 @@ object PromptFxPlugins {
     /** Load plugins from config/plugins/ folder. */
     fun <C> loadExternalPlugins(type: Class<C>): List<PluginInfo<C>> {
         val pluginFiles = listOf(Path(PLUGIN_DIR))
-            .flatMap { it.listDirectoryEntries("*.jar") }
+            .flatMap { if (it.exists() && it.isDirectory()) it.listDirectoryEntries("*.jar") else listOf() }
         if (pluginFiles.isNotEmpty()) {
             val urls = pluginFiles.map { it.toUri().toURL() }.toTypedArray()
             info<PromptFxPlugins>("Loading plugins from $PLUGIN_DIR")
