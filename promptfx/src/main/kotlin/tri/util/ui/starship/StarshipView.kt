@@ -21,8 +21,8 @@ package tri.util.ui.starship
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.animation.Timeline
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.value.ObservableValue
+import javafx.collections.ObservableList
 import javafx.concurrent.Task
 import javafx.event.EventHandler
 import javafx.geometry.BoundingBox
@@ -32,10 +32,9 @@ import javafx.scene.layout.Pane
 import javafx.scene.shape.StrokeLineJoin
 import javafx.scene.transform.Rotate
 import javafx.stage.Screen
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.promptfx.PromptFxController
-import tri.promptfx.PromptFxDriver.sendInput
-import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.docs.DocumentQaView
 import tri.ai.text.docs.FormattedText
 import tri.promptfx.ui.ImmersiveChatView
@@ -44,7 +43,6 @@ import tri.util.info
 import tri.util.ui.*
 import tri.util.ui.AnimatingThumbnailBox
 import tri.util.ui.starship.Chromify.chromify
-import tri.util.ui.starship.StarshipContentConfig.explain
 
 /** View for a full-screen animated text display. */
 class StarshipView : Fragment("Starship") {
@@ -53,140 +51,109 @@ class StarshipView : Fragment("Starship") {
     val baseComponent: View? by param()
 
     val controller: PromptFxController by inject()
+
+    val configs = StarshipConfig()
+    val layout
+        get() = configs.layout
+    val pipeline
+        get() = configs.pipeline
     val results = StarshipPipelineResults()
 
-    val indicator = BlinkingIndicator(FontAwesomeIcon.ROCKET).apply {
-        glyphSize = 60.0
-        glyphStyle = "-fx-fill:gray;"
-    }
-    val input = AnimatingTextFlow()
-    val output = AnimatingTextFlow()
-    val outputHighlight = AnimatingTextFlow()
-
-    //region BUTTON VARS
-
-    private val summarizeForIndex = SimpleIntegerProperty(0)
-    private val summarizeFor = summarizeForIndex.stringBinding { summarizeForOptions[it!!.toInt()] }
-    private val summarizeForOptions = StarshipContentConfig.userOptions["text-summarize/simplify-audience"]?.get("audience")
-        ?: throw IllegalStateException("No summarize-for options found for text-summarize/simplify-audience")
-    private fun nextSummarizeFor() { summarizeForIndex.set((summarizeForIndex.get() + 1) % summarizeForOptions.size) }
-
-    private val targetLanguageIndex = SimpleIntegerProperty(0)
-    private val targetLanguage = targetLanguageIndex.stringBinding { targetLanguageOptions[it!!.toInt()] }
-    private val targetLanguageOptions = StarshipContentConfig.userOptions["text-translate/translate"]?.get("instruct")
-        ?: throw IllegalStateException("No summarize-for options found for text-summarize/simplify-audience")
-    private fun nextTargetLanguage() { targetLanguageIndex.set((targetLanguageIndex.get() + 1) % targetLanguageOptions.size) }
-
-    //endregion
-
-    private lateinit var thumbnails: AnimatingThumbnailBox
-    private val DOC_THUMBNAIL_SIZE = 193
-    private var isExplainerVisible = false
+    private val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
+        ?: Screen.getPrimary()
+    private val screenWidth = 1920 // curScreen.bounds.width
+    private val screenHeight = 1080 // curScreen.bounds.height
 
     private val css1 = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
     private val css2 = StarshipView::class.java.getResource("resources/starship.css")!!
 
-    init {
-        if (baseComponent is DocumentQaView) {
-            val base = baseComponent as DocumentQaView
-            base.snippets.onChange {
-                val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
-                    .map { DocumentThumbnail(it, DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE, true)) }
-                thumbnails.animateThumbs(thumbs.take(6))
-            }
-        }
-    }
+    private var isExplainerVisible = false
+
+    //region DERIVED PROPERTIES
+
+    private val uw
+        get() = screenWidth / layout.numCols.toDouble()
+    private val uh
+        get() = screenHeight / layout.numRows.toDouble()
+
+    private val INSETS = 60.0
+
+    private fun StarshipConfigWidget.px() =
+        INSETS + uw * (pos.x - 1).toDouble()
+    private fun StarshipConfigWidget.py() =
+        INSETS + uh * (pos.y - 1).toDouble()
+    private fun StarshipConfigWidget.pw() =
+        uw * pos.width.toDouble() - 2 * INSETS
+    private fun StarshipConfigWidget.ph() =
+        uh * pos.height.toDouble() - 2 * INSETS
+
+    //endregion
 
     override val root = pane {
         stylesheets.add(css1.toExternalForm())
         stylesheets.add(css2.toExternalForm())
 
-        val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
-            ?: Screen.getPrimary()
-        val screenWidth = 1920 // curScreen.bounds.width
-        val screenHeight = 1080 // curScreen.bounds.height
-
-        // framing for a 3x3 grid
-        if (StarshipContentConfig.isShowGrid) {
-            (0..2).forEach { x ->
-                (0..2).forEach { y ->
-                    rectangle(screenWidth * x / 3.0, screenHeight * y / 3.0, screenWidth / 3.0, screenHeight / 3.0) {
-                        style = "-fx-stroke:black;-fx-fill:none"
-                    }
-                }
-            }
+        if (layout.isShowGrid) {
+            addGrid()
         }
 
         val chromePane = pane {
             resizeRelocate(0.0, 0.0, 5.0, 5.0)
         }
 
-        add(input.apply {
-            root.isMouseTransparent = true
-            root.resizeRelocate(120.0, 60.0, 1080.0, 200.0)
-            updatePrefWidth(1080.0)
-            updateFontSize(48.0)
-            results.input.onChange { animateText(FormattedText(it ?: "").toFxNodes()) }
-            chromePane.chromify(root, wid = 36.0, title = "Question", icon = FontAwesomeIcon.QUESTION)
-        })
-        add(output.apply {
-            root.isMouseTransparent = true
-            root.resizeRelocate(55.0, 380.0, 525.0, 800.0)
-            updatePrefWidth(525.0)
-            updateFontSize(20.0)
-            results.outputText.onChange { animateText(FormattedText(it ?: "").toFxNodes()) }
-            chromePane.chromify(root, wid = 15.0, title = baseComponentTitle ?: "Answer", icon = FontAwesomeIcon.FILE_PDF_ALT)
-        })
-        add(outputHighlight.apply {
-            root.isMouseTransparent = true
-            root.visibleWhen(results.outputHighlightText.isNotBlank())
-            root.resizeRelocate(700.0, 380.0, 520.0, 800.0)
-            updatePrefWidth(520.0)
-            updateFontSize(21.0)
-            results.outputHighlightText.onChange { animateText(FormattedText(it ?: "").toFxNodes()) }
-            chromePane.chromify(root, wid = 17.5, title = "Summarize For", icon = FontAwesomeIcon.COMMENTS,
-                buttonText = summarizeFor, buttonAction = ::nextSummarizeFor
-            )
-        })
-        vbox(54.0) {
-            resizeRelocate(1340.0, 60.0, 520.0, 400.0)
-            bindChildren(results.secondaryOutputs) { output ->
-                AnimatingTextFlow().apply {
-                    updatePrefWidth(520.0)
-                    updateFontSize(15.0)
-                    animateText(output.text.toFxNodes())
-                }.root.also {
-                    isMouseTransparent = true
-                    val bt = if (output.label == "Translate") targetLanguage else null
-                    val ba = if (output.label == "Translate") ::nextTargetLanguage else null
-                    chromePane.chromify(it, wid = 12.0, title = output.label, icon = FontAwesomeIcon.MAGIC, buttonText = bt, buttonAction = ba)
+        // animating text widgets - positioned absolutely as described in config
+        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT }.forEach { widget ->
+            add(createWidget(widget, chromePane))
+        }
+
+        // vertical text widgets - grouped by location so they can be stacked
+        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT_VERTICAL }
+            .groupBy { it.pos.x to it.pos.y }
+            .forEach { (loc, widgets) ->
+                vbox(54.0) {
+                    val w = widgets.first()
+                    resizeRelocate(w.px(), w.py(), w.pw(), w.ph())
+                    // TODO - should we bind to results instead so we get intermediate processing updates dynamically (and don't show all chrome all the time?)
+                    // TODO - can we reuse AnimatingTextWidget as-is, or do we need to tweak it?
+                    bindChildren(widgets.asObservable()) { w ->
+                        createWidget(w, chromePane).root
+                    }
+                }
+            }
+
+        // thumbnail widgets - positioned absolutely as described in config
+        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_THUMBNAILS }.forEach { widget ->
+            // TODO - fix hardcoded link to results thumbnails
+            add(ThumbnailWidget(results.thumbnails).view)
+        }
+
+        // fill background with 100 twinkling stars of various sizes
+        addBackgroundIcons()
+        // add rocket indicator in lower-right corner to indicate ongoing processing
+        addProgressIndicator()
+        // add explainer overlay that can be turned on/off with "X" keypress
+        addExplainerOverlay()
+    }
+
+    //region RENDER HELPERS
+
+    /** Overlays a grid on top of the view. */
+    private fun Pane.addGrid() {
+        (0 until layout.numCols).forEach { x ->
+            (0 until layout.numRows).forEach { y ->
+                rectangle(screenWidth * x / layout.numCols, screenHeight * y / layout.numRows, screenWidth / layout.numCols, screenHeight / layout.numRows) {
+                    style = "-fx-stroke:black;-fx-fill:none"
                 }
             }
         }
+    }
 
-        thumbnails = AnimatingThumbnailBox { }.apply {
-            id = "starship-thumbnails"
-            isMouseTransparent = true
-            resizeRelocate(10.0, screenHeight - 300.0, screenWidth - 80.0, 300.0)
-            spacing = 20.0
-        }
-        results.thumbnails.onChange { thumbnails.animateThumbs(it.list) }
-        add(thumbnails)
-
-        results.started.onChange { if (it) indicator.startBlinking() }
-        results.completed.onChange { indicator.stopBlinking() }
-
-        add(indicator.apply {
-            id = "starship-indicator"
-            layoutX = screenWidth - glyphSize.toDouble() - 20.0
-            layoutY = screenHeight - 20.0
-        })
-
-        // fill background with 100 twinkling stars of various sizes
+    /** Adds a background pane with lots of semi-transparent icons for decoration. */
+    private fun Pane.addBackgroundIcons() {
         pane {
             isMouseTransparent = true
-            for (i in 0 until StarshipContentConfig.backgroundIconCount) {
-                val star = StarshipContentConfig.backgroundIcon
+            for (i in 0 until layout.backgroundIconCount) {
+                val star = layout.backgroundIcon
                 val size = (5..20).random()
                 add(BlinkingIndicator(star).apply {
                     layoutX = (size..(screenWidth - size)).random().toDouble()
@@ -200,16 +167,41 @@ class StarshipView : Fragment("Starship") {
                 })
             }
         }
+    }
 
-        // explainer overlay in orange
+    /** Adds a blinker indicator to indicate processing. */
+    private fun Pane.addProgressIndicator() {
+        val indicator = BlinkingIndicator(FontAwesomeIcon.ROCKET).apply {
+            glyphSize = 60.0
+            glyphStyle = "-fx-fill:gray;"
+        }
+        add(indicator.apply {
+            id = "starship-indicator"
+            layoutX = screenWidth - glyphSize.toDouble() - 20.0
+            layoutY = screenHeight - 20.0
+            results.started.onChange { if (it) startBlinking() }
+            results.completed.onChange { stopBlinking() }
+        })
+    }
+
+    /** Adds a widget to the pane, with chromed decoration. */
+    private fun createWidget(widget: StarshipConfigWidget, chromePane: Pane): Fragment {
+        val observable = results.observableFor(widget)
+        val buttonEntry = widget.overlay.options.entries.firstOrNull()
+        if (buttonEntry == null) {
+            return AnimatingTextWidget(widget, chromePane, observable).view
+        } else {
+            val (buttonText, buttonAction) = results.actionFor(buttonEntry.key, buttonEntry.value)
+            return AnimatingTextWidget(widget, chromePane, observable, buttonText, buttonAction).view
+        }
+    }
+
+    /** Adds an explainer overlay that can be toggled with "X" keypress. */
+    private fun Pane.addExplainerOverlay() {
         val explainer = pane {
             isMouseTransparent = true
             isVisible = false
-            explainerOverlay(0, 0, xn = 2, yn = 1, screenWidth, screenHeight, step = 1, explain = explain[0])
-            explainerOverlay(0, 2, xn = 2, yn = 1, screenWidth, screenHeight, step = 2, explain = explain[1])
-            explainerOverlay(0, 1, xn = 1, yn = 1, screenWidth, screenHeight, step = 3, explain = explain[2])
-            explainerOverlay(1, 1, xn = 1, yn = 1, screenWidth, screenHeight, step = 4, explain = explain[3])
-            explainerOverlay(2, 0, xn = 1, yn = 3, screenWidth, screenHeight, step = 5, explain = explain[4])
+            layout.widgets.forEach { explainerOverlay(it) }
         }
         onKeyPressed = EventHandler { event ->
             if (event.code == KeyCode.X) {
@@ -219,7 +211,8 @@ class StarshipView : Fragment("Starship") {
         }
     }
 
-    private fun Pane.explainerOverlay(x: Int, y: Int, xn: Int, yn: Int, w: Int, h: Int, step: Int, explain: String) {
+    /** Add a single explainer overlay for the given widget. */
+    private fun Pane.explainerOverlay(widget: StarshipConfigWidget) {
         // blink all pane content for 2 seconds whenever results activeStep property changes to step
         var blinker: Timeline? = null
         val initialDelayMillis = 0
@@ -232,7 +225,7 @@ class StarshipView : Fragment("Starship") {
             results.activeStep.onChange {
                 if (it == 0) {
                     opacity = opacityInitial
-                } else if (it == step) {
+                } else if (it == widget.overlay.step) {
                     // create timeline to blink opacity of this pane
                     blinker?.stop()
                     blinker = timeline(play = false) {
@@ -246,9 +239,9 @@ class StarshipView : Fragment("Starship") {
                 }
             }
 
-            val uw = w / 3
-            val uh = h / 3
-            val bounds = BoundingBox(x * uw.toDouble(), y * uh.toDouble(), xn * uw.toDouble(), yn * uh.toDouble())
+            val uw = screenWidth / layout.numCols
+            val uh = screenHeight / layout.numRows
+            val bounds = BoundingBox((widget.pos.x - 1) * uw.toDouble(), (widget.pos.y - 1) * uh.toDouble(), widget.pos.width * uw.toDouble(), widget.pos.height * uh.toDouble())
             // draw a rectangular box in orange, with corner radius 10 px, inset by 10 pixels
             rectangle(bounds.minX + 10, bounds.minY + 10, bounds.width - 20, bounds.height - 20) {
                 style =
@@ -261,7 +254,7 @@ class StarshipView : Fragment("Starship") {
                 style = "-fx-fill:#EE8F33;"
             }
             // draw step # over the circle
-            text(step.toString()) {
+            text(widget.overlay.step.toString()) {
                 layoutX = bounds.minX + 22
                 layoutY = bounds.maxY - 20
                 style = "-fx-fill:black;-fx-font-size:28px;-fx-font-weight:bold;"
@@ -269,12 +262,16 @@ class StarshipView : Fragment("Starship") {
             // fill in explanation in textflow box inside the rectangle
             textflow {
                 resizeRelocate(bounds.minX + 50, bounds.maxY - 42, bounds.width - 60, bounds.height - 20)
-                text(explain) {
+                text(widget.overlay.explain) {
                     style = "-fx-fill:#EE8F33;-fx-font-size:17px;"
                 }
             }
         }
     }
+
+    //endregion
+
+    //region PIPELINE MANAGEMENT
 
     private var job: Task<Unit>? = null
     private var jobCanceled = false
@@ -286,20 +283,15 @@ class StarshipView : Fragment("Starship") {
     private fun runPipeline() {
         if (jobCanceled)
             return
-        results.clearAll()
+        results.clearResults()
         job = runAsync {
-            val config = StarshipPipelineConfig(controller.chatService.value)
-            config.secondaryPrompts[0].params["audience"] = summarizeFor.value
-            config.secondaryPrompts[3].params["instruct"] = targetLanguage.value
-            config.promptExec = object : AiPromptExecutor {
-                override suspend fun exec(prompt: PromptWithParams, input: String): StarshipInterimResult {
-                    var text: FormattedText? = null
-                    find<PromptFxWorkspace>().sendInput(baseComponentTitle!!, input) { text = it }
-                    return StarshipInterimResult(baseComponentTitle!!, text!!, null, emptyList())
-                }
-            }
+            // TODO - add delay if isExplainerVisible is in place to slow down processing between steps for demo
+//            StarshipPipelines.exec(config, results, if (isExplainerVisible) 3000 else 0)
             info<StarshipView>("Running Starship pipeline with delay=$isExplainerVisible...")
-            StarshipPipeline.exec(config, results, if (isExplainerVisible) 3000 else 0)
+            runBlocking {
+                StarshipPipelineExecutor(configs.pipeline, controller.chatService.value, results)
+                    .execute()
+            }
         }.also {
             it.setOnSucceeded {
                 info<StarshipView>("Starship pipeline succeeded. Triggering a new run in 20 seconds.")
@@ -312,9 +304,55 @@ class StarshipView : Fragment("Starship") {
         info<StarshipView>("Canceling Starship pipeline...")
         job?.cancel()
         jobCanceled = true
-        results.clearAll()
+        results.clearResults()
         info<StarshipView>("Cancellation succeeded.")
     }
+
+    //endregion
+
+    //region VIEW WIDGETS
+
+    /** View element for large display text. */
+    inner class AnimatingTextWidget(widget: StarshipConfigWidget, chromePane: Pane, value: ObservableValue<String>,
+                                    buttonText: ObservableValue<String>? = null, buttonAction: (() -> Unit)? = null) {
+        val view = AnimatingTextFlow()
+
+        init {
+            view.root.isMouseTransparent = true
+            view.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), widget.ph())
+            view.updatePrefWidth(widget.pw())
+            view.updateFontSize(widget.overlay.iconSize?.toDouble() ?: 12.0)
+            chromePane.chromify(view.root, 36.0, widget.overlay.title ?: "", widget.overlay.icon, buttonText, buttonAction)
+            value.onChange { view.animateText(FormattedText(it ?: "").toFxNodes()) }
+        }
+    }
+
+    /** View element for displaying a list of thumbnails. */
+    inner class ThumbnailWidget(list: ObservableList<DocumentThumbnail>) {
+        private val DOC_THUMBNAIL_SIZE = 193
+
+        val view = AnimatingThumbnailBox { }.apply {
+            id = "starship-thumbnails"
+            isMouseTransparent = true
+            // TODO - dynamic location
+            resizeRelocate(10.0, screenHeight - 300.0, screenWidth - 80.0, 300.0)
+            spacing = 20.0
+            list.onChange { animateThumbs(it.list) }
+        }
+
+        init {
+            if (baseComponent is DocumentQaView) {
+                val base = baseComponent as DocumentQaView
+                base.snippets.onChange {
+                    val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
+                        .map { DocumentThumbnail(it, DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE, true)) }
+                    view.animateThumbs(thumbs.take(6))
+                }
+            }
+        }
+    }
+
+    //endregion
 
 }
 

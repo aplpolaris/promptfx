@@ -28,7 +28,7 @@ import tri.ai.prompt.template
 import tri.ai.core.agent.wf.MAPPER
 
 /** Fills text into a prompt template. */
-class PromptExecutable(private val def: PromptDef): Executable {
+class PromptFillExecutable(private val def: PromptDef): Executable {
 
     override val name: String
         get() = "prompt/${def.bareId}"
@@ -43,7 +43,11 @@ class PromptExecutable(private val def: PromptDef): Executable {
     override suspend fun execute(input: JsonNode, ctx: ExecContext): JsonNode {
         val args = MAPPER.convertValue(input, Map::class.java) as Map<String, Any?>
         val text = def.template().fill(args.filterValues { it != null } as Map<String, Any>)
-        return createObject("text", text)
+        return createObject(TEXT_KEY, text)
     }
 
+    companion object {
+        internal const val TEXT_KEY  = "text"
+    }
 }
+

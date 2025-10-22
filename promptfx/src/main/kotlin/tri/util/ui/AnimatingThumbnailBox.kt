@@ -27,7 +27,7 @@ import tornadofx.*
 import tri.ai.text.chunks.BrowsableSource
 
 /** Box with an animating set of thumbnails. */
-internal class AnimatingThumbnailBox(_action: ((DocumentThumbnail) -> Unit)?) : HBox() {
+class AnimatingThumbnailBox(_action: ((DocumentThumbnail) -> Unit)?) : HBox() {
 
     private val thumbnailList = observableListOf<DocumentThumbnail>()
     private val thumbnailAction: ((DocumentThumbnail) -> Unit)? = _action

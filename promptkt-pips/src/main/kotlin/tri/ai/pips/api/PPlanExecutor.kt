@@ -40,16 +40,19 @@ import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
 
-/** Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor]. */
+/**
+ * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor].
+ * Supports monitoring intermediate status.
+ */
 class PPlanExecutor(private val registry: ExecutableRegistry) {
 
-    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext()) {
+    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: AiTaskMonitor) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
 
         val planner = PPlanPlanner(plan, context, registry)
         val tasks = planner.plan()
-        AiPipelineExecutor.execute(tasks, PrintMonitor())
+        AiPipelineExecutor.execute(tasks, monitor)
     }
 
 }
@@ -70,24 +73,28 @@ class PPlanPlanner(
                     inputs: Map<String, AiPromptTraceSupport>,
                     monitor: AiTaskMonitor
                 ): AiPromptTraceSupport {
-                    info<PPlanExecutor>("$ANSI_GRAY  context vars:$ANSI_RESET")
-                    context.vars.forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+                    log("context", context.vars)
 
                     val inputMap = step.input.resolveRefs(context.vars)
-                    info<PPlanExecutor>("$ANSI_GRAY  input:$ANSI_RESET")
-                    MAPPER.convertValue<Map<String, Any>>(inputMap)
-                        .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+                    log("input", inputMap)
 
                     val result = exec.execute(inputMap, context)
-                    step.saveAs?.let { context.vars[it] = result }
-                    info<PPlanExecutor>("$ANSI_GRAY  output:$ANSI_RESET")
-                    MAPPER.convertValue<Map<String, Any?>>(result)
-                        .forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
+                    log("output", result)
 
+                    step.saveAs?.let { context.put(it, result) }
                     return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
                 }
             }
         }
+    }
+
+    private fun log(label: String, node: JsonNode) {
+        log(label, MAPPER.convertValue<Map<String, Any?>>(node))
+    }
+
+    private fun log(label: String, node: Map<String, Any?>) {
+        info<PPlanExecutor>("$ANSI_GRAY  $label:$ANSI_RESET")
+        node.forEach { (k, v) -> info<PPlanExecutor>("$ANSI_GRAY    $k: $v$ANSI_RESET") }
     }
 
     /** Resolve any ref object in the tree such as { "$ref": "varName" } with a reference lookup in the vars table. */

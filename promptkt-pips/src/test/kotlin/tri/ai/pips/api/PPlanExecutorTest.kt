@@ -31,8 +31,9 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.ChatExecutable
-import tri.ai.core.tool.impl.PromptLibraryExecutableRegistry
+import tri.ai.core.tool.impl.PromptTemplateRegistry
 import tri.ai.openai.OpenAiPlugin
+import tri.ai.pips.PrintMonitor
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
 
@@ -65,7 +66,7 @@ class PPlanExecutorTest {
 
             val plan = PPlan.parse(json)
             val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context)
+            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
             println("        Context: ${context.vars}")
 
             // --- Assertions ---
@@ -92,7 +93,7 @@ class PPlanExecutorTest {
 
             val plan = PPlan.parseYaml(yaml)
             val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context)
+            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
             println("        Context: ${context.vars}")
 
             // --- Assertions ---
@@ -107,7 +108,7 @@ class PPlanExecutorTest {
     fun `plan using a PromptLibrary and LLM`() {
         runBlocking {
             val registry = ExecutableRegistry.create(
-                PromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
+                PromptTemplateRegistry(PromptLibrary.INSTANCE).list() +
                         ChatExecutable(OpenAiPlugin().chatModels().first())
             )
 
@@ -124,7 +125,7 @@ class PPlanExecutorTest {
 
             val plan = PPlan.parse(json)
             val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context)
+            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
             println("        Context: ${context.vars}")
             println("        Chat response: ${context.vars["chat1"]?.get("message")?.asText()}")
 
@@ -165,7 +166,7 @@ class PPlanExecutorTest {
             }
 
             val registry = ExecutableRegistry.create(
-                PromptLibraryExecutableRegistry(PromptLibrary.INSTANCE).list() +
+                PromptTemplateRegistry(PromptLibrary.INSTANCE).list() +
 //                        PChatExecutable(OpenAiPlugin().chatModels().first())
                         ChatExecutable(mockChat)
             )
@@ -201,7 +202,7 @@ class PPlanExecutorTest {
 
             val plan = PPlan.parse(json)
             val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context)
+            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
             println("        Context: ${context.vars}")
 
             // --- Assertions ---

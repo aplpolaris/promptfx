@@ -51,7 +51,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val iterationLimit = 5
     val completionTokens = 2000
 
-    private fun createScratchpad() = ExecContext().apply { vars["steps"] = MAPPER.createArrayNode() }
+    private fun createScratchpad() = ExecContext().apply { put("steps", MAPPER.createArrayNode()) }
     private fun ExecContext.steps() = vars["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 

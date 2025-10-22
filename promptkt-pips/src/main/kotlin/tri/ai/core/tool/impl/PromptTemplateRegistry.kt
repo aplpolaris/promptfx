@@ -22,18 +22,19 @@ package tri.ai.core.tool.impl
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.prompt.PromptLibrary
 
-/** Creates an executable registry from a prompt library file. */
-class PromptLibraryExecutableRegistry(private val lib: PromptLibrary): ExecutableRegistry {
+/** Creates an executable registry from a prompt library file, with executables returning filled templates. */
+class PromptTemplateRegistry(private val lib: PromptLibrary): ExecutableRegistry {
 
-    private val executables by lazy {
+    private val fillExecutables by lazy {
         lib.list().associate { def ->
-            val exec = PromptExecutable(def)
+            val exec = PromptFillExecutable(def)
             exec.name to exec
         }
     }
 
-    override fun get(name: String) = executables[name]
+    override fun get(name: String) = fillExecutables[name]
 
-    override fun list() = executables.values.toList()
+    override fun list() = fillExecutables.values.toList()
 
 }
+

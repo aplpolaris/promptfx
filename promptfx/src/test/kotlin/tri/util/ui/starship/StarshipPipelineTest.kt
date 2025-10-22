@@ -28,7 +28,7 @@ class StarshipPipelineTest {
     @Test
     @Disabled("TBD")
     fun testExec() {
-        val config = StarshipPipelineConfig(PromptFxModels.chatModelDefault()!!)
+        val config = StarshipPipelines(PromptFxModels.chatModelDefault()!!)
         val results = StarshipPipelineResults().apply {
             input.addListener { _, _, newValue -> println("Input: $newValue") }
             runConfig.addListener { _, _, newValue -> println("RunConfig: $newValue") }
@@ -39,6 +39,6 @@ class StarshipPipelineTest {
             started.addListener { _, _, _ -> println("Started") }
             completed.addListener { _, _, _ -> println("Completed") }
         }
-        StarshipPipeline.exec(config, results)
+        StarshipPipelines.exec(config, results)
     }
 }

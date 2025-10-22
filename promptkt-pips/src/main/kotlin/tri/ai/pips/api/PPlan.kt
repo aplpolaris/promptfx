@@ -45,6 +45,8 @@ data class PPlan(
 data class PPlanStep(
     /** Reference to the tool to be used. */
     val tool: String,
+    /** Description of the execution step. */
+    val description: String? = null,
     /** The input to the tool. */
     val input: JsonNode,
     /** Optional location to save tool result. */
