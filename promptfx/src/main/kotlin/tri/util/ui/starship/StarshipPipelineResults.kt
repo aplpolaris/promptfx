@@ -25,9 +25,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
-import tornadofx.observableListOf
 import tornadofx.stringBinding
-import tri.util.ui.DocumentThumbnail
 
 /** Object collecting observable results from a pipeline execution. */
 class StarshipPipelineResults {
@@ -39,14 +37,14 @@ class StarshipPipelineResults {
 
     /** Flag indicating start of execution. */
     val started = SimpleBooleanProperty(false)
-    /** Flag indicating active step. */
-    val activeStep = SimpleObjectProperty<Int>(0)
+    /** Active step (indicated by the variable being solved for). */
+    val activeStepVar = SimpleObjectProperty<String>(null)
     /** Flag indicating completion. */
     val completed = SimpleBooleanProperty(false)
 
     /** Creates an observable value for tracking the value of a variable, if not already present. */
     fun observableFor(widget: StarshipConfigWidget) =
-        vars.getOrPut(widget.varRef) { SimpleStringProperty(null) }!!
+        vars.getOrPut(widget.varRef) { SimpleStringProperty(null) }
 
     /** Creates an observable value for tracking the value of a variable, allowing users to cycle between options. */
     fun actionFor(key: String, values: List<String>): Pair<ObservableValue<String>, () -> Unit> {
@@ -65,6 +63,7 @@ class StarshipPipelineResults {
         vars.values.forEach { it.set(null) }
         started.set(false)
         completed.set(false)
+        activeStepVar.set(null)
     }
 }
 

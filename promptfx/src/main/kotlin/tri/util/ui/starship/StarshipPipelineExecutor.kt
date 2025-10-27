@@ -8,6 +8,7 @@ import tri.ai.core.tool.impl.PromptChatRegistry
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskMonitor
 import tri.ai.pips.PrintMonitor
+import tri.ai.pips.api.AiPlanStepTask
 import tri.ai.pips.api.PPlan
 import tri.ai.pips.api.PPlanExecutor
 import tri.ai.prompt.PromptLibrary
@@ -21,8 +22,8 @@ class StarshipPipelineExecutor(
     val plan: PPlan,
     /** Chat model used for prompt execution. */
     val chat: TextChat,
-    /** Optional delay between steps. */
-    val stepDelay: Int = 0,
+    /** Optional delay applied after each step. */
+    val stepDelayMs: Int = 0,
     /** Used for sending inputs to UI components for processing. */
     val workspace: PromptFxWorkspace,
     /** Used for sending inputs to the view that was active when Starship was launched. */
@@ -30,6 +31,29 @@ class StarshipPipelineExecutor(
     /** Used for collecting results. */
     val results: StarshipPipelineResults
 ) {
+
+    /** Custom monitor for managing delay and tracking completed steps. */
+    val monitor = object : AiTaskMonitor {
+        val print = PrintMonitor()
+        override fun taskStarted(task: AiTask) {
+            print.taskStarted(task)
+        }
+        override fun taskUpdate(task: AiTask, progress: Double) {
+            print.taskUpdate(task, progress)
+        }
+        override fun taskCompleted(task: AiTask, result: Any?) {
+            print.taskCompleted(task, result)
+            if (task is AiPlanStepTask) {
+                results.activeStepVar.set(task.step.saveAs)
+            }
+            Thread.sleep(stepDelayMs.toLong())
+        }
+        override fun taskFailed(task: AiTask, error: Throwable) {
+            print.taskFailed(task, error)
+            Thread.sleep(stepDelayMs.toLong())
+        }
+    }
+
     suspend fun execute() {
         val registry = ExecutableRegistry.Companion.create(
             listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +
@@ -38,22 +62,7 @@ class StarshipPipelineExecutor(
         val context = ExecContext().apply {
             variableSet = results::updateVariable
         }
-        val monitor = if (stepDelay == 0) PrintMonitor() else PrintMonitorWithDelay(stepDelay)
         PPlanExecutor(registry).execute(plan, context, monitor)
-    }
-
-    private inner class PrintMonitorWithDelay(val delayMs: Int) : AiTaskMonitor {
-        val printer = PrintMonitor()
-        override fun taskStarted(task: AiTask) = printer.taskStarted(task)
-        override fun taskUpdate(task: AiTask, progress: Double) = printer.taskUpdate(task, progress)
-        override fun taskCompleted(task: AiTask, result: Any?) {
-            printer.taskCompleted(task, result)
-            Thread.sleep(delayMs.toLong())
-        }
-        override fun taskFailed(task: AiTask, error: Throwable) {
-            printer.taskFailed(task, error)
-            Thread.sleep(delayMs.toLong())
-        }
     }
 }
 

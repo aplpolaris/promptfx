@@ -38,7 +38,6 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.ui.ImmersiveChatView
 import tri.util.info
 import tri.util.ui.*
-import tri.util.ui.starship.StarshipView.Companion.INSETS
 
 /** View for a full-screen animated text display. */
 class StarshipView : Fragment("Starship") {
@@ -179,10 +178,10 @@ class StarshipView : Fragment("Starship") {
 
         pane {
             opacity = opacityInitial
-            results.activeStep.onChange {
-                if (it == 0) {
+            results.activeStepVar.onChange {
+                if (it.isNullOrBlank()) {
                     opacity = opacityInitial
-                } else if (it == widget.overlay.step) {
+                } else if (it == widget.varRef) {
                     // create timeline to blink opacity of this pane
                     blinker?.stop()
                     blinker = timeline(play = false) {
@@ -244,7 +243,7 @@ class StarshipView : Fragment("Starship") {
         job = runAsync {
             info<StarshipView>("Running Starship pipeline with delay=$isExplainerVisible...")
             runBlocking {
-                StarshipPipelineExecutor(configs.question, configs.pipeline, controller.chatService.value, stepDelay = if (isExplainerVisible) 3000 else 0,
+                StarshipPipelineExecutor(configs.question, configs.pipeline, controller.chatService.value, stepDelayMs = if (isExplainerVisible) 3000 else 0,
                     find<PromptFxWorkspace>(), baseComponentTitle!!, results)
                     .execute()
             }
@@ -266,11 +265,9 @@ class StarshipView : Fragment("Starship") {
 
     //endregion
 
-    companion object {
-        const val INSETS = 60.0
-    }
-
 }
+
+const val WIDGET_INSETS = 60.0
 
 /** Helper object for widget view layout, chrome, etc. */
 class StarshipWidgetLayoutContext(
@@ -280,7 +277,15 @@ class StarshipWidgetLayoutContext(
     val chromePane: Pane,
     val results: StarshipPipelineResults,
     val baseComponent: View?
-)
+) {
+    val uw = screenWidth / layout.numCols.toDouble()
+    val uh = screenHeight / layout.numRows.toDouble()
+
+    fun px(widget: StarshipConfigWidget) = WIDGET_INSETS + uw * (widget.pos.x - 1).toDouble()
+    fun py(widget: StarshipConfigWidget) = WIDGET_INSETS + uh * (widget.pos.y - 1).toDouble()
+    fun pw(widget: StarshipConfigWidget) = uw * widget.pos.width.toDouble() - 2 * WIDGET_INSETS
+    fun ph(widget: StarshipConfigWidget) = uh * widget.pos.height.toDouble() - 2 * WIDGET_INSETS
+}
 
 /** Adds a widget to the pane, with chromed decoration. */
 internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetLayoutContext, isShowDynamically: Boolean = false): Fragment {
@@ -385,14 +390,14 @@ internal object Chromify {
                 val boundsInScene = node.localToScene(node.boundsInLocal)
                 val boundsInPane = this.sceneToLocal(boundsInScene)
                 // set up standard coords
-                val x0 = boundsInPane.minX - INSETS/2
+                val x0 = boundsInPane.minX - WIDGET_INSETS/2
                 val y0 = boundsInPane.minY
-                val y1 = boundsInPane.maxY + INSETS/2
+                val y1 = boundsInPane.maxY + WIDGET_INSETS/2
                 with(path) {
                     elements.clear()
                     moveTo(x0, y0)
                     lineTo(x0, boundsInPane.maxY)
-                    arcTo(INSETS/2, INSETS/2, 0.0, boundsInPane.minX, y1,
+                    arcTo(WIDGET_INSETS/2, WIDGET_INSETS/2, 0.0, boundsInPane.minX, y1,
                         largeArcFlag = false, sweepFlag = false)
                     lineTo(boundsInPane.maxX, y1)
                 }

@@ -1,6 +1,7 @@
 package tri.util.ui.starship
 
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
@@ -21,18 +22,18 @@ class StarshipConfigTest {
     @Test
     fun testRandomQuestion() {
         val config = StarshipConfig.readDefaultYaml()
-        val questioner = StarshipExecutableQuestionGenerator(OpenAiPlugin().chatModels().first())
-        questioner.config = config.question
+        val questioner = StarshipExecutableQuestionGenerator(config.question, OpenAiPlugin().chatModels().first())
         println(questioner.randomQuestion())
         println(questioner.randomQuestion())
     }
 
+    @Disabled("Need alternative to the current view executor")
     @Test
     fun testExecute() {
         val config = StarshipConfig.readDefaultYaml()
         val chat = OpenAiPlugin().chatModels().first()
         val registry = ExecutableRegistry.Companion.create(
-            listOf(StarshipExecutableQuestionGenerator(chat), StarshipExecutableCurrentView()) +
+            listOf(StarshipExecutableQuestionGenerator(config.question, chat)) +
                     PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
         )
 

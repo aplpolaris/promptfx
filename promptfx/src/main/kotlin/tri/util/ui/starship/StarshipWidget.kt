@@ -17,23 +17,10 @@ import tri.util.ui.starship.Chromify.chromify
 
 /** Common Starship widget view elements. */
 sealed class StarshipWidget(protected val context: StarshipWidgetLayoutContext) {
-    //region DERIVED PROPERTIES
-
-    private val uw
-        get() = context.screenWidth / context.layout.numCols.toDouble()
-    private val uh
-        get() = context.screenHeight / context.layout.numRows.toDouble()
-
-    protected fun StarshipConfigWidget.px() =
-        StarshipView.Companion.INSETS + uw * (pos.x - 1).toDouble()
-    protected fun StarshipConfigWidget.py() =
-        StarshipView.Companion.INSETS + uh * (pos.y - 1).toDouble()
-    protected fun StarshipConfigWidget.pw() =
-        uw * pos.width.toDouble() - 2 * StarshipView.Companion.INSETS
-    protected fun StarshipConfigWidget.ph() =
-        uh * pos.height.toDouble() - 2 * StarshipView.Companion.INSETS
-
-    //endregion
+    protected fun StarshipConfigWidget.px() = context.px(this)
+    protected fun StarshipConfigWidget.py() = context.py(this)
+    protected fun StarshipConfigWidget.pw() = context.pw(this)
+    protected fun StarshipConfigWidget.ph() = context.ph(this)
 }
 
 /** Container widget for grouping other widgets. */
@@ -86,6 +73,11 @@ class ThumbnailWidget(context: StarshipWidgetLayoutContext, widget: StarshipConf
                     .map { DocumentThumbnail(it, DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE, true)) }
                 thumbnailBox.animateThumbs(thumbs.take(6))
             }
+        }
+
+        context.results.activeStepVar.onChange {
+            if (it.isNullOrBlank())
+                thumbnailBox.animateThumbs(emptyList())
         }
     }
 }

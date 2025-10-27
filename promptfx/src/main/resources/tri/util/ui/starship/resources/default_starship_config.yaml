@@ -87,7 +87,7 @@ layout:
         step: 3
         title: Answer
         icon: FILE_PDF_ALT
-        iconSize: 20
+        iconSize: 18
         explain: LLMs answer the question using the matching paragraphs.
 
     - varRef: simpleResponse
@@ -97,7 +97,7 @@ layout:
         step: 4
         title: Summarize For
         icon: COMMENTS
-        iconSize: 20
+        iconSize: 18
         explain: The answer is summarized for the target audience.
         options:
           audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
