@@ -96,7 +96,10 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
     }
 
     private fun log(label: String, node: JsonNode) {
-        log(label, MAPPER.convertValue<Map<String, Any?>>(node))
+        if (node.isTextual)
+            info<PPlanExecutor>("$ANSI_GRAY  $label: ${node.asText()}$ANSI_RESET")
+        else
+            log(label, MAPPER.convertValue<Map<String, Any?>>(node))
     }
 
     private fun log(label: String, node: Map<String, Any?>) {

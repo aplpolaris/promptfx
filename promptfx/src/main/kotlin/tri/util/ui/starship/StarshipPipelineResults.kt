@@ -52,6 +52,10 @@ class StarshipPipelineResults {
         return Pair(mc.value, { mc.next() })
     }
 
+    /** Gets all current multiple-choice variable values. */
+    fun getMultiChoiceValues(): Map<String, String> =
+        mcOptions.mapValues { it.value.value.value }
+
     /** Updates the value of a variable. */
     fun updateVariable(key: String, value: JsonNode) {
         val prop = vars.getOrPut(key) { SimpleStringProperty(null) }

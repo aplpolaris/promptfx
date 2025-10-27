@@ -1,10 +1,10 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
@@ -26,7 +26,7 @@ class StarshipExecutableQuestionGenerator(val config: StarshipConfigQuestion, va
         val question = randomQuestion()
         val response = chat.chat(listOf(TextChatMessage.user(question)))
             .firstValue.textContent()
-        return createObject(RESPONSE_KEY, response)
+        return TextNode.valueOf(response)
     }
 
     /** Generate a random question based on the current configuration. */
@@ -55,9 +55,8 @@ class StarshipExecutableQuestionGenerator(val config: StarshipConfigQuestion, va
     }
 
     companion object {
-        private const val RESPONSE_KEY = "question"
         private const val INPUT_SCHEMA = """{"type":"object"}"""
-        private const val OUTPUT_SCHEMA = """{"type":"object","properties":{"$RESPONSE_KEY":{"type":"string"}}}"""
+        private const val OUTPUT_SCHEMA = """{"type":"string"}"""
     }
 }
 

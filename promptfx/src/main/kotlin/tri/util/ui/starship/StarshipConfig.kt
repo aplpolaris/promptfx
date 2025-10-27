@@ -22,6 +22,6 @@ class StarshipConfig() {
 
         /** Reads default Starship config. */
         fun readDefaultYaml(): StarshipConfig =
-            readYaml(StarshipConfig::class.java.getResource("resources/default_starship_config.yaml")!!.readText())
+            readYaml(StarshipConfig::class.java.getResource("resources/default-starship-config.yaml")!!.readText())
     }
 }

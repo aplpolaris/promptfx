@@ -36,7 +36,7 @@ pipeline:
       description: The answer is summarized for the target audience.
       input:
         input: { "$var": "viewResult" }
-        audience: (UI option)
+        audience: { "$var": "simplify-audience" }  # from UI option
       saveAs: simpleResponse
     - tool: prompt-chat/docs-reduce/outline
       description: The answer can be transformed in other ways depending on the use case.
@@ -50,7 +50,7 @@ pipeline:
     - tool: prompt-chat/text-translate/translate
       input:
         input: { "$var": "viewResult" }
-        instruct: (UI option, random language)
+        instruct: { "$var": "translate-instruct" }  # from UI option
       saveAs: translatedResponse
 
 # Widget layout for visualizing results
@@ -100,7 +100,7 @@ layout:
         iconSize: 18
         explain: The answer is summarized for the target audience.
         options:
-          audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
+          simplify-audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
 
     - varRef: outline
       widgetType: ANIMATING_TEXT_VERTICAL
@@ -125,4 +125,4 @@ layout:
         title: Translate
         iconSize: 16
         options:
-          instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
+          translate-instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]

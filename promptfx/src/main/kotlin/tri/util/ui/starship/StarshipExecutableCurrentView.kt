@@ -1,7 +1,7 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.core.agent.createObject
+import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.text.docs.FormattedText
@@ -21,11 +21,7 @@ class StarshipExecutableCurrentView(val workspace: PromptFxWorkspace, val baseCo
         var text: FormattedText? = null
         workspace.sendInput(baseComponentTitle, strInput) { text = it }
         // TODO - propagate formatted text
-        return createObject(VIEW_RESULT_KEY, text.toString())
+        return TextNode.valueOf(text?.toString() ?: "")
 
-    }
-
-    companion object {
-        const val VIEW_RESULT_KEY = "viewResult"
     }
 }

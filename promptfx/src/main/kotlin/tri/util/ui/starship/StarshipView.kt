@@ -288,16 +288,16 @@ class StarshipWidgetLayoutContext(
 }
 
 /** Adds a widget to the pane, with chromed decoration. */
-internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetLayoutContext, isShowDynamically: Boolean = false): Fragment {
+internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetLayoutContext, isDynamic: Boolean = false): Fragment {
     val observable = context.results.observableFor(widget)
     val buttonEntry = widget.overlay.options.entries.firstOrNull()
     val widget = if (buttonEntry == null) {
-        AnimatingTextWidget(context, widget, observable).textFlow
+        AnimatingTextWidget(context, widget, observable, isDynamic).textFlow
     } else {
         val (buttonText, buttonAction) = context.results.actionFor(buttonEntry.key, buttonEntry.value)
-        AnimatingTextWidget(context, widget, observable, buttonText, buttonAction).textFlow
+        AnimatingTextWidget(context, widget, observable, isDynamic, buttonText, buttonAction).textFlow
     }
-    if (isShowDynamically) {
+    if (isDynamic) {
         val nonEmptyBinding = observable.booleanBinding { !it.isNullOrBlank() }
         widget.root.managedWhen(nonEmptyBinding)
         widget.root.visibleWhen(nonEmptyBinding)

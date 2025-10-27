@@ -1,6 +1,7 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
@@ -61,6 +62,9 @@ class StarshipPipelineExecutor(
         )
         val context = ExecContext().apply {
             variableSet = results::updateVariable
+            results.getMultiChoiceValues().forEach {
+                put(it.key, TextNode.valueOf(it.value))
+            }
         }
         PPlanExecutor(registry).execute(plan, context, monitor)
     }

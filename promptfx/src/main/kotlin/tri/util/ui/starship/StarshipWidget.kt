@@ -25,12 +25,13 @@ sealed class StarshipWidget(protected val context: StarshipWidgetLayoutContext) 
 
 /** Container widget for grouping other widgets. */
 class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<StarshipConfigWidget>) : StarshipWidget(context) {
+    // TODO - there is some weirdness about vertical layout boundaries within the dynamic setting
     fun addTo(target: EventTarget) {
         target.vbox(54.0) {
             val w = widgets.first()
             resizeRelocate(w.px(), w.py(), w.pw(), 0.0)
             bindChildren(widgets.asObservable()) { w ->
-                createWidget(w, context, isShowDynamically = true).root
+                createWidget(w, context, isDynamic = true).root
             }
         }
     }
@@ -39,12 +40,13 @@ class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<St
 /** View element for large display text. */
 class AnimatingTextWidget(context: StarshipWidgetLayoutContext,
                           widget: StarshipConfigWidget, value: ObservableValue<String>,
+                          isDynamic: Boolean,
                           buttonText: ObservableValue<String>? = null, buttonAction: (() -> Unit)? = null): StarshipWidget(context) {
     val textFlow = AnimatingTextFlow()
 
     init {
         textFlow.root.isMouseTransparent = true
-        textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), widget.ph())
+        textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), if (isDynamic) 0.0 else widget.ph())
         textFlow.updatePrefWidth(widget.pw())
         val iconSize = widget.overlay.iconSize?.toDouble() ?: 12.0
         textFlow.updateFontSize(iconSize)

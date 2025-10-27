@@ -1,9 +1,9 @@
 package tri.ai.core.tool.impl
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
@@ -23,13 +23,9 @@ class PromptChatExecutable(private val def: PromptDef, private val chatExec: Tex
     @Suppress("UNCHECKED_CAST")
     override suspend fun execute(input: JsonNode, ctx: ExecContext): JsonNode {
         val filled = PromptFillExecutable(def).execute(input, ctx)
-        val response = chatExec.chat(listOf(TextChatMessage.Companion.user(filled.get(PromptFillExecutable.Companion.TEXT_KEY).asText())))
+        val response = chatExec.chat(listOf(TextChatMessage.Companion.user(filled.asText())))
             .firstValue.textContent()
-        return createObject(RESPONSE_KEY, response)
-    }
-
-    companion object {
-        private const val RESPONSE_KEY = "response"
+        return TextNode.valueOf(response)
     }
 
 }
