@@ -39,4 +39,9 @@ object PPlanValidator {
         }
     }
 
+    /** Checks that the plan has at least one step. */
+    fun validateHasSteps(plan: PPlan) {
+        require(plan.steps.isNotEmpty()) { "Plan has no steps." }
+    }
+
 }

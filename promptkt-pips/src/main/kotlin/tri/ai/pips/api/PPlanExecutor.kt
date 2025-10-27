@@ -49,6 +49,7 @@ class PPlanExecutor(private val registry: ExecutableRegistry) {
     suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: AiTaskMonitor) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
+        PPlanValidator.validateHasSteps(plan)
 
         val planner = PPlanPlanner(plan, context, registry)
         val tasks = planner.plan()

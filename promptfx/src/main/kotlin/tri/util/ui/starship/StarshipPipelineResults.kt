@@ -19,6 +19,7 @@
  */
 package tri.util.ui.starship
 
+import com.fasterxml.jackson.databind.JsonNode
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -36,9 +37,6 @@ class StarshipPipelineResults {
     /** Tracks multiple-choice options by variable name. */
     private val mcOptions = mutableMapOf<String, MultiChoiceObject>()
 
-    // TODO - can we embed this within intermediate result objects instead of having a global?
-    /** Thumbnails associated with output. */
-    val thumbnails = observableListOf<DocumentThumbnail>()
     /** Flag indicating start of execution. */
     val started = SimpleBooleanProperty(false)
     /** Flag indicating active step. */
@@ -48,7 +46,7 @@ class StarshipPipelineResults {
 
     /** Creates an observable value for tracking the value of a variable, if not already present. */
     fun observableFor(widget: StarshipConfigWidget) =
-        vars.getOrPut(widget.varName) { SimpleStringProperty(null) }!!
+        vars.getOrPut(widget.varRef) { SimpleStringProperty(null) }!!
 
     /** Creates an observable value for tracking the value of a variable, allowing users to cycle between options. */
     fun actionFor(key: String, values: List<String>): Pair<ObservableValue<String>, () -> Unit> {
@@ -56,10 +54,15 @@ class StarshipPipelineResults {
         return Pair(mc.value, { mc.next() })
     }
 
+    /** Updates the value of a variable. */
+    fun updateVariable(key: String, value: JsonNode) {
+        val prop = vars.getOrPut(key) { SimpleStringProperty(null) }
+        prop.set(value.unwrappedTextValue())
+    }
+
     /** Clear results, while keeping current values of multichoice options. */
     fun clearResults() {
         vars.values.forEach { it.set(null) }
-        thumbnails.setAll()
         started.set(false)
         completed.set(false)
     }

@@ -12,7 +12,7 @@ import tri.ai.prompt.PromptDef
 class PromptChatExecutable(private val def: PromptDef, private val chatExec: TextChat): Executable {
 
     override val name: String
-        get() = "prompt_chat/${def.bareId}"
+        get() = "prompt-chat/${def.bareId}"
     override val description: String
         get() = def.description ?: "Prompt template chat ${def.bareId}"
     override val version: String

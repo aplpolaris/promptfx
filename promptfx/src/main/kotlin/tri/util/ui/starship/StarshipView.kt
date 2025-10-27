@@ -22,7 +22,6 @@ package tri.util.ui.starship
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import javafx.animation.Timeline
 import javafx.beans.value.ObservableValue
-import javafx.collections.ObservableList
 import javafx.concurrent.Task
 import javafx.event.EventHandler
 import javafx.geometry.BoundingBox
@@ -35,59 +34,36 @@ import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.promptfx.PromptFxController
-import tri.promptfx.docs.DocumentQaView
-import tri.ai.text.docs.FormattedText
+import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.ui.ImmersiveChatView
-import tri.promptfx.ui.toFxNodes
 import tri.util.info
 import tri.util.ui.*
-import tri.util.ui.AnimatingThumbnailBox
-import tri.util.ui.starship.Chromify.chromify
+import tri.util.ui.starship.StarshipView.Companion.INSETS
 
 /** View for a full-screen animated text display. */
 class StarshipView : Fragment("Starship") {
 
     val baseComponentTitle: String? by param()
     val baseComponent: View? by param()
-
     val controller: PromptFxController by inject()
 
-    val configs = StarshipConfig()
+    val configs = StarshipConfig.readDefaultYaml()
     val layout
         get() = configs.layout
-    val pipeline
-        get() = configs.pipeline
     val results = StarshipPipelineResults()
+
+    lateinit var chromePane: Pane
+    lateinit var widgetLayoutContext: StarshipWidgetLayoutContext
 
     private val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
         ?: Screen.getPrimary()
-    private val screenWidth = 1920 // curScreen.bounds.width
-    private val screenHeight = 1080 // curScreen.bounds.height
+    internal val screenWidth = 1920 // curScreen.bounds.width
+    internal val screenHeight = 1080 // curScreen.bounds.height
 
     private val css1 = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
     private val css2 = StarshipView::class.java.getResource("resources/starship.css")!!
 
     private var isExplainerVisible = false
-
-    //region DERIVED PROPERTIES
-
-    private val uw
-        get() = screenWidth / layout.numCols.toDouble()
-    private val uh
-        get() = screenHeight / layout.numRows.toDouble()
-
-    private val INSETS = 60.0
-
-    private fun StarshipConfigWidget.px() =
-        INSETS + uw * (pos.x - 1).toDouble()
-    private fun StarshipConfigWidget.py() =
-        INSETS + uh * (pos.y - 1).toDouble()
-    private fun StarshipConfigWidget.pw() =
-        uw * pos.width.toDouble() - 2 * INSETS
-    private fun StarshipConfigWidget.ph() =
-        uh * pos.height.toDouble() - 2 * INSETS
-
-    //endregion
 
     override val root = pane {
         stylesheets.add(css1.toExternalForm())
@@ -97,37 +73,30 @@ class StarshipView : Fragment("Starship") {
             addGrid()
         }
 
-        val chromePane = pane {
+        chromePane = pane {
             resizeRelocate(0.0, 0.0, 5.0, 5.0)
         }
+        widgetLayoutContext = StarshipWidgetLayoutContext(layout, screenWidth.toDouble(), screenHeight.toDouble(), chromePane, results, baseComponent)
 
-        // animating text widgets - positioned absolutely as described in config
+        // animating text widgets - positioned by widget config
         layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT }.forEach { widget ->
-            add(createWidget(widget, chromePane))
+            add(createWidget(widget, widgetLayoutContext))
         }
 
         // vertical text widgets - grouped by location so they can be stacked
         layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT_VERTICAL }
             .groupBy { it.pos.x to it.pos.y }
             .forEach { (loc, widgets) ->
-                vbox(54.0) {
-                    val w = widgets.first()
-                    resizeRelocate(w.px(), w.py(), w.pw(), w.ph())
-                    // TODO - should we bind to results instead so we get intermediate processing updates dynamically (and don't show all chrome all the time?)
-                    // TODO - can we reuse AnimatingTextWidget as-is, or do we need to tweak it?
-                    bindChildren(widgets.asObservable()) { w ->
-                        createWidget(w, chromePane).root
-                    }
-                }
+                ContainerWidget(widgetLayoutContext, widgets).addTo(this)
             }
 
-        // thumbnail widgets - positioned absolutely as described in config
+        // thumbnail widgets - positioned by widget config
         layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_THUMBNAILS }.forEach { widget ->
-            // TODO - fix hardcoded link to results thumbnails
-            add(ThumbnailWidget(results.thumbnails).view)
+            // TODO - this is essentially hardcoded to the Doc Q&A view, want to be more flexible
+            add(ThumbnailWidget(widgetLayoutContext, widget).thumbnailBox)
         }
 
-        // fill background with 100 twinkling stars of various sizes
+        // fill background with random icons
         addBackgroundIcons()
         // add rocket indicator in lower-right corner to indicate ongoing processing
         addProgressIndicator()
@@ -182,18 +151,6 @@ class StarshipView : Fragment("Starship") {
             results.started.onChange { if (it) startBlinking() }
             results.completed.onChange { stopBlinking() }
         })
-    }
-
-    /** Adds a widget to the pane, with chromed decoration. */
-    private fun createWidget(widget: StarshipConfigWidget, chromePane: Pane): Fragment {
-        val observable = results.observableFor(widget)
-        val buttonEntry = widget.overlay.options.entries.firstOrNull()
-        if (buttonEntry == null) {
-            return AnimatingTextWidget(widget, chromePane, observable).view
-        } else {
-            val (buttonText, buttonAction) = results.actionFor(buttonEntry.key, buttonEntry.value)
-            return AnimatingTextWidget(widget, chromePane, observable, buttonText, buttonAction).view
-        }
     }
 
     /** Adds an explainer overlay that can be toggled with "X" keypress. */
@@ -285,11 +242,10 @@ class StarshipView : Fragment("Starship") {
             return
         results.clearResults()
         job = runAsync {
-            // TODO - add delay if isExplainerVisible is in place to slow down processing between steps for demo
-//            StarshipPipelines.exec(config, results, if (isExplainerVisible) 3000 else 0)
             info<StarshipView>("Running Starship pipeline with delay=$isExplainerVisible...")
             runBlocking {
-                StarshipPipelineExecutor(configs.pipeline, controller.chatService.value, results)
+                StarshipPipelineExecutor(configs.question, configs.pipeline, controller.chatService.value, stepDelay = if (isExplainerVisible) 3000 else 0,
+                    find<PromptFxWorkspace>(), baseComponentTitle!!, results)
                     .execute()
             }
         }.also {
@@ -310,50 +266,38 @@ class StarshipView : Fragment("Starship") {
 
     //endregion
 
-    //region VIEW WIDGETS
-
-    /** View element for large display text. */
-    inner class AnimatingTextWidget(widget: StarshipConfigWidget, chromePane: Pane, value: ObservableValue<String>,
-                                    buttonText: ObservableValue<String>? = null, buttonAction: (() -> Unit)? = null) {
-        val view = AnimatingTextFlow()
-
-        init {
-            view.root.isMouseTransparent = true
-            view.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), widget.ph())
-            view.updatePrefWidth(widget.pw())
-            view.updateFontSize(widget.overlay.iconSize?.toDouble() ?: 12.0)
-            chromePane.chromify(view.root, 36.0, widget.overlay.title ?: "", widget.overlay.icon, buttonText, buttonAction)
-            value.onChange { view.animateText(FormattedText(it ?: "").toFxNodes()) }
-        }
+    companion object {
+        const val INSETS = 60.0
     }
 
-    /** View element for displaying a list of thumbnails. */
-    inner class ThumbnailWidget(list: ObservableList<DocumentThumbnail>) {
-        private val DOC_THUMBNAIL_SIZE = 193
+}
 
-        val view = AnimatingThumbnailBox { }.apply {
-            id = "starship-thumbnails"
-            isMouseTransparent = true
-            // TODO - dynamic location
-            resizeRelocate(10.0, screenHeight - 300.0, screenWidth - 80.0, 300.0)
-            spacing = 20.0
-            list.onChange { animateThumbs(it.list) }
-        }
+/** Helper object for widget view layout, chrome, etc. */
+class StarshipWidgetLayoutContext(
+    val layout: StarshipConfigLayout,
+    val screenWidth: Double,
+    val screenHeight: Double,
+    val chromePane: Pane,
+    val results: StarshipPipelineResults,
+    val baseComponent: View?
+)
 
-        init {
-            if (baseComponent is DocumentQaView) {
-                val base = baseComponent as DocumentQaView
-                base.snippets.onChange {
-                    val thumbs = base.snippets.map { it.document.browsable()!! }.toSet()
-                        .map { DocumentThumbnail(it, DocumentUtils.documentThumbnail(it, DOC_THUMBNAIL_SIZE, true)) }
-                    view.animateThumbs(thumbs.take(6))
-                }
-            }
-        }
+/** Adds a widget to the pane, with chromed decoration. */
+internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetLayoutContext, isShowDynamically: Boolean = false): Fragment {
+    val observable = context.results.observableFor(widget)
+    val buttonEntry = widget.overlay.options.entries.firstOrNull()
+    val widget = if (buttonEntry == null) {
+        AnimatingTextWidget(context, widget, observable).textFlow
+    } else {
+        val (buttonText, buttonAction) = context.results.actionFor(buttonEntry.key, buttonEntry.value)
+        AnimatingTextWidget(context, widget, observable, buttonText, buttonAction).textFlow
     }
-
-    //endregion
-
+    if (isShowDynamically) {
+        val nonEmptyBinding = observable.booleanBinding { !it.isNullOrBlank() }
+        widget.root.managedWhen(nonEmptyBinding)
+        widget.root.visibleWhen(nonEmptyBinding)
+    }
+    return widget
 }
 
 /** Utilities for decorating components. */
@@ -364,25 +308,24 @@ internal object Chromify {
 
     /** Add decoration to parent panel, for the given node which should be inside that parent pane. */
     internal fun Pane.chromify(
-        node: Node, wid: Double, title: String, icon: FontAwesomeIcon? = null,
+        node: Node, strokeWid: Double, title: String, icon: FontAwesomeIcon? = null,
         buttonText: ObservableValue<String>? = null, buttonAction: (() -> Unit)? = null
     ) {
         val pane = pane {
             isPickOnBounds = false
-            val gap = wid * 1.1
             val path = path {
-                strokeWidth = wid
+                strokeWidth = strokeWid
                 strokeLineJoin = StrokeLineJoin.ROUND
                 style = STROKE_STYLE
             }
             val circ = circle {
                 strokeWidth = WID2
                 style = CIRC_STYLE
-                radius = 0.8 * wid
+                radius = 0.8 * strokeWid
             }
             if (icon != null) {
                 val iconView = icon.graphic.apply {
-                    glyphSize = 0.9 * wid
+                    glyphSize = 0.9 * strokeWid
                     glyphStyle = "-fx-fill: #333;"
                 }
                 val fudge = when (icon) {
@@ -397,9 +340,9 @@ internal object Chromify {
             }
             if (buttonText != null) {
                 line {
-                    startXProperty().bind(circ.centerXProperty() + wid)
+                    startXProperty().bind(circ.centerXProperty() + strokeWid)
                     startYProperty().bind(circ.centerYProperty())
-                    endXProperty().bind(circ.centerXProperty() + 2 * wid)
+                    endXProperty().bind(circ.centerXProperty() + 2 * strokeWid)
                     endYProperty().bind(circ.centerYProperty())
                     style {
                         stroke = c("#333")
@@ -407,18 +350,18 @@ internal object Chromify {
                     }
                 }
                 button(buttonText) {
-                    resizeRelocate(0.0, 0.0, 2 * wid, 2 * wid)
+                    resizeRelocate(0.0, 0.0, 2 * strokeWid, 2 * strokeWid)
                     style {
                         backgroundColor += c("#333")
                         borderColor += box(c("#333"))
                         textFill = c("#777")
-                        fontSize = (wid*0.8).px
+                        fontSize = (strokeWid*0.8).px
                         borderRadius += box(10.px)
                         padding = box(0.px, 6.px, 1.px, 6.px)
                     }
                     action { buttonAction?.invoke() }
-                    layoutXProperty().bind(circ.centerXProperty() + 2*wid)
-                    layoutYProperty().bind(circ.centerYProperty() - 0.7*wid)
+                    layoutXProperty().bind(circ.centerXProperty() + 2*strokeWid)
+                    layoutYProperty().bind(circ.centerYProperty() - 0.7*strokeWid)
 
                     setOnMouseEntered {
                         style(true) { effect = javafx.scene.effect.DropShadow(10.0, c("#EE8F33")) }
@@ -428,35 +371,35 @@ internal object Chromify {
                         style(true) { effect = javafx.scene.effect.DropShadow(10.0, c("#333")) }
                     }
                 }
-                node.style += "-fx-padding: ${1.8*wid}px 0 0 0;"
+                node.style += "-fx-padding: ${1.8*strokeWid}px 0 0 0;"
             }
             text(title) {
                 transforms.add(Rotate(90.0))
-                style = "-fx-fill: gray; -fx-font-size: ${wid}px"
-                layoutXProperty().bind(circ.centerXProperty().minus(0.3 * wid))
-                layoutYProperty().bind(circ.centerYProperty().plus(wid))
+                style = "-fx-fill: gray; -fx-font-size: ${strokeWid}px"
+                layoutXProperty().bind(circ.centerXProperty().minus(0.3 * strokeWid))
+                layoutYProperty().bind(circ.centerYProperty().plus(strokeWid))
             }
 
             fun updatePath() {
                 // get bounds of node relative to [Pane]
                 val boundsInScene = node.localToScene(node.boundsInLocal)
                 val boundsInPane = this.sceneToLocal(boundsInScene)
+                // set up standard coords
+                val x0 = boundsInPane.minX - INSETS/2
+                val y0 = boundsInPane.minY
+                val y1 = boundsInPane.maxY + INSETS/2
                 with(path) {
                     elements.clear()
-                    moveTo(boundsInPane.minX - gap - wid / 2, boundsInPane.minY + 1.2 * wid)
-                    lineTo(boundsInPane.minX - gap - wid / 2, boundsInPane.maxY)
-                    arcTo(
-                        gap + wid / 2, gap + wid / 2, 0.0,
-                        boundsInPane.minX, boundsInPane.maxY + gap + wid / 2,
-                        largeArcFlag = false, sweepFlag = false
-                    )
-                    lineTo(boundsInPane.maxX, boundsInPane.maxY + gap + wid / 2)
+                    moveTo(x0, y0)
+                    lineTo(x0, boundsInPane.maxY)
+                    arcTo(INSETS/2, INSETS/2, 0.0, boundsInPane.minX, y1,
+                        largeArcFlag = false, sweepFlag = false)
+                    lineTo(boundsInPane.maxX, y1)
                 }
-                with(circ) {
-                    centerX = boundsInPane.minX - gap - wid / 2
-                    centerY = boundsInPane.minY + 0.5 * wid
-                }
+                circ.centerX = x0
+                circ.centerY = y0
             }
+
             updatePath()
             node.boundsInParentProperty().onChange { updatePath() }
         }

@@ -15,14 +15,12 @@ import tri.util.ui.starship.StarshipConfigQuestion.Companion.TOPIC_KEY
 import kotlin.collections.random
 
 /** Generates a random question for use in the Starship view.*/
-class StarshipExecutableQuestionGenerator(val chat: TextChat) : Executable {
+class StarshipExecutableQuestionGenerator(val config: StarshipConfigQuestion, val chat: TextChat) : Executable {
     override val name = "starship/random-question"
     override val description = "Generates a random question."
     override val version = "0.0.1"
     override val inputSchema = MAPPER.readTree(INPUT_SCHEMA)
     override val outputSchema = MAPPER.readTree(OUTPUT_SCHEMA)
-
-    var config = StarshipConfigQuestion()
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
         val question = randomQuestion()

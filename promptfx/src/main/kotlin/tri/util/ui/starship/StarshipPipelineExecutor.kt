@@ -1,47 +1,65 @@
 package tri.util.ui.starship
 
-import javafx.scene.image.Image
+import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.PromptChatRegistry
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskMonitor
+import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.PPlan
 import tri.ai.pips.api.PPlanExecutor
-import tri.ai.pips.api.PPlanStep
 import tri.ai.prompt.PromptLibrary
-import tri.ai.text.docs.FormattedText
-import tri.util.ui.DocumentThumbnail
+import tri.promptfx.PromptFxWorkspace
 
 /** Executes a Starship pipeline with observability tracking. */
-class StarshipPipelineExecutor(val plan: PPlan, val chat: TextChat, val results: StarshipPipelineResults) {
+class StarshipPipelineExecutor(
+    /** The question generator. */
+    val questionConfig: StarshipConfigQuestion,
+    /** The plan to execute. */
+    val plan: PPlan,
+    /** Chat model used for prompt execution. */
+    val chat: TextChat,
+    /** Optional delay between steps. */
+    val stepDelay: Int = 0,
+    /** Used for sending inputs to UI components for processing. */
+    val workspace: PromptFxWorkspace,
+    /** Used for sending inputs to the view that was active when Starship was launched. */
+    val baseComponentTitle: String,
+    /** Used for collecting results. */
+    val results: StarshipPipelineResults
+) {
     suspend fun execute() {
         val registry = ExecutableRegistry.Companion.create(
-            listOf(StarshipExecutableQuestionGenerator(chat), StarshipExecutableCurrentView()) +
+            listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +
                     PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
         )
-        // TODO - add observability and update interim results
-        val context = ExecContext()
-        val monitor = object : AiTaskMonitor {
-            override fun taskStarted(task: AiTask) { }
-            override fun taskUpdate(task: AiTask, progress: Double) { }
-            override fun taskCompleted(task: AiTask, result: Any?) {
-                // TODO - potential hook to trigger pipeline result updates
-                println("Task completed: ${task.id} with result: $result")
-            }
-            override fun taskFailed(task: AiTask, error: Throwable) { }
+        val context = ExecContext().apply {
+            variableSet = results::updateVariable
         }
+        val monitor = if (stepDelay == 0) PrintMonitor() else PrintMonitorWithDelay(stepDelay)
         PPlanExecutor(registry).execute(plan, context, monitor)
-        context.variableSet = { name, value ->
-            // TODO - potential hook to capture individual variable updates
-            println("Variable updated: $name = $value")
+    }
+
+    private inner class PrintMonitorWithDelay(val delayMs: Int) : AiTaskMonitor {
+        val printer = PrintMonitor()
+        override fun taskStarted(task: AiTask) = printer.taskStarted(task)
+        override fun taskUpdate(task: AiTask, progress: Double) = printer.taskUpdate(task, progress)
+        override fun taskCompleted(task: AiTask, result: Any?) {
+            printer.taskCompleted(task, result)
+            Thread.sleep(delayMs.toLong())
+        }
+        override fun taskFailed(task: AiTask, error: Throwable) {
+            printer.taskFailed(task, error)
+            Thread.sleep(delayMs.toLong())
         }
     }
 }
 
-/** Result object for individual [PPlanStep] steps in the [StarshipView] pipeline. */
-class StarshipPipelineStepResult(val step: Int, val label: String, val text: FormattedText, val image: Image?, val docs: List<DocumentThumbnail>) {
-    val rawText
-        get() = text.toString()
+/** Unwraps a [JsonNode] to get a text value, working iteratively until finding a string value or a more complex structure. */
+fun JsonNode.unwrappedTextValue(): String = when {
+    isTextual -> asText()
+    isObject && size() == 1 -> properties().first().value.unwrappedTextValue()
+    else -> toString()
 }

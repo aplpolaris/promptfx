@@ -6,6 +6,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.PromptChatRegistry
 import tri.ai.openai.OpenAiPlugin
+import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.PPlanExecutor
 import tri.ai.prompt.PromptLibrary
 
@@ -18,6 +19,15 @@ class StarshipConfigTest {
     }
 
     @Test
+    fun testRandomQuestion() {
+        val config = StarshipConfig.readDefaultYaml()
+        val questioner = StarshipExecutableQuestionGenerator(OpenAiPlugin().chatModels().first())
+        questioner.config = config.question
+        println(questioner.randomQuestion())
+        println(questioner.randomQuestion())
+    }
+
+    @Test
     fun testExecute() {
         val config = StarshipConfig.readDefaultYaml()
         val chat = OpenAiPlugin().chatModels().first()
@@ -27,7 +37,7 @@ class StarshipConfigTest {
         )
 
         runBlocking {
-            PPlanExecutor(registry).execute(config.pipeline, ExecContext())
+            PPlanExecutor(registry).execute(config.pipeline, ExecContext(), PrintMonitor())
         }
     }
 }

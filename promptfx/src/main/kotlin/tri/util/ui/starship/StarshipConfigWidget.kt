@@ -5,8 +5,8 @@ import java.awt.Rectangle
 
 /** Configuration for a view widget in the Starship UI. */
 data class StarshipConfigWidget(
-    /** Variable name to bind the widget to. */
-    val varName: String,
+    /** Variable name to bind the widget to, with update received when [tri.ai.core.tool.ExecContext] updates its vars. */
+    val varRef: String,
     /** Type of widget to display. */
     val widgetType: StarshipWidgetType,
     /** Position within grid. */
@@ -25,7 +25,7 @@ enum class StarshipWidgetType {
 /** Overlay settings for Starship UI widgets. */
 data class StarshipWidgetOverlay(
     /** Number of other character used to identify the widget. */
-    val step: Int,
+    val step: Int? = null,
     /** Title of the step. */
     val title: String? = null,
     /** Icon to show in the widget header. */
@@ -33,7 +33,7 @@ data class StarshipWidgetOverlay(
     /** Size of icon in widget header. */
     val iconSize: Int? = null,
     /** Explainer text to show in "help" mode. */
-    val explain: String,
+    val explain: String? = null,
     /** Options to be displayed in dropdowns for the user, with keys matching elements of the associated prompt template. */
     val options: Map<String, List<String>> = mapOf()
 )
