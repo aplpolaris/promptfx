@@ -133,7 +133,7 @@ class PPlanExecutorTest {
             assertEquals("prompt-llm/demo@0.0.1", plan.id)
             assertTrue("prompt1" in context.vars.keys)
             assertTrue("chat1" in context.vars.keys)
-            assertTrue("red" in (context.vars["prompt1"]?.get("text")?.asText() ?: ""))
+            assertTrue("red" in (context.vars["prompt1"]?.asText() ?: ""))
             assertEquals("#ff0000", context.vars["chat1"]?.get("message")?.asText()?.toLowerCase())
         }
     }
