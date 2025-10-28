@@ -216,7 +216,7 @@ class PPlanExecutorTest {
             assertTrue("finalSummary" in context.vars.keys)
 
             // Verify the flow worked - keyword prompt should contain the input text
-            val keywordPrompt = context.vars["keywordPrompt"]?.get("text")?.asText() ?: ""
+            val keywordPrompt = context.vars["keywordPrompt"]?.asText() ?: ""
             assertTrue("Artificial intelligence" in keywordPrompt)
 
             // Verify the mock chat responses are flowing through
@@ -224,7 +224,7 @@ class PPlanExecutorTest {
             assertEquals("AI, machine learning, natural language processing", extractedKeywords)
 
             // Verify the final summary prompt contains the extracted keywords
-            val summaryPrompt = context.vars["summaryPrompt"]?.get("text")?.asText() ?: ""
+            val summaryPrompt = context.vars["summaryPrompt"]?.asText() ?: ""
             assertTrue("AI, machine learning, natural language processing" in summaryPrompt)
 
             // Verify the final summary contains expected content
