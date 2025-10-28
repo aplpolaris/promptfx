@@ -22,15 +22,19 @@ package tri.ai.mcp
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.google.common.annotations.Beta
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import tri.ai.core.tool.Executable
+import tri.ai.mcp.tool.McpToolResult
 
 /**
  * Remote MCP server adapter that connects to external MCP servers via HTTP.
  */
+@Beta
 class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
     
     private val httpClient = HttpClient(OkHttp) {
@@ -42,6 +46,22 @@ class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
     }
     
     private val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+
+    override suspend fun getCapabilities(): McpServerCapabilities? {
+        try {
+            val response = httpClient.get("$baseUrl/capabilities")
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText()
+                return objectMapper.readValue<McpServerCapabilities>(responseBody)
+            } else {
+                // Capabilities endpoint is optional, so we don't throw an error
+                return null
+            }
+        } catch (e: Exception) {
+            // Capabilities endpoint is optional, so we don't throw an error
+            return null
+        }
+    }
     
     override suspend fun listPrompts(): List<McpPrompt> {
         try {
@@ -77,23 +97,47 @@ class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
             throw McpServerException("Error getting prompt from MCP server: ${e.message}")
         }
     }
-    
-    override suspend fun getCapabilities(): McpServerCapabilities? {
+
+    override suspend fun listTools(): List<Executable> {
         try {
-            val response = httpClient.get("$baseUrl/capabilities")
+            val response = httpClient.get("$baseUrl/tools/list")
             if (response.status.isSuccess()) {
                 val responseBody = response.bodyAsText()
-                return objectMapper.readValue<McpServerCapabilities>(responseBody)
+                return objectMapper.readValue<List<Executable>>(responseBody)
             } else {
-                // Capabilities endpoint is optional, so we don't throw an error
-                return null
+                throw McpServerException("Failed to list tools: ${response.status}")
             }
         } catch (e: Exception) {
-            // Capabilities endpoint is optional, so we don't throw an error
-            return null
+            throw McpServerException("Error connecting to MCP server: ${e.message}")
         }
     }
-    
+
+    override suspend fun getTool(name: String): Executable? {
+        val tools = listTools()
+        return tools.find { it.name == name }
+    }
+
+    override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
+        try {
+            val response = httpClient.post("$baseUrl/tools/call") {
+                contentType(ContentType.Application.Json)
+                setBody(objectMapper.writeValueAsString(mapOf(
+                    "name" to name,
+                    "arguments" to args
+                )))
+            }
+
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText()
+                return objectMapper.readValue<McpToolResult>(responseBody)
+            } else {
+                throw McpServerException("Failed to call tool '$name': ${response.status}")
+            }
+        } catch (e: Exception) {
+            throw McpServerException("Error calling tool on MCP server: ${e.message}")
+        }
+    }
+
     override suspend fun close() {
         httpClient.close()
     }

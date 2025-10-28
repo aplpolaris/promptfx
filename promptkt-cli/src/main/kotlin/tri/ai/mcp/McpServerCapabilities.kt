@@ -19,14 +19,18 @@
  */
 package tri.ai.mcp
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import kotlinx.serialization.Serializable
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Serializable
 data class McpServerCapabilities(
-    val prompts: McpServerPromptCapability
+    val prompts: McpServerCapability? = null,
+    val tools: McpServerCapability? = null,
+    val resources: McpServerCapability? = null
 )
 
 @Serializable
-data class McpServerPromptCapability(
+data class McpServerCapability(
     val listChanged: Boolean = false
 )

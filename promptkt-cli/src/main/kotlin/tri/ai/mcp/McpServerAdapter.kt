@@ -19,21 +19,22 @@
  */
 package tri.ai.mcp
 
+import tri.ai.mcp.tool.ToolLibrary
+
 /**
  * Interface for connecting to MCP prompt servers, supporting both local and remote connections.
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  */
-interface McpServerAdapter {
-    
-    /** List all available prompts from the server. */
-    suspend fun listPrompts(): List<McpPrompt>
-    
-    /** Get a filled prompt with the given arguments. */
-    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
-    
+interface McpServerAdapter: ToolLibrary {
+
     /** Get server capabilities. */
     suspend fun getCapabilities(): McpServerCapabilities?
-    
+
+    /** List all available prompts from the server. */
+    suspend fun listPrompts(): List<McpPrompt>
+    /** Get a filled prompt with the given arguments. */
+    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
+
     /** Close the connection to the server. */
     suspend fun close()
 }
