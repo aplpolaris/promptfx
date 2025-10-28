@@ -85,7 +85,11 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
         task: WorkflowTask
     ): WorkflowSolveStep {
         val t0 = System.currentTimeMillis()
-        val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+        val input = state.aggregateInputsFor(name).values.mapNotNull { 
+            it?.let { node -> 
+                if (node.isTextual) node.asText() else node.toString()
+            }
+        }.ifEmpty {
             listOf(task.name)
         }.joinToString("\n")
         

@@ -19,7 +19,11 @@
  */
 package tri.ai.core.agent.wf
 
-/** Tracks intermediate results and other useful information. */
+/** 
+ * Tracks intermediate results and other useful information. 
+ * @deprecated Use ExecContext instead. WorkflowScratchpad is no longer used in WorkflowExecutor.
+ */
+@Deprecated("Use ExecContext instead", ReplaceWith("ExecContext", "tri.ai.core.tool.ExecContext"))
 class WorkflowScratchpad {
     val data = mutableMapOf<String, WVar>()
 

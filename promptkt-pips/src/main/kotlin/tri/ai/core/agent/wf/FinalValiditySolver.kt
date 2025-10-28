@@ -43,12 +43,12 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         // get input information from the state
         val userRequest = state.request.request
         val finalTaskId = state.taskTree.findTask { it is WorkflowUserRequest }!!.tasks.last().root.id
-        val finalResult = state.scratchpad.data["$finalTaskId.result"]!!
+        val finalResult = state.context.vars["$finalTaskId.result"]!!
 
         // complete a prompt doing the assessment
         val prompt = PROMPTS.get(VALIDATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
-            PROPOSED_RESULT_PARAM to finalResult.value.toString()
+            PROPOSED_RESULT_PARAM to (if (finalResult.isTextual) finalResult.asText() else finalResult.toString())
         )
 
         // use LLM to generate a response
@@ -67,8 +67,8 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         return WorkflowSolveStep(
             task,
             this,
-            inputs(userRequest, finalResult.value),
-            outputs(validity.isRequestAnswered, validity.rationale, finalResult.value),
+            inputs(userRequest, if (finalResult.isTextual) finalResult.asText() else finalResult.toString()),
+            outputs(validity.isRequestAnswered, validity.rationale, if (finalResult.isTextual) finalResult.asText() else finalResult.toString()),
             t1 - t0,
             true
         )

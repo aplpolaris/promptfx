@@ -33,7 +33,11 @@ class RunSolver(
     ): WorkflowSolveStep {
         val t0 = System.currentTimeMillis()
         val inputData = if (inputs.isEmpty()) "" else
-            state.aggregateInputsFor(name).values.joinToString("\n") { "${it?.value}" }
+            state.aggregateInputsFor(name).values.joinToString("\n") { 
+                it?.let { node -> 
+                    if (node.isTextual) node.asText() else node.toString()
+                } ?: ""
+            }
         val result = run(inputData)
         return solveStep(
             task,

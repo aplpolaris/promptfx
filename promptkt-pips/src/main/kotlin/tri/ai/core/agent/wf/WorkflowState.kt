@@ -19,6 +19,9 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.node.TextNode
+import tri.ai.core.agent.MAPPER
+import tri.ai.core.tool.ExecContext
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
@@ -29,8 +32,8 @@ class WorkflowState(_request: WorkflowUserRequest) {
     var request = _request
     /** Tree of tasks required for workflow execution. */
     val taskTree = WorkflowTaskTree.createSolveAndValidateTree(request)
-    /** Scratchpad containing intermediate results and other useful information. */
-    val scratchpad = WorkflowScratchpad()
+    /** Context containing intermediate results and other useful information. */
+    val context = ExecContext()
     /** History of solver steps taken. */
     val solveHistory = mutableListOf<WorkflowSolveStep>()
     /** Flag indicating when the execution is complete. */
@@ -41,7 +44,7 @@ class WorkflowState(_request: WorkflowUserRequest) {
         // TODO - this is very brittle
         val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
         if (userInput.isNotEmpty())
-            scratchpad.data["user_input"] = WVar("user_input", "User input for the workflow", userInput)
+            context.put("user_input", TextNode.valueOf(userInput))
     }
 
     /** Check for completion, updating the isDone flag if all tasks are complete. */
@@ -58,6 +61,15 @@ class WorkflowState(_request: WorkflowUserRequest) {
             curNode.isDone = newNode.isDone
         }
         printTaskPlan(plan.decomp)
+    }
+
+    /** Add task results to the context. */
+    fun addResults(task: WorkflowTask, outputs: List<WVar>) {
+        outputs.forEach { 
+            val key = "${task.id}.${it.name}"
+            val value = MAPPER.valueToTree<com.fasterxml.jackson.databind.JsonNode>(it.value)
+            context.put(key, value)
+        }
     }
 
     internal fun printTaskPlan(trees: List<WorkflowTaskTree>, indent: String = ""): String = StringBuilder().apply {
@@ -87,11 +99,13 @@ class WorkflowState(_request: WorkflowUserRequest) {
     /** Using the current plan, look up all the inputs associated with the given tool. */
     fun aggregateInputsFor(toolName: String) =
         ((taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
-            ?: listOf()).associateWith { scratchpad.data["$it.result"] ?: scratchpad.data[it] }
+            ?: listOf()).associateWith { context.vars["$it.result"] ?: context.vars[it] }
 
-    /** Get the final computed result from the scratchpad. */
+    /** Get the final computed result from the context. */
     fun finalResult() =
-        // TODO - this is brittle since it assumes a specific output exists on the scratchpad, want a general purpose solution
-        scratchpad.data[FINAL_RESULT_ID]!!.value
+        // TODO - this is brittle since it assumes a specific output exists on the context, want a general purpose solution
+        context.vars[FINAL_RESULT_ID]!!.let { 
+            if (it.isTextual) it.asText() else it.toString()
+        }
 }
 

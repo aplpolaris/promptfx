@@ -261,7 +261,11 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         private fun Executable.toSolver(textChat: TextChat) = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
             override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
-                val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+                val input = state.aggregateInputsFor(name).values.mapNotNull { 
+                    it?.let { node -> 
+                        if (node.isTextual) node.asText() else node.toString()
+                    }
+                }.ifEmpty {
                     listOf(task.name)
                 }.joinToString("\n")
                 val result = runBlocking {
