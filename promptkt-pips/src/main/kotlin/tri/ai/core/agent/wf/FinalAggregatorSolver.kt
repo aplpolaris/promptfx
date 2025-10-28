@@ -37,7 +37,11 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
         task: WorkflowTask
     ): WorkflowSolveStep {
         val userRequest = state.request.request
-        val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+        val inputs = state.aggregateInputsFor(name).values.mapNotNull { 
+            it?.let { node -> 
+                if (node.isTextual) node.asText() else node.toString()
+            }
+        }.ifEmpty {
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")

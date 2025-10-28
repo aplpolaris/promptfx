@@ -97,7 +97,7 @@ class WorkflowExecutor(
 
             if (step.isSuccess) {
                 state.taskTree.setTaskDone(task)
-                state.scratchpad.addResults(task, step.outputs)
+                state.addResults(task, step.outputs)
                 emit(AgentChatEvent.ToolResult(solver.name, step.outputs.joinToString("\n") { "${it.name}: ${it.value}" }))
             } else {
                 emit(AgentChatEvent.Error(Exception("Step failed, see logs for details.")))

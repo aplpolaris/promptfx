@@ -33,7 +33,11 @@ class ChatSolver(
 ) : WorkflowSolver(name, description, mapOf(INPUT to inputDescription), mapOf(RESULT to outputDescription)) {
 
     override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
-        val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+        val inputs = state.aggregateInputsFor(name).values.mapNotNull { 
+            it?.let { node -> 
+                if (node.isTextual) node.asText() else node.toString()
+            }
+        }.ifEmpty {
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")
@@ -60,7 +64,11 @@ class InstructSolver(
     val instruction: String
 ) : WorkflowSolver(name, description, mapOf("input" to inputDescription), mapOf("result" to outputDescription)) {
     override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
-        val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
+        val inputs = state.aggregateInputsFor(name).values.mapNotNull { 
+            it?.let { node -> 
+                if (node.isTextual) node.asText() else node.toString()
+            }
+        }.ifEmpty {
             listOf(task.name)
         }
         val inputData = inputs.joinToString("\n")
