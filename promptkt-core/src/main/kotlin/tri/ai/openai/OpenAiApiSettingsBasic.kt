@@ -80,7 +80,7 @@ class OpenAiApiSettingsBasic : OpenAiApiSettings {
 
         return if (key.isNullOrBlank()) {
             // Using tri.util.info to allow suppression in CLI contexts where MIN_LEVEL_TO_LOG >= WARNING
-            tri.util.info<OpenAiApiSettings>(
+            tri.util.info<OpenAiApiSettingsBasic>(
                 "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
             )
             ""
