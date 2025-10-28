@@ -79,8 +79,8 @@ class OpenAiApiSettingsBasic : OpenAiApiSettings {
             System.getenv(API_KEY_ENV)
 
         return if (key.isNullOrBlank()) {
-            // Using tri.util.warning to respect MIN_LEVEL_TO_LOG when used in CLI contexts
-            tri.util.warning<OpenAiApiSettings>(
+            // Using tri.util.info to allow suppression in CLI contexts where MIN_LEVEL_TO_LOG >= WARNING
+            tri.util.info<OpenAiApiSettings>(
                 "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
             )
             ""

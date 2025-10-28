@@ -93,8 +93,8 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
         }
 
     override fun run() {
-        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         val driver = createQaDriver(config)
 
         val status: (String) -> String = { "Asking a question about documents in ${ANSI_YELLOW}$it${ANSI_RESET}. Say '${ANSI_GREEN}bye${ANSI_RESET}' to exit, or '${ANSI_GREEN}switch x${ANSI_RESET}' to switch to a different folder." }
@@ -148,8 +148,8 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         }
 
     override fun run() {
-        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         val driver = createQaDriver(config)
 
         info<DocumentQa>("  question: $question")
