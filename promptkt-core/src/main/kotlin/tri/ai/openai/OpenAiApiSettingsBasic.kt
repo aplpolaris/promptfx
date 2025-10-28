@@ -26,8 +26,8 @@ import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
 import tri.ai.openai.api.OpenAiApiSettings
+import tri.util.warning
 import java.io.File
-import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
 
 /** Manages OpenAI API key and client. */
@@ -79,7 +79,8 @@ class OpenAiApiSettingsBasic : OpenAiApiSettings {
             System.getenv(API_KEY_ENV)
 
         return if (key.isNullOrBlank()) {
-            Logger.getLogger(OpenAiApiSettings::class.java.name).warning(
+            // Using tri.util.warning to respect MIN_LEVEL_TO_LOG when used in CLI contexts
+            tri.util.warning<OpenAiApiSettings>(
                 "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
             )
             ""

@@ -67,14 +67,8 @@ class DocumentCli : CliktCommand(name = "document") {
         .default("")
     private val model by option(help = "Chat model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
         .default(OpenAiModelIndex.GPT35_TURBO_ID)
-        .validate {
-            require(it in TextPlugin.chatModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val embedding by option(help = "Embedding model to use (default ${OpenAiModelIndex.EMBEDDING_ADA})")
         .default(OpenAiModelIndex.EMBEDDING_ADA)
-        .validate {
-            require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val temp by option(help = "Temperature for chat completion (default 0.5)")
         .double()
         .default(0.5)
@@ -255,7 +249,8 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         try {
             chatModel = config.chatModel
         } catch (x: NoSuchElementException) {
-            error("Chat model ${config.chatModel} not found.")
+            val availableModels = TextPlugin.chatModels().map { it.modelId }
+            error("Chat model '${config.chatModel}' not found. Available models: ${availableModels.joinToString(", ")}")
         }
     }
     info<DocumentQa>("  using chat engine $chatModel")
@@ -263,7 +258,8 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         try {
             embeddingModel = config.embeddingModel
         } catch (x: NoSuchElementException) {
-            error("Embedding model ${config.embeddingModel} not found.")
+            val availableModels = TextPlugin.embeddingModels().map { it.modelId }
+            error("Embedding model '${config.embeddingModel}' not found. Available models: ${availableModels.joinToString(", ")}")
         }
     }
     info<DocumentQa>("  using embedding model $embeddingModel")
