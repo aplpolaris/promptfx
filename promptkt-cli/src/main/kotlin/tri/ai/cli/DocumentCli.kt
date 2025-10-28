@@ -67,14 +67,8 @@ class DocumentCli : CliktCommand(name = "document") {
         .default("")
     private val model by option(help = "Chat model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
         .default(OpenAiModelIndex.GPT35_TURBO_ID)
-        .validate {
-            require(it in TextPlugin.chatModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val embedding by option(help = "Embedding model to use (default ${OpenAiModelIndex.EMBEDDING_ADA})")
         .default(OpenAiModelIndex.EMBEDDING_ADA)
-        .validate {
-            require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val temp by option(help = "Temperature for chat completion (default 0.5)")
         .double()
         .default(0.5)
@@ -99,8 +93,8 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
         }
 
     override fun run() {
-        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         val driver = createQaDriver(config)
 
         val status: (String) -> String = { "Asking a question about documents in ${ANSI_YELLOW}$it${ANSI_RESET}. Say '${ANSI_GREEN}bye${ANSI_RESET}' to exit, or '${ANSI_GREEN}switch x${ANSI_RESET}' to switch to a different folder." }
@@ -154,8 +148,8 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         }
 
     override fun run() {
-        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
+        OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         val driver = createQaDriver(config)
 
         info<DocumentQa>("  question: $question")
@@ -255,7 +249,8 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         try {
             chatModel = config.chatModel
         } catch (x: NoSuchElementException) {
-            error("Chat model ${config.chatModel} not found.")
+            val availableModels = TextPlugin.chatModels().map { it.modelId }
+            error("Chat model '${config.chatModel}' not found. Available models: ${availableModels.joinToString(", ")}")
         }
     }
     info<DocumentQa>("  using chat engine $chatModel")
@@ -263,7 +258,8 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         try {
             embeddingModel = config.embeddingModel
         } catch (x: NoSuchElementException) {
-            error("Embedding model ${config.embeddingModel} not found.")
+            val availableModels = TextPlugin.embeddingModels().map { it.modelId }
+            error("Embedding model '${config.embeddingModel}' not found. Available models: ${availableModels.joinToString(", ")}")
         }
     }
     info<DocumentQa>("  using embedding model $embeddingModel")
