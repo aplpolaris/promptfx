@@ -108,7 +108,8 @@ layout:
       overlay:
         step: 5
         title: Outline
-        iconSize: 16
+        icon: LIST_ALT
+        iconSize: 18
         explain: The answer can be transformed in other ways depending on the use case.
 
     - varRef: technicalTerms
@@ -116,13 +117,15 @@ layout:
       pos: { x: 3, y: 1, width: 1, height: 0 }  # use same coordinate and height=0 to stack vertically
       overlay:
         title: Technical Terms
-        iconSize: 16
+        icon: COGS
+        iconSize: 18
 
     - varRef: translatedResponse
       widgetType: ANIMATING_TEXT_VERTICAL
       pos: { x: 3, y: 1, width: 1, height: 0 }  # use same coordinate and height=0 to stack vertically
       overlay:
         title: Translate
-        iconSize: 16
+        icon: GLOBE
+        iconSize: 18
         options:
           translate-instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]

@@ -297,11 +297,6 @@ internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetL
         val (buttonText, buttonAction) = context.results.actionFor(buttonEntry.key, buttonEntry.value)
         AnimatingTextWidget(context, widget, observable, isDynamic, buttonText, buttonAction).textFlow
     }
-    if (isDynamic) {
-        val nonEmptyBinding = observable.booleanBinding { !it.isNullOrBlank() }
-        widget.root.managedWhen(nonEmptyBinding)
-        widget.root.visibleWhen(nonEmptyBinding)
-    }
     return widget
 }
 
