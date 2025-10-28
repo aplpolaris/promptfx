@@ -19,12 +19,11 @@
  */
 package tri.util.ui.starship
 
+import javafx.beans.binding.BooleanBinding
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
-import tornadofx.asObservable
-import tornadofx.bindChildren
-import tornadofx.onChange
-import tornadofx.vbox
+import javafx.scene.layout.VBox
+import tornadofx.*
 import tri.ai.text.docs.FormattedText
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.ui.toFxNodes
@@ -44,8 +43,10 @@ sealed class StarshipWidget(protected val context: StarshipWidgetLayoutContext) 
 
 /** Container widget for grouping other widgets. */
 class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<StarshipConfigWidget>) : StarshipWidget(context) {
+    lateinit var container: VBox
+    
     fun addTo(target: EventTarget) {
-        target.vbox(54.0) {
+        container = target.vbox(54.0) {
             val w = widgets.first()
             layoutX = w.px()
             layoutY = w.py()
@@ -54,6 +55,27 @@ class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<St
                 createWidget(w, context, isDynamic = true).root
             }
         }
+        
+        // Hide container when workflow is cleared/started
+        context.results.started.onChange {
+            if (!it) {
+                container.isVisible = false
+                container.isManaged = false
+            }
+        }
+        
+        // Show container when any widget has content
+        val bindings = widgets.map { w ->
+            context.results.observableFor(w).booleanBinding { !it.isNullOrBlank() }
+        }
+        
+        // Combine all bindings with OR logic
+        val hasContent = bindings.reduce { acc, binding ->
+            acc.or(binding)
+        }
+        
+        container.visibleWhen(hasContent)
+        container.managedWhen(hasContent)
     }
 }
 

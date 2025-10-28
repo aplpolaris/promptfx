@@ -41,7 +41,7 @@ class AnimatingTextFlow : Fragment() {
             id = "chat-response-scroll"
             hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
             vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
-            maxHeight = Screen.getPrimary().bounds.height / 2
+            isFitToHeight = true
             hbox {
                 textflow {
                     id = "chat-response"

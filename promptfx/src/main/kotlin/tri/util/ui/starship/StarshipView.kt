@@ -318,20 +318,24 @@ internal object Chromify {
     ) {
         val pane = pane {
             isPickOnBounds = false
+            isMouseTransparent = false
             val path = path {
                 strokeWidth = strokeWid
                 strokeLineJoin = StrokeLineJoin.ROUND
                 style = STROKE_STYLE
+                isMouseTransparent = true
             }
             val circ = circle {
                 strokeWidth = WID2
                 style = CIRC_STYLE
                 radius = 0.8 * strokeWid
+                isMouseTransparent = true
             }
             if (icon != null) {
                 val iconView = icon.graphic.apply {
                     glyphSize = 0.9 * strokeWid
                     glyphStyle = "-fx-fill: #333;"
+                    isMouseTransparent = true
                 }
                 val fudge = when (icon) {
                     FontAwesomeIcon.COMMENTS -> -2
@@ -353,6 +357,7 @@ internal object Chromify {
                         stroke = c("#333")
                         strokeWidth = 4.px
                     }
+                    isMouseTransparent = true
                 }
                 button(buttonText) {
                     resizeRelocate(0.0, 0.0, 2 * strokeWid, 2 * strokeWid)
@@ -383,6 +388,7 @@ internal object Chromify {
                 style = "-fx-fill: gray; -fx-font-size: ${strokeWid}px"
                 layoutXProperty().bind(circ.centerXProperty().minus(0.3 * strokeWid))
                 layoutYProperty().bind(circ.centerYProperty().plus(strokeWid))
+                isMouseTransparent = true
             }
 
             fun updatePath() {
