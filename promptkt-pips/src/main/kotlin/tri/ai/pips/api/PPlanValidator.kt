@@ -19,7 +19,7 @@
  */
 package tri.ai.pips.api
 
-import tri.ai.pips.core.ExecutableRegistry
+import tri.ai.core.tool.ExecutableRegistry
 
 /** Validates a [PPlan] object. */
 object PPlanValidator {
@@ -37,6 +37,11 @@ object PPlanValidator {
             "Unknown tools: $missing" +
             "    Valid tools: ${registry.list().map { it.name }}"
         }
+    }
+
+    /** Checks that the plan has at least one step. */
+    fun validateHasSteps(plan: PPlan) {
+        require(plan.steps.isNotEmpty()) { "Plan has no steps." }
     }
 
 }

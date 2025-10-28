@@ -21,7 +21,7 @@ package tri.ai.mcp
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import tri.ai.pips.core.MAPPER
+import tri.ai.core.agent.MAPPER
 
 /**
  * Handles JSON serialization and deserialization for JSON-RPC messages.

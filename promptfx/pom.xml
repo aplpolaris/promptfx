@@ -82,6 +82,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-gemini</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>

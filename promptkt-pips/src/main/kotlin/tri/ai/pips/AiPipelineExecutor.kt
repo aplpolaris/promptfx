@@ -33,7 +33,7 @@ object AiPipelineExecutor {
      * Returns the table of execution results.
      */
     suspend fun execute(tasks: List<AiTask>, monitor: AiTaskMonitor): AiPipelineResult {
-        require(tasks.isNotEmpty())
+        require(tasks.isNotEmpty()) { "No tasks to execute." }
 
         val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
         val failedTasks = mutableMapOf<String, AiPromptTraceSupport>()

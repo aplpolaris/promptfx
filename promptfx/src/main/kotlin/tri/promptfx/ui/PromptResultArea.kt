@@ -199,8 +199,7 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
     lazyContextmenu {
         val value = trace.value
         if (value != null) {
-            item("Details...") {
-                enableWhen { trace.booleanBinding { it != null } }
+            item("Prompt trace details...") {
                 action {
                     find<PromptTraceDetailsUi>().apply {
                         setTrace(value)
@@ -208,16 +207,16 @@ fun EventTarget.promptTraceContextMenu(trace: ObservableValue<AiPromptTraceSuppo
                     }
                 }
             }
-            item("Try in template view", graphic = FontAwesomeIcon.SEND.graphic) {
-                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
-                action {
-                    find<PromptFxWorkspace>().launchTemplateView(value)
-                }
-            }
-            item("Open in prompt history view", graphic = FontAwesomeIcon.SEARCH.graphic) {
+            item(LOCATE_IN_PROMPT_HISTORY, graphic = FontAwesomeIcon.SEARCH.graphic) {
                 enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
                 action {
                     find<PromptFxWorkspace>().launchHistoryView(value)
+                }
+            }
+            item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIcon.SEND.graphic) {
+                enableWhen(trace.booleanBinding { it?.prompt?.template?.isNotBlank() == true })
+                action {
+                    find<PromptFxWorkspace>().launchTemplateView(value)
                 }
             }
             buildsendresultmenu(value, find<PromptFxWorkspace>())

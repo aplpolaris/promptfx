@@ -62,4 +62,13 @@ class StdioMcpServerTest {
             server.close()
         }
     }
+
+    @Test
+    fun testCreateWithDefaultLibrary() {
+        runTest {
+            val server = StdioMcpServer(LocalMcpServer(PromptLibrary(), StarterToolLibrary()))
+            assertNotNull(server, "Server should be created with default library")
+            server.close()
+        }
+    }
 }

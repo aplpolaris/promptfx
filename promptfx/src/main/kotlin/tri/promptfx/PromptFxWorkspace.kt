@@ -35,6 +35,7 @@ import tri.promptfx.docs.TextManagerView
 import tri.promptfx.multimodal.AudioSpeechView
 import tri.promptfx.multimodal.AudioView
 import tri.promptfx.prompts.PromptTemplateView
+import tri.promptfx.prompts.PromptLibraryView
 import tri.promptfx.multimodal.ImagesView
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.ImmersiveChatView
@@ -250,6 +251,22 @@ class PromptFxWorkspace : Workspace() {
         workspace.dock(view)
     }
 
+    /** Launches the prompt library view. */
+    fun launchLibraryView() {
+        val view = find<PromptLibraryView>()
+        workspace.dock(view)
+    }
+
+    /** Launches the prompt library view and selects the prompt matching the given template text. */
+    fun launchLibraryView(templateText: String) {
+        val view = find<PromptLibraryView>()
+        workspace.dock(view)
+        // Select the prompt after docking
+        runLater {
+            view.selectPromptByTemplate(templateText)
+        }
+    }
+
     /** Launches the text manager view with the given library. */
     fun launchTextManagerView(library: TextLibrary) {
         val view = find<TextManagerView>()
@@ -310,24 +327,19 @@ class PromptFxWorkspace : Workspace() {
         item(model.category, model.icon, expanded = false) {
             op()
             if (model.category == "Custom") {
-                (this as DrawerItem).padding = insets(5.0)
-                // Group runtime views by their actual categories with headings and separators
-                val runtimeViews = model.views.filterIsInstance<NavigableWorkspaceViewRuntime>()
-                val categoriesInCustom = runtimeViews.map { it.category }.distinct().sorted()
-                
+                padding = insets(5.0)
                 var isFirstCategory = true
-                categoriesInCustom.forEach { customCategory ->
-                    if (!isFirstCategory) {
-                        separator { }
-                    }
-                    isFirstCategory = false
-                    
-                    label(customCategory)
 
-                    runtimeViews.filter { it.category == customCategory }.sortedBy { it.name }.forEach {
-                        hyperlinkview(model.category, it)
+                model.views.filter { it.category !in PromptFxWorkspaceModel.BUILT_IN_CATEGORIES }
+                    .groupBy { it.category }.toSortedMap()
+                    .forEach { cat, views ->
+                        if (!isFirstCategory) separator { }
+                        isFirstCategory = false
+                        label(cat)
+                        views.sortedBy { it.name }.forEach {
+                            hyperlinkview(model.category, it)
+                        }
                     }
-                }
             } else {
                 model.views.forEach {
                     hyperlinkview(it.category, it)

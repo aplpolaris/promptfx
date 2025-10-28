@@ -1,67 +1,109 @@
 # Library of view configurations
 ---
-view-config-generator:
-  prompt:
-    id: generate-config/promptfx-view-config
-    category: Settings
-  modeOptions: []
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
-
 entity-extraction:
   prompt:
     id: text-extract/entities
     category: Text
-  modeOptions:
-    - id: entities
-      templateId: mode
+  args:
+    - fieldId: mode
+      modeId: entities
       label: Mode
-    - id: structured-format
-      templateId: format
+    - fieldId: format
+      modeId: structured-format
       label: Format as
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
+
+question-answering:
+  prompt:
+    id: text-qa/answer
+    category: Text
+  args:
+    - fieldId: instruct
+      label: Question
+      control: TEXT_AREA
+    - fieldId: input
+      label: Source Text
+      control: TEXT_AREA
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 sentiment-analysis:
   prompt:
     id: text-classify/sentiment
     category: Text
-  modeOptions:
-    - id: sentiment
-      templateId: instruct
+  args:
+    - modeId: sentiment
+      fieldId: instruct
       label: Sentiment
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
+
+structured-data:
+  prompt:
+    id: text-extract/text-to-json
+    category: Text
+  args:
+    - fieldId: guidance
+      label: Guidance
+    - modeId: structured-format
+      fieldId: format
+      label: Format as
+    - fieldId: input
+      label: Input Text
+      control: TEXT_AREA
+    - fieldId: example
+      label: "Sample Output (JSON, YAML, XML, CSV, ...)"
+      control: TEXT_AREA
+  userControls:
+    modelParameters: true
+    multipleResponses: true
+  requestJson: true
 
 summarization:
   prompt:
     category: Text
     id: text-summarize/summarize
-  modeOptions:
-    - id: summarization-audience
-      templateId: audience
+  args:
+    - modeId: summarization-audience
+      fieldId: audience
       label: Summarize for
-    - id: summarization-style
-      templateId: style
+    - modeId: summarization-style
+      fieldId: style
       label: Style of
-    - id: summarization-format
-      templateId: format
+    - modeId: summarization-format
+      fieldId: format
       label: Shown as
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 translation:
   prompt:
     id: text-translate/translate
     category: Text
-  modeOptions:
-    - id: translation
-      templateId: instruct
+  args:
+    - modeId: translation
+      fieldId: instruct
       label: Language
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
 
 emoji:
   prompt:
     id: examples/emoji
     category: Fun
-  isShowMultipleResponseOption: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
+
+view-config-generator:
+  prompt:
+    id: generate-config/promptfx-view-config
+    category: Settings
 
 research-planner:
   prompt:
@@ -69,15 +111,16 @@ research-planner:
     category: Research
     name: Research Planner
     description: Analyze research requests and generate comprehensive task plans
-  modeOptions:
-    - id: planning-approach
-      templateId: approach
+  args:
+    - modeId: planning-approach
+      fieldId: approach
       label: Planning Approach
-    - id: research-scope
-      templateId: scope
+    - modeId: research-scope
+      fieldId: scope
       label: Research Scope
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 research-questions:
   prompt:
@@ -85,15 +128,16 @@ research-questions:
     category: Research
     name: Generate Research Questions
     description: Generate comprehensive research questions for any topic
-  modeOptions:
-    - id: research-question-type
-      templateId: question_type
+  args:
+    - modeId: research-question-type
+      fieldId: question_type
       label: Question Type
-    - id: research-depth
-      templateId: depth
+    - modeId: research-depth
+      fieldId: depth
       label: Depth Level
-  isShowModelParameters: true
-  isShowMultipleResponseOption: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 research-outline:
   prompt:
@@ -101,15 +145,16 @@ research-outline:
     category: Research
     name: Generate Report Outline
     description: Create structured outlines for reports and research papers
-  modeOptions:
-    - id: outline-type
-      templateId: outline_type
+  args:
+    - modeId: outline-type
+      fieldId: outline_type
       label: Outline Type
-    - id: report-length
-      templateId: length
+    - modeId: report-length
+      fieldId: length
       label: Report Length
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 research-draft:
   prompt:
@@ -117,12 +162,13 @@ research-draft:
     category: Research
     name: Generate Draft Report
     description: Combine research findings with outlines to create comprehensive draft reports
-  modeOptions:
-    - id: report-tone
-      templateId: tone
+  args:
+    - modeId: report-tone
+      fieldId: tone
       label: Writing Tone
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 research-review:
   prompt:
@@ -130,15 +176,16 @@ research-review:
     category: Research
     name: Review & Edit Report
     description: Review and provide editing suggestions for report sections
-  modeOptions:
-    - id: review-focus
-      templateId: focus
+  args:
+    - modeId: review-focus
+      fieldId: focus
       label: Review Focus
-    - id: target-audience
-      templateId: target_audience
+    - modeId: target-audience
+      fieldId: target_audience
       label: Target Audience
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 neutrality-review:
   prompt:
@@ -146,9 +193,10 @@ neutrality-review:
     category: Research Quality
     name: Neutrality and Independence Review
     description: Evaluate research text for neutrality, independence from external agendas, and avoidance of bias
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  args: []
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 evidence-source-review:
   prompt:
@@ -156,9 +204,10 @@ evidence-source-review:
     category: Research Quality
     name: Evidence and Source Integrity Review
     description: Check research claims for sufficient sourcing, clear attribution, and traceability to credible sources
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  args: []
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 assumptions-clarity-review:
   prompt:
@@ -166,9 +215,10 @@ assumptions-clarity-review:
     category: Research Quality
     name: Assumptions and Clarity Review
     description: Identify assumptions, uncertainties, and confidence levels in findings to improve clarity and transparency
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  args: []
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 logical-consistency-review:
   prompt:
@@ -176,9 +226,10 @@ logical-consistency-review:
     category: Research Quality
     name: Logical Consistency Review
     description: Evaluate research reasoning for internal consistency, clarity of logic, and support from evidence
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  args: []
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 research-quality-evaluation:
   prompt:
@@ -186,6 +237,7 @@ research-quality-evaluation:
     category: Research Quality
     name: Research Quality Evaluation
     description: Comprehensive evaluation of a research product against core research quality principles
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: false
+  args: []
+  userControls:
+    modelParameters: true
+    multipleResponses: true

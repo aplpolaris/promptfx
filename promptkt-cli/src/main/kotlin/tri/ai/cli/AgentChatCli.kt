@@ -26,13 +26,17 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.agent.api.AgentChatAPI
+import tri.ai.core.agent.api.DefaultAgentChatAPI
 import tri.ai.openai.OpenAiAdapter
-import tri.ai.pips.agent.*
-import tri.util.MIN_LEVEL_TO_LOG
+import tri.util.*
+import java.time.LocalDateTime
 import java.util.logging.Level
 import kotlin.system.exitProcess
 
@@ -56,18 +60,18 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
         .int()
         .default(4000)
     private val reasoning by option("--reasoning", help = "Enable reasoning mode").flag()
-    private val verbose by option("--verbose", help = "Verbose logging and progress").flag()
+    private val verbose by option("--verbose", help = "Verbose logging and progress").flag(default = false)
     private val systemMessage by option("--system", help = "System message for the agent")
 
     private val greeting
-        get() = "You are chatting with $model using AgentChat. Say 'bye' to exit, 'sessions' to list sessions."
+        get() = "You are chatting with $model using AgentChat. Say 'bye' to exit, '/sessions' to list sessions, '/help' for commands."
 
     private val api: AgentChatAPI = DefaultAgentChatAPI()
     private lateinit var currentSession: AgentChatSession
 
     override fun run() {
         if (verbose) {
-            println("Verbose logging enabled.")
+            printlnInfo("Verbose logging enabled.")
             MIN_LEVEL_TO_LOG = Level.FINE
         } else {
             MIN_LEVEL_TO_LOG = Level.WARNING
@@ -85,125 +89,197 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
         )
         
         currentSession = api.createSession(config)
-        println(greeting)
+        printlnInfo(greeting)
         
         if (systemMessage != null) {
-            println("System: $systemMessage")
+            printlnInfo("System: $systemMessage")
         }
-        
-        println("Model: $model, Max Context: $maxContext, Temperature: $temperature")
+
+        printlnInfo("Model: $model, Max Context: $maxContext, Temperature: $temperature")
         
         if (reasoning) {
-            println("Reasoning mode enabled - interim thoughts will be shown.")
+            printlnInfo("Reasoning mode enabled - interim thoughts will be shown.")
         }
         
         runBlocking {
             print("> ")
             var input = readln()
             while (input != "bye") {
-                when (input.lowercase()) {
-                    "sessions" -> {
-                        listSessions()
+                when {
+                    input.lowercase() == "/sessions" -> listSessions()
+                    input.lowercase() == "/clear" -> clearSession()
+                    input.lowercase() == "/help" -> showHelp()
+                    input.lowercase() == "/api" -> showApiInfo()
+                    input.lowercase() == "/save" -> saveCurrentSession()
+                    input.lowercase() == "/info" -> showSessionInfo()
+                    input.lowercase().startsWith("/switch ") ->
+                        switchSession(input.removePrefix("/switch ").trim())
+                    input.lowercase().startsWith("/load ") ->
+                        loadSessionById(input.removePrefix("/load ").trim())
+                    input.lowercase().startsWith("/delete ") ->
+                        deleteSessionById(input.removePrefix("/delete ").trim())
+                    input.startsWith("/") -> {
+                        printlnError("Unknown command: $input. Type '/help' for available commands.")
                     }
-                    "clear" -> {
-                        clearSession()
-                    }
-                    "help" -> {
-                        showHelp()
-                    }
-                    else -> {
-                        if (input.isNotBlank()) {
-                            sendMessage(input)
-                        }
-                    }
+                    input.isNotBlank() -> sendMessage(input)
                 }
                 print("> ")
                 input = readln()
             }
         }
-        println("Goodbye!")
+        printlnResponse("Goodbye!")
         exitProcess(0)
     }
 
     private suspend fun sendMessage(userInput: String) {
         val message = MultimodalChatMessage.text(MChatRole.User, userInput)
         val operation = api.sendMessage(currentSession, message)
-        
-        try {
-            operation.events.collect { event ->
-                when (event) {
-                    is AgentChatEvent.Progress -> {
-                        if (verbose) {
-                            println("[Progress] ${event.message}")
-                        }
-                    }
-                    is AgentChatEvent.Reasoning -> {
-                        if (reasoning) {
-                            println("[Thinking] ${event.reasoning}")
-                        }
-                    }
-                    is AgentChatEvent.StreamingToken -> {
-                        print(event.token)
-                    }
-                    is AgentChatEvent.Response -> {
-                        val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
-                        // TODO - if have been printing intermediate tokens, may not need to prin the full response
-                        println(responseText)
-                        
-                        if (event.response.reasoning != null) {
-                            println("[Reasoning] ${event.response.reasoning}")
-                        }
-                    }
-                    is AgentChatEvent.Error -> {
-                        println("Error: ${event.error.message}")
-                        if (verbose) {
-                            event.error.printStackTrace()
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
-            if (verbose) {
-                e.printStackTrace()
-            }
-        }
+        operation.events.collect(AgentFlowLogger(verbose))
     }
 
     private fun listSessions() {
         val sessions = api.listSessions()
         if (sessions.isEmpty()) {
-            println("No saved sessions found.")
+            printlnInfo("No saved sessions found.")
         } else {
-            println("Sessions:")
+            printlnInfo("Sessions:")
             sessions.forEach { session ->
                 val currentIndicator = if (session.sessionId == currentSession.sessionId) "*" else " "
-                println("$currentIndicator ${session.name} (${session.messageCount} messages) - ${session.lastModified}")
+                printlnInfo("$currentIndicator ${session.name} (${session.messageCount} messages) - ${session.lastModified.print} - ${session.sessionId}")
                 session.lastMessagePreview?.let {
-                    println("   Last: $it")
+                    printlnInfo("     Last: $it")
                 }
             }
         }
     }
 
+    //region PRINT FUNCTIONS
+
+    private fun printlnResponse(text: String) {
+        kotlin.io.println("${ANSI_LIGHTBLUE}$text$ANSI_RESET")
+    }
+
+    private fun printlnInfo(text: String) {
+        kotlin.io.println("${ANSI_GRAY}$text$ANSI_RESET")
+    }
+
+    private fun printlnError(text: String?) {
+        kotlin.io.println("${ANSI_RED}ERROR: $text$ANSI_RESET")
+    }
+
+    // format as HH:mm:ss if today, otherwise YYYY-MM-DD HH:mm:ss
+    private val LocalDateTime.print
+        get() = when {
+            toLocalDate() == LocalDateTime.now().toLocalDate() -> toLocalTime().withNano(0).toString()
+            else -> toString().substring(0, 19)
+        }
+
+    //endregion
+
     private fun clearSession() {
         val config = currentSession.config
         currentSession = api.createSession(config)
-        println("Session cleared. Starting new conversation.")
+        printlnInfo("Session cleared. Starting new conversation.")
     }
 
     private fun showHelp() {
-        println("Commands:")
-        println("  bye      - Exit the chat")
-        println("  sessions - List all sessions")  
-        println("  clear    - Clear current session and start new")
-        println("  help     - Show this help")
-        println("\nOptions:")
-        println("  --model      Multimodal model to use")
-        println("  --maxContext Maximum context messages") 
-        println("  --temperature Response temperature")
-        println("  --reasoning  Enable reasoning mode")
-        println("  --verbose    Show progress and detailed output")
-        println("  --system     Set system message")
+        printlnInfo("""
+            Commands:
+                bye           - Exit the chat
+                /sessions     - List all sessions
+                /clear        - Clear current session and start new
+                /help         - Show this help
+                /api          - Show API information
+                /switch <id>  - Switch to a different session by ID
+                /load <id>    - Load a session by ID
+                /delete <id>  - Delete a session by ID
+                /save         - Save current session
+                /info         - Show current session information
+            Options:
+                --model       Multimodal model to use
+                --maxContext  Maximum context messages
+                --temperature Response temperature
+                --reasoning   Enable reasoning mode
+                --verbose     Show progress and detailed output (default on)
+                --system      Set system message
+        """.trimIndent())
+    }
+
+    private fun showApiInfo() {
+        printlnInfo("AgentChat API Information:")
+        printlnInfo("  API Implementation: ${api.javaClass.simpleName}")
+        printlnInfo("  Model: $model")
+        printlnInfo("  Max Context: $maxContext")
+        printlnInfo("  Temperature: $temperature")
+        printlnInfo("  Max Tokens: $maxTokens")
+        printlnInfo("  Reasoning Mode: $reasoning")
+        printlnInfo("  System Message: ${systemMessage ?: "None"}")
+        printlnInfo("  Current Session: ${currentSession.sessionId}")
+        printlnInfo("  Session Name: ${currentSession.name}")
+        printlnInfo("  Messages in Session: ${currentSession.messages.size}")
+    }
+
+    private fun switchSession(sessionId: String) {
+        val session = api.loadSession(sessionId)
+        if (session != null) {
+            currentSession = session
+            printlnInfo("Switched to session: ${session.name} (${session.sessionId})")
+            printlnInfo("Messages: ${session.messages.size}")
+        } else {
+            printlnInfo("Session not found: $sessionId")
+        }
+    }
+
+    private fun loadSessionById(sessionId: String) {
+        val session = api.loadSession(sessionId)
+        if (session != null) {
+            currentSession = session
+            printlnInfo("Loaded session: ${session.name}")
+            printlnInfo("Session ID: ${session.sessionId}")
+            printlnInfo("Created: ${session.createdAt.print}")
+            printlnInfo("Last Modified: ${session.lastModified.print}")
+            printlnInfo("Messages: ${session.messages.size}")
+            if (session.messages.isNotEmpty()) {
+                printlnInfo("Last message preview: ${session.messages.last().content?.firstOrNull()?.text?.take(50) ?: "N/A"}...")
+            }
+        } else {
+            printlnInfo("Session not found: $sessionId")
+        }
+    }
+
+    private fun deleteSessionById(sessionId: String) {
+        if (sessionId == currentSession.sessionId) {
+            printlnInfo("Cannot delete the current active session. Switch to another session first.")
+            return
+        }
+        val deleted = api.deleteSession(sessionId)
+        if (deleted) {
+            printlnInfo("Session deleted: $sessionId")
+        } else {
+            printlnInfo("Session not found or could not be deleted: $sessionId")
+        }
+    }
+
+    private fun saveCurrentSession() {
+        val sessionId = api.saveSession(currentSession)
+        printlnInfo("Session saved: $sessionId")
+        printlnInfo("Session name: ${currentSession.name}")
+    }
+
+    private fun showSessionInfo() {
+        printlnInfo("Current Session Information:")
+        printlnInfo("  Session ID: ${currentSession.sessionId}")
+        printlnInfo("  Name: ${currentSession.name}")
+        printlnInfo("  Created: ${currentSession.createdAt}")
+        printlnInfo("  Last Modified: ${currentSession.lastModified}")
+        printlnInfo("  Messages: ${currentSession.messages.size}")
+        printlnInfo("  Configuration:")
+        printlnInfo("    Model: ${currentSession.config.modelId}")
+        printlnInfo("    Max Context: ${currentSession.config.maxContextMessages}")
+        printlnInfo("    Temperature: ${currentSession.config.temperature}")
+        printlnInfo("    Max Tokens: ${currentSession.config.maxTokens}")
+        printlnInfo("    Enable Tools: ${currentSession.config.enableTools}")
+        printlnInfo("    Reasoning Mode: ${currentSession.config.enableReasoningMode}")
+        printlnInfo("    System Message: ${currentSession.config.systemMessage ?: "None"}")
     }
 }

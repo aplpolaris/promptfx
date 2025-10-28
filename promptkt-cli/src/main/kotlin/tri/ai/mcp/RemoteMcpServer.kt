@@ -28,8 +28,8 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import tri.ai.core.tool.Executable
 import tri.ai.mcp.tool.McpToolResult
-import tri.ai.pips.core.Executable
 
 /**
  * Remote MCP server adapter that connects to external MCP servers via HTTP.

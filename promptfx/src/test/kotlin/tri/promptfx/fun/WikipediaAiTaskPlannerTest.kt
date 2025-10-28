@@ -35,6 +35,22 @@ class WikipediaAiTaskPlannerTest {
     val engine = OpenAiChat(OpenAiModelIndex.GPT35_TURBO)
 
     @Test
+    @Disabled("Disabled to prevent excessive API calls")
+    fun testSearch() {
+        val page = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "")
+            .firstMatchingPage("capitol of Texas")
+        assertEquals("Texas State Capitol", page)
+    }
+
+    @Test
+    @Disabled("Disabled to prevent excessive API calls")
+    fun testGetPage() {
+        val page = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "")
+            .getWikipediaPage("Texas")
+        assertTrue(page.startsWith("Texas (  TEK-səss) is the most populous state"))
+    }
+
+    @Test
     fun testPlanner() {
         val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
         assertEquals(4, tasks.size)
@@ -43,12 +59,14 @@ class WikipediaAiTaskPlannerTest {
 
     @Test
     @Disabled("Requires apikey")
-    fun testExecute() = runTest {
-        val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
-        val result = AiPipelineExecutor.execute(tasks, PrintMonitor())
-        println(result.interimResults)
-        assertEquals(4, result.interimResults.size)
-        println(result.finalResult)
+    fun testExecute() {
+        runTest {
+            val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
+            val result = AiPipelineExecutor.execute(tasks, PrintMonitor())
+            println(result.interimResults)
+            assertEquals(4, result.interimResults.size)
+            println(result.finalResult)
+        }
     }
 
 }

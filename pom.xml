@@ -14,10 +14,12 @@
 
     <modules>
         <module>promptkt-core</module>
+        <module>promptkt-gemini</module>
         <module>promptkt-pips</module>
         <module>promptkt-docs</module>
         <module>promptkt-cli</module>
         <module>promptfx</module>
+        <module>promptfx-sample-plugin</module>
     </modules>
 
     <!-- configuration of the default license to use -->

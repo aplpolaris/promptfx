@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
@@ -49,14 +50,11 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     private var promptIdFilter: (String) -> Boolean = { true }
     private val filteredPromptEntries = observableListOf(promptEntries)
     private val promptSelection = SimpleObjectProperty<PromptDef>()
+    private lateinit var promptListView: ListView<PromptDef>
 
     init {
         input {
             toolbar {
-                // TODO - tools for prompt CRUD
-//                button("Add", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-//                    action { onCreate() }
-//                }
                 // add search bar here to update promptFilter when you hit enter
                 textfield("") {
                     promptText = "Search"
@@ -66,6 +64,10 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
                 spacer()
+                button("", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+                    tooltip("Create a new prompt")
+                    action { onCreate() }
+                }
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the prompt list.")
                     action {
@@ -85,7 +87,7 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                     }
                 }
             }
-            listview(filteredPromptEntries) {
+            promptListView = listview(filteredPromptEntries) {
                 vgrow = Priority.ALWAYS
                 promptSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
@@ -108,6 +110,8 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 }
             }
             find<PromptDetailsUi>().apply {
+                visibleWhen(promptSelection.isNotNull)
+                managedWhen(visibleProperty())
                 promptSelection.onChange { prompt.set(it) }
                 this@output.add(this)
             }
@@ -117,7 +121,25 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
     }
 
     override fun onCreate() {
-        TODO()
+        val dialog = find<CreatePromptDialog>()
+        dialog.openModal(block = true)
+        
+        val newPrompt = dialog.getResult()
+        if (newPrompt != null) {
+            // Refresh the runtime prompts to pick up the new prompt
+            PromptLibrary.refreshRuntimePrompts()
+            
+            // Update the prompt entries list
+            promptEntries.setAll(lib.list().toMutableList())
+            refilter()
+            
+            // Select the new prompt
+            val createdPrompt = filteredPromptEntries.find { it.id == newPrompt.id }
+            if (createdPrompt != null) {
+                promptListView.selectionModel.select(createdPrompt)
+                promptListView.scrollTo(createdPrompt)
+            }
+        }
     }
 
     private fun sendToTemplateView() {
@@ -126,6 +148,28 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
 
     private fun refilter() {
         filteredPromptEntries.setAll(promptEntries.filter { promptIdFilter(it.id) })
+    }
+
+    /** Select a prompt in the library that matches the given template text. */
+    fun selectPromptByTemplate(templateText: String) {
+        // Find a prompt with matching template text
+        val matchingPrompt = filteredPromptEntries.find { promptDef ->
+            promptDef.template?.trim() == templateText.trim()
+        }
+        
+        if (matchingPrompt != null) {
+            promptListView.selectionModel.select(matchingPrompt)
+            promptListView.scrollTo(matchingPrompt)
+        } else {
+            // If no exact match, try to find a prompt that contains the template text
+            val partialMatch = filteredPromptEntries.find { promptDef ->
+                promptDef.template?.contains(templateText.trim()) == true
+            }
+            if (partialMatch != null) {
+                promptListView.selectionModel.select(partialMatch)
+                promptListView.scrollTo(partialMatch)
+            }
+        }
     }
 
     override suspend fun processUserInput() = AiPipelineResult.todo()
