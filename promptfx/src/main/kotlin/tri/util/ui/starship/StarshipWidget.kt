@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.util.ui.starship
 
 import javafx.beans.value.ObservableValue
@@ -25,11 +44,12 @@ sealed class StarshipWidget(protected val context: StarshipWidgetLayoutContext) 
 
 /** Container widget for grouping other widgets. */
 class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<StarshipConfigWidget>) : StarshipWidget(context) {
-    // TODO - there is some weirdness about vertical layout boundaries within the dynamic setting
     fun addTo(target: EventTarget) {
         target.vbox(54.0) {
             val w = widgets.first()
-            resizeRelocate(w.px(), w.py(), w.pw(), 0.0)
+            layoutX = w.px()
+            layoutY = w.py()
+            prefWidth = w.pw()
             bindChildren(widgets.asObservable()) { w ->
                 createWidget(w, context, isDynamic = true).root
             }
@@ -46,7 +66,13 @@ class AnimatingTextWidget(context: StarshipWidgetLayoutContext,
 
     init {
         textFlow.root.isMouseTransparent = true
-        textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), if (isDynamic) 0.0 else widget.ph())
+        if (isDynamic) {
+            textFlow.root.layoutX = widget.px()
+            textFlow.root.layoutY = widget.py()
+            textFlow.root.prefWidth = widget.pw()
+        } else {
+            textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), widget.ph())
+        }
         textFlow.updatePrefWidth(widget.pw())
         val iconSize = widget.overlay.iconSize?.toDouble() ?: 12.0
         textFlow.updateFontSize(iconSize)
