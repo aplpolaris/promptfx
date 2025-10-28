@@ -33,6 +33,7 @@ import kotlin.String
 
 interface ToolLibrary {
     suspend fun listTools(): List<Executable>
+    suspend fun getTool(name: String): Executable?
     suspend fun callTool(name: String, args: Map<String, String>): McpToolResult
 }
 
@@ -40,8 +41,11 @@ class StarterToolLibrary: ToolLibrary {
     var tools: List<Executable> = listOf(WebSearchExecutable()) + FakeTools.load()
     override suspend fun listTools(): List<Executable> = tools
 
+    override suspend fun getTool(name: String): Executable? =
+        tools.find { it.name == name }
+
     override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
-        val tool = tools.find { it.name == name }
+        val tool = getTool(name)
             ?: return McpToolResult.error(name, "Tool with name '$name' not found")
 
         val inputNode = MAPPER.valueToTree<JsonNode>(args)

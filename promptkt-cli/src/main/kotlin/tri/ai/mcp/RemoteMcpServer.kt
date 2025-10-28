@@ -112,6 +112,11 @@ class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
         }
     }
 
+    override suspend fun getTool(name: String): Executable? {
+        val tools = listTools()
+        return tools.find { it.name == name }
+    }
+
     override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
         try {
             val response = httpClient.post("$baseUrl/tools/call") {

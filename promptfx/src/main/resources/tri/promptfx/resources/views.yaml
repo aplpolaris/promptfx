@@ -193,7 +193,6 @@ neutrality-review:
     category: Research Quality
     name: Neutrality and Independence Review
     description: Evaluate research text for neutrality, independence from external agendas, and avoidance of bias
-  args: []
   userControls:
     modelParameters: true
     multipleResponses: true
@@ -204,7 +203,6 @@ evidence-source-review:
     category: Research Quality
     name: Evidence and Source Integrity Review
     description: Check research claims for sufficient sourcing, clear attribution, and traceability to credible sources
-  args: []
   userControls:
     modelParameters: true
     multipleResponses: true
@@ -215,7 +213,6 @@ assumptions-clarity-review:
     category: Research Quality
     name: Assumptions and Clarity Review
     description: Identify assumptions, uncertainties, and confidence levels in findings to improve clarity and transparency
-  args: []
   userControls:
     modelParameters: true
     multipleResponses: true
@@ -226,7 +223,6 @@ logical-consistency-review:
     category: Research Quality
     name: Logical Consistency Review
     description: Evaluate research reasoning for internal consistency, clarity of logic, and support from evidence
-  args: []
   userControls:
     modelParameters: true
     multipleResponses: true
@@ -237,7 +233,6 @@ research-quality-evaluation:
     category: Research Quality
     name: Research Quality Evaluation
     description: Comprehensive evaluation of a research product against core research quality principles
-  args: []
   userControls:
     modelParameters: true
     multipleResponses: true
