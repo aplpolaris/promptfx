@@ -33,12 +33,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import org.jsoup.nodes.TextNode
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.MAPPER
-import tri.ai.mcp.JsonSerializers
 import tri.ai.mcp.LocalMcpServer
-import tri.ai.mcp.McpHandler.Companion.convertToolResponse
 import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
 import tri.ai.mcp.RemoteMcpServer
