@@ -27,8 +27,11 @@ import tri.ai.openai.jsonMapper
 import tri.ai.prompt.PromptTemplate
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import java.io.IOException
+import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
 
@@ -55,25 +58,41 @@ class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParamete
                 .execute(chatEngine)
         }.plan
 
-    private fun firstMatchingPage(query: String): String {
-        val url = "https://en.wikipedia.org/w/api.php?action=query" +
-                "&format=json&list=search&srsearch=${query.trim().replace(" ", "%20")}"
-        val jsonText = URL(url).readText()
-        return jsonMapper.readTree(jsonText).at("/query/search/0/title").asText()
+    internal fun firstMatchingPage(query: String): String {
+        val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.toString())
+        val urlString = "https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=$encodedQuery"
+        return try {
+            println(urlString)
+            val connection = URI(urlString).toURL().openConnection()
+            connection.setRequestProperty("User-Agent", TEST_USER_AGENT)
+            val jsonText = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            return jsonMapper.readTree(jsonText).at("/query/search/0/title").asText()
+        } catch (e: IOException) {
+            "Error searching wikipedia: ${e.message}"
+        }
     }
 
-    private fun getWikipediaPage(request: String): String {
-        val title = request.trim()
-        val url = "https://en.wikipedia.org/w/api.php?action=query" +
+    internal fun getWikipediaPage(request: String): String {
+        val encodedTitle = URLEncoder.encode(request.trim(), StandardCharsets.UTF_8.toString())
+        val urlString = "https://en.wikipedia.org/w/api.php?action=query" +
                 "&format=json&prop=extracts&exintro=&explaintext=" +
-                "&titles=${URLEncoder.encode(title, "UTF-8")}"
-        println(url)
-        val jsonText = URL(url).readText()
-        val elements = jsonMapper.readTree(jsonText).at("/query/pages").elements()
-        return if (elements.hasNext())
-            elements.next()["extract"].asText()
-        else
-            "No content returned"
+                "&titles=$encodedTitle"
+        return try {
+            val connection = URI(urlString).toURL().openConnection()
+            connection.setRequestProperty("User-Agent", TEST_USER_AGENT)
+            val jsonText = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val elements = jsonMapper.readTree(jsonText).at("/query/pages").elements()
+            if (elements.hasNext())
+                elements.next()["extract"].asText()
+            else
+                "No content returned"
+        } catch (e: IOException) {
+            return "Error retrieving page: ${e.message}"
+        }
+    }
+
+    companion object {
+        private const val TEST_USER_AGENT = "KotlinTestApp/1.0"
     }
 
 }
