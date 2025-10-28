@@ -40,10 +40,8 @@ import tri.ai.openai.api.OpenAiApiPlugin
 import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEYS
 import tri.promptfx.api.ModelsView
-import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
-import tri.util.ui.starship.StarshipContentConfig
 import java.io.File
 
 /** Plugin for the [PromptFxSettingsView]. */
@@ -321,66 +319,8 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
     private fun showStarshipConfigDetails() {
         with(detailPane) {
 
-            // Basic Settings
-            vbox(5) {
-                label("Display Settings:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                label("Background Icon: ${StarshipContentConfig.backgroundIcon}")
-                label("Background Icon Count: ${StarshipContentConfig.backgroundIconCount}")
-                label("Show Grid: ${StarshipContentConfig.isShowGrid}")
-            }
+            // TODO - update this with starship configuration details
 
-            separator()
-
-            // Explanation Text
-            vbox(5) {
-                label("Explanation Steps (${StarshipContentConfig.explain.size}):") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                StarshipContentConfig.explain.forEachIndexed { index, step ->
-                    label("${index + 1}. $step")
-                }
-            }
-
-            separator()
-
-            // Prompt Information
-            vbox(5) {
-                label("Prompt Pipeline Configuration:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                StarshipContentConfig.promptInfo.forEach { info ->
-                    when (info) {
-                        is String -> label("• $info")
-                        is Map<*, *> -> {
-                            info.entries.forEach { (key, value) ->
-                                label("• $key:")
-                                if (value is Map<*, *>) {
-                                    value.entries.forEach { (subKey, subValue) ->
-                                        label("    $subKey: $subValue")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            separator()
-
-            // User Options
-            vbox(5) {
-                label("User Options:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                StarshipContentConfig.userOptions.forEach { (promptId, options) ->
-                    label("• $promptId:")
-                    options.forEach { (optionKey, optionValues) ->
-                        label("    $optionKey (${optionValues.size} options): ${optionValues.take(3).joinToString(", ")}${if (optionValues.size > 3) "..." else ""}")
-                    }
-                }
-            }
         }
     }
 

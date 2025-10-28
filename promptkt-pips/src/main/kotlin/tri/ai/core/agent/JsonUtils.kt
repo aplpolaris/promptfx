@@ -21,12 +21,15 @@ package tri.ai.core.agent
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 val MAPPER: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+val YAML_MAPPER: ObjectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
 
 //region JsonNode HELPERS
 

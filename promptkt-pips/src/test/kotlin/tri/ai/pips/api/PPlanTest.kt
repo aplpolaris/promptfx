@@ -111,8 +111,8 @@ class PPlanTest {
         val original = PPlan(
             id = "pipelines/rt@0.1.0",
             steps = listOf(
-                PPlanStep("util/echo", MAPPER.readTree("""{"msg":"hello"}"""), saveAs = "m"),
-                PPlanStep("util/merge", MAPPER.readTree("""{"left":{"${"$"}var":"m"}}"""))
+                PPlanStep("util/echo", input = MAPPER.readTree("""{"msg":"hello"}"""), saveAs = "m"),
+                PPlanStep("util/merge", input = MAPPER.readTree("""{"left":{"${"$"}var":"m"}}"""))
             )
         )
         val json = MAPPER.writeValueAsString(original)

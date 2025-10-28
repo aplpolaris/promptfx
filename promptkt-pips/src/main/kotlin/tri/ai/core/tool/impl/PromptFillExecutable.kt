@@ -20,7 +20,7 @@
 package tri.ai.core.tool.impl
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.core.agent.createObject
+import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
@@ -28,7 +28,7 @@ import tri.ai.prompt.template
 import tri.ai.core.agent.wf.MAPPER
 
 /** Fills text into a prompt template. */
-class PromptExecutable(private val def: PromptDef): Executable {
+class PromptFillExecutable(private val def: PromptDef): Executable {
 
     override val name: String
         get() = "prompt/${def.bareId}"
@@ -43,7 +43,7 @@ class PromptExecutable(private val def: PromptDef): Executable {
     override suspend fun execute(input: JsonNode, ctx: ExecContext): JsonNode {
         val args = MAPPER.convertValue(input, Map::class.java) as Map<String, Any?>
         val text = def.template().fill(args.filterValues { it != null } as Map<String, Any>)
-        return createObject("text", text)
+        return TextNode.valueOf(text)
     }
-
 }
+

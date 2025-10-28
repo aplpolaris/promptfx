@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,16 +17,24 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.ui.starship
+package tri.ai.core.tool.impl
 
-/** Full-screen UI with animating text and image blocks. */
-class StarshipUi {
+import tri.ai.core.tool.ExecutableRegistry
+import tri.ai.prompt.PromptLibrary
+
+/** Creates an executable registry from a prompt library file, with executables returning filled templates. */
+class PromptTemplateRegistry(private val lib: PromptLibrary): ExecutableRegistry {
+
+    private val fillExecutables by lazy {
+        lib.list().associate { def ->
+            val exec = PromptFillExecutable(def)
+            exec.name to exec
+        }
+    }
+
+    override fun get(name: String) = fillExecutables[name]
+
+    override fun list() = fillExecutables.values.toList()
+
 }
 
-/** History bar for the Starship UI. */
-class HistoryBar {
-}
-
-/** Model for the history bar. */
-class HistoryBarUiModel {
-}

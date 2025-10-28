@@ -24,11 +24,23 @@ import tri.ai.core.agent.MAPPER
 import java.util.UUID
 
 /** Runtime context available to every executable. */
-data class ExecContext(
-    val vars: MutableMap<String, JsonNode> = mutableMapOf(),
+class ExecContext(
+    val vars: Map<String, JsonNode> = mutableMapOf(),
     val resources: Map<String, Any?> = emptyMap(),
     val traceId: String = UUID.randomUUID().toString()
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = MAPPER
+
+    private val vars_mutable = vars as MutableMap<String, JsonNode>
+
+    /** Updates a variable in the context. */
+    fun put(key: String, value: JsonNode) {
+        vars_mutable[key] = value
+        variableSet(key, value)
+    }
+
+    /** Hook called when a variable is set. */
+    var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
+
 }
