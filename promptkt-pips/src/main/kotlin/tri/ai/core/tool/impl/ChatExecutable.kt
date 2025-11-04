@@ -22,10 +22,9 @@ package tri.ai.core.tool.impl
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
+import tri.util.createObject
 
 /** Executes for simple text input/output using a chat service. */
 class ChatExecutable(val chat: TextChat): Executable {

@@ -38,4 +38,11 @@ interface Executable {
 
     /** Execute the tool with given input and context. */
     suspend fun execute(input: JsonNode, context: ExecContext): JsonNode
+
+    /** Returns a string representation of the input schema. */
+    fun inputSchemaAsString() = inputSchema?.toPrettyString()
+
+    /** Returns a string representation of the output schema. */
+    fun outputSchemaAsString() = outputSchema?.toPrettyString()
+
 }

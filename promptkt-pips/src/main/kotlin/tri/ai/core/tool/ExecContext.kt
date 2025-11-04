@@ -20,7 +20,7 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.core.agent.MAPPER
+import tri.util.MAPPER
 import java.util.UUID
 
 /** Runtime context available to every executable. */

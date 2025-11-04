@@ -51,6 +51,7 @@ class WorkflowExecutorTest {
     private val CALC_SOLVER = RunSolver(
         "Calculator",
         "Use this to do math",
+        "",
         "Expression to evaluate",
         "Calculated result",
         CALC_FUNCTION
@@ -58,6 +59,7 @@ class WorkflowExecutorTest {
     private val ROMANIZER_SOLVER = RunSolver(
         "Romanizer",
         "Converts numbers to Roman numerals",
+        "",
         "Positive integer to convert",
         "Roman numeral result",
         ROMANIZER_FUNCTION
@@ -76,17 +78,19 @@ class WorkflowExecutorTest {
 
     //region QUERY/TIMELINE SOLVERS
 
-    private val SOLVER_QUERY = ChatSolver(
+    private val SOLVER_QUERY = chatSolver(
         "Data Query",
         "Use this to search for data that is needed to answer a question",
+        "",
         "The query to search for",
         "The result of the query",
         "tools/tool-query"
     )
 
-    private val SOLVER_TIMELINE = ChatSolver(
+    private val SOLVER_TIMELINE = chatSolver(
         "Timeline",
         "Use this once you have all the data needed to visualize the result on a timeline.",
+        "",
         "The data to visualize",
         "Visualization specification (structured content)",
         "tools/tool-timeline"
@@ -110,25 +114,28 @@ class WorkflowExecutorTest {
 
     //region SUMMARIZATION SOLVERS
 
-    private val SOLVER_SUMMARY = InstructSolver(
+    private val SOLVER_SUMMARY = instructSolver(
         "Summarization",
         "Use this to summarize a document or article.",
+        "",
         "The text to summarize",
         "The summary of the text",
         "Generate a 20-30 summary of the text provided below."
     )
 
-    private val SOLVER_KEYDATES = InstructSolver(
+    private val SOLVER_KEYDATES = instructSolver(
         "Key Dates Extraction",
         "Use this to extract key dates from a document or article.",
+        "",
         "The text to analyze for dates",
         "The extracted key dates",
         "Extract key dates from the text provided below."
     )
 
-    private val SOLVER_TITLEGEN = InstructSolver(
+    private val SOLVER_TITLEGEN = instructSolver(
         "Title Generation",
         "Use this to generate a title for a document or article.",
+        "",
         "The text to analyze for a title",
         "The generated title",
         "Generate a concise and descriptive title for the text provided below."

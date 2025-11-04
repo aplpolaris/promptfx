@@ -21,8 +21,8 @@ package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.YAML_MAPPER
+import tri.util.MAPPER
+import tri.util.YAML_MAPPER
 
 /** A serializable version of a plan. */
 data class PPlan(

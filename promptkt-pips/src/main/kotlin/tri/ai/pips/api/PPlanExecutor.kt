@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.convertValue
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
@@ -38,6 +37,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
+import tri.util.MAPPER
 import tri.util.info
 
 /**

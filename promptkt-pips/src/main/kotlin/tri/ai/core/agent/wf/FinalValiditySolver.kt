@@ -25,14 +25,19 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
+import tri.util.MAPPER
+import tri.util.YAML_MAPPER
+import tri.util.createJsonSchema
+import tri.util.createObject
 import java.io.IOException
 
 /** A solver used to validate that a computed result answers the actual user question. */
 class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
     "Validate Final Result",
     "Checks if the final result answers the user's request",
-    mapOf(REQUEST to "User's initial request", RESULT to "Workflow's final result"),
-    mapOf(ANSWERED to "Flag indicating whether request has been answered", RATIONALE to "Assessment of result validity/relevance", VALIDATED_RESULT to "Validated final result")
+    "",
+    createJsonSchema(REQUEST to "User's initial request", RESULT to "Workflow's final result"),
+    createJsonSchema(ANSWERED to "Flag indicating whether request has been answered", RATIONALE to "Assessment of result validity/relevance", VALIDATED_RESULT to "Validated final result")
 ) {
     override suspend fun solve(
         state: WorkflowState,
@@ -43,12 +48,13 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         // get input information from the state
         val userRequest = state.request.request
         val finalTaskId = state.taskTree.findTask { it is WorkflowUserRequest }!!.tasks.last().root.id
-        val finalResult = state.scratchpad.data["$finalTaskId.result"]!!
+        val finalResult = state.scratchpad.vars["$finalTaskId.result"]!!
+        val finalResultText = finalResult.prettyPrint()
 
         // complete a prompt doing the assessment
         val prompt = PROMPTS.get(VALIDATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
-            PROPOSED_RESULT_PARAM to finalResult.value.toString()
+            PROPOSED_RESULT_PARAM to finalResultText
         )
 
         // use LLM to generate a response
@@ -67,8 +73,12 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         return WorkflowSolveStep(
             task,
             this,
-            inputs(userRequest, finalResult.value),
-            outputs(validity.isRequestAnswered, validity.rationale, finalResult.value),
+            createObject(REQUEST to userRequest, RESULT to finalResultText),
+            MAPPER.createObjectNode().apply {
+                put(ANSWERED, validity.isRequestAnswered)
+                put(RATIONALE, validity.rationale)
+                put(VALIDATED_RESULT, finalResultText)
+            },
             t1 - t0,
             true
         )
@@ -78,7 +88,7 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         val quotedResponse = value.findCode()
         // parse into yaml and return
         return try {
-            MAPPER.readValue<ResultValidity>(quotedResponse)
+            YAML_MAPPER.readValue<ResultValidity>(quotedResponse)
         } catch (e: IOException) {
             error("Failed to parse response: $e\n$quotedResponse\n$value")
         }

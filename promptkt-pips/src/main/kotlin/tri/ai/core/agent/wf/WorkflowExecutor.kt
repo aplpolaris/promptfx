@@ -19,6 +19,7 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
@@ -53,7 +54,7 @@ class WorkflowExecutor(
 
     /** Logs tool usage. */
     suspend fun FlowCollector<AgentChatEvent>.logToolUsage() {
-        emit(AgentChatEvent.Progress("Using solvers: ${solvers.joinToString(", ") { it.name }}"))
+        emit(AgentChatEvent.Progress("Using solvers: [${solvers.joinToString(", ") { it.name }}]"))
     }
 
     private suspend fun FlowCollector<AgentChatEvent>.solve(problem: WorkflowUserRequest): MultimodalChatMessage {
@@ -92,13 +93,12 @@ class WorkflowExecutor(
 
             // 3. Use the selected solver to solve part of the task
             val step = solver.solve(state, task)
-            emit(AgentChatEvent.UsingTool(solver.name, if (step.inputs.isEmpty()) "None" else
-                step.inputs.joinToString("\n") { "${it.name}: ${it.value}" }))
+            emit(AgentChatEvent.UsingTool(solver.name, step.inputs.prettyPrint()))
 
             if (step.isSuccess) {
                 state.taskTree.setTaskDone(task)
-                state.scratchpad.addResults(task, step.outputs)
-                emit(AgentChatEvent.ToolResult(solver.name, step.outputs.joinToString("\n") { "${it.name}: ${it.value}" }))
+                state.addResults(task, step.outputs)
+                emit(AgentChatEvent.ToolResult(solver.name, step.outputs.prettyPrint()))
             } else {
                 emit(AgentChatEvent.Error(Exception("Step failed, see logs for details.")))
             }
@@ -113,12 +113,19 @@ class WorkflowExecutor(
         if (i <= maxSteps) {
             val execTime = System.currentTimeMillis() - t0
             emit(AgentChatEvent.Progress("Workflow execution complete in ${execTime}ms and ${i-1} steps!"))
-            val message = MultimodalChatMessage.text(MChatRole.Assistant, state.finalResult().toString())
+            val final = state.finalResult().prettyPrint()
+            val message = MultimodalChatMessage.text(MChatRole.Assistant, final)
             return message
         } else {
             throw IllegalStateException("Workflow execution failed after $maxSteps steps.")
         }
     }
 
+}
+
+internal fun JsonNode.prettyPrint() = when {
+    isTextual -> asText()
+    properties().isEmpty() -> "None"
+    else -> properties().joinToString("\n") { "${it.key}: ${it.value.asText()}" }
 }
 

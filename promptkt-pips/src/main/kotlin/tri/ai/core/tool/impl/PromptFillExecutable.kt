@@ -25,7 +25,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
-import tri.ai.core.agent.wf.MAPPER
+import tri.util.MAPPER
 
 /** Fills text into a prompt template. */
 class PromptFillExecutable(private val def: PromptDef): Executable {
