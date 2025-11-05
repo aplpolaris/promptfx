@@ -35,6 +35,7 @@ import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.docs.*
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.warning
 import java.io.File
 
 /** Plugin for the [TextManagerView]. */
@@ -86,7 +87,12 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
 
     init {
         val filesToRestore = find<PromptFxConfig>().textManagerFiles()
-        filesToRestore.forEach { model.loadLibraryFrom(it, replace = false, selectAllDocs = false) }
+        filesToRestore.forEach {
+            if (it.exists())
+                model.loadLibraryFrom(it, replace = false, selectAllDocs = false)
+            else
+                warning<TextManagerView>("Could not find previously opened text library file: ${it.absolutePath}")
+        }
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {

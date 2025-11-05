@@ -32,21 +32,25 @@ import javafx.stage.Screen
 import tornadofx.*
 
 /** View for formatted text that can be animated. */
-class AnimatingTextFlow : Fragment() {
+class AnimatingTextFlow(val dynamicHeight: Boolean = false) : Fragment() {
 
     val textNodes = observableListOf<Node>()
+
+    private val PRIMARY_SCREEN_BOUNDS = Screen.getPrimary().bounds
 
     override val root = hbox {
         scrollpane {
             id = "chat-response-scroll"
             hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
             vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
-            maxHeight = Screen.getPrimary().bounds.height / 2
+            if (!dynamicHeight) {
+                maxHeight = PRIMARY_SCREEN_BOUNDS.height / 2
+            }
             hbox {
                 textflow {
                     id = "chat-response"
                     textNodes.onChange { updateTextFlow(it) }
-                    prefWidth = minOf(2000.0, Screen.getPrimary().bounds.width * 2 / 3)
+                    prefWidth = minOf(2000.0, PRIMARY_SCREEN_BOUNDS.width * 2 / 3)
 
                     // add context menu to copy
                     contextmenu {

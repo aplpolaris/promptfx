@@ -75,7 +75,7 @@ class WebSearchExecutable : JsonToolExecutable(
             else -> input.inputText
         } ?: throw IllegalArgumentException("Query parameter missing or malformed.")
 
-        val maxResults = input.get("max_results").asInt(5)
+        val maxResults = input.get("max_results")?.asInt(5) ?: 5
         val clampedMaxResults = maxResults.coerceIn(1, 10)
 
         return try {
