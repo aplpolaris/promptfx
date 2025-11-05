@@ -17,24 +17,33 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core.agent
+package tri.util
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
-val MAPPER: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
-val YAML_MAPPER: ObjectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
+val MAPPER: ObjectMapper = ObjectMapper()
+    .registerModule(KotlinModule.Builder().build())
+    .registerModule(JavaTimeModule())
+
+val YAML_MAPPER: ObjectMapper = ObjectMapper(YAMLFactory())
+    .registerModule(KotlinModule.Builder().build())
+    .registerModule(JavaTimeModule())
 
 //region JsonNode HELPERS
 
-fun createObject(key: String, value: String?) = MAPPER.createObjectNode().put(key, value)
-fun createObject(key: String, value: Int) = MAPPER.createObjectNode().put(key, value)
+fun createObject(key: String, value: String?): ObjectNode = MAPPER.createObjectNode().put(key, value)
+fun createObject(key: String, value: Int): ObjectNode = MAPPER.createObjectNode().put(key, value)
+fun createObject(vararg vars: Pair<String, String>): ObjectNode = MAPPER.createObjectNode().apply {
+    vars.forEach { put(it.first, it.second) }
+}
 
 /** Try to parse a string as JSON, returning null if it fails. */
 fun String.tryJson(): JsonNode? = try {
@@ -59,20 +68,29 @@ fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
 
 //region FIELD CONVENTIONS
 
+const val PARAM_INPUT = "input"
+const val PARAM_REQUEST = "request"
+const val PARAM_TEXT = "text"
+const val PARAM_RESULT = "result"
+
+const val STRING_INPUT_SCHEMA = """{"type":"object","properties":{"$PARAM_INPUT":{"type":"string"}}}"""
+const val INTEGER_INPUT_SCHEMA = """{"type":"object","properties":{"$PARAM_INPUT":{"type":"integer"}}}"""
+const val OUTPUT_SCHEMA = """{"type":"object","properties":{"$PARAM_RESULT":{"type":"string"}}}"""
+
 /** Extracts the most likely text input from a JsonNode, checking common fields. */
 val JsonNode.inputText: String
     get() = when {
         isTextual -> asText()
-        has("input") -> get("input").asText()
-        has("request") -> get("request").asText()
-        has("text") -> get("text").asText()
+        has(PARAM_INPUT) -> get(PARAM_INPUT).asText()
+        has(PARAM_REQUEST) -> get(PARAM_REQUEST).asText()
+        has(PARAM_TEXT) -> get(PARAM_TEXT).asText()
         else -> toString()
     }
 
 /** Creates a standard result JsonNode with "result" and "isTerminal" fields. */
 fun createResult(result: String, isTerminal: Boolean = false) =
     MAPPER.createObjectNode()
-        .put("result", result)
+        .put(PARAM_RESULT, result)
         .put("isTerminal", isTerminal)
 
 //endregion

@@ -20,8 +20,8 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.agent.YAML_MAPPER
 import tri.ai.pips.api.PPlan
+import tri.util.YAML_MAPPER
 
 /** Global Starship configuration, including the pipeline and the view config. */
 class StarshipConfig() {

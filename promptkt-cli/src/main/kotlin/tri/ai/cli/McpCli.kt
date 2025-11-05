@@ -34,7 +34,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import tri.ai.core.TextPlugin
-import tri.ai.core.agent.MAPPER
 import tri.ai.mcp.LocalMcpServer
 import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
@@ -46,6 +45,7 @@ import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
+import tri.util.MAPPER
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =

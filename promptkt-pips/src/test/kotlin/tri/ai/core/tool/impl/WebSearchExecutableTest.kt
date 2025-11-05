@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
+import tri.util.MAPPER
 
 class WebSearchExecutableTest {
 

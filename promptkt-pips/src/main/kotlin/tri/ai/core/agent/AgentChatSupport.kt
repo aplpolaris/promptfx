@@ -38,7 +38,6 @@ abstract class AgentChatSupport : AgentChat {
     }
 
     override fun sendMessage(session: AgentChatSession, message: MultimodalChatMessage): AgentChatFlow {
-        println("send message")
         return AgentChatFlow(
             flow {
                 val agentResponse = sendMessageSafe(session, message)

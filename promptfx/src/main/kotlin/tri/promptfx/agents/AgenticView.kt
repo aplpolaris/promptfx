@@ -43,14 +43,19 @@ import tri.ai.core.agent.wf.*
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.ai.core.tool.JsonToolExecutable.Companion.OUTPUT_SCHEMA
-import tri.ai.core.tool.JsonToolExecutable.Companion.STRING_INPUT_SCHEMA
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.*
+import tri.util.OUTPUT_SCHEMA
+import tri.util.PARAM_INPUT
+import tri.util.PARAM_RESULT
+import tri.util.STRING_INPUT_SCHEMA
+import tri.util.createJsonSchema
+import tri.util.createObject
+import tri.util.readJsonSchema
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
@@ -199,8 +204,8 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         override val name: String = title.asToolName()
         override val description: String = instruction
         override val version: String = "1.0"
-        override val inputSchema = MAPPER.readTree(STRING_INPUT_SCHEMA)
-        override val outputSchema = MAPPER.readTree(OUTPUT_SCHEMA)
+        override val inputSchema = readJsonSchema(STRING_INPUT_SCHEMA)
+        override val outputSchema = readJsonSchema(OUTPUT_SCHEMA)
         override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
             // More robust input handling - extract input text from JsonNode
             val inputText = when {
@@ -321,21 +326,27 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
     companion object {
-        /** Converts a [SelectableTool] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
-        private fun Executable.toSolver(textChat: TextChat) = object : WorkflowSolver(name, description, mapOf("input" to "Input for $name"), mapOf("result" to "Result from $name")) {
-            override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
+        /** Converts an [Executable] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
+        private fun Executable.toSolver(textChat: TextChat) = object : WorkflowSolver(
+            name,
+            description,
+            version,
+            createJsonSchema(PARAM_INPUT to "Input for $name"),
+            createJsonSchema(PARAM_RESULT to "Result from $name")
+        ) {
+            override suspend fun solve(
+                state: WorkflowState,
+                task: WorkflowTask
+            ): WorkflowSolveStep {
                 val t0 = System.currentTimeMillis()
-                val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
-                    listOf(task.name)
-                }.joinToString("\n")
+                val input = state.aggregateInputsAsStringFor(name, task.name)
+                val inputJson = createObject(PARAM_INPUT, input)
                 val result = runBlocking {
-                    this@toSolver.execute(
-                        createObject("input", input),
-                        ExecContext(resources = mapOf("textChat" to textChat))
-                    )
-                }.get("result").asText()
+                    this@toSolver.execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
+                }.get(PARAM_RESULT).asText()
+                val resultJsonFinal = createObject(PARAM_RESULT, result)
                 val tt = System.currentTimeMillis() - t0
-                return solveStep(task, inputs(input), outputs(result), tt, true)
+                return WorkflowSolveStep(task, this, inputJson, resultJsonFinal, tt, true)
             }
         }
 

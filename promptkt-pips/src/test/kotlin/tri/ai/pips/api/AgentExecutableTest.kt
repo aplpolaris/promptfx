@@ -25,10 +25,9 @@ import org.junit.jupiter.api.Test
 import com.fasterxml.jackson.databind.JsonNode
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.fail
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
+import tri.util.createObject
 
 class AgentExecutableTest {
 

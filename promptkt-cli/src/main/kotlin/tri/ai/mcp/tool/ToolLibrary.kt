@@ -24,11 +24,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.impl.WebSearchExecutable
 import tri.ai.mcp.JsonSerializers.toJsonElement
+import tri.util.MAPPER
 import kotlin.String
 
 interface ToolLibrary {

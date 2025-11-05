@@ -19,29 +19,50 @@
  */
 package tri.ai.core.agent.wf
 
+import tri.ai.core.agent.impl.PROMPTS
+import tri.ai.openai.OpenAiCompletionChat
+import tri.ai.prompt.template
+import tri.util.createJsonSchema
+import tri.util.createObject
+
 /** Solver that takes a single input, provides a single output, based on a runner. */
 class RunSolver(
     name: String,
     description: String,
-    inputDescription: String? = null,
+    version: String = "",
+    inputDescription: String,
     outputDescription: String,
-    val run: (String) -> String
-) : WorkflowSolver(name, description, inputDescription?.let { mapOf(INPUT to it) } ?: mapOf(), mapOf(RESULT to outputDescription)) {
-    override suspend fun solve(
-        state: WorkflowState,
-        task: WorkflowTask
-    ): WorkflowSolveStep {
+    val run: suspend (String) -> String
+) : WorkflowSolver(name, description, version, createJsonSchema(INPUT to inputDescription), createJsonSchema(RESULT to outputDescription)) {
+
+    override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
         val t0 = System.currentTimeMillis()
-        val inputData = if (inputs.isEmpty()) "" else
-            state.aggregateInputsFor(name).values.joinToString("\n") { "${it?.value}" }
+        val inputData = state.aggregateInputsAsStringFor(name, task.name)
         val result = run(inputData)
-        return solveStep(
+        return WorkflowSolveStep(
             task,
-            if (inputs.isEmpty()) inputs() else inputs(inputData),
-            outputs(result),
+            this,
+            createObject(INPUT, inputData),
+            createObject(RESULT, result),
             System.currentTimeMillis() - t0,
             true
         )
     }
 
 }
+
+/** Solver that takes a single input, provides a single output, based on an LLM chat request. */
+fun chatSolver(name: String, description: String, version: String, inputDescription: String, outputDescription: String, promptId: String) =
+    RunSolver(name, description, version, inputDescription, outputDescription) { inputData ->
+        val prompt = PROMPTS.get(promptId)!!.template().fillInput(inputData)
+        val result = OpenAiCompletionChat().complete(prompt, tokens = 1000)
+        result.firstValue.textContent()
+    }
+
+/** Solver that takes a single input, provides a single output, based on an LLM chat request. */
+fun instructSolver(name: String, description: String, version: String, inputDescription: String, outputDescription: String, instruction: String) =
+    RunSolver(name, description, version, inputDescription, outputDescription) { inputData ->
+        val promptInput = "$instruction\n\nInput:\n$inputData"
+        val result = OpenAiCompletionChat().complete(promptInput, tokens = 1000)
+        result.firstValue.textContent()
+    }

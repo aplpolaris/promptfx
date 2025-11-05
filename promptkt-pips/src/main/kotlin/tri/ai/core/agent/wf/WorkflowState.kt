@@ -19,18 +19,26 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import tri.ai.core.tool.ExecContext
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
+import tri.util.MAPPER
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.ifEmpty
 
 /** Tracks state of workflow execution. */
 class WorkflowState(_request: WorkflowUserRequest) {
+
     /** The user request that needs to be solved. */
     var request = _request
     /** Tree of tasks required for workflow execution. */
     val taskTree = WorkflowTaskTree.createSolveAndValidateTree(request)
     /** Scratchpad containing intermediate results and other useful information. */
-    val scratchpad = WorkflowScratchpad()
+    val scratchpad = ExecContext()
     /** History of solver steps taken. */
     val solveHistory = mutableListOf<WorkflowSolveStep>()
     /** Flag indicating when the execution is complete. */
@@ -41,7 +49,15 @@ class WorkflowState(_request: WorkflowUserRequest) {
         // TODO - this is very brittle
         val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
         if (userInput.isNotEmpty())
-            scratchpad.data["user_input"] = WVar("user_input", "User input for the workflow", userInput)
+            scratchpad.put("user_input", MAPPER.valueToTree<JsonNode>(userInput))
+        // description ?? scratchpad["user_input"] = WVar("user_input", "User input for the workflow", userInput)
+    }
+
+    /** Add task results to the scratchpad. */
+    fun addResults(task: WorkflowTask, outputs: ObjectNode) {
+        outputs.properties().forEach { (key, value) ->
+            scratchpad.put("${task.id}.$key", value)
+        }
     }
 
     /** Check for completion, updating the isDone flag if all tasks are complete. */
@@ -85,13 +101,23 @@ class WorkflowState(_request: WorkflowUserRequest) {
     }.toString().trim()
 
     /** Using the current plan, look up all the inputs associated with the given tool. */
-    fun aggregateInputsFor(toolName: String) =
+    fun aggregateInputsFor(toolName: String): Map<String, JsonNode> =
         ((taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
-            ?: listOf()).associateWith { scratchpad.data["$it.result"] ?: scratchpad.data[it] }
+            ?: listOf()).associateWith { scratchpad.vars["$it.$RESULT"] ?: scratchpad.vars[it]!! }
+
+    /** Aggregates inputs as a string value. */
+    fun aggregateInputsAsStringFor(toolName: String, taskName: String, separator: String = "\n"): String =
+        aggregateInputsFor(toolName).values.mapNotNull { it.prettyPrint() }.ifEmpty { listOf(taskName) }.joinToString(separator)
+
+    private fun JsonNode.prettyPrint() = when {
+        isTextual -> asText()
+        else -> toString()
+    }
 
     /** Get the final computed result from the scratchpad. */
+    // TODO - this is brittle since it assumes a specific output exists on the scratchpad, want a general purpose solution
     fun finalResult() =
-        // TODO - this is brittle since it assumes a specific output exists on the scratchpad, want a general purpose solution
-        scratchpad.data[FINAL_RESULT_ID]!!.value
+        scratchpad.vars[FINAL_RESULT_ID]!!
+
 }
 

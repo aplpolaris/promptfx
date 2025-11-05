@@ -23,12 +23,12 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.fill
+import tri.util.readJsonSchema
 import tri.util.ui.starship.StarshipConfigQuestion.Companion.EXAMPLE_KEY
 import tri.util.ui.starship.StarshipConfigQuestion.Companion.TOPIC_KEY
 import kotlin.collections.random
@@ -38,8 +38,8 @@ class StarshipExecutableQuestionGenerator(val config: StarshipConfigQuestion, va
     override val name = "starship/random-question"
     override val description = "Generates a random question."
     override val version = "0.0.1"
-    override val inputSchema = MAPPER.readTree(INPUT_SCHEMA)
-    override val outputSchema = MAPPER.readTree(OUTPUT_SCHEMA)
+    override val inputSchema = readJsonSchema(INPUT_SCHEMA)
+    override val outputSchema = readJsonSchema(OUTPUT_SCHEMA)
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
         val question = randomQuestion()

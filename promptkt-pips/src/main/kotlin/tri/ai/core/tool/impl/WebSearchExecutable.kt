@@ -25,10 +25,10 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.inputText
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.JsonToolExecutable
+import tri.util.MAPPER
+import tri.util.inputText
 import java.net.URLDecoder
 
 /**

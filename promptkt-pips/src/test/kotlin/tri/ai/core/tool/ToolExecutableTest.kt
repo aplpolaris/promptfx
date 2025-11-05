@@ -22,8 +22,7 @@ package tri.ai.core.tool
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
+import tri.util.createObject
 
 class ToolExecutableTest {
 
