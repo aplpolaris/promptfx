@@ -326,7 +326,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
     companion object {
-        /** Converts a [SelectableTool] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
+        /** Converts an [Executable] to a [tri.ai.core.agent.wf.WorkflowSolver]. */
         private fun Executable.toSolver(textChat: TextChat) = object : WorkflowSolver(
             name,
             description,
@@ -342,7 +342,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 val input = state.aggregateInputsAsStringFor(name, task.name)
                 val inputJson = createObject(PARAM_INPUT, input)
                 val result = runBlocking {
-                    execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
+                    this@toSolver.execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
                 }.get(PARAM_RESULT).asText()
                 val resultJsonFinal = createObject(PARAM_RESULT, result)
                 val tt = System.currentTimeMillis() - t0
