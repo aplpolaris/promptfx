@@ -1,33 +1,126 @@
 # Library of OpenAI Models
 # See https://platform.openai.com/docs/models
 ---
-audio: [ whisper-1 ]
-chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4 ]
+audio: [ gpt-4o-transcribe, gpt-4o-mini-transcribe, whisper-1 ]
+chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4, o3-mini ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]
-moderation: [ text-moderation-latest, text-moderation-stable ]
-multimodal: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4, gpt-4o-mini, gpt-4o, gpt-4.5-preview, o3-mini ]
-tts: [ tts-1, tts-1-hd ]
-image_generator: [ dall-e-2, dall-e-3 ]
-vision_language: [ gpt-4o-mini, gpt-4o, gpt-4.5-preview, o3-mini ]
+moderation: [ omni-moderation-latest ]
+multimodal: [ gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano, gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, gpt-4-turbo, o4-mini, o3, o1 ]
+tts: [ gpt-4o-mini-tts, tts-1, tts-1-hd ]
+image_generator: [ gpt-image-1, gpt-image-1-mini, dall-e-3, dall-e-2 ]
+vision_language: [ gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano, gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, gpt-4-turbo, o4-mini, o3, o1 ]
 
 models:
 
-  GPT-45:
+  GPT-5:
 
-    - id: gpt-4.5-preview
-      name: GPT-4.5 Preview
+    - id: gpt-5.1
+      name: GPT-5.1
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text, image ]
+      source: OpenAI
+      description: >
+        GPT-5.1 is our flagship model for coding and agentic tasks with configurable reasoning and non-reasoning effort.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+      snapshots: [ ]
+
+    - id: gpt-5
+      name: GPT-5
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text, image ]
+      source: OpenAI
+      description: >
+        GPT-5 is our previous model for coding, reasoning, and agentic tasks across domains. We recommend using the latest GPT-5.1. Learn more in our latest model guide.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+      snapshots: [ ]
+
+    - id: gpt-5-mini
+      name: GPT-5 mini
       type: TEXT_VISION_CHAT
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
       description: >
-        This is a research preview of GPT-4.5, our largest and most capable GPT model yet. Its deep world knowledge and better understanding of user intent makes it good at creative tasks and agentic planning. GPT-4.5 excels at tasks that benefit from creative, open-ended thinking and conversation, such as writing, learning, or exploring new ideas.
-      lifecycle: EXPERIMENTAL
-      totalTokenLimit: 128000
-      outputTokenLimit: 16384
+        GPT-5 mini is a faster, more cost-efficient version of GPT-5. It's great for well-defined tasks and precise prompts.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+      snapshots: [ ]
+
+    - id: gpt-5-nano
+      name: GPT-5 nano
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-5 Nano is our fastest, cheapest version of GPT-5. It's great for summarization and classification tasks.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+      snapshots: [ ]
+
+    - id: gpt-5-pro
+      name: GPT-5 pro ($$$$, Responses API only))
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-5 pro uses more compute to think harder and provide consistently better answers.
+        GPT-5 pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future. Since GPT-5 pro is designed to tackle tough problems, some requests may take several minutes to finish.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 272000
+      snapshots: [ ]
 
   GPT-4:
+
+    - id: gpt-4.1
+      name: GPT-4.1
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-4.1 excels at instruction following and tool calling, with broad knowledge across domains. It features a 1M token context window, and low latency without a reasoning step.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 1047576
+      outputTokenLimit: 32768
+      snapshots: []
+
+    - id: gpt-4.1-mini
+      name: GPT-4.1 mini
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-4.1 mini excels at instruction following and tool calling. It features a 1M token context window, and low latency without a reasoning step.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 1047576
+      outputTokenLimit: 32768
+      snapshots: []
+
+    - id: gpt-4.1-nano
+      name: GPT-4.1 nano
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-4.1 nano excels at instruction following and tool calling. It features a 1M token context window, and low latency without a reasoning step.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 1047576
+      outputTokenLimit: 32768
+      snapshots: []
 
     - id: gpt-4o
       name: GPT-4o
@@ -41,20 +134,7 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 128000
       outputTokenLimit: 16384
-      snapshots: [ '2024-05-13' ]
-
-    - id: chatgpt-4o-latest
-      name: ChatGPT 4o
-      type: TEXT_VISION_CHAT
-      inputs: [ text, image ]
-      outputs: [ text ]
-      source: OpenAI
-      description: >
-        Latest GPT-4o model used in ChatGPT
-      lifecycle: PRODUCTION_ALIAS
-      totalTokenLimit: 128000
-      outputTokenLimit: 16384
-      snapshots: [ '2024-05-13' ]
+      snapshots: [ ]
 
     - id: gpt-4o-mini
       name: GPT-4o Mini
@@ -87,7 +167,7 @@ models:
     - id: gpt-4
       name: GPT-4
       type: TEXT_CHAT
-      inputs: [ text, image ]
+      inputs: [ text ]
       outputs: [ text ]
       source: OpenAI
       description: >
@@ -97,48 +177,6 @@ models:
       totalTokenLimit: 8192
       outputTokenLimit: 8192
       snapshots: [ '0613', '1106-preview' ]
-
-  GPT-4 Reasoning:
-
-    - id: o3-mini
-      name: GPT o3-mini Reasoning
-      type: TEXT_CHAT
-      inputs: [ text ]
-      outputs: [ text ]
-      source: OpenAI
-      description: >
-        o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API.
-      lifecycle: PRODUCTION_ALIAS
-      totalTokenLimit: 200000
-      outputTokenLimit: 100000
-
-    - id: o1
-      name: GPT o1 Reasoning
-      type: TEXT_VISION_CHAT
-      inputs: [ text, image ]
-      outputs: [ text ]
-      source: OpenAI
-      description: >
-        The o1 series of models are trained with reinforcement learning to perform complex reasoning.
-        o1 models think before they answer, producing a long internal chain of thought before responding to the user.
-        o1: reasoning model designed to solve hard problems across domains
-      lifecycle: PRODUCTION_ALIAS
-      totalTokenLimit: 200000
-      outputTokenLimit: 100000
-
-    - id: o1-mini
-      name: GPT o1-mini Reasoning
-      type: TEXT_CHAT
-      inputs: [ text ]
-      outputs: [ text ]
-      source: OpenAI
-      description: >
-        The o1 series of models are trained with reinforcement learning to perform complex reasoning.
-        o1 models think before they answer, producing a long internal chain of thought before responding to the user.
-        o1-mini: fast and affordable reasoning model for specialized tasks
-      lifecycle: PRODUCTION_ALIAS
-      totalTokenLimit: 128000
-      outputTokenLimit: 65536
 
   GPT-3.5:
 
@@ -154,37 +192,31 @@ models:
       totalTokenLimit: 16385
       outputTokenLimit: 4096
 
-  Embeddings:
+  GPT-OSS:
 
-    - id: text-embedding-ada-002
-      name: Ada Text Embeddings
-      type: TEXT_EMBEDDING
-      source: OpenAI
-      description: Most capable 2nd generation embedding model, replacing 16 first generation models
-      lifecycle: PRODUCTION
+    - id: gpt-oss-120b
+      name: gpt-oss-120b (Responses API only)
+      type: RESPONSES
       inputs: [ text ]
-      outputs: [ embedding ]
-      outputDimension: 1536
+      outputs: [ text ]
+      source: OpenAI
+      description: Most powerful open-weight model, fits into an H100 GPU
+      lifecycle: PRODUCTION
+      totalTokenLimit: 131072
+      outputTokenLimit: 131072
+      snapshots: [ ]
 
-    - id: text-embedding-3-large
-      name: Ada Text Embeddings
-      type: TEXT_EMBEDDING
-      source: OpenAI
-      description: Most capable embedding model for both english and non-english tasks
-      lifecycle: PRODUCTION
+    - id: gpt-oss-20b
+      name: gpt-oss-20b (Responses API only)
+      type: RESPONSES
       inputs: [ text ]
-      outputs: [ embedding ]
-      outputDimension: 3072
-
-    - id: text-embedding-3-small
-      name: Ada Text Embeddings
-      type: TEXT_EMBEDDING
+      outputs: [ text ]
       source: OpenAI
-      description: Increased performance over 2nd generation ada embedding model
+      description: Medium-sized open-weight model for low latency, local, or specialized use-cases
       lifecycle: PRODUCTION
-      inputs: [ text ]
-      outputs: [ embedding ]
-      outputDimension: 1536
+      totalTokenLimit: 131072
+      outputTokenLimit: 131072
+      snapshots: [ ]
 
   GPT completions:
 
@@ -220,12 +252,144 @@ models:
       totalTokenLimit: 16384
       outputTokenLimit: 4096
 
+  Omni Reasoning Models:
+
+    - id: o4-mini
+      name: o4-mini
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        o4-mini is our latest small o-series model. It's optimized for fast, effective reasoning with exceptionally efficient performance in coding and visual tasks. It's succeeded by GPT-5 mini.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+    - id: o3-pro
+      name: o3-pro ($$$, Responses API only)
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        The o-series of models are trained with reinforcement learning to think before they answer and perform complex reasoning. The o3-pro model uses more compute to think harder and provide consistently better answers.
+        o3-pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future. Since o3-pro is designed to tackle tough problems, some requests may take several minutes to finish. To avoid timeouts, try using background mode.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+    - id: o3
+      name: o3
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        o3 is a well-rounded and powerful model across domains. It sets a new standard for math, science, coding, and visual reasoning tasks. It also excels at technical writing and instruction-following. Use it to think through multi-step problems that involve analysis across text, code, and images.
+        o3 is succeeded by GPT-5.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+    - id: o3-mini
+      name: GPT o3-mini Reasoning
+      type: TEXT_CHAT
+      inputs: [ text ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+    - id: o1
+      name: GPT o1 Reasoning
+      type: TEXT_VISION_CHAT
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        The o1 series of models are trained with reinforcement learning to perform complex reasoning.
+        o1 models think before they answer, producing a long internal chain of thought before responding to the user.
+        o1: reasoning model designed to solve hard problems across domains
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+    - id: o1-pro
+      name: o1-pro ($$$$$, Responses API only)
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        The o1 series of models are trained with reinforcement learning to think before they answer and perform complex reasoning. The o1-pro model uses more compute to think harder and provide consistently better answers.
+        o1-pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future.      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 200000
+      outputTokenLimit: 100000
+
+  Embeddings:
+
+    - id: text-embedding-ada-002
+      name: Ada Text Embeddings
+      type: TEXT_EMBEDDING
+      source: OpenAI
+      description: Most capable 2nd generation embedding model, replacing 16 first generation models
+      lifecycle: PRODUCTION
+      inputs: [ text ]
+      outputs: [ embedding ]
+      outputDimension: 1536
+
+    - id: text-embedding-3-large
+      name: Ada Text Embeddings
+      type: TEXT_EMBEDDING
+      source: OpenAI
+      description: Most capable embedding model for both english and non-english tasks
+      lifecycle: PRODUCTION
+      inputs: [ text ]
+      outputs: [ embedding ]
+      outputDimension: 3072
+
+    - id: text-embedding-3-small
+      name: Ada Text Embeddings
+      type: TEXT_EMBEDDING
+      source: OpenAI
+      description: Increased performance over 2nd generation ada embedding model
+      lifecycle: PRODUCTION
+      inputs: [ text ]
+      outputs: [ embedding ]
+      outputDimension: 1536
+
   Image Generation:
+
+    - id: gpt-image-1
+      name: GPT Image 1
+      type: IMAGE_GENERATOR
+      source: OpenAI
+      description: >
+        GPT Image 1 is our new state-of-the-art image generation model. It is a natively multimodal language model that accepts both text and image inputs, and produces image outputs.
+      lifecycle: PRODUCTION
+      inputs: [ text, image ]
+      outputs: [ image ]
+
+    - id: gpt-image-1-mini
+      name: GPT Image 1 mini
+      type: IMAGE_GENERATOR
+      source: OpenAI
+      description: >
+        A cost-efficient version of GPT Image 1. It is a natively multimodal language model that accepts both text and image inputs, and produces image outputs.
+      lifecycle: PRODUCTION
+      inputs: [ text, image ]
+      outputs: [ image ]
 
     - id: dall-e-3
       name: DALL-E 3
       type: IMAGE_GENERATOR
       source: OpenAI
+      description: >
+        DALL·E is an AI system that creates realistic images and art from a natural language description. DALL·E 3 currently supports the ability, given a prompt, to create a new image with a specific size.
       lifecycle: PRODUCTION
       inputs: [ text ]
       outputs: [ image ]
@@ -241,33 +405,25 @@ models:
   Moderation:
 
     - id: omni-moderation-latest
-      name: Omni Text Moderation (latest)
+      name: Omni Moderation
       type: MODERATION
       source: OpenAI
       lifecycle: PRODUCTION
       inputs: [ text, image ]
       outputs: [ moderation ]
-      totalTokenLimit: 32768
-
-    - id: text-moderation-latest
-      name: Text Moderation (latest)
-      type: MODERATION
-      source: OpenAI
-      lifecycle: PRODUCTION
-      inputs: [ text ]
-      outputs: [ moderation ]
-      totalTokenLimit: 32768
-
-    - id: text-moderation-stable
-      name: Text Moderation (stable)
-      type: MODERATION
-      source: OpenAI
-      lifecycle: PRODUCTION
-      inputs: [ text ]
-      outputs: [ moderation ]
-      totalTokenLimit: 32768
+      snapshots: [ ]
 
   Speech:
+
+    - id: gpt-4o-mini-tts
+      name: GPT-4o mini TTS
+      source: OpenAI
+      type: TEXT_TO_SPEECH
+      description: >
+        GPT-4o mini TTS is a text-to-speech model built on GPT-4o mini, a fast and powerful language model. Use it to convert text to natural sounding spoken text. The maximum number of input tokens is 2000.
+      lifecycle: PRODUCTION
+      inputs: [ text ]
+      outputs: [ audio ]
 
     - id: tts-1
       name: TTS 1
@@ -286,6 +442,26 @@ models:
       lifecycle: PRODUCTION
       inputs: [ text ]
       outputs: [ audio ]
+
+    - id: gpt-4o-transcribe
+      name: GPT-4o Transcribe
+      type: SPEECH_TO_TEXT
+      source: OpenAI
+      description: >
+        GPT-4o Transcribe is a speech-to-text model that uses GPT-4o to transcribe audio. It offers improvements to word error rate and better language recognition and accuracy compared to original Whisper models. Use it for more accurate transcripts.
+      lifecycle: PRODUCTION
+      inputs: [ audio, text ]
+      outputs: [ text ]
+
+    - id: gpt-4o-mini-transcribe
+      name: GPT-4o mini Transcribe
+      type: SPEECH_TO_TEXT
+      source: OpenAI
+      description: >
+        GPT-4o mini Transcribe is a speech-to-text model that uses GPT-4o mini to transcribe audio. It offers improvements to word error rate and better language recognition and accuracy compared to original Whisper models. Use it for more accurate transcripts.
+      lifecycle: PRODUCTION
+      inputs: [ audio, text ]
+      outputs: [ text ]
 
     - id: whisper-1
       name: Whisper v2-large

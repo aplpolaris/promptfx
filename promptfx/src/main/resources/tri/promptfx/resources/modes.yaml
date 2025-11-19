@@ -1,4 +1,8 @@
-# Library of modes for use in other views
+#
+# modes.yaml
+#
+# This file provides multiple choice menu options for prompt templates.
+# It can be overwritten at runtime by modifying config/modes.yaml.
 ---
 translation:
   - English
