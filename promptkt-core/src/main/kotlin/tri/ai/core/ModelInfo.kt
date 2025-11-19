@@ -91,6 +91,7 @@ enum class ModelType {
     SPEECH_TO_TEXT,
     AUDIO_CHAT,
     REALTIME_CHAT,
+    RESPONSES,
     MODERATION,
     QUESTION_ANSWER,
     UNKNOWN
