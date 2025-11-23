@@ -51,8 +51,9 @@ class GeminiSdkModelIndexTest {
     @Test
     fun testChatModelsInclusive() {
         val models = GeminiSdkModelIndex.chatModelsInclusive()
-        assertTrue(models.isEmpty()) // No dedicated chat models, using multimodal
-        println("Chat models: $models")
+        assertTrue(models.isNotEmpty()) // chat + vision_language models
+        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_15_FLASH))
+        println("Chat models (inclusive): $models")
     }
 
 }
