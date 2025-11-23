@@ -47,7 +47,7 @@ class AnthropicClientTest {
         assertTrue(models.isNotEmpty())
         println("Available models:")
         models.forEach { model ->
-            println("  ${model.id()} - ${model.displayName().orElse("N/A")}")
+            println("  ${model.id()}")
         }
     }
 

@@ -28,7 +28,7 @@ import tri.ai.core.MChatRole
 
 class AnthropicTextChatTest {
 
-    val client = AnthropicTextChat(AnthropicModelIndex.CLAUDE_3_5_HAIKU_20241022)
+    val client = AnthropicTextChat(AnthropicModelIndex.CLAUDE_3_5_HAIKU_20241022, AnthropicClient())
 
     @Test
     @Tag("anthropic")
@@ -40,7 +40,8 @@ class AnthropicTextChatTest {
             )
             val res = client.chat(messages, tokens = 100)
             println(res)
-            assertTrue("paris" in res.lowercase())
+            val text = res.output?.outputs?.firstOrNull()?.text ?: ""
+            assertTrue("paris" in text.lowercase())
         }
     }
 

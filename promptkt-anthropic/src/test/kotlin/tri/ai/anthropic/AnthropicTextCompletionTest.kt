@@ -23,12 +23,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextChatMessage
-import tri.ai.core.MChatRole
+import tri.ai.core.MChatVariation
 
 class AnthropicTextCompletionTest {
 
-    val client = AnthropicTextCompletion(AnthropicModelIndex.CLAUDE_3_5_HAIKU_20241022)
+    val client = AnthropicTextCompletion(AnthropicModelIndex.CLAUDE_3_5_HAIKU_20241022, AnthropicClient())
 
     @Test
     @Tag("anthropic")
@@ -36,11 +35,12 @@ class AnthropicTextCompletionTest {
         runTest {
             val res = client.complete(
                 "Translate Hello, world! into French.",
-                tokens = 100,
-                temperature = 0.5
+                variation = MChatVariation(temperature = 0.5),
+                tokens = 100
             )
             println(res)
-            assertTrue("monde" in res.lowercase() || "bonjour" in res.lowercase())
+            val text = res.output?.outputs?.firstOrNull()?.text ?: ""
+            assertTrue("monde" in text.lowercase() || "bonjour" in text.lowercase())
         }
     }
 
