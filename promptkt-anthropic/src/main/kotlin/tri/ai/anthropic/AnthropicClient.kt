@@ -93,12 +93,8 @@ class AnthropicClient : Closeable {
         }
 
         // Apply variation parameters
-        if (variation.temperature != null) {
-            paramsBuilder.temperature(variation.temperature!!)
-        }
-        if (variation.topP != null) {
-            paramsBuilder.topP(variation.topP!!)
-        }
+        variation.temperature?.let { paramsBuilder.temperature(it) }
+        variation.topP?.let { paramsBuilder.topP(it) }
 
         return createMessage(paramsBuilder.build())
     }

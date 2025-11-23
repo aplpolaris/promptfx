@@ -46,9 +46,8 @@ class AnthropicAiPlugin : TextPlugin {
         }
     else listOf()
 
-    override fun embeddingModels(): List<EmbeddingModel> = models(AnthropicModelIndex.embeddingModels()) {
-        TODO("Anthropic does not provide embedding models")
-    }
+    override fun embeddingModels(): List<EmbeddingModel> = emptyList()
+        // Anthropic does not provide embedding models
 
     override fun chatModels(): List<TextChat> =
         models(AnthropicModelIndex.chatModelsInclusive()) { AnthropicTextChat(it, client) }
@@ -62,9 +61,8 @@ class AnthropicAiPlugin : TextPlugin {
     override fun visionLanguageModels(): List<VisionLanguageChat> =
         models(AnthropicModelIndex.visionLanguageModels()) { AnthropicVisionLanguageChat(it, client) }
 
-    override fun imageGeneratorModels(): List<ImageGenerator> = models(AnthropicModelIndex.imageGeneratorModels()) {
-        TODO("Anthropic does not provide image generation models")
-    }
+    override fun imageGeneratorModels(): List<ImageGenerator> = emptyList()
+        // Anthropic does not provide image generation models
 
     override fun close() {
         client.close()

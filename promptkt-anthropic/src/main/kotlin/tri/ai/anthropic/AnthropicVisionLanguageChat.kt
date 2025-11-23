@@ -23,7 +23,13 @@ import com.anthropic.models.messages.*
 import tri.ai.core.*
 import tri.ai.prompt.trace.*
 
-/** Vision-language chat completion with Anthropic Claude models. */
+/**
+ * Vision-language chat completion with Anthropic Claude models.
+ * 
+ * NOTE: Image support is currently simplified - images are passed as text URIs.
+ * Full image support using base64-encoded images can be added in future versions
+ * using the ContentBlockParam.ofImage API from the Anthropic SDK.
+ */
 class AnthropicVisionLanguageChat(
     override val modelId: String,
     private val client: AnthropicClient
@@ -51,8 +57,9 @@ class AnthropicVisionLanguageChat(
             messages.forEach { msg ->
                 when (msg.role) {
                     MChatRole.User -> {
-                        // For now, just send the text content
-                        // TODO: Add proper image support using ContentBlockParam.ofImage
+                        // Currently simplified to text-only
+                        // TODO: Implement image support using ContentBlockParam.ofImage
+                        // from the Anthropic SDK for proper vision-language functionality
                         paramsBuilder.addUserMessage(msg.content)
                     }
                     MChatRole.Assistant -> {
