@@ -1,10 +1,10 @@
 # PromptKt Gemini SDK Plugin
 
-This module provides support for Google's Gemini AI models using the official [Google Cloud Vertex AI Java SDK](https://github.com/googleapis/java-genai).
+This module provides support for Google's Gemini AI models using the official [java-genai library](https://github.com/googleapis/java-genai).
 
 ## Overview
 
-The `promptkt-gemini-sdk` plugin implements the `TextPlugin` interface to provide access to Gemini models through Google's official SDK. This is an alternative to the `promptkt-gemini` plugin, which uses direct REST API calls.
+The `promptkt-gemini-sdk` plugin implements the `TextPlugin` interface to provide access to Gemini models through Google's official java-genai SDK. This is an alternative to the `promptkt-gemini` plugin, which uses direct REST API calls.
 
 ## Features
 
@@ -17,36 +17,38 @@ The `promptkt-gemini-sdk` plugin implements the `TextPlugin` interface to provid
 
 ## Configuration
 
-The plugin requires three pieces of configuration:
+The plugin supports two modes of operation:
 
-### 1. API Key (Required)
+### Mode 1: Gemini Developer API (API Key Only)
 
-You can provide the API key in one of two ways:
+This is the simplest configuration, requiring only an API key:
 
 - **File**: Create a file named `apikey-gemini.txt` in the application root directory containing your API key
 - **Environment Variable**: Set the `GEMINI_API_KEY` environment variable
 
-### 2. Project ID (Required)
+### Mode 2: Vertex AI (Project ID + Location + API Key)
 
-You can provide the Google Cloud project ID in one of two ways:
+For Vertex AI mode, you need to provide:
 
-- **File**: Create a file named `gemini-project-id.txt` in the application root directory containing your project ID
-- **Environment Variable**: Set the `GEMINI_PROJECT_ID` environment variable
+1. **API Key** (Required)
+   - **File**: Create a file named `apikey-gemini.txt` in the application root directory
+   - **Environment Variable**: Set the `GEMINI_API_KEY` environment variable
 
-### 3. Location (Optional)
+2. **Project ID** (Required for Vertex AI)
+   - **File**: Create a file named `gemini-project-id.txt` in the application root directory
+   - **Environment Variable**: Set the `GEMINI_PROJECT_ID` environment variable
 
-The location/region for the Vertex AI endpoint. Defaults to `us-central1` if not specified.
-
-You can override this in one of two ways:
-
-- **File**: Create a file named `gemini-location.txt` in the application root directory containing your preferred location
-- **Environment Variable**: Set the `GEMINI_LOCATION` environment variable
+3. **Location** (Optional, defaults to `us-central1`)
+   - **File**: Create a file named `gemini-location.txt` in the application root directory
+   - **Environment Variable**: Set the `GEMINI_LOCATION` environment variable
 
 Common locations include:
 - `us-central1` (default)
 - `us-east4`
 - `europe-west4`
 - `asia-northeast1`
+
+**Note**: If you provide a project ID, the plugin will automatically use Vertex AI mode. If you only provide an API key (no project ID), it will use the Gemini Developer API mode.
 
 ## Setup
 
@@ -143,7 +145,7 @@ Note: By default, tests tagged with `gemini-sdk` are excluded to avoid requiring
 
 ## Dependencies
 
-- **google-cloud-vertexai**: 1.24.0 - Google's official Vertex AI SDK
+- **google-genai**: 1.2.0 - Google's official java-genai library for Gemini API
 - **promptkt-core**: Core PromptKt interfaces and utilities
 - **kotlin-stdlib**: Kotlin standard library
 - **kotlinx-coroutines**: For async/await support

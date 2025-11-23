@@ -21,6 +21,7 @@ package tri.ai.geminisdk
 
 import tri.ai.core.*
 import tri.ai.prompt.trace.*
+import java.util.Optional
 
 /** Gemini vision language chat model using the official SDK. */
 class GeminiSdkVisionLanguageChat(
@@ -57,7 +58,9 @@ class GeminiSdkVisionLanguageChat(
                 history
             )
             
-            val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text ?: ""
+            // Handle Optional<String> from java-genai
+            val textOptional: Optional<String> = response.text()
+            val responseText = if (textOptional.isPresent) textOptional.get() else ""
             
             return AiPromptTrace(
                 null,

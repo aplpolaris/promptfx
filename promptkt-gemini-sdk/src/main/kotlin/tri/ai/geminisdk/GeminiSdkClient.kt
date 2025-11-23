@@ -70,15 +70,17 @@ class GeminiSdkClient : Closeable {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         
         // Build generation config from variation
-        val generationConfig = GenerationConfig.builder().apply {
-            variation.temperature?.let { temperature(it) }
-            variation.topP?.let { topP(it) }
-            variation.topK?.let { topK(it) }
-        }.build()
+        val generationConfigBuilder = GenerationConfig.builder()
+        variation.temperature?.let { generationConfigBuilder.temperature(it.toFloat()) }
+        variation.topP?.let { generationConfigBuilder.topP(it.toFloat()) }
+        variation.topK?.let { generationConfigBuilder.topK(it.toFloat()) }
+        val generationConfig = generationConfigBuilder.build()
         
-        val config = GenerateContentConfig.builder()
-            .generationConfig(generationConfig)
-            .build()
+        val configBuilder = GenerateContentConfig.builder()
+        if (generationConfig != null) {
+            configBuilder.generationConfig(generationConfig)
+        }
+        val config = configBuilder.build()
         
         // For now, we'll use the simple text-based generation
         // History support can be added later with multi-turn conversations

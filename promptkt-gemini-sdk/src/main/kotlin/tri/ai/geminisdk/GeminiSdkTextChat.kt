@@ -26,6 +26,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
+import java.util.Optional
 
 /** Gemini text chat model using the official SDK. */
 class GeminiSdkTextChat(
@@ -57,8 +58,9 @@ class GeminiSdkTextChat(
                 history
             )
             
-            // java-genai provides a text() method for quick access
-            val responseText = response.text().orElse("")
+            // Handle Optional<String> from java-genai
+            val textOptional: Optional<String> = response.text()
+            val responseText = if (textOptional.isPresent) textOptional.get() else ""
             
             return AiPromptTrace(
                 null,

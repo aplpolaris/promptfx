@@ -25,6 +25,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
+import java.util.Optional
 
 /** Gemini text completion model using the official SDK. */
 class GeminiSdkTextCompletion(
@@ -44,7 +45,9 @@ class GeminiSdkTextCompletion(
         
         try {
             val response = client.generateContent(text, modelId, variation)
-            val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text ?: ""
+            // Handle Optional<String> from java-genai
+            val textOptional: Optional<String> = response.text()
+            val responseText = if (textOptional.isPresent) textOptional.get() else ""
             
             return AiPromptTrace(
                 null,
