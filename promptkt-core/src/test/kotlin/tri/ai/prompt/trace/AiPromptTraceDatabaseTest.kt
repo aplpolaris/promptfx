@@ -21,7 +21,7 @@ package tri.ai.prompt.trace
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.openai.jsonWriter
+import tri.util.jackson.jsonWriter
 
 class AiPromptTraceDatabaseTest {
 

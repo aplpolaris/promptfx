@@ -21,7 +21,7 @@ package tri.ai.prompt.trace.batch
 
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
-import tri.ai.openai.jsonWriter
+import tri.util.jackson.jsonWriter
 
 class AiPromptBatchTest {
 
