@@ -1,0 +1,36 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.geminisdk
+
+import tri.ai.core.ModelIndex
+
+/** Models available in the Gemini SDK. */
+object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
+
+    //region MODEL ID's
+
+    const val EMBED4 = "text-embedding-004"
+    const val GEMINI_15_FLASH = "gemini-1.5-flash"
+    const val GEMINI_15_FLASH_8B = "gemini-1.5-flash-8b"
+    const val GEMINI_15_PRO = "gemini-1.5-pro"
+
+    //endregion
+
+}

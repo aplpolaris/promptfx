@@ -1,0 +1,14 @@
+# Library of Gemini Models via Official SDK
+# See https://ai.google.dev/gemini-api/docs/models/gemini
+# See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versioning
+---
+
+audio: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]
+chat: [ ]
+completion: [  ]
+embeddings: [ text-embedding-004 ]
+multimodal: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]
+moderation: [ ]
+tts: [ ]
+image_generator: [ ]
+vision_language: [ gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro ]
