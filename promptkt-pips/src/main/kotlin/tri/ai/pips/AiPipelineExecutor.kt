@@ -60,7 +60,7 @@ object AiPipelineExecutor {
                         completedTasks[task.id] = result
                     }
                 } catch (x: Exception) {
-                    x.printStackTrace()
+                    tri.util.warning<AiPipelineExecutor>("Task execution failed for task ${task.id}: ${x.message}", x)
                     monitor.taskFailed(task, x)
                     failedTasks[task.id] = AiPromptTrace.error(null, x.message!!, x)
                 }

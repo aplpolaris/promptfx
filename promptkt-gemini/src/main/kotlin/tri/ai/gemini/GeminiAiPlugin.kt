@@ -37,7 +37,7 @@ class GeminiAiPlugin : TextPlugin {
             try {
                 client.listModels().models.map { it.toCoreModelInfo() }
             } catch (x: Exception) {
-                x.printStackTrace()
+                tri.util.warning<GeminiAiPlugin>("Failed to retrieve Gemini model information: ${x.message}", x)
                 emptyList()
             }
         }

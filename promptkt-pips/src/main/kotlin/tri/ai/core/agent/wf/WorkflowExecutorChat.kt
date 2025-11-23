@@ -27,7 +27,6 @@ import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
 import tri.util.YAML_MAPPER
 import tri.util.warning
-import java.io.IOException
 
 /**
  * Uses an LLM for workflow planning and tool (solver) selection.
@@ -60,11 +59,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
             .execute(chat)
 
         // parse the response and use it to build a set of subtasks to solve
-        val taskDecomp = try {
-            parseTaskDecomp(response.firstValue.textContent())
-        } catch (x: IllegalStateException) {
-            throw x
-        }
+        val taskDecomp = parseTaskDecomp(response.firstValue.textContent())
 
         val taskTree = when {
             taskDecomp.subtasks.isEmpty() ->
@@ -107,8 +102,8 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
         // parse into yaml and return
         return try {
             YAML_MAPPER.readValue<TaskDecomp>(quotedResponse)
-        } catch (e: IOException) {
-            throw IllegalStateException("Failed to parse task decomposition from response:\n$quotedResponse", e)
+        } catch (e: Exception) {
+            throw WorkflowParsingException("Failed to parse task decomposition from response: ${e.message}\nResponse: $quotedResponse", e)
         }
     }
 }

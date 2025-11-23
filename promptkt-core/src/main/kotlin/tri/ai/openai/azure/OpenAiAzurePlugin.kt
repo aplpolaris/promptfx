@@ -38,7 +38,7 @@ class OpenAiAzurePlugin : TextPlugin {
             client.client.models().map { it.toModelInfo(modelSource()) }
         }
     } catch (x: Exception) {
-        x.printStackTrace()
+        tri.util.warning<OpenAiAzurePlugin>("Failed to retrieve Azure OpenAI model information: ${x.message}", x)
         emptyList()
     }
 

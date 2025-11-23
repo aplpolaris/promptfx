@@ -21,6 +21,7 @@ package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
 import tri.ai.core.TextChat
+import tri.ai.core.WikipediaServiceException
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.openai.jsonMapper
@@ -66,9 +67,11 @@ class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParamete
             val connection = URI(urlString).toURL().openConnection()
             connection.setRequestProperty("User-Agent", TEST_USER_AGENT)
             val jsonText = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            return jsonMapper.readTree(jsonText).at("/query/search/0/title").asText()
+            jsonMapper.readTree(jsonText).at("/query/search/0/title").asText()
         } catch (e: IOException) {
-            "Error searching wikipedia: ${e.message}"
+            throw WikipediaServiceException("Failed to search Wikipedia for query '$query': ${e.message}", e)
+        } catch (e: Exception) {
+            throw WikipediaServiceException("Failed to parse Wikipedia search results for query '$query': ${e.message}", e)
         }
     }
 
@@ -85,9 +88,13 @@ class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParamete
             if (elements.hasNext())
                 elements.next()["extract"].asText()
             else
-                "No content returned"
+                throw WikipediaServiceException("No content returned for Wikipedia page '$request'")
         } catch (e: IOException) {
-            return "Error retrieving page: ${e.message}"
+            throw WikipediaServiceException("Failed to retrieve Wikipedia page '$request': ${e.message}", e)
+        } catch (e: WikipediaServiceException) {
+            throw e
+        } catch (e: Exception) {
+            throw WikipediaServiceException("Failed to parse Wikipedia page content for '$request': ${e.message}", e)
         }
     }
 

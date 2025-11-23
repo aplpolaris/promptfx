@@ -39,7 +39,7 @@ class AffinityClusterService : ClusterService {
             info<AffinityClusterService>("  > cluster sizes: ${itemClusters.values.map { it.size }}")
             return itemClusters.values.toList()
         } catch (ex: Exception) {
-            ex.printStackTrace()
+            tri.util.warning<AffinityClusterService>("Affinity clustering failed: ${ex.message}", ex)
             return listOf()
         }
     }

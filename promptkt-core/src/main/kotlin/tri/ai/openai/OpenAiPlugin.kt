@@ -37,7 +37,7 @@ class OpenAiPlugin : TextPlugin {
             client.client.models().map { it.toModelInfo(modelSource()) }
         }
     } catch (x: Exception) {
-        x.printStackTrace()
+        tri.util.warning<OpenAiPlugin>("Failed to retrieve OpenAI model information: ${x.message}", x)
         emptyList()
     }
 
