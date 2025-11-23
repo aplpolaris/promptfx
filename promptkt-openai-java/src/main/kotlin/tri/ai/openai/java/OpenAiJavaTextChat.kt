@@ -50,8 +50,18 @@ class OpenAiJavaTextChat(
 
         val paramsBuilder = com.openai.models.chat.completions.ChatCompletionCreateParams.builder()
             .model(modelId)
-            .messages(messages.map { it.toOpenAiMessage() })
             .maxCompletionTokens(tokens?.toLong() ?: 500)
+        
+        // Add messages using builder methods
+        messages.forEach { message ->
+            val content = message.content ?: ""
+            when (message.role) {
+                MChatRole.User -> paramsBuilder.addUserMessage(content)
+                MChatRole.System -> paramsBuilder.addSystemMessage(content)
+                MChatRole.Assistant -> paramsBuilder.addAssistantMessage(content)
+                else -> throw UnsupportedOperationException("Unsupported role: ${message.role}")
+            }
+        }
         
         variation.temperature?.let { paramsBuilder.temperature(it.toDouble()) }
         variation.topP?.let { paramsBuilder.topP(it.toDouble()) }
@@ -63,9 +73,8 @@ class OpenAiJavaTextChat(
         numResponses?.let { paramsBuilder.n(it.toLong()) }
         
         if (requestJson == true) {
-            paramsBuilder.responseFormat(com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(
-                com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder().build()
-            ))
+            val jsonFormat = com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder()
+            paramsBuilder.responseFormat(com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(jsonFormat.build()))
         }
 
         val completion = client.client.chat().completions().create(paramsBuilder.build())
@@ -85,15 +94,6 @@ class OpenAiJavaTextChat(
             ),
             AiOutputInfo.messages(responseMessages)
         )
-    }
-
-    private fun TextChatMessage.toOpenAiMessage(): com.openai.models.chat.completions.ChatCompletionMessageParam {
-        return when (role) {
-            MChatRole.User -> com.openai.models.chat.completions.ChatCompletionUserMessageParam.ofTextContent(content)
-            MChatRole.System -> com.openai.models.chat.completions.ChatCompletionSystemMessageParam.ofText(content)
-            MChatRole.Assistant -> com.openai.models.chat.completions.ChatCompletionAssistantMessageParam.builder().content(content).build()
-            else -> throw UnsupportedOperationException("Unsupported role: $role")
-        }
     }
 
 }

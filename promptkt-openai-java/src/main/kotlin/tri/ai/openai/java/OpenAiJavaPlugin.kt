@@ -39,7 +39,10 @@ class OpenAiJavaPlugin : TextPlugin {
                         type = ModelType.UNKNOWN,
                         source = modelSource()
                     ).also {
-                        it.created = model.created().orElse(null)?.let { ts -> Instant.ofEpochSecond(ts).atZone(java.time.ZoneId.systemDefault()).toLocalDate() }
+                        val createdOpt = model.created()
+                        it.created = if (createdOpt.isPresent()) {
+                            Instant.ofEpochSecond(createdOpt.get()).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        } else null
                     }
                 }
             } catch (x: Exception) {

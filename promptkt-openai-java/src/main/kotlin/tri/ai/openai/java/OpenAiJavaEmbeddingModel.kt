@@ -38,7 +38,9 @@ class OpenAiJavaEmbeddingModel(
         if (uncached.isNotEmpty()) {
             val paramsBuilder = com.openai.models.embeddings.EmbeddingCreateParams.builder()
                 .model(modelId)
-                .input(com.openai.models.embeddings.EmbeddingCreateParams.Input.ofStrings(uncached))
+            
+            // Add strings one by one
+            uncached.forEach { paramsBuilder.addInput(it) }
             
             outputDimensionality?.let { paramsBuilder.dimensions(it.toLong()) }
             

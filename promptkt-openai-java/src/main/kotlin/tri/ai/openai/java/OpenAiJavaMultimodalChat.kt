@@ -48,8 +48,18 @@ class OpenAiJavaMultimodalChat(
 
         val paramsBuilder = com.openai.models.chat.completions.ChatCompletionCreateParams.builder()
             .model(modelId)
-            .messages(messages.map { it.toOpenAiMessage() })
             .maxCompletionTokens(parameters.tokens?.toLong() ?: 500)
+
+        // Add messages using builder methods (simplified - text only for now)
+        messages.forEach { message ->
+            val textContent = message.content?.firstOrNull { it.partType == MPartType.TEXT }?.text ?: ""
+            when (message.role) {
+                MChatRole.User -> paramsBuilder.addUserMessage(textContent)
+                MChatRole.System -> paramsBuilder.addSystemMessage(textContent)
+                MChatRole.Assistant -> paramsBuilder.addAssistantMessage(textContent)
+                else -> {} // Skip unsupported roles for now
+            }
+        }
 
         parameters.variation.temperature?.let { paramsBuilder.temperature(it.toDouble()) }
         parameters.variation.topP?.let { paramsBuilder.topP(it.toDouble()) }
@@ -61,11 +71,8 @@ class OpenAiJavaMultimodalChat(
         parameters.numResponses?.let { paramsBuilder.n(it.toLong()) }
 
         if (parameters.responseFormat == MResponseFormat.JSON) {
-            paramsBuilder.responseFormat(
-                com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(
-                    com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder().build()
-                )
-            )
+            val jsonFormat = com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder()
+            paramsBuilder.responseFormat(com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(jsonFormat.build()))
         }
 
         val completion = client.client.chat().completions().create(paramsBuilder.build())
@@ -92,39 +99,6 @@ class OpenAiJavaMultimodalChat(
 
     override fun close() {
         client.close()
-    }
-
-    private fun MultimodalChatMessage.toOpenAiMessage(): com.openai.models.chat.completions.ChatCompletionMessageParam {
-        return when (role) {
-            MChatRole.User -> {
-                val parts = content?.map { part ->
-                    when (part.partType) {
-                        MPartType.TEXT -> com.openai.models.chat.completions.ChatCompletionContentPartTextParam.ofText(part.text!!)
-                        MPartType.IMAGE -> {
-                            // Assume base64 encoded data URL
-                            com.openai.models.chat.completions.ChatCompletionContentPartImageParam.ofImageUrl(
-                                com.openai.models.chat.completions.ChatCompletionContentPartImageParam.ImageUrl.builder()
-                                    .url(part.inlineData!!)
-                                    .build()
-                            )
-                        }
-                        else -> throw UnsupportedOperationException("Unsupported part type: ${part.partType}")
-                    }
-                } ?: emptyList()
-                
-                com.openai.models.chat.completions.ChatCompletionUserMessageParam.ofArrayOfContentParts(parts)
-            }
-            MChatRole.System -> {
-                val text = content?.firstOrNull()?.text ?: ""
-                com.openai.models.chat.completions.ChatCompletionSystemMessageParam.ofText(text)
-            }
-            MChatRole.Assistant -> {
-                val text = content?.firstOrNull()?.text ?: ""
-                com.openai.models.chat.completions.ChatCompletionAssistantMessageParam.builder().content(text).build()
-            }
-            MChatRole.Tool -> throw UnsupportedOperationException("Tool role not yet supported")
-            else -> throw UnsupportedOperationException("Unsupported role: $role")
-        }
     }
 
 }

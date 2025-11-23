@@ -20,72 +20,45 @@
 package tri.ai.openai.java
 
 import tri.ai.core.ImageGenerator
-import tri.ai.openai.java.OpenAiJavaModelIndex.DALLE3
-import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.core.ImageSize
+import java.net.URL
 
 /** Image generation with OpenAI DALL-E models using the official Java SDK. */
 class OpenAiJavaImageGenerator(
-    override val modelId: String = DALLE3,
+    override val modelId: String = OpenAiJavaModelIndex.DALLE3,
     val client: OpenAiJavaClient = OpenAiJavaClient.INSTANCE
 ) : ImageGenerator {
 
     override fun toString() = "$modelId (OpenAI Java SDK)"
 
     override suspend fun generateImage(
-        prompt: String,
-        n: Int?,
-        size: String?,
-        quality: String?,
-        style: String?
-    ): AiPromptTrace {
+        text: String,
+        size: ImageSize,
+        prompt: String?,
+        numResponses: Int?
+    ): List<URL> {
         val modelInfo = AiModelInfo.info(modelId)
         val t0 = System.currentTimeMillis()
 
         val paramsBuilder = com.openai.models.images.ImageGenerateParams.builder()
             .model(modelId)
-            .prompt(prompt)
+            .prompt(prompt ?: text)
             .responseFormat(com.openai.models.images.ImageGenerateParams.ResponseFormat.URL)
 
-        n?.let { paramsBuilder.n(it.toLong()) }
-        size?.let { 
-            val imageSize = when (size) {
-                "256x256" -> com.openai.models.images.ImageGenerateParams.Size._256X256
-                "512x512" -> com.openai.models.images.ImageGenerateParams.Size._512X512
-                "1024x1024" -> com.openai.models.images.ImageGenerateParams.Size._1024X1024
-                "1792x1024" -> com.openai.models.images.ImageGenerateParams.Size._1792X1024
-                "1024x1792" -> com.openai.models.images.ImageGenerateParams.Size._1024X1792
-                else -> com.openai.models.images.ImageGenerateParams.Size._1024X1024
-            }
-            paramsBuilder.size(imageSize)
+        numResponses?.let { paramsBuilder.n(it.toLong()) }
+        
+        val imageSize = when (size) {
+            ImageSize.SMALL -> com.openai.models.images.ImageGenerateParams.Size._256X256
+            ImageSize.MEDIUM -> com.openai.models.images.ImageGenerateParams.Size._512X512
+            ImageSize.LARGE -> com.openai.models.images.ImageGenerateParams.Size._1024X1024
         }
-        quality?.let {
-            val imageQuality = when (quality.lowercase()) {
-                "hd" -> com.openai.models.images.ImageGenerateParams.Quality.HD
-                else -> com.openai.models.images.ImageGenerateParams.Quality.STANDARD
-            }
-            paramsBuilder.quality(imageQuality)
-        }
-        style?.let {
-            val imageStyle = when (style.lowercase()) {
-                "natural" -> com.openai.models.images.ImageGenerateParams.Style.NATURAL
-                else -> com.openai.models.images.ImageGenerateParams.Style.VIVID
-            }
-            paramsBuilder.style(imageStyle)
-        }
+        paramsBuilder.size(imageSize)
 
         val response = client.client.images().generate(paramsBuilder.build())
 
-        val imageUrls = response.data().orElse(emptyList()).mapNotNull { it.url().orElse(null) }
-
-        return AiPromptTrace(
-            null,
-            modelInfo,
-            AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-            AiOutputInfo.imageUrls(imageUrls)
-        )
+        return response.data().orElse(emptyList()).mapNotNull { 
+            it.url().orElse(null)?.let { urlStr -> URL(urlStr) }
+        }
     }
 
 }

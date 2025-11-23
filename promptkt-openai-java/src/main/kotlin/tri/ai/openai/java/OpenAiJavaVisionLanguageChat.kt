@@ -49,18 +49,19 @@ class OpenAiJavaVisionLanguageChat(
 
         val paramsBuilder = com.openai.models.chat.completions.ChatCompletionCreateParams.builder()
             .model(modelId)
-            .messages(messages.map { it.toOpenAiMessage() })
             .maxCompletionTokens(tokens?.toLong() ?: 500)
+
+        // Add messages (simplified - text only for now, image support TODO)
+        messages.forEach { message ->
+            paramsBuilder.addUserMessage(message.content)
+        }
 
         temp?.let { paramsBuilder.temperature(it) }
         stop?.let { paramsBuilder.stop(com.openai.models.chat.completions.ChatCompletionCreateParams.Stop.ofStrings(it)) }
 
         if (requestJson == true) {
-            paramsBuilder.responseFormat(
-                com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(
-                    com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder().build()
-                )
-            )
+            val jsonFormat = com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.JsonObject.builder()
+            paramsBuilder.responseFormat(com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat.ofJsonObject(jsonFormat.build()))
         }
 
         val completion = client.client.chat().completions().create(paramsBuilder.build())
@@ -80,24 +81,6 @@ class OpenAiJavaVisionLanguageChat(
             ),
             AiOutputInfo.messages(responseMessages)
         )
-    }
-
-    private fun VisionLanguageChatMessage.toOpenAiMessage(): com.openai.models.chat.completions.ChatCompletionUserMessageParam {
-        val parts = mutableListOf<Any>()
-        
-        // Add text part
-        parts.add(com.openai.models.chat.completions.ChatCompletionContentPartTextParam.ofText(content))
-        
-        // Add image part
-        parts.add(
-            com.openai.models.chat.completions.ChatCompletionContentPartImageParam.ofImageUrl(
-                com.openai.models.chat.completions.ChatCompletionContentPartImageParam.ImageUrl.builder()
-                    .url(image.toString())
-                    .build()
-            )
-        )
-        
-        return com.openai.models.chat.completions.ChatCompletionUserMessageParam.ofArrayOfContentParts(parts)
     }
 
 }

@@ -47,7 +47,7 @@ class OpenAiJavaTextCompletion(
 
         val paramsBuilder = com.openai.models.chat.completions.ChatCompletionCreateParams.builder()
             .model(modelId)
-            .addMessage(com.openai.models.chat.completions.ChatCompletionUserMessageParam.ofTextContent(text))
+            .addUserMessage(text)
             .maxCompletionTokens(tokens?.toLong() ?: 500)
         
         variation.temperature?.let { paramsBuilder.temperature(it.toDouble()) }
