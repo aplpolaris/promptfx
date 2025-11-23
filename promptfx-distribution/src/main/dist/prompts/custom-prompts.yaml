@@ -1,7 +1,8 @@
 # Sample runtime prompt file that overrides the default prompt file.
 ---
 prompts:
-  - id: text-extract/dates@1.0.0
+  - # using the same name as predefined prompt will override the default
+    id: text-extract/dates@1.0.0
     title: Extract Dates
     description: Extract all dates from input text and provide as a list.
     template: |
@@ -9,7 +10,8 @@ prompts:
       '''
       {{{input}}}
       '''
-  - id: text-extract/author@1.0.0
+  - # you can also add new prompts
+    id: text-extract/author@1.0.0
     title: Extract Author
     template: |
       Input: {{{input}}}
@@ -33,14 +35,6 @@ prompts:
       ```
       {{{input}}}
       ```
-  - id: docs-reduce/bluey@1.0.0
-    title: Convert to Bluey Episode
-    template: |
-      Combine the following summaries into an outline of a script for a Bluey episode.
-      Provide three main scenes, and for each scene include a brief description of the setting and the main events.
-      ```
-      {{{input}}}
-      ```
   - # docs-map/* prompts are used in the Document Insights view to run against all snippets
     # keywords:
     #   {{{input}}} - text to process
@@ -61,3 +55,42 @@ prompts:
       ```
       {{{input}}}
       ```
+  - id: docs-reduce/bluey@1.0.0
+    title: Convert to Bluey Episode
+    template: |
+      Combine the following summaries into an outline of a script for a Bluey episode.
+      Provide three main scenes, and for each scene include a brief description of the setting and the main events.
+      ```
+      {{{input}}}
+      ```
+  - # image-describe/* prompts are used in the Image Insights view to describe images
+    id: image-describe/ips@1.0.0
+    title: Extract IPs from Image
+    template: |
+      Extract a list of IPs found in the image, as a JSON list. If there are none, return an empty list.
+  - # docs-qa/answer-* prompts are used in the Document Q&A view to answer questions
+    # keywords:
+    #   {{{instruct}}} - question
+    #   {{{input}}} - document sections
+    id: docs-qa/answer-custom@1.0.0
+    title: Document Question Answering (Custom)
+    template: |
+      Answer the following question based on the given collection of document sections. If you do not know the answer, say you don't know.
+      Please also indicate the documents used to answer the question.
+      Question: {{{instruct}}}
+      ```
+      {{{input}}}
+      ```
+      Answer:
+  - # snippet-joiner-* prompts are used in the Document Q&A to combine text chunks for a prompt
+    # keywords:
+    #   {{matches}} - list of snippets
+    #   {{name}} - name of snippet
+    #   {{{text}}} - text of snippet
+    id: snippet-joiner/custom@1.0.0
+    title: Custom Snippet Joiner
+    template: |
+      {{#matches}}
+      Document: {{name}}
+      Relevant Text: {{{text}}}  
+      {{/matches}}
