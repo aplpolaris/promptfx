@@ -24,7 +24,6 @@ import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.wf.RunSolver
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
@@ -34,10 +33,10 @@ import tri.ai.core.agent.wf.WorkflowSolveStep
 import tri.ai.core.agent.wf.WorkflowSolver
 import tri.ai.core.agent.wf.WorkflowState
 import tri.ai.core.agent.wf.WorkflowTask
-import tri.util.PARAM_INPUT
-import tri.util.PARAM_RESULT
-import tri.util.createJsonSchema
-import tri.util.createObject
+import tri.util.json.PARAM_INPUT
+import tri.util.json.PARAM_RESULT
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
 
 /**
  * An agent-based executable unit in a Pips pipeline, built using plan-and-act logic with a set of tools.

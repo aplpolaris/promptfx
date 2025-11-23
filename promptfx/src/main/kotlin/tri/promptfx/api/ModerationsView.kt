@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiExecInfo

@@ -25,7 +25,7 @@ import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.createTool
-import tri.util.tryJson
+import tri.util.json.tryJson
 
 /**
  * Executes a prompt using tools and a [MultimodalChat]. This will attempt to use tools in sequence as needed until a response

@@ -73,16 +73,19 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
                 role = this@openAi.role.openAi()
                 content {
                     this@openAi.content?.forEach {
-                        if (it.text != null)
-                            text(it.text)
-                        if (it.inlineData != null)
+                        val textVal = it.text
+                        if (textVal != null)
+                            text(textVal)
+                        val inlineDataVal = it.inlineData
+                        if (inlineDataVal != null)
                             // TODO - validation of data type for this call ??
-                            image(it.inlineData)
+                            image(inlineDataVal)
                         // TODO - API support for additional modalities when available
                     }
                 }
-                if (!this@openAi.toolCalls.isNullOrEmpty()) {
-                    toolCalls = this@openAi.toolCalls.map { it.openAi() }
+                val toolCallsVal = this@openAi.toolCalls
+                if (!toolCallsVal.isNullOrEmpty()) {
+                    toolCalls = toolCallsVal.map { it.openAi() }
                 }
                 toolCallId = this@openAi.toolCallId?.let { ToolId(it) }
             }.build()

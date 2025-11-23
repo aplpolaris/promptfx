@@ -19,7 +19,6 @@
  */
 package tri.ai.core
 
-import tri.ai.openai.OpenAiPlugin
 import tri.util.info
 import java.io.File
 import java.net.MalformedURLException
@@ -67,8 +66,15 @@ interface TextPlugin {
             ServiceLoader.load(TextPlugin::class.java, pluginLoader)
         }
 
-        val defaultPlugin by lazy { plugins.first { it is OpenAiPlugin } as OpenAiPlugin }
-        val orderedPlugins by lazy { listOf(defaultPlugin) + (plugins - defaultPlugin) }
+        val defaultPlugin by lazy { 
+            plugins.firstOrNull { it.modelSource() == "OpenAI" } 
+                ?: plugins.firstOrNull() 
+                ?: throw IllegalStateException("No text plugins found")
+        }
+        val orderedPlugins by lazy { 
+            val default = defaultPlugin
+            listOf(default) + (plugins.toList() - default)
+        }
 
         /** Get all model sources. */
         fun sources() = orderedPlugins.map { it.modelSource() }

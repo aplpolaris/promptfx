@@ -31,12 +31,6 @@ import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.ObjectWriter
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
 import tri.ai.core.*
@@ -337,18 +331,6 @@ enum class UsageUnit {
     IMAGES,
     NONE
 }
-
-val jsonMapper = ObjectMapper()
-    .registerModule(JavaTimeModule())
-    .registerModule(KotlinModule.Builder().build())
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
-val yamlMapper = ObjectMapper(YAMLFactory())
-    .registerModule(JavaTimeModule())
-    .registerModule(KotlinModule.Builder().build())
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
-
-val jsonWriter: ObjectWriter = jsonMapper.writerWithDefaultPrettyPrinter()
-val yamlWriter: ObjectWriter = yamlMapper.writerWithDefaultPrettyPrinter()
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")

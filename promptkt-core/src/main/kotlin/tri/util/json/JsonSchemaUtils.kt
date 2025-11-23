@@ -17,56 +17,29 @@
  * limitations under the License.
  * #L%
  */
-package tri.util
+package tri.util.json
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 
-val MAPPER: ObjectMapper = ObjectMapper()
-    .registerModule(KotlinModule.Builder().build())
-    .registerModule(JavaTimeModule())
+/** Parses a JSON schema string as a [com.fasterxml.jackson.databind.JsonNode]. */
+// TODO - validation
+fun readJsonSchema(schema: String) =
+    jsonMapper.readTree(schema)
 
-val YAML_MAPPER: ObjectMapper = ObjectMapper(YAMLFactory())
-    .registerModule(KotlinModule.Builder().build())
-    .registerModule(JavaTimeModule())
-
-//region JsonNode HELPERS
-
-fun createObject(key: String, value: String?): ObjectNode = MAPPER.createObjectNode().put(key, value)
-fun createObject(key: String, value: Int): ObjectNode = MAPPER.createObjectNode().put(key, value)
-fun createObject(vararg vars: Pair<String, String>): ObjectNode = MAPPER.createObjectNode().apply {
-    vars.forEach { put(it.first, it.second) }
-}
-
-/** Try to parse a string as JSON, returning null if it fails. */
-fun String.tryJson(): JsonNode? = try {
-    val jsonObject = Json.parseToJsonElement(this) as? JsonObject
-    // Convert kotlinx JsonObject to Jackson JsonNode
-    jsonObject?.let {
-        val jsonString = it.toString()
-        MAPPER.readTree(jsonString)
+/** Creates a JSON schema from a map of field names to descriptions, assuming string fields for each. */
+fun createJsonSchema(vararg fields: Pair<String, String>) =
+    jsonMapper.createObjectNode().apply {
+        put("type", "object")
+        val props = putObject("properties")
+        fields.forEach { (name, description) ->
+            props.putObject(name).apply {
+                put("type", "string")
+                put("description", description)
+            }
+        }
+        val required = putArray("required")
+        fields.forEach { required.add(it.first) }
     }
-} catch (x: SerializationException) {
-    null
-} catch (x: Exception) {
-    null
-}
-
-fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
-    val jsonString = MAPPER.writeValueAsString(input)
-    return Json.parseToJsonElement(jsonString) as JsonObject
-}
-
-//endregion
-
-//region FIELD CONVENTIONS
 
 const val PARAM_INPUT = "input"
 const val PARAM_REQUEST = "request"
@@ -89,8 +62,6 @@ val JsonNode.inputText: String
 
 /** Creates a standard result JsonNode with "result" and "isTerminal" fields. */
 fun createResult(result: String, isTerminal: Boolean = false) =
-    MAPPER.createObjectNode()
+    jsonMapper.createObjectNode()
         .put(PARAM_RESULT, result)
         .put("isTerminal", isTerminal)
-
-//endregion

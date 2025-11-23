@@ -21,7 +21,7 @@ package tri.util.ui.starship
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.pips.api.PPlan
-import tri.util.YAML_MAPPER
+import tri.util.json.yamlMapper
 
 /** Global Starship configuration, including the pipeline and the view config. */
 class StarshipConfig() {
@@ -37,7 +37,7 @@ class StarshipConfig() {
 
         /** Reads a Starship config from YAML. */
         fun readYaml(yaml: String): StarshipConfig =
-            YAML_MAPPER.readValue(yaml)
+            yamlMapper.readValue(yaml)
 
         /** Reads default Starship config. */
         fun readDefaultYaml(): StarshipConfig =

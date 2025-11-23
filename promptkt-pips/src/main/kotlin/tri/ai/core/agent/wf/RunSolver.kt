@@ -22,8 +22,8 @@ package tri.ai.core.agent.wf
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.prompt.template
-import tri.util.createJsonSchema
-import tri.util.createObject
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
 
 /** Solver that takes a single input, provides a single output, based on a runner. */
 class RunSolver(

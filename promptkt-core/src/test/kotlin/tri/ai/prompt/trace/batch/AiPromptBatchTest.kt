@@ -20,13 +20,12 @@
 package tri.ai.prompt.trace.batch
 
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextPlugin
-import tri.ai.openai.jsonWriter
+import tri.util.json.jsonWriter
 
 class AiPromptBatchTest {
 
     private val batch = AiPromptBatchCyclic("test-batch-languages").apply {
-        model = TextPlugin.textCompletionModels().first().modelId
+        model = "test-model-id"
         prompt = listOf("Translate {{text}} into {{language}}.")
         promptParams = mapOf("text" to "Hello, world!", "language" to listOf("French", "German"))
         runs = 2

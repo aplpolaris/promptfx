@@ -20,7 +20,7 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 import java.util.UUID
 
 /** Runtime context available to every executable. */
@@ -30,7 +30,7 @@ class ExecContext(
     val traceId: String = UUID.randomUUID().toString()
 ) {
     /** Jackson ObjectMapper for JSON operations. */
-    val mapper = MAPPER
+    val mapper = jsonMapper
 
     private val vars_mutable = vars as MutableMap<String, JsonNode>
 
