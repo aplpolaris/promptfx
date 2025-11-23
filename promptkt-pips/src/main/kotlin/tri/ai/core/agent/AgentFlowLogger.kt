@@ -53,7 +53,7 @@ class AgentFlowLogger(var verbose: Boolean = false) : FlowCollector<AgentChatEve
             is AgentChatEvent.Error -> {
                 log(ANSI_RED, "ERROR", event.error.message.toString())
                 if (verbose) {
-                    event.error.printStackTrace()
+                    tri.util.warning<AgentFlowLogger>("Agent chat error: ${event.error.message}", event.error)
                 }
             }
         }

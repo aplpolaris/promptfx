@@ -27,9 +27,9 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.safety.Safelist
+import tri.ai.core.WebCrawlerException
 import tri.util.io.LocalFileManager.metadataFile
 import tri.util.io.LocalFileManager.writeMetadata
-import tri.util.warning
 import java.io.File
 import java.io.IOException
 import java.time.Instant
@@ -127,7 +127,9 @@ object WebCrawler {
                 }
             }
         } catch (x: IOException) {
-            warning<WebCrawler>("  ... failed to retrieve URL due to $x")
+            throw WebCrawlerException("Failed to retrieve URL '$url': ${x.message}", x)
+        } catch (x: Exception) {
+            throw WebCrawlerException("Failed to process URL '$url': ${x.message}", x)
         }
         return resultMap
     }

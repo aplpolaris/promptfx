@@ -29,7 +29,6 @@ import tri.util.MAPPER
 import tri.util.YAML_MAPPER
 import tri.util.createJsonSchema
 import tri.util.createObject
-import java.io.IOException
 
 /** A solver used to validate that a computed result answers the actual user question. */
 class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
@@ -89,8 +88,8 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         // parse into yaml and return
         return try {
             YAML_MAPPER.readValue<ResultValidity>(quotedResponse)
-        } catch (e: IOException) {
-            error("Failed to parse response: $e\n$quotedResponse\n$value")
+        } catch (e: Exception) {
+            throw WorkflowParsingException("Failed to parse validity response: ${e.message}\nResponse: $quotedResponse", e)
         }
     }
 }

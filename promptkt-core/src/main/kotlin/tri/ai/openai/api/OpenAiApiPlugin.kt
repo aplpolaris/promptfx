@@ -92,7 +92,7 @@ class OpenAiApiPlugin : TextPlugin {
             try {
                 client(it.settings).client.close()
             } catch (e: Exception) {
-                e.printStackTrace()
+                tri.util.warning<OpenAiApiPlugin>("Failed to close OpenAI API client for ${it.source}: ${e.message}", e)
             }
         }
     }

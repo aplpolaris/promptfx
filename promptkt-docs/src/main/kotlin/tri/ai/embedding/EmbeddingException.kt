@@ -17,7 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.embedding
 
-/** Exception thrown when a prompt is not found. */
-class McpServerException(message: String, x: Throwable? = null) : RuntimeException(message, x)
+/**
+ * Exception thrown when an embedding index operation fails.
+ */
+open class EmbeddingException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+/**
+ * Exception thrown when loading or accessing embedding data fails.
+ */
+class EmbeddingStorageException(message: String, cause: Throwable? = null) : EmbeddingException(message, cause)

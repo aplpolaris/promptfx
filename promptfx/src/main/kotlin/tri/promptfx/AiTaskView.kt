@@ -423,7 +423,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
             try {
                 block()
             } catch (x: Exception) {
-                x.printStackTrace()
+                tri.util.warning<AiTaskView>("Task execution failed: ${x.message}", x)
                 AiPipelineResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
             }
         }

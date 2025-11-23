@@ -21,6 +21,7 @@ package tri.promptfx.`fun`
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.core.WeatherServiceException
 import tri.ai.openai.jsonMapper
 import java.io.File
 import java.io.IOException
@@ -28,7 +29,6 @@ import java.net.URL
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.logging.Logger
 
 interface WeatherService {
     fun getWeather(request: WeatherRequest): WeatherResult?
@@ -52,6 +52,9 @@ data class WeatherResult(
 class OpenWeatherMapService(private val apiKey: String) : WeatherService {
     private val baseUrl = "http://api.openweathermap.org/data/2.5"
     override fun getWeather(request: WeatherRequest): WeatherResult? {
+        if (apiKey.isBlank()) {
+            return null
+        }
         try {
             val endpoint = if (request.historical) "history" else "weather"
             val url = "$baseUrl/$endpoint?q=${request.city}&appid=$apiKey&units=imperial"
@@ -70,13 +73,19 @@ class OpenWeatherMapService(private val apiKey: String) : WeatherService {
                 sunset = responseObj.sys?.sunset?.epochSecondsToLocalDateTime()
             )
         } catch (e: IOException) {
-            Logger.getLogger(WeatherService::class.java.name).warning(
-                "There was an error retrieving data. This might be caused by an invalid city name or a missing API key. " +
+            throw WeatherServiceException(
+                "Failed to retrieve weather data for city '${request.city}'. " +
+                        "This might be caused by an invalid city name or a missing API key. " +
                         "The API key should be saved in a file named \"apikey-weather.txt\" in the root directory. " +
-                        "To get an API key, please visit https://openweathermap.org/appid."
+                        "To get an API key, please visit https://openweathermap.org/appid.",
+                e
+            )
+        } catch (e: Exception) {
+            throw WeatherServiceException(
+                "Failed to parse weather data for city '${request.city}': ${e.message}",
+                e
             )
         }
-        return null
     }
     private fun Int.epochSecondsToLocalDateTime(): LocalDateTime =
         LocalDateTime.ofInstant(Instant.ofEpochSecond(this.toLong()), java.time.ZoneId.systemDefault())

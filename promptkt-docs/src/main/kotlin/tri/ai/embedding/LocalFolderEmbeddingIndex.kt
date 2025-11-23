@@ -20,6 +20,7 @@
 package tri.ai.embedding
 
 import org.apache.poi.UnsupportedFileFormatException
+import tri.ai.embedding.EmbeddingStorageException
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextLibrary
@@ -80,9 +81,9 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
             try {
                 library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
             } catch (x: IOException) {
-                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+                throw EmbeddingStorageException("Failed to read text from $it: ${x.message}", x)
             } catch (x: UnsupportedFileFormatException) {
-                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+                throw EmbeddingStorageException("Unsupported file format for $it: ${x.message}", x)
             }
         }
 

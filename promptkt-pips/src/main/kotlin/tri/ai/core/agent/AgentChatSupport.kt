@@ -47,7 +47,7 @@ abstract class AgentChatSupport : AgentChat {
                 if (session.messages.lastOrNull() == message) {
                     session.messages.removeAt(session.messages.size - 1)
                 }
-                e.printStackTrace()
+                tri.util.warning<AgentChatSupport>("Agent chat message failed: ${e.message}", e)
                 emit(AgentChatEvent.Error(e))
             })
     }
