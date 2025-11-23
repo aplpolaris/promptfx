@@ -39,9 +39,10 @@ class GeminiSdkSettings {
     var apiKey = readApiKey()
     var projectId = readProjectId()
     var location = readLocation()
+    var useVertexAI = readUseVertexAI()
 
     /** Returns true if the client is configured with required settings. */
-    fun isConfigured() = apiKey.isNotBlank() && projectId.isNotBlank()
+    fun isConfigured() = apiKey.isNotBlank()
 
     /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
     private fun readApiKey(): String {
@@ -92,6 +93,11 @@ class GeminiSdkSettings {
             info<GeminiSdkSettings>("Gemini location loaded: $loc")
             loc
         }
+    }
+
+    /** Determine whether to use Vertex AI or Gemini Developer API based on project ID availability. */
+    private fun readUseVertexAI(): Boolean {
+        return projectId.isNotBlank()
     }
 
 }

@@ -57,7 +57,8 @@ class GeminiSdkTextChat(
                 history
             )
             
-            val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text ?: ""
+            // java-genai provides a text() method for quick access
+            val responseText = response.text().orElse("")
             
             return AiPromptTrace(
                 null,

@@ -25,8 +25,8 @@ module tri.promptkt.gemini.sdk {
     requires transitive kotlin.stdlib;
     requires transitive kotlinx.coroutines.core;
 
-    // Google Cloud Vertex AI SDK - these are automatic modules
-    requires google.cloud.vertexai;
+    // Google Gen AI Java SDK
+    requires google.genai;
 
     exports tri.ai.geminisdk;
 

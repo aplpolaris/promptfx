@@ -43,11 +43,11 @@
             <version>${kotlinx-coroutines-core.version}</version>
         </dependency>
 
-        <!-- Google Gemini official Java SDK -->
+        <!-- Google Gemini official Java SDK (java-genai) -->
         <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-vertexai</artifactId>
-            <version>1.24.0</version>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- Test dependencies -->
