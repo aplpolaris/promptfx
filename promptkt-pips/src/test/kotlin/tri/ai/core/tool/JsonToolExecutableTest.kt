@@ -24,10 +24,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import tri.util.INTEGER_INPUT_SCHEMA
-import tri.util.STRING_INPUT_SCHEMA
-import tri.util.createObject
-import tri.util.inputText
+import tri.util.json.INTEGER_INPUT_SCHEMA
+import tri.util.json.STRING_INPUT_SCHEMA
+import tri.util.json.createObject
+import tri.util.json.inputText
 
 class JsonToolExecutableTest {
 

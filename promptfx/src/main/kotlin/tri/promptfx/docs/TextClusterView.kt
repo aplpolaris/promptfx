@@ -30,7 +30,7 @@ import javafx.scene.control.TreeItem
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace

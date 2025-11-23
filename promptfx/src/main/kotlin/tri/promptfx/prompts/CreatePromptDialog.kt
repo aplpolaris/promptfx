@@ -29,7 +29,6 @@ import tri.ai.prompt.PromptGroup
 import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.generateArgs
-import java.io.File
 
 /** Dialog for creating a new prompt definition. */
 class CreatePromptDialog : Fragment("Create New Prompt") {

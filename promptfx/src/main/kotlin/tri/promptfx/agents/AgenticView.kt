@@ -49,13 +49,13 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.*
-import tri.util.OUTPUT_SCHEMA
-import tri.util.PARAM_INPUT
-import tri.util.PARAM_RESULT
-import tri.util.STRING_INPUT_SCHEMA
-import tri.util.createJsonSchema
-import tri.util.createObject
-import tri.util.readJsonSchema
+import tri.util.json.OUTPUT_SCHEMA
+import tri.util.json.PARAM_INPUT
+import tri.util.json.PARAM_RESULT
+import tri.util.json.STRING_INPUT_SCHEMA
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
+import tri.util.json.readJsonSchema
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 

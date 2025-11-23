@@ -19,10 +19,10 @@
  */
 package tri.ai.core.agent.wf
 
-const val REQUEST = tri.util.PARAM_REQUEST
-const val INPUT = tri.util.PARAM_INPUT
+const val REQUEST = tri.util.json.PARAM_REQUEST
+const val INPUT = tri.util.json.PARAM_INPUT
 const val INTERMEDIATE_RESULTS = "intermediate_results"
-const val RESULT = tri.util.PARAM_RESULT
+const val RESULT = tri.util.json.PARAM_RESULT
 
 const val ANSWERED = "answered"
 const val RATIONALE = "rationale"

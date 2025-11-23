@@ -22,13 +22,23 @@ package tri.ai.openai
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.*
+import tri.ai.core.testChat_Simple
+import tri.ai.core.testChat_Multiple
+import tri.ai.core.testChat_Roles
+import tri.ai.core.testChat_Image
+import tri.ai.core.testChat_Tools
 
 class OpenAiMultimodalChatTest {
 
     private val client = OpenAiAdapter.INSTANCE
     private val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, client)
     private val chatVision = OpenAiMultimodalChat(OpenAiModelIndex.GPT4_TURBO_ID, client)
+
+    @Test
+    fun canLoadMultimodalChatTestViaReflection() {
+        val clazz = Class.forName("tri.ai.core.MultimodalChatTestKt")
+        println("Loaded: $clazz from " + clazz.protectionDomain.codeSource?.location)
+    }
 
     @Test
     @Tag("openai")

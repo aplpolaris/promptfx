@@ -27,7 +27,7 @@ import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo

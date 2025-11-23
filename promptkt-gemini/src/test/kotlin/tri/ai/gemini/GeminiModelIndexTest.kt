@@ -26,6 +26,8 @@ class GeminiModelIndexTest {
 
     @Test
     fun testModels() {
+        assertTrue(GeminiModelIndex.javaClass.getResourceAsStream("resources/gemini-models.yaml") != null)
+
         println(GeminiModelIndex.audioModels())
         println(GeminiModelIndex.chatModels())
         println(GeminiModelIndex.completionModels())
@@ -36,7 +38,6 @@ class GeminiModelIndexTest {
         println(GeminiModelIndex.imageGeneratorModels())
         println(GeminiModelIndex.visionLanguageModels())
 
-        assertTrue(GeminiModelIndex.javaClass.getResourceAsStream("resources/gemini-models.yaml") != null)
         assertTrue(GeminiModelIndex.multimodalModels().isNotEmpty())
 
         // no additional model info has been configured

@@ -26,7 +26,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
 import tri.ai.mcp.tool.FakeTools.buildSchemaWithOneRequiredParam
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 
 class StubToolTest {
 
