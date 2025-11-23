@@ -22,9 +22,16 @@ package tri.util.ui
 
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.*
 import javax.imageio.ImageIO
+
+/** Decode base64 string as image. */
+fun String.base64ToImage(): Image {
+    val byteArray = Base64.getDecoder().decode(this)
+    return Image(ByteArrayInputStream(byteArray))
+}
 
 /** Encode image as base64 string. */
 fun Image.base64(formatName: String = "png"): String {

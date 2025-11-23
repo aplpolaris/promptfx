@@ -209,7 +209,23 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             null,
             imageCreation.toModelInfo(),
             AiExecInfo.durationSince(t0),
-            AiOutputInfo.text(resp.map { it.url })
+            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageUrl(imageUrl = it.url) })
+        )
+    }
+
+    /** Runs an image creation request. */
+    suspend fun imageJSON(imageCreation: ImageCreation): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.imageJSON(imageCreation)
+        usage.increment(resp.size, UsageUnit.IMAGES)
+
+        return AiPromptTrace(
+            null,
+            imageCreation.toModelInfo(),
+            AiExecInfo.durationSince(t0),
+            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageBase64(imageBase64 = it.b64JSON) })
         )
     }
 

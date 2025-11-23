@@ -31,6 +31,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
+import javafx.scene.control.Slider
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import tornadofx.action
@@ -39,7 +40,6 @@ import tornadofx.clear
 import tornadofx.combobox
 import tornadofx.contextmenu
 import tornadofx.datagrid
-import tornadofx.disableWhen
 import tornadofx.enableWhen
 import tornadofx.error
 import tornadofx.field
@@ -61,6 +61,7 @@ import tornadofx.vbox
 import tornadofx.vgrow
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.aitask
+import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiImageTrace
 import tri.ai.prompt.trace.AiModelInfo
@@ -71,6 +72,7 @@ import tri.promptfx.PromptFxConfig
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.base64ToImage
 import tri.util.ui.copyToClipboard
 import tri.util.ui.saveToFile
 import tri.util.ui.showImageDialog
@@ -89,42 +91,40 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     private val images = observableListOf<AiImageTrace>()
 
     /** Model */
-    private val model = SimpleStringProperty(IMAGE_MODELS.first()).apply {
+    private val model = SimpleStringProperty(DALLE2_ID).apply {
         onChange {
-            imageSizes.setAll(IMAGE_SIZES[it] ?: listOf())
+            imageSizes.setAll(MODEL_INFO[it]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
             if (imageSize.value !in imageSizes)
                 imageSize.set(imageSizes.first())
-            when (it) {
-                DALLE3_ID -> {
-                    numProperty.set(1)
-                    imageQualities.setAll(STANDARD_QUALITY, Quality.Companion.HD)
-                    quality.set(STANDARD_QUALITY)
-                }
-                DALLE2_ID -> {
-                    imageQualities.setAll(STANDARD_QUALITY)
-                    quality.set(STANDARD_QUALITY)
-                }
-                else ->
-                    throw UnsupportedOperationException("Unsupported model: $it")
-            }
+            imageQualities.setAll(MODEL_INFO[it]?.qualities ?: listOf())
+            if (imageQuality.value !in imageQualities)
+                imageQuality.set(imageQualities.firstOrNull())
+            imageStyles.setAll(MODEL_INFO[it]?.styles ?: listOf())
+            if (imageStyle.value !in imageStyles)
+                imageStyle.set(imageStyles.firstOrNull())
+            countSlider.min = MODEL_INFO[it]?.counts?.first?.toDouble() ?: 1.0
+            countSlider.max = MODEL_INFO[it]?.counts?.last?.toDouble() ?: 1.0
+            countSlider.isDisable = countSlider.min == countSlider.max
         }
     }
     /** Available sizes based on model */
-    private val imageSizes: ObservableList<ImageSize> = observableListOf(IMAGE_SIZES[model.value] ?: listOf())
+    private val imageSizes: ObservableList<ImageSize> = observableListOf(MODEL_INFO[model.value]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
     /** Available quality values based on model */
-    private val imageQualities = observableListOf(STANDARD_QUALITY, Quality.Companion.HD)
+    private val imageQualities: ObservableList<Quality> = observableListOf(MODEL_INFO[model.value]?.qualities ?: listOf(QUAL_AUTO))
     /** Available styles based on model */
-    private val imageStyles = observableListOf(Style.Companion.Vivid, Style.Companion.Natural)
+    private val imageStyles: ObservableList<Style> = observableListOf(MODEL_INFO[model.value]?.styles ?: listOf())
 
-    /** Number of images to generate */
-    private val numProperty = SimpleIntegerProperty(1)
     /** Image size */
-    private val imageSize = SimpleObjectProperty(ImageSize.Companion.is256x256)
+    private val imageSize = SimpleObjectProperty(imageSizes.first())
     /** Image quality */
-    private val quality = SimpleObjectProperty(STANDARD_QUALITY)
+    private val imageQuality = SimpleObjectProperty(imageQualities.firstOrNull())
     /** Image style */
-    private val imageStyle = SimpleObjectProperty(Style.Companion.Vivid)
+    private val imageStyle = SimpleObjectProperty(imageStyles.firstOrNull())
+    /** Number of images to generate */
+    private val imageCount = SimpleIntegerProperty(1)
 
+    /** Slider used for count. */
+    private lateinit var countSlider: Slider
     /** Grid thumbnail size */
     private val thumbnailSize = SimpleDoubleProperty(128.0)
 
@@ -148,7 +148,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 cellWidthProperty.bind(thumbnailSize)
                 cellHeightProperty.bind(thumbnailSize)
                 cellCache {
-                    imageview(it.firstValue.textContent()) {
+                    imageview(it.firstValue.imageContent()!!.base64ToImage()) {
                         fitWidthProperty().bind(thumbnailSize)
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
@@ -157,7 +157,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                             val text = text(it.prompt!!.template) {
                                 style = "-fx-fill: white;"
                             }
-                            val image = imageview(it.firstValue.textContent())
+                            val image = imageview(it.firstValue.imageContent()!!.base64ToImage())
                             text.wrappingWidthProperty().bind(image.image.widthProperty())
                         } }
                         contextmenu {
@@ -180,11 +180,10 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 combobox(model, IMAGE_MODELS)
             }
             field("# Images") {
-                disableWhen { model.isEqualTo(DALLE3_ID) } // dall-e-3 requires n=1
-                slider(1..10) {
-                    valueProperty().bindBidirectional(numProperty)
+                countSlider = slider(1..10) {
+                    valueProperty().bindBidirectional(imageCount)
                 }
-                label(numProperty)
+                label(imageCount)
             }
             field ("Size") {
                 combobox(imageSize, imageSizes) {
@@ -192,15 +191,15 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 }
             }
             field("Quality") {
-                enableWhen { model.isEqualTo(DALLE3_ID) }
-                combobox(quality, imageQualities) {
-                    cellFormat { text = it.value }
+                enableWhen(imageQuality.isNotNull)
+                combobox(imageQuality, imageQualities) {
+                    cellFormat { text = it?.value ?: "N/A" }
                 }
             }
             field("Style") {
-                enableWhen { model.isEqualTo(DALLE3_ID) }
+                enableWhen(imageStyle.isNotNull)
                 combobox(imageStyle, imageStyles) {
-                    cellFormat { text = it.value }
+                    cellFormat { text = it?.value ?: "N/A" }
                 }
             }
         }
@@ -231,23 +230,22 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
         val modelInfo = AiModelInfo(
-            model.value, mapOf(
-                "n" to numProperty.value,
-                "size" to imageSize.value
-            ) + if (model.value == DALLE3_ID) mapOf(
-                "quality" to quality.value,
+            model.value, mapOfNotNull(
+                "n" to imageCount.value,
+                "size" to imageSize.value,
+                "quality" to imageQuality.value,
                 "style" to imageStyle.value
-            ) else emptyMap()
+            )
         )
         val result = try {
-            val images = controller.openAiPlugin.client.imageURL(
+            val images = controller.openAiPlugin.client.imageJSON(
                 ImageCreation(
                     model = ModelId(model.value),
                     prompt = input.value,
-                    n = numProperty.value,
+                    n = imageCount.value,
                     size = imageSize.value,
-                    quality = if (model.value == DALLE3_ID) quality.value else null,
-                    style = if (model.value == DALLE3_ID) imageStyle.value else null
+                    quality = imageQuality.value,
+                    style = imageStyle.value
                 )
             )
             AiImageTrace(
@@ -329,22 +327,64 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     companion object {
         private const val DALLE2_ID = "dall-e-2"
         private const val DALLE3_ID = "dall-e-3"
-
-        private val STANDARD_QUALITY = Quality("standard")
+        private const val GPT_IMAGE1 = "gpt-image-1"
+        private const val GPT_IMAGE1_MINI = "gpt-image-1-mini"
 
         private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
-        private val IMAGE_SIZES = mapOf(
-            DALLE2_ID to listOf(
-                ImageSize.Companion.is256x256,
-                ImageSize.Companion.is512x512,
-                ImageSize.Companion.is1024x1024
+
+        private val SIZE256 = ImageSize.Companion.is256x256
+        private val SIZE512 = ImageSize.Companion.is512x512
+        private val SIZE1024 = ImageSize.Companion.is1024x1024
+        private val SIZE1536 = ImageSize("1536x1024")
+        private val SIZE1536PORTRAIT = ImageSize("1024x1536")
+        private val SIZE1792 = ImageSize("1792x1024")
+        private val SIZE1792PORTRAIT = ImageSize("1024x1792")
+        private val SIZE_AUTO = ImageSize("auto")
+
+        private val QUAL_STANDARD = Quality("standard")
+        private val QUAL_HIGH = Quality("high")
+        private val QUAL_MEDIUM = Quality("medium")
+        private val QUAL_LOW = Quality("low")
+        private val QUAL_AUTO = Quality("auto")
+
+        val MODEL_INFO = mapOf(
+            DALLE2_ID to ImageModelCapabilities(DALLE2_ID,
+                sizes = listOf(SIZE256, SIZE512, SIZE1024),
+                qualities = listOf(),
+                styles = listOf(),
+                counts = 1..10
             ),
-            DALLE3_ID to listOf(
-                ImageSize.Companion.is1024x1024,
-                ImageSize("1792x1024"),
-                ImageSize("1024x1792")
+            DALLE3_ID to ImageModelCapabilities(DALLE3_ID,
+                sizes = listOf(SIZE1024, SIZE1792, SIZE1792PORTRAIT),
+                qualities = listOf(QUAL_STANDARD, Quality.Companion.HD, QUAL_AUTO),
+                styles = listOf(Style.Companion.Vivid, Style.Companion.Natural),
+                counts = 1..1
+            ),
+            GPT_IMAGE1 to ImageModelCapabilities(GPT_IMAGE1,
+                sizes = listOf(SIZE1024, SIZE1536, SIZE1536PORTRAIT, SIZE_AUTO),
+                qualities = listOf(QUAL_LOW, QUAL_MEDIUM, QUAL_HIGH, QUAL_AUTO),
+                styles = listOf(),
+                counts = 1..10
+            ),
+            GPT_IMAGE1_MINI to ImageModelCapabilities(GPT_IMAGE1_MINI,
+                sizes = listOf(SIZE1024, SIZE1536, SIZE1536PORTRAIT, SIZE_AUTO),
+                qualities = listOf(QUAL_LOW, QUAL_MEDIUM, QUAL_HIGH, QUAL_AUTO),
+                styles = listOf(),
+                counts = 1..10
             )
         )
+
+        private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
+            mapOf(*pairs).filterValues { it != null } as Map<String, Any>
     }
 
 }
+
+/** Image model capabilities for specific models. */
+class ImageModelCapabilities(
+    val modelId: String,
+    val sizes: List<ImageSize>,
+    val qualities: List<Quality>,
+    val styles: List<Style>,
+    val counts: IntRange
+)
