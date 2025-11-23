@@ -150,8 +150,7 @@
                 <version>3.0.0-M5</version>
                 <configuration>
                     <!-- TODO - set up profiles so we can run different test sets from command line -->
-                    <!--                    <excludedGroups>gemini</excludedGroups>-->
-                    <excludedGroups>gemini | openai</excludedGroups>
+                    <excludedGroups>openai</excludedGroups>
                     <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>

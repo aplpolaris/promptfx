@@ -20,7 +20,7 @@
 
 module tri.promptkt.pips {
     requires transitive tri.promptkt.core;
-    requires tri.promptkt.openai;
+    requires transitive tri.promptkt.openai;
 
     requires io.ktor.client.core;
     requires io.ktor.client.okhttp;

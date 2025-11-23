@@ -23,10 +23,6 @@ import tri.ai.openai.api.OpenAiApiPlugin;
 
 module tri.promptkt.openai {
     requires transitive tri.promptkt.core;
-    requires transitive kotlin.stdlib;
-    requires transitive kotlinx.coroutines.core;
-    requires transitive kotlinx.serialization.core;
-    requires transitive kotlinx.serialization.json;
 
     requires openai.core.jvm;
     requires openai.client.jvm;

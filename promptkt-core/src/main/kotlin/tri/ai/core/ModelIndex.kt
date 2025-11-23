@@ -24,10 +24,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.util.fine
 import tri.util.info
-import tri.util.warning
+import tri.util.json.yamlMapper
+import tri.util.loadResourceFromSiblingResources
 import java.io.File
+import java.io.InputStream
+import java.net.URL
+import java.nio.file.Paths
 
 /** A model index with configurable model information and runtime overrides. */
 open class ModelIndex(val modelFileName: String) {
@@ -36,18 +39,21 @@ open class ModelIndex(val modelFileName: String) {
 
     /** Model definitions in library. */
     private val models: ModelLibrary by lazy {
-        val resource = javaClass.getResourceAsStream("resources/$modelFileName")
+        val resource: InputStream? = loadResourceFromSiblingResources(this::class.java, modelFileName)
         if (resource == null) {
-            info<ModelIndex>("Model resource index not found: $modelFileName for $javaClass. Using runtime configuration only.")
+            info<ModelIndex>(
+                "Model resource index not found: $modelFileName for ${this::class.java}. " +
+                        "Using runtime configuration only."
+            )
             ModelLibrary()
         } else {
-            MAPPER.readValue(resource)
+            resource.use { yamlMapper.readValue(it) }
         }
     }
     /** Model overrides at runtime - ids only. */
     private val runtimeModels: ModelLibrary = setOf(File(modelFileName), File("config/$modelFileName"))
         .firstOrNull { it.exists() }?.let {
-            MAPPER.readValue(it)
+            yamlMapper.readValue(it)
         } ?: ModelLibrary()
 
     //endregion
@@ -95,12 +101,5 @@ open class ModelIndex(val modelFileName: String) {
         }
 
     //endregion
-
-    companion object {
-        private val MAPPER = ObjectMapper(YAMLFactory()).apply {
-            registerModule(KotlinModule.Builder().build())
-            registerModule(JavaTimeModule())
-        }
-    }
 
 }

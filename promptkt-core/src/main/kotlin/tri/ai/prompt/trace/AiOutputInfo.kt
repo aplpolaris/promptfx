@@ -19,9 +19,7 @@
  */
 package tri.ai.prompt.trace
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
-import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
 
@@ -63,41 +61,5 @@ data class AiOutputInfo(
             is List<*> -> error("use `listSingleOutput` for lists, or map to multiple outputs")
             else -> AiOutputInfo(listOf(AiOutput(other = content)))
         }
-
     }
-}
-
-/** Encapsulates outputs from an AI processing step. */
-class AiOutput(
-    val text: String? = null,
-    val message: TextChatMessage? = null,
-    val multimodalMessage: MultimodalChatMessage? = null,
-    @get:JsonIgnore
-    val other: Any? = null
-) {
-
-    override fun toString(): String = textContent(ifNone = other?.toString() ?: "(no output)")
-
-    /**
-     * Finds text content where possible in the output.
-     */
-    fun textContent(ifNone: String? = null): String = text
-        ?: message?.content
-        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
-        ?: other?.toString()
-        ?: ifNone
-        ?: error("No text content available in output: $this")
-
-    /**
-     * Finds image content based on message part type, or null if there is no image content.
-     */
-    fun imageContent(): String? =
-        multimodalMessage?.content
-            ?.firstOrNull { it.partType == MPartType.IMAGE }
-            ?.inlineData
-
-    /**
-     * Gets whichever message content is provided.
-     */
-    fun content(): Any = message ?: multimodalMessage ?: text ?: other ?: error("No content available in output: $this")
 }

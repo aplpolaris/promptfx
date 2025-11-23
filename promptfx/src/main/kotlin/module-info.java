@@ -35,12 +35,7 @@ import tri.util.ui.NavigableWorkspaceView;
 module tri.promptfx {
     requires transitive tri.promptkt.docs;
     requires transitive tri.promptkt.gemini;
-    requires tri.promptkt.openai;
-
-    requires okhttp3;
-    requires okio;
-
-    requires org.apache.pdfbox;
+    requires transitive tri.promptkt.openai;
 
     requires javafx.controls;
     requires javafx.fxml;

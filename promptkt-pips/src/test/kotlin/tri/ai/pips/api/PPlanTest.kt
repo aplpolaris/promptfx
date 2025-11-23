@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 
 class PPlanTest {
 
@@ -111,11 +111,11 @@ class PPlanTest {
         val original = PPlan(
             id = "pipelines/rt@0.1.0",
             steps = listOf(
-                PPlanStep("util/echo", input = MAPPER.readTree("""{"msg":"hello"}"""), saveAs = "m"),
-                PPlanStep("util/merge", input = MAPPER.readTree("""{"left":{"${"$"}var":"m"}}"""))
+                PPlanStep("util/echo", input = jsonMapper.readTree("""{"msg":"hello"}"""), saveAs = "m"),
+                PPlanStep("util/merge", input = jsonMapper.readTree("""{"left":{"${"$"}var":"m"}}"""))
             )
         )
-        val json = MAPPER.writeValueAsString(original)
+        val json = jsonMapper.writeValueAsString(original)
         val reparsed = PPlan.parse(json)
 
         assertEquals(original.id, reparsed.id)

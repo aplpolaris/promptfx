@@ -40,13 +40,14 @@ module tri.promptkt.core {
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
+    opens tri.util.json to com.fasterxml.jackson.databind;
 
     exports tri.ai.core;
     exports tri.ai.prompt;
     exports tri.ai.prompt.trace;
     exports tri.ai.prompt.trace.batch;
     exports tri.util;
-    exports tri.util.jackson;
+    exports tri.util.json;
 
     // services (service loader API)
     uses TextPlugin;

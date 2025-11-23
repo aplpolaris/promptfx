@@ -17,16 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.test
+package tri.ai.core
 
-import tri.ai.core.*
-import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiOutputInfo
 
 /**
  * Minimal test implementation of [TextPlugin] for testing purposes only.
  * This shim plugin provides minimal implementations to avoid circular dependencies.
  */
-class TestShimPlugin : TextPlugin {
+class TextPluginTest : TextPlugin {
     override fun modelSource() = "TestShim"
     override fun modelInfo() = listOf(ModelInfo("test-model", ModelType.TEXT_COMPLETION, "TestShim"))
     override fun embeddingModels() = emptyList<EmbeddingModel>()
@@ -41,7 +43,7 @@ class TestShimPlugin : TextPlugin {
 /** Minimal test text completion model. */
 internal class TestTextCompletion : TextCompletion {
     override val modelId = "test-model"
-    override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) = 
+    override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
         AiPromptTrace(null, AiModelInfo(modelId), AiExecInfo(), AiOutputInfo.text("test response"))
 }
 
@@ -49,5 +51,10 @@ internal class TestTextCompletion : TextCompletion {
 internal class TestTextChat : TextChat {
     override val modelId = "test-model"
     override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
-        AiPromptTrace(null, AiModelInfo(modelId), AiExecInfo(), AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response"))))
+        AiPromptTrace(
+            null,
+            AiModelInfo(modelId),
+            AiExecInfo(),
+            AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response")))
+        )
 }

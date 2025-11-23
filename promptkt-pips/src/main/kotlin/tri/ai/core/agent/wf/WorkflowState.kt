@@ -25,7 +25,7 @@ import tri.ai.core.tool.ExecContext
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_GREEN
 import tri.util.ANSI_RESET
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.ifEmpty
@@ -49,7 +49,7 @@ class WorkflowState(_request: WorkflowUserRequest) {
         // TODO - this is very brittle
         val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
         if (userInput.isNotEmpty())
-            scratchpad.put("user_input", MAPPER.valueToTree<JsonNode>(userInput))
+            scratchpad.put("user_input", jsonMapper.valueToTree<JsonNode>(userInput))
         // description ?? scratchpad["user_input"] = WVar("user_input", "User input for the workflow", userInput)
     }
 

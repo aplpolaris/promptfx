@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.util.jackson
+package tri.util.json
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper

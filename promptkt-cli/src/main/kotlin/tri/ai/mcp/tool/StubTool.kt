@@ -29,7 +29,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.mcp.JsonSerializers.toJsonElement
 import tri.ai.mcp.JsonSerializers.toJsonNode
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 
 /** A tool that returns a fixed result, useful for testing. */
 data class StubTool(
@@ -49,8 +49,8 @@ data class StubTool(
         @JsonProperty("hardCodedOutput") hardCodedOutput: Any
     ) : this(
         name, description, version,
-        MAPPER.convertValue(inputSchema),
-        MAPPER.convertValue(outputSchema)
+        jsonMapper.convertValue(inputSchema),
+        jsonMapper.convertValue(outputSchema)
     ) {
         this.hardCodedOutput = (hardCodedOutput as? JsonElement) ?: toJsonElement(hardCodedOutput)
     }
