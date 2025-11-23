@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
-import tri.ai.openai.jsonMapper
-import tri.ai.openai.yamlMapper
+import tri.util.jackson.jsonMapper
+import tri.util.jackson.yamlMapper
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
-import tri.ai.openai.jsonMapper
+import tri.util.jackson.jsonMapper
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.template
 import tri.ai.text.chunks.TextDocMetadata

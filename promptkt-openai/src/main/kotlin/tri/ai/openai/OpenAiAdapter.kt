@@ -31,12 +31,6 @@ import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.ObjectWriter
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
 import tri.ai.core.*
@@ -338,17 +332,18 @@ enum class UsageUnit {
     NONE
 }
 
-val jsonMapper = ObjectMapper()
-    .registerModule(JavaTimeModule())
-    .registerModule(KotlinModule.Builder().build())
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
-val yamlMapper = ObjectMapper(YAMLFactory())
-    .registerModule(JavaTimeModule())
-    .registerModule(KotlinModule.Builder().build())
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)!!
+// Re-export common Jackson mappers from tri.util.jackson for backward compatibility
+@Deprecated("Use tri.util.jackson.jsonMapper instead", ReplaceWith("tri.util.jackson.jsonMapper"))
+val jsonMapper = tri.util.jackson.jsonMapper
 
-val jsonWriter: ObjectWriter = jsonMapper.writerWithDefaultPrettyPrinter()
-val yamlWriter: ObjectWriter = yamlMapper.writerWithDefaultPrettyPrinter()
+@Deprecated("Use tri.util.jackson.yamlMapper instead", ReplaceWith("tri.util.jackson.yamlMapper"))
+val yamlMapper = tri.util.jackson.yamlMapper
+
+@Deprecated("Use tri.util.jackson.jsonWriter instead", ReplaceWith("tri.util.jackson.jsonWriter"))
+val jsonWriter = tri.util.jackson.jsonWriter
+
+@Deprecated("Use tri.util.jackson.yamlWriter instead", ReplaceWith("tri.util.jackson.yamlWriter"))
+val yamlWriter = tri.util.jackson.yamlWriter
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")

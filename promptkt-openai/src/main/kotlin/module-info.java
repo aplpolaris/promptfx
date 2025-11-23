@@ -18,36 +18,38 @@
  * #L%
  */
 import tri.ai.core.TextPlugin;
+import tri.ai.openai.OpenAiPlugin;
+import tri.ai.openai.api.OpenAiApiPlugin;
 
-module tri.promptkt.core {
+module tri.promptkt.openai {
+    requires transitive tri.promptkt.core;
     requires transitive kotlin.stdlib;
     requires transitive kotlinx.coroutines.core;
     requires transitive kotlinx.serialization.core;
     requires transitive kotlinx.serialization.json;
 
-    requires transitive java.logging;
+    requires openai.core.jvm;
+    requires openai.client.jvm;
 
-    requires transitive com.fasterxml.jackson.annotation;
-    requires transitive com.fasterxml.jackson.databind;
-    requires transitive com.fasterxml.jackson.kotlin;
-    requires transitive com.fasterxml.jackson.datatype.jsr310;
-    requires transitive com.fasterxml.jackson.dataformat.yaml;
-    requires transitive com.fasterxml.jackson.dataformat.csv;
+    requires okhttp3;
+    requires okio;
 
-    requires com.github.mustachejava;
+    requires io.ktor.client.core;
+    requires io.ktor.client.content.negotiation;
+    requires io.ktor.http;
+    requires io.ktor.serialization;
+    requires io.ktor.serialization.kotlinx.json;
+    requires io.ktor.utils;
+    requires io.ktor.client.logging;
 
-    opens tri.ai.core to com.fasterxml.jackson.databind;
-    opens tri.ai.prompt to com.fasterxml.jackson.databind;
-    opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
-    opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
+    opens tri.ai.openai to com.fasterxml.jackson.databind;
+    opens tri.ai.openai.api to com.fasterxml.jackson.databind;
+    opens tri.ai.openai.azure to com.fasterxml.jackson.databind;
 
-    exports tri.ai.core;
-    exports tri.ai.prompt;
-    exports tri.ai.prompt.trace;
-    exports tri.ai.prompt.trace.batch;
-    exports tri.util;
-    exports tri.util.jackson;
+    exports tri.ai.openai;
+    exports tri.ai.openai.api;
+    exports tri.ai.openai.azure;
 
     // services (service loader API)
-    uses TextPlugin;
+    provides TextPlugin with OpenAiPlugin, OpenAiApiPlugin;
 }

@@ -19,8 +19,8 @@
  */
 package tri.ai.prompt.trace
 
-import tri.ai.openai.jsonWriter
-import tri.ai.openai.yamlWriter
+import tri.util.jackson.jsonWriter
+import tri.util.jackson.yamlWriter
 import java.io.File
 
 /** Writes the given [AiPromptTraceDatabase] to the specified file. */
