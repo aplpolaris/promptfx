@@ -8,11 +8,12 @@ The `promptkt-gemini-sdk` plugin implements the `TextPlugin` interface to provid
 
 ## Features
 
-- **Embedding Models**: text-embedding-004
 - **Chat Models**: Uses multimodal/vision-language models for chat functionality
 - **Multimodal Models**: gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro
 - **Vision-Language Models**: gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro
 - **Text Completion**: Supported via chat models
+
+**Note**: Embedding models are not yet supported in this SDK-based plugin. For embedding functionality, please use the `promptkt-gemini` plugin which uses the REST API directly.
 
 ## Configuration
 
@@ -84,7 +85,6 @@ val plugin = GeminiSdkPlugin()
 if (plugin.client.isConfigured()) {
     // Get available models
     val chatModels = plugin.chatModels()
-    val embeddingModels = plugin.embeddingModels()
     
     // Use a chat model
     val chatModel = chatModels.first()
@@ -111,35 +111,22 @@ val result = model.complete(
 println(result.outputInfo.textContent())
 ```
 
-### Example: Generating Embeddings
-
-```kotlin
-import tri.ai.geminisdk.GeminiSdkPlugin
-
-val plugin = GeminiSdkPlugin()
-val embeddingModel = plugin.embeddingModels().first()
-
-// Generate embedding for a single text
-val embedding = embeddingModel.calculateEmbedding("Hello, world!")
-println("Embedding dimension: ${embedding.size}")
-
-// Generate embeddings for multiple texts
-val embeddings = embeddingModel.calculateEmbedding(
-    listOf("First text", "Second text", "Third text")
-)
-println("Generated ${embeddings.size} embeddings")
-```
-
 ## Differences from promptkt-gemini
 
-The `promptkt-gemini` plugin uses direct HTTP/REST API calls via Ktor, while this plugin uses Google's official SDK which may provide:
+The `promptkt-gemini` plugin uses direct HTTP/REST API calls via Ktor, while this plugin uses Google's official SDK.
 
+**Advantages of promptkt-gemini (REST API)**:
+- Supports embedding models (text-embedding-004, etc.)
+- Simpler dependencies
+- More direct control over API calls
+
+**Advantages of promptkt-gemini-sdk (Official SDK)**:
 - Better integration with Google Cloud authentication
 - More consistent API updates from Google
 - Additional enterprise features
 - Potentially better performance through optimized client implementations
 
-However, the REST API plugin may be simpler and have fewer dependencies.
+**Recommendation**: Use `promptkt-gemini` (REST API) for embedding functionality. Use this SDK-based plugin when you need better Google Cloud integration or enterprise features.
 
 ## Testing
 

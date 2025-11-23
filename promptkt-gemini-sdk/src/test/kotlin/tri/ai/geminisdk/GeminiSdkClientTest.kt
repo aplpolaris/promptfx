@@ -58,28 +58,13 @@ class GeminiSdkClientTest {
     }
 
     @Test
-    fun testEmbedContent() {
+    fun testEmbedContentNotImplemented() {
         Assumptions.assumeTrue(client.isConfigured(), "Client not configured")
         
         runBlocking {
-            val embeddings = client.embedContents(listOf("This is a test"), EMBED4)
-            assertNotNull(embeddings)
-            assertTrue(embeddings.isNotEmpty())
-            val embedding = embeddings.first()
-            println("Embedding size: ${embedding.size}")
-            println("First few values: ${embedding.take(5)}")
-        }
-    }
-
-    @Test
-    fun testBatchEmbedContents() {
-        Assumptions.assumeTrue(client.isConfigured(), "Client not configured")
-        
-        runBlocking {
-            val embeddings = client.embedContents(listOf("This is", "a test"), EMBED4)
-            assertNotNull(embeddings)
-            assertEquals(2, embeddings.size)
-            println("Batch embeddings generated: ${embeddings.size}")
+            assertThrows<NotImplementedError> {
+                client.embedContents(listOf("This is a test"), EMBED4)
+            }
         }
     }
 

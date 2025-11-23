@@ -70,14 +70,15 @@ class GeminiSdkClient : Closeable {
 
     /**
      * Generate embeddings for the given texts.
-     * Note: The official SDK may have different embedding APIs than the REST API.
-     * This is a placeholder implementation that would need to be adjusted based on
-     * the actual SDK capabilities.
+     * Note: The official SDK's embedding API is currently not implemented.
+     * This will be added in a future update once the proper SDK API is available.
      */
     suspend fun embedContents(contents: List<String>, modelId: String): List<List<Float>> {
-        // TODO: Implement proper embedding using SDK when available
-        // For now, return empty list as placeholder
-        return contents.map { emptyList<Float>() }
+        throw NotImplementedError(
+            "Embedding generation is not yet implemented for the Gemini SDK. " +
+            "The official SDK does not expose the embedding API in the same way as the REST API. " +
+            "Please use the promptkt-gemini plugin (REST API) for embedding functionality."
+        )
     }
 
     private fun createModel(modelId: String, variation: MChatVariation): GenerativeModel {
@@ -98,18 +99,14 @@ class GeminiSdkClient : Closeable {
     }
 
     private fun createChatSession(model: GenerativeModel, history: List<TextChatMessage>): ChatSession {
-        val chatBuilder = model.startChat()
+        // Start a new chat session
+        val chatSession = model.startChat()
         
-        // Convert history messages to Gemini format
-        for (message in history) {
-            if (message.role == MChatRole.User) {
-                // Add user message to history
-                chatBuilder.sendMessage(message.content)
-            }
-            // Note: System messages and assistant messages handling depends on SDK capabilities
-        }
+        // Note: The SDK's chat session doesn't easily support pre-populating history
+        // For now, we'll just use the current prompt with the system instruction
+        // which was already set in createModel if a System message was in history
         
-        return chatBuilder
+        return chatSession
     }
 
     override fun close() {

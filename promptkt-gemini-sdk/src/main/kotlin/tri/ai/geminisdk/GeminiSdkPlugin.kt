@@ -31,9 +31,8 @@ class GeminiSdkPlugin : TextPlugin {
     override fun modelInfo() = 
         emptyList<tri.ai.core.ModelInfo>() // SDK doesn't provide a listModels API in the same way
 
-    override fun embeddingModels(): List<tri.ai.core.EmbeddingModel> = models(GeminiSdkModelIndex.embeddingModels()) { 
-        GeminiSdkEmbeddingModel(it, client) 
-    }
+    override fun embeddingModels(): List<tri.ai.core.EmbeddingModel> = 
+        emptyList() // Embedding models not yet supported by the SDK wrapper
 
     override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModelsInclusive()) { 
         GeminiSdkTextChat(it, client) 
@@ -53,9 +52,8 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkVisionLanguageChat(it, client) 
     }
 
-    override fun imageGeneratorModels() = models(GeminiSdkModelIndex.imageGeneratorModels()) { 
-        TODO("Image generation not yet implemented") 
-    }
+    override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> = 
+        emptyList() // Image generation not supported by Vertex AI SDK
 
     override fun close() {
         client.close()

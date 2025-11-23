@@ -27,9 +27,10 @@ class GeminiSdkModelIndexTest {
     @Test
     fun testEmbeddingModels() {
         val models = GeminiSdkModelIndex.embeddingModels()
-        assertTrue(models.isNotEmpty())
+        assertTrue(models.isNotEmpty()) // Models are defined in YAML
         assertTrue(models.contains(GeminiSdkModelIndex.EMBED4))
-        println("Embedding models: $models")
+        println("Embedding models in index: $models")
+        println("Note: Embedding models are not currently exposed by the plugin due to SDK limitations")
     }
 
     @Test
