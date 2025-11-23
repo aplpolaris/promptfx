@@ -21,7 +21,6 @@ package tri.ai.geminisdk
 
 import tri.ai.core.*
 import tri.ai.prompt.trace.*
-import java.util.Optional
 
 /** Gemini multimodal chat model using the official SDK. */
 class GeminiSdkMultimodalChat(
@@ -55,9 +54,8 @@ class GeminiSdkMultimodalChat(
                 history
             )
             
-            // Handle Optional<String> from java-genai
-            val textOptional: Optional<String> = response.text()
-            val responseText = if (textOptional.isPresent) textOptional.get() else ""
+            // Handle nullable String from java-genai (platform type String!)
+            val responseText = response.text() ?: ""
             val responseMsg = MultimodalChatMessage(
                 MChatRole.Assistant,
                 listOf(MChatMessagePart.text(responseText))

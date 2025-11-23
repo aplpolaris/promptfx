@@ -80,7 +80,7 @@ class GeminiSdkClientTest {
                 history = emptyList()
             )
             assertNotNull(response)
-            val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text
+            val responseText = response.text()
             assertNotNull(responseText)
             assertTrue(responseText!!.isNotBlank())
             println("Generated response: $responseText")
@@ -103,7 +103,7 @@ class GeminiSdkClientTest {
                 history = history
             )
             assertNotNull(response)
-            val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text
+            val responseText = response.text()
             assertNotNull(responseText)
             println("Chat response: $responseText")
         }
