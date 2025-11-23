@@ -1,33 +1,111 @@
 # Library of view configurations
 ---
+rag_qa_prefilter_json:
+  prompt:
+    id: docs-qa/prefilter-json
+    category: RAG QA
+    name: Prefilter JSON Generation
+    description: Generate JSON to prefilter large document sets based on user queries.
+    template: |
+      You are acting as a preprocessor that determines an appropriate next step based on a user's question in a chat field. Users might have general questions (answerable with latent information in a large language model), or might have more domain specific questions (answerable using RAG based on information in a document database). Your job is to (i) determine the degree to which each method is appropriate for the user's inquiry, and (ii) in the latter case, determine if there are any appropriate filter criteria to downselect the documents.
+
+      The output should have the following form:
+      ```json
+      {
+        "model_utility": "<NONE|LOW|MED|HIGH>",
+        "rag_utility": "<NONE|LOW|MED|HIGH>",
+        "rag_query_filter": {
+          "time_range": { "start": <DATE>, "end": <DATE> }, // if any specified
+          "geographic_aoi": [ "<AOI>" ],  // if any specified
+          "language": [ "<LANGUAGE>" ], // if any specified
+          "source": [ "<SOURCE>" ], // if any specified
+          ... // any other filter criteria
+        }
+      }
+      ```
+
+      User prompt:
+      ```
+      {{{input}}}
+      ```
+
+      Today is {{today}}.
+
+math_unit_conversion:
+  prompt:
+    id: math/unit_conversion
+    category: Math
+    name: Unit Conversions
+    description: Convert units to a specified unit
+    template: |
+      Enter the value to convert and the unit type to convert from, and specify the unit to convert to:
+      '''
+      Value: {{input}}
+      Convert from: {{UNIT_TYPE}}
+      Convert to: {{CONVERT_TO_UNIT}}
+      '''
+  args:
+    - fieldId: UNIT_TYPE
+      label: Unit Type
+      values:
+        - Length
+        - Mass
+        - Volume
+    - fieldId: CONVERT_TO_UNIT
+      label: Convert To Unit
+      values:
+        - Meter
+        - Kilogram
+        - Liter
+
+math_calculations:
+  prompt:
+    id: math/calculations
+    category: Math
+    name: Math Calculations
+    description: Perform various math calculations efficiently.
+    template: |
+      Perform math calculations on the following numbers ({{OPERATION_TYPE}}):
+      '''
+      {{{input}}}
+      '''
+  args:
+    - fieldId: OPERATION_TYPE
+      label: Operation Type
+      values:
+        - Addition
+        - Subtraction
+        - Multiplication
+        - Division
+
 date-extraction:
   prompt:
     id: text-extract/dates
     category: Text
-  modeOptions:
-    - templateId: DATE_FORMAT
+  args:
+    - fieldId: DATE_FORMAT
       label: Date Format
       values:
         - ISO8601 Date
         - MMM dd, yyyy
         - yyyy/MM/dd
         - the 12th of February
-  isShowModelParameters: false
-  isShowMultipleResponseOption: false
 
 entity-extraction:
   prompt:
     id: text-extract/entities
     category: Text
     description: Extract entities from text (testing runtime override)
-  modeOptions:
-    - id: entities
-      templateId: mode
+  args:
+    - modeId: entities
+      fieldId: mode
       label: Mode
-    - id: structured-format
-      templateId: format
+    - modeId: structured-format
+      fieldId: format
       label: Format as
-  isShowModelParameters: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true
 
 code-review:
   prompt:
@@ -45,6 +123,6 @@ code-review:
       ```
       {{{code}}}
       ```
-  modeOptions: []
-  isShowModelParameters: true
-  isShowMultipleResponseOption: true
+  userControls:
+    modelParameters: true
+    multipleResponses: true

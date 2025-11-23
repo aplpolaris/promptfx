@@ -20,12 +20,11 @@
 
 module tri.promptkt.pips {
     requires transitive tri.promptkt.core;
-
-    requires openai.core.jvm;
-    requires openai.client.jvm;
+    requires transitive tri.promptkt.openai;
 
     requires io.ktor.client.core;
     requires io.ktor.client.okhttp;
+    requires io.ktor.http;
     requires okhttp3;
 
     requires com.github.mustachejava;

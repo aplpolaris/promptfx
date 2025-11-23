@@ -20,9 +20,9 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.util.OUTPUT_SCHEMA
-import tri.util.createResult
-import tri.util.readJsonSchema
+import tri.util.json.OUTPUT_SCHEMA
+import tri.util.json.createResult
+import tri.util.json.readJsonSchema
 
 /**
  * Base class for JSON schema-based executables.

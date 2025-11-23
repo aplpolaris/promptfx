@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.util.tryJson
+import tri.util.json.tryJson
 
 /** Advances workflow towards a solution. */
 abstract class WorkflowSolver(

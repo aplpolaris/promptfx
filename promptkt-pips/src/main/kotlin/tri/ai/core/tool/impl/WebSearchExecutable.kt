@@ -27,8 +27,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.JsonToolExecutable
-import tri.util.MAPPER
-import tri.util.inputText
+import tri.util.json.inputText
+import tri.util.json.jsonMapper
 import java.net.URLDecoder
 
 /**
@@ -80,12 +80,12 @@ class WebSearchExecutable : JsonToolExecutable(
 
         return try {
             val searchResults = performDuckDuckGoSearch(query, clampedMaxResults)
-            MAPPER.writeValueAsString(mapOf(
+            jsonMapper.writeValueAsString(mapOf(
                 "query" to query,
                 "results" to searchResults
             ))
         } catch (e: Exception) {
-            MAPPER.writeValueAsString(mapOf(
+            jsonMapper.writeValueAsString(mapOf(
                 "query" to query,
                 "error" to "Search failed: ${e.message}",
                 "results" to emptyList<SearchResult>()

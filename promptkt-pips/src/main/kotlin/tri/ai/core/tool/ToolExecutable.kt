@@ -20,8 +20,8 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.util.createResult
-import tri.util.inputText
+import tri.util.json.createResult
+import tri.util.json.inputText
 
 /**
  * Base class for tool-like executables that work with simple string input/output.

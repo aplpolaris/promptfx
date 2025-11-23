@@ -14,6 +14,7 @@
 
     <modules>
         <module>promptkt-core</module>
+        <module>promptkt-openai</module>
         <module>promptkt-gemini</module>
         <module>promptkt-gemini-sdk</module>
         <module>promptkt-pips</module>

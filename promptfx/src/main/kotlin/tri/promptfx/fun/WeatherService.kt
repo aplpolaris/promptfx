@@ -21,7 +21,7 @@ package tri.promptfx.`fun`
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import java.io.File
 import java.io.IOException
 import java.net.URL

@@ -24,8 +24,8 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
-import tri.util.createJsonSchema
-import tri.util.createObject
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
 
 /** A solver used to aggregate/finalize a response for an original user question. */
 class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(

@@ -21,7 +21,7 @@ package tri.ai.mcp
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 
 /**
  * Handles JSON serialization and deserialization for JSON-RPC messages.
@@ -45,7 +45,7 @@ object JsonSerializers {
 
     /** Convert any DTO to JsonElement via Jackson -> string -> kotlinx JsonElement */
     fun toJsonElement(obj: Any): JsonElement =
-        json.parseToJsonElement(MAPPER.writeValueAsString(obj))
+        json.parseToJsonElement(jsonMapper.writeValueAsString(obj))
 
     /** Convert a JsonObject like {"k":"v"} into Map<String,String> */
     fun toStringMap(jsonObject: JsonObject): Map<String, String> =
@@ -53,5 +53,5 @@ object JsonSerializers {
 
     /** Convert a kotlinx JsonElement to Jackson JsonNode */
     fun JsonElement.toJsonNode() =
-        MAPPER.readTree(json.encodeToString(this))
+        jsonMapper.readTree(json.encodeToString(this))
 }

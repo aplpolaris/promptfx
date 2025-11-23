@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.fail
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.util.createObject
+import tri.util.json.createObject
 
 class AgentExecutableTest {
 

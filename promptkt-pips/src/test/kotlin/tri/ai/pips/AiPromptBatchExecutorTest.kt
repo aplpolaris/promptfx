@@ -25,13 +25,13 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
-import tri.ai.openai.jsonMapper
-import tri.ai.openai.jsonWriter
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.PromptInfo
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
+import tri.util.json.jsonMapper
+import tri.util.json.jsonWriter
 
 class AiPromptBatchExecutorTest {
 
