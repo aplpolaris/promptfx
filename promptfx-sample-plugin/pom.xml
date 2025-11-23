@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.googlecode.blaisemath</groupId>
         <artifactId>promptfx-meta</artifactId>
-        <version>0.12.1-SNAPSHOT</version>
+        <version>0.13.0</version>
     </parent>
 
     <artifactId>promptfx-sample-plugin</artifactId>
@@ -42,7 +42,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>promptfx-meta-0.13.0</tag>
     </scm>
 
     <issueManagement>
