@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
-import tri.ai.gemini.GeminiModelIndex.EMBED1
-import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
+import tri.ai.gemini.GeminiModelIndex.EMBED4
+import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 import tri.util.BASE64_AUDIO_SAMPLE
 
 @Tag("gemini")
@@ -60,7 +60,7 @@ class GeminiClientTest {
     @Test
     fun testEmbedContent() {
         runBlocking {
-            val response = client.embedContent("This is a test", EMBED1, outputDimensionality = 10)
+            val response = client.embedContent("This is a test", EMBED4, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }
@@ -69,7 +69,7 @@ class GeminiClientTest {
     @Test
     fun testBatchEmbedContents() {
         runBlocking {
-            val response = client.batchEmbedContents(listOf("This is", "a test"), EMBED1, outputDimensionality = 10)
+            val response = client.batchEmbedContents(listOf("This is", "a test"), EMBED4, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }
@@ -80,7 +80,7 @@ class GeminiClientTest {
         runBlocking {
             val response = client.generateContent(
                 "Write a limerick about a magic backpack.",
-                GEMINI_15_FLASH,
+                GEMINI_25_FLASH_LITE,
                 MChatVariation(),
                 history = listOf()
             )
@@ -101,7 +101,7 @@ class GeminiClientTest {
             assert(response.promptFeedback == null)
             with (response.usageMetadata) {
                 assert(this != null)
-                assertEquals(10, this!!.promptTokenCount)
+                assertEquals(11, this!!.promptTokenCount)
                 assert(candidatesTokenCount > 10)
                 assert(totalTokenCount > 20)
             }
@@ -115,8 +115,9 @@ class GeminiClientTest {
             val response = client.generateContent(listOf(
                 TextChatMessage(MChatRole.System, "You are a wizard that always responds as if you are casting a spell."),
                 TextChatMessage(MChatRole.User, "What should I have for dinner?")
-            ), GEMINI_15_FLASH)
+            ), GEMINI_25_FLASH_LITE)
             assertNotNull(response)
+            println(response)
             assert(response.promptFeedback?.blockReason == null)
         }
     }
@@ -126,11 +127,11 @@ class GeminiClientTest {
         runBlocking {
             val request = GenerateContentRequest(Content(
                 listOf(
-                    Part("Transcribe this audio"),
-                    Part(null, Blob.fromDataUrl(BASE64_AUDIO_SAMPLE))
+                    Part.text("Transcribe this audio"),
+                    Part(inlineData = Blob.fromDataUrl(BASE64_AUDIO_SAMPLE))
                 ), ContentRole.user
             ))
-            val response = client.generateContent(GEMINI_15_FLASH, request)
+            val response = client.generateContent(GEMINI_25_FLASH_LITE, request)
             println(response)
             assertNotNull(response)
             assert(response.candidates!![0].content.parts[0].text != null)

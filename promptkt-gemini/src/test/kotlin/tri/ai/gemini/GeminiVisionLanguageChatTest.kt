@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
+import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 import tri.util.BASE64_IMAGE_SAMPLE
 import java.net.URI
 
@@ -38,7 +38,7 @@ class GeminiVisionLanguageChatTest {
         @JvmStatic
         @BeforeAll
         fun setUp() {
-            client = GeminiVisionLanguageChat(modelId = GEMINI_15_FLASH)
+            client = GeminiVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE)
         }
 
         @JvmStatic
