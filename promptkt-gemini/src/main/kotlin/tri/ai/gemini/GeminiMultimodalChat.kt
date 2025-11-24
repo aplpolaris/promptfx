@@ -25,9 +25,10 @@ import tri.ai.core.*
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
 import tri.ai.prompt.trace.*
 import tri.util.info
+import tri.util.json.jsonMapper
 
 /** Chat completion with Gemini models. */
-class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_15_FLASH, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     MultimodalChat {
 
     override fun toString() = modelId
@@ -140,7 +141,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             return when (this) {
                 MChatRole.User -> ContentRole.user
                 MChatRole.Assistant -> ContentRole.model
-                MChatRole.Tool -> null
+                MChatRole.Tool -> ContentRole.function
                 else -> error("Invalid role: $this")
             }
         }

@@ -58,7 +58,7 @@ class GeminiClient : Closeable {
     //region ALTERNATE API METHODS
 
     suspend fun embedContent(content: String, modelId: String, outputDimensionality: Int? = null): EmbedContentResponse {
-        val request = EmbedContentRequest(Content(listOf(Part(content))), outputDimensionality = outputDimensionality)
+        val request = EmbedContentRequest(Content.text(content), outputDimensionality = outputDimensionality)
         return client.post("models/$modelId:embedContent") {
             setBody(request)
         }.body<EmbedContentResponse>()
@@ -66,7 +66,7 @@ class GeminiClient : Closeable {
 
     suspend fun batchEmbedContents(content: List<String>, modelId: String, outputDimensionality: Int? = null): BatchEmbedContentsResponse {
         val request = BatchEmbedContentRequest(
-            content.map { EmbedContentRequest(Content(listOf(Part(it))), model = "models/$modelId", outputDimensionality = outputDimensionality) }
+            content.map { EmbedContentRequest(Content.text(it), model = "models/$modelId", outputDimensionality = outputDimensionality) }
         )
         return client.post("models/$modelId:batchEmbedContents") {
             setBody(request)
@@ -78,9 +78,9 @@ class GeminiClient : Closeable {
         val request = GenerateContentRequest(
             contents = history.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
-                Content(listOf(Part(it.content)), role)
+                Content(listOf(Part.text(it.content)), role)
             } + Content.text(prompt),
-            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
+            systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) },
             generationConfig = variation.asGenerationConfig(numResponses = numResponses)
         )
         return generateContent(modelId, request)
@@ -102,12 +102,12 @@ class GeminiClient : Closeable {
         val request = GenerateContentRequest(
             contents = history.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
-                Content(listOf(Part(it.content)), role)
+                Content(listOf(Part.text(it.content)), role)
             } + Content(listOf(
-                Part(text = prompt),
-                Part(inlineData = Blob(image, MIME_TYPE_JPEG))
+                Part.text(prompt),
+                Part.inlineData(image, MIME_TYPE_JPEG)
             )),
-            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
+            systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) },
 // TODO - enable when Gemini API supports candidateCount, see https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
 //            generationConfig = numResponses?.let { GenerationConfig(candidateCount = it) }
         )
@@ -119,9 +119,9 @@ class GeminiClient : Closeable {
         val request = GenerateContentRequest(
             messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
-                Content(listOf(Part(it.content)), role)
+                Content(listOf(Part.text(it.content)), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) },
+            systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) },
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -133,11 +133,11 @@ class GeminiClient : Closeable {
             messages.filter { it.role != MChatRole.System }.map {
                 val role = it.role.toGeminiRole()
                 Content(listOf(
-                    Part(it.content),
-                    Part(null, Blob.fromDataUrl(it.image))
+                    Part.text(it.content),
+                    Part(inlineData = Blob.fromDataUrl(it.image))
                 ), role)
             },
-            systemInstruction = system?.let { Content(listOf(Part(it)), ContentRole.user) }, // TODO - support for system messages
+            systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) }, // TODO - support for system messages
             generationConfig = config
         )
         return generateContent(modelId, request)
@@ -186,6 +186,7 @@ data class ModelInfo(
     val inputTokenLimit: Int,
     val outputTokenLimit: Int,
     val supportedGenerationMethods: List<String>,
+    val thinking: Boolean? = null,
     val temperature: Double? = null,
     val maxTemperature: Double? = null,
     val topP: Double? = null,

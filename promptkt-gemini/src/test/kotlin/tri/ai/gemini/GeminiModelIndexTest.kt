@@ -19,8 +19,11 @@
  */
 package tri.ai.gemini
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.gemini.GeminiClientTest.Companion.client
 
 class GeminiModelIndexTest {
 
@@ -42,6 +45,27 @@ class GeminiModelIndexTest {
 
         // no additional model info has been configured
         assertTrue(GeminiModelIndex.modelInfoIndex.isEmpty())
+    }
+
+    @Test
+    @Tag("gemini")
+    fun testIndexModels() {
+        runBlocking {
+            val res = GeminiClient().listModels().models
+            val apiModelIds = res.map { it.name.substringAfter("/") }.toSet()
+            val indexIds = GeminiModelIndex.modelIds
+            println(res)
+            println("-".repeat(50))
+            println("Gemini API models not in local index:")
+            val ids = apiModelIds - indexIds
+            ids.sorted().forEach {
+                // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##" or "-##-##"
+                if (!it.matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?")))
+                    println("  $it")
+            }
+            println("-".repeat(50))
+            println("Local index models not in Gemini API: " + (indexIds - apiModelIds))
+        }
     }
 
 }
