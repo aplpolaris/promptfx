@@ -173,8 +173,8 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
                 val fileBytes = file.value!!.audioUri("wav")
                 val request = GenerateContentRequest(Content(
                     listOf(
-                        Part(GEMINI_PROMPT),
-                        Part(null, Blob.fromDataUrl(fileBytes))
+                        Part.text(GEMINI_PROMPT),
+                        Part(inlineData = Blob.fromDataUrl(fileBytes))
                     ), ContentRole.user
                 ))
                 val response = GeminiClient().use {

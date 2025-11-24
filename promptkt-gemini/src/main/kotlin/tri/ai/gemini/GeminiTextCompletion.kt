@@ -21,14 +21,14 @@ package tri.ai.gemini
 
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextCompletion
-import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
+import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with Gemini models. */
-class GeminiTextCompletion(override val modelId: String = GEMINI_15_FLASH, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextCompletion {
 
     override fun toString() = "$modelId (Gemini)"
@@ -56,7 +56,9 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_15_FLASH, val c
             } else if (candidates.isNullOrEmpty()) {
                 AiPromptTrace.error(modelInfo, "Gemini returned no candidates", duration = System.currentTimeMillis() - t0)
             } else {
-                val respText = candidates?.flatMap { it.content.parts.map { it.text } }?.filterNotNull()
+                // Gemini API appears to return all candidates as parts of content of the first candidate response as well as across multiple candidates, so flatmap doesn't work
+                // val respText = candidates?.flatMap { it.content.parts.map { it.text } }?.filterNotNull()
+                val respText = candidates?.mapNotNull { it.content.parts.firstOrNull { it.text != null }?.text }
                 return AiPromptTrace(
                     null,
                     modelInfo,
