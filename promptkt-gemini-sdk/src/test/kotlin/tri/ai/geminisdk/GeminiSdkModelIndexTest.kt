@@ -30,14 +30,13 @@ class GeminiSdkModelIndexTest {
         assertTrue(models.isNotEmpty()) // Models are defined in YAML
         assertTrue(models.contains(GeminiSdkModelIndex.EMBED4))
         println("Embedding models in index: $models")
-        println("Note: Embedding models are not currently exposed by the plugin due to SDK limitations")
     }
 
     @Test
     fun testMultimodalModels() {
         val models = GeminiSdkModelIndex.multimodalModels()
         assertTrue(models.isNotEmpty())
-        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_15_FLASH))
+        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
         println("Multimodal models: $models")
     }
 
@@ -45,7 +44,7 @@ class GeminiSdkModelIndexTest {
     fun testVisionLanguageModels() {
         val models = GeminiSdkModelIndex.visionLanguageModels()
         assertTrue(models.isNotEmpty())
-        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_15_FLASH))
+        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
         println("Vision language models: $models")
     }
 
@@ -53,7 +52,7 @@ class GeminiSdkModelIndexTest {
     fun testChatModelsInclusive() {
         val models = GeminiSdkModelIndex.chatModelsInclusive()
         assertTrue(models.isNotEmpty()) // chat + vision_language models
-        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_15_FLASH))
+        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
         println("Chat models (inclusive): $models")
     }
 

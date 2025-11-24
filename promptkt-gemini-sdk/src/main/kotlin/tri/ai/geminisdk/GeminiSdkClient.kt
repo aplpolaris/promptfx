@@ -65,7 +65,8 @@ class GeminiSdkClient : Closeable {
         prompt: String,
         modelId: String,
         variation: MChatVariation = MChatVariation(),
-        history: List<TextChatMessage> = emptyList()
+        history: List<TextChatMessage> = emptyList(),
+        numResponses: Int = 1
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         

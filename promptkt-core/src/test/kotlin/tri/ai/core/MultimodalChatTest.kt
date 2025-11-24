@@ -30,6 +30,7 @@ fun MultimodalChat.testChat_Simple() = runTest {
     val response = chat(request)
     val responseText = response.firstValue.textContent()
     println(responseText)
+    assertTrue(responseText.contains("5") || responseText.contains("five"), "Response should mention '5' or 'five'")
 }
 
 fun MultimodalChat.testChat_Multiple(responseCheck: (List<String>) -> Unit) = runTest {
@@ -67,6 +68,7 @@ fun MultimodalChat.testChat_Image() = runTest {
     val response = chat(request)
     val responseText = response.firstValue.textContent()
     println(responseText)
+    assertTrue(responseText.contains("3") || responseText.contains("three"), "Response should mention '3' or 'three'")
 }
 
 fun MultimodalChat.testChat_Tools() = runTest {

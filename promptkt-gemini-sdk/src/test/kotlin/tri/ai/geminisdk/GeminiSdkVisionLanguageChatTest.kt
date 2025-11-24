@@ -21,12 +21,13 @@ package tri.ai.geminisdk
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_15_FLASH
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 import tri.util.BASE64_IMAGE_SAMPLE
 import java.net.URI
 
@@ -40,7 +41,7 @@ class GeminiSdkVisionLanguageChatTest {
         @BeforeAll
         fun setUp() {
             sdkClient = GeminiSdkClient.INSTANCE
-            client = GeminiSdkVisionLanguageChat(modelId = GEMINI_15_FLASH, sdkClient)
+            client = GeminiSdkVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE, sdkClient)
         }
 
         @JvmStatic
@@ -61,6 +62,8 @@ class GeminiSdkVisionLanguageChatTest {
             )
             val resp = client.chat(listOf(message))
             println(resp.output!!.outputs.first())
+            val lower = resp.output!!.outputs.first().toString().lowercase()
+            assertTrue("fruit" in lower || "banana" in lower || "raspberry" in lower) { "Response does not describe the image as expected: $lower" }
         }
     }
 

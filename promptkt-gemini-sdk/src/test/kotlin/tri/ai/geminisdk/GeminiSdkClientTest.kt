@@ -26,7 +26,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.geminisdk.GeminiSdkModelIndex.EMBED4
-import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_15_FLASH
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
 @Tag("gemini-sdk")
 class GeminiSdkClientTest {
@@ -50,7 +50,12 @@ class GeminiSdkClientTest {
     @Test
     fun testClientConfiguration() {
         if (client.isConfigured()) {
-            println("Client is configured with project ID: ${client.settings.projectId}")
+            if (client.settings.projectId.isBlank()) {
+                println("Warning: Client is configured without a project ID. Using Gemini Developer API mode.")
+            } else {
+                println("Client is configured in Vertex AI mode.")
+                println("Client is configured with project ID: ${client.settings.projectId}")
+            }
             println("Location: ${client.settings.location}")
         } else {
             println("Client is not configured. Set GEMINI_API_KEY and GEMINI_PROJECT_ID to run tests.")
@@ -75,7 +80,7 @@ class GeminiSdkClientTest {
         runBlocking {
             val response = client.generateContent(
                 "Write a short limerick about a magic backpack.",
-                GEMINI_15_FLASH,
+                GEMINI_25_FLASH_LITE,
                 MChatVariation(),
                 history = emptyList()
             )
@@ -83,7 +88,8 @@ class GeminiSdkClientTest {
             val responseText = response.text()
             assertNotNull(responseText)
             assertTrue(responseText!!.isNotBlank())
-            println("Generated response: $responseText")
+            println(responseText)
+            assertTrue("backpack" in responseText.lowercase(), "Response should mention 'backpack'")
         }
     }
 
@@ -97,8 +103,8 @@ class GeminiSdkClientTest {
                 TextChatMessage(MChatRole.User, "What is 2+2?")
             )
             val response = client.generateContent(
-                "And what is 3+3?",
-                GEMINI_15_FLASH,
+                "And what is 3 more than that?",
+                GEMINI_25_FLASH_LITE,
                 MChatVariation(),
                 history = history
             )
@@ -106,6 +112,7 @@ class GeminiSdkClientTest {
             val responseText = response.text()
             assertNotNull(responseText)
             println("Chat response: $responseText")
+            assertTrue(responseText!!.contains("7") || responseText.contains("seven"), "Response should contain the answer '7'")
         }
     }
 

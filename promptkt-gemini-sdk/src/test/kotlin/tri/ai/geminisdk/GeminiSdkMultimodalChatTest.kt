@@ -28,7 +28,7 @@ import tri.ai.core.*
 class GeminiSdkMultimodalChatTest {
 
     val client = GeminiSdkClient.INSTANCE
-    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_15_FLASH, client)
+    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, client)
 
     @Test
     @Tag("gemini-sdk")
@@ -40,7 +40,7 @@ class GeminiSdkMultimodalChatTest {
     @Tag("gemini-sdk")
     fun testChat_Multiple() {
         chat.testChat_Multiple {
-            assertEquals(1, it.size) { "Gemini SDK only supports a single response" }
+            assertEquals(2, it.size) { "Gemini SDK only supports a single response" }
         }
     }
 

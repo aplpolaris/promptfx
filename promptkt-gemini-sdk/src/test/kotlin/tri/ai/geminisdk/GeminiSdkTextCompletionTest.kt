@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatVariation.Companion.temp
-import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_15_FLASH
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
 class GeminiSdkTextCompletionTest {
 
-    val client = GeminiSdkTextCompletion(GEMINI_15_FLASH, GeminiSdkClient.INSTANCE)
+    val client = GeminiSdkTextCompletion(GEMINI_25_FLASH_LITE, GeminiSdkClient.INSTANCE)
 
     @Test
     @Tag("gemini-sdk")
@@ -53,7 +53,7 @@ class GeminiSdkTextCompletionTest {
                 tokens = 100,
                 numResponses = 2
             )
-            assertEquals(1, res.output!!.outputs.size) { "Gemini SDK only supports a single response" }
+            assertEquals(2, res.output!!.outputs.size) { "Gemini SDK only supports a single response" }
             println(res)
         }
     }
