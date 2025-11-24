@@ -61,11 +61,27 @@ class GeminiSdkTextChat(
             // Handle nullable String from java-genai (platform type String!)
             // If multiple responses requested, collect all candidates
             val responseTexts: List<String> = if (numResponses != null && numResponses > 1) {
-                val candidates = response.candidates()
-                if (candidates != null && candidates.size > 0) {
-                    candidates.map { candidate ->
-                        candidate.content?.parts?.firstOrNull()?.text ?: ""
-                    }.filter { it.isNotBlank() }.toList()
+                val candidatesOpt = response.candidates()
+                if (candidatesOpt != null && candidatesOpt.isPresent) {
+                    val candidates = candidatesOpt.get()
+                    val texts = mutableListOf<String>()
+                    for (i in 0 until candidates.size) {
+                        val candidate = candidates[i]
+                        val contentOpt = candidate.content()
+                        if (contentOpt.isPresent) {
+                            val partsOpt = contentOpt.get().parts()
+                            if (partsOpt.isPresent) {
+                                val parts = partsOpt.get()
+                                if (parts.isNotEmpty()) {
+                                    val text = parts[0].text()?.orElse("") ?: ""
+                                    if (text.isNotBlank()) {
+                                        texts.add(text)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    texts
                 } else {
                     listOf(response.text() ?: "")
                 }

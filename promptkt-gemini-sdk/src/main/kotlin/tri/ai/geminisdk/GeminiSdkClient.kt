@@ -71,23 +71,25 @@ class GeminiSdkClient : Closeable {
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         
-        // Build generation config from variation
-        val generationConfig = buildGenerationConfig(variation, numResponses)
-        
         // Build content list with history and current prompt
         val contents = buildContentList(history, prompt)
         
         // Extract system instruction if present
         val systemInstruction = history.firstOrNull { it.role == MChatRole.System }?.content?.let {
-            Content.newBuilder()
-                .addParts(Part.newBuilder().setText(it).build())
+            Content.builder()
+                .parts(listOf(Part.fromText(it)))
                 .build()
         }
         
-        val configBuilder = GenerateContentConfig.newBuilder()
-            .setGenerationConfig(generationConfig)
-        
-        systemInstruction?.let { configBuilder.setSystemInstruction(it) }
+        // Build config with generation parameters
+        val configBuilder = GenerateContentConfig.builder()
+        variation.temperature?.let { configBuilder.temperature(it.toFloat()) }
+        variation.topP?.let { configBuilder.topP(it.toFloat()) }
+        variation.topK?.let { configBuilder.topK(it.toFloat()) }
+        if (numResponses > 1) {
+            configBuilder.candidateCount(numResponses)
+        }
+        systemInstruction?.let { configBuilder.systemInstruction(it) }
         val config = configBuilder.build()
         
         return genClient.models.generateContent(modelId, contents, config)
@@ -104,39 +106,43 @@ class GeminiSdkClient : Closeable {
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         
-        // Build generation config
-        val generationConfig = buildGenerationConfig(variation, numResponses)
-        
         // Build content list with images
         val contents = messages.filter { it.role != MChatRole.System }.map { msg ->
-            val contentBuilder = Content.newBuilder()
+            val parts = mutableListOf<Part>()
             
             // Add text part
             if (!msg.content.isNullOrBlank()) {
-                contentBuilder.addParts(Part.newBuilder().setText(msg.content).build())
+                parts.add(Part.fromText(msg.content))
             }
             
             // Add image part if present
             msg.image?.let { imageUri ->
                 val imagePart = createImagePart(imageUri)
-                contentBuilder.addParts(imagePart)
+                parts.add(imagePart)
             }
             
-            contentBuilder.setRole(msg.role.toGeminiRole())
-            contentBuilder.build()
+            Content.builder()
+                .parts(parts)
+                .role(msg.role.toGeminiRole())
+                .build()
         }
         
         // Extract system instruction
         val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content?.let {
-            Content.newBuilder()
-                .addParts(Part.newBuilder().setText(it).build())
+            Content.builder()
+                .parts(listOf(Part.fromText(it)))
                 .build()
         }
         
-        val configBuilder = GenerateContentConfig.newBuilder()
-            .setGenerationConfig(generationConfig)
-        
-        systemInstruction?.let { configBuilder.setSystemInstruction(it) }
+        // Build config with generation parameters
+        val configBuilder = GenerateContentConfig.builder()
+        variation.temperature?.let { configBuilder.temperature(it.toFloat()) }
+        variation.topP?.let { configBuilder.topP(it.toFloat()) }
+        variation.topK?.let { configBuilder.topK(it.toFloat()) }
+        if (numResponses > 1) {
+            configBuilder.candidateCount(numResponses)
+        }
+        systemInstruction?.let { configBuilder.systemInstruction(it) }
         val config = configBuilder.build()
         
         return genClient.models.generateContent(modelId, contents, config)
@@ -145,16 +151,22 @@ class GeminiSdkClient : Closeable {
     /**
      * Build generation config from variation parameters.
      */
-    private fun buildGenerationConfig(variation: MChatVariation, numResponses: Int): GenerationConfig {
-        val builder = GenerationConfig.newBuilder()
+    @Deprecated("Not used - parameters are set directly on GenerateContentConfig.builder()")
+    private fun buildGenerationConfig(variation: MChatVariation, numResponses: Int): GenerationConfig? {
+        // Only create config if there are parameters to set
+        if (variation.temperature == null && variation.topP == null && variation.topK == null && numResponses == 1) {
+            return null
+        }
         
-        variation.temperature?.let { builder.setTemperature(it.toFloat()) }
-        variation.topP?.let { builder.setTopP(it.toFloat()) }
-        variation.topK?.let { builder.setTopK(it.toInt()) }
+        val builder = GenerationConfig.builder()
+        
+        variation.temperature?.let { builder.temperature(it.toFloat()) }
+        variation.topP?.let { builder.topP(it.toFloat()) }
+        variation.topK?.let { builder.topK(it.toFloat()) }
         
         // Set candidate count for multiple responses
         if (numResponses > 1) {
-            builder.setCandidateCount(numResponses)
+            builder.candidateCount(numResponses)
         }
         
         return builder.build()
@@ -168,16 +180,16 @@ class GeminiSdkClient : Closeable {
         
         // Add history (excluding system messages)
         history.filter { it.role != MChatRole.System }.forEach { msg ->
-            contents.add(Content.newBuilder()
-                .addParts(Part.newBuilder().setText(msg.content).build())
-                .setRole(msg.role.toGeminiRole())
+            contents.add(Content.builder()
+                .parts(listOf(Part.fromText(msg.content ?: "")))
+                .role(msg.role.toGeminiRole())
                 .build())
         }
         
         // Add current prompt as user message
-        contents.add(Content.newBuilder()
-            .addParts(Part.newBuilder().setText(prompt).build())
-            .setRole("user")
+        contents.add(Content.builder()
+            .parts(listOf(Part.fromText(prompt)))
+            .role("user")
             .build())
         
         return contents
@@ -194,14 +206,10 @@ class GeminiSdkClient : Closeable {
             val mimeType = urlStr.substringBefore(";base64,").substringAfter("data:")
             val base64Data = urlStr.substringAfter(";base64,")
             
-            val blob = Blob.newBuilder()
-                .setData(base64Data)
-                .setMimeType(mimeType)
-                .build()
+            // Decode base64 to bytes
+            val bytes = java.util.Base64.getDecoder().decode(base64Data)
                 
-            Part.newBuilder()
-                .setInlineData(blob)
-                .build()
+            Part.fromBytes(bytes, mimeType)
         } else {
             // For non-data URLs, we would need to fetch and encode, but for now just throw
             throw UnsupportedOperationException("Only data URLs are currently supported for images. Got: $urlStr")
