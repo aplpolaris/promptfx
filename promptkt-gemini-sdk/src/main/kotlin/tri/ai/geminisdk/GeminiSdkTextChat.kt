@@ -54,17 +54,30 @@ class GeminiSdkTextChat(
                 lastMessage.content ?: "",
                 modelId,
                 variation,
-                history
+                history,
+                numResponses ?: 1
             )
             
             // Handle nullable String from java-genai (platform type String!)
-            val responseText = response.text() ?: ""
+            // If multiple responses requested, collect all candidates
+            val responseTexts: List<String> = if (numResponses != null && numResponses > 1) {
+                val candidates = response.candidates()
+                if (candidates != null && candidates.size > 0) {
+                    candidates.map { candidate ->
+                        candidate.content?.parts?.firstOrNull()?.text ?: ""
+                    }.filter { it.isNotBlank() }.toList()
+                } else {
+                    listOf(response.text() ?: "")
+                }
+            } else {
+                listOf(response.text() ?: "")
+            }
             
             return AiPromptTrace(
                 null,
                 modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiOutputInfo.text(responseText)
+                if (responseTexts.size == 1) AiOutputInfo.text(responseTexts.first()) else AiOutputInfo.text(responseTexts)
             )
         } catch (e: Exception) {
             return AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)

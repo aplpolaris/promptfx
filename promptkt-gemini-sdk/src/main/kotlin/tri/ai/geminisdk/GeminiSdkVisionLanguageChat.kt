@@ -38,23 +38,17 @@ class GeminiSdkVisionLanguageChat(
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
         val t0 = System.currentTimeMillis()
         
-        // Convert vision messages to text messages (simplified)
-        val textMessages = messages.map { msg ->
-            TextChatMessage(msg.role, msg.content)
+        if (messages.isEmpty()) {
+            return AiPromptTrace.error(modelInfo, "No messages provided", duration = System.currentTimeMillis() - t0)
         }
         
-        val lastMessage = textMessages.lastOrNull() ?: 
-            return AiPromptTrace.error(modelInfo, "No messages provided", duration = System.currentTimeMillis() - t0)
-        
-        val history = textMessages.dropLast(1)
         val variation = MChatVariation(temperature = temp)
         
         try {
-            val response = client.generateContent(
-                lastMessage.content ?: "",
+            val response = client.generateContentVision(
+                messages,
                 modelId,
-                variation,
-                history
+                variation
             )
             
             // Handle nullable String from java-genai (platform type String!)
