@@ -21,6 +21,7 @@ package tri.ai.gemini
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.gemini.GeminiClientTest.Companion.client
 
@@ -47,6 +48,7 @@ class GeminiModelIndexTest {
     }
 
     @Test
+    @Tag("gemini")
     fun testIndexModels() {
         runBlocking {
             val res = GeminiClient().listModels().models
