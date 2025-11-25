@@ -22,6 +22,7 @@ package tri.ai.geminisdk
 import tri.ai.core.TextChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.MChatVariation
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiExecInfo
@@ -44,17 +45,11 @@ class GeminiSdkTextChat(
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
         val t0 = System.currentTimeMillis()
         
-        val lastMessage = messages.lastOrNull() 
-            ?: return AiPromptTrace.error(modelInfo, "No messages provided", duration = System.currentTimeMillis() - t0)
-        
-        val history = messages.dropLast(1)
-        
         try {
             val response = client.generateContent(
-                lastMessage.content ?: "",
                 modelId,
                 variation,
-                history,
+                messages.map { MultimodalChatMessage.text(it.role, it.content!!) },
                 numResponses ?: 1
             )
             

@@ -21,9 +21,12 @@ package tri.ai.geminisdk
 
 import com.google.genai.Client
 import com.google.genai.types.*
+import tri.ai.core.MChatMessagePart
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
+import tri.ai.core.MPartType
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 import java.net.URI
@@ -62,43 +65,23 @@ class GeminiSdkClient : Closeable {
     /**
      * Generate content using the specified model with text prompt and optional history.
      */
-    suspend fun generateContent(
-        prompt: String,
+    fun generateContent(
         modelId: String,
         variation: MChatVariation = MChatVariation(),
-        history: List<TextChatMessage> = emptyList(),
+        history: List<MultimodalChatMessage> = emptyList(),
         numResponses: Int = 1
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
-        
-        // Build content list with history and current prompt
-        val contents = buildContentList(history, prompt)
-        
-        // Extract system instruction if present
-        val systemInstruction = history.firstOrNull { it.role == MChatRole.System }?.content?.let {
-            Content.builder()
-                .parts(listOf(Part.fromText(it)))
-                .build()
-        }
-        
-        // Build config with generation parameters
-        val configBuilder = GenerateContentConfig.builder()
-        variation.temperature?.let { configBuilder.temperature(it.toFloat()) }
-        variation.topP?.let { configBuilder.topP(it.toFloat()) }
-        variation.topK?.let { configBuilder.topK(it.toFloat()) }
-        if (numResponses > 1) {
-            configBuilder.candidateCount(numResponses)
-        }
-        systemInstruction?.let { configBuilder.systemInstruction(it) }
-        val config = configBuilder.build()
-        
+        val contents = buildContentList(history)
+        val systemInstruction = history.firstOrNull { it.role == MChatRole.System }?.content?.first()?.text
+        val config = generateContentConfig(systemInstruction, variation, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
     /**
      * Generate content with vision/image support.
      */
-    suspend fun generateContentVision(
+    fun generateContentVision(
         messages: List<VisionLanguageChatMessage>,
         modelId: String,
         variation: MChatVariation = MChatVariation(),
@@ -109,90 +92,63 @@ class GeminiSdkClient : Closeable {
         // Build content list with images
         val contents = messages.filter { it.role != MChatRole.System }.map { msg ->
             val parts = mutableListOf<Part>()
-            
-            // Add text part
-            if (!msg.content.isNullOrBlank()) {
+            if (msg.content.isNotBlank()) {
                 parts.add(Part.fromText(msg.content))
             }
-            
-            // Add image part if present
-            msg.image?.let { imageUri ->
-                val imagePart = createImagePart(imageUri)
-                parts.add(imagePart)
-            }
-            
+            parts.add(createImagePart(msg.image))
+
             Content.builder()
                 .parts(parts)
                 .role(msg.role.toGeminiRole())
                 .build()
         }
-        
-        // Extract system instruction
-        val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content?.let {
-            Content.builder()
-                .parts(listOf(Part.fromText(it)))
-                .build()
-        }
-        
-        // Build config with generation parameters
-        val configBuilder = GenerateContentConfig.builder()
-        variation.temperature?.let { configBuilder.temperature(it.toFloat()) }
-        variation.topP?.let { configBuilder.topP(it.toFloat()) }
-        variation.topK?.let { configBuilder.topK(it.toFloat()) }
-        if (numResponses > 1) {
-            configBuilder.candidateCount(numResponses)
-        }
-        systemInstruction?.let { configBuilder.systemInstruction(it) }
-        val config = configBuilder.build()
-        
+
+        val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content
+        val config = generateContentConfig(systemInstruction, variation, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
     /**
-     * Build generation config from variation parameters.
+     * Build content list from history.
      */
-    @Deprecated("Not used - parameters are set directly on GenerateContentConfig.builder()")
-    private fun buildGenerationConfig(variation: MChatVariation, numResponses: Int): GenerationConfig? {
-        // Only create config if there are parameters to set
-        if (variation.temperature == null && variation.topP == null && variation.topK == null && numResponses == 1) {
-            return null
-        }
-        
-        val builder = GenerationConfig.builder()
-        
-        variation.temperature?.let { builder.temperature(it.toFloat()) }
-        variation.topP?.let { builder.topP(it.toFloat()) }
-        variation.topK?.let { builder.topK(it.toFloat()) }
-        
-        // Set candidate count for multiple responses
-        if (numResponses > 1) {
-            builder.candidateCount(numResponses)
-        }
-        
-        return builder.build()
-    }
-
-    /**
-     * Build content list from history and current prompt.
-     */
-    private fun buildContentList(history: List<TextChatMessage>, prompt: String): List<Content> {
+    private fun buildContentList(history: List<MultimodalChatMessage>): List<Content> {
         val contents = mutableListOf<Content>()
-        
-        // Add history (excluding system messages)
         history.filter { it.role != MChatRole.System }.forEach { msg ->
             contents.add(Content.builder()
-                .parts(listOf(Part.fromText(msg.content ?: "")))
+                .parts((msg.content ?: listOf()).map { it.gemini() })
                 .role(msg.role.toGeminiRole())
                 .build())
         }
-        
-        // Add current prompt as user message
-        contents.add(Content.builder()
-            .parts(listOf(Part.fromText(prompt)))
-            .role("user")
-            .build())
-        
         return contents
+    }
+
+    private fun MChatMessagePart.gemini(): Part = when (partType) {
+        MPartType.TEXT -> Part.fromText(text)
+        MPartType.IMAGE -> Part.fromBytes(inlineData!!.toByteArray(), "image/png") // assuming PNG; adjust as needed
+        MPartType.TOOL_CALL -> Part.fromFunctionCall(functionName, functionArgs)
+        MPartType.TOOL_RESPONSE -> Part.fromFunctionResponse(functionName, functionArgs)
+    }
+
+    /** Generate content config. */
+    private fun generateContentConfig(
+        systemInstruction: String?,
+        variation: MChatVariation,
+        numResponses: Int
+    ): GenerateContentConfig {
+        val builder = GenerateContentConfig.builder()
+        variation.temperature?.let { builder.temperature(it.toFloat()) }
+        variation.topP?.let { builder.topP(it.toFloat()) }
+        variation.topK?.let { builder.topK(it.toFloat()) }
+        if (numResponses > 1) {
+            builder.candidateCount(numResponses)
+        }
+        systemInstruction?.let {
+            val instruction = Content.builder()
+                .parts(listOf(Part.fromText(it)))
+                .build()
+            builder.systemInstruction(instruction)
+        }
+        return builder.build()
     }
 
     /**
@@ -230,7 +186,7 @@ class GeminiSdkClient : Closeable {
      * Generate embeddings for the given texts.
      * Note: The java-genai SDK's embedding API needs to be checked for availability.
      */
-    suspend fun embedContents(contents: List<String>, modelId: String): List<List<Float>> {
+    fun embedContents(contents: List<String>, modelId: String): List<List<Float>> {
         throw NotImplementedError(
             "Embedding generation is not yet implemented for the java-genai SDK. " +
             "The SDK's embedding API support needs to be verified. " +

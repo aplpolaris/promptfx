@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.geminisdk.GeminiSdkModelIndex.EMBED4
 import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
@@ -79,10 +80,9 @@ class GeminiSdkClientTest {
         
         runBlocking {
             val response = client.generateContent(
-                "Write a short limerick about a magic backpack.",
                 GEMINI_25_FLASH_LITE,
                 MChatVariation(),
-                history = emptyList()
+                listOf(MultimodalChatMessage.text(MChatRole.User, "Write a short limerick about a magic backpack."))
             )
             assertNotNull(response)
             val responseText = response.text()
@@ -99,11 +99,12 @@ class GeminiSdkClientTest {
         
         runBlocking {
             val history = listOf(
-                TextChatMessage(MChatRole.System, "You are a helpful assistant that responds concisely."),
-                TextChatMessage(MChatRole.User, "What is 2+2?")
+                MultimodalChatMessage.text(MChatRole.System, "You are a helpful assistant that responds concisely."),
+                MultimodalChatMessage.text(MChatRole.User, "What is 2+2?"),
+                MultimodalChatMessage.text(MChatRole.System, "The answer is 4."),
+                MultimodalChatMessage.text(MChatRole.User, "And what is 3 more than that?")
             )
             val response = client.generateContent(
-                "And what is 3 more than that?",
                 GEMINI_25_FLASH_LITE,
                 MChatVariation(),
                 history = history

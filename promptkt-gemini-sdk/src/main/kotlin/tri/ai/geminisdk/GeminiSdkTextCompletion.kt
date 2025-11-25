@@ -19,8 +19,10 @@
  */
 package tri.ai.geminisdk
 
+import tri.ai.core.MChatRole
 import tri.ai.core.TextCompletion
 import tri.ai.core.MChatVariation
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiExecInfo
@@ -43,7 +45,8 @@ class GeminiSdkTextCompletion(
         val t0 = System.currentTimeMillis()
         
         try {
-            val response = client.generateContent(text, modelId, variation, emptyList(), numResponses ?: 1)
+            val message = MultimodalChatMessage.text(MChatRole.User, text)
+            val response = client.generateContent(modelId, variation, listOf(message), numResponses ?: 1)
             
             // Handle nullable String from java-genai (platform type String!)
             // If multiple responses requested, collect all candidates

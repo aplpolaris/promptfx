@@ -19,6 +19,7 @@
  */
 package tri.ai.geminisdk
 
+import tri.util.fine
 import tri.util.info
 import tri.util.warning
 import java.io.File
@@ -70,7 +71,8 @@ class GeminiSdkSettings {
             System.getenv(PROJECT_ID_ENV)
 
         return if (id.isNullOrBlank()) {
-            warning<GeminiSdkSettings>("Gemini project ID not found. Please create a file named $PROJECT_ID_FILE in the root directory, or set an environment variable named $PROJECT_ID_ENV.")
+            // we only need this in vertex AI mode, which is untested so far
+            fine<GeminiSdkSettings>("Gemini project ID not found. Please create a file named $PROJECT_ID_FILE in the root directory, or set an environment variable named $PROJECT_ID_ENV.")
             ""
         } else {
             info<GeminiSdkSettings>("Gemini project ID loaded successfully: $id")
@@ -87,7 +89,8 @@ class GeminiSdkSettings {
             System.getenv(LOCATION_ENV)
 
         return if (loc.isNullOrBlank()) {
-            info<GeminiSdkSettings>("Using default Gemini location: $DEFAULT_LOCATION")
+            // we only need this in vertex AI mode, which is untested so far
+            fine<GeminiSdkSettings>("Using default Gemini location: $DEFAULT_LOCATION")
             DEFAULT_LOCATION
         } else {
             info<GeminiSdkSettings>("Gemini location loaded: $loc")

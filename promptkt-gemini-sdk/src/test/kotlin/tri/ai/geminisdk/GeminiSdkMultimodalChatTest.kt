@@ -40,7 +40,7 @@ class GeminiSdkMultimodalChatTest {
     @Tag("gemini-sdk")
     fun testChat_Multiple() {
         chat.testChat_Multiple {
-            assertEquals(2, it.size) { "Gemini SDK only supports a single response" }
+            assertEquals(1, it.size) { "Gemini only supports a single response" }
         }
     }
 
@@ -54,6 +54,12 @@ class GeminiSdkMultimodalChatTest {
     @Tag("gemini-sdk")
     fun testChat_Image() {
         chat.testChat_Image()
+    }
+
+    @Test
+    @Tag("gemini-sdk")
+    fun testChat_Tools() {
+        chat.testChat_Tools()
     }
 
 }

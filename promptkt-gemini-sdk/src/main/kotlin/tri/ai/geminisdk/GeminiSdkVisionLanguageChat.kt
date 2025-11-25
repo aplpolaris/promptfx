@@ -45,11 +45,7 @@ class GeminiSdkVisionLanguageChat(
         val variation = MChatVariation(temperature = temp)
         
         try {
-            val response = client.generateContentVision(
-                messages,
-                modelId,
-                variation
-            )
+            val response = client.generateContentVision(messages, modelId, variation)
             
             // Handle nullable String from java-genai (platform type String!)
             val responseText = response.text() ?: ""
