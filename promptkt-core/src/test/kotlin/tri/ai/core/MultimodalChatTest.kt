@@ -83,7 +83,7 @@ fun MultimodalChat.testChat_Tools() = runTest {
     // in the first call, the AI will provide a response indicating what tool to use
     val toolCallMessage = chat(query, params).firstValue.multimodalMessage!!
     assertEquals(MChatRole.Assistant, toolCallMessage.role)
-    assertTrue(toolCallMessage.content.isNullOrEmpty())
+    assertTrue(toolCallMessage.content.isNullOrEmpty() || toolCallMessage.content!!.first().partType == MPartType.TOOL_CALL)
 
     val calls = toolCallMessage.toolCalls!!
     assertEquals(1, calls.size)

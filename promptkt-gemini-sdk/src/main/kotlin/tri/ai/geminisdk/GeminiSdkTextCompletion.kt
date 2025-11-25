@@ -46,8 +46,8 @@ class GeminiSdkTextCompletion(
         
         try {
             val message = MultimodalChatMessage.text(MChatRole.User, text)
-            val response = client.generateContent(modelId, variation, listOf(message), numResponses ?: 1)
-            
+            val response = client.generateContent(modelId, variation, listOf(message), tools = null, numResponses ?: 1)
+
             // Handle nullable String from java-genai (platform type String!)
             // If multiple responses requested, collect all candidates
             val responseTexts: List<String> = if (numResponses != null && numResponses > 1) {

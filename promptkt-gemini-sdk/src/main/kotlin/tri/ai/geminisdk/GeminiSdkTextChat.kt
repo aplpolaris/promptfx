@@ -50,6 +50,7 @@ class GeminiSdkTextChat(
                 modelId,
                 variation,
                 messages.map { MultimodalChatMessage.text(it.role, it.content!!) },
+                tools = null,
                 numResponses ?: 1
             )
             

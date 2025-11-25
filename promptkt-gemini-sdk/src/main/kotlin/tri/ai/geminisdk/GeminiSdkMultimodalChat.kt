@@ -46,9 +46,10 @@ class GeminiSdkMultimodalChat(
 
         try {
             val response = client.generateContent(
-                modelId,
-                parameters.variation,
-                messages,
+                modelId = modelId,
+                variation = parameters.variation,
+                history = messages,
+                tools = parameters.tools,
                 numResponses = parameters.numResponses ?: 1
             )
 

@@ -24,6 +24,7 @@ import com.google.genai.types.*
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
+import tri.ai.core.MChatTools
 import tri.ai.core.MChatVariation
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
@@ -69,12 +70,13 @@ class GeminiSdkClient : Closeable {
         modelId: String,
         variation: MChatVariation = MChatVariation(),
         history: List<MultimodalChatMessage> = emptyList(),
+        tools: MChatTools? = null,
         numResponses: Int = 1
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         val contents = buildContentList(history)
         val systemInstruction = history.firstOrNull { it.role == MChatRole.System }?.content?.first()?.text
-        val config = generateContentConfig(systemInstruction, variation, numResponses)
+        val config = generateContentConfig(systemInstruction, variation, tools, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
@@ -104,7 +106,7 @@ class GeminiSdkClient : Closeable {
         }
 
         val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content
-        val config = generateContentConfig(systemInstruction, variation, numResponses)
+        val config = generateContentConfig(systemInstruction, variation, tools = null, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
@@ -124,7 +126,13 @@ class GeminiSdkClient : Closeable {
 
     private fun MChatMessagePart.gemini(): Part = when (partType) {
         MPartType.TEXT -> Part.fromText(text)
-        MPartType.IMAGE -> Part.fromBytes(inlineData!!.toByteArray(), "image/png") // assuming PNG; adjust as needed
+        MPartType.IMAGE -> {
+            val mime = inlineData!!.substringBefore(",").substringAfter("data:").substringBefore(";base64")
+            val bytes = inlineData!!.substringAfter(",").let { dataStr ->
+                java.util.Base64.getDecoder().decode(dataStr)
+            }
+            Part.fromBytes(bytes, mime)
+        }
         MPartType.TOOL_CALL -> Part.fromFunctionCall(functionName, functionArgs)
         MPartType.TOOL_RESPONSE -> Part.fromFunctionResponse(functionName, functionArgs)
     }
@@ -133,6 +141,7 @@ class GeminiSdkClient : Closeable {
     private fun generateContentConfig(
         systemInstruction: String?,
         variation: MChatVariation,
+        tools: MChatTools?,
         numResponses: Int
     ): GenerateContentConfig {
         val builder = GenerateContentConfig.builder()
@@ -147,6 +156,19 @@ class GeminiSdkClient : Closeable {
                 .parts(listOf(Part.fromText(it)))
                 .build()
             builder.systemInstruction(instruction)
+        }
+        tools?.let {
+            builder.tools(
+                it.tools.map { tool ->
+                    Tool.builder().functionDeclarations(listOf(
+                        FunctionDeclaration.builder()
+                            .name(tool.name)
+                            .description(tool.description)
+                            .parameters(Schema.fromJson(tool.jsonSchema))
+                            .build()
+                    )).build()
+                }
+            )
         }
         return builder.build()
     }

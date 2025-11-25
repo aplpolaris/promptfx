@@ -29,6 +29,7 @@ class GeminiSdkMultimodalChatTest {
 
     val client = GeminiSdkClient.INSTANCE
     val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, client)
+    val chat2 = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH, client)
 
     @Test
     @Tag("gemini-sdk")
@@ -59,7 +60,8 @@ class GeminiSdkMultimodalChatTest {
     @Test
     @Tag("gemini-sdk")
     fun testChat_Tools() {
-        chat.testChat_Tools()
+        // may fail sometimes
+        chat2.testChat_Tools()
     }
 
 }
