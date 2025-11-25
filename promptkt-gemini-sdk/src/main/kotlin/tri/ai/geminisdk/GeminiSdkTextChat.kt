@@ -19,14 +19,9 @@
  */
 package tri.ai.geminisdk
 
-import tri.ai.core.TextChatMessage
-import tri.ai.core.TextChat
-import tri.ai.core.MChatVariation
-import tri.ai.core.MultimodalChatMessage
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.core.*
+import tri.ai.geminisdk.GeminiSdkClient.Companion.extractTexts
+import tri.ai.prompt.trace.*
 
 /** Gemini text chat model using the official SDK. */
 class GeminiSdkTextChat(
@@ -45,7 +40,7 @@ class GeminiSdkTextChat(
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
         val t0 = System.currentTimeMillis()
         
-        try {
+        return try {
             val response = client.generateContent(
                 modelId,
                 variation,
@@ -53,49 +48,18 @@ class GeminiSdkTextChat(
                 tools = null,
                 numResponses ?: 1
             )
+            val responseTexts = response.extractTexts(numResponses ?: 1)
             
-            // Handle nullable String from java-genai (platform type String!)
-            // If multiple responses requested, collect all candidates
-            val responseTexts: List<String> = if (numResponses != null && numResponses > 1) {
-                val candidatesOpt = response.candidates()
-                if (candidatesOpt != null && candidatesOpt.isPresent) {
-                    val candidates = candidatesOpt.get()
-                    val texts = mutableListOf<String>()
-                    for (i in 0 until candidates.size) {
-                        val candidate = candidates[i]
-                        val contentOpt = candidate.content()
-                        if (contentOpt.isPresent) {
-                            val partsOpt = contentOpt.get().parts()
-                            if (partsOpt.isPresent) {
-                                val parts = partsOpt.get()
-                                if (parts.isNotEmpty()) {
-                                    val text = parts[0].text()?.orElse("") ?: ""
-                                    if (text.isNotBlank()) {
-                                        texts.add(text)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    texts
-                } else {
-                    listOf(response.text() ?: "")
-                }
-            } else {
-                listOf(response.text() ?: "")
-            }
-            
-            return AiPromptTrace(
+            AiPromptTrace(
                 null,
                 modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
                 if (responseTexts.size == 1) AiOutputInfo.text(responseTexts.first()) else AiOutputInfo.text(responseTexts)
             )
         } catch (e: Exception) {
-            return AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
+            AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
         }
     }
 
     override fun toString() = modelId
-
 }

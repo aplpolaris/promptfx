@@ -19,7 +19,6 @@
  */
 package tri.ai.geminisdk
 
-import kotlinx.coroutines.runBlocking
 import tri.ai.core.EmbeddingModel
 
 /** Gemini embedding model using the official SDK. */
@@ -35,5 +34,4 @@ class GeminiSdkEmbeddingModel(
     }
 
     override fun toString() = modelId
-
 }

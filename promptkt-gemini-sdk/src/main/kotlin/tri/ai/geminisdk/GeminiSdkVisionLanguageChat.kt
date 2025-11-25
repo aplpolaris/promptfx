@@ -42,25 +42,18 @@ class GeminiSdkVisionLanguageChat(
             return AiPromptTrace.error(modelInfo, "No messages provided", duration = System.currentTimeMillis() - t0)
         }
         
-        val variation = MChatVariation(temperature = temp)
-        
-        try {
-            val response = client.generateContentVision(messages, modelId, variation)
-            
-            // Handle nullable String from java-genai (platform type String!)
-            val responseText = response.text() ?: ""
-            
-            return AiPromptTrace(
+        return try {
+            val response = client.generateContentVision(messages, modelId, MChatVariation(temperature = temp))
+            AiPromptTrace(
                 null,
                 modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiOutputInfo.text(responseText)
+                AiOutputInfo.text(response.text() ?: "")
             )
         } catch (e: Exception) {
-            return AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
+            AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
         }
     }
 
     override fun toString() = modelId
-
 }

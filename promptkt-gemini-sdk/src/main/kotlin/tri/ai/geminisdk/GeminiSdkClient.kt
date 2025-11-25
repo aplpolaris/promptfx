@@ -21,16 +21,8 @@ package tri.ai.geminisdk
 
 import com.google.genai.Client
 import com.google.genai.types.*
-import tri.ai.core.MChatMessagePart
-import tri.ai.core.TextChatMessage
-import tri.ai.core.MChatRole
-import tri.ai.core.MChatTools
-import tri.ai.core.MChatVariation
-import tri.ai.core.MPartType
-import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.VisionLanguageChatMessage
+import tri.ai.core.*
 import java.io.Closeable
-import java.net.URI
 
 /**
  * Client for the Gemini API using Google's official java-genai library.
@@ -44,7 +36,6 @@ class GeminiSdkClient : Closeable {
     init {
         if (settings.isConfigured()) {
             client = if (settings.useVertexAI) {
-                // Use Vertex AI mode with project and location
                 Client.builder()
                     .apiKey(settings.apiKey)
                     .project(settings.projectId)
@@ -52,7 +43,6 @@ class GeminiSdkClient : Closeable {
                     .vertexAI(true)
                     .build()
             } else {
-                // Use Gemini Developer API mode
                 Client.builder()
                     .apiKey(settings.apiKey)
                     .build()
@@ -60,7 +50,6 @@ class GeminiSdkClient : Closeable {
         }
     }
 
-    /** Returns true if the client is configured with required settings. */
     fun isConfigured() = settings.isConfigured() && client != null
 
     /**
@@ -76,7 +65,7 @@ class GeminiSdkClient : Closeable {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         val contents = buildContentList(history)
         val systemInstruction = history.firstOrNull { it.role == MChatRole.System }?.content?.first()?.text
-        val config = generateContentConfig(systemInstruction, variation, tools, numResponses)
+        val config = buildGenerateContentConfig(systemInstruction, variation, tools, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
@@ -91,14 +80,12 @@ class GeminiSdkClient : Closeable {
     ): GenerateContentResponse {
         val genClient = client ?: throw IllegalStateException("Client not initialized")
         
-        // Build content list with images
         val contents = messages.filter { it.role != MChatRole.System }.map { msg ->
             val parts = mutableListOf<Part>()
             if (msg.content.isNotBlank()) {
                 parts.add(Part.fromText(msg.content))
             }
-            parts.add(createImagePart(msg.image))
-
+            parts.add(parseDataUrlToPart(msg.image.toString()))
             Content.builder()
                 .parts(parts)
                 .role(msg.role.toGeminiRole())
@@ -106,39 +93,37 @@ class GeminiSdkClient : Closeable {
         }
 
         val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content
-        val config = generateContentConfig(systemInstruction, variation, tools = null, numResponses)
+        val config = buildGenerateContentConfig(systemInstruction, variation, null, numResponses)
         return genClient.models.generateContent(modelId, contents, config)
     }
 
-    /**
-     * Build content list from history.
-     */
     private fun buildContentList(history: List<MultimodalChatMessage>): List<Content> {
-        val contents = mutableListOf<Content>()
-        history.filter { it.role != MChatRole.System }.forEach { msg ->
-            contents.add(Content.builder()
-                .parts((msg.content ?: listOf()).map { it.gemini() })
+        return history.filter { it.role != MChatRole.System }.map { msg ->
+            Content.builder()
+                .parts((msg.content ?: listOf()).map { it.toGeminiPart() })
                 .role(msg.role.toGeminiRole())
-                .build())
+                .build()
         }
-        return contents
     }
 
-    private fun MChatMessagePart.gemini(): Part = when (partType) {
+    private fun MChatMessagePart.toGeminiPart(): Part = when (partType) {
         MPartType.TEXT -> Part.fromText(text)
-        MPartType.IMAGE -> {
-            val mime = inlineData!!.substringBefore(",").substringAfter("data:").substringBefore(";base64")
-            val bytes = inlineData!!.substringAfter(",").let { dataStr ->
-                java.util.Base64.getDecoder().decode(dataStr)
-            }
-            Part.fromBytes(bytes, mime)
-        }
+        MPartType.IMAGE -> parseDataUrlToPart(inlineData!!)
         MPartType.TOOL_CALL -> Part.fromFunctionCall(functionName, functionArgs)
         MPartType.TOOL_RESPONSE -> Part.fromFunctionResponse(functionName, functionArgs)
     }
 
-    /** Generate content config. */
-    private fun generateContentConfig(
+    private fun parseDataUrlToPart(dataUrl: String): Part {
+        require(dataUrl.startsWith("data:") && dataUrl.contains(";base64,")) {
+            "Invalid data URL format. Expected format: data:<mimeType>;base64,<data>"
+        }
+        val mimeType = dataUrl.substringBefore(";base64,").substringAfter("data:")
+        val base64Data = dataUrl.substringAfter(";base64,")
+        val bytes = java.util.Base64.getDecoder().decode(base64Data)
+        return Part.fromBytes(bytes, mimeType)
+    }
+
+    private fun buildGenerateContentConfig(
         systemInstruction: String?,
         variation: MChatVariation,
         tools: MChatTools?,
@@ -148,81 +133,62 @@ class GeminiSdkClient : Closeable {
         variation.temperature?.let { builder.temperature(it.toFloat()) }
         variation.topP?.let { builder.topP(it.toFloat()) }
         variation.topK?.let { builder.topK(it.toFloat()) }
-        if (numResponses > 1) {
-            builder.candidateCount(numResponses)
-        }
+        if (numResponses > 1) builder.candidateCount(numResponses)
         systemInstruction?.let {
-            val instruction = Content.builder()
-                .parts(listOf(Part.fromText(it)))
-                .build()
-            builder.systemInstruction(instruction)
+            builder.systemInstruction(Content.builder().parts(listOf(Part.fromText(it))).build())
         }
         tools?.let {
-            builder.tools(
-                it.tools.map { tool ->
-                    Tool.builder().functionDeclarations(listOf(
-                        FunctionDeclaration.builder()
-                            .name(tool.name)
-                            .description(tool.description)
-                            .parameters(Schema.fromJson(tool.jsonSchema))
-                            .build()
-                    )).build()
-                }
-            )
+            builder.tools(it.tools.map { tool ->
+                Tool.builder().functionDeclarations(listOf(
+                    FunctionDeclaration.builder()
+                        .name(tool.name)
+                        .description(tool.description)
+                        .parameters(Schema.fromJson(tool.jsonSchema))
+                        .build()
+                )).build()
+            })
         }
         return builder.build()
     }
 
-    /**
-     * Create image part from URI (supports data URLs).
-     */
-    private fun createImagePart(imageUri: URI): Part {
-        val urlStr = imageUri.toString()
-        
-        return if (urlStr.startsWith("data:")) {
-            // Parse data URL
-            val mimeType = urlStr.substringBefore(";base64,").substringAfter("data:")
-            val base64Data = urlStr.substringAfter(";base64,")
-            
-            // Decode base64 to bytes
-            val bytes = java.util.Base64.getDecoder().decode(base64Data)
-                
-            Part.fromBytes(bytes, mimeType)
-        } else {
-            // For non-data URLs, we would need to fetch and encode, but for now just throw
-            throw UnsupportedOperationException("Only data URLs are currently supported for images. Got: $urlStr")
-        }
-    }
-
-    /**
-     * Convert MChatRole to Gemini role string.
-     */
     private fun MChatRole.toGeminiRole(): String = when (this) {
         MChatRole.User -> "user"
         MChatRole.Assistant -> "model"
-        MChatRole.System -> "user" // System messages are handled separately
-        else -> "user" // Default for any other types
+        else -> "user"
     }
 
-    /**
-     * Generate embeddings for the given texts.
-     * Note: The java-genai SDK's embedding API needs to be checked for availability.
-     */
     fun embedContents(contents: List<String>, modelId: String): List<List<Float>> {
         throw NotImplementedError(
             "Embedding generation is not yet implemented for the java-genai SDK. " +
-            "The SDK's embedding API support needs to be verified. " +
             "Please use the promptkt-gemini plugin (REST API) for embedding functionality."
         )
     }
 
     override fun close() {
-        // The java-genai Client doesn't have an explicit close method in current versions
-        // Connection pooling is handled internally
+        // The java-genai Client handles connection pooling internally
     }
 
     companion object {
         val INSTANCE by lazy { GeminiSdkClient() }
+
+        /** Extract text responses from a GenerateContentResponse. */
+        fun GenerateContentResponse.extractTexts(numResponses: Int): List<String> {
+            if (numResponses <= 1) return listOf(text() ?: "")
+            
+            val candidates = candidates()?.takeIf { it.isPresent }?.get() ?: return listOf(text() ?: "")
+            
+            val texts = candidates.mapNotNull { candidate ->
+                extractTextFromCandidate(candidate)
+            }
+            return texts.ifEmpty { listOf(text() ?: "") }
+        }
+
+        private fun extractTextFromCandidate(candidate: Candidate): String? {
+            val content = candidate.content().takeIf { it.isPresent }?.get() ?: return null
+            val parts = content.parts().takeIf { it.isPresent }?.get() ?: return null
+            val firstPart = parts.firstOrNull() ?: return null
+            return firstPart.text()?.orElse(null)?.takeIf { it.isNotBlank() }
+        }
     }
 
 }
