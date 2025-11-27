@@ -163,7 +163,7 @@ class GeminiClient : Closeable {
         fun ContentRole?.fromGeminiRole() = when (this) {
             ContentRole.user -> MChatRole.User
             ContentRole.model -> MChatRole.Assistant
-            else -> error("Invalid role: $this")
+            else -> error("Invalid Gemini role: $this")
         }
     }
 

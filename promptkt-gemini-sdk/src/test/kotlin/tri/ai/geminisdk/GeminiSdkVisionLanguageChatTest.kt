@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
@@ -27,30 +27,32 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 import tri.util.BASE64_IMAGE_SAMPLE
 import java.net.URI
 
-class GeminiVisionLanguageChatTest {
+class GeminiSdkVisionLanguageChatTest {
 
     companion object {
-        lateinit var client: GeminiVisionLanguageChat
+        lateinit var client: GeminiSdkVisionLanguageChat
+        lateinit var sdkClient: GeminiSdkClient
 
         @JvmStatic
         @BeforeAll
         fun setUp() {
-            client = GeminiVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE)
+            sdkClient = GeminiSdkClient.INSTANCE
+            client = GeminiSdkVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE, sdkClient)
         }
 
         @JvmStatic
         @AfterAll
         fun tearDown() {
-            client.client.close()
+            sdkClient.close()
         }
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat() {
         runTest {
             val message = VisionLanguageChatMessage(

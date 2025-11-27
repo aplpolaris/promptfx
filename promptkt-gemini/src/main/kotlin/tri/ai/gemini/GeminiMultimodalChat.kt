@@ -25,7 +25,6 @@ import tri.ai.core.*
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
 import tri.ai.prompt.trace.*
 import tri.util.info
-import tri.util.json.jsonMapper
 
 /** Chat completion with Gemini models. */
 class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
