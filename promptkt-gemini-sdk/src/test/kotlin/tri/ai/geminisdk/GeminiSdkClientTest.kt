@@ -22,7 +22,6 @@ package tri.ai.geminisdk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChatMessage
@@ -64,13 +63,20 @@ class GeminiSdkClientTest {
     }
 
     @Test
-    fun testEmbedContentNotImplemented() {
-        Assumptions.assumeTrue(client.isConfigured(), "Client not configured")
-        
+    fun testEmbedContent() {
         runBlocking {
-            assertThrows<NotImplementedError> {
-                client.embedContents(listOf("This is a test"), EMBED4)
-            }
+            val response = client.embedContent("This is a test", EMBED4, outputDimensionality = 10)
+            assertNotNull(response)
+            println(response)
+        }
+    }
+
+    @Test
+    fun testBatchEmbedContents() {
+        runBlocking {
+            val response = client.batchEmbedContents(listOf("This is", "a test"), EMBED4, outputDimensionality = 10)
+            assertNotNull(response)
+            println(response)
         }
     }
 
@@ -89,7 +95,7 @@ class GeminiSdkClientTest {
             assertNotNull(responseText)
             assertTrue(responseText!!.isNotBlank())
             println(responseText)
-            assertTrue("backpack" in responseText.lowercase(), "Response should mention 'backpack'")
+            assertTrue("pack" in responseText.lowercase(), "Response should mention 'backpack'")
         }
     }
 

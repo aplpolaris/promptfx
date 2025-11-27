@@ -1,3 +1,4 @@
 tri.ai.openai.OpenAiPlugin
 tri.ai.gemini.GeminiAiPlugin
+tri.ai.geminisdk.GeminiSdkPlugin
 tri.ai.openai.api.OpenAiApiPlugin

@@ -80,7 +80,7 @@ class GeminiSdkMultimodalChat(
         client.close()
     }
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId (Gemini SDK)"
 
     companion object {
         fun Candidate.fromGeminiCandidate(): MultimodalChatMessage {

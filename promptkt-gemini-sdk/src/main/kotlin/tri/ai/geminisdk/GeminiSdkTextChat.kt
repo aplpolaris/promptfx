@@ -61,5 +61,5 @@ class GeminiSdkTextChat(
         }
     }
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId (Gemini SDK)"
 }

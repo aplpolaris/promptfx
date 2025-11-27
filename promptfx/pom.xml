@@ -89,6 +89,12 @@
 
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-gemini-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt-openai</artifactId>
             <version>${project.version}</version>
         </dependency>

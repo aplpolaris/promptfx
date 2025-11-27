@@ -52,6 +52,13 @@ class GeminiSdkClient : Closeable {
 
     fun isConfigured() = settings.isConfigured() && client != null
 
+    fun listModels(): List<Model?> {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val listConfig = ListModelsConfig.builder().build()
+        val models = genClient.models.list(listConfig)
+        return models.toList()
+    }
+
     /**
      * Generate content using the specified model with text prompt and optional history.
      */
@@ -157,11 +164,25 @@ class GeminiSdkClient : Closeable {
         else -> "user"
     }
 
-    fun embedContents(contents: List<String>, modelId: String): List<List<Float>> {
-        throw NotImplementedError(
-            "Embedding generation is not yet implemented for the java-genai SDK. " +
-            "Please use the promptkt-gemini plugin (REST API) for embedding functionality."
-        )
+    fun embedContent(content: String, modelId: String, outputDimensionality: Int? = null): List<Float> {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val embedConfig = EmbedContentConfig.builder()
+            .let { if (outputDimensionality != null) it.outputDimensionality(outputDimensionality) else it }
+            .build()
+        return genClient.models.embedContent(modelId, content, embedConfig)
+            .embeddings().get()
+            .map { it.values().get() }
+            .first()
+    }
+
+    fun batchEmbedContents(contents: List<String>, modelId: String, outputDimensionality: Int? = null): List<List<Float>> {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val embedConfig = EmbedContentConfig.builder()
+            .let { if (outputDimensionality != null) it.outputDimensionality(outputDimensionality) else it }
+            .build()
+        return genClient.models.embedContent(modelId, contents, embedConfig)
+            .embeddings().get()
+            .map { it.values().get() }
     }
 
     override fun close() {
