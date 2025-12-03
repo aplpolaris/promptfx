@@ -26,6 +26,7 @@ import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingStrategy
+import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiPipelineResult
 import tri.ai.text.chunks.SmartTextChunker
@@ -34,7 +35,7 @@ import tri.promptfx.prompts.PromptTraceHistoryModel
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiPlugin = TextPlugin.defaultPlugin
+    val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
 
     val completionEngine: SimpleObjectProperty<TextCompletion> =
         SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())

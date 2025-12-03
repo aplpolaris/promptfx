@@ -28,7 +28,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.impl.WebSearchExecutable
 import tri.ai.mcp.JsonSerializers.toJsonElement
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 import kotlin.String
 
 interface ToolLibrary {
@@ -48,7 +48,7 @@ class StarterToolLibrary: ToolLibrary {
         val tool = getTool(name)
             ?: return McpToolResult.error(name, "Tool with name '$name' not found")
 
-        val inputNode = MAPPER.valueToTree<JsonNode>(args)
+        val inputNode = jsonMapper.valueToTree<JsonNode>(args)
         return try {
             val outputNode = tool.execute(inputNode, ExecContext())
             val outputJsonElement = toJsonElement(outputNode)
@@ -60,7 +60,7 @@ class StarterToolLibrary: ToolLibrary {
 }
 
 object FakeTools {
-    fun buildSchemaWithOneRequiredParam(paramName: String, paramDescription: String) = MAPPER.readTree(
+    fun buildSchemaWithOneRequiredParam(paramName: String, paramDescription: String) = jsonMapper.readTree(
         """
         {
           "type": "object",
@@ -71,7 +71,7 @@ object FakeTools {
         }
     """.trimIndent()
     )
-    private fun buildSchemaWithOneOptionalParam(paramName: String, paramDescription: String) = MAPPER.readTree(
+    private fun buildSchemaWithOneOptionalParam(paramName: String, paramDescription: String) = jsonMapper.readTree(
         """
         {
           "type": "object",
@@ -84,7 +84,7 @@ object FakeTools {
 
     fun load(): List<StubTool> {
         val resource = this::class.java.getResource("resources/stub-tools.json")!!
-        val loadedTools = MAPPER.readValue<Map<String, List<StubTool>>>(resource)
+        val loadedTools = jsonMapper.readValue<Map<String, List<StubTool>>>(resource)
         return loadedTools.values.flatten()
 //        listOf(fakeInternetSearch, fakeSentimentAnalysis, echo, testAircraftTypeLookup, testAviationNewsSearch, testAircraftTracksSearch, testAviationPersonLookup)
     }

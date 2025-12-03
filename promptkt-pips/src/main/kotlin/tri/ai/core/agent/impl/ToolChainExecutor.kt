@@ -33,8 +33,8 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.prompt.fill
-import tri.util.MAPPER
-import tri.util.createObject
+import tri.util.json.createObject
+import tri.util.json.jsonMapper
 
 /**
  * Executes a user prompt using a set of tools using a planning operation.
@@ -51,7 +51,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val iterationLimit = 5
     val completionTokens = 2000
 
-    private fun createScratchpad() = ExecContext().apply { put("steps", MAPPER.createArrayNode()) }
+    private fun createScratchpad() = ExecContext().apply { put("steps", jsonMapper.createArrayNode()) }
     private fun ExecContext.steps() = vars["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 

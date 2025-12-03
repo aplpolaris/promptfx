@@ -29,7 +29,7 @@ import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TEXTLIB
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
 import tri.promptfx.PromptFxConfig.Companion.FF_JSON

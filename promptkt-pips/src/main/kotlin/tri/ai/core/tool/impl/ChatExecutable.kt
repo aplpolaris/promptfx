@@ -24,7 +24,7 @@ import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
-import tri.util.createObject
+import tri.util.json.createObject
 
 /** Executes for simple text input/output using a chat service. */
 class ChatExecutable(val chat: TextChat): Executable {

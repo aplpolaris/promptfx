@@ -25,7 +25,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 
 /** Fills text into a prompt template. */
 class PromptFillExecutable(private val def: PromptDef): Executable {
@@ -41,7 +41,7 @@ class PromptFillExecutable(private val def: PromptDef): Executable {
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun execute(input: JsonNode, ctx: ExecContext): JsonNode {
-        val args = MAPPER.convertValue(input, Map::class.java) as Map<String, Any?>
+        val args = jsonMapper.convertValue(input, Map::class.java) as Map<String, Any?>
         val text = def.template().fill(args.filterValues { it != null } as Map<String, Any>)
         return TextNode.valueOf(text)
     }

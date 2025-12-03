@@ -21,7 +21,6 @@ package tri.ai.prompt.trace.batch
 
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.PromptInfo.Companion.filled

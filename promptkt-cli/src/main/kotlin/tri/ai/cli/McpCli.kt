@@ -45,7 +45,7 @@ import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
-import tri.util.MAPPER
+import tri.util.json.jsonMapper
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
@@ -399,7 +399,7 @@ class McpCli : CliktCommand(
                         if (text is JsonPrimitive) {
                             // try to parse JSON and pretty print top-level key-value pairs
                             try {
-                                val parsed = MAPPER.readTree(text.content)
+                                val parsed = jsonMapper.readTree(text.content)
                                 if (parsed is ObjectNode) {
                                     parsed.properties().forEach { (k, v) ->
                                         echo("  - $k: $v")

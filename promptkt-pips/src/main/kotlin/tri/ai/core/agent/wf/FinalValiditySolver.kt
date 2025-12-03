@@ -25,10 +25,10 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
-import tri.util.MAPPER
-import tri.util.YAML_MAPPER
-import tri.util.createJsonSchema
-import tri.util.createObject
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
+import tri.util.json.jsonMapper
+import tri.util.json.yamlMapper
 
 /** A solver used to validate that a computed result answers the actual user question. */
 class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
@@ -73,7 +73,7 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
             task,
             this,
             createObject(REQUEST to userRequest, RESULT to finalResultText),
-            MAPPER.createObjectNode().apply {
+            jsonMapper.createObjectNode().apply {
                 put(ANSWERED, validity.isRequestAnswered)
                 put(RATIONALE, validity.rationale)
                 put(VALIDATED_RESULT, finalResultText)
@@ -87,7 +87,7 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         val quotedResponse = value.findCode()
         // parse into yaml and return
         return try {
-            YAML_MAPPER.readValue<ResultValidity>(quotedResponse)
+            yamlMapper.readValue<ResultValidity>(quotedResponse)
         } catch (e: Exception) {
             throw WorkflowParsingException("Failed to parse validity response: ${e.message}\nResponse: $quotedResponse", e)
         }

@@ -17,49 +17,51 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai
+package tri.ai.geminisdk
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.*
 
-class OpenAiMultimodalChatTest {
+@Tag("gemini-sdk")
+class GeminiSdkMultimodalChatTest {
 
-    private val client = OpenAiAdapter.INSTANCE
-    private val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, client)
-    private val chatVision = OpenAiMultimodalChat(OpenAiModelIndex.GPT4_TURBO_ID, client)
+    val client = GeminiSdkClient.INSTANCE
+    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, client)
+    val chat2 = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH, client)
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testChat_Simple() {
         chat.testChat_Simple()
     }
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testChat_Multiple() {
         chat.testChat_Multiple {
-            assertEquals(2, it.size)
+            assertEquals(1, it.size) { "Gemini only supports a single response" }
         }
     }
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testChat_Roles() {
         chat.testChat_Roles()
     }
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testChat_Image() {
-        chatVision.testChat_Image()
+        chat.testChat_Image()
     }
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testChat_Tools() {
-        chat.testChat_Tools()
+        // may fail sometimes
+        chat2.testChat_Tools()
     }
 
 }

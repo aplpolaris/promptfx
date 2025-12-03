@@ -21,6 +21,7 @@
 module tri.promptkt.cli {
     requires transitive tri.promptkt.docs;
     requires transitive tri.promptkt.gemini;
+    requires transitive tri.promptkt.openai;
 
     requires clikt.jvm;
     requires okhttp3;

@@ -24,13 +24,12 @@ import tri.ai.core.TextChat
 import tri.ai.core.WikipediaServiceException
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
 import java.io.IOException
 import java.net.URI
-import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 

@@ -25,7 +25,7 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
-import tri.util.YAML_MAPPER
+import tri.util.json.yamlMapper
 import tri.util.warning
 
 /**
@@ -101,7 +101,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
         val quotedResponse = response.findCode()
         // parse into yaml and return
         return try {
-            YAML_MAPPER.readValue<TaskDecomp>(quotedResponse)
+            yamlMapper.readValue<TaskDecomp>(quotedResponse)
         } catch (e: Exception) {
             throw WorkflowParsingException("Failed to parse task decomposition from response: ${e.message}\nResponse: $quotedResponse", e)
         }

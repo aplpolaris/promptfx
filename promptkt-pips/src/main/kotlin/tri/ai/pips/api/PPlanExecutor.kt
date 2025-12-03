@@ -37,8 +37,8 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
-import tri.util.MAPPER
 import tri.util.info
+import tri.util.json.jsonMapper
 
 /**
  * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor].
@@ -99,7 +99,7 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
         if (node.isTextual)
             info<PPlanExecutor>("$ANSI_GRAY  $label: ${node.asText()}$ANSI_RESET")
         else
-            log(label, MAPPER.convertValue<Map<String, Any?>>(node))
+            log(label, jsonMapper.convertValue<Map<String, Any?>>(node))
     }
 
     private fun log(label: String, node: Map<String, Any?>) {

@@ -28,7 +28,7 @@ import tri.ai.core.tool.Executable
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.fill
-import tri.util.readJsonSchema
+import tri.util.json.readJsonSchema
 import tri.util.ui.starship.StarshipConfigQuestion.Companion.EXAMPLE_KEY
 import tri.util.ui.starship.StarshipConfigQuestion.Companion.TOPIC_KEY
 import kotlin.collections.random

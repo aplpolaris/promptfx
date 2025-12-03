@@ -21,8 +21,8 @@ package tri.ai.pips.api
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.util.MAPPER
-import tri.util.YAML_MAPPER
+import tri.util.json.jsonMapper
+import tri.util.json.yamlMapper
 
 /** A serializable version of a plan. */
 data class PPlan(
@@ -33,9 +33,9 @@ data class PPlan(
 ) {
     companion object {
         /** Construct plan from JSON. */
-        fun parse(json: String) = MAPPER.readValue<PPlan>(json)
+        fun parse(json: String) = jsonMapper.readValue<PPlan>(json)
         /** Construct plan from YAML. */
-        fun parseYaml(yaml: String) = YAML_MAPPER.readValue<PPlan>(yaml)
+        fun parseYaml(yaml: String) = yamlMapper.readValue<PPlan>(yaml)
         /** An empty plan with no ID and no steps. */
         val EMPTY = PPlan(null, emptyList())
     }

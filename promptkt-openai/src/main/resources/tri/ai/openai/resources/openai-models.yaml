@@ -72,7 +72,7 @@ models:
       snapshots: [ ]
 
     - id: gpt-5-pro
-      name: GPT-5 pro ($$$$, Responses API only))
+      name: GPT-5 pro ($$$$, Responses API only)
       type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
@@ -330,7 +330,8 @@ models:
       source: OpenAI
       description: >
         The o1 series of models are trained with reinforcement learning to think before they answer and perform complex reasoning. The o1-pro model uses more compute to think harder and provide consistently better answers.
-        o1-pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future.      lifecycle: PRODUCTION_ALIAS
+        o1-pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future.
+      lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 200000
       outputTokenLimit: 100000
 
