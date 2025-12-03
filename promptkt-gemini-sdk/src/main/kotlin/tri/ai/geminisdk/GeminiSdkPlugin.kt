@@ -43,7 +43,7 @@ class GeminiSdkPlugin : TextPlugin {
             try {
                 client.listModels().map { it!!.toCoreModelInfo() }
             } catch (x: Exception) {
-                x.printStackTrace()
+                tri.util.warning<GeminiSdkPlugin>("Failed to retrieve Gemini SDK model information: ${x.message}", x)
                 emptyList()
             }
         }
