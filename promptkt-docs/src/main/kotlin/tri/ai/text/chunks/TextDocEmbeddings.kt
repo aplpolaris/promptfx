@@ -98,7 +98,11 @@ object TextDocEmbeddings {
 
     /** Get the set of all embedding model IDs used in a library. */
     fun TextLibrary.embeddingModels(): Set<String> =
-        docs.flatMap { doc -> doc.chunks.mapNotNull { it.getEmbeddingInfo()?.keys }.flatten() }.toSet()
+        docs.asSequence()
+            .flatMap { doc -> doc.chunks.asSequence() }
+            .mapNotNull { it.getEmbeddingInfo()?.keys }
+            .flatten()
+            .toSet()
 
     /** Get summary info for a library: number of documents, chunks, and embedding models. */
     fun TextLibrary.summaryInfo(): String {
