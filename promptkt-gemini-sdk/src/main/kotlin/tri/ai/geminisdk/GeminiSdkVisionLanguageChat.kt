@@ -17,20 +17,16 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
-import tri.ai.core.VisionLanguageChat
-import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
-import tri.ai.gemini.GeminiTextChat.Companion.trace
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.core.*
+import tri.ai.prompt.trace.*
 
-/** Vision chat completion with Gemini models. */
-class GeminiVisionLanguageChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
-    VisionLanguageChat {
-
-    override fun toString() = "$modelId (Gemini)"
+/** Gemini vision language chat model using the official SDK. */
+class GeminiSdkVisionLanguageChat(
+    override val modelId: String,
+    private val client: GeminiSdkClient
+) : VisionLanguageChat {
 
     override suspend fun chat(
         messages: List<VisionLanguageChatMessage>,
@@ -41,14 +37,23 @@ class GeminiVisionLanguageChat(override val modelId: String = GEMINI_25_FLASH_LI
     ): AiPromptTrace {
         val modelInfo = AiModelInfo.info(modelId, tokens = tokens, stop = stop, requestJson = requestJson)
         val t0 = System.currentTimeMillis()
-        val resp = client.generateContentVision(messages, modelId,
-            GenerationConfig(
-                maxOutputTokens = tokens ?: 500,
-                stopSequences = stop,
-                responseMimeType = if (requestJson == true) "application/json" else null
+        
+        if (messages.isEmpty()) {
+            return AiPromptTrace.error(modelInfo, "No messages provided", duration = System.currentTimeMillis() - t0)
+        }
+        
+        return try {
+            val response = client.generateContentVision(messages, modelId, MChatVariation(temperature = temp))
+            AiPromptTrace(
+                null,
+                modelInfo,
+                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiOutputInfo.text(response.text() ?: "")
             )
-        )
-        return resp.trace(modelInfo, t0)
+        } catch (e: Exception) {
+            AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
+        }
     }
 
+    override fun toString() = "$modelId (Gemini SDK)"
 }

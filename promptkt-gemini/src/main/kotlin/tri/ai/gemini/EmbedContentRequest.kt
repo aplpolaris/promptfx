@@ -39,7 +39,8 @@ enum class EmbeddingTaskType {
     CLASSIFICATION,
     CLUSTERING,
     QUESTION_ANSWERING,
-    FACT_VERIFICATION
+    FACT_VERIFICATION,
+    CODE_RETRIEVAL_QUERY
 }
 
 @Serializable

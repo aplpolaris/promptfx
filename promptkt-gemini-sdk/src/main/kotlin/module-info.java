@@ -17,20 +17,21 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+import tri.ai.core.TextPlugin;
+import tri.ai.geminisdk.GeminiSdkPlugin;
 
-import tri.ai.core.ModelIndex
+module tri.promptkt.gemini.sdk {
+    requires transitive tri.promptkt.core;
+    requires transitive kotlin.stdlib;
+    requires transitive kotlinx.coroutines.core;
 
-/** Models available in the Gemini API. */
-object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
+    // Google Gen AI Java SDK
+    requires google.genai;
 
-    //region MODEL ID's
+    exports tri.ai.geminisdk;
 
-    const val EMBED4 = "text-embedding-004"
+    // services (service loader API)
+    uses TextPlugin;
 
-    const val GEMINI_25_FLASH = "gemini-2.5-flash"
-    const val GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"
-
-    //endregion
-
+    provides TextPlugin with GeminiSdkPlugin;
 }

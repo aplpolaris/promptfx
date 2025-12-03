@@ -17,12 +17,12 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
 import tri.ai.core.ModelIndex
 
-/** Models available in the Gemini API. */
-object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
+/** Models available in the Gemini SDK. */
+object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
 
     //region MODEL ID's
 

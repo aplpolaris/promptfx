@@ -17,20 +17,20 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
-import tri.ai.core.ModelIndex
+import tri.ai.core.EmbeddingModel
 
-/** Models available in the Gemini API. */
-object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
+/** Gemini embedding model using the official SDK. */
+class GeminiSdkEmbeddingModel(
+    override val modelId: String,
+    private val client: GeminiSdkClient
+) : EmbeddingModel {
 
-    //region MODEL ID's
+    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
+        client.batchEmbedContents(text, modelId, outputDimensionality).map { embedding ->
+            embedding.map { it.toDouble() }
+        }
 
-    const val EMBED4 = "text-embedding-004"
-
-    const val GEMINI_25_FLASH = "gemini-2.5-flash"
-    const val GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"
-
-    //endregion
-
+    override fun toString() = "$modelId (Gemini SDK)"
 }

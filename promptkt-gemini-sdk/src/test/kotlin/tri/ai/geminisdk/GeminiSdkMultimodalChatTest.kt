@@ -17,30 +17,28 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.*
-import tri.util.json.jsonMapper
 
-@Tag("gemini")
-class GeminiMultimodalChatTest {
+@Tag("gemini-sdk")
+class GeminiSdkMultimodalChatTest {
 
-    val client = GeminiClient.INSTANCE
-    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH_LITE, client)
-    val chat2 = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH, client)
+    val client = GeminiSdkClient.INSTANCE
+    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, client)
+    val chat2 = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH, client)
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat_Simple() {
         chat.testChat_Simple()
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat_Multiple() {
         chat.testChat_Multiple {
             assertEquals(1, it.size) { "Gemini only supports a single response" }
@@ -48,22 +46,21 @@ class GeminiMultimodalChatTest {
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat_Roles() {
         chat.testChat_Roles()
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat_Image() {
         chat.testChat_Image()
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testChat_Tools() {
-        // note - Gemini does not always get this test right (sometimes refuses to use the tool, or final response is empty)
-        // seem to be inconsistencies in behavior between GEMINI_25_FLASH_LITE and GEMINI_25_FLASH
+        // may fail sometimes
         chat2.testChat_Tools()
     }
 

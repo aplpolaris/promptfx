@@ -19,18 +19,12 @@
  */
 package tri.ai.core
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.util.info
 import tri.util.json.yamlMapper
 import tri.util.loadResourceFromSiblingResources
 import java.io.File
 import java.io.InputStream
-import java.net.URL
-import java.nio.file.Paths
 
 /** A model index with configurable model information and runtime overrides. */
 open class ModelIndex(val modelFileName: String) {
@@ -59,7 +53,9 @@ open class ModelIndex(val modelFileName: String) {
     //endregion
 
     /** [ModelInfo] by id, where config in runtime overrides preconfigured info. */
-    val modelInfoIndex = models.modelInfoIndex() + runtimeModels.modelInfoIndex()
+    val modelInfoIndex by lazy { models.modelInfoIndex() + runtimeModels.modelInfoIndex() }
+    /** All available model ids, including runtime overrides. */
+    val modelIds by lazy { models.modelIds() + runtimeModels.modelIds() }
 
     /** Get chat models, including vision-language models which have the same API. */
     fun chatModelsInclusive(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots) + models(

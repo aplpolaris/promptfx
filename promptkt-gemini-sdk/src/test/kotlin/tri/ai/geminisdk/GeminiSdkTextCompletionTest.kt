@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.gemini
+package tri.ai.geminisdk
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,14 +25,14 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatVariation.Companion.temp
-import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
-class GeminiTextCompletionTest {
+class GeminiSdkTextCompletionTest {
 
-    val client = GeminiTextCompletion(GEMINI_25_FLASH_LITE)
+    val client = GeminiSdkTextCompletion(GEMINI_25_FLASH_LITE, GeminiSdkClient.INSTANCE)
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testComplete() {
         runTest {
             val res = client.complete("Translate Hello, world! into French.",
@@ -45,16 +45,16 @@ class GeminiTextCompletionTest {
     }
 
     @Test
-    @Tag("gemini")
+    @Tag("gemini-sdk")
     fun testCompleteMultiple() {
         runTest {
             val res = client.complete("Translate Hello, world! into French.",
                 variation = temp(0.5),
                 tokens = 100,
-                numResponses = 3
+                numResponses = 2
             )
+            assertEquals(2, res.output!!.outputs.size) { "Gemini SDK only supports a single response" }
             println(res)
-            assertEquals(3, res.output!!.outputs.size)
         }
     }
 
