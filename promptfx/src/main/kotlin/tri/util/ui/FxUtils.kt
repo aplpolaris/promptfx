@@ -185,16 +185,10 @@ fun EventTarget.nestedlistmenubutton(items: () -> Map<String, List<String>>, act
         setOnShowing {
             this.items.clear()
             items().forEach { (category, keys) ->
-                if (keys.size == 1) {
-                    item("$category/${keys.first()}") {
-                        action { action(keys.first()) }
-                    }
-                } else {
-                    menu(category) {
-                        keys.forEach { key ->
-                            item(key) {
-                                action { action(key) }
-                            }
+                menu(category) {
+                    keys.forEach { key ->
+                        item(key) {
+                            action { action(key) }
                         }
                     }
                 }
