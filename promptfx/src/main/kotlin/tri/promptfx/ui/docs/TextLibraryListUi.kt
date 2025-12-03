@@ -29,6 +29,7 @@ import tornadofx.*
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.summaryInfo
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.*
 import tri.promptfx.docs.TextLibraryInfo
@@ -106,6 +107,7 @@ class TextLibraryListUi : Fragment() {
                         style = "-fx-font-style: italic; -fx-text-fill: light-gray"
                     }
                 }
+                tooltip(it.library.summaryInfo())
             }
             lazyContextmenu {
                 buildsendcollectionmenu(this@TextLibraryListUi, librarySelection)
