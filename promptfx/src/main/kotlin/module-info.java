@@ -19,6 +19,10 @@
  */
 import tri.ai.core.TextPlugin;
 import tri.promptfx.agents.*;
+import tri.promptfx.mcp.McpPromptPlugin;
+import tri.promptfx.mcp.McpResourcePlugin;
+import tri.promptfx.mcp.McpServerPlugin;
+import tri.promptfx.mcp.McpToolPlugin;
 import tri.promptfx.settings.AboutPlugin;
 import tri.promptfx.settings.PromptFxSettingsPlugin;
 import tri.promptfx.text.*;
@@ -59,6 +63,7 @@ module tri.promptfx {
     opens tri.promptfx.api to com.fasterxml.jackson.databind;
     opens tri.promptfx.docs to tornadofx, com.github.mustachejava;
     opens tri.promptfx.fun to com.fasterxml.jackson.databind;
+    opens tri.promptfx.mcp to com.fasterxml.jackson.databind;
     opens tri.promptfx.multimodal to com.fasterxml.jackson.databind;
     opens tri.promptfx.prompts to com.fasterxml.jackson.databind;
     opens tri.promptfx.settings to com.fasterxml.jackson.databind;
@@ -72,6 +77,7 @@ module tri.promptfx {
     exports tri.promptfx.api;
     exports tri.promptfx.docs;
     exports tri.promptfx.fun;
+    exports tri.promptfx.mcp;
     exports tri.promptfx.multimodal;
     exports tri.promptfx.prompts;
     exports tri.promptfx.settings;
@@ -100,30 +106,36 @@ module tri.promptfx {
             // 2 - text
             ListGeneratorPlugin,
 
-            // 3 - multimodal
-            AudioApiPlugin,
-            AudioSpeechApiPlugin,
-            ImagesApiPlugin,
-            ImageDescribePlugin,
-
-            // 4 - docs
+            // 3 - docs
             DocumentQaPlugin,
             DocumentInsightPlugin,
             TextManagerPlugin,
             TextClusterPlugin,
             TextSimilarityPlugin,
 
-            // 5 - fun/integrations
-            ChatBackPlugin,
-            ColorPlugin,
-            WeatherViewPlugin,
-            WikipediaViewPlugin,
+            // 4 - multimodal
+            AudioApiPlugin,
+            AudioSpeechApiPlugin,
+            ImagesApiPlugin,
+            ImageDescribePlugin,
+
+            // 5 - mcp
+            McpServerPlugin,
+            McpPromptPlugin,
+            McpToolPlugin,
+            McpResourcePlugin,
 
             // 6 - agents
             AgenticPlugin,
 
             // 7 - settings
             AboutPlugin,
-            PromptFxSettingsPlugin
+            PromptFxSettingsPlugin,
+
+            // 8 - custom
+            ChatBackPlugin,
+            ColorPlugin,
+            WeatherViewPlugin,
+            WikipediaViewPlugin
     ;
 }

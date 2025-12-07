@@ -24,8 +24,8 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.*
 import tri.util.ui.NavigableWorkspaceView
-import tri.util.ui.fireOrange
 import tri.util.ui.graphic
+import tri.util.ui.steelBlue
 
 /** Model of the view content within [PromptFx] (views, groups, etc.). */
 class PromptFxWorkspaceModel(
@@ -33,7 +33,7 @@ class PromptFxWorkspaceModel(
 ) {
     companion object {
         /** Built-in categories that should have their own tabs. */
-        val BUILT_IN_CATEGORIES = setOf("API", "Prompts", "Text", "Documents", "Multimodal", "Agents", "Fun", "Settings")
+        val BUILT_IN_CATEGORIES = setOf("API", "Prompts", "Text", "Documents", "Multimodal", "MCP", "Agents", "Settings")
         
         /** The singleton instance of the workspace model. */
         var instance: PromptFxWorkspaceModel = loadWorkspaceModel()
@@ -98,20 +98,15 @@ class PromptFxWorkspaceModel(
         private fun groupIcon(category: String): FontAwesomeIconView {
             return when (category) {
                 "API" -> FontAwesomeIcon.CLOUD
-                "Prompts" -> FontAwesomeIcon.WRENCH
-                "Documents" -> FontAwesomeIcon.FILE
-                "Text" -> FontAwesomeIcon.FONT
-                "Fun" -> FontAwesomeIcon.SMILE_ALT
-                "Audio" -> FontAwesomeIcon.MICROPHONE
-                "Vision" -> FontAwesomeIcon.IMAGE
-                "Multimodal" -> FontAwesomeIcon.IMAGE
-                "Integrations" -> FontAwesomeIcon.PLUG
-                "Documentation" -> FontAwesomeIcon.BOOK
                 "Agents" -> FontAwesomeIcon.ANDROID
+                "Documents" -> FontAwesomeIcon.FILE
+                "MCP" -> FontAwesomeIcon.DASHCUBE
+                "Multimodal" -> FontAwesomeIcon.IMAGE
+                "Prompts" -> FontAwesomeIcon.WRENCH
                 "Settings" -> FontAwesomeIcon.COG
-                "Custom" -> FontAwesomeIcon.CUBES
-                else -> FontAwesomeIcon.CUBES
-            }.graphic.fireOrange
+                "Text" -> FontAwesomeIcon.FONT
+                else -> FontAwesomeIcon.PUZZLE_PIECE
+            }.graphic.steelBlue
         }
     }
 }

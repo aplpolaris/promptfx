@@ -25,7 +25,7 @@ import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 
 class PromptFxWorkspaceModelTest {
 
-    private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+    private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "MCP", "Multimodal", "Prompts", "Settings", "Text")
 
     @Test
     fun testCustomCategoryHandling() {
