@@ -18,14 +18,19 @@
  * #L%
  */
 
-module tri.promptkt.cli {
-    requires transitive tri.promptkt.docs;
-    requires transitive tri.promptkt.gemini;
-    requires transitive tri.promptkt.openai;
-    requires transitive tri.promptkt.mcp;
+module tri.promptkt.mcp {
+    requires transitive tri.promptkt.pips;
+    requires transitive kotlin.stdlib;
 
-    requires clikt.jvm;
-    requires okhttp3;
+    requires com.fasterxml.jackson.databind;
+    requires com.google.common;
+    requires io.ktor.client.core;
+    requires kotlinx.serialization.core;
+    requires kotlinx.serialization.json;
 
-    opens tri.ai.cli to com.fasterxml.jackson.databind;
+    exports tri.ai.mcp;
+    exports tri.ai.mcp.tool;
+
+    opens tri.ai.mcp to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp.tool to com.fasterxml.jackson.databind, kotlin.reflect;
 }
