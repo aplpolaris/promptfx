@@ -89,13 +89,28 @@ class McpServerRegistry(
     
     private fun createTestServer(config: TestServerConfig): McpServerAdapter {
         // Test server uses a fixed set of samples/built-ins
-        val prompts = PromptLibrary().apply {
-            // Add sample prompts from the main library
-            PromptLibrary.INSTANCE
-                .list { it.category?.startsWith("research") == true }
-                .forEach { addPrompt(it) }
+        val prompts = if (config.includeDefaultPrompts) {
+            PromptLibrary().apply {
+                // Add sample prompts from the main library
+                PromptLibrary.INSTANCE
+                    .list { it.category?.startsWith("research") == true }
+                    .forEach { addPrompt(it) }
+            }
+        } else {
+            PromptLibrary()
         }
-        val tools = StarterToolLibrary()
+        
+        val tools: ToolLibrary = if (config.includeDefaultTools) {
+            StarterToolLibrary()
+        } else {
+            object : ToolLibrary {
+                override suspend fun listTools() = emptyList<tri.ai.core.tool.Executable>()
+                override suspend fun getTool(name: String) = null
+                override suspend fun callTool(name: String, args: Map<String, String>) =
+                    tri.ai.mcp.tool.McpToolResult.error(name, "Tool library is disabled")
+            }
+        }
+        
         return LocalMcpServer(prompts, tools)
     }
     
@@ -182,8 +197,7 @@ sealed class McpServerConfig {
  */
 data class LocalServerConfig(
     override val description: String? = null,
-    val promptLibraryPath: String? = null,
-    val toolLibraryPath: String? = null
+    val promptLibraryPath: String? = null
 ) : McpServerConfig()
 
 /**

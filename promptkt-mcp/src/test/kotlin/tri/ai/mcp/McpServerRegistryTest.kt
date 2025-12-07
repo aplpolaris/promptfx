@@ -277,4 +277,81 @@ class McpServerRegistryTest {
             server.close()
         }
     }
+
+    @Test
+    fun testTestServerConfigFlags() {
+        runTest {
+            // Test with prompts only
+            val yamlFile1 = tempDir.resolve("test-prompts-only.yaml")
+            Files.writeString(
+                yamlFile1, """
+                servers:
+                  test-prompts-only:
+                    type: test
+                    description: "Test server with prompts only"
+                    includeDefaultPrompts: true
+                    includeDefaultTools: false
+            """.trimIndent()
+            )
+
+            val registry1 = McpServerRegistry.loadFromFile(yamlFile1.toString())
+            val server1 = registry1.getServer("test-prompts-only")!!
+            
+            val prompts1 = server1.listPrompts()
+            val tools1 = server1.listTools()
+            
+            assertTrue(prompts1.isNotEmpty(), "Should have prompts")
+            assertTrue(tools1.isEmpty(), "Should not have tools")
+            
+            server1.close()
+
+            // Test with tools only
+            val yamlFile2 = tempDir.resolve("test-tools-only.yaml")
+            Files.writeString(
+                yamlFile2, """
+                servers:
+                  test-tools-only:
+                    type: test
+                    description: "Test server with tools only"
+                    includeDefaultPrompts: false
+                    includeDefaultTools: true
+            """.trimIndent()
+            )
+
+            val registry2 = McpServerRegistry.loadFromFile(yamlFile2.toString())
+            val server2 = registry2.getServer("test-tools-only")!!
+            
+            val prompts2 = server2.listPrompts()
+            val tools2 = server2.listTools()
+            
+            assertTrue(prompts2.isEmpty(), "Should not have prompts")
+            assertTrue(tools2.isNotEmpty(), "Should have tools")
+            
+            server2.close()
+
+            // Test with neither
+            val yamlFile3 = tempDir.resolve("test-empty.yaml")
+            Files.writeString(
+                yamlFile3, """
+                servers:
+                  test-empty:
+                    type: test
+                    description: "Empty test server"
+                    includeDefaultPrompts: false
+                    includeDefaultTools: false
+            """.trimIndent()
+            )
+
+            val registry3 = McpServerRegistry.loadFromFile(yamlFile3.toString())
+            val server3 = registry3.getServer("test-empty")!!
+            
+            val prompts3 = server3.listPrompts()
+            val tools3 = server3.listTools()
+            
+            assertTrue(prompts3.isEmpty(), "Should not have prompts")
+            assertTrue(tools3.isEmpty(), "Should not have tools")
+            
+            server3.close()
+        }
+    }
 }
