@@ -260,7 +260,7 @@ class McpServerRegistryTest {
               custom:
                 type: local
                 description: "Local server with custom prompts"
-                promptLibraryPath: "${promptFile.toString()}"
+                promptLibraryPath: "${promptFile.toString().replace("\\", "\\\\")}"
         """.trimIndent()
         )
 

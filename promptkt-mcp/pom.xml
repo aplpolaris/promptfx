@@ -12,7 +12,7 @@
     <packaging>jar</packaging>
 	
     <name>${project.artifactId}-${project.version}</name>
-    <description>MCP (Model Context Protocol) client implementation.</description>
+    <description>MCP (Model Context Protocol) server and client implementations.</description>
 
     <dependencies>
         <dependency>
