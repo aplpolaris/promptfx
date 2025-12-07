@@ -37,6 +37,7 @@ import tri.ai.core.TextPlugin
 import tri.ai.mcp.LocalMcpServer
 import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
+import tri.ai.mcp.McpServerRegistry
 import tri.ai.mcp.RemoteMcpServer
 import tri.ai.mcp.StdioMcpServer
 import tri.ai.mcp.tool.StarterToolLibrary
@@ -59,11 +60,21 @@ class McpCli : CliktCommand(
     name = "mcp-prompt",
     help = "Interface to MCP prompt servers - list, fill, and execute prompts, list and execute tools, or start a local server"
 ) {
-    private val serverUrl by option("--server", "-s", help = "MCP server URL (use 'local' for local server)")
+    private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'local' for local server)")
         .default("local")
+    private val registryConfig by option("--registry", "-r", help = "Path to MCP server registry configuration file (JSON or YAML)")
     private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for local server only)")
     private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for local server only)")
     private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
+    
+    private val registry: McpServerRegistry by lazy {
+        if (registryConfig != null) {
+            if (verbose) echo("Loading MCP server registry from: $registryConfig")
+            McpServerRegistry.loadFromFile(registryConfig!!)
+        } else {
+            McpServerRegistry.default()
+        }
+    }
 
     override fun run() {
         // Parent command - show help if no subcommand provided
@@ -83,6 +94,14 @@ class McpCli : CliktCommand(
     //region INIT
 
     private fun createAdapter(): McpServerAdapter {
+        // First try to get from registry
+        val fromRegistry = registry.getServer(serverUrl)
+        if (fromRegistry != null) {
+            if (verbose) echo("Using MCP server from registry: $serverUrl")
+            return fromRegistry
+        }
+        
+        // Fallback to backward compatibility: treat as direct server specification
         return if (serverUrl == "local") {
             val library = loadPromptLibrary()
             val toolLibrary = loadToolLibrary()
