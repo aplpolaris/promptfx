@@ -105,6 +105,7 @@ class McpServerAdapterHttpTest {
             val adapter = McpServerAdapterHttp(BASE_URL)
             
             val capabilities = adapter.getCapabilities()
+            println("testGetCapabilities result: $capabilities")
             assertNotNull(capabilities)
             assertNotNull(capabilities?.prompts)
             assertEquals(false, capabilities?.prompts?.listChanged)
@@ -120,6 +121,7 @@ class McpServerAdapterHttpTest {
             
             try {
                 val prompts = adapter.listPrompts()
+                println("testListPrompts result: $prompts")
                 assertNotNull(prompts)
                 assertTrue(prompts.size >= 1, "Should have at least one prompt")
                 assertEquals("test-prompt", prompts[0].name)
@@ -138,10 +140,12 @@ class McpServerAdapterHttpTest {
             try {
                 try {
                     val response = adapter.getPrompt("test-prompt", mapOf("arg1" to "value1"))
+                    println("testGetPrompt result: $response")
                     assertNotNull(response)
                     assertEquals("Test prompt response", response.description)
                     assertTrue(response.messages.size >= 1, "Should have at least one message")
                 } catch (e: McpServerException) {
+                    println("testGetPrompt error: ${e.message}")
                     // Expected if there are deserialization issues
                     assertTrue(e.message?.contains("getting prompt") == true || e.message?.contains("MCP server") == true)
                 }
@@ -160,8 +164,10 @@ class McpServerAdapterHttpTest {
                 // This might fail due to deserialization, which is expected in a basic test
                 // Just test that the method exists and can be called
                 try {
-                    adapter.listTools()
+                    val tools = adapter.listTools()
+                    println("testListTools result: $tools")
                 } catch (e: McpServerException) {
+                    println("testListTools error: ${e.message}")
                     // Expected - deserialization might fail for Executable
                 }
             } finally {
@@ -179,8 +185,10 @@ class McpServerAdapterHttpTest {
                 // Tools might not deserialize correctly, but we can test the method
                 try {
                     val tool = adapter.getTool("test-tool")
+                    println("testGetTool result: $tool")
                     // Tool might be null if deserialization fails, which is fine for this test
                 } catch (e: McpServerException) {
+                    println("testGetTool error: ${e.message}")
                     // Expected if deserialization fails
                 }
             } finally {
@@ -197,10 +205,12 @@ class McpServerAdapterHttpTest {
             try {
                 // Tool call should work as it returns McpToolResult
                 val result = adapter.callTool("test-tool", mapOf("input" to "test"))
+                println("testCallTool result: $result")
                 assertNotNull(result)
                 assertEquals("test-tool", result.name)
                 assertNull(result.error)
             } catch (e: McpServerException) {
+                println("testCallTool error: ${e.message}")
                 // Expected if tool call fails
                 assertTrue(e.message?.contains("tool") == true || e.message?.contains("MCP server") == true)
             } finally {
