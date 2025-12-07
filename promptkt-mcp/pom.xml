@@ -8,19 +8,19 @@
         <version>0.13.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>promptkt-cli</artifactId>
+    <artifactId>promptkt-mcp</artifactId>
     <packaging>jar</packaging>
 	
     <name>${project.artifactId}-${project.version}</name>
-    <description>LLM tools for embedding and documents.</description>
+    <description>MCP (Model Context Protocol) client implementation.</description>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-docs</artifactId>
+            <artifactId>promptkt-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-pips</artifactId>
@@ -28,27 +28,20 @@
         </dependency>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-mcp</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-gemini</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-core-jvm</artifactId>
+            <version>${ktor.version}</version>
         </dependency>
-
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-openai</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.ajalt.clikt</groupId>
-            <artifactId>clikt-jvm</artifactId>
-            <version>${clikt.version}</version>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-okhttp-jvm</artifactId>
+            <version>${ktor.version}</version>
         </dependency>
 		
         <dependency>
@@ -70,29 +63,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <!-- create executable jar -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
