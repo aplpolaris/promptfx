@@ -60,7 +60,7 @@ class McpServerEmbedded(val prompts: PromptLibrary = PromptLibrary(), val tools:
     )
 
     override suspend fun close() {
-        // Nothing to close for local adapter
+        // Nothing to close for embedded adapter
     }
 
 }

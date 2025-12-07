@@ -36,15 +36,15 @@ class McpServerRegistryTest {
         val registry = McpServerRegistry.default()
         
         val serverNames = registry.listServerNames()
-        assertTrue(serverNames.contains("local"))
+        assertTrue(serverNames.contains("embedded"))
         assertTrue(serverNames.contains("test"))
     }
 
     @Test
-    fun testGetLocalServer() {
+    fun testGetEmbeddedServer() {
         runTest {
             val registry = McpServerRegistry.default()
-            val server = registry.getServer("local")
+            val server = registry.getServer("embedded")
             
             assertNotNull(server)
             assertTrue(server is McpServerEmbedded)
@@ -93,9 +93,9 @@ class McpServerRegistryTest {
         Files.writeString(
             yamlFile, """
             servers:
-              test-local:
-                type: local
-                description: "Test local server"
+              test-embedded:
+                type: embedded
+                description: "Test embedded server"
               test-http:
                 type: http
                 description: "Test HTTP server"
@@ -110,7 +110,7 @@ class McpServerRegistryTest {
         
         val serverNames = registry.listServerNames()
         assertEquals(3, serverNames.size)
-        assertTrue(serverNames.contains("test-local"))
+        assertTrue(serverNames.contains("test-embedded"))
         assertTrue(serverNames.contains("test-http"))
         assertTrue(serverNames.contains("test-test"))
     }
@@ -122,9 +122,9 @@ class McpServerRegistryTest {
             jsonFile, """
             {
               "servers": {
-                "test-local": {
-                  "type": "local",
-                  "description": "Test local server"
+                "test-embedded": {
+                  "type": "embedded",
+                  "description": "Test embedded server"
                 },
                 "test-http": {
                   "type": "http",
@@ -140,7 +140,7 @@ class McpServerRegistryTest {
         
         val serverNames = registry.listServerNames()
         assertEquals(2, serverNames.size)
-        assertTrue(serverNames.contains("test-local"))
+        assertTrue(serverNames.contains("test-embedded"))
         assertTrue(serverNames.contains("test-http"))
     }
 
@@ -202,11 +202,11 @@ class McpServerRegistryTest {
         val configs = registry.getConfigs()
         
         assertNotNull(configs)
-        assertTrue(configs.containsKey("local"))
+        assertTrue(configs.containsKey("embedded"))
         assertTrue(configs.containsKey("test"))
         
-        val localConfig = configs["local"]
-        assertTrue(localConfig is EmbeddedServerConfig)
+        val embeddedConfig = configs["embedded"]
+        assertTrue(embeddedConfig is EmbeddedServerConfig)
         
         val testConfig = configs["test"]
         assertTrue(testConfig is TestServerConfig)
@@ -258,8 +258,8 @@ class McpServerRegistryTest {
             yamlFile, """
             servers:
               custom:
-                type: local
-                description: "Local server with custom prompts"
+                type: embedded
+                description: "Embedded server with custom prompts"
                 promptLibraryPath: "${promptFile.toString().replace("\\", "\\\\")}"
         """.trimIndent()
         )

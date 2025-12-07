@@ -54,17 +54,17 @@ fun main(args: Array<String>) =
 
 /**
  * Command-line interface for interacting with MCP (Model Context Protocol) prompt servers.
- * Supports both local and remote MCP servers.
+ * Supports both embedded and remote MCP servers.
  */
 class McpCli : CliktCommand(
     name = "mcp-prompt",
-    help = "Interface to MCP prompt servers - list, fill, and execute prompts, list and execute tools, or start a local server"
+    help = "Interface to MCP prompt servers - list, fill, and execute prompts, list and execute tools, or start an embedded server"
 ) {
-    private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'local' for local server)")
-        .default("local")
+    private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'embedded' for embedded server)")
+        .default("embedded")
     private val registryConfig by option("--registry", "-r", help = "Path to MCP server registry configuration file (JSON or YAML)")
-    private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for local server only)")
-    private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for local server only)")
+    private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for embedded server only)")
+    private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for embedded server only)")
     private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
     
     private val registry: McpServerRegistry by lazy {
@@ -102,7 +102,7 @@ class McpCli : CliktCommand(
         }
         
         // Fallback to backward compatibility: treat as direct server specification
-        return if (serverUrl == "local") {
+        return if (serverUrl == "embedded" || serverUrl == "local") {
             val library = loadPromptLibrary()
             val toolLibrary = loadToolLibrary()
             McpServerEmbedded(library, toolLibrary)
@@ -117,7 +117,7 @@ class McpCli : CliktCommand(
             if (verbose) echo("Loading custom prompt library from: $promptLibrary")
             PromptLibrary.loadFromPath(promptLibrary!!)
         } else {
-            if (verbose) echo("Using default local MCP server with PromptLibrary")
+            if (verbose) echo("Using default embedded MCP server with PromptLibrary")
             PromptLibrary().apply {
                 PromptLibrary.INSTANCE
                     .list { it.category?.startsWith("research") == true }
@@ -450,7 +450,7 @@ class McpCli : CliktCommand(
     /** Starts an MCP server on stdio. */
     inner class ServeCommand : CliktCommand(
         name = "start",
-        help = "Start an MCP server on stdio, with locally provided prompts and tools"
+        help = "Start an MCP server on stdio, with embedded prompts and tools"
     ) {
         override fun run() {
             runBlocking {

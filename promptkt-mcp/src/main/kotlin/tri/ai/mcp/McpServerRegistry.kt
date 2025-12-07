@@ -77,8 +77,7 @@ class McpServerRegistry(
     }
     
     private fun createStdioServerAdapter(config: StdioServerConfig): McpServerAdapter {
-        // TODO - instantiate [McpServerAdapterStdio]
-        throw UnsupportedOperationException("Stdio server connections are not yet implemented in registry")
+        return McpServerAdapterStdio(config.command, config.args, config.env)
     }
     
     private fun createHttpServerAdapter(config: HttpServerConfig) =
@@ -190,7 +189,7 @@ sealed class McpServerConfig {
 }
 
 /**
- * Configuration for a local MCP server (running in the same process).
+ * Configuration for an embedded MCP server (running in the same process).
  */
 data class EmbeddedServerConfig(
     override val description: String? = null,
