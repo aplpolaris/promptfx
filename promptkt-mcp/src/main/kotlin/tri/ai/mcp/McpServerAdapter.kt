@@ -22,7 +22,8 @@ package tri.ai.mcp
 import tri.ai.mcp.tool.ToolLibrary
 
 /**
- * Interface for connecting to MCP prompt servers, supporting both local and remote connections.
+ * Interface for connecting to MCP prompt servers, whether capabilities provided are embedded
+ * or accessible via stdio, http, etc.
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  */
 interface McpServerAdapter: ToolLibrary {
@@ -38,3 +39,4 @@ interface McpServerAdapter: ToolLibrary {
     /** Close the connection to the server. */
     suspend fun close()
 }
+

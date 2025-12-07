@@ -1,15 +1,15 @@
 # MCP Server Registry Configuration
 # This file defines available MCP servers that can be used by the CLI
 servers:
-  # Local server with default libraries
-  local:
-    type: local
-    description: "Local MCP server with default prompt and tool libraries"
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
   
-  # Local server with custom prompt library
-  custom-local:
-    type: local
-    description: "Local MCP server with custom prompts"
+  # Embedded server with custom prompt library
+  custom-embedded:
+    type: embedded
+    description: "Embedded MCP server with custom prompts"
     promptLibraryPath: "/path/to/custom/prompts.yaml"
   
   # Test server with built-in samples

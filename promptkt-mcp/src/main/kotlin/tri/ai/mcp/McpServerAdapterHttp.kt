@@ -35,7 +35,7 @@ import tri.ai.mcp.tool.McpToolResult
  * Remote MCP server adapter that connects to external MCP servers via HTTP.
  */
 @Beta
-class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
+class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
     
     private val httpClient = HttpClient(OkHttp) {
         engine {

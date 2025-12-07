@@ -30,12 +30,12 @@ import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
 /**
- * Implements basic functionality of MCP prompt server based on a local prompt library.
+ * Implements basic functionality of MCP prompt server based on in-memory prompt and tool libraries.
  */
-class LocalMcpServer(val prompts: PromptLibrary = PromptLibrary(), val tools: ToolLibrary) :
+class McpServerEmbedded(val prompts: PromptLibrary = PromptLibrary(), val tools: ToolLibrary) :
     McpServerAdapter, ToolLibrary by tools {
 
-    override fun toString() = "LocalMcpServer"
+    override fun toString() = "McpServer-Embedded"
 
     /** List prompt information. */
     override suspend fun listPrompts(): List<McpPrompt> =

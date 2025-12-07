@@ -47,7 +47,7 @@ class McpServerRegistryTest {
             val server = registry.getServer("local")
             
             assertNotNull(server)
-            assertTrue(server is LocalMcpServer)
+            assertTrue(server is McpServerEmbedded)
             
             // Verify it works
             val prompts = server!!.listPrompts()
@@ -64,7 +64,7 @@ class McpServerRegistryTest {
             val server = registry.getServer("test")
             
             assertNotNull(server)
-            assertTrue(server is LocalMcpServer)
+            assertTrue(server is McpServerEmbedded)
             
             // Verify it has prompts and tools
             val prompts = server!!.listPrompts()
@@ -206,7 +206,7 @@ class McpServerRegistryTest {
         assertTrue(configs.containsKey("test"))
         
         val localConfig = configs["local"]
-        assertTrue(localConfig is LocalServerConfig)
+        assertTrue(localConfig is EmbeddedServerConfig)
         
         val testConfig = configs["test"]
         assertTrue(testConfig is TestServerConfig)
@@ -230,7 +230,7 @@ class McpServerRegistryTest {
             val server = registry.getServer("remote")
             
             assertNotNull(server)
-            assertTrue(server is RemoteMcpServer)
+            assertTrue(server is McpServerAdapterHttp)
             
             server!!.close()
         }
@@ -269,7 +269,7 @@ class McpServerRegistryTest {
             val server = registry.getServer("custom")
             
             assertNotNull(server)
-            assertTrue(server is LocalMcpServer)
+            assertTrue(server is McpServerEmbedded)
             
             val prompts = server!!.listPrompts()
             assertTrue(prompts.any { it.name == "test/custom-prompt" })

@@ -34,12 +34,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import tri.ai.core.TextPlugin
-import tri.ai.mcp.LocalMcpServer
+import tri.ai.mcp.McpServerEmbedded
 import tri.ai.mcp.McpServerAdapter
 import tri.ai.mcp.McpServerException
 import tri.ai.mcp.McpServerRegistry
-import tri.ai.mcp.RemoteMcpServer
-import tri.ai.mcp.StdioMcpServer
+import tri.ai.mcp.McpServerAdapterHttp
+import tri.ai.mcp.McpServerStdio
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.prompt.PromptLibrary
@@ -105,10 +105,10 @@ class McpCli : CliktCommand(
         return if (serverUrl == "local") {
             val library = loadPromptLibrary()
             val toolLibrary = loadToolLibrary()
-            LocalMcpServer(library, toolLibrary)
+            McpServerEmbedded(library, toolLibrary)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
-            RemoteMcpServer(serverUrl)
+            McpServerAdapterHttp(serverUrl)
         }
     }
 
@@ -456,8 +456,8 @@ class McpCli : CliktCommand(
             runBlocking {
                 val prompts = this@McpCli.loadPromptLibrary()
                 val tools = this@McpCli.loadToolLibrary()
-                val locServer = LocalMcpServer(prompts, tools)
-                StdioMcpServer(locServer).startServer(System.`in`, System.out)
+                val locServer = McpServerEmbedded(prompts, tools)
+                McpServerStdio(locServer).startServer(System.`in`, System.out)
             }
         }
     }

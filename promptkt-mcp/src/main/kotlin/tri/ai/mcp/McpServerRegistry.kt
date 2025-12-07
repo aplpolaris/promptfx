@@ -60,33 +60,30 @@ class McpServerRegistry(
     
     private fun createAdapter(config: McpServerConfig): McpServerAdapter {
         return when (config) {
-            is LocalServerConfig -> createLocalServer(config)
-            is StdioServerConfig -> createStdioServer(config)
-            is HttpServerConfig -> createHttpServer(config)
+            is EmbeddedServerConfig -> createEmbeddedServer(config)
+            is StdioServerConfig -> createStdioServerAdapter(config)
+            is HttpServerConfig -> createHttpServerAdapter(config)
             is TestServerConfig -> createTestServer(config)
         }
     }
     
-    private fun createLocalServer(config: LocalServerConfig): McpServerAdapter {
+    private fun createEmbeddedServer(config: EmbeddedServerConfig): McpServerAdapter {
         val prompts = if (config.promptLibraryPath != null) {
             PromptLibrary.loadFromPath(config.promptLibraryPath)
         } else {
             PromptLibrary()
         }
-        
-        val tools: ToolLibrary = StarterToolLibrary()
-        
-        return LocalMcpServer(prompts, tools)
+        return McpServerEmbedded(prompts, StarterToolLibrary())
     }
     
-    private fun createStdioServer(config: StdioServerConfig): McpServerAdapter {
+    private fun createStdioServerAdapter(config: StdioServerConfig): McpServerAdapter {
+        // TODO - instantiate [McpServerAdapterStdio]
         throw UnsupportedOperationException("Stdio server connections are not yet implemented in registry")
     }
     
-    private fun createHttpServer(config: HttpServerConfig): McpServerAdapter {
-        return RemoteMcpServer(config.url)
-    }
-    
+    private fun createHttpServerAdapter(config: HttpServerConfig) =
+        McpServerAdapterHttp(config.url)
+
     private fun createTestServer(config: TestServerConfig): McpServerAdapter {
         // Test server uses a fixed set of samples/built-ins
         val prompts = if (config.includeDefaultPrompts) {
@@ -111,7 +108,7 @@ class McpServerRegistry(
             }
         }
         
-        return LocalMcpServer(prompts, tools)
+        return McpServerEmbedded(prompts, tools)
     }
     
     companion object {
@@ -155,8 +152,8 @@ class McpServerRegistry(
         fun default(): McpServerRegistry {
             return McpServerRegistry(
                 mapOf(
-                    "local" to LocalServerConfig(
-                        description = "Local MCP server with default libraries"
+                    "embedded" to EmbeddedServerConfig(
+                        description = "Embedded MCP server with default libraries"
                     ),
                     "test" to TestServerConfig(
                         description = "Test server with sample prompts and tools"
@@ -183,7 +180,7 @@ data class McpServerRegistryConfig(
     property = "type"
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(value = LocalServerConfig::class, name = "local"),
+    JsonSubTypes.Type(value = EmbeddedServerConfig::class, name = "embedded"),
     JsonSubTypes.Type(value = StdioServerConfig::class, name = "stdio"),
     JsonSubTypes.Type(value = HttpServerConfig::class, name = "http"),
     JsonSubTypes.Type(value = TestServerConfig::class, name = "test")
@@ -195,7 +192,7 @@ sealed class McpServerConfig {
 /**
  * Configuration for a local MCP server (running in the same process).
  */
-data class LocalServerConfig(
+data class EmbeddedServerConfig(
     override val description: String? = null,
     val promptLibraryPath: String? = null
 ) : McpServerConfig()
