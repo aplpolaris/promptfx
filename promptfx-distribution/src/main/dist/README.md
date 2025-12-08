@@ -77,13 +77,17 @@ promptfx/
 ├── promptfx-[version].jar         # Main application JAR (includes all dependencies)
 ├── apikey.txt                     # (optional) OpenAI API key
 ├── apikey-gemini.txt              # (optional) Gemini API key
-└── config/                        # YAML configuration files
-    ├── openai-models.yaml
-    ├── gemini-models.yaml
-    ├── prompts.yaml
-    ├── views.yaml
-    ├── modes.yaml
-    └── starship.yaml
+├── config/                        # YAML configuration files
+│   ├── openai-models.yaml
+│   ├── openai-api-config.yaml
+│   ├── gemini-models.yaml
+│   ├── ollama-models.yaml
+│   ├── views.yaml
+│   ├── modes.yaml
+│   ├── starship.yaml
+│   └── plugins/                   # Plugin configuration
+└── prompts/                       # Custom prompt templates
+    └── custom-prompts.yaml
 ```
 
 ### 🔐 API Key Setup
@@ -114,13 +118,24 @@ PromptFX uses YAML files to configure models, views, prompts, and runtime behavi
 | File | Purpose                                                    |
 |------|------------------------------------------------------------|
 | `openai-models.yaml` | Available OpenAI models                                    |
+| `openai-api-config.yaml` | OpenAI API configuration settings                         |
 | `gemini-models.yaml` | Available Google Gemini models                             |
-| `prompts.yaml` | Prompt templates                                           |
+| `ollama-models.yaml` | Available Ollama models (local model support)              |
 | `modes.yaml` | Lists of options (used in prompt templates and some views) |
 | `views.yaml` | Configurations of custom views                             |
 | `starship.yaml` | Configuration of the "starship" demo mode                  |
 
 These files are located in the `config/` folder and loaded at runtime.
+
+### 📝 Custom Prompts
+
+Custom prompt templates can be added or modified in the `prompts/` folder:
+
+| File | Purpose                                                    |
+|------|------------------------------------------------------------|
+| `custom-prompts.yaml` | Custom prompt templates that override or extend defaults   |
+
+The `prompts/` folder is scanned recursively, so you can organize your prompts into subdirectories if desired.
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
 
