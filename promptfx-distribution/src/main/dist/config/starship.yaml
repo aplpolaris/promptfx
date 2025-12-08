@@ -1,30 +1,9 @@
-# Configuration for the Starship Demo mode
+# default yaml configuration for starship pipeline and associated view config
 ---
-explain:
-  - "AI generates a random question about LLMs."
-  - "Using semantic text similarity models, we look for matching paragraphs in a set of source documents."
-  - "LLMs answer the question using the matching paragraphs."
-  - "The answer is summarized for the target audience."
-  - "The answer can be transformed in other ways depending on the use case."
-
-prompt-info:
-  - text-summarize/simplify-audience:
-      audience: a general audience
-  - docs-reduce/outline
-  - docs-reduce/technical-terms
-  - text-translate/translate:
-      instruct: a random language
-
-user-options:
-  text-summarize/simplify-audience:
-    audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
-  text-translate/translate:
-    instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
-
-random-question:
-  # template uses {{topic}} and {{example}} to pick from lists below
+# Question randomizer configuration
+question:
   template: |
-    Generate a random question about LLMs. The question should be 10-20 words.
+    Generate a random question about large language models (LLMs). The question should be 10-20 words.
     The random question should be about {{topic}}.
     Example Question:
       - {{example}}
@@ -39,3 +18,114 @@ random-question:
   lists:
     types: [ "transformer models", "BERT", "GPT-3", "T5", "RoBERTa", "XLNet", "ALBERT", "DistilBERT", "ELECTRA", "CamemBERT", "XLM-RoBERTa", "BART", "Pegasus", "MarianMT", "MBart", "Turing-NLG", "GPT-2", "GPT-4" ]
     apps: [ "medical diagnosis", "chatbots", "translation", "summarization", "question-answering", "text generation", "code generation", "image generation", "music generation", "video generation", "data analysis", "data visualization", "data summarization", "data governance" ]
+
+# LLM pipeline configuration
+pipeline:
+  id: starship/demo@0.0.1
+  steps:
+    - tool: starship/random-question
+      description: AI generates a random question about LLMs.
+      input: { }
+      saveAs: question
+    - tool: starship/execute-view
+      description: Using semantic text similarity models, we look for matching paragraphs in a set of source documents.
+      input:
+        input: { "$var": "question" }
+      saveAs: viewResult
+    - tool: prompt-chat/text-summarize/simplify-audience
+      description: The answer is summarized for the target audience.
+      input:
+        input: { "$var": "viewResult" }
+        audience: { "$var": "simplify-audience" }  # from UI option
+      saveAs: simpleResponse
+    - tool: prompt-chat/docs-reduce/outline
+      description: The answer can be transformed in other ways depending on the use case.
+      input:
+        input: { "$var": "viewResult" }
+      saveAs: outline
+    - tool: prompt-chat/docs-reduce/technical-terms
+      input:
+        input: { "$var": "viewResult" }
+      saveAs: technicalTerms
+    - tool: prompt-chat/text-translate/translate
+      input:
+        input: { "$var": "viewResult" }
+        instruct: { "$var": "translate-instruct" }  # from UI option
+      saveAs: translatedResponse
+
+# Widget layout for visualizing results
+layout:
+  backgroundIcon: STAR_ALT
+  backgroundIconCount: 1000
+
+  numCols: 3
+  numRows: 3
+  isShowGrid: true
+
+  widgets:
+    - varRef: question
+      widgetType: ANIMATING_TEXT
+      pos: { x: 1, y: 1, width: 2, height: 1 }
+      overlay:
+        step: 1
+        title: Question
+        icon: QUESTION
+        iconSize: 48
+        explain: AI generates a random question.
+
+    - varRef: viewResult
+      widgetType: ANIMATING_THUMBNAILS
+      pos: { x: 1, y: 3, width: 2, height: 1 }
+      overlay:
+        step: 2
+        explain: Using semantic text similarity models, we look for matching paragraphs in a set of source documents.
+
+    - varRef: viewResult
+      widgetType: ANIMATING_TEXT
+      pos: { x: 1, y: 2, width: 1, height: 1 }
+      overlay:
+        step: 3
+        title: Answer
+        icon: FILE_PDF_ALT
+        iconSize: 18
+        explain: LLMs answer the question using the matching paragraphs.
+
+    - varRef: simpleResponse
+      widgetType: ANIMATING_TEXT
+      pos: { x: 2, y: 2, width: 1, height: 1 }
+      overlay:
+        step: 4
+        title: Summarize For
+        icon: COMMENTS
+        iconSize: 18
+        explain: The answer is summarized for the target audience.
+        options:
+          simplify-audience: [ "a general audience", "elementary school students", "high school students", "software engineers", "executives" ]
+
+    - varRef: outline
+      widgetType: ANIMATING_TEXT_VERTICAL
+      pos: { x: 3, y: 1, width: 1, height: 3 }
+      overlay:
+        step: 5
+        title: Outline
+        icon: LIST_ALT
+        iconSize: 18
+        explain: The answer can be transformed in other ways depending on the use case.
+
+    - varRef: technicalTerms
+      widgetType: ANIMATING_TEXT_VERTICAL
+      pos: { x: 3, y: 1, width: 1, height: 0 }  # use same coordinate and height=0 to stack vertically
+      overlay:
+        title: Technical Terms
+        icon: COGS
+        iconSize: 18
+
+    - varRef: translatedResponse
+      widgetType: ANIMATING_TEXT_VERTICAL
+      pos: { x: 3, y: 1, width: 1, height: 0 }  # use same coordinate and height=0 to stack vertically
+      overlay:
+        title: Translate
+        icon: GLOBE
+        iconSize: 18
+        options:
+          translate-instruct: [ "a random language", "English", "Spanish", "French", "German", "Chinese", "Japanese", "Emoji", "Korean", "Russian", "Arabic", "Hindi", "Portuguese", "Italian" ]
