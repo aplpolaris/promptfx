@@ -153,12 +153,14 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         runAsync {
             try {
                 val inputNode: JsonNode = jsonMapper.readTree(inputJson)
+                // Note: runAsync already provides coroutine context, but tool.execute is suspend
+                // We need to use runBlocking here because runAsync uses a different threading model
                 val output = kotlinx.coroutines.runBlocking {
                     tool.execute(inputNode, ExecContext())
                 }
                 "Success:\n${output.toPrettyString()}"
             } catch (e: Exception) {
-                "Error: ${e.message}\n${e.stackTraceToString()}"
+                "Error: ${e.message}"
             }
         } ui { result ->
             toolOutputText.value = result
