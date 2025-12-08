@@ -50,11 +50,9 @@ class StarshipConfigTest {
 
     @Test
     fun testReadConfigWithCustomFile() {
-        // Save reference to any existing file
+        // Save reference to any existing custom file
         val customFile = File("starship-custom.yaml")
-        val configCustomFile = File("config/starship-custom.yaml")
         val existingCustomContent = if (customFile.exists()) customFile.readText() else null
-        val existingConfigCustomContent = if (configCustomFile.exists()) configCustomFile.readText() else null
         
         val customContent = """
             question:
@@ -88,16 +86,11 @@ class StarshipConfigTest {
             
             println("Successfully loaded custom config: ${config.pipeline.id}")
         } finally {
-            // Restore original state
+            // Restore original state - only clean up the file we created
             if (existingCustomContent != null) {
                 customFile.writeText(existingCustomContent)
             } else if (customFile.exists()) {
                 customFile.delete()
-            }
-            if (existingConfigCustomContent != null) {
-                configCustomFile.writeText(existingConfigCustomContent)
-            } else if (configCustomFile.exists()) {
-                configCustomFile.delete()
             }
         }
     }

@@ -41,8 +41,8 @@ class StarshipConfig() {
 
         /** Reads Starship config from custom file if available, otherwise from default file, otherwise from embedded default. */
         fun readConfig(): StarshipConfig {
-            val customConfigFile = setOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
-            val defaultConfigFile = setOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
+            val customConfigFile = listOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
+            val defaultConfigFile = listOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
             
             return customConfigFile?.let { readYaml(it.readText()) }
                 ?: defaultConfigFile?.let { readYaml(it.readText()) }
