@@ -65,16 +65,16 @@ class McpServerAdapterHttpTest {
                     
                     post("/prompts/get") {
                         val body = call.receiveText()
-                        // Return a simple prompt response
+                        // Return a simple prompt response with correct capitalized role
                         call.respondText(
-                            """{"description":"Test prompt response","messages":[{"role":"user","content":[{"partType":"TEXT","text":"Test message"}]}]}""",
+                            """{"description":"Test prompt response","messages":[{"role":"User","content":[{"partType":"TEXT","text":"Test message"}]}]}""",
                             ContentType.Application.Json
                         )
                     }
                     
                     get("/tools/list") {
                         call.respondText(
-                            """[{"name":"test-tool","description":"A test tool","inputSchema":null,"outputSchema":null}]""",
+                            """[{"name":"test-tool","description":"A test tool","version":"1.0.0","inputSchema":{},"outputSchema":{},"hardCodedOutput":{}}]""",
                             ContentType.Application.Json
                         )
                     }
@@ -138,17 +138,11 @@ class McpServerAdapterHttpTest {
             val adapter = McpServerAdapterHttp(BASE_URL)
             
             try {
-                try {
-                    val response = adapter.getPrompt("test-prompt", mapOf("arg1" to "value1"))
-                    println("testGetPrompt result: $response")
-                    assertNotNull(response)
-                    assertEquals("Test prompt response", response.description)
-                    assertTrue(response.messages.size >= 1, "Should have at least one message")
-                } catch (e: McpServerException) {
-                    println("testGetPrompt error: ${e.message}")
-                    // Expected if there are deserialization issues
-                    assertTrue(e.message?.contains("getting prompt") == true || e.message?.contains("MCP server") == true)
-                }
+                val response = adapter.getPrompt("test-prompt", mapOf("arg1" to "value1"))
+                println("testGetPrompt result: $response")
+                assertNotNull(response)
+                assertEquals("Test prompt response", response.description)
+                assertTrue(response.messages.size >= 1, "Should have at least one message")
             } finally {
                 adapter.close()
             }
@@ -161,15 +155,11 @@ class McpServerAdapterHttpTest {
             val adapter = McpServerAdapterHttp(BASE_URL)
             
             try {
-                // This might fail due to deserialization, which is expected in a basic test
-                // Just test that the method exists and can be called
-                try {
-                    val tools = adapter.listTools()
-                    println("testListTools result: $tools")
-                } catch (e: McpServerException) {
-                    println("testListTools error: ${e.message}")
-                    // Expected - deserialization might fail for Executable
-                }
+                val tools = adapter.listTools()
+                println("testListTools result: $tools")
+                assertNotNull(tools)
+                assertTrue(tools.size >= 1, "Should have at least one tool")
+                assertEquals("test-tool", tools[0].name)
             } finally {
                 adapter.close()
             }
@@ -182,15 +172,10 @@ class McpServerAdapterHttpTest {
             val adapter = McpServerAdapterHttp(BASE_URL)
             
             try {
-                // Tools might not deserialize correctly, but we can test the method
-                try {
-                    val tool = adapter.getTool("test-tool")
-                    println("testGetTool result: $tool")
-                    // Tool might be null if deserialization fails, which is fine for this test
-                } catch (e: McpServerException) {
-                    println("testGetTool error: ${e.message}")
-                    // Expected if deserialization fails
-                }
+                val tool = adapter.getTool("test-tool")
+                println("testGetTool result: $tool")
+                assertNotNull(tool, "Tool should be found")
+                assertEquals("test-tool", tool?.name)
             } finally {
                 adapter.close()
             }
@@ -203,16 +188,11 @@ class McpServerAdapterHttpTest {
             val adapter = McpServerAdapterHttp(BASE_URL)
             
             try {
-                // Tool call should work as it returns McpToolResult
                 val result = adapter.callTool("test-tool", mapOf("input" to "test"))
                 println("testCallTool result: $result")
                 assertNotNull(result)
                 assertEquals("test-tool", result.name)
                 assertNull(result.error)
-            } catch (e: McpServerException) {
-                println("testCallTool error: ${e.message}")
-                // Expected if tool call fails
-                assertTrue(e.message?.contains("tool") == true || e.message?.contains("MCP server") == true)
             } finally {
                 adapter.close()
             }
