@@ -202,27 +202,30 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     label("Model Source: ${it.modelSource()}")
                     when (it) {
                         is OpenAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
+                            val configured = it.client.settings.isConfigured()
+                            label("API Key: ${if (configured) "Configured" else "Not Configured"}")
                             label("Base URL: ${it.client.settings.baseUrl}")
                             label("Log Level: ${it.client.settings.logLevel}")
                         }
 
                         is GeminiAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
+                            val configured = it.client.isConfigured()
+                            label("API Key: ${if (configured) "Configured" else "Not Configured"}")
                             label("Base URL: ${it.client.settings.baseUrl}")
                             label("Timeout: ${it.client.settings.timeoutSeconds}sec")
 
                         }
 
                         is OpenAiApiPlugin -> {
-                            it.config.endpoints.forEach {
-                                label("• ${it.source}") {
+                            it.config.endpoints.forEach { endpoint ->
+                                label("• ${endpoint.source}") {
                                     style { fontWeight = FontWeight.NORMAL }
                                 }
-                                label("  API Key: ${it.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                                label("  Base URL: ${it.settings.baseUrl}")
-                                label("  Log Level: ${it.settings.logLevel}")
-                                label("  Timeout: ${it.settings.timeoutSeconds}sec")
+                                val configured = endpoint.settings.isConfigured()
+                                label("  API Key: ${if (configured) "Configured" else "Not Configured"}")
+                                label("  Base URL: ${endpoint.settings.baseUrl}")
+                                label("  Log Level: ${endpoint.settings.logLevel}")
+                                label("  Timeout: ${endpoint.settings.timeoutSeconds}sec")
                             }
                         }
 

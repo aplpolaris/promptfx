@@ -87,8 +87,16 @@ class OpenAiAzureSettings : OpenAiApiSettings {
         // unclear how to do automated checks for Azure
     }
 
-    /** Returns true if the settings are configured with an API key and resource name. */
-    override fun isConfigured() = !apiKey.isNullOrBlank() && resourceName.isNotBlank()
+    /** Returns true if the settings are configured with an API key and resource name. Uses checkApiKey() logic to avoid duplication. */
+    override fun isConfigured(): Boolean {
+        return try {
+            checkApiKey()
+            // For Azure, also check that API key and resource name are present
+            !apiKey.isNullOrBlank() && resourceName.isNotBlank()
+        } catch (e: UnsupportedOperationException) {
+            false
+        }
+    }
 
     @Throws(IllegalStateException::class)
     fun buildClient() = OpenAI(
