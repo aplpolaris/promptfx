@@ -45,23 +45,23 @@ class AiEngineView: View() {
         with (controller) {
             menubutton("Chat", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
                 tooltip(chatService.value?.toString() ?: "Select the chat model to use.")
-                chatService.onChange { tooltip.text = it.toString() }
-                PromptFxModels.chatModels().forEach { model ->
-                    item(model.toString()) {
-                        style = menustyle(model.modelId, chatService.value?.modelId)
-                        styleProperty().bind(chatService.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { chatService.set(model) }
+                chatService.onChange { tooltip.text = it?.toString() }
+                PromptFxModels.sourcedChatModels().forEach { sourcedModel ->
+                    item(sourcedModel.toString()) {
+                        style = menustyle(sourcedModel.modelId, chatService.value?.modelId)
+                        styleProperty().bind(chatService.stringBinding { menustyle(sourcedModel.modelId, it?.modelId) })
+                        action { chatService.set(sourcedModel) }
                     }
                 }
             }
             menubutton("Embeddings", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                tooltip(embeddingStrategy.value?.model?.toString() ?: "Select the embedding engine to use.")
-                embeddingStrategy.onChange { tooltip.text = it?.model.toString() }
-                PromptFxModels.embeddingModels().forEach { model ->
-                    item(model.toString()) {
-                        style = menustyle(model.modelId, embeddingStrategy.value?.modelId)
-                        styleProperty().bind(embeddingStrategy.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { embeddingStrategy.set(EmbeddingStrategy(model, SmartTextChunker())) }
+                tooltip(embeddingStrategy.value?.toString() ?: "Select the embedding engine to use.")
+                embeddingStrategy.onChange { tooltip.text = it?.toString() }
+                PromptFxModels.sourcedEmbeddingStrategies().forEach { sourcedStrategy ->
+                    item(sourcedStrategy.toString()) {
+                        style = menustyle(sourcedStrategy.modelId, embeddingStrategy.value?.modelId)
+                        styleProperty().bind(embeddingStrategy.stringBinding { menustyle(sourcedStrategy.modelId, it?.modelId) })
+                        action { embeddingStrategy.set(sourcedStrategy) }
                     }
                 }
             }

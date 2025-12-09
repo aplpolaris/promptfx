@@ -25,7 +25,6 @@ import tri.ai.prompt.trace.*
 /** Gemini vision language chat model using the official SDK. */
 class GeminiSdkVisionLanguageChat(
     override val modelId: String,
-    override val modelSource: String = "Gemini-SDK",
     private val client: GeminiSdkClient
 ) : VisionLanguageChat {
 
@@ -56,5 +55,5 @@ class GeminiSdkVisionLanguageChat(
         }
     }
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini SDK)"
 }

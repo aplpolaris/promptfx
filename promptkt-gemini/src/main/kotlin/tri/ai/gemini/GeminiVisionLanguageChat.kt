@@ -27,13 +27,10 @@ import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with Gemini models. */
-class GeminiVisionLanguageChat(
-    override val modelId: String = GEMINI_25_FLASH_LITE,
-    override val modelSource: String = "Gemini",
-    val client: GeminiClient = GeminiClient.INSTANCE
-) : VisionLanguageChat {
+class GeminiVisionLanguageChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
+    VisionLanguageChat {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini)"
 
     override suspend fun chat(
         messages: List<VisionLanguageChatMessage>,

@@ -25,7 +25,6 @@ import tri.ai.prompt.trace.AiPromptTrace
 interface TextChat {
 
     val modelId: String
-    val modelSource: String
 
     /** Completes user text. */
     suspend fun chat(

@@ -145,7 +145,6 @@ class PPlanExecutorTest {
             // --- Create a mock chat service that returns predictable results ---
             val mockChat = object : TextChat {
                 override val modelId = "mock-chat"
-                override val modelSource = "Test"
                 override suspend fun chat(
                     messages: List<TextChatMessage>,
                     variation: MChatVariation,

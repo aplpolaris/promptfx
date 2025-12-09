@@ -283,11 +283,11 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {
-                if (doc.chunks.any { it.getEmbeddingInfo(service.modelId) == null })
-                    service.model.addEmbeddingInfo(doc)
+                if (doc.chunks.any { it.getEmbeddingInfo(service.strategy.model.modelId) == null })
+                    service.strategy.model.addEmbeddingInfo(doc)
                 var count = 0
                 doc.chunks.forEach {
-                    val embed = it.getEmbeddingInfo(service.modelId)
+                    val embed = it.getEmbeddingInfo(service.strategy.model.modelId)
                     if (embed != null) {
                         result[it] = embed
                         count++

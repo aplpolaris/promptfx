@@ -28,8 +28,8 @@ import tri.ai.core.*
 class GeminiSdkMultimodalChatTest {
 
     val client = GeminiSdkClient.INSTANCE
-    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, "Gemini-SDK", client)
-    val chat2 = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH, "Gemini-SDK", client)
+    val chat = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE, client)
+    val chat2 = GeminiSdkMultimodalChat(GeminiSdkModelIndex.GEMINI_25_FLASH, client)
 
     @Test
     @Tag("gemini-sdk")

@@ -73,11 +73,11 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
 
     val chatEngine: TextChat
-        get() = controller.chatService.value
+        get() = controller.chatService.value?.model ?: throw IllegalStateException("No chat model selected")
     val completionEngine: TextCompletion
-        get() = controller.completionEngine.value
+        get() = controller.completionEngine.value?.model ?: throw IllegalStateException("No completion model selected")
     val embeddingModel: EmbeddingModel
-        get() = controller.embeddingStrategy.value.model
+        get() = controller.embeddingStrategy.value?.strategy?.model ?: throw IllegalStateException("No embedding model selected")
 
     init {
         disableCreate()
@@ -190,7 +190,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     fun addDefaultTextCompletionParameters(common: ModelParameters) {
         parameters("Text Completion Model") {
             field("Model") {
-                combobox(controller.completionEngine, PromptFxModels.textCompletionModels())
+                combobox(controller.completionEngine, PromptFxModels.sourcedTextCompletionModels())
             }
             with (common) {
                 temperature()
@@ -204,7 +204,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     fun addDefaultChatParameters(common: ModelParameters) {
         parameters("Chat Model") {
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.chatModels())
+                combobox(controller.chatService, PromptFxModels.sourcedChatModels())
             }
             with (common) {
                 temperature()

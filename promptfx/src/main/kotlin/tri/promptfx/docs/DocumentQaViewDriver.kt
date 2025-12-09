@@ -45,19 +45,16 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
                 view.documentFolder.set(folderFile)
         }
     override var chatModel: String
-        get() = view.controller.chatService.value.modelId
+        get() = view.controller.chatService.value!!.modelId
         set(value) {
-            view.controller.chatService.set(
-                PromptFxModels.policy.chatModels().find { it.modelId == value }!!
-            )
+            val sourced = PromptFxModels.sourcedChatModels().find { it.modelId == value }!!
+            view.controller.chatService.set(sourced)
         }
     override var embeddingModel: String
-        get() = view.controller.embeddingStrategy.value.modelId
+        get() = view.controller.embeddingStrategy.value!!.modelId
         set(value) {
-            view.controller.embeddingStrategy.set(
-                EmbeddingStrategy(PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!,
-                    SmartTextChunker())
-            )
+            val sourced = PromptFxModels.sourcedEmbeddingStrategies().find { it.modelId == value }!!
+            view.controller.embeddingStrategy.set(sourced)
         }
     override var temp: Double
         get() = view.common.temp.value

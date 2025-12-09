@@ -47,7 +47,7 @@ abstract class ChatDriver : ScopedInstance, Component() {
 class OpenAiChatDriver : ChatDriver() {
 
     private val inst = OpenAiAdapter.INSTANCE
-    private val chatter = OpenAiChat(GPT35_TURBO, "OpenAI", inst)
+    private val chatter = OpenAiChat(GPT35_TURBO, inst)
 
     override var userName = System.getProperty("user.name")
     override var systemName = "ChatGPT (${chatter.modelId})"

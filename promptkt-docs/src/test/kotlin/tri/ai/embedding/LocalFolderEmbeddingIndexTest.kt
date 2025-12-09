@@ -48,7 +48,6 @@ class LocalFolderEmbeddingIndexTest {
 
 class MockEmbeddingModel: EmbeddingModel, TextChunker {
     override val modelId = "mock"
-    override val modelSource = "Test"
 
     override fun chunkText(text: String, maxChunkSize: Int) =
         SmartTextChunker().chunkText(text, maxChunkSize)

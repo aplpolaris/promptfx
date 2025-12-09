@@ -23,13 +23,10 @@ import tri.ai.core.EmbeddingModel
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 
 /** An embedding service that uses the OpenAI API. */
-class OpenAiEmbeddingModel(
-    override val modelId: String = EMBEDDING_ADA,
-    override val modelSource: String = "OpenAI",
-    val client: OpenAiAdapter = OpenAiAdapter.INSTANCE
-) : EmbeddingModel {
+class OpenAiEmbeddingModel(override val modelId: String = EMBEDDING_ADA, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
+    EmbeddingModel {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelId
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Double>>()
 

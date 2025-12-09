@@ -31,8 +31,8 @@ import tri.ai.core.testChat_Tools
 class OpenAiMultimodalChatTest {
 
     private val client = OpenAiAdapter.INSTANCE
-    private val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, "OpenAI", client)
-    private val chatVision = OpenAiMultimodalChat(OpenAiModelIndex.GPT4_TURBO_ID, "OpenAI", client)
+    private val chat = OpenAiMultimodalChat(OpenAiModelIndex.GPT35_TURBO_ID, client)
+    private val chatVision = OpenAiMultimodalChat(OpenAiModelIndex.GPT4_TURBO_ID, client)
 
     @Test
     fun canLoadMultimodalChatTestViaReflection() {

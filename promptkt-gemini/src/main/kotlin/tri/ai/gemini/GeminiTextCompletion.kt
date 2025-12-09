@@ -28,13 +28,10 @@ import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with Gemini models. */
-class GeminiTextCompletion(
-    override val modelId: String = GEMINI_25_FLASH_LITE,
-    override val modelSource: String = "Gemini",
-    val client: GeminiClient = GeminiClient.INSTANCE
-) : TextCompletion {
+class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
+    TextCompletion {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini)"
 
     override suspend fun complete(
         text: String,

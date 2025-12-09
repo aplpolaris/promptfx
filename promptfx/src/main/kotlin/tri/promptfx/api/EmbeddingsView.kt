@@ -37,7 +37,7 @@ import tri.promptfx.PromptFxModels
 class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embedding (each line will be calculated separately).") {
 
     private val input = SimpleStringProperty("")
-    private val model = SimpleObjectProperty(PromptFxModels.embeddingModelDefault())
+    private val model = SimpleObjectProperty(PromptFxModels.sourcedEmbeddingModels().firstOrNull())
     private val customOutputDimensionality = SimpleBooleanProperty(false)
     private val outputDimensionality = SimpleIntegerProperty(1)
 
@@ -45,7 +45,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
         addInputTextArea(input)
         parameters("Embeddings") {
             field("Model") {
-                combobox(model, PromptFxModels.embeddingModels())
+                combobox(model, PromptFxModels.sourcedEmbeddingModels())
             }
             field("Custom output dimensionality") {
                 checkbox("", customOutputDimensionality)
@@ -62,7 +62,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
     override suspend fun processUserInput(): AiPipelineResult {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
         val ouputDim = if (customOutputDimensionality.value) outputDimensionality.value else null
-        return model.value!!.calculateEmbedding(inputs, ouputDim).let {
+        return model.value!!.model.calculateEmbedding(inputs, ouputDim).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
             AiPromptTrace(

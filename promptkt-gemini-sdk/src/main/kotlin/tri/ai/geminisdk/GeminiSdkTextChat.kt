@@ -26,7 +26,6 @@ import tri.ai.prompt.trace.*
 /** Gemini text chat model using the official SDK. */
 class GeminiSdkTextChat(
     override val modelId: String,
-    override val modelSource: String = "Gemini-SDK",
     private val client: GeminiSdkClient
 ) : TextChat {
 
@@ -62,5 +61,5 @@ class GeminiSdkTextChat(
         }
     }
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini SDK)"
 }

@@ -26,7 +26,6 @@ import tri.ai.prompt.trace.*
 /** Gemini text completion model using the official SDK. */
 class GeminiSdkTextCompletion(
     override val modelId: String,
-    override val modelSource: String = "Gemini-SDK",
     private val client: GeminiSdkClient
 ) : TextCompletion {
 
@@ -56,5 +55,5 @@ class GeminiSdkTextCompletion(
         }
     }
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini SDK)"
 }

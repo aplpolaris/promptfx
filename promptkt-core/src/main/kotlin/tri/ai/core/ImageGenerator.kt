@@ -25,7 +25,6 @@ import java.net.URL
 interface ImageGenerator {
 
     val modelId: String
-    val modelSource: String
 
     /** Generate an image, return URL to access image. */
     suspend fun generateImage(

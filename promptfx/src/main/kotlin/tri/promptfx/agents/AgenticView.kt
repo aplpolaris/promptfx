@@ -158,7 +158,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 }
             }
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.policy.chatModels())
+                combobox(controller.chatService, PromptFxModels.sourcedChatModels())
             }
         }
         
@@ -238,7 +238,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         val executor: AgentChat =  when (engine.value) {
             WorkflowEngine.TOOL_CHAIN -> ToolChainExecutor(tools)
             WorkflowEngine.JSON_TOOL -> JsonToolExecutor(tools)
-            WorkflowEngine.WORKFLOW_PLANNER -> WorkflowExecutor(WorkflowExecutorChat(config), tools.map { it.toSolver(controller.chatService.value) })
+            WorkflowEngine.WORKFLOW_PLANNER -> WorkflowExecutor(WorkflowExecutorChat(config), tools.map { it.toSolver(controller.chatService.value!!.model) })
         }
 
         // set up task execution flow

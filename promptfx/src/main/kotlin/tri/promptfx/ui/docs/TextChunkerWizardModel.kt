@@ -131,7 +131,7 @@ class TextChunkerWizardModel: ViewModel() {
         folder.onChange { libraryFolder.set(it) }
         
         // Initialize embedding model with default
-        embeddingModel.set(controller.embeddingStrategy.value?.model)
+        embeddingModel.set(controller.embeddingStrategy.value!!.strategy?.model)
     }
 
     /** Get sample of input text based on current settings. */
@@ -172,7 +172,7 @@ class TextChunkerWizardModel: ViewModel() {
         val useChunks = chunks
             .filter(chunkFilter(doc.all!!))
             .take(MAX_PREVIEW_CHUNKS)
-        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingStrategy.value?.modelId, null) })
+        previewChunks.setAll(useChunks.map { it.asTextChunkViewModel(doc, controller.embeddingStrategy.value!!.strategy?.modelId, null) })
     }
 
     /** Chunker based on current settings. */

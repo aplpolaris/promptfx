@@ -23,13 +23,10 @@ import tri.ai.core.EmbeddingModel
 import tri.ai.gemini.GeminiModelIndex.EMBED4
 
 /** An embedding service that uses the Gemini API. */
-class GeminiEmbeddingModel(
-    override val modelId: String = EMBED4,
-    override val modelSource: String = "Gemini",
-    val client: GeminiClient = GeminiClient.INSTANCE
-) : EmbeddingModel {
+class GeminiEmbeddingModel(override val modelId: String = EMBED4, val client: GeminiClient = GeminiClient.INSTANCE) :
+    EmbeddingModel {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = "$modelId (Gemini)"
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 

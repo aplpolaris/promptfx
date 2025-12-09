@@ -95,7 +95,7 @@ class ChatViewAdvanced : ChatView(
             tools = if (toolChoice != null && tools != null) MChatTools(toolChoice, tools) else null
         )
 
-        val m = model.value!!
+        val m = model.value!!.model
         val result = m.chat(messages, params)
         return result.asPipelineResult()
     }

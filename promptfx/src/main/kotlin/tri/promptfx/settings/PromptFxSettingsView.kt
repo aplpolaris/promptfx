@@ -297,9 +297,9 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label("Embedding Strategy:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
-                label(controller.embeddingStrategy.stringBinding { "Model: ${it?.model?.modelId ?: "Not set"}" })
-                label(controller.embeddingStrategy.stringBinding { "Provider: ${it?.model?.javaClass?.simpleName ?: "Unknown"}" })
-                label(controller.embeddingStrategy.stringBinding { "Chunker: ${it?.chunker?.javaClass?.simpleName ?: "Unknown"}" })
+                label(controller.embeddingStrategy.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
+                label(controller.embeddingStrategy.stringBinding { "Provider: ${it?.source ?: "Unknown"}" })
+                label(controller.embeddingStrategy.stringBinding { "Chunker: ${it?.strategy?.chunker?.javaClass?.simpleName ?: "Unknown"}" })
             }
             
             separator()

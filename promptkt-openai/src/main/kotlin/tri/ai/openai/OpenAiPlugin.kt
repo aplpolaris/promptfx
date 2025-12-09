@@ -42,23 +42,23 @@ class OpenAiPlugin : TextPlugin {
     }
 
     override fun embeddingModels() =
-        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, modelSource(), client) }
+        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, modelSource(), client) } +
-        OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, modelSource(), client) }
+        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
+        OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, modelSource(), client) }
+        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, modelSource(), client) }
+        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, modelSource(), client) }
+        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, modelSource(), client) }
+        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()

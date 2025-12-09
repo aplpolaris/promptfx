@@ -31,7 +31,6 @@ import tri.ai.prompt.trace.PromptInfo.Companion.filled
 interface TextCompletion {
 
     val modelId: String
-    val modelSource: String
 
     /** Completes user text. */
     suspend fun complete(

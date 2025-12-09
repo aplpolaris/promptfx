@@ -40,7 +40,6 @@ val NoOpEmbeddingStrategy = EmbeddingStrategy(NoOpEmbeddingModel, NoOpChunker)
 /** A no-op version of the embedding service. */
 object NoOpEmbeddingModel : EmbeddingModel {
     override val modelId = "NONE"
-    override val modelSource = "None"
     override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) = text.map { listOf<Double>(0.0) }
 }
 

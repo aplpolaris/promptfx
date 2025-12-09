@@ -25,13 +25,10 @@ import tri.ai.core.*
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Chat completion with OpenAI models. */
-class OpenAiMultimodalChat(
-    override val modelId: String = OpenAiModelIndex.GPT35_TURBO,
-    override val modelSource: String = "OpenAI",
-    val client: OpenAiAdapter = OpenAiAdapter.INSTANCE
-) : MultimodalChat {
+class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
+    MultimodalChat {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelId
 
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,
