@@ -30,12 +30,13 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import tri.ai.core.tool.Executable
 import tri.ai.mcp.tool.McpToolResult
+import tri.ai.mcp.tool.StubTool
 
 /**
  * Remote MCP server adapter that connects to external MCP servers via HTTP.
  */
 @Beta
-class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
+class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
     
     private val httpClient = HttpClient(OkHttp) {
         engine {
@@ -103,12 +104,13 @@ class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
             val response = httpClient.get("$baseUrl/tools/list")
             if (response.status.isSuccess()) {
                 val responseBody = response.bodyAsText()
-                return objectMapper.readValue<List<Executable>>(responseBody)
+                // Tools are returned as StubTool instances from MCP servers
+                return objectMapper.readValue<List<StubTool>>(responseBody)
             } else {
                 throw McpServerException("Failed to list tools: ${response.status}")
             }
         } catch (e: Exception) {
-            throw McpServerException("Error connecting to MCP server: ${e.message}")
+            throw McpServerException("Error connecting to MCP server: ${e.message}", e)
         }
     }
 
@@ -129,12 +131,24 @@ class RemoteMcpServer(private val baseUrl: String) : McpServerAdapter {
 
             if (response.status.isSuccess()) {
                 val responseBody = response.bodyAsText()
-                return objectMapper.readValue<McpToolResult>(responseBody)
+                // Parse as Map first to handle the JSON structure
+                val resultMap = objectMapper.readValue<Map<String, Any?>>(responseBody)
+                val toolName = resultMap["name"] as? String ?: name
+                val error = resultMap["error"] as? String
+                
+                // Convert output to JsonElement using JsonSerializers
+                val output = resultMap["output"]?.let {
+                    JsonSerializers.toJsonElement(it)
+                }
+                
+                return McpToolResult(toolName, output, error, null)
             } else {
                 throw McpServerException("Failed to call tool '$name': ${response.status}")
             }
+        } catch (e: McpServerException) {
+            throw e
         } catch (e: Exception) {
-            throw McpServerException("Error calling tool on MCP server: ${e.message}")
+            throw McpServerException("Error calling tool on MCP server: ${e.message}", e)
         }
     }
 

@@ -95,5 +95,10 @@ class StdioJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
         out.println(JsonSerializers.serialize(err))
         out.flush()
     }
+
+    fun close() {
+        // todo: close resources if needed
+    }
+
 }
 

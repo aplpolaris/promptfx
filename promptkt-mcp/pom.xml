@@ -12,7 +12,7 @@
     <packaging>jar</packaging>
 	
     <name>${project.artifactId}-${project.version}</name>
-    <description>MCP (Model Context Protocol) client implementation.</description>
+    <description>MCP (Model Context Protocol) server and client implementations.</description>
 
     <dependencies>
         <dependency>
@@ -43,6 +43,12 @@
             <artifactId>ktor-client-okhttp-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 		
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -60,6 +66,18 @@
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-test</artifactId>
             <version>${kotlinx-coroutines-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-core-jvm</artifactId>
+            <version>${ktor.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-netty-jvm</artifactId>
+            <version>${ktor.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -19,24 +19,23 @@
  */
 package tri.ai.mcp
 
-import tri.ai.mcp.tool.ToolLibrary
-
 /**
- * Interface for connecting to MCP prompt servers, whether capabilities provided are embedded
- * or accessible via stdio, http, etc.
- * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+ * MCP server that runs over http -- switch out for a library when possible.
+ * Uses [McpServerAdapter] for the underlying server implementation,
+ * allowing the server to be defined in-memory or to mirror a remote server.
  */
-interface McpServerAdapter: ToolLibrary {
+class McpServerHttp(private val server: McpServerAdapter) {
 
-    /** Get server capabilities. */
-    suspend fun getCapabilities(): McpServerCapabilities?
+    private val businessLogic = McpServerHandler(server)
 
-    /** List all available prompts from the server. */
-    suspend fun listPrompts(): List<McpPrompt>
-    /** Get a filled prompt with the given arguments. */
-    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
+    /** Start the HTTP server. */
+    suspend fun startServer() {
+        TODO()
+    }
 
-    /** Close the connection to the server. */
-    suspend fun close()
+    suspend fun close() {
+        server.close()
+        // router.close()
+    }
+
 }
-

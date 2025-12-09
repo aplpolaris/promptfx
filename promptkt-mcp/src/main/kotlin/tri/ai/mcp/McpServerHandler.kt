@@ -30,7 +30,7 @@ import tri.ai.mcp.tool.McpToolResult
  * Handles MCP-specific business logic for JSON-RPC requests.
  * Focuses on MCP protocol implementation without JSON-RPC concerns.
  */
-class McpHandler(private val server: McpServerAdapter) : JsonRpcHandler {
+class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
 
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
