@@ -32,33 +32,41 @@ class OpenAiPlugin : TextPlugin {
 
     override fun modelSource() = "OpenAI"
 
-    override fun modelInfo() = try {
-        runBlocking {
-            client.client.models().map { it.toModelInfo(modelSource()) }
+    override fun modelInfo() = if (client.settings.isConfigured())
+        try {
+            runBlocking {
+                client.client.models().map { it.toModelInfo(modelSource()) }
+            }
+        } catch (x: Exception) {
+            x.printStackTrace()
+            emptyList()
         }
-    } catch (x: Exception) {
-        x.printStackTrace()
-        emptyList()
-    }
+    else emptyList()
 
     override fun embeddingModels() =
-        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, client) }
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
         OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
+        if (!client.settings.isConfigured()) emptyList()
+        else OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()

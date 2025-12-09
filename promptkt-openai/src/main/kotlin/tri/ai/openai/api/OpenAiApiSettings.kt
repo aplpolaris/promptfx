@@ -30,5 +30,8 @@ interface OpenAiApiSettings {
     /** Hook for checking validity of an API key. */
     @Throws(UnsupportedOperationException::class)
     fun checkApiKey()
+
+    /** Returns true if the settings are configured with an API key. */
+    fun isConfigured(): Boolean
 }
 

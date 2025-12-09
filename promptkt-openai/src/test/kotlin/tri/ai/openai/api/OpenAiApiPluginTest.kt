@@ -19,6 +19,7 @@
  */
 package tri.ai.openai.api
 
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class OpenAiApiPluginTest {
@@ -30,6 +31,20 @@ class OpenAiApiPluginTest {
             println("$e: ${models.size} models")
             models.forEach { println(it) }
         }
+    }
+
+    @Test
+    fun testNoModelsWithoutApiKey() {
+        val plugin = OpenAiApiPlugin()
+        // When no API key is configured, no models should be returned
+        assertTrue(plugin.modelInfo().isEmpty(), "Should return no models when API key is not configured")
+        assertTrue(plugin.endpoints().isEmpty(), "Should return no endpoints when API key is not configured")
+        assertTrue(plugin.chatModels().isEmpty(), "Should return no chat models when API key is not configured")
+        assertTrue(plugin.textCompletionModels().isEmpty(), "Should return no text completion models when API key is not configured")
+        assertTrue(plugin.embeddingModels().isEmpty(), "Should return no embedding models when API key is not configured")
+        assertTrue(plugin.multimodalModels().isEmpty(), "Should return no multimodal models when API key is not configured")
+        assertTrue(plugin.visionLanguageModels().isEmpty(), "Should return no vision language models when API key is not configured")
+        assertTrue(plugin.imageGeneratorModels().isEmpty(), "Should return no image generator models when API key is not configured")
     }
 
 }

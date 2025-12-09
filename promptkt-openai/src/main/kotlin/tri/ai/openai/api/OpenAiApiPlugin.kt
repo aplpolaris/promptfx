@@ -40,8 +40,8 @@ class OpenAiApiPlugin : TextPlugin {
 
     override fun modelSource() = "OpenAI-Compatible API"
 
-    fun endpoints() = config.endpoints.map { it.source }
-    fun modelInfoByEndpoint() = config.endpoints.mapNotNull { e ->
+    fun endpoints() = config.endpoints.filter { it.settings.isConfigured() }.map { it.source }
+    fun modelInfoByEndpoint() = config.endpoints.filter { it.settings.isConfigured() }.mapNotNull { e ->
         try {
             runBlocking {
                 e to client(e.settings).client.models().map { model ->
@@ -57,33 +57,33 @@ class OpenAiApiPlugin : TextPlugin {
     override fun modelInfo() = modelInfoByEndpoint().values.flatten()
 
     override fun embeddingModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.embeddingModels().map { OpenAiEmbeddingModel(it, client(e)) }
         }
 
     override fun textCompletionModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.chatModelsInclusive().map { OpenAiCompletionChat(it, client(e)) } +
             e.index.completionModels().map { OpenAiCompletion(it, client(e)) }
         }
 
     override fun chatModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.chatModelsInclusive().map { OpenAiChat(it, client(e)) }
         }
 
     override fun multimodalModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.multimodalModels().map { OpenAiMultimodalChat(it, client(e)) }
         }
 
     override fun visionLanguageModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client(e)) }
         }
 
     override fun imageGeneratorModels() =
-        config.endpoints.flatMap { e ->
+        config.endpoints.filter { it.settings.isConfigured() }.flatMap { e ->
             e.index.imageGeneratorModels().map { OpenAiImageGenerator(it, client(e)) }
         }
 
