@@ -91,6 +91,34 @@ object TextDocEmbeddings {
         }
     }
 
+    //region LIBRARY STATISTICS
+
+    /** Get the total number of chunks in a library. */
+    fun TextLibrary.chunkCount(): Int = docs.sumOf { it.chunks.size }
+
+    /** Get the set of all embedding model IDs used in a library. */
+    fun TextLibrary.embeddingModels(): Set<String> =
+        docs.asSequence()
+            .flatMap { doc -> doc.chunks.asSequence() }
+            .mapNotNull { it.getEmbeddingInfo()?.keys }
+            .flatten()
+            .toSet()
+
+    /** Get summary info for a library: number of documents, chunks, and embedding models. */
+    fun TextLibrary.summaryInfo(): String {
+        val docCount = docs.size
+        val chunkCount = chunkCount()
+        val models = embeddingModels()
+        return buildString {
+            append("$docCount document(s), $chunkCount chunk(s)")
+            if (models.isNotEmpty()) {
+                append(", embeddings: ${models.joinToString(", ")}")
+            }
+        }
+    }
+
+    //endregion
+
 }
 
 typealias EmbeddingInfo = MutableMap<String, List<Double>>
