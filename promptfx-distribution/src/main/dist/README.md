@@ -77,15 +77,13 @@ promptfx/
 ├── promptfx-[version].jar         # Main application JAR (includes all dependencies)
 ├── apikey.txt                     # (optional) OpenAI API key
 ├── apikey-gemini.txt              # (optional) Gemini API key
-├── starship-custom.yaml           # (optional) Custom Starship configuration
 └── config/                        # YAML configuration files
     ├── openai-models.yaml
     ├── gemini-models.yaml
     ├── prompts.yaml
     ├── views.yaml
     ├── modes.yaml
-    ├── starship.yaml
-    └── starship-custom.yaml       # (optional) Alternative location for custom config
+    └── starship.yaml
 ```
 
 ### 🔐 API Key Setup
@@ -123,14 +121,6 @@ PromptFX uses YAML files to configure models, views, prompts, and runtime behavi
 | `starship.yaml` | Configuration of the "starship" demo mode                  |
 
 These files are located in the `config/` folder and loaded at runtime.
-
-#### 🎨 Custom Starship Configuration
-
-You can override the default Starship configuration by creating a `starship-custom.yaml` file. This allows you to customize the demo mode without modifying the default configuration files. The custom file can be placed in:
-- Root directory: `starship-custom.yaml` (highest priority)
-- Config directory: `config/starship-custom.yaml`
-
-The configuration follows the same format as `config/starship.yaml`. If no custom file exists, the application will fall back to the default configuration.
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
 

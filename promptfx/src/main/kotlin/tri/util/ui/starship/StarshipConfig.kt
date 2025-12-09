@@ -39,13 +39,11 @@ class StarshipConfig() {
         fun readDefaultYaml(): StarshipConfig =
             readYaml(StarshipConfig::class.java.getResource("resources/default-starship-config.yaml")!!.readText())
 
-        /** Reads Starship config from custom file if available, otherwise from default file, otherwise from embedded default. */
+        /** Reads Starship config from file if available, otherwise from embedded default. */
         fun readConfig(): StarshipConfig {
-            val customConfigFile = listOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
-            val defaultConfigFile = listOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
+            val configFile = listOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
             
-            return customConfigFile?.let { readYaml(it.readText()) }
-                ?: defaultConfigFile?.let { readYaml(it.readText()) }
+            return configFile?.let { readYaml(it.readText()) }
                 ?: readDefaultYaml()
         }
     }

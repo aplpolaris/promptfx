@@ -49,10 +49,10 @@ class StarshipConfigTest {
     }
 
     @Test
-    fun testReadConfigWithCustomFile() {
-        // Save reference to any existing custom file
-        val customFile = File("starship-custom.yaml")
-        val existingCustomContent = if (customFile.exists()) customFile.readText() else null
+    fun testReadConfigWithFile() {
+        // Save reference to any existing file
+        val configFile = File("starship.yaml")
+        val existingContent = if (configFile.exists()) configFile.readText() else null
         
         val customContent = """
             question:
@@ -73,24 +73,24 @@ class StarshipConfigTest {
         """.trimIndent()
         
         try {
-            // Create custom file in root directory (higher priority)
-            customFile.writeText(customContent)
+            // Create config file in root directory
+            configFile.writeText(customContent)
             
-            // Load config - should pick up the custom file
+            // Load config - should pick up the config file
             val config = StarshipConfig.readConfig()
             
-            // Verify custom config was loaded
+            // Verify config was loaded
             assertEquals("custom/test@1.0.0", config.pipeline.id)
             assertEquals("Custom question template", config.question.template)
             assertEquals(500, config.layout.backgroundIconCount)
             
-            println("Successfully loaded custom config: ${config.pipeline.id}")
+            println("Successfully loaded config: ${config.pipeline.id}")
         } finally {
             // Restore original state - only clean up the file we created
-            if (existingCustomContent != null) {
-                customFile.writeText(existingCustomContent)
-            } else if (customFile.exists()) {
-                customFile.delete()
+            if (existingContent != null) {
+                configFile.writeText(existingContent)
+            } else if (configFile.exists()) {
+                configFile.delete()
             }
         }
     }
