@@ -57,6 +57,26 @@ class McpServerHttpTest {
         }
     }
 
+    private suspend fun waitForServerReady(maxAttempts: Int = 10) {
+        repeat(maxAttempts) { attempt ->
+            try {
+                val response = httpClient.post("http://localhost:$testPort/") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"jsonrpc":"2.0","id":0,"method":"ping"}""")
+                }
+                if (response.status.isSuccess() || response.status == HttpStatusCode.OK) {
+                    return
+                }
+            } catch (e: Exception) {
+                if (attempt < maxAttempts - 1) {
+                    kotlinx.coroutines.delay(100)
+                } else {
+                    throw Exception("Server failed to start after $maxAttempts attempts", e)
+                }
+            }
+        }
+    }
+
     @Test
     fun testStartServerAndInitialize() {
         runTest {
@@ -64,8 +84,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            // Wait for server to start
-            Thread.sleep(500)
+            waitForServerReady()
             
             val response = sendJsonRpcRequest("initialize", null)
             
@@ -82,7 +101,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            Thread.sleep(500)
+            waitForServerReady()
             
             val response = sendJsonRpcRequest("prompts/list", null)
             
@@ -98,7 +117,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            Thread.sleep(500)
+            waitForServerReady()
             
             val params = buildJsonObject {
                 put("name", "test-prompt")
@@ -118,7 +137,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            Thread.sleep(500)
+            waitForServerReady()
             
             val response = sendJsonRpcRequest("tools/list", null)
             
@@ -133,7 +152,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            Thread.sleep(500)
+            waitForServerReady()
             
             val response = sendJsonRpcRequest("invalid/method", null)
             
@@ -149,7 +168,7 @@ class McpServerHttpTest {
             mcpServer = McpServerHttp(adapter, testPort)
             mcpServer.startServer()
             
-            Thread.sleep(500)
+            waitForServerReady()
             
             val response = httpClient.post("http://localhost:$testPort/") {
                 contentType(ContentType.Application.Json)

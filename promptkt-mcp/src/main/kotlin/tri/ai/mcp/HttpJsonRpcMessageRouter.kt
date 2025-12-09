@@ -75,7 +75,9 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                     call.respondJsonRpcResult(id, result)
                 } else if (method == "notifications/close") {
                     // Special case: close notification should exit
+                    // Respond first, then close to avoid race condition
                     call.respond(HttpStatusCode.NoContent)
+                    kotlinx.coroutines.delay(100) // Allow response to be sent
                     close()
                 } else if (method?.startsWith("notifications/") == true) {
                     // Other notifications have no response
