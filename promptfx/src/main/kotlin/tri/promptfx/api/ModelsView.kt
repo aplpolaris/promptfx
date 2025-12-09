@@ -101,7 +101,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                     listview(sortedModels) {
                         vgrow = Priority.ALWAYS
                         cellFormat {
-                            text = "${it.id} (${it.source})"
+                            text = "${it.id} [${it.source}]"
                             graphic = graphic(it.type)
                             val inPolicy = it.id in PromptFxModels.modelIds()
                             style = when {

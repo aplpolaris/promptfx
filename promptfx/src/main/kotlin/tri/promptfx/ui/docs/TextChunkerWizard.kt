@@ -360,7 +360,7 @@ class TextChunkerWizardLocation: View("Library Location") {
                     combobox(model.embeddingModel, PromptFxModels.embeddingModels()) {
                         visibleWhen(model.isGenerateEmbeddings)
                         managedWhen(model.isGenerateEmbeddings)
-                        cellFormat { text = it.modelId }
+                        cellFormat { text = it.toString() }
                         prefWidth = 200.0
                     }
                 }

@@ -94,24 +94,42 @@ interface TextPlugin {
         /** Get registered image models. */
         fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
 
-        /** Get an embedding model by id. Throws an exception if not found. */
-        fun embeddingModel(modelId: String) =
-            embeddingModels().first { it.modelId == modelId }
-        /** Get a text completion model by id. Throws an exception if not found. */
-        fun textCompletionModel(modelId: String) =
-            textCompletionModels().first { it.modelId == modelId }
-        /** Get a chat model by id. Throws an exception if not found. */
-        fun chatModel(modelId: String) =
-            chatModels().first { it.modelId == modelId }
-        /** Get a multimodal model by id. Throws an exception if not found. */
-        fun multimodalModel(modelId: String) =
-            multimodalModels().first { it.modelId == modelId }
-        /** Get a vision language model by id. Throws an exception if not found. */
-        fun visionLanguageModel(modelId: String) =
-            visionLanguageModels().first { it.modelId == modelId }
-        /** Get an image model by id. Throws an exception if not found. */
-        fun imageGeneratorModel(modelId: String) =
-            imageGeneratorModels().first { it.modelId == modelId }
+        /** Get an embedding model by id and optionally source. Throws an exception if not found. */
+        fun embeddingModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                embeddingModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                embeddingModels().first { it.modelId == modelId }
+        /** Get a text completion model by id and optionally source. Throws an exception if not found. */
+        fun textCompletionModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                textCompletionModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                textCompletionModels().first { it.modelId == modelId }
+        /** Get a chat model by id and optionally source. Throws an exception if not found. */
+        fun chatModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                chatModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                chatModels().first { it.modelId == modelId }
+        /** Get a multimodal model by id and optionally source. Throws an exception if not found. */
+        fun multimodalModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                multimodalModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                multimodalModels().first { it.modelId == modelId }
+        /** Get a vision language model by id and optionally source. Throws an exception if not found. */
+        fun visionLanguageModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                visionLanguageModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                visionLanguageModels().first { it.modelId == modelId }
+        /** Get an image model by id and optionally source. Throws an exception if not found. */
+        fun imageGeneratorModel(modelId: String, modelSource: String? = null) =
+            if (modelSource != null)
+                imageGeneratorModels().first { it.modelId == modelId && it.modelSource == modelSource }
+            else
+                imageGeneratorModels().first { it.modelId == modelId }
 
         /**
          * Return a [ClassLoader] that looks for files in the "config/modules"
