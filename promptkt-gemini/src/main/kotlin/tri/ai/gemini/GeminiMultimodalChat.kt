@@ -27,10 +27,13 @@ import tri.ai.prompt.trace.*
 import tri.util.info
 
 /** Chat completion with Gemini models. */
-class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
-    MultimodalChat {
+class GeminiMultimodalChat(
+    override val modelId: String = GeminiModelIndex.GEMINI_25_FLASH_LITE,
+    override val modelSource: String = "Gemini",
+    val client: GeminiClient = GeminiClient.INSTANCE
+) : MultimodalChat {
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,

@@ -31,6 +31,7 @@ import kotlin.jvm.optionals.getOrNull
 /** Gemini multimodal chat model using the official SDK. */
 class GeminiSdkMultimodalChat(
     override val modelId: String,
+    override val modelSource: String = "Gemini-SDK",
     private val client: GeminiSdkClient
 ) : MultimodalChat {
 
@@ -80,7 +81,7 @@ class GeminiSdkMultimodalChat(
         client.close()
     }
 
-    override fun toString() = "$modelId (Gemini SDK)"
+    override fun toString() = "$modelId [$modelSource]"
 
     companion object {
         fun Candidate.fromGeminiCandidate(): MultimodalChatMessage {

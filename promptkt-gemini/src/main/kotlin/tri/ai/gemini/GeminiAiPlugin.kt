@@ -43,21 +43,21 @@ class GeminiAiPlugin : TextPlugin {
         }
     else listOf()
 
-    override fun embeddingModels() = models(GeminiModelIndex.embeddingModels()) { GeminiEmbeddingModel(it, client) }
+    override fun embeddingModels() = models(GeminiModelIndex.embeddingModels()) { GeminiEmbeddingModel(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(GeminiModelIndex.chatModelsInclusive()) { GeminiTextChat(it, client) }
+        models(GeminiModelIndex.chatModelsInclusive()) { GeminiTextChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
-        models(GeminiModelIndex.multimodalModels()) { GeminiMultimodalChat(it, client) }
+        models(GeminiModelIndex.multimodalModels()) { GeminiMultimodalChat(it, modelSource(), client) }
 
     override fun textCompletionModels() =
         models(GeminiModelIndex.completionModels() + GeminiModelIndex.chatModelsInclusive()) {
-            GeminiTextCompletion(it, client)
+            GeminiTextCompletion(it, modelSource(), client)
         }
 
     override fun visionLanguageModels() =
-        models(GeminiModelIndex.visionLanguageModels()) { GeminiVisionLanguageChat(it, client) }
+        models(GeminiModelIndex.visionLanguageModels()) { GeminiVisionLanguageChat(it, modelSource(), client) }
 
     override fun imageGeneratorModels() = models(GeminiModelIndex.imageGeneratorModels()) { TODO() }
 

@@ -32,6 +32,7 @@ interface EmbeddingModel {
         get() = EmbeddingPrecision.FIRST_EIGHT
 
     val modelId: String
+    val modelSource: String
 
     /** Calculate embedding for multiple texts. */
     suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int? = null): List<List<Double>>

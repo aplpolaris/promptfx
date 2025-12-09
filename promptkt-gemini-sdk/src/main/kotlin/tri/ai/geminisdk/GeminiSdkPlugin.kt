@@ -50,25 +50,25 @@ class GeminiSdkPlugin : TextPlugin {
     else listOf()
 
     override fun embeddingModels() = models(GeminiSdkModelIndex.embeddingModels()) {
-        GeminiSdkEmbeddingModel(it, client)
+        GeminiSdkEmbeddingModel(it, modelSource(), client)
     }
 
     override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModelsInclusive()) {
-        GeminiSdkTextChat(it, client) 
+        GeminiSdkTextChat(it, modelSource(), client) 
     }
 
     override fun multimodalModels() = models(GeminiSdkModelIndex.multimodalModels()) { 
-        GeminiSdkMultimodalChat(it, client) 
+        GeminiSdkMultimodalChat(it, modelSource(), client) 
     }
 
     override fun textCompletionModels() = models(
         GeminiSdkModelIndex.completionModels() + GeminiSdkModelIndex.chatModelsInclusive()
     ) {
-        GeminiSdkTextCompletion(it, client)
+        GeminiSdkTextCompletion(it, modelSource(), client)
     }
 
     override fun visionLanguageModels() = models(GeminiSdkModelIndex.visionLanguageModels()) { 
-        GeminiSdkVisionLanguageChat(it, client) 
+        GeminiSdkVisionLanguageChat(it, modelSource(), client) 
     }
 
     override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> = 

@@ -28,6 +28,7 @@ import java.net.URI
 interface VisionLanguageChat {
 
     val modelId: String
+    val modelSource: String
 
     /** Completes user text. */
     suspend fun chat(

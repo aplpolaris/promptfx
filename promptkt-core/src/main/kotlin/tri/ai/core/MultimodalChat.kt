@@ -31,6 +31,7 @@ interface MultimodalChat {
 
     /** Identifier for underlying model. */
     val modelId: String
+    val modelSource: String
 
     /** Provided a response to a sequence of chat messages. */
     suspend fun chat(

@@ -24,6 +24,7 @@ import tri.ai.core.EmbeddingModel
 /** Gemini embedding model using the official SDK. */
 class GeminiSdkEmbeddingModel(
     override val modelId: String,
+    override val modelSource: String = "Gemini-SDK",
     private val client: GeminiSdkClient
 ) : EmbeddingModel {
 
@@ -32,5 +33,5 @@ class GeminiSdkEmbeddingModel(
             embedding.map { it.toDouble() }
         }
 
-    override fun toString() = "$modelId (Gemini SDK)"
+    override fun toString() = "$modelId [$modelSource]"
 }
