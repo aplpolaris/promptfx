@@ -30,8 +30,8 @@ import tri.util.json.jsonMapper
 class GeminiMultimodalChatTest {
 
     val client = GeminiClient.INSTANCE
-    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH_LITE, client)
-    val chat2 = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH, client)
+    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH_LITE, "Gemini", client)
+    val chat2 = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH, "Gemini", client)
 
     @Test
     @Tag("gemini")

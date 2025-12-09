@@ -29,7 +29,7 @@ import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
 class GeminiSdkTextCompletionTest {
 
-    val client = GeminiSdkTextCompletion(GEMINI_25_FLASH_LITE, GeminiSdkClient.INSTANCE)
+    val client = GeminiSdkTextCompletion(GEMINI_25_FLASH_LITE, "Gemini-SDK", GeminiSdkClient.INSTANCE)
 
     @Test
     @Tag("gemini-sdk")

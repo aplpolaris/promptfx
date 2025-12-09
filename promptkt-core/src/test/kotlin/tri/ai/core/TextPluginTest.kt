@@ -43,6 +43,7 @@ class TextPluginTest : TextPlugin {
 /** Minimal test text completion model. */
 internal class TestTextCompletion : TextCompletion {
     override val modelId = "test-model"
+    override val modelSource = "TestShim"
     override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
         AiPromptTrace(null, AiModelInfo(modelId), AiExecInfo(), AiOutputInfo.text("test response"))
 }
@@ -50,6 +51,7 @@ internal class TestTextCompletion : TextCompletion {
 /** Minimal test text chat model. */
 internal class TestTextChat : TextChat {
     override val modelId = "test-model"
+    override val modelSource = "TestShim"
     override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
         AiPromptTrace(
             null,

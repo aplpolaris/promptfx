@@ -41,7 +41,7 @@ class GeminiSdkVisionLanguageChatTest {
         @BeforeAll
         fun setUp() {
             sdkClient = GeminiSdkClient.INSTANCE
-            client = GeminiSdkVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE, sdkClient)
+            client = GeminiSdkVisionLanguageChat(modelId = GEMINI_25_FLASH_LITE, modelSource = "Gemini-SDK", client = sdkClient)
         }
 
         @JvmStatic
