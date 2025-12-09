@@ -243,7 +243,7 @@ class StarshipView : Fragment("Starship") {
         job = runAsync {
             info<StarshipView>("Running Starship pipeline with delay=$isExplainerVisible...")
             runBlocking {
-                StarshipPipelineExecutor(configs.question, configs.pipeline, controller.chatService.value, stepDelayMs = if (isExplainerVisible) 3000 else 0,
+                StarshipPipelineExecutor(configs.question, configs.pipeline, controller.chatService.value!!.model, stepDelayMs = if (isExplainerVisible) 3000 else 0,
                     find<PromptFxWorkspace>(), baseComponentTitle!!, results)
                     .execute()
             }

@@ -194,7 +194,7 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
             "tone" to conversationTone.value,
             "script" to conversationScript.value
         )
-        return controller.chatService.value.chat(
+        return controller.chatService.value!!.model.chat(
             listOf(TextChatMessage(MChatRole.System, systemMessage)) +
                 history.toChatMessages(nextPerson, otherPersons, maxMessageHistory.value),
             tokens = maxTokens.value,

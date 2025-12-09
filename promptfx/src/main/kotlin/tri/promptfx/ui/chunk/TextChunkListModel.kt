@@ -51,14 +51,14 @@ class TextChunkListModel : Component(), ScopedInstance {
 
     fun setChunkList(chunks: List<Pair<TextChunk, TextDoc>>) {
         val newChunks = chunks.map { (ch, doc) ->
-            Pair(ch, doc).asTextChunkViewModel(controller.embeddingStrategy.value.modelId)
+            Pair(ch, doc).asTextChunkViewModel(controller.embeddingStrategy.value!!.strategy.modelId)
         }
         chunkList.setAll(newChunks)
     }
 
     fun applyEmbeddingFilter(text: String) {
         require(text.isNotBlank()) { "Filter text must not be blank" }
-        filterModel.createSemanticFilter(text, chunkList, controller.embeddingStrategy.value.model)
+        filterModel.createSemanticFilter(text, chunkList, controller.embeddingStrategy.value!!.strategy.model)
     }
 
 }

@@ -82,7 +82,7 @@ class DocumentQaView: AiPlanTaskView(
     val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
         embeddingIndex = controller.embeddingStrategy.objectBinding(documentFolder, maxChunkSize) {
-            LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
+            LocalFolderEmbeddingIndex(documentFolder.value, it!!.strategy).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }
         }
@@ -198,7 +198,7 @@ class DocumentQaView: AiPlanTaskView(
             minChunkSize = minChunkSizeForRelevancy.value,
             contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
             contextChunks = chunksToSendWithQuery.value,
-            chatEngine = controller.chatService.value,
+            chatEngine = controller.chatService.value!!.model,
             maxTokens = common.maxTokens.value,
             temp = common.temp.value,
             numResponses = common.numResponses.value

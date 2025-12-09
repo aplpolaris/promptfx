@@ -115,7 +115,7 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         val modelInfo = prompt.model ?: AiModelInfo("N/A")
         template.set(promptInfo.template)
         fields.setAll(promptInfo.params.entries.map { it.key to it.value.toString() })
-        val model = PromptFxModels.chatModels().find { it.modelId == modelInfo.modelId }
+        val model = PromptFxModels.sourcedChatModels().find { it.modelId == modelInfo.modelId }
         if (model != null) {
             controller.chatService.set(model)
         } else {

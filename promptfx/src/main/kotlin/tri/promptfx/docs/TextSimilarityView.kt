@@ -52,7 +52,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
     override suspend fun processUserInput(): AiPipelineResult {
         val chunks = secondText.get().splitIntoChunks()
-        val mod = controller.embeddingStrategy.get().model
+        val mod = controller.embeddingStrategy.get()!!.strategy.model
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
 
         val score = cosineSimilarity(embedList[0], embedList[1])
