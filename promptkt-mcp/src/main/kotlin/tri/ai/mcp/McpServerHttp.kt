@@ -30,7 +30,7 @@ class McpServerHttp(private val server: McpServerAdapter, private val port: Int 
     private val router = HttpJsonRpcMessageRouter(businessLogic)
 
     /** Start the HTTP server. */
-    suspend fun startServer() {
+    fun startServer() {
         router.startServer(port)
     }
 

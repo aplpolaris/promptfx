@@ -87,6 +87,7 @@ class McpServerHttpTest {
             waitForServerReady()
             
             val response = sendJsonRpcRequest("initialize", null)
+            println(response)
             
             assertTrue(response.contains("\"protocolVersion\""))
             assertTrue(response.contains("\"serverInfo\""))
@@ -104,6 +105,7 @@ class McpServerHttpTest {
             waitForServerReady()
             
             val response = sendJsonRpcRequest("prompts/list", null)
+            println(response)
             
             assertTrue(response.contains("\"prompts\""))
             assertTrue(response.contains("test-prompt"))
@@ -125,6 +127,7 @@ class McpServerHttpTest {
             }
             
             val response = sendJsonRpcRequest("prompts/get", params)
+            println(response)
             
             assertTrue(response.contains("\"messages\""))
         }
@@ -140,6 +143,7 @@ class McpServerHttpTest {
             waitForServerReady()
             
             val response = sendJsonRpcRequest("tools/list", null)
+            println(response)
             
             assertTrue(response.contains("\"tools\""))
         }
@@ -155,6 +159,7 @@ class McpServerHttpTest {
             waitForServerReady()
             
             val response = sendJsonRpcRequest("invalid/method", null)
+            println(response)
             
             assertTrue(response.contains("\"error\""))
             assertTrue(response.contains("-32601") || response.contains("Method not found"))
@@ -174,6 +179,7 @@ class McpServerHttpTest {
                 contentType(ContentType.Application.Json)
                 setBody("{not valid json")
             }
+            println(response)
             
             val responseText = response.bodyAsText()
             assertTrue(responseText.contains("\"error\""))
@@ -199,52 +205,34 @@ class McpServerHttpTest {
         return response.bodyAsText()
     }
 
-    private fun createTestAdapter(): McpServerAdapter {
-        return object : McpServerAdapter {
-            override suspend fun getCapabilities(): McpServerCapabilities {
-                return McpServerCapabilities(
-                    prompts = McpServerCapability(listChanged = false),
-                    tools = null
-                )
-            }
+    private fun createTestAdapter() = object : McpServerAdapter {
+        override suspend fun getCapabilities() = McpServerCapabilities(
+            prompts = McpServerCapability(listChanged = false),
+            tools = null
+        )
+        override suspend fun listPrompts() = listOf(
+            McpPrompt(
+                name = "test-prompt",
+                title = "Test Prompt",
+                description = "A test prompt"
+            )
+        )
 
-            override suspend fun listPrompts(): List<McpPrompt> {
-                return listOf(
-                    McpPrompt(
-                        name = "test-prompt",
-                        title = "Test Prompt",
-                        description = "A test prompt"
-                    )
-                )
-            }
+        override suspend fun getPrompt(name: String, args: Map<String, String>) =
+            McpGetPromptResponse(
+                description = "Test prompt response",
+                messages = listOf(MultimodalChatMessage.user("Test message"))
+            )
 
-            override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
-                return McpGetPromptResponse(
-                    description = "Test prompt response",
-                    messages = listOf(
-                        MultimodalChatMessage(
-                            role = tri.ai.core.MChatRole.User,
-                            content = listOf(MChatMessagePart(MPartType.TEXT, text = "Test message"))
-                        )
-                    )
-                )
-            }
+        override suspend fun listTools(): List<Executable> = emptyList()
 
-            override suspend fun listTools(): List<Executable> {
-                return emptyList()
-            }
+        override suspend fun getTool(name: String): Executable? = null
 
-            override suspend fun getTool(name: String): Executable? {
-                return null
-            }
+        override suspend fun callTool(name: String, args: Map<String, String>) =
+            McpToolResult(name, null, "Unsupported", null)
 
-            override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
-                return McpToolResult(name, null, null, null)
-            }
-
-            override suspend fun close() {
-                // No-op for test
-            }
+        override suspend fun close() {
+            // No-op for test
         }
     }
 }
