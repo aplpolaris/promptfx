@@ -133,6 +133,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
         when (category.value) {
             ConfigCategory.APIS -> showApis()
             ConfigCategory.RUNTIME -> showRuntimeDetails()
+            ConfigCategory.MCP_SERVERS -> showMcpServersDetails()
             ConfigCategory.STARSHIP -> showStarshipConfigDetails()
             ConfigCategory.CONFIG_FILES -> showConfigFilesDetails()
             ConfigCategory.VIEWS -> showViewsDetails()
@@ -312,6 +313,141 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label(controller.tokensUsed.stringBinding { "Tokens Used: $it" })
                 label(controller.audioUsed.stringBinding { "Audio Usage: $it" })
                 label(controller.imagesUsed.stringBinding { "Images Used: $it" })
+            }
+        }
+    }
+
+    private fun showMcpServersDetails() {
+        with(detailPane) {
+            val mcpController = find<PromptFxMcpController>()
+            val registry = mcpController.mcpServerRegistry
+            val configs = registry.getConfigs()
+
+            // MCP Configuration Source
+            vbox(5) {
+                label("MCP Configuration Source:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                
+                val runtimeFile = setOf(
+                    File("mcp-servers.yaml"),
+                    File("config/mcp-servers.yaml")
+                ).firstOrNull { it.exists() }
+                
+                if (runtimeFile != null) {
+                    label("Source: Runtime Configuration File")
+                    label("Path: ${runtimeFile.absolutePath}")
+                    label("Size: ${runtimeFile.length()} bytes")
+                } else {
+                    label("Source: Built-in Resource")
+                    label("Path: tri/promptfx/resources/mcp-servers.yaml")
+                }
+            }
+
+            separator()
+
+            // List of configured servers
+            vbox(5) {
+                label("Configured MCP Servers (${configs.size}):") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+
+                if (configs.isEmpty()) {
+                    label("No MCP servers configured.") {
+                        style { fontStyle = FontPosture.ITALIC }
+                    }
+                } else {
+                    configs.forEach { (name, config) ->
+                        vbox(5) {
+                            paddingLeft = 10.0
+                            paddingTop = 10.0
+
+                            label("• $name") {
+                                style {
+                                    fontWeight = FontWeight.BOLD
+                                    fontSize = 14.px
+                                }
+                            }
+
+                            if (config.description != null) {
+                                label("  Description: ${config.description}")
+                            }
+
+                            label("  Type: ${config.javaClass.simpleName.replace("ServerConfig", "")}")
+
+                            when (config) {
+                                is tri.ai.mcp.EmbeddedServerConfig -> {
+                                    if (config.promptLibraryPath != null) {
+                                        label("  Prompt Library: ${config.promptLibraryPath}")
+                                    } else {
+                                        label("  Prompt Library: Default")
+                                    }
+                                }
+                                is tri.ai.mcp.StdioServerConfig -> {
+                                    label("  Command: ${config.command}")
+                                    if (config.args.isNotEmpty()) {
+                                        label("  Arguments: ${config.args.joinToString(" ")}")
+                                    }
+                                    if (config.env.isNotEmpty()) {
+                                        label("  Environment Variables: ${config.env.keys.joinToString(", ")}")
+                                    }
+                                }
+                                is tri.ai.mcp.HttpServerConfig -> {
+                                    label("  URL: ${config.url}")
+                                }
+                                is tri.ai.mcp.TestServerConfig -> {
+                                    label("  Include Default Prompts: ${config.includeDefaultPrompts}")
+                                    label("  Include Default Tools: ${config.includeDefaultTools}")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            separator()
+
+            // Instructions for configuring MCP servers
+            vbox(5) {
+                label("How to Configure MCP Servers:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                label("1. Create a file named 'mcp-servers.yaml' in the application directory or 'config/' subdirectory")
+                label("2. Define your server configurations in YAML format")
+                label("3. Restart the application to load the new configuration")
+                label("") 
+                label("Example configuration:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                textarea {
+                    isEditable = false
+                    text = """servers:
+  my-embedded-server:
+    type: embedded
+    description: "My custom embedded server"
+    promptLibraryPath: "/path/to/prompts"
+  
+  my-stdio-server:
+    type: stdio
+    description: "External MCP server via stdio"
+    command: "node"
+    args: ["server.js"]
+    env:
+      API_KEY: "your-api-key"
+  
+  my-http-server:
+    type: http
+    description: "Remote MCP server via HTTP"
+    url: "http://localhost:3000"
+  
+  my-test-server:
+    type: test
+    description: "Test server with samples"
+    includeDefaultPrompts: true
+    includeDefaultTools: true"""
+                    prefRowCount = 15
+                    style = "-fx-font-family: 'Courier New', monospace; -fx-font-size: 11px;"
+                }
             }
         }
     }
@@ -518,6 +654,7 @@ enum class ConfigCategory(val displayName: String, val title: String, val descri
     ROOT("Configuration", "PromptFx Settings", "Select a specific category to view details.", FontAwesomeIcon.COG),
     APIS("APIs", "APIs", "External APIs (model providers, etc.).", FontAwesomeIcon.CLOUD),
     RUNTIME("Model Runtime", "Model Runtime", "Current policy, models, and usage statistics.", FontAwesomeIcon.GEARS),
+    MCP_SERVERS("MCP Servers", "MCP Servers", "Model Context Protocol server configurations.", FontAwesomeIcon.SERVER),
     CONFIG_FILES("Config Files", "Configuration Files", "Configuration files discovered by PromptFx.", FontAwesomeIcon.FILE_CODE_ALT),
     VIEWS("Views", "View Configuration", "Current and discovered view configurations.", FontAwesomeIcon.SITEMAP),
     STARSHIP("Starship Mode", "Starship Demo Mode Config", "View configuration for \"Starship\" demo mode.", FontAwesomeIcon.ROCKET),
