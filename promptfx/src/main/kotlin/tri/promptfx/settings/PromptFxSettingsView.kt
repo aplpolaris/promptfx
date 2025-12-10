@@ -35,6 +35,10 @@ import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.gemini.GeminiAiPlugin
+import tri.ai.mcp.EmbeddedServerConfig
+import tri.ai.mcp.HttpServerConfig
+import tri.ai.mcp.StdioServerConfig
+import tri.ai.mcp.TestServerConfig
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.api.OpenAiApiPlugin
 import tri.promptfx.*
@@ -374,7 +378,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                             
                             // Show config-specific details
                             when (config) {
-                                is tri.ai.mcp.StdioServerConfig -> {
+                                is StdioServerConfig -> {
                                     label("  Command: ${config.command}")
                                     if (config.args.isNotEmpty()) {
                                         label("  Arguments: ${config.args.joinToString(" ")}")
@@ -383,15 +387,15 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                                         label("  Environment Variables: ${config.env.size}")
                                     }
                                 }
-                                is tri.ai.mcp.HttpServerConfig -> {
+                                is HttpServerConfig -> {
                                     label("  URL: ${config.url}")
                                 }
-                                is tri.ai.mcp.EmbeddedServerConfig -> {
+                                is EmbeddedServerConfig -> {
                                     config.promptLibraryPath?.let { path ->
                                         label("  Prompt Library: $path")
                                     }
                                 }
-                                is tri.ai.mcp.TestServerConfig -> {
+                                is TestServerConfig -> {
                                     label("  Include Default Prompts: ${config.includeDefaultPrompts}")
                                     label("  Include Default Tools: ${config.includeDefaultTools}")
                                 }
