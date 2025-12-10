@@ -36,6 +36,15 @@ interface TextChat {
         requestJson: Boolean? = null
     ): AiPromptTrace
 
+    companion object {
+        val UNAVAILABLE = object : TextChat {
+            override val modelId = "Unavailable"
+            override fun toString() = modelId
+            override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
+                AiPromptTrace.error(modelInfo = null, message = "Text chat model is unavailable.")
+        }
+    }
+
 }
 
 /** A single message in a chat. */

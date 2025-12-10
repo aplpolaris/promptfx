@@ -26,6 +26,7 @@ import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
 import tri.ai.openai.api.OpenAiApiSettings
+import tri.util.warning
 import java.io.File
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
@@ -62,37 +63,18 @@ class OpenAiApiSettingsBasic : OpenAiApiSettings {
             buildClient()
         }
 
-    var client: OpenAI
+    var client: OpenAI = buildClient()
         private set
 
-    init {
-        client = buildClient()
-    }
-
-    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
-    private fun readApiKey(): String {
-        val file = File(API_KEY_FILE)
-
-        val key = if (file.exists()) {
-            file.readText()
-        } else
-            System.getenv(API_KEY_ENV)
-
-        return if (key.isNullOrBlank()) {
-            Logger.getLogger(OpenAiApiSettings::class.java.name).warning(
-                "No API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV."
-            )
-            ""
-        } else
-            key
-    }
-
-    /** Checks for an OpenAI API key, if the base URL points to OpenAI. */
-    override fun checkApiKey() {
+    override fun isConfigured(): Boolean {
         val isOpenAi = baseUrl.let { it == null || it.contains("api.openai.com") }
         val isValidOpenAiKey = apiKey.startsWith("sk-") && !apiKey.trim().contains(" ")
-        if (!isValidOpenAiKey && isOpenAi)
-            throw UnsupportedOperationException("Invalid OpenAi API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
+        return isValidOpenAiKey || !isOpenAi
+    }
+
+    override fun checkApiKey() {
+        if (!isConfigured())
+            throw UnsupportedOperationException("Invalid OpenAI API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
     }
 
     @Throws(IllegalStateException::class)
@@ -106,6 +88,22 @@ class OpenAiApiSettingsBasic : OpenAiApiSettings {
             )
         )
         return client
+    }
+
+    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
+    private fun readApiKey(): String {
+        val file = File(API_KEY_FILE)
+
+        val key = if (file.exists()) {
+            file.readText()
+        } else
+            System.getenv(API_KEY_ENV)
+
+        return if (key.isNullOrBlank()) {
+            warning<OpenAiApiSettingsBasic>("OpenAI API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
+            ""
+        } else
+            key
     }
 
 }
