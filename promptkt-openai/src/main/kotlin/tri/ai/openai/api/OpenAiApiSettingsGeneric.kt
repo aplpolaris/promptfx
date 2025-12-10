@@ -50,13 +50,16 @@ class OpenAiApiSettingsGeneric : OpenAiApiSettings {
     /** Timeout in seconds for the OpenAI client. */
     var timeoutSeconds: Int = 60
 
-    /** API keys not checked by default. */
-    override fun checkApiKey() {
+    override fun isConfigured(): Boolean {
         val isOpenAi = baseUrl.let { it == null || it.contains("api.openai.com") }
         val testKey = apiKey
         val isValidOpenAiKey = testKey != null && testKey.startsWith("sk-") && !testKey.trim().contains(" ")
-        if (!isValidOpenAiKey && isOpenAi)
-            throw UnsupportedOperationException("Invalid OpenAi API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
+        return isValidOpenAiKey || !isOpenAi
+    }
+
+    override fun checkApiKey() {
+        if (!isConfigured())
+            throw UnsupportedOperationException("Invalid OpenAI API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
     }
 
     @Throws(IllegalStateException::class)

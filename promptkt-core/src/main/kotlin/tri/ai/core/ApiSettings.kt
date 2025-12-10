@@ -17,13 +17,17 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai.api
+package tri.ai.core
 
-import com.aallam.openai.api.logging.LogLevel
-import tri.ai.core.ApiSettings
+/** Common interface for API settings. */
+interface ApiSettings {
+    val baseUrl: String?
+    val apiKey: String?
 
-/** Abstract interface for API settings. */
-interface OpenAiApiSettings : ApiSettings {
-    var logLevel: LogLevel
+    /** Hook for checking if API has a valid configuration. */
+    fun isConfigured(): Boolean
+
+    /** Hook for checking validity of an API key. */
+    @Throws(UnsupportedOperationException::class)
+    fun checkApiKey()
 }
-

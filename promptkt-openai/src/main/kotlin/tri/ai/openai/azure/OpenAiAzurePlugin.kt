@@ -31,39 +31,46 @@ class OpenAiAzurePlugin : TextPlugin {
 
     val client = OpenAiAzureSettings.INSTANCE
 
+    override fun isApiConfigured() = client.settings.isConfigured()
+
     override fun modelSource() = "OpenAI"
 
-    override fun modelInfo() = try {
-        runBlocking {
-            client.client.models().map { it.toModelInfo(modelSource()) }
+    override fun modelInfo() = if (isApiConfigured())
+        try {
+            runBlocking {
+                client.client.models().map { it.toModelInfo(modelSource()) }
+            }
+        } catch (x: Exception) {
+            x.printStackTrace()
+            emptyList()
         }
-    } catch (x: Exception) {
-        x.printStackTrace()
-        emptyList()
-    }
+    else emptyList()
 
     override fun embeddingModels() =
-        OpenAiAzureModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, client) }
+        models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiAzureModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
-                OpenAiAzureModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, client) } +
+        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiAzureModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        OpenAiAzureModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
+        models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiAzureModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiAzureModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
+        models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()
     }
+
+    private fun <T> models(ids: List<String>, factory: (String) -> T): List<T> =
+        if (!client.settings.isConfigured()) listOf() else ids.map(factory)
 
 }
 

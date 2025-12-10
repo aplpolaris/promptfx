@@ -30,39 +30,46 @@ class OpenAiPlugin : TextPlugin {
 
     val client = OpenAiAdapter.INSTANCE
 
+    override fun isApiConfigured() = client.settings.isConfigured()
+
     override fun modelSource() = "OpenAI"
 
-    override fun modelInfo() = try {
-        runBlocking {
-            client.client.models().map { it.toModelInfo(modelSource()) }
+    override fun modelInfo() = if (client.settings.isConfigured())
+        try {
+            runBlocking {
+                client.client.models().map { it.toModelInfo(modelSource()) }
+            }
+        } catch (x: Exception) {
+            x.printStackTrace()
+            emptyList()
         }
-    } catch (x: Exception) {
-        x.printStackTrace()
-        emptyList()
-    }
+    else emptyList()
 
     override fun embeddingModels() =
-        OpenAiModelIndex.embeddingModels().map { OpenAiEmbeddingModel(it, client) }
+        models(OpenAiModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, client) }
 
     override fun textCompletionModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiCompletionChat(it, client) } +
-        OpenAiModelIndex.completionModels(false).map { OpenAiCompletion(it, client) }
+        models(OpenAiModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, client) } +
+        models(OpenAiModelIndex.completionModels(false)) { OpenAiCompletion(it, client) }
 
     override fun chatModels() =
-        OpenAiModelIndex.chatModelsInclusive(false).map { OpenAiChat(it, client) }
+        models(OpenAiModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        OpenAiModelIndex.multimodalModels().map { OpenAiMultimodalChat(it, client) }
+        models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client) }
 
     override fun visionLanguageModels() =
-        OpenAiModelIndex.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client) }
+        models(OpenAiModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client) }
 
     override fun imageGeneratorModels() =
-        OpenAiModelIndex.imageGeneratorModels().map { OpenAiImageGenerator(it, client) }
+        models(OpenAiModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, client) }
 
     override fun close() {
         client.client.close()
     }
+
+    private fun <T> models(ids: List<String>, factory: (String) -> T): List<T> =
+        if (!client.settings.isConfigured()) listOf() else ids.map(factory)
 
 }
 

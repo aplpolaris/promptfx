@@ -19,31 +19,29 @@
  */
 package tri.ai.geminisdk
 
+import tri.ai.core.ApiSettings
 import tri.util.fine
 import tri.util.info
 import tri.util.warning
 import java.io.File
 
 /** Manages Gemini SDK configuration. */
-class GeminiSdkSettings {
+class GeminiSdkSettings : ApiSettings {
 
-    companion object {
-        const val API_KEY_FILE = "apikey-gemini.txt"
-        const val API_KEY_ENV = "GEMINI_API_KEY"
-        const val PROJECT_ID_FILE = "gemini-project-id.txt"
-        const val PROJECT_ID_ENV = "GEMINI_PROJECT_ID"
-        const val LOCATION_FILE = "gemini-location.txt"
-        const val LOCATION_ENV = "GEMINI_LOCATION"
-        const val DEFAULT_LOCATION = "us-central1"
-    }
-
-    var apiKey = readApiKey()
+    override val baseUrl: String? = null
+    override var apiKey = readApiKey()
     var projectId = readProjectId()
     var location = readLocation()
-    var useVertexAI = readUseVertexAI()
 
-    /** Returns true if the client is configured with required settings. */
-    fun isConfigured() = apiKey.isNotBlank()
+    /** Determine whether to use Vertex AI or Gemini Developer API based on project ID availability. */
+    var useVertexAI = projectId.isNotBlank()
+
+    override fun isConfigured() = apiKey.isNotBlank() && !apiKey.trim().contains(" ")
+
+    override fun checkApiKey() {
+        if (!isConfigured())
+            throw UnsupportedOperationException("Gemini API key is not configured. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
+    }
 
     /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
     private fun readApiKey(): String {
@@ -98,9 +96,14 @@ class GeminiSdkSettings {
         }
     }
 
-    /** Determine whether to use Vertex AI or Gemini Developer API based on project ID availability. */
-    private fun readUseVertexAI(): Boolean {
-        return projectId.isNotBlank()
+    companion object {
+        const val API_KEY_FILE = "apikey-gemini.txt"
+        const val API_KEY_ENV = "GEMINI_API_KEY"
+        const val PROJECT_ID_FILE = "gemini-project-id.txt"
+        const val PROJECT_ID_ENV = "GEMINI_PROJECT_ID"
+        const val LOCATION_FILE = "gemini-location.txt"
+        const val LOCATION_ENV = "GEMINI_LOCATION"
+        const val DEFAULT_LOCATION = "us-central1"
     }
 
 }
