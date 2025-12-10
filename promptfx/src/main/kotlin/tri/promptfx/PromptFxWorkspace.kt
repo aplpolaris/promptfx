@@ -402,8 +402,8 @@ class PromptFxWorkspace : Workspace() {
         
         categoryLinks.forEachIndexed { index, linkGroup ->
             if (linkGroup.links.isNotEmpty()) {
-                // Add separator before each group except the first one (unless it has a group name)
-                if (index > 0 || linkGroup.group.isNotBlank()) {
+                // Add separator between link groups (but not before the very first group)
+                if (index > 0) {
                     separator { }
                 }
                 linkGroup.links.forEach { link ->

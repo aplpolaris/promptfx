@@ -64,19 +64,23 @@ object ViewLinksConfig {
             File("views-links.yaml"),
             File("config/views-links.yaml")
         )
-        return runtimeFiles
-            .filter { it.exists() }
-            .flatMap { file ->
-                try {
-                    val loaded: Map<String, List<LinkGroup>> = MAPPER.readValue(file)
-                    loaded.entries
-                } catch (e: Exception) {
-                    tri.util.warning<ViewLinksConfig>("Failed to load runtime view links from ${file.path}: ${e.message}")
-                    emptyList()
+        return mergeLinksFromFiles(runtimeFiles.filter { it.exists() })
+    }
+
+    /** Helper to merge links from multiple files. */
+    private fun mergeLinksFromFiles(files: List<File>): Map<String, List<LinkGroup>> {
+        val allLinks = mutableMapOf<String, MutableList<LinkGroup>>()
+        files.forEach { file ->
+            try {
+                val loaded: Map<String, List<LinkGroup>> = MAPPER.readValue(file)
+                loaded.forEach { (category, groups) ->
+                    allLinks.getOrPut(category) { mutableListOf() }.addAll(groups)
                 }
+            } catch (e: Exception) {
+                tri.util.warning<ViewLinksConfig>("Failed to load runtime view links from ${file.path}: ${e.message}")
             }
-            .groupBy({ it.key }, { it.value })
-            .mapValues { it.value.flatten() }
+        }
+        return allLinks
     }
 }
 
