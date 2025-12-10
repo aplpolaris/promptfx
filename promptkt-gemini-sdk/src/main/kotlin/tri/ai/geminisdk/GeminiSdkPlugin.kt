@@ -36,7 +36,7 @@ class GeminiSdkPlugin : TextPlugin {
 
     val client = GeminiSdkClient()
 
-    override fun isApiConfigured() = client.settings.isConfigured()
+    override fun isApiConfigured() = client.isConfigured()
 
     override fun modelSource() = "Gemini-SDK"
 

@@ -1,6 +1,6 @@
 package tri.ai.core
 
-/** Base class for API settings. */
+/** Common interface for API settings. */
 interface ApiSettings {
     val baseUrl: String?
     val apiKey: String?

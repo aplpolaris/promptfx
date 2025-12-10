@@ -59,7 +59,7 @@ class OpenAiApiSettingsGeneric : OpenAiApiSettings {
 
     override fun checkApiKey() {
         if (!isConfigured())
-            throw UnsupportedOperationException("Invalid OpenAi API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
+            throw UnsupportedOperationException("Invalid OpenAI API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
     }
 
     @Throws(IllegalStateException::class)
