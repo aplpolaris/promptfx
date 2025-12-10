@@ -409,14 +409,15 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
 
             // Instructions for configuring MCP servers
             vbox(5) {
+                paddingTop = 10.0
                 label("How to Configure MCP Servers:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
                 label("1. Create a file named 'mcp-servers.yaml' in the application directory or 'config/' subdirectory")
                 label("2. Define your server configurations in YAML format")
                 label("3. Restart the application to load the new configuration")
-                label("") 
                 label("Example configuration:") {
+                    paddingTop = 5.0
                     style { fontWeight = FontWeight.BOLD }
                 }
                 textarea {
