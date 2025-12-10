@@ -1,0 +1,14 @@
+# MCP Server Registry Configuration
+# This file defines available MCP servers that can be used by PromptFx
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Test server with built-in samples
+  test:
+    type: test
+    description: "Test server with sample prompts and tools for testing"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
