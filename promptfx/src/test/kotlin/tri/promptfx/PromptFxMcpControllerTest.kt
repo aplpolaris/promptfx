@@ -22,7 +22,10 @@ package tri.promptfx
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import tri.ai.mcp.McpServerRegistry
+import java.io.File
+import java.nio.file.Path
 
 class PromptFxMcpControllerTest {
 
@@ -73,5 +76,33 @@ class PromptFxMcpControllerTest {
         
         val nonExistentServer = registry.getServer("nonexistent")
         assertNull(nonExistentServer)
+    }
+
+    @Test
+    fun testRuntimeConfigFileLoading(@TempDir tempDir: Path) {
+        // Create a config directory
+        val configDir = tempDir.resolve("config").toFile()
+        configDir.mkdirs()
+        
+        // Create a test mcp-servers.yaml file in config directory
+        val configFile = configDir.resolve("mcp-servers.yaml")
+        configFile.writeText("""
+            servers:
+              runtime-test:
+                type: test
+                description: "Runtime test server"
+                includeDefaultPrompts: false
+                includeDefaultTools: false
+        """.trimIndent())
+        
+        // Load registry directly from the file
+        val registry = McpServerRegistry.loadFromYaml(configFile)
+        
+        // Should have the runtime-test server
+        val serverNames = registry.listServerNames()
+        assertTrue(serverNames.contains("runtime-test"), "Should contain runtime-test server from config/mcp-servers.yaml")
+        
+        // Clean up
+        configFile.delete()
     }
 }

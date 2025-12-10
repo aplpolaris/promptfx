@@ -30,6 +30,17 @@ class PromptFxMcpController : Controller() {
     val mcpServerRegistry: McpServerRegistry = loadRegistry()
 
     private fun loadRegistry(): McpServerRegistry {
+        // First, try to load from runtime config files
+        val runtimeFile = setOf(
+            File("mcp-servers.yaml"),
+            File("config/mcp-servers.yaml")
+        ).firstOrNull { it.exists() }
+        
+        if (runtimeFile != null) {
+            return McpServerRegistry.loadFromYaml(runtimeFile)
+        }
+        
+        // Fall back to built-in resource file
         val configPath = "tri/promptfx/resources/mcp-servers.yaml"
         val configStream = javaClass.classLoader.getResourceAsStream(configPath)
         
@@ -43,7 +54,7 @@ class PromptFxMcpController : Controller() {
             }
             McpServerRegistry.loadFromYaml(tempFile)
         } else {
-            // Fallback to default registry if config file not found
+            // Fallback to default registry if no config file found
             McpServerRegistry.default()
         }
     }
