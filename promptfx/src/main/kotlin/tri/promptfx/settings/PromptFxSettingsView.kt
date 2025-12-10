@@ -133,6 +133,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
         when (category.value) {
             ConfigCategory.APIS -> showApis()
             ConfigCategory.RUNTIME -> showRuntimeDetails()
+            ConfigCategory.MCP_SERVERS -> showMcpServersDetails()
             ConfigCategory.STARSHIP -> showStarshipConfigDetails()
             ConfigCategory.CONFIG_FILES -> showConfigFilesDetails()
             ConfigCategory.VIEWS -> showViewsDetails()
@@ -312,6 +313,92 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label(controller.tokensUsed.stringBinding { "Tokens Used: $it" })
                 label(controller.audioUsed.stringBinding { "Audio Usage: $it" })
                 label(controller.imagesUsed.stringBinding { "Images Used: $it" })
+            }
+        }
+    }
+
+    private fun showMcpServersDetails() {
+        with(detailPane) {
+            val mcpController = find<PromptFxMcpController>()
+            val registry = mcpController.mcpServerRegistry
+            
+            // Registry Information
+            vbox(5) {
+                label("MCP Server Registry:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                label("Total Configured Servers: ${registry.listServerNames().size}")
+            }
+            
+            separator()
+            
+            // Configuration Files
+            vbox(5) {
+                label("Configuration Files:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                val configFiles = listOf(
+                    File("mcp-servers.yaml"),
+                    File("config/mcp-servers.yaml")
+                )
+                configFiles.forEach { file ->
+                    label("• ${file.path}: ${if (file.exists()) "Found (${file.length()} bytes)" else "Not found"}")
+                }
+            }
+            
+            separator()
+            
+            // List all configured servers
+            val configs = registry.getConfigs()
+            if (configs.isEmpty()) {
+                vbox(5) {
+                    label("No MCP servers configured.") {
+                        style { fontStyle = FontPosture.ITALIC }
+                    }
+                }
+            } else {
+                vbox(5) {
+                    label("Configured Servers (${configs.size}):") {
+                        style { fontWeight = FontWeight.BOLD }
+                    }
+                    
+                    configs.forEach { (name, config) ->
+                        vbox(5) {
+                            label("• $name") {
+                                style { fontWeight = FontWeight.BOLD }
+                            }
+                            label("  Type: ${config.javaClass.simpleName.replace("ServerConfig", "")}")
+                            config.description?.let { desc ->
+                                label("  Description: $desc")
+                            }
+                            
+                            // Show config-specific details
+                            when (config) {
+                                is tri.ai.mcp.StdioServerConfig -> {
+                                    label("  Command: ${config.command}")
+                                    if (config.args.isNotEmpty()) {
+                                        label("  Arguments: ${config.args.joinToString(" ")}")
+                                    }
+                                    if (config.env.isNotEmpty()) {
+                                        label("  Environment Variables: ${config.env.size}")
+                                    }
+                                }
+                                is tri.ai.mcp.HttpServerConfig -> {
+                                    label("  URL: ${config.url}")
+                                }
+                                is tri.ai.mcp.EmbeddedServerConfig -> {
+                                    config.promptLibraryPath?.let { path ->
+                                        label("  Prompt Library: $path")
+                                    }
+                                }
+                                is tri.ai.mcp.TestServerConfig -> {
+                                    label("  Include Default Prompts: ${config.includeDefaultPrompts}")
+                                    label("  Include Default Tools: ${config.includeDefaultTools}")
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -518,6 +605,7 @@ enum class ConfigCategory(val displayName: String, val title: String, val descri
     ROOT("Configuration", "PromptFx Settings", "Select a specific category to view details.", FontAwesomeIcon.COG),
     APIS("APIs", "APIs", "External APIs (model providers, etc.).", FontAwesomeIcon.CLOUD),
     RUNTIME("Model Runtime", "Model Runtime", "Current policy, models, and usage statistics.", FontAwesomeIcon.GEARS),
+    MCP_SERVERS("MCP Servers", "MCP Servers", "Model Context Protocol server configurations.", FontAwesomeIcon.SERVER),
     CONFIG_FILES("Config Files", "Configuration Files", "Configuration files discovered by PromptFx.", FontAwesomeIcon.FILE_CODE_ALT),
     VIEWS("Views", "View Configuration", "Current and discovered view configurations.", FontAwesomeIcon.SITEMAP),
     STARSHIP("Starship Mode", "Starship Demo Mode Config", "View configuration for \"Starship\" demo mode.", FontAwesomeIcon.ROCKET),
