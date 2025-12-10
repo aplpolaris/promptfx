@@ -22,8 +22,6 @@ package tri.promptfx.mcp
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import javafx.scene.text.FontWeight
 import tornadofx.*
