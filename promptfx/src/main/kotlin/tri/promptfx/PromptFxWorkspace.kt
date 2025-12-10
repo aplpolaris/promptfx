@@ -131,18 +131,7 @@ class PromptFxWorkspace : Workspace() {
 //                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
 //                hyperlinkview<FilesView>("API", "Files")
                 hyperlinkview<ModerationsView>("API", "Moderations")
-                separator { }
-                label("Documentation/Links")
-                browsehyperlink("PromptFx Wiki", "https://github.com/aplpolaris/promptfx/wiki")
-                separator { }
-                browsehyperlink("OpenAI API Reference", "https://platform.openai.com/docs/api-reference")
-                browsehyperlink("OpenAI API Playground", "https://platform.openai.com/playground")
-                browsehyperlink("OpenAI API Pricing", "https://openai.com/pricing")
-                browsehyperlink("OpenAI Blog", "https://openai.com/blog")
-                separator { }
-                browsehyperlink("Gemini API Reference", "https://ai.google.dev/api/generate-content")
-                separator { }
-                browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
+                loadViewLinks("API")
             }
             group(ViewGroupModel("MCP", FontAwesomeIcon.DASHCUBE.graphic.steelBlue, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
@@ -150,9 +139,7 @@ class PromptFxWorkspace : Workspace() {
                 hyperlinkview<McpPromptView>("MCP", "Prompts")
                 hyperlinkview<McpToolView>("MCP", "Tools")
                 hyperlinkview<McpResourceView>("MCP", "Resources")
-                separator { }
-                label("Documentation/Links")
-                browsehyperlink("MCP Getting Started", "https://modelcontextprotocol.io/docs/getting-started/intro")
+                loadViewLinks("MCP")
             }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
                 if (it.category != "MCP") {
@@ -403,6 +390,25 @@ class PromptFxWorkspace : Workspace() {
     private fun EventTarget.browsehyperlink(label: String, url: String) {
         hyperlink(label, graphic = FontAwesomeIcon.EXTERNAL_LINK.graphic) {
             action { hostServices.showDocument(url) }
+        }
+    }
+
+    private fun EventTarget.loadViewLinks(category: String) {
+        val categoryLinks = ViewLinksConfig.links[category] ?: return
+        if (categoryLinks.isEmpty()) return
+        
+        separator { }
+        label("Documentation/Links")
+        
+        categoryLinks.forEach { linkGroup ->
+            if (linkGroup.links.isNotEmpty()) {
+                if (categoryLinks.size > 1 || linkGroup.group.isNotBlank()) {
+                    separator { }
+                }
+                linkGroup.links.forEach { link ->
+                    browsehyperlink(link.label, link.url)
+                }
+            }
         }
     }
 

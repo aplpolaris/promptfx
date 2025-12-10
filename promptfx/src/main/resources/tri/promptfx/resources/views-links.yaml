@@ -1,0 +1,32 @@
+# Library of hyperlinks for navigation panes
+# Links are grouped by topic and displayed at the bottom of each nav pane
+---
+API:
+  - group: "General"
+    links:
+      - label: "PromptFx Wiki"
+        url: "https://github.com/aplpolaris/promptfx/wiki"
+  - group: "OpenAI"
+    links:
+      - label: "OpenAI API Reference"
+        url: "https://platform.openai.com/docs/api-reference"
+      - label: "OpenAI API Playground"
+        url: "https://platform.openai.com/playground"
+      - label: "OpenAI API Pricing"
+        url: "https://openai.com/pricing"
+      - label: "OpenAI Blog"
+        url: "https://openai.com/blog"
+  - group: "Gemini"
+    links:
+      - label: "Gemini API Reference"
+        url: "https://ai.google.dev/api/generate-content"
+  - group: "Templates"
+    links:
+      - label: "Mustache Template Docs"
+        url: "https://mustache.github.io/mustache.5.html"
+
+MCP:
+  - group: "Documentation"
+    links:
+      - label: "MCP Getting Started"
+        url: "https://modelcontextprotocol.io/docs/getting-started/intro"
