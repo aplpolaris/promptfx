@@ -27,15 +27,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import tri.ai.core.MChatMessagePart
-import tri.ai.core.MPartType
-import tri.ai.core.MultimodalChatMessage
 
 class McpServerAdapterHttpTest {
 
