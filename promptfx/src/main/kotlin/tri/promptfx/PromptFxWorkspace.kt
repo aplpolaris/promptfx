@@ -400,9 +400,10 @@ class PromptFxWorkspace : Workspace() {
         separator { }
         label("Documentation/Links")
         
-        categoryLinks.forEach { linkGroup ->
+        categoryLinks.forEachIndexed { index, linkGroup ->
             if (linkGroup.links.isNotEmpty()) {
-                if (categoryLinks.size > 1 || linkGroup.group.isNotBlank()) {
+                // Add separator before each group except the first one (unless it has a group name)
+                if (index > 0 || linkGroup.group.isNotBlank()) {
                     separator { }
                 }
                 linkGroup.links.forEach { link ->

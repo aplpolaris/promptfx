@@ -50,9 +50,10 @@ object ViewLinksConfig {
     /** Load built-in links from resources. */
     private fun loadBuiltInLinks(): Map<String, List<LinkGroup>> {
         return try {
-            ViewLinksConfig::class.java.getResource("resources/views-links.yaml")
+            ViewLinksConfig::class.java.getResource("/tri/promptfx/resources/views-links.yaml")
                 ?.let { MAPPER.readValue(it) } ?: emptyMap()
         } catch (e: Exception) {
+            tri.util.warning<ViewLinksConfig>("Failed to load built-in view links: ${e.message}")
             emptyMap()
         }
     }
@@ -70,6 +71,7 @@ object ViewLinksConfig {
                     val loaded: Map<String, List<LinkGroup>> = MAPPER.readValue(file)
                     loaded.entries
                 } catch (e: Exception) {
+                    tri.util.warning<ViewLinksConfig>("Failed to load runtime view links from ${file.path}: ${e.message}")
                     emptyList()
                 }
             }
