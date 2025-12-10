@@ -19,12 +19,6 @@
  */
 package tri.ai.mcp
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
@@ -37,61 +31,68 @@ import tri.ai.prompt.PromptLibrary
  * and McpServerAdapterHttp to be a client for that server.
  * 
  * This verifies the functionality on both the HTTP server side and HTTP client side.
+ * 
+ * **Note**: McpServerHttp uses JSON-RPC 2.0 protocol (POST to `/`), while McpServerAdapterHttp
+ * expects REST-style endpoints (GET/POST to `/capabilities`, `/prompts/list`, etc.).
+ * These components use different protocols and cannot communicate with each other directly.
+ * This test demonstrates this architectural limitation.
  */
 class McpHttpClientServerIntegrationTest {
     
-    private val jsonRpcPort = 9879
-    private val restPort = 9880
+    private val testPort = 9879
 
     /**
-     * Integration test showing both McpServerHttp and McpServerAdapterHttp working together
+     * Integration test showing that McpServerHttp and McpServerAdapterHttp 
+     * use incompatible protocols and cannot communicate with each other.
      */
     @Test
-    fun testBothServerTypesCanCoexist() {
+    fun testMcpServerHttpWithAdapterClient() {
         runTest {
-            // Start JSON-RPC server
+            // Start McpServerHttp with embedded adapter
             val embeddedAdapter = McpServerEmbedded(
                 PromptLibrary.INSTANCE,
                 StarterToolLibrary()
             )
-            val jsonRpcServer = McpServerHttp(embeddedAdapter, jsonRpcPort)
-            jsonRpcServer.startServer()
+            val mcpServer = McpServerHttp(embeddedAdapter, testPort)
+            mcpServer.startServer()
             
-            // Start REST server
-            val restServer = embeddedServer(Netty, port = restPort) {
-                routing {
-                    get("/prompts/list") {
-                        call.respondText(
-                            """[{"name":"rest-prompt","title":"REST Prompt","description":"From REST server"}]""",
-                            ContentType.Application.Json
-                        )
-                    }
-                }
-            }.start(wait = false)
-            
-            delay(1000) // Wait for both servers to start
+            delay(1000) // Wait for server to start
             
             try {
-                // Connect REST client to REST server
-                val httpAdapter = McpServerAdapterHttp("http://localhost:$restPort")
+                // Verify the server is running with embedded adapter
+                val serverPrompts = embeddedAdapter.listPrompts()
+                assertTrue(serverPrompts.isNotEmpty(), "Server should have prompts via embedded adapter")
+                
+                val serverTools = embeddedAdapter.listTools()
+                assertTrue(serverTools.isNotEmpty(), "Server should have tools via embedded adapter")
+                
+                // Create McpServerAdapterHttp client pointing to the McpServerHttp
+                val httpAdapter = McpServerAdapterHttp("http://localhost:$testPort")
                 
                 try {
-                    val restPrompts = httpAdapter.listPrompts()
+                    // Attempt to communicate - this will fail because of protocol mismatch
+                    // McpServerHttp uses JSON-RPC (POST to /)
+                    // McpServerAdapterHttp expects REST (GET /capabilities, etc.)
                     
-                    // Verify both servers are operational
-                    assertNotNull(jsonRpcServer, "JSON-RPC server should be running")
-                    assertNotNull(restPrompts, "REST client should retrieve prompts")
-                    assertEquals("rest-prompt", restPrompts[0].name, "Should get prompts from REST server")
+                    // Test capabilities - will return null because /capabilities endpoint doesn't exist
+                    val capabilities = httpAdapter.getCapabilities()
+                    assertNull(capabilities, "Capabilities should be null - REST endpoint /capabilities not found on JSON-RPC server")
                     
-                    // Verify embedded adapter is still accessible
-                    val embeddedPrompts = embeddedAdapter.listPrompts()
-                    assertTrue(embeddedPrompts.isNotEmpty(), "Embedded adapter should still have prompts")
+                    // Attempting to list prompts will fail because /prompts/list doesn't exist
+                    // McpServerAdapterHttp expects GET /prompts/list but McpServerHttp only has POST /
+                    try {
+                        httpAdapter.listPrompts()
+                        fail("Should not be able to list prompts - protocol mismatch")
+                    } catch (e: Exception) {
+                        // Expected - protocols are incompatible
+                        assertTrue(e is McpServerException || e.cause is McpServerException,
+                            "Should fail with protocol mismatch")
+                    }
                 } finally {
                     httpAdapter.close()
                 }
             } finally {
-                jsonRpcServer.close()
-                restServer.stop(1000, 2000)
+                mcpServer.close()
             }
         }
     }
