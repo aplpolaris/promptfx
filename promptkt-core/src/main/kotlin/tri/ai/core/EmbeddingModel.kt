@@ -44,6 +44,14 @@ interface EmbeddingModel {
     suspend fun calculateEmbedding(vararg text: String, outputDimensionality: Int? = null): List<List<Double>> =
         calculateEmbedding(listOf(*text), outputDimensionality)
 
+    companion object {
+        val UNAVAILABLE = object : EmbeddingModel {
+            override val modelId = "Unavailable"
+            override fun toString() = modelId
+            override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
+                text.map { listOf<Double>(0.0) }
+        }
+    }
 }
 
 /** Precision to use when storing embeddings. */

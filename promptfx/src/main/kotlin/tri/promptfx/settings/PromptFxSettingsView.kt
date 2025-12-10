@@ -35,8 +35,16 @@ import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.gemini.GeminiAiPlugin
+import tri.ai.gemini.GeminiSettings
+import tri.ai.geminisdk.GeminiSdkPlugin
+import tri.ai.geminisdk.GeminiSdkSettings
+import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.api.OpenAiApiPlugin
+import tri.ai.openai.api.OpenAiApiSettings
+import tri.ai.openai.api.OpenAiApiSettingsGeneric
+import tri.ai.openai.azure.OpenAiAzurePlugin
+import tri.ai.openai.azure.OpenAiAzureSettings
 import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEYS
 import tri.promptfx.api.ModelsView
@@ -194,40 +202,55 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
             separator()
 
             // API client configurations
-            allPlugins.forEach {
-                label("${it.javaClass.simpleName} API Client:") {
+            allPlugins.flatMap {
+                when (it) {
+                    is OpenAiPlugin -> listOf(it to it.client.settings)
+                    is OpenAiApiPlugin -> it.apiSettingsList.map { settings -> it to settings }
+                    is OpenAiAzurePlugin -> listOf(it to it.client.settings)
+                    is GeminiAiPlugin -> listOf(it to it.client.settings)
+                    is GeminiSdkPlugin -> listOf(it to it.client.settings)
+                    else -> listOf()
+                }
+            }.forEach { (plugin, settings) ->
+                label("${plugin.javaClass.simpleName} API Client:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
                 vbox(5) {
-                    label("Model Source: ${it.modelSource()}")
-                    when (it) {
-                        is OpenAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                            label("Base URL: ${it.client.settings.baseUrl}")
-                            label("Log Level: ${it.client.settings.logLevel}")
+                    if (plugin is OpenAiApiPlugin)
+                        label("Model Source: ${plugin.modelSource(settings)}")
+                    else
+                        label("Model Source: ${plugin.modelSource()}")
+                    label("Base URL: ${settings.baseUrl}")
+                    label("API Key: ${if (settings.isConfigured()) "Configured" else "Not Configured"}")
+                    when (settings) {
+                        is OpenAiAzureSettings -> {
+                            label("Resource Name: ${settings.resourceName}")
+                            label("Deployment Id: ${settings.deploymentId}")
+                            label("API Version: ${settings.apiVersion}")
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
-                        is GeminiAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                            label("Base URL: ${it.client.settings.baseUrl}")
-                            label("Timeout: ${it.client.settings.timeoutSeconds}sec")
-
+                        is OpenAiApiSettingsBasic -> {
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
-                        is OpenAiApiPlugin -> {
-                            it.config.endpoints.forEach {
-                                label("• ${it.source}") {
-                                    style { fontWeight = FontWeight.NORMAL }
-                                }
-                                label("  API Key: ${it.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                                label("  Base URL: ${it.settings.baseUrl}")
-                                label("  Log Level: ${it.settings.logLevel}")
-                                label("  Timeout: ${it.settings.timeoutSeconds}sec")
-                            }
+                        is OpenAiApiSettingsGeneric -> {
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
+                        is OpenAiApiSettings -> {
+                            label("Log Level: ${settings.logLevel}")
+                        }
+                        is GeminiSettings -> {
+                            label("Timeout: ${settings.timeoutSeconds}sec")
+                        }
+                        is GeminiSdkSettings -> {
+                            label("Project Id: ${settings.projectId}")
+                            label("Location: ${settings.location}")
+                            label("Use Vertex AI: ${settings.useVertexAI}")
+                        }
                         else -> {
-                            label("No specific API client configuration available for ${it.javaClass.simpleName}.")
+                            label("No specific API client configuration available for ${plugin.javaClass.simpleName}.")
                         }
                     }
                 }

@@ -39,6 +39,7 @@ import tri.util.ui.NavigableWorkspaceView;
 module tri.promptfx {
     requires transitive tri.promptkt.docs;
     requires transitive tri.promptkt.gemini;
+    requires transitive tri.promptkt.gemini.sdk;
     requires transitive tri.promptkt.openai;
 
     requires javafx.controls;

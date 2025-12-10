@@ -20,6 +20,7 @@
 package tri.ai.openai.api
 
 import kotlinx.coroutines.runBlocking
+import tri.ai.core.ApiSettings
 import tri.ai.core.TextPlugin
 import tri.ai.openai.*
 import tri.util.warning
@@ -32,15 +33,23 @@ class OpenAiApiPlugin : TextPlugin {
 
     val config = OpenAiApiConfig.INSTANCE
     private val clients = mutableMapOf<OpenAiApiSettingsGeneric, OpenAiAdapter>()
+    val apiSettingsList
+        get() = clients.keys.toList()
 
     private fun client(endpoint: OpenAiApiEndpointConfig) = client(endpoint.settings)
     private fun client(settings: OpenAiApiSettingsGeneric) = clients.getOrPut(settings) {
         OpenAiAdapter(settings, settings.buildClient())
     }
 
+    fun endpoints() = config.endpoints.map { it.source }
+    fun modelSource(settings: ApiSettings) = config.endpoints.find { it.settings == settings }?.source ?: "Unknown"
+
+    override fun isApiConfigured() = clients.keys.any { it.isConfigured() }
+
     override fun modelSource() = "OpenAI-Compatible API"
 
-    fun endpoints() = config.endpoints.map { it.source }
+    override fun modelInfo() = modelInfoByEndpoint().values.flatten()
+
     fun modelInfoByEndpoint() = config.endpoints.mapNotNull { e ->
         try {
             runBlocking {
@@ -53,8 +62,6 @@ class OpenAiApiPlugin : TextPlugin {
             null
         }
     }.toMap()
-
-    override fun modelInfo() = modelInfoByEndpoint().values.flatten()
 
     override fun embeddingModels() =
         config.endpoints.flatMap { e ->

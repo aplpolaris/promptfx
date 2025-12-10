@@ -20,15 +20,10 @@
 package tri.ai.openai.api
 
 import com.aallam.openai.api.logging.LogLevel
+import tri.ai.core.ApiSettings
 
 /** Abstract interface for API settings. */
-interface OpenAiApiSettings {
-    val baseUrl: String?
-    val apiKey: String?
+interface OpenAiApiSettings : ApiSettings {
     var logLevel: LogLevel
-
-    /** Hook for checking validity of an API key. */
-    @Throws(UnsupportedOperationException::class)
-    fun checkApiKey()
 }
 
