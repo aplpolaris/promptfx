@@ -32,6 +32,7 @@ import tri.promptfx.api.*
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.docs.TextManagerView
+import tri.promptfx.mcp.*
 import tri.promptfx.multimodal.AudioSpeechView
 import tri.promptfx.multimodal.AudioView
 import tri.promptfx.prompts.PromptTemplateView
@@ -143,8 +144,20 @@ class PromptFxWorkspace : Workspace() {
                 separator { }
                 browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
             }
+            group(ViewGroupModel("MCP", FontAwesomeIcon.DASHCUBE.graphic.steelBlue, listOf())) {
+                (this as DrawerItem).padding = insets(5.0)
+                hyperlinkview<McpServerView>("MCP", "MCP Servers")
+                hyperlinkview<McpPromptView>("MCP", "Prompts")
+                hyperlinkview<McpToolView>("MCP", "Tools")
+                hyperlinkview<McpResourceView>("MCP", "Resources")
+                separator { }
+                label("Documentation/Links")
+                browsehyperlink("MCP Getting Started", "https://modelcontextprotocol.io/docs/getting-started/intro")
+            }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
-                group(it)
+                if (it.category != "MCP") {
+                    group(it)
+                }
             }
         }
     }
