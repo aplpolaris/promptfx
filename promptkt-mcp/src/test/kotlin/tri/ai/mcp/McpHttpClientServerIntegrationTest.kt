@@ -30,20 +30,16 @@ import tri.ai.prompt.PromptLibrary
  * Integration test that uses McpServerHttp to stand up an MCP server,
  * and McpServerAdapterHttp to be a client for that server.
  * 
- * This verifies the functionality on both the HTTP server side and HTTP client side.
- * 
- * **Note**: McpServerHttp uses JSON-RPC 2.0 protocol (POST to `/`), while McpServerAdapterHttp
- * expects REST-style endpoints (GET/POST to `/capabilities`, `/prompts/list`, etc.).
- * These components use different protocols and cannot communicate with each other directly.
- * This test demonstrates this architectural limitation.
+ * This verifies the functionality on both the HTTP server side and HTTP client side
+ * using the MCP specification for HTTP transport with JSON-RPC 2.0 on the `/mcp` endpoint.
  */
 class McpHttpClientServerIntegrationTest {
     
     private val testPort = 9879
 
     /**
-     * Integration test showing that McpServerHttp and McpServerAdapterHttp 
-     * use incompatible protocols and cannot communicate with each other.
+     * Integration test showing McpServerHttp and McpServerAdapterHttp working together
+     * using JSON-RPC 2.0 protocol on the /mcp endpoint.
      */
     @Test
     fun testMcpServerHttpWithAdapterClient() {
@@ -70,23 +66,31 @@ class McpHttpClientServerIntegrationTest {
                 val httpAdapter = McpServerAdapterHttp("http://localhost:$testPort")
                 
                 try {
-                    // Attempt to communicate - this will fail because of protocol mismatch
-                    // McpServerHttp uses JSON-RPC (POST to /)
-                    // McpServerAdapterHttp expects REST (GET /capabilities, etc.)
-                    
-                    // Test capabilities - will return null because /capabilities endpoint doesn't exist
+                    // Test capabilities via initialize
                     val capabilities = httpAdapter.getCapabilities()
-                    assertNull(capabilities, "Capabilities should be null - REST endpoint /capabilities not found on JSON-RPC server")
+                    assertNotNull(capabilities, "Should retrieve capabilities")
                     
-                    // Attempting to list prompts will fail because /prompts/list doesn't exist
-                    // McpServerAdapterHttp expects GET /prompts/list but McpServerHttp only has POST /
-                    try {
-                        httpAdapter.listPrompts()
-                        fail("Should not be able to list prompts - protocol mismatch")
-                    } catch (e: Exception) {
-                        // Expected - protocols are incompatible
-                        assertTrue(e is McpServerException || e.cause is McpServerException,
-                            "Should fail with protocol mismatch")
+                    // Test list prompts
+                    val prompts = httpAdapter.listPrompts()
+                    assertNotNull(prompts, "Should retrieve prompts")
+                    assertTrue(prompts.isNotEmpty(), "Should have at least one prompt")
+                    
+                    // Test list tools
+                    val tools = httpAdapter.listTools()
+                    assertNotNull(tools, "Should retrieve tools")
+                    assertTrue(tools.isNotEmpty(), "Should have at least one tool")
+                    
+                    // Test get a specific prompt
+                    if (prompts.isNotEmpty()) {
+                        val promptResponse = httpAdapter.getPrompt(prompts[0].name, emptyMap())
+                        assertNotNull(promptResponse, "Should retrieve prompt response")
+                        assertNotNull(promptResponse.messages, "Should have messages")
+                    }
+                    
+                    // Test call a tool
+                    if (tools.isNotEmpty()) {
+                        val toolResult = httpAdapter.callTool(tools[0].name, emptyMap())
+                        assertNotNull(toolResult, "Should get tool result")
                     }
                 } finally {
                     httpAdapter.close()

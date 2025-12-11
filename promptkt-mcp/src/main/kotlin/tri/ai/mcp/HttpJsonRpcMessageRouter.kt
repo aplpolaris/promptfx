@@ -45,7 +45,7 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
     fun startServer(port: Int = 8080) {
         server = embeddedServer(Netty, port = port) {
             routing {
-                post("/") {
+                post("/mcp") {
                     handleJsonRpcRequest(call)
                 }
             }
