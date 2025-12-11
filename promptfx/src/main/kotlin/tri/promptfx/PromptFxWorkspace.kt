@@ -133,18 +133,8 @@ class PromptFxWorkspace : Workspace() {
                 hyperlinkview<ModerationsView>("API", "Moderations")
                 loadViewLinks("API")
             }
-            group(ViewGroupModel("MCP", FontAwesomeIcon.DASHCUBE.graphic.steelBlue, listOf())) {
-                (this as DrawerItem).padding = insets(5.0)
-                hyperlinkview<McpServerView>("MCP", "MCP Servers")
-                hyperlinkview<McpPromptView>("MCP", "Prompts")
-                hyperlinkview<McpToolView>("MCP", "Tools")
-                hyperlinkview<McpResourceView>("MCP", "Resources")
-                loadViewLinks("MCP")
-            }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
-                if (it.category != "MCP") {
-                    group(it)
-                }
+                group(it)
             }
         }
     }
@@ -345,6 +335,8 @@ class PromptFxWorkspace : Workspace() {
                     hyperlinkview(it.category, it)
                 }
             }
+            // Automatically load view links for this category
+            loadViewLinks(model.category)
         }.apply {
             if (children.isEmpty()) {
                 removeFromParent()
