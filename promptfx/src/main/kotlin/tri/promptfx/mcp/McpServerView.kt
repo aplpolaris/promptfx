@@ -36,177 +36,176 @@ class McpServerPlugin : NavigableWorkspaceViewImpl<McpServerView>("MCP", "MCP Se
 
 /** View and try out MCP server prompts. */
 class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.") {
-    
+
     private val mcpController: PromptFxMcpController by inject()
     private val serverNames = observableListOf<String>()
     private val selectedServerName = SimpleObjectProperty<String>()
     private val selectedServerConfig = SimpleObjectProperty<McpServerConfig>()
-    
+
     init {
         // Load server names from registry
         serverNames.setAll(mcpController.mcpServerRegistry.listServerNames())
-        
+
         // Update config when server is selected
         selectedServerName.onChange { serverName ->
-            selectedServerConfig.value = serverName?.let { 
-                mcpController.mcpServerRegistry.getConfigs()[it] 
+            selectedServerConfig.value = serverName?.let {
+                mcpController.mcpServerRegistry.getConfigs()[it]
             }
         }
-        
+
         hideParameters()
         hideRunButton()
-        
+
         outputPane.clear()
-        output {
-            splitpane {
+        input {
+            // Left pane: Server list
+            vbox {
                 vgrow = Priority.ALWAYS
-                
-                // Left pane: Server list
-                vbox {
-                    vgrow = Priority.ALWAYS
-                    toolbar {
-                        label("Servers")
-                        spacer()
-                        button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
-                            tooltip("Refresh server list")
-                            action {
-                                serverNames.setAll(mcpController.mcpServerRegistry.listServerNames())
-                            }
-                        }
-                    }
-                    listview(serverNames) {
-                        vgrow = Priority.ALWAYS
-                        selectedServerName.bind(this.selectionModel.selectedItemProperty())
-                        cellFormat {
-                            text = it
+                toolbar {
+                    label("Servers")
+                    spacer()
+                    button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
+                        tooltip("Refresh server list")
+                        action {
+                            serverNames.setAll(mcpController.mcpServerRegistry.listServerNames())
                         }
                     }
                 }
-                
-                // Right pane: Server details
-                vbox {
+                listview(serverNames) {
                     vgrow = Priority.ALWAYS
-                    padding = insets(10.0)
-                    spacing = 10.0
-                    
-                    visibleWhen(selectedServerName.isNotNull)
-                    managedWhen(visibleProperty())
-                    
-                    label {
-                        textProperty().bind(selectedServerName)
-                        style {
-                            fontSize = 18.px
-                            fontWeight = FontWeight.BOLD
+                    selectedServerName.bind(this.selectionModel.selectedItemProperty())
+                    cellFormat {
+                        text = it
+                    }
+                }
+            }
+        }
+
+        output {
+            // Right pane: Server details
+            vbox {
+                vgrow = Priority.ALWAYS
+                padding = insets(10.0)
+                spacing = 10.0
+
+                visibleWhen(selectedServerName.isNotNull)
+                managedWhen(visibleProperty())
+
+                label {
+                    textProperty().bind(selectedServerName)
+                    style {
+                        fontSize = 18.px
+                        fontWeight = FontWeight.BOLD
+                    }
+                }
+
+                form {
+                    fieldset("Server Configuration") {
+                        field("Type") {
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    when (it) {
+                                        is EmbeddedServerConfig -> "Embedded"
+                                        is StdioServerConfig -> "Stdio"
+                                        is HttpServerConfig -> "HTTP"
+                                        is TestServerConfig -> "Test"
+                                        null -> ""
+                                        else -> it::class.simpleName ?: "Unknown"
+                                    }
+                                })
+                            }
+                        }
+
+                        field("Description") {
+                            label {
+                                isWrapText = true
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    it?.description ?: "No description available"
+                                })
+                            }
                         }
                     }
-                    
-                    form {
-                        fieldset("Server Configuration") {
-                            field("Type") {
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        when (it) {
-                                            is EmbeddedServerConfig -> "Embedded"
-                                            is StdioServerConfig -> "Stdio"
-                                            is HttpServerConfig -> "HTTP"
-                                            is TestServerConfig -> "Test"
-                                            null -> ""
-                                            else -> it::class.simpleName ?: "Unknown"
-                                        }
-                                    })
-                                }
-                            }
-                            
-                            field("Description") {
-                                label {
-                                    isWrapText = true
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        it?.description ?: "No description available" 
-                                    })
-                                }
+
+                    // Type-specific configuration details
+                    fieldset {
+                        textProperty().bind(selectedServerConfig.stringBinding { "Details" })
+
+                        // Embedded Server Config
+                        field("Prompt Library Path") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is EmbeddedServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? EmbeddedServerConfig)?.promptLibraryPath ?: "(default)"
+                                })
                             }
                         }
-                        
-                        // Type-specific configuration details
-                        fieldset {
-                            textProperty().bind(selectedServerConfig.stringBinding { "Details" })
-                            
-                            // Embedded Server Config
-                            field("Prompt Library Path") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is EmbeddedServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? EmbeddedServerConfig)?.promptLibraryPath ?: "(default)" 
-                                    })
-                                }
-                            }
-                            
-                            // Stdio Server Config
-                            field("Command") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? StdioServerConfig)?.command ?: "" 
-                                    })
-                                }
-                            }
-                            
-                            field("Arguments") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    isWrapText = true
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? StdioServerConfig)?.args?.joinToString(" ") ?: "" 
-                                    })
-                                }
-                            }
-                            
-                            field("Environment") {
-                                visibleWhen(selectedServerConfig.booleanBinding { 
-                                    it is StdioServerConfig && (it as StdioServerConfig).env.isNotEmpty() 
+
+                        // Stdio Server Config
+                        field("Command") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? StdioServerConfig)?.command ?: ""
                                 })
-                                managedWhen(visibleProperty())
-                                label {
-                                    isWrapText = true
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? StdioServerConfig)?.env?.entries?.joinToString("\n") { "${it.key}=${it.value}" } ?: "" 
-                                    })
-                                }
                             }
-                            
-                            // HTTP Server Config
-                            field("URL") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is HttpServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? HttpServerConfig)?.url ?: "" 
-                                    })
-                                }
+                        }
+
+                        field("Arguments") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                isWrapText = true
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? StdioServerConfig)?.args?.joinToString(" ") ?: ""
+                                })
                             }
-                            
-                            // Test Server Config
-                            field("Include Default Prompts") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? TestServerConfig)?.includeDefaultPrompts?.toString() ?: "" 
-                                    })
-                                }
+                        }
+
+                        field("Environment") {
+                            visibleWhen(selectedServerConfig.booleanBinding {
+                                it is StdioServerConfig && (it as StdioServerConfig).env.isNotEmpty()
+                            })
+                            managedWhen(visibleProperty())
+                            label {
+                                isWrapText = true
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? StdioServerConfig)?.env?.entries?.joinToString("\n") { "${it.key}=${it.value}" }
+                                        ?: ""
+                                })
                             }
-                            
-                            field("Include Default Tools") {
-                                visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
-                                managedWhen(visibleProperty())
-                                label {
-                                    textProperty().bind(selectedServerConfig.stringBinding { 
-                                        (it as? TestServerConfig)?.includeDefaultTools?.toString() ?: "" 
-                                    })
-                                }
+                        }
+
+                        // HTTP Server Config
+                        field("URL") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is HttpServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? HttpServerConfig)?.url ?: ""
+                                })
+                            }
+                        }
+
+                        // Test Server Config
+                        field("Include Default Prompts") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? TestServerConfig)?.includeDefaultPrompts?.toString() ?: ""
+                                })
+                            }
+                        }
+
+                        field("Include Default Tools") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? TestServerConfig)?.includeDefaultTools?.toString() ?: ""
+                                })
                             }
                         }
                     }
@@ -214,6 +213,6 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
             }
         }
     }
-    
+
     override suspend fun processUserInput() = AiPipelineResult.todo()
 }
