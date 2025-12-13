@@ -304,13 +304,13 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
 
     override suspend fun listResources(): List<McpResource> {
         try {
-            val response = httpClient.get("$baseUrl/resources/list")
-            if (response.status.isSuccess()) {
-                val responseBody = response.bodyAsText()
-                return objectMapper.readValue<List<McpResource>>(responseBody)
-            } else {
-                throw McpServerException("Failed to list resources: ${response.status}")
-            }
+            val result = sendJsonRpcRequest("resources/list")
+            val resourcesJson = result.jsonObject["resources"]?.jsonArray
+                ?: throw McpServerException("No resources in response")
+            
+            return jsonMapper.readValue(JsonSerializers.serialize(resourcesJson))
+        } catch (e: McpServerException) {
+            throw e
         } catch (e: Exception) {
             throw McpServerException("Error listing resources from MCP server: ${e.message}", e)
         }
@@ -318,13 +318,13 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
 
     override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
         try {
-            val response = httpClient.get("$baseUrl/resources/templates/list")
-            if (response.status.isSuccess()) {
-                val responseBody = response.bodyAsText()
-                return objectMapper.readValue<List<McpResourceTemplate>>(responseBody)
-            } else {
-                throw McpServerException("Failed to list resource templates: ${response.status}")
-            }
+            val result = sendJsonRpcRequest("resources/templates/list")
+            val templatesJson = result.jsonObject["resourceTemplates"]?.jsonArray
+                ?: throw McpServerException("No resource templates in response")
+            
+            return jsonMapper.readValue(JsonSerializers.serialize(templatesJson))
+        } catch (e: McpServerException) {
+            throw e
         } catch (e: Exception) {
             throw McpServerException("Error listing resource templates from MCP server: ${e.message}", e)
         }
@@ -332,17 +332,15 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
 
     override suspend fun readResource(uri: String): McpReadResourceResponse {
         try {
-            val response = httpClient.post("$baseUrl/resources/read") {
-                contentType(ContentType.Application.Json)
-                setBody(objectMapper.writeValueAsString(mapOf("uri" to uri)))
+            val params = buildJsonObject {
+                put("uri", JsonPrimitive(uri))
             }
             
-            if (response.status.isSuccess()) {
-                val responseBody = response.bodyAsText()
-                return objectMapper.readValue<McpReadResourceResponse>(responseBody)
-            } else {
-                throw McpServerException("Failed to read resource '$uri': ${response.status}")
-            }
+            val result = sendJsonRpcRequest("resources/read", params)
+            
+            return jsonMapper.readValue(JsonSerializers.serialize(result))
+        } catch (e: McpServerException) {
+            throw e
         } catch (e: Exception) {
             throw McpServerException("Error reading resource from MCP server: ${e.message}", e)
         }
