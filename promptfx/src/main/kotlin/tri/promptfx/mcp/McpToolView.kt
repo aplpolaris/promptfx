@@ -65,8 +65,8 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
             toolbar {
                 textfield("") {
                     promptText = "Search"
-                    setOnKeyPressed {
-                        toolFilter = { text in it }
+                    textProperty().addListener { _, _, newValue ->
+                        toolFilter = { newValue in it }
                         refilter()
                     }
                 }
