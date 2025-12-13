@@ -19,6 +19,7 @@
  */
 package tri.promptfx.mcp
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.promptfx.PromptFxMcpController
@@ -51,5 +52,45 @@ class McpServerViewTest {
         
         val testConfig = configs["test"]
         assertNotNull(testConfig?.description, "Test server should have a description")
+    }
+    
+    @Test
+    fun `test server capabilities can be queried`() = runBlocking {
+        val controller = PromptFxMcpController()
+        
+        // Test the embedded server
+        val embeddedServer = controller.mcpServerRegistry.getServer("embedded")
+        assertNotNull(embeddedServer, "Should be able to get embedded server")
+        
+        val capabilities = embeddedServer?.getCapabilities()
+        assertNotNull(capabilities, "Should have capabilities")
+        
+        // Embedded server should have prompts capability
+        assertNotNull(capabilities?.prompts, "Embedded server should support prompts")
+    }
+    
+    @Test
+    fun `test server capability info data class`() {
+        // Test that ServerCapabilityInfo can be created and used
+        val info1 = ServerCapabilityInfo(
+            hasPrompts = true,
+            hasTools = true,
+            hasResources = false,
+            promptsCount = 5,
+            toolsCount = 3,
+            resourcesCount = 0
+        )
+        
+        assertTrue(info1.hasPrompts)
+        assertTrue(info1.hasTools)
+        assertFalse(info1.hasResources)
+        assertEquals(5, info1.promptsCount)
+        assertEquals(3, info1.toolsCount)
+        assertNull(info1.error)
+        
+        // Test error state
+        val info2 = ServerCapabilityInfo(error = "Connection failed")
+        assertNotNull(info2.error)
+        assertEquals("Connection failed", info2.error)
     }
 }

@@ -23,7 +23,9 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.layout.Priority
+import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.mcp.*
 import tri.ai.pips.AiPipelineResult
@@ -34,6 +36,17 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 /** Plugin for the [McpServerView]. */
 class McpServerPlugin : NavigableWorkspaceViewImpl<McpServerView>("MCP", "MCP Servers", type = McpServerView::class)
 
+/** Data class to hold server capability information. */
+data class ServerCapabilityInfo(
+    val hasPrompts: Boolean = false,
+    val hasTools: Boolean = false,
+    val hasResources: Boolean = false,
+    val promptsCount: Int = 0,
+    val toolsCount: Int = 0,
+    val resourcesCount: Int = 0,
+    val error: String? = null
+)
+
 /** View and try out MCP server prompts. */
 class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.") {
 
@@ -41,6 +54,13 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
     private val serverNames = observableListOf<String>()
     private val selectedServerName = SimpleObjectProperty<String>()
     private val selectedServerConfig = SimpleObjectProperty<McpServerConfig>()
+    private val serverCapabilities = mutableMapOf<String, SimpleObjectProperty<ServerCapabilityInfo>>()
+    
+    private fun getCapabilityInfo(serverName: String): SimpleObjectProperty<ServerCapabilityInfo> {
+        return serverCapabilities.getOrPut(serverName) {
+            SimpleObjectProperty(ServerCapabilityInfo())
+        }
+    }
 
     init {
         // Load server names from registry
@@ -51,6 +71,8 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
             selectedServerConfig.value = serverName?.let {
                 mcpController.mcpServerRegistry.getConfigs()[it]
             }
+            // Query capabilities when server is selected
+            serverName?.let { queryServerCapabilities(it) }
         }
 
         hideParameters()
@@ -74,8 +96,52 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                 listview(serverNames) {
                     vgrow = Priority.ALWAYS
                     selectedServerName.bind(this.selectionModel.selectedItemProperty())
-                    cellFormat {
-                        text = it
+                    cellFormat { serverName ->
+                        graphic = hbox(spacing = 5.0) {
+                            label(serverName) {
+                                minWidth = 100.0
+                            }
+                            spacer()
+                            
+                            val capInfo = getCapabilityInfo(serverName)
+                            
+                            // Show icons for supported capabilities
+                            hbox(spacing = 3.0) {
+                                visibleWhen(capInfo.booleanBinding { 
+                                    it != null && (it.hasPrompts || it.hasTools || it.hasResources) 
+                                })
+                                
+                                // Prompts icon
+                                label {
+                                    visibleWhen(capInfo.booleanBinding { it?.hasPrompts == true })
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT_ALT).apply {
+                                        glyphSize = 12
+                                        fill = Color.DODGERBLUE
+                                    }
+                                    tooltip("Has prompts")
+                                }
+                                
+                                // Tools icon
+                                label {
+                                    visibleWhen(capInfo.booleanBinding { it?.hasTools == true })
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.WRENCH).apply {
+                                        glyphSize = 12
+                                        fill = Color.ORANGE
+                                    }
+                                    tooltip("Has tools")
+                                }
+                                
+                                // Resources icon
+                                label {
+                                    visibleWhen(capInfo.booleanBinding { it?.hasResources == true })
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.DATABASE).apply {
+                                        glyphSize = 12
+                                        fill = Color.GREEN
+                                    }
+                                    tooltip("Has resources")
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -122,6 +188,86 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 textProperty().bind(selectedServerConfig.stringBinding {
                                     it?.description ?: "No description available"
                                 })
+                            }
+                        }
+                    }
+
+                    // Capabilities information
+                    fieldset("Capabilities") {
+                        val capInfo = selectedServerName.objectBinding { name ->
+                            name?.let { getCapabilityInfo(it).value }
+                        }
+                        
+                        field("Prompts") {
+                            hbox(spacing = 5.0) {
+                                label {
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT_ALT).apply {
+                                        glyphSize = 14
+                                        fill = Color.DODGERBLUE
+                                    }
+                                }
+                                label {
+                                    textProperty().bind(capInfo.stringBinding {
+                                        when {
+                                            it?.error != null -> "Error"
+                                            it?.hasPrompts == true -> "Supported (${it.promptsCount} prompts)"
+                                            else -> "Not supported"
+                                        }
+                                    })
+                                }
+                            }
+                        }
+                        
+                        field("Tools") {
+                            hbox(spacing = 5.0) {
+                                label {
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.WRENCH).apply {
+                                        glyphSize = 14
+                                        fill = Color.ORANGE
+                                    }
+                                }
+                                label {
+                                    textProperty().bind(capInfo.stringBinding {
+                                        when {
+                                            it?.error != null -> "Error"
+                                            it?.hasTools == true -> "Supported (${it.toolsCount} tools)"
+                                            else -> "Not supported"
+                                        }
+                                    })
+                                }
+                            }
+                        }
+                        
+                        field("Resources") {
+                            hbox(spacing = 5.0) {
+                                label {
+                                    graphic = FontAwesomeIconView(FontAwesomeIcon.DATABASE).apply {
+                                        glyphSize = 14
+                                        fill = Color.GREEN
+                                    }
+                                }
+                                label {
+                                    textProperty().bind(capInfo.stringBinding {
+                                        when {
+                                            it?.error != null -> "Error"
+                                            it?.hasResources == true -> "Supported (${it.resourcesCount} resources)"
+                                            else -> "Not supported"
+                                        }
+                                    })
+                                }
+                            }
+                        }
+                        
+                        // Show error message if there was an issue querying capabilities
+                        field("Status") {
+                            visibleWhen(capInfo.booleanBinding { it?.error != null })
+                            managedWhen(visibleProperty())
+                            label {
+                                isWrapText = true
+                                style {
+                                    textFill = Color.RED
+                                }
+                                textProperty().bind(capInfo.stringBinding { it?.error ?: "" })
                             }
                         }
                     }
@@ -211,6 +357,59 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     }
                 }
             }
+        }
+    }
+
+    private fun queryServerCapabilities(serverName: String) {
+        val capabilityProp = getCapabilityInfo(serverName)
+        
+        // Run query in background using coroutine
+        runAsync {
+            runBlocking {
+                try {
+                    val adapter = mcpController.mcpServerRegistry.getServer(serverName)
+                        ?: return@runBlocking ServerCapabilityInfo(error = "Server not found")
+                    
+                    val capabilities = adapter.getCapabilities()
+                    
+                    // Only query for counts if the capability is supported
+                    val promptsCount = if (capabilities?.prompts != null) {
+                        try {
+                            adapter.listPrompts().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
+                        0
+                    }
+                    
+                    val toolsCount = if (capabilities?.tools != null) {
+                        try {
+                            adapter.listTools().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
+                        0
+                    }
+                    
+                    // Resources API is not yet implemented in the adapter interface
+                    val resourcesCount = 0
+                    
+                    ServerCapabilityInfo(
+                        hasPrompts = capabilities?.prompts != null,
+                        hasTools = capabilities?.tools != null,
+                        hasResources = capabilities?.resources != null,
+                        promptsCount = promptsCount,
+                        toolsCount = toolsCount,
+                        resourcesCount = resourcesCount
+                    )
+                } catch (e: Exception) {
+                    ServerCapabilityInfo(error = "Error: ${e.message}")
+                }
+            }
+        } ui { result ->
+            capabilityProp.value = result
         }
     }
 
