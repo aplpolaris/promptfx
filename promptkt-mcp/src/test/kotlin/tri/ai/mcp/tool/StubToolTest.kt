@@ -25,7 +25,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
-import tri.ai.mcp.tool.FakeTools.buildSchemaWithOneRequiredParam
+import tri.util.json.buildSchemaWithOneRequiredParam
 import tri.util.json.jsonMapper
 
 class StubToolTest {
