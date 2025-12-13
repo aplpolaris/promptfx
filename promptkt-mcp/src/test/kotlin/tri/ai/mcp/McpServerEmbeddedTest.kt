@@ -47,6 +47,42 @@ class McpServerEmbeddedTest {
     }
 
     @Test
+    fun testListResources() {
+        runTest {
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val resources = server.listResources()
+            println(resources)
+            assertTrue(resources.isEmpty(), "Default embedded server should have no resources")
+            server.close()
+        }
+    }
+
+    @Test
+    fun testListResourceTemplates() {
+        runTest {
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val templates = server.listResourceTemplates()
+            println(templates)
+            assertTrue(templates.isEmpty(), "Default embedded server should have no resource templates")
+            server.close()
+        }
+    }
+
+    @Test
+    fun testReadResource_notFound() {
+        runTest {
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            try {
+                server.readResource("file:///nonexistent")
+                Assertions.fail("Expected McpServerException for nonexistent resource")
+            } catch (e: McpServerException) {
+                // Expected
+            }
+            server.close()
+        }
+    }
+
+    @Test
     fun testGetPrompt() {
         runTest {
             val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
