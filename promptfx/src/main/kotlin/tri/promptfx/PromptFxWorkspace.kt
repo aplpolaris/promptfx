@@ -131,7 +131,6 @@ class PromptFxWorkspace : Workspace() {
 //                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
 //                hyperlinkview<FilesView>("API", "Files")
                 hyperlinkview<ModerationsView>("API", "Moderations")
-                loadViewLinks("API")
             }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
                 // Skip API category as it's manually configured above
