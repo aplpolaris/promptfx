@@ -96,6 +96,22 @@ class McpServerHttpTest {
     }
 
     @Test
+    fun testHealthCheck() {
+        runTest {
+            val adapter = createTestAdapter()
+            mcpServer = McpServerHttp(adapter, testPort)
+            mcpServer.startServer()
+            
+            waitForServerReady()
+            
+            val response = httpClient.get("http://localhost:$testPort/health")
+            
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("OK", response.bodyAsText())
+        }
+    }
+
+    @Test
     fun testListPrompts() {
         runTest {
             val adapter = createTestAdapter()

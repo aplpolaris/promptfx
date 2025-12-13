@@ -48,6 +48,9 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                 post("/mcp") {
                     handleJsonRpcRequest(call)
                 }
+                get("/health") {
+                    call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.OK)
+                }
             }
         }.start(wait = false)
     }
