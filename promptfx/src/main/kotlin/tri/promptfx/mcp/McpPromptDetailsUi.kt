@@ -26,10 +26,12 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import tornadofx.*
+import tri.ai.mcp.McpGetPromptResponse
 import tri.promptfx.PromptFxMcpController
 
 /** View showing details of an MCP prompt. */
@@ -38,7 +40,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
     private val mcpController: PromptFxMcpController by inject()
     var promptWithServer = SimpleObjectProperty<McpPromptWithServer>()
     private val argumentValues = mutableMapOf<String, SimpleStringProperty>()
-    private val promptResult = SimpleStringProperty("")
+    private val promptResponse = SimpleObjectProperty<McpGetPromptResponse?>()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
@@ -48,8 +50,8 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
             vgrow = Priority.ALWAYS
             isFitToWidth = true
             form {
-                fieldset("Server Information") {
-                    field("Server") { 
+                fieldset("MCP Server Information") {
+                    field("Server Id") { 
                         text(promptWithServer.stringBinding { it?.serverName ?: "N/A" })
                     }
                 }
@@ -86,7 +88,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                         promptWithServer.onChange { pwsValue ->
                             children.clear()
                             argumentValues.clear()
-                            promptResult.set("")
+                            promptResponse.set(null)
                             
                             pwsValue?.prompt?.arguments?.forEach { arg ->
                                 val valueProperty = SimpleStringProperty("")
@@ -113,23 +115,51 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                                 alignment = Pos.CENTER_LEFT
                                 paddingTop = 10.0
                                 
-                                button("Execute Prompt", FontAwesomeIconView(FontAwesomeIcon.PLAY)) {
+                                button("Get Filled Prompt", FontAwesomeIconView(FontAwesomeIcon.PLAY)) {
                                     action {
                                         executePrompt()
                                     }
                                 }
                             }
-                            
-                            // Add result area
-                            vbox {
-                                paddingTop = 10.0
-                                label("Result:") {
-                                    style = "-fx-font-weight: bold"
-                                }
-                                textarea(promptResult) {
-                                    isEditable = false
-                                    prefRowCount = 10
-                                    isWrapText = true
+                        }
+                    }
+                }
+                fieldset("Prompt Result") {
+                    visibleWhen(promptResponse.isNotNull)
+                    managedWhen(visibleProperty())
+                    
+                    field("Description") {
+                        labelContainer.alignment = Pos.TOP_LEFT
+                        text(promptResponse.stringBinding { it?.description ?: "N/A" }) {
+                            wrappingWidth = 400.0
+                        }
+                    }
+                    
+                    // Dynamically create a field for each message
+                    vbox {
+                        spacing = 10.0
+                        promptResponse.onChange { response ->
+                            children.clear()
+                            response?.messages?.forEachIndexed { index, message ->
+                                form {
+                                    fieldset("Message ${index + 1}") {
+                                        field("Role") {
+                                            label(message.role.toString())
+                                        }
+                                        field("Content") {
+                                            labelContainer.alignment = Pos.TOP_LEFT
+                                            vbox {
+                                                spacing = 5.0
+                                                message.content?.forEach { part ->
+                                                    textarea(part?.text ?: "") {
+                                                        isEditable = false
+                                                        isWrapText = true
+                                                        prefRowCount = 5
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -145,34 +175,29 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val server = mcpController.mcpServerRegistry.getServer(pws.serverName)
-                val result = if (server != null) {
+                if (server != null) {
                     val args = argumentValues.mapValues { it.value.value }
                     val response = server.getPrompt(pws.prompt.name, args)
                     
-                    // Format the response
-                    buildString {
-                        response.description?.let {
-                            append("Description: $it\n\n")
-                        }
-                        append("Messages:\n")
-                        response.messages.forEach { message ->
-                            append("Role: ${message.role}\n")
-                            message.content?.forEach { part ->
-                                append("${part?.text ?: ""}\n")
-                            }
-                            append("\n")
-                        }
+                    Platform.runLater {
+                        promptResponse.set(response)
                     }
                 } else {
-                    "Error: Server '${pws.serverName}' not found"
-                }
-                
-                Platform.runLater {
-                    promptResult.set(result)
+                    Platform.runLater {
+                        // Create an error response
+                        promptResponse.set(McpGetPromptResponse(
+                            description = "Error: Server '${pws.serverName}' not found",
+                            messages = emptyList()
+                        ))
+                    }
                 }
             } catch (e: Exception) {
                 Platform.runLater {
-                    promptResult.set("Error executing prompt: ${e.message}")
+                    // Create an error response
+                    promptResponse.set(McpGetPromptResponse(
+                        description = "Error executing prompt: ${e.message}",
+                        messages = emptyList()
+                    ))
                 }
             }
         }

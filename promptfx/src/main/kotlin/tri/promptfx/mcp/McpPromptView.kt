@@ -33,7 +33,7 @@ import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [McpPromptView]. */
-class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "Prompts", type = McpPromptView::class)
+class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "MCP Prompts", type = McpPromptView::class)
 
 /** View and try out MCP server prompts. */
 class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers.") {
