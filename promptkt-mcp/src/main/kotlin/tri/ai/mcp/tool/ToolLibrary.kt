@@ -28,8 +28,6 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.impl.WebSearchExecutable
 import tri.ai.mcp.JsonSerializers.toJsonElement
-import tri.util.json.buildSchemaWithOneOptionalParam
-import tri.util.json.buildSchemaWithOneRequiredParam
 import tri.util.json.jsonMapper
 import kotlin.String
 
