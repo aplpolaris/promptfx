@@ -36,7 +36,7 @@ import tri.util.json.jsonMapper
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [McpToolView]. */
-class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "Tools", type = McpToolView::class)
+class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "MCP Tools", type = McpToolView::class)
 
 /** Data class to track tools with their server information. */
 data class ToolWithServer(
