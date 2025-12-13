@@ -146,6 +146,33 @@ class McpServerAdapterStdio(
         }
     }
 
+    override suspend fun listResources(): List<McpResource> {
+        try {
+            val result = sendRequest("resources/list")
+            return objectMapper.readValue<List<McpResource>>(result.toString())
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resources from stdio server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
+        try {
+            val result = sendRequest("resources/templates/list")
+            return objectMapper.readValue<List<McpResourceTemplate>>(result.toString())
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resource templates from stdio server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun readResource(uri: String): McpReadResourceResponse {
+        try {
+            val result = sendRequest("resources/read", mapOf("uri" to uri))
+            return objectMapper.readValue<McpReadResourceResponse>(result.toString())
+        } catch (e: Exception) {
+            throw McpServerException("Error reading resource from stdio server: ${e.message}", e)
+        }
+    }
+
     override suspend fun close() {
         try {
             writer?.close()

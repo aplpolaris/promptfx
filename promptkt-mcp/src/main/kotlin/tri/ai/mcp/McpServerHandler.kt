@@ -45,7 +45,8 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
             "tools/list" -> handleToolsList()
             "tools/call" -> handleToolsCall(params)
             "resources/list" -> handleResourcesList()
-            "resources/read" -> handleResourcesRead()
+            "resources/templates/list" -> handleResourceTemplatesList()
+            "resources/read" -> handleResourcesRead(params)
 
             // --- Notifications with no responses ---
             "notifications/initialized" -> handleNotificationsInitialized()
@@ -90,8 +91,17 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
         return convertToolResponse(server.callTool(name, argsMap))
     }
 
-    private suspend fun handleResourcesList() = objwithemptylist("resources")
-    private suspend fun handleResourcesRead() = objwithemptylist("contents")
+    private suspend fun handleResourcesList() = buildJsonObject {
+        put("resources", toJsonElement(server.listResources()))
+    }
+    private suspend fun handleResourceTemplatesList() = buildJsonObject {
+        put("resourceTemplates", toJsonElement(server.listResourceTemplates()))
+    }
+    private suspend fun handleResourcesRead(params: JsonObject?): JsonElement {
+        val uri = params?.get("uri")?.jsonPrimitive?.content
+        require(!uri.isNullOrBlank()) { "Invalid params: 'uri' is required" }
+        return toJsonElement(server.readResource(uri))
+    }
     private suspend fun handleNotificationsInitialized() = null
     private suspend fun handleNotificationsClose(): JsonElement? {
         // No response for notifications, caller should exit

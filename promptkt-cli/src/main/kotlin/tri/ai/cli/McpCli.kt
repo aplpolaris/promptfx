@@ -87,6 +87,7 @@ class McpCli : CliktCommand(
         subcommands(
             PromptListCommand(), PromptGetCommand(), PromptExecuteCommand(),
             ToolListCommand(), ToolExecuteCommand(),
+            ResourceListCommand(), ResourceTemplatesListCommand(), ResourceReadCommand(),
             ServeCommand()
         )
     }
@@ -435,6 +436,134 @@ class McpCli : CliktCommand(
                         // Print the whole output as pretty JSON
                         echo(Json { prettyPrint = true }.encodeToString(output))
                     }
+                }
+            } catch (e: McpServerException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    //endregion
+
+    //region RESOURCES
+
+    /** List all available resources. */
+    inner class ResourceListCommand : CliktCommand(
+        name = "resources-list",
+        help = "List all available resources from the MCP server"
+    ) {
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val resources = adapter.listResources()
+
+                if (resources.isEmpty()) {
+                    echo("No resources found.")
+                    return@runBlocking
+                }
+
+                echo()
+                echo("Available resources on $adapter:")
+                echo("=".repeat(50))
+
+                resources.forEach { resource ->
+                    echo("${ANSI_BOLD}URI$ANSI_RESET: ${resource.uri}")
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${resource.name}")
+                    if (resource.description != null) {
+                        echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${resource.description}$ANSI_RESET")
+                    }
+                    if (resource.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${resource.mimeType}")
+                    }
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpServerException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    /** List all available resource templates. */
+    inner class ResourceTemplatesListCommand : CliktCommand(
+        name = "resources-templates-list",
+        help = "List all available resource templates from the MCP server"
+    ) {
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val templates = adapter.listResourceTemplates()
+
+                if (templates.isEmpty()) {
+                    echo("No resource templates found.")
+                    return@runBlocking
+                }
+
+                echo()
+                echo("Available resource templates on $adapter:")
+                echo("=".repeat(50))
+
+                templates.forEach { template ->
+                    echo("${ANSI_BOLD}URI Template$ANSI_RESET: ${template.uriTemplate}")
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${template.name}")
+                    if (template.description != null) {
+                        echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${template.description}$ANSI_RESET")
+                    }
+                    if (template.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${template.mimeType}")
+                    }
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpServerException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    /** Read a resource by URI. */
+    inner class ResourceReadCommand : CliktCommand(
+        name = "resources-read",
+        help = "Read a resource by URI"
+    ) {
+        private val uri by argument(help = "URI of the resource to read")
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                if (this@McpCli.verbose) {
+                    echo("Reading resource: $uri")
+                }
+
+                val response = adapter.readResource(uri)
+
+                echo()
+                echo("Resource contents:")
+                echo("=".repeat(50))
+
+                response.contents.forEach { content ->
+                    echo("${ANSI_BOLD}URI$ANSI_RESET: ${content.uri}")
+                    if (content.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${content.mimeType}")
+                    }
+                    if (content.text != null) {
+                        echo("${ANSI_BOLD}Text Content$ANSI_RESET:")
+                        echo(content.text)
+                    }
+                    if (content.blob != null) {
+                        echo("${ANSI_BOLD}Binary Content$ANSI_RESET: (base64 encoded, ${content.blob.length} characters)")
+                        if (this@McpCli.verbose) {
+                            echo(content.blob)
+                        }
+                    }
+                    echo("-".repeat(30))
                 }
             } catch (e: McpServerException) {
                 echo("Error: ${e.message}", err = true)

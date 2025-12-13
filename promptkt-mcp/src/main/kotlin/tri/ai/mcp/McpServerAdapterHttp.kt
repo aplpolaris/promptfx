@@ -152,6 +152,52 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         }
     }
 
+    override suspend fun listResources(): List<McpResource> {
+        try {
+            val response = httpClient.get("$baseUrl/resources/list")
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText()
+                return objectMapper.readValue<List<McpResource>>(responseBody)
+            } else {
+                throw McpServerException("Failed to list resources: ${response.status}")
+            }
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resources from MCP server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
+        try {
+            val response = httpClient.get("$baseUrl/resources/templates/list")
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText()
+                return objectMapper.readValue<List<McpResourceTemplate>>(responseBody)
+            } else {
+                throw McpServerException("Failed to list resource templates: ${response.status}")
+            }
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resource templates from MCP server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun readResource(uri: String): McpReadResourceResponse {
+        try {
+            val response = httpClient.post("$baseUrl/resources/read") {
+                contentType(ContentType.Application.Json)
+                setBody(objectMapper.writeValueAsString(mapOf("uri" to uri)))
+            }
+            
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText()
+                return objectMapper.readValue<McpReadResourceResponse>(responseBody)
+            } else {
+                throw McpServerException("Failed to read resource '$uri': ${response.status}")
+            }
+        } catch (e: Exception) {
+            throw McpServerException("Error reading resource from MCP server: ${e.message}", e)
+        }
+    }
+
     override suspend fun close() {
         httpClient.close()
     }
