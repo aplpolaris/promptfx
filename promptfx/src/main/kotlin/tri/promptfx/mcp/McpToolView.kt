@@ -41,7 +41,8 @@ class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "Tools", ty
 /** View and try out MCP server tools. */
 class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured MCP servers.") {
 
-    private val toolEntries = controller.mcpTools
+    private val mcpController = controller.mcpController
+    private val toolEntries = observableListOf<Executable>()
     private val toolSelection = SimpleObjectProperty<Executable>()
     private lateinit var toolListView: ListView<Executable>
 
@@ -49,12 +50,15 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     private val toolOutputText = SimpleStringProperty("")
 
     init {
+        // Load tools initially
+        loadTools()
+        
         input {
             toolbar {
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the tool list.")
                     action {
-                        toolEntries.setAll(controller.mcpTools)
+                        loadTools()
                     }
                 }
             }
@@ -172,5 +176,27 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
             AiPromptTrace.error(null, "Not implemented", null),
             mapOf()
         )
+    }
+
+    private fun loadTools() {
+        runAsync {
+            val allTools = mutableListOf<Executable>()
+            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+                try {
+                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    if (server != null) {
+                        val tools = kotlinx.coroutines.runBlocking {
+                            server.listTools()
+                        }
+                        allTools.addAll(tools)
+                    }
+                } catch (e: Exception) {
+                    println("Error loading tools from server $serverName: ${e.message}")
+                }
+            }
+            allTools
+        } ui { tools ->
+            toolEntries.setAll(tools)
+        }
     }
 }

@@ -21,14 +21,10 @@ package tri.promptfx
 
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
 import tornadofx.Controller
 import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
-import tri.ai.core.tool.Executable
-import tri.ai.core.tool.impl.WebSearchExecutable
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
@@ -54,10 +50,6 @@ class PromptFxController : Controller() {
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)
     val imagesUsed = SimpleIntegerProperty(0)
-
-    val mcpTools: ObservableList<Executable> = FXCollections.observableArrayList<Executable>().apply {
-        add(WebSearchExecutable())
-    }
 
     //region UPDATERS
 
