@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx-sample-textplugin
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ class SampleTextPlugin : TextPlugin {
 class SampleTextCompletionModel : TextCompletion {
     override val modelId = "sample-echo-v1"
 
+    override fun toString() = modelId
+
     override suspend fun complete(
         text: String,
         variation: MChatVariation,
@@ -89,6 +91,8 @@ class SampleTextCompletionModel : TextCompletion {
 /** Sample chat model that echoes the last message. */
 class SampleChatModel : TextChat {
     override val modelId = "sample-chat-v1"
+
+    override fun toString() = modelId
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

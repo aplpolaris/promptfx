@@ -14,7 +14,7 @@
     <name>${project.artifactId}-${project.version}</name>
     <description>Sample plugin demonstrating TextPlugin implementation.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
-    <inceptionYear>2023</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
 
     <!-- configuration of the default license to use -->
     <licenses>
