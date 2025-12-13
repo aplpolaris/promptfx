@@ -38,13 +38,21 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 /** Plugin for the [McpToolView]. */
 class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "Tools", type = McpToolView::class)
 
+/** Data class to track tools with their server information. */
+data class ToolWithServer(
+    val tool: Executable,
+    val serverName: String
+)
+
 /** View and try out MCP server tools. */
 class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured MCP servers.") {
 
     private val mcpController = controller.mcpController
-    private val toolEntries = observableListOf<Executable>()
-    private val toolSelection = SimpleObjectProperty<Executable>()
-    private lateinit var toolListView: ListView<Executable>
+    private val toolEntries = observableListOf<ToolWithServer>()
+    private var toolFilter: (String) -> Boolean = { true }
+    private val filteredToolEntries = observableListOf<ToolWithServer>()
+    private val toolSelection = SimpleObjectProperty<ToolWithServer>()
+    private lateinit var toolListView: ListView<ToolWithServer>
 
     private val toolInputText = SimpleStringProperty("{}")
     private val toolOutputText = SimpleStringProperty("")
@@ -55,6 +63,14 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         
         input {
             toolbar {
+                textfield("") {
+                    promptText = "Search"
+                    setOnKeyPressed {
+                        toolFilter = { text in it }
+                        refilter()
+                    }
+                }
+                spacer()
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the tool list.")
                     action {
@@ -62,86 +78,105 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                     }
                 }
             }
-            toolListView = listview(toolEntries) {
+            toolListView = listview(filteredToolEntries) {
                 vgrow = Priority.ALWAYS
                 toolSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    text = it.name
-                    tooltip(it.description)
+                    text = it.tool.name
+                    tooltip(it.tool.description)
                 }
             }
         }
         outputPane.clear()
         output {
-            toolbar {
-                label("Tool Details")
-            }
-            form {
-                visibleWhen(toolSelection.isNotNull)
-                managedWhen(visibleProperty())
-                fieldset("Tool Information") {
-                    field("Name") {
-                        label(toolSelection.stringBinding { it?.name ?: "" })
+            splitpane {
+                vgrow = Priority.ALWAYS
+                // Tool Details Section
+                vbox {
+                    toolbar {
+                        label("Tool Details")
                     }
-                    field("Description") {
-                        textarea {
-                            isEditable = false
-                            isWrapText = true
-                            prefRowCount = 2
-                            textProperty().bind(toolSelection.stringBinding { it?.description ?: "" })
+                    scrollpane {
+                        isFitToWidth = true
+                        vgrow = Priority.ALWAYS
+                        form {
+                            visibleWhen(toolSelection.isNotNull)
+                            managedWhen(visibleProperty())
+                            fieldset("Tool Information") {
+                                field("Name") {
+                                    label(toolSelection.stringBinding { it?.tool?.name ?: "" })
+                                }
+                                field("Description") {
+                                    textarea {
+                                        isEditable = false
+                                        isWrapText = true
+                                        prefRowCount = 2
+                                        textProperty().bind(toolSelection.stringBinding { it?.tool?.description ?: "" })
+                                    }
+                                }
+                                field("Version") {
+                                    label(toolSelection.stringBinding { it?.tool?.version ?: "" })
+                                }
+                                field("MCP Server") {
+                                    label(toolSelection.stringBinding { it?.serverName ?: "" })
+                                }
+                            }
+                            fieldset("Input Schema") {
+                                textarea {
+                                    isEditable = false
+                                    isWrapText = true
+                                    prefRowCount = 5
+                                    textProperty().bind(toolSelection.stringBinding { 
+                                        it?.tool?.inputSchema?.toPrettyString() ?: "No schema available" 
+                                    })
+                                }
+                            }
+                            fieldset("Output Schema") {
+                                textarea {
+                                    isEditable = false
+                                    isWrapText = true
+                                    prefRowCount = 5
+                                    textProperty().bind(toolSelection.stringBinding { 
+                                        it?.tool?.outputSchema?.toPrettyString() ?: "No schema available" 
+                                    })
+                                }
+                            }
                         }
                     }
-                    field("Version") {
-                        label(toolSelection.stringBinding { it?.version ?: "" })
-                    }
                 }
-                fieldset("Input Schema") {
-                    textarea {
-                        isEditable = false
-                        isWrapText = true
-                        prefRowCount = 5
-                        textProperty().bind(toolSelection.stringBinding { 
-                            it?.inputSchema?.toPrettyString() ?: "No schema available" 
-                        })
+                // Try Tool Section
+                vbox {
+                    toolbar {
+                        label("Try Tool")
                     }
-                }
-                fieldset("Output Schema") {
-                    textarea {
-                        isEditable = false
-                        isWrapText = true
-                        prefRowCount = 5
-                        textProperty().bind(toolSelection.stringBinding { 
-                            it?.outputSchema?.toPrettyString() ?: "No schema available" 
-                        })
-                    }
-                }
-            }
-            separator()
-            toolbar {
-                label("Try Tool")
-            }
-            form {
-                visibleWhen(toolSelection.isNotNull)
-                managedWhen(visibleProperty())
-                fieldset("Input Parameters (JSON)") {
-                    textarea(toolInputText) {
-                        isWrapText = true
-                        prefRowCount = 5
-                        promptText = """{"param1": "value1"}"""
-                    }
-                }
-                buttonbar {
-                    button("Execute Tool") {
-                        enableWhen(toolSelection.isNotNull)
-                        action { runToolExecution() }
-                    }
-                }
-                fieldset("Output") {
-                    textarea(toolOutputText) {
-                        isEditable = false
-                        isWrapText = true
-                        prefRowCount = 8
+                    scrollpane {
+                        isFitToWidth = true
                         vgrow = Priority.ALWAYS
+                        form {
+                            visibleWhen(toolSelection.isNotNull)
+                            managedWhen(visibleProperty())
+                            fieldset("Input Parameters (JSON)") {
+                                textarea(toolInputText) {
+                                    isWrapText = true
+                                    prefRowCount = 5
+                                    promptText = """{"param1": "value1"}"""
+                                }
+                            }
+                            buttonbar {
+                                button("Execute Tool") {
+                                    enableWhen(toolSelection.isNotNull)
+                                    action { runToolExecution() }
+                                }
+                            }
+                            fieldset("Output") {
+                                textarea(toolOutputText) {
+                                    isEditable = false
+                                    isWrapText = true
+                                    prefRowCount = 8
+                                    vgrow = Priority.ALWAYS
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -151,7 +186,8 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     }
 
     private fun runToolExecution() {
-        val tool = toolSelection.value ?: return
+        val toolWithServer = toolSelection.value ?: return
+        val tool = toolWithServer.tool
         val inputJson = toolInputText.value
 
         runAsync {
@@ -180,7 +216,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
 
     private fun loadTools() {
         runAsync {
-            val allTools = mutableListOf<Executable>()
+            val allTools = mutableListOf<ToolWithServer>()
             for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
                 try {
                     val server = mcpController.mcpServerRegistry.getServer(serverName)
@@ -188,7 +224,9 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                         val tools = kotlinx.coroutines.runBlocking {
                             server.listTools()
                         }
-                        allTools.addAll(tools)
+                        tools.forEach { tool ->
+                            allTools.add(ToolWithServer(tool, serverName))
+                        }
                     }
                 } catch (e: Exception) {
                     println("Error loading tools from server $serverName: ${e.message}")
@@ -197,6 +235,11 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
             allTools
         } ui { tools ->
             toolEntries.setAll(tools)
+            refilter()
         }
+    }
+
+    private fun refilter() {
+        filteredToolEntries.setAll(toolEntries.filter { toolFilter(it.tool.name) })
     }
 }
