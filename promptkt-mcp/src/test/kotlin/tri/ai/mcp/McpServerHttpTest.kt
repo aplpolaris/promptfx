@@ -60,7 +60,7 @@ class McpServerHttpTest {
     private suspend fun waitForServerReady(maxAttempts: Int = 10) {
         repeat(maxAttempts) { attempt ->
             try {
-                val response = httpClient.post("http://localhost:$testPort/") {
+                val response = httpClient.post("http://localhost:$testPort/mcp") {
                     contentType(ContentType.Application.Json)
                     setBody("""{"jsonrpc":"2.0","id":0,"method":"ping"}""")
                 }
@@ -175,7 +175,7 @@ class McpServerHttpTest {
             
             waitForServerReady()
             
-            val response = httpClient.post("http://localhost:$testPort/") {
+            val response = httpClient.post("http://localhost:$testPort/mcp") {
                 contentType(ContentType.Application.Json)
                 setBody("{not valid json")
             }
@@ -197,7 +197,7 @@ class McpServerHttpTest {
             }
         }
         
-        val response = httpClient.post("http://localhost:$testPort/") {
+        val response = httpClient.post("http://localhost:$testPort/mcp") {
             contentType(ContentType.Application.Json)
             setBody(JsonSerializers.serialize(request))
         }
