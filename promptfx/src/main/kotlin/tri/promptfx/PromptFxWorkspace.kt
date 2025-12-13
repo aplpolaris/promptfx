@@ -134,7 +134,10 @@ class PromptFxWorkspace : Workspace() {
                 loadViewLinks("API")
             }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
-                group(it)
+                // Skip API category as it's manually configured above
+                if (it.category != "API") {
+                    group(it)
+                }
             }
         }
     }
