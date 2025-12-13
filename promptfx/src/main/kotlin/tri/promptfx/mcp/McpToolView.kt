@@ -82,7 +82,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                 vgrow = Priority.ALWAYS
                 toolSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    text = it.tool.name
+                    text = "${it.tool.name} [${it.serverName}]"
                     tooltip(it.tool.description)
                 }
             }
