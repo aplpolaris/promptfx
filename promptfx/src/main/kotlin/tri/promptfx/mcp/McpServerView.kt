@@ -393,8 +393,8 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         0
                     }
                     
-                    // Resources are not yet implemented in the adapter, so we check capabilities
-                    val resourcesCount = 0 // TODO: implement when resources API is available
+                    // Resources API is not yet implemented in the adapter interface
+                    val resourcesCount = 0
                     
                     ServerCapabilityInfo(
                         hasPrompts = capabilities?.prompts != null,
