@@ -35,6 +35,8 @@ module tri.promptkt.core {
     requires transitive com.fasterxml.jackson.dataformat.csv;
 
     requires com.github.mustachejava;
+    requires com.github.victools.jsonschema.generator;
+    requires com.github.victools.jsonschema.module.jackson;
 
     opens tri.ai.core to com.fasterxml.jackson.databind;
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
