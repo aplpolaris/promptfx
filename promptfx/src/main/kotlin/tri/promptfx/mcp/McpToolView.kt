@@ -66,7 +66,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                 textfield("") {
                     promptText = "Search"
                     textProperty().addListener { _, _, newValue ->
-                        toolFilter = { newValue in it }
+                        toolFilter = { it.contains(newValue, ignoreCase = true) }
                         refilter()
                     }
                 }
