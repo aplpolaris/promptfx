@@ -557,10 +557,10 @@ class McpCli : CliktCommand(
                         echo("${ANSI_BOLD}Text Content$ANSI_RESET:")
                         echo(content.text)
                     }
-                    if (content.blob != null) {
-                        echo("${ANSI_BOLD}Binary Content$ANSI_RESET: (base64 encoded, ${content.blob.length} characters)")
+                    content.blob?.let { blob ->
+                        echo("${ANSI_BOLD}Binary Content$ANSI_RESET: (base64 encoded, ${blob.length} characters)")
                         if (this@McpCli.verbose) {
-                            echo(content.blob)
+                            echo(blob)
                         }
                     }
                     echo("-".repeat(30))

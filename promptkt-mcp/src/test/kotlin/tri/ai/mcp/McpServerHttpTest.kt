@@ -231,6 +231,14 @@ class McpServerHttpTest {
         override suspend fun callTool(name: String, args: Map<String, String>) =
             McpToolResult(name, null, "Unsupported", null)
 
+        override suspend fun listResources(): List<McpResource> = emptyList()
+
+        override suspend fun listResourceTemplates(): List<McpResourceTemplate> = emptyList()
+
+        override suspend fun readResource(uri: String): McpReadResourceResponse {
+            throw McpServerException("Resource not found: $uri")
+        }
+
         override suspend fun close() {
             // No-op for test
         }
