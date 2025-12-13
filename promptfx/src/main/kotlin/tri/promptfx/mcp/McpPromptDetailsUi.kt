@@ -19,15 +19,23 @@
  */
 package tri.promptfx.mcp
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.promptfx.PromptFxMcpController
 
 /** View showing details of an MCP prompt. */
 class McpPromptDetailsUi : Fragment("MCP Prompt") {
 
+    private val mcpController: PromptFxMcpController by inject()
     var promptWithServer = SimpleObjectProperty<McpPromptWithServer>()
+    private val argumentValues = mutableMapOf<String, SimpleStringProperty>()
+    private val promptResult = SimpleStringProperty("")
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
@@ -67,7 +75,98 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                         }
                     }
                 }
+                fieldset("Try Prompt") {
+                    vbox {
+                        spacing = 10.0
+                        
+                        // Dynamically create input fields for each argument
+                        promptWithServer.onChange { pwsValue ->
+                            children.clear()
+                            argumentValues.clear()
+                            promptResult.set("")
+                            
+                            pwsValue?.prompt?.arguments?.forEach { arg ->
+                                val valueProperty = SimpleStringProperty("")
+                                argumentValues[arg.name] = valueProperty
+                                
+                                hbox {
+                                    spacing = 5.0
+                                    label(arg.name) {
+                                        minWidth = 100.0
+                                        if (arg.required) {
+                                            style = "-fx-font-weight: bold"
+                                        }
+                                    }
+                                    textfield(valueProperty) {
+                                        promptText = arg.description
+                                        hgrow = Priority.ALWAYS
+                                    }
+                                }
+                            }
+                            
+                            // Add execute button
+                            hbox {
+                                spacing = 10.0
+                                alignment = Pos.CENTER_LEFT
+                                paddingTop = 10.0
+                                
+                                button("Execute Prompt", FontAwesomeIconView(FontAwesomeIcon.PLAY)) {
+                                    action {
+                                        executePrompt()
+                                    }
+                                }
+                            }
+                            
+                            // Add result area
+                            vbox {
+                                paddingTop = 10.0
+                                label("Result:") {
+                                    style = "-fx-font-weight: bold"
+                                }
+                                textarea(promptResult) {
+                                    isEditable = false
+                                    prefRowCount = 10
+                                    isWrapText = true
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        }
+    }
+    
+    private fun executePrompt() {
+        val pws = promptWithServer.value ?: return
+        
+        try {
+            runBlocking {
+                val server = mcpController.mcpServerRegistry.getServer(pws.serverName)
+                if (server != null) {
+                    val args = argumentValues.mapValues { it.value.value }
+                    val response = server.getPrompt(pws.prompt.name, args)
+                    
+                    // Format the response
+                    val resultText = buildString {
+                        response.description?.let {
+                            append("Description: $it\n\n")
+                        }
+                        append("Messages:\n")
+                        response.messages.forEach { message ->
+                            append("Role: ${message.role}\n")
+                            message.content?.forEach { part ->
+                                append("${part.text ?: ""}\n")
+                            }
+                            append("\n")
+                        }
+                    }
+                    promptResult.set(resultText)
+                } else {
+                    promptResult.set("Error: Server '${pws.serverName}' not found")
+                }
+            }
+        } catch (e: Exception) {
+            promptResult.set("Error executing prompt: ${e.message}")
         }
     }
 }

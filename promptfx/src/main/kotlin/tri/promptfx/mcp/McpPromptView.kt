@@ -66,7 +66,7 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
                 vgrow = Priority.ALWAYS
                 promptSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    graphic = Text("${it.serverName}/${it.prompt.name}").apply {
+                    graphic = Text("${it.prompt.name} [${it.serverName}]").apply {
                         tooltip(it.prompt.description ?: it.prompt.title)
                     }
                 }
