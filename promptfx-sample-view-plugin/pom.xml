@@ -8,7 +8,7 @@
         <version>0.13.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>promptfx-sample-plugin</artifactId>
+    <artifactId>promptfx-sample-view-plugin</artifactId>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}-${project.version}</name>

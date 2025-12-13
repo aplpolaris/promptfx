@@ -4,7 +4,7 @@
 echo "Building PromptFx Sample Plugins..."
 
 # Build both plugins
-mvn clean package -pl promptfx-sample-plugin,promptfx-sample-textplugin -q
+mvn clean package -pl promptfx-sample-view-plugin,promptfx-sample-api-plugin -q
 
 if [ $? -eq 0 ]; then
     echo "Build successful!"
@@ -12,8 +12,8 @@ if [ $? -eq 0 ]; then
     # Copy to config directory
     echo "Deploying plugins to config directory..."
     mkdir -p promptfx/config/plugins
-    cp promptfx-sample-plugin/target/promptfx-sample-plugin-*[!javadoc][!sources].jar promptfx/config/plugins/
-    cp promptfx-sample-textplugin/target/promptfx-sample-textplugin-*[!javadoc][!sources].jar promptfx/config/plugins/
+    cp promptfx-sample-view-plugin/target/promptfx-sample-view-plugin-*[!javadoc][!sources].jar promptfx/config/plugins/
+    cp promptfx-sample-api-plugin/target/promptfx-sample-api-plugin-*[!javadoc][!sources].jar promptfx/config/plugins/
     
     echo "Plugins deployed successfully!"
     echo "The plugin JARs are now in promptfx/config/plugins/ and will be loaded automatically when PromptFx starts."

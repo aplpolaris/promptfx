@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx-sample-textplugin
+ * tri.promptfx:promptfx-sample-api-plugin
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -20,7 +20,7 @@
 import tri.ai.core.TextPlugin;
 import tri.promptfx.sample.textplugin.SampleTextPlugin;
 
-module tri.promptfx.sample.textplugin {
+module tri.promptfx.sample.api.plugin {
     requires transitive tri.promptkt.core;
     requires kotlin.stdlib;
 

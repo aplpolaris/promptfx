@@ -25,8 +25,8 @@ provides TextPlugin with SampleTextPlugin;
 
 Build and copy to config directory:
 ```bash
-mvn package -pl promptfx-sample-textplugin
-cp promptfx-sample-textplugin/target/promptfx-sample-textplugin-*.jar config/modules/
+mvn package -pl promptfx-sample-api-plugin
+cp promptfx-sample-api-plugin/target/promptfx-sample-api-plugin-*.jar config/modules/
 ```
 
 ## Run/Test
@@ -35,5 +35,5 @@ Start PromptFx - models appear under "SampleText" source in model selection drop
 
 Run tests:
 ```bash
-mvn test -pl promptfx-sample-textplugin
+mvn test -pl promptfx-sample-api-plugin
 ```
