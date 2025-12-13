@@ -24,6 +24,8 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.geometry.Orientation
+import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import tornadofx.*
@@ -89,91 +91,92 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         }
         outputPane.clear()
         output {
-            splitpane {
-                vgrow = Priority.ALWAYS
-                // Tool Details Section
-                vbox {
-                    toolbar {
-                        label("Tool Details")
-                    }
-                    scrollpane {
-                        isFitToWidth = true
-                        vgrow = Priority.ALWAYS
+            scrollpane {
+                isFitToWidth = true
+                squeezebox(multiselect = true) {
+                    visibleWhen(toolSelection.isNotNull)
+                    managedWhen(visibleProperty())
+                    vgrow = Priority.ALWAYS
+                    fold("MCP Server", expanded = true) {
                         form {
-                            visibleWhen(toolSelection.isNotNull)
-                            managedWhen(visibleProperty())
+                            fieldset {
+                                field("Server Id") {
+                                    label(toolSelection.stringBinding { it?.serverName ?: "" })
+                                }
+                            }
+                        }
+                    }
+                    fold("Tool Details", expanded = true) {
+                        form {
                             fieldset("Tool Information") {
                                 field("Name") {
                                     label(toolSelection.stringBinding { it?.tool?.name ?: "" })
                                 }
                                 field("Description") {
-                                    textarea {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 2
-                                        textProperty().bind(toolSelection.stringBinding { it?.tool?.description ?: "" })
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    text(toolSelection.stringBinding { it?.tool?.description ?: "N/A" }) {
+                                        wrappingWidth = 400.0
                                     }
                                 }
                                 field("Version") {
                                     label(toolSelection.stringBinding { it?.tool?.version ?: "" })
                                 }
-                                field("MCP Server") {
-                                    label(toolSelection.stringBinding { it?.serverName ?: "" })
+                            }
+                            fieldset("Input") {
+                                field("Schema") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    textarea {
+                                        isEditable = false
+                                        isWrapText = true
+                                        prefRowCount = 5
+                                        textProperty().bind(toolSelection.stringBinding {
+                                            it?.tool?.inputSchema?.toPrettyString() ?: "No schema available"
+                                        })
+                                    }
                                 }
                             }
-                            fieldset("Input Schema") {
-                                textarea {
-                                    isEditable = false
-                                    isWrapText = true
-                                    prefRowCount = 5
-                                    textProperty().bind(toolSelection.stringBinding { 
-                                        it?.tool?.inputSchema?.toPrettyString() ?: "No schema available" 
-                                    })
-                                }
-                            }
-                            fieldset("Output Schema") {
-                                textarea {
-                                    isEditable = false
-                                    isWrapText = true
-                                    prefRowCount = 5
-                                    textProperty().bind(toolSelection.stringBinding { 
-                                        it?.tool?.outputSchema?.toPrettyString() ?: "No schema available" 
-                                    })
+                            fieldset("Output") {
+                                field("Schema") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    textarea {
+                                        isEditable = false
+                                        isWrapText = true
+                                        prefRowCount = 5
+                                        textProperty().bind(toolSelection.stringBinding {
+                                            it?.tool?.outputSchema?.toPrettyString() ?: "No schema available"
+                                        })
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                // Try Tool Section
-                vbox {
-                    toolbar {
-                        label("Try Tool")
-                    }
-                    scrollpane {
-                        isFitToWidth = true
-                        vgrow = Priority.ALWAYS
+                    fold("Try Tool", expanded = true) {
                         form {
-                            visibleWhen(toolSelection.isNotNull)
-                            managedWhen(visibleProperty())
-                            fieldset("Input Parameters (JSON)") {
-                                textarea(toolInputText) {
-                                    isWrapText = true
-                                    prefRowCount = 5
-                                    promptText = """{"param1": "value1"}"""
+                            fieldset("Input") {
+                                field("Parameters (JSON)") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    textarea(toolInputText) {
+                                        isWrapText = true
+                                        prefRowCount = 5
+                                        promptText = """{"param1": "value1"}"""
+                                    }
                                 }
-                            }
-                            buttonbar {
-                                button("Execute Tool") {
-                                    enableWhen(toolSelection.isNotNull)
-                                    action { runToolExecution() }
+                                buttonbar {
+                                    button("Execute Tool") {
+                                        enableWhen(toolSelection.isNotNull)
+                                        action { runToolExecution() }
+                                    }
                                 }
                             }
                             fieldset("Output") {
-                                textarea(toolOutputText) {
-                                    isEditable = false
-                                    isWrapText = true
-                                    prefRowCount = 8
-                                    vgrow = Priority.ALWAYS
+                                field("JSON") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    textarea(toolOutputText) {
+                                        isEditable = false
+                                        isWrapText = true
+                                        prefRowCount = 8
+                                        vgrow = Priority.ALWAYS
+                                    }
                                 }
                             }
                         }
@@ -193,8 +196,6 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         runAsync {
             try {
                 val inputNode: JsonNode = jsonMapper.readTree(inputJson)
-                // Note: runAsync already provides coroutine context, but tool.execute is suspend
-                // We need to use runBlocking here because runAsync uses a different threading model
                 val output = kotlinx.coroutines.runBlocking {
                     tool.execute(inputNode, ExecContext())
                 }
