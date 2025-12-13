@@ -22,10 +22,10 @@ The sample plugin consists of:
 
 ```bash
 # Build the sample plugin
-mvn package -pl promptfx-sample-plugin
+mvn package -pl promptfx-sample-view-plugin
 
 # The JAR will be created at:
-# promptfx-sample-plugin/target/promptfx-sample-plugin-0.12.1-SNAPSHOT.jar
+# promptfx-sample-view-plugin/target/promptfx-sample-view-plugin-0.13.1-SNAPSHOT.jar
 ```
 
 ## Installing the Plugin
@@ -33,7 +33,7 @@ mvn package -pl promptfx-sample-plugin
 1. Build the plugin JAR as shown above
 2. Copy the JAR to the PromptFx config directory:
    ```bash
-   cp promptfx-sample-plugin/target/promptfx-sample-plugin-0.12.1-SNAPSHOT.jar promptfx/config/
+   cp promptfx-sample-view-plugin/target/promptfx-sample-view-plugin-0.13.1-SNAPSHOT.jar promptfx/config/
    ```
 3. Start PromptFx - the plugin will be automatically discovered and loaded
 4. Look for "Hello World" under the "Sample" category in the UI

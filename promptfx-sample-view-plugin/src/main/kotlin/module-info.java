@@ -1,8 +1,8 @@
 /*-
  * #%L
- * tri.promptfx:promptfx-sample-plugin
+ * tri.promptfx:promptfx-sample-view-plugin
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 import tri.promptfx.sample.SamplePlugin;
 import tri.util.ui.NavigableWorkspaceView;
 
-module tri.promptfx.sample.plugin {
+module tri.promptfx.sample.view.plugin {
     requires transitive tri.promptfx;
     requires kotlin.stdlib;
     requires tornadofx;
