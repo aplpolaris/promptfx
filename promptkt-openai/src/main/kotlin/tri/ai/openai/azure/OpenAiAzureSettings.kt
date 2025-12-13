@@ -38,28 +38,6 @@ import kotlin.time.Duration.Companion.seconds
  */
 class OpenAiAzureSettings : OpenAiApiSettings {
 
-    companion object {
-        private val RESOURCE_NAME = OpenAiAzureSettings::class.java.simpleName+".properties"
-        private val INSTANCE_SETTINGS = OpenAiAzureSettings().apply {
-            val propsFile = File(RESOURCE_NAME).ifMissing { File("config/$RESOURCE_NAME") }.ifMissing { null }
-            val props = Properties().apply {
-                propsFile?.inputStream()?.use { load(it) }
-            }
-            resourceName = props.getProperty("resourceName", "")
-            deploymentId = props.getProperty("deploymentId", "")
-            apiVersion = props.getProperty("apiVersion", "")
-            logLevel = try {
-                LogLevel.valueOf(props.getProperty("logLevel", "None"))
-            } catch (e: IllegalArgumentException) {
-                LogLevel.None
-            }
-            timeoutSeconds = props.getProperty("timeoutSeconds", "60").toIntOrNull() ?: 60
-        }
-        val INSTANCE = OpenAiAdapter(INSTANCE_SETTINGS, INSTANCE_SETTINGS.buildClient())
-
-        private fun File?.ifMissing(block: () -> File?) = if (this?.exists() == true) this else block()
-    }
-
     /** Azure resource name. */
     var resourceName: String = ""
     /** Azure deployment ID. */
@@ -82,9 +60,12 @@ class OpenAiAzureSettings : OpenAiApiSettings {
     /** Timeout in seconds for the OpenAI client. */
     var timeoutSeconds: Int = 60
 
-    /** API keys not checked by default. */
+    // unclear how to do automated checks for Azure
+    override fun isConfigured() = true
+
     override fun checkApiKey() {
-        // unclear how to do automated checks for Azure
+        if (!isConfigured())
+            throw UnsupportedOperationException("Invalid Azure OpenAI API key. Please set a valid OpenAI API key. If you are using Azure, please change the baseURL configuration.")
     }
 
     @Throws(IllegalStateException::class)
@@ -107,5 +88,27 @@ class OpenAiAzureSettings : OpenAiApiSettings {
 
     private fun buildHost() =
         OpenAIHost.azure(resourceName, deploymentId, apiVersion)
+
+    companion object {
+        private val RESOURCE_NAME = OpenAiAzureSettings::class.java.simpleName+".properties"
+        private val INSTANCE_SETTINGS = OpenAiAzureSettings().apply {
+            val propsFile = File(RESOURCE_NAME).ifMissing { File("config/$RESOURCE_NAME") }.ifMissing { null }
+            val props = Properties().apply {
+                propsFile?.inputStream()?.use { load(it) }
+            }
+            resourceName = props.getProperty("resourceName", "")
+            deploymentId = props.getProperty("deploymentId", "")
+            apiVersion = props.getProperty("apiVersion", "")
+            logLevel = try {
+                LogLevel.valueOf(props.getProperty("logLevel", "None"))
+            } catch (e: IllegalArgumentException) {
+                LogLevel.None
+            }
+            timeoutSeconds = props.getProperty("timeoutSeconds", "60").toIntOrNull() ?: 60
+        }
+        val INSTANCE = OpenAiAdapter(INSTANCE_SETTINGS, INSTANCE_SETTINGS.buildClient())
+
+        private fun File?.ifMissing(block: () -> File?) = if (this?.exists() == true) this else block()
+    }
 
 }

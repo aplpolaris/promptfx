@@ -60,27 +60,8 @@ class StarterToolLibrary: ToolLibrary {
 }
 
 object FakeTools {
-    fun buildSchemaWithOneRequiredParam(paramName: String, paramDescription: String) = jsonMapper.readTree(
-        """
-        {
-          "type": "object",
-          "properties": {
-            "$paramName": { "type": "string", "description": "$paramDescription" }
-          },
-          "required": ["$paramName"]
-        }
-    """.trimIndent()
-    )
-    private fun buildSchemaWithOneOptionalParam(paramName: String, paramDescription: String) = jsonMapper.readTree(
-        """
-        {
-          "type": "object",
-          "properties": {
-            "$paramName": { "type": "string", "description": "$paramDescription" }
-          }
-        }
-    """.trimIndent()
-    )
+    // Remove local buildSchemaWithOneRequiredParam - now using common utility from tri.util.json
+    // Remove local buildSchemaWithOneOptionalParam - now using common utility from tri.util.json
 
     fun load(): List<StubTool> {
         val resource = this::class.java.getResource("resources/stub-tools.json")!!

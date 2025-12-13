@@ -1,0 +1,37 @@
+# MCP Server Registry Configuration (Runtime)
+# This file defines available MCP servers that can be used by PromptFx at runtime
+# Place this file in the config/ directory to override the built-in MCP server configurations
+
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Embedded server with custom prompt library
+  # custom-embedded:
+  #   type: embedded
+  #   description: "Embedded MCP server with custom prompts"
+  #   promptLibraryPath: "/path/to/custom/prompts.yaml"
+  
+  # Test server with built-in samples
+  test:
+    type: test
+    description: "Test server with sample prompts and tools for testing"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
+  
+  # Remote MCP server via HTTP
+  # remote-example:
+  #   type: http
+  #   description: "Remote MCP server via HTTP"
+  #   url: "http://localhost:8080/mcp"
+  
+  # Remote MCP server via stdio
+  # stdio-example:
+  #   type: stdio
+  #   description: "Remote MCP server via stdio"
+  #   command: "npx"
+  #   args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  #   env:
+  #     NODE_ENV: "production"

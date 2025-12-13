@@ -36,6 +36,8 @@ class GeminiSdkPlugin : TextPlugin {
 
     val client = GeminiSdkClient()
 
+    override fun isApiConfigured() = client.isConfigured()
+
     override fun modelSource() = "Gemini-SDK"
 
     override fun modelInfo() = if (client.isConfigured())
@@ -47,7 +49,7 @@ class GeminiSdkPlugin : TextPlugin {
                 emptyList()
             }
         }
-    else listOf()
+    else emptyList()
 
     override fun embeddingModels() = models(GeminiSdkModelIndex.embeddingModels()) {
         GeminiSdkEmbeddingModel(it, client)

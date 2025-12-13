@@ -32,13 +32,13 @@ abstract class PromptFxPolicy {
     abstract fun modelInfo(): List<ModelInfo>
 
     abstract fun embeddingModels(): List<EmbeddingModel>
-    open fun embeddingModelDefault() = embeddingModels().first()
+    open fun embeddingModelDefault() = embeddingModels().firstOrNull() ?: EmbeddingModel.UNAVAILABLE
 
     abstract fun textCompletionModels(): List<TextCompletion>
-    open fun textCompletionModelDefault() = textCompletionModels().first()
+    open fun textCompletionModelDefault() = textCompletionModels().firstOrNull() ?: TextCompletion.UNAVAILABLE
 
     abstract fun chatModels(): List<TextChat>
-    open fun chatModelDefault() = chatModels().firstOrNull()
+    open fun chatModelDefault() = chatModels().firstOrNull() ?: TextChat.UNAVAILABLE
 
     abstract fun multimodalModels(): List<MultimodalChat>
     open fun multimodalModelDefault() = multimodalModels().firstOrNull()

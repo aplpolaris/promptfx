@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptkt
+ * tri.promptfx:promptfx
  * %%
  * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -17,13 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai.api
+package tri.promptfx.mcp
 
-import com.aallam.openai.api.logging.LogLevel
-import tri.ai.core.ApiSettings
+import tri.ai.mcp.McpPrompt
 
-/** Abstract interface for API settings. */
-interface OpenAiApiSettings : ApiSettings {
-    var logLevel: LogLevel
-}
-
+/**
+ * Data class that combines an MCP prompt with its server information.
+ */
+data class McpPromptWithServer(
+    val prompt: McpPrompt,
+    val serverName: String
+)
