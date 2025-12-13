@@ -82,6 +82,7 @@ promptfx/
     ├── gemini-models.yaml
     ├── prompts.yaml
     ├── views.yaml
+    ├── views-links.yaml
     ├── modes.yaml
     └── starship.yaml
 ```
@@ -118,9 +119,32 @@ PromptFX uses YAML files to configure models, views, prompts, and runtime behavi
 | `prompts.yaml` | Prompt templates                                           |
 | `modes.yaml` | Lists of options (used in prompt templates and some views) |
 | `views.yaml` | Configurations of custom views                             |
+| `views-links.yaml` | Documentation links displayed in navigation panes          |
 | `starship.yaml` | Configuration of the "starship" demo mode                  |
 
 These files are located in the `config/` folder and loaded at runtime.
+
+#### Configuring Documentation Links
+
+The `views-links.yaml` file allows you to customize documentation links that appear at the bottom of navigation panes in the UI. Links are organized by category (e.g., API, MCP) and grouped by topic.
+
+**Example configuration:**
+```yaml
+API:
+  - group: "OpenAI"
+    links:
+      - label: "OpenAI API Reference"
+        url: "https://platform.openai.com/docs/api-reference"
+      - label: "OpenAI Pricing"
+        url: "https://openai.com/pricing"
+MCP:
+  - group: "Documentation"
+    links:
+      - label: "MCP Getting Started"
+        url: "https://modelcontextprotocol.io/docs/getting-started/intro"
+```
+
+You can add links for any tab category (API, MCP, Prompts, Text, Documents, etc.) by creating groups with labels and URLs. The links will automatically appear at the bottom of the corresponding navigation pane under "Documentation/Links".
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
 
