@@ -372,15 +372,24 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     
                     val capabilities = adapter.getCapabilities()
                     
-                    val promptsCount = try {
-                        adapter.listPrompts().size
-                    } catch (e: Exception) {
+                    // Only query for counts if the capability is supported
+                    val promptsCount = if (capabilities?.prompts != null) {
+                        try {
+                            adapter.listPrompts().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
                         0
                     }
                     
-                    val toolsCount = try {
-                        adapter.listTools().size
-                    } catch (e: Exception) {
+                    val toolsCount = if (capabilities?.tools != null) {
+                        try {
+                            adapter.listTools().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
                         0
                     }
                     
