@@ -34,6 +34,7 @@ fun main(args: Array<String>) {
     println("=".repeat(50))
     
     // Load prompts and tools
+    // Create a new library instance and populate it with research-related prompts from the singleton
     val prompts = PromptLibrary().apply {
         PromptLibrary.INSTANCE
             .list { it.category?.startsWith("research") == true }
@@ -55,9 +56,7 @@ fun main(args: Array<String>) {
     println("Health Check: http://localhost:$port/health")
     println()
     println("Available prompts: ${prompts.list().size}")
-    runBlocking {
-        println("Available tools: ${tools.listTools().size}")
-    }
+    println("Available tools: ${runBlocking { tools.listTools().size }}")
     println()
     println("Press Ctrl+C to stop the server")
     println("=".repeat(50))
