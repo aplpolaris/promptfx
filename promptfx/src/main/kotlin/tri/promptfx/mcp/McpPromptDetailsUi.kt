@@ -21,11 +21,14 @@ package tri.promptfx.mcp
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.application.Platform
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import tornadofx.*
 import tri.promptfx.PromptFxMcpController
 
@@ -139,15 +142,15 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
     private fun executePrompt() {
         val pws = promptWithServer.value ?: return
         
-        try {
-            runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
                 val server = mcpController.mcpServerRegistry.getServer(pws.serverName)
-                if (server != null) {
+                val result = if (server != null) {
                     val args = argumentValues.mapValues { it.value.value }
                     val response = server.getPrompt(pws.prompt.name, args)
                     
                     // Format the response
-                    val resultText = buildString {
+                    buildString {
                         response.description?.let {
                             append("Description: $it\n\n")
                         }
@@ -155,18 +158,23 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                         response.messages.forEach { message ->
                             append("Role: ${message.role}\n")
                             message.content?.forEach { part ->
-                                append("${part.text ?: ""}\n")
+                                append("${part?.text ?: ""}\n")
                             }
                             append("\n")
                         }
                     }
-                    promptResult.set(resultText)
                 } else {
-                    promptResult.set("Error: Server '${pws.serverName}' not found")
+                    "Error: Server '${pws.serverName}' not found"
+                }
+                
+                Platform.runLater {
+                    promptResult.set(result)
+                }
+            } catch (e: Exception) {
+                Platform.runLater {
+                    promptResult.set("Error executing prompt: ${e.message}")
                 }
             }
-        } catch (e: Exception) {
-            promptResult.set("Error executing prompt: ${e.message}")
         }
     }
 }
