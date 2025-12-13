@@ -108,7 +108,8 @@ class McpServerAdapterStdio(
     override suspend fun listPrompts(): List<McpPrompt> {
         try {
             val result = sendRequest("prompts/list")
-            return objectMapper.readValue<List<McpPrompt>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<McpPrompt>>>(result.toString())
+            return wrapper["prompts"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing prompts from stdio server: ${e.message}", e)
         }
@@ -126,7 +127,8 @@ class McpServerAdapterStdio(
     override suspend fun listTools(): List<Executable> {
         try {
             val result = sendRequest("tools/list")
-            return objectMapper.readValue<List<Executable>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<Executable>>>(result.toString())
+            return wrapper["tools"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing tools from stdio server: ${e.message}", e)
         }
@@ -149,7 +151,8 @@ class McpServerAdapterStdio(
     override suspend fun listResources(): List<McpResource> {
         try {
             val result = sendRequest("resources/list")
-            return objectMapper.readValue<List<McpResource>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<McpResource>>>(result.toString())
+            return wrapper["resources"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing resources from stdio server: ${e.message}", e)
         }
@@ -158,7 +161,8 @@ class McpServerAdapterStdio(
     override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
         try {
             val result = sendRequest("resources/templates/list")
-            return objectMapper.readValue<List<McpResourceTemplate>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<McpResourceTemplate>>>(result.toString())
+            return wrapper["resourceTemplates"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing resource templates from stdio server: ${e.message}", e)
         }
