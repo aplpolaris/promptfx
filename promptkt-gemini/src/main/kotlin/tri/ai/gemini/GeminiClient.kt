@@ -37,9 +37,6 @@ class GeminiClient : Closeable {
     val settings = GeminiSettings()
     private val client = settings.client
 
-    /** Returns true if the client is configured with an API key. */
-    fun isConfigured() = settings.apiKey.isNotBlank()
-
     //region CORE API METHODS
 
     suspend fun listModels(): ModelsResponse {

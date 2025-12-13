@@ -29,6 +29,9 @@ import java.util.*
 /** Provides a set of plugins at runtime. */
 interface TextPlugin {
 
+    /** Check if the plugin API has been configured, e.g. with proper API key. */
+    fun isApiConfigured(): Boolean
+
     /** Model source for this plugin. */
     fun modelSource(): String
     /** Provide a list of model information. */

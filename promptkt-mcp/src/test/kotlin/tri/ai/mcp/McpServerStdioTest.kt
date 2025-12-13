@@ -28,7 +28,7 @@ import tri.ai.prompt.PromptLibrary
 import java.nio.file.Files
 import java.nio.file.Path
 
-class StdioMcpServerTest {
+class McpServerStdioTest {
 
     @TempDir
     lateinit var tempDir: Path
@@ -53,7 +53,7 @@ class StdioMcpServerTest {
             )
 
             val customLibrary = PromptLibrary.loadFromPath(promptFile.toString())
-            val server = StdioMcpServer(LocalMcpServer(customLibrary, StarterToolLibrary()))
+            val server = McpServerStdio(McpServerEmbedded(customLibrary, StarterToolLibrary()))
 
             // Verify the server uses the custom library by checking what prompts are available
             // We can't easily test the stdio functionality, but we can verify the library integration
@@ -66,7 +66,7 @@ class StdioMcpServerTest {
     @Test
     fun testCreateWithDefaultLibrary() {
         runTest {
-            val server = StdioMcpServer(LocalMcpServer(tools = StarterToolLibrary()))
+            val server = McpServerStdio(McpServerEmbedded(tools = StarterToolLibrary()))
             assertNotNull(server, "Server should be created with default library")
             server.close()
         }

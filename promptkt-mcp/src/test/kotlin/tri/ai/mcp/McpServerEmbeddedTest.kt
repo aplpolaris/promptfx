@@ -33,12 +33,12 @@ import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 
-class LocalMcpServerTest {
+class McpServerEmbeddedTest {
 
     @Test
     fun testListPrompts() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
             val prompts = server.listPrompts()
             println(prompts)
             assertTrue(prompts.isNotEmpty(), "Should have at least one prompt")
@@ -49,7 +49,7 @@ class LocalMcpServerTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             // Test getting a prompt that exists
             val firstPrompt = server.listPrompts().first()
@@ -73,7 +73,7 @@ class LocalMcpServerTest {
     @Test
     fun testGetPrompt_arguments() {
         runTest {
-            val server = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             val response = server.getPrompt(
                 "text-qa/answer", mapOf(
@@ -109,7 +109,7 @@ class LocalMcpServerTest {
     @Test
     fun testCapabilities() {
         runTest {
-            val adapter = LocalMcpServer(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val adapter = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
 
             val capabilities = adapter.getCapabilities()
             println(capabilities)

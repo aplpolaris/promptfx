@@ -49,6 +49,7 @@ class PromptFxController : Controller() {
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
     val promptHistory = find<PromptTraceHistoryModel>()
+    val mcpController = find<PromptFxMcpController>()
 
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)

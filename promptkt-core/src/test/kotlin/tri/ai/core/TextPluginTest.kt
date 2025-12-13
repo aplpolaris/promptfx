@@ -29,6 +29,7 @@ import tri.ai.prompt.trace.AiOutputInfo
  * This shim plugin provides minimal implementations to avoid circular dependencies.
  */
 class TextPluginTest : TextPlugin {
+    override fun isApiConfigured() = true
     override fun modelSource() = "TestShim"
     override fun modelInfo() = listOf(ModelInfo("test-model", ModelType.TEXT_COMPLETION, "TestShim"))
     override fun embeddingModels() = emptyList<EmbeddingModel>()
