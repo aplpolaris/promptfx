@@ -34,57 +34,37 @@ class JsonSchemaUtilsTest {
         val title: String,
         val count: Int,
         val active: Boolean,
-        val tags: List<String>
+        val tags: List<String>,
+        val map: Map<String, Int>,
+        val sub: SimpleClass
     )
-
-    @Test
-    fun testGenerateJsonSchemaFromJavaClass() {
-        val schema = generateJsonSchema(SimpleClass::class.java)
-        assertNotNull(schema)
-        assertTrue(schema.isObject)
-        assertTrue(schema.has("properties"))
-        
-        val properties = schema.get("properties")
-        assertTrue(properties.has("name"))
-        assertTrue(properties.has("age"))
-    }
-
-    @Test
-    fun testGenerateJsonSchemaFromKotlinClass() {
-        val schema = generateJsonSchema(SimpleClass::class)
-        assertNotNull(schema)
-        assertTrue(schema.isObject)
-        assertTrue(schema.has("properties"))
-        
-        val properties = schema.get("properties")
-        assertTrue(properties.has("name"))
-        assertTrue(properties.has("age"))
-    }
 
     @Test
     fun testGenerateJsonSchemaStringFromJavaClass() {
         val schemaString = generateJsonSchemaString(SimpleClass::class.java)
+        println(schemaString)
         assertNotNull(schemaString)
         assertTrue(schemaString.contains("name"))
         assertTrue(schemaString.contains("age"))
         assertTrue(schemaString.contains("properties"))
         
-        // Verify it's valid JSON
         val parsed = jsonMapper.readTree(schemaString)
-        assertTrue(parsed.isObject)
+        assertTrue(parsed.isObject) { "invalid json" }
+
+        println(generateJsonSchemaString(ComplexClass::class.java))
     }
 
     @Test
     fun testGenerateJsonSchemaStringFromKotlinClass() {
         val schemaString = generateJsonSchemaString(SimpleClass::class)
+        println(schemaString)
         assertNotNull(schemaString)
         assertTrue(schemaString.contains("name"))
         assertTrue(schemaString.contains("age"))
         assertTrue(schemaString.contains("properties"))
         
-        // Verify it's valid JSON
         val parsed = jsonMapper.readTree(schemaString)
-        assertTrue(parsed.isObject)
+        assertTrue(parsed.isObject) { "invalid json" }
     }
 
     @Test
@@ -98,6 +78,8 @@ class JsonSchemaUtilsTest {
         assertTrue(properties.has("count"))
         assertTrue(properties.has("active"))
         assertTrue(properties.has("tags"))
+        assertTrue(properties.has("map"))
+        assertTrue(properties.has("sub"))
     }
 
     @Test
