@@ -33,7 +33,7 @@ import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [McpResourceView]. */
-class McpResourcePlugin : NavigableWorkspaceViewImpl<McpResourceView>("MCP", "Resources", type = McpResourceView::class)
+class McpResourcePlugin : NavigableWorkspaceViewImpl<McpResourceView>("MCP", "MCP Resources", type = McpResourceView::class)
 
 /** Data class to track resources with their server information. */
 data class ResourceWithServer(

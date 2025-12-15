@@ -421,6 +421,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                                 is TestServerConfig -> {
                                     label("  Include Default Prompts: ${config.includeDefaultPrompts}")
                                     label("  Include Default Tools: ${config.includeDefaultTools}")
+                                    label("  Include Default Resources: ${config.includeDefaultResources}")
                                 }
                             }
                         }

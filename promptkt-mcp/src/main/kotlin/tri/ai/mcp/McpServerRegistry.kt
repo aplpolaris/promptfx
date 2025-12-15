@@ -107,7 +107,32 @@ class McpServerRegistry(
             }
         }
         
-        return McpServerEmbedded(prompts, tools)
+        val resources = if (config.includeDefaultResources) {
+            listOf(
+                McpResource(
+                    uri = "file:///sample-data.txt",
+                    name = "Sample Text File",
+                    description = "A sample text file for testing the MCP Resources view",
+                    mimeType = "text/plain"
+                ),
+                McpResource(
+                    uri = "file:///config.json",
+                    name = "Configuration File",
+                    description = "Sample JSON configuration for demonstration purposes",
+                    mimeType = "application/json"
+                ),
+                McpResource(
+                    uri = "data://test/example",
+                    name = "Test Data Resource",
+                    description = "Example data resource with custom URI scheme",
+                    mimeType = "text/plain"
+                )
+            )
+        } else {
+            emptyList()
+        }
+        
+        return McpServerEmbedded(prompts, tools, resources)
     }
     
     companion object {
@@ -220,5 +245,6 @@ data class HttpServerConfig(
 data class TestServerConfig(
     override val description: String? = null,
     val includeDefaultPrompts: Boolean = true,
-    val includeDefaultTools: Boolean = true
+    val includeDefaultTools: Boolean = true,
+    val includeDefaultResources: Boolean = true
 ) : McpServerConfig()
