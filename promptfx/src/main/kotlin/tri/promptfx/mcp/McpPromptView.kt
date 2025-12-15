@@ -25,151 +25,89 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
+import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.prompt.PromptDef
-import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
-import tri.promptfx.PromptFxWorkspace
-import tri.promptfx.prompts.CreatePromptDialog
-import tri.promptfx.ui.prompt.PromptDetailsUi
+import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [McpPromptView]. */
-class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "Prompts", type = McpPromptView::class)
+class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "MCP Prompts", type = McpPromptView::class)
 
 /** View and try out MCP server prompts. */
 class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers.") {
 
-    // TODO - make the prompt details ui stretch the whole height
+    private val mcpController: PromptFxMcpController by inject()
 
-    private val lib = PromptLibrary.INSTANCE
-    private val runtimeLib = PromptLibrary.RUNTIME_INSTANCE
-
-    private val promptEntries = observableListOf(lib.list().toMutableList())
-    private var promptIdFilter: (String) -> Boolean = { true }
-    private val filteredPromptEntries = observableListOf(promptEntries)
-    private val promptSelection = SimpleObjectProperty<PromptDef>()
-    private lateinit var promptListView: ListView<PromptDef>
+    private val promptEntries = observableListOf<McpPromptWithServer>()
+    private var promptNameFilter: (String) -> Boolean = { true }
+    private val filteredPromptEntries = observableListOf<McpPromptWithServer>()
+    private val promptSelection = SimpleObjectProperty<McpPromptWithServer>()
+    private lateinit var promptListView: ListView<McpPromptWithServer>
 
     init {
         input {
             toolbar {
-                // add search bar here to update promptFilter when you hit enter
                 textfield("") {
                     promptText = "Search"
                     setOnKeyPressed {
-                        promptIdFilter = { text in it }
+                        promptNameFilter = { text in it }
                         refilter()
                     }
                 }
                 spacer()
-                button("", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
-                    tooltip("Create a new prompt")
-                    action { onCreate() }
-                }
                 button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                     tooltip("Refresh the prompt list.")
-                    action {
-                        PromptLibrary.refreshRuntimePrompts()
-                        promptEntries.setAll(lib.list().toMutableList())
-                        refilter()
-                    }
-                }
-                button("", FontAwesomeIconView(FontAwesomeIcon.EDIT)) {
-                    tooltip("Edit custom-prompts.yaml file in your default editor.")
-                    action {
-                        val file = PromptLibrary.RUNTIME_PROMPTS_FILE
-                        if (!file.exists()) {
-                            PromptLibrary.createRuntimePromptsFile()
-                        }
-                        hostServices.showDocument(file.toURI().toString())
-                    }
+                    action { loadPrompts() }
                 }
             }
             promptListView = listview(filteredPromptEntries) {
                 vgrow = Priority.ALWAYS
                 promptSelection.bind(this.selectionModel.selectedItemProperty())
                 cellFormat {
-                    graphic = Text(it.bareId).apply {
-                        tooltip(it.template)
-                        if (runtimeLib.get(it.id) != null) {
-                            style = "-fx-font-weight: bold"
-                            text = it.id + " (customized)"
-                        }
+                    graphic = Text("${it.prompt.name} [${it.serverName}]").apply {
+                        tooltip(it.prompt.description ?: it.prompt.title)
                     }
                 }
             }
         }
         outputPane.clear()
         output {
-            toolbar {
-                button("Try in Template View", FontAwesomeIconView(FontAwesomeIcon.SEND)) {
-                    enableWhen(promptSelection.isNotNull)
-                    action { sendToTemplateView() }
-                }
-            }
-            find<PromptDetailsUi>().apply {
+            find<McpPromptDetailsUi>().apply {
                 visibleWhen(promptSelection.isNotNull)
                 managedWhen(visibleProperty())
-                promptSelection.onChange { prompt.set(it) }
+                promptSelection.onChange { promptWithServer.set(it) }
                 this@output.add(this)
             }
         }
         hideParameters()
         hideRunButton()
-    }
-
-    override fun onCreate() {
-        val dialog = find<CreatePromptDialog>()
-        dialog.openModal(block = true)
         
-        val newPrompt = dialog.getResult()
-        if (newPrompt != null) {
-            // Refresh the runtime prompts to pick up the new prompt
-            PromptLibrary.refreshRuntimePrompts()
-            
-            // Update the prompt entries list
-            promptEntries.setAll(lib.list().toMutableList())
-            refilter()
-            
-            // Select the new prompt
-            val createdPrompt = filteredPromptEntries.find { it.id == newPrompt.id }
-            if (createdPrompt != null) {
-                promptListView.selectionModel.select(createdPrompt)
-                promptListView.scrollTo(createdPrompt)
-            }
-        }
+        loadPrompts()
     }
 
-    private fun sendToTemplateView() {
-        find<PromptFxWorkspace>().launchTemplateView(promptSelection.value!!.template!!)
+    private fun loadPrompts() {
+        runBlocking {
+            val allPrompts = mutableListOf<McpPromptWithServer>()
+            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+                try {
+                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    if (server != null) {
+                        val prompts = server.listPrompts()
+                        allPrompts.addAll(prompts.map { McpPromptWithServer(it, serverName) })
+                    }
+                } catch (e: Exception) {
+                    println("Failed to load prompts from server '$serverName': ${e.message}")
+                }
+            }
+            promptEntries.setAll(allPrompts)
+            refilter()
+        }
     }
 
     private fun refilter() {
-        filteredPromptEntries.setAll(promptEntries.filter { promptIdFilter(it.id) })
-    }
-
-    /** Select a prompt in the library that matches the given template text. */
-    fun selectPromptByTemplate(templateText: String) {
-        // Find a prompt with matching template text
-        val matchingPrompt = filteredPromptEntries.find { promptDef ->
-            promptDef.template?.trim() == templateText.trim()
-        }
-        
-        if (matchingPrompt != null) {
-            promptListView.selectionModel.select(matchingPrompt)
-            promptListView.scrollTo(matchingPrompt)
-        } else {
-            // If no exact match, try to find a prompt that contains the template text
-            val partialMatch = filteredPromptEntries.find { promptDef ->
-                promptDef.template?.contains(templateText.trim()) == true
-            }
-            if (partialMatch != null) {
-                promptListView.selectionModel.select(partialMatch)
-                promptListView.scrollTo(partialMatch)
-            }
-        }
+        filteredPromptEntries.setAll(promptEntries.filter { promptNameFilter(it.prompt.name) })
     }
 
     override suspend fun processUserInput() = AiPipelineResult.todo()

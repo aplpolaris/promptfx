@@ -20,11 +20,97 @@
 package tri.util.json
 
 import com.fasterxml.jackson.databind.JsonNode
+import tri.util.json.internal.SchemaGeneratorWrapper
+import kotlin.reflect.KClass
 
-/** Parses a JSON schema string as a [com.fasterxml.jackson.databind.JsonNode]. */
-// TODO - validation
-fun readJsonSchema(schema: String) =
-    jsonMapper.readTree(schema)
+/**
+ * Generates a JSON schema from a Java/Kotlin class as a [JsonNode].
+ * @param clazz the class to generate schema for
+ * @return the JSON schema as a JsonNode
+ */
+fun generateJsonSchema(clazz: Class<*>): JsonNode =
+    SchemaGeneratorWrapper.generateSchema(clazz)
+
+/**
+ * Generates a JSON schema from a Kotlin class as a [JsonNode].
+ * @param clazz the Kotlin class to generate schema for
+ * @return the JSON schema as a JsonNode
+ */
+fun generateJsonSchema(clazz: KClass<*>): JsonNode =
+    generateJsonSchema(clazz.java)
+
+/**
+ * Generates a JSON schema from a Java/Kotlin class as a String.
+ * @param clazz the class to generate schema for
+ * @return the JSON schema as a JSON string
+ */
+fun generateJsonSchemaString(clazz: Class<*>): String =
+    jsonMapper.writeValueAsString(generateJsonSchema(clazz))
+
+/**
+ * Generates a JSON schema from a Kotlin class as a String.
+ * @param clazz the Kotlin class to generate schema for
+ * @return the JSON schema as a JSON string
+ */
+fun generateJsonSchemaString(clazz: KClass<*>): String =
+    generateJsonSchemaString(clazz.java)
+
+/**
+ * Parses a JSON schema string as a [JsonNode] and validates it.
+ * @param schema the JSON schema string to parse
+ * @return the JSON schema as a JsonNode
+ * @throws com.fasterxml.jackson.core.JsonProcessingException if the schema is not valid JSON
+ */
+fun readJsonSchema(schema: String): JsonNode {
+    val node = jsonMapper.readTree(schema)
+    // Basic validation: ensure it's a valid JSON object
+    if (!node.isObject) {
+        throw IllegalArgumentException("JSON schema must be a JSON object")
+    }
+    return node
+}
+
+/**
+ * Builds a simple JSON schema with one required string parameter.
+ * @param paramName the name of the parameter
+ * @param paramDescription the description of the parameter
+ * @param paramType the type of the parameter (default: "string")
+ * @return the JSON schema as a JsonNode
+ */
+fun buildSchemaWithOneRequiredParam(
+    paramName: String, 
+    paramDescription: String,
+    paramType: String = "string"
+): JsonNode = jsonMapper.createObjectNode().apply {
+    put("type", "object")
+    val props = putObject("properties")
+    props.putObject(paramName).apply {
+        put("type", paramType)
+        put("description", paramDescription)
+    }
+    val required = putArray("required")
+    required.add(paramName)
+}
+
+/**
+ * Builds a simple JSON schema with one optional string parameter.
+ * @param paramName the name of the parameter
+ * @param paramDescription the description of the parameter
+ * @param paramType the type of the parameter (default: "string")
+ * @return the JSON schema as a JsonNode
+ */
+fun buildSchemaWithOneOptionalParam(
+    paramName: String, 
+    paramDescription: String,
+    paramType: String = "string"
+): JsonNode = jsonMapper.createObjectNode().apply {
+    put("type", "object")
+    val props = putObject("properties")
+    props.putObject(paramName).apply {
+        put("type", paramType)
+        put("description", paramDescription)
+    }
+}
 
 /** Creates a JSON schema from a map of field names to descriptions, assuming string fields for each. */
 fun createJsonSchema(vararg fields: Pair<String, String>) =
