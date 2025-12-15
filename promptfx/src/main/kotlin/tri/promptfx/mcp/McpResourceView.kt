@@ -61,8 +61,8 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
             toolbar {
                 textfield("") {
                     promptText = "Search"
-                    textProperty().addListener { _, _, newValue ->
-                        resourceFilter = { it.contains(newValue, ignoreCase = true) }
+                    setOnKeyPressed {
+                        resourceFilter = { text in it }
                         refilter()
                     }
                 }
@@ -213,7 +213,7 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
                         }
                     }
                 } catch (e: Exception) {
-                    println("Error loading resources from server $serverName: ${e.message}")
+                    System.err.println("Error loading resources from server $serverName: ${e.message}")
                 }
             }
             allResources

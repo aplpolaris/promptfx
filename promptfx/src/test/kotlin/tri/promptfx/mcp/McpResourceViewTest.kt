@@ -67,12 +67,10 @@ class McpResourceViewTest {
                 }
             } catch (e: Exception) {
                 // Some servers may not support resources yet, which is okay
-                println("Server $serverName does not support resources or encountered an error: ${e.message}")
             }
         }
         
         // We don't assert on resourceCount because servers may not have resources configured
-        println("Total resources found across all servers: $resourceCount")
     }
     
     @Test
