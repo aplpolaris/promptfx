@@ -54,6 +54,14 @@ class McpServerEmbedded(val prompts: PromptLibrary = PromptLibrary(), val tools:
         )))
     }
 
+    override suspend fun listResources(): List<McpResource> = emptyList()
+
+    override suspend fun listResourceTemplates(): List<McpResourceTemplate> = emptyList()
+
+    override suspend fun readResource(uri: String): McpReadResourceResponse {
+        throw McpServerException("Resource with URI '$uri' not found")
+    }
+
     override suspend fun getCapabilities() = McpServerCapabilities(
         prompts = McpServerCapability(listChanged = false),
         tools = if (tools.listTools().isEmpty()) null else McpServerCapability(listChanged = false)

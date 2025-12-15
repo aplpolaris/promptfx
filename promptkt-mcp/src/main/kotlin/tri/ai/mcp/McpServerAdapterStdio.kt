@@ -108,7 +108,8 @@ class McpServerAdapterStdio(
     override suspend fun listPrompts(): List<McpPrompt> {
         try {
             val result = sendRequest("prompts/list")
-            return objectMapper.readValue<List<McpPrompt>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<McpPrompt>>>(result.toString())
+            return wrapper["prompts"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing prompts from stdio server: ${e.message}", e)
         }
@@ -126,7 +127,8 @@ class McpServerAdapterStdio(
     override suspend fun listTools(): List<Executable> {
         try {
             val result = sendRequest("tools/list")
-            return objectMapper.readValue<List<Executable>>(result.toString())
+            val wrapper = objectMapper.readValue<Map<String, List<Executable>>>(result.toString())
+            return wrapper["tools"] ?: emptyList()
         } catch (e: Exception) {
             throw McpServerException("Error listing tools from stdio server: ${e.message}", e)
         }
@@ -143,6 +145,35 @@ class McpServerAdapterStdio(
             return objectMapper.readValue<McpToolResult>(result.toString())
         } catch (e: Exception) {
             throw McpServerException("Error calling tool on stdio server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun listResources(): List<McpResource> {
+        try {
+            val result = sendRequest("resources/list")
+            val wrapper = objectMapper.readValue<Map<String, List<McpResource>>>(result.toString())
+            return wrapper["resources"] ?: emptyList()
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resources from stdio server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
+        try {
+            val result = sendRequest("resources/templates/list")
+            val wrapper = objectMapper.readValue<Map<String, List<McpResourceTemplate>>>(result.toString())
+            return wrapper["resourceTemplates"] ?: emptyList()
+        } catch (e: Exception) {
+            throw McpServerException("Error listing resource templates from stdio server: ${e.message}", e)
+        }
+    }
+
+    override suspend fun readResource(uri: String): McpReadResourceResponse {
+        try {
+            val result = sendRequest("resources/read", mapOf("uri" to uri))
+            return objectMapper.readValue<McpReadResourceResponse>(result.toString())
+        } catch (e: Exception) {
+            throw McpServerException("Error reading resource from stdio server: ${e.message}", e)
         }
     }
 

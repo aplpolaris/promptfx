@@ -27,5 +27,9 @@ module tri.promptkt.cli {
     requires clikt.jvm;
     requires okhttp3;
 
+    requires com.github.victools.jsonschema.generator;
+    requires com.github.victools.jsonschema.module.jackson;
+    requires org.slf4j;
+
     opens tri.ai.cli to com.fasterxml.jackson.databind;
 }
