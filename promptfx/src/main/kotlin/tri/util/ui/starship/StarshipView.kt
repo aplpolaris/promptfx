@@ -46,7 +46,7 @@ class StarshipView : Fragment("Starship") {
     val baseComponent: View? by param()
     val controller: PromptFxController by inject()
 
-    val configs = StarshipConfig.readDefaultYaml()
+    val configs = StarshipConfig.readConfig()
     val layout
         get() = configs.layout
     val results = StarshipPipelineResults()
