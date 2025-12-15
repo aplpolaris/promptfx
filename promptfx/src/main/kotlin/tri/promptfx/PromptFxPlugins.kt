@@ -53,7 +53,7 @@ object PromptFxPlugins {
     }
 
     /** Load plugins from the main application classpath. */
-    fun <C> loadBuiltInPlugins(type: Class<C>): List<PluginInfo<C>> {
+    private fun <C> loadBuiltInPlugins(type: Class<C>): List<PluginInfo<C>> {
         val serviceLoader = ServiceLoader.load(type)
         return mutableListOf<PluginInfo<C>>().apply {
             serviceLoader.forEach { add(PluginInfo(it, PluginSource.BUILT_IN)) }
@@ -61,7 +61,7 @@ object PromptFxPlugins {
     }
 
     /** Load plugins from config/plugins/ folder. */
-    fun <C> loadExternalPlugins(type: Class<C>): List<PluginInfo<C>> {
+    private fun <C> loadExternalPlugins(type: Class<C>): List<PluginInfo<C>> {
         val pluginFiles = listOf(Path(PLUGIN_DIR))
             .flatMap { if (it.exists() && it.isDirectory()) it.listDirectoryEntries("*.jar") else listOf() }
         if (pluginFiles.isNotEmpty()) {

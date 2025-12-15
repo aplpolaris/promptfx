@@ -8,13 +8,13 @@
         <version>0.13.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>promptfx-sample-plugin</artifactId>
+    <artifactId>promptfx-sample-view-plugin</artifactId>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
     <description>Sample plugin demonstrating NavigableWorkspaceView.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
-    <inceptionYear>2023</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
 
     <!-- configuration of the default license to use -->
     <licenses>
