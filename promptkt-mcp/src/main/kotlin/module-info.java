@@ -25,6 +25,10 @@ module tri.promptkt.mcp {
     requires com.fasterxml.jackson.databind;
     requires com.google.common;
     requires io.ktor.client.core;
+    requires io.ktor.server.core;
+    requires io.ktor.server.netty;
+    requires io.ktor.server.host.common;
+
     requires kotlinx.serialization.core;
     requires kotlinx.serialization.json;
 
