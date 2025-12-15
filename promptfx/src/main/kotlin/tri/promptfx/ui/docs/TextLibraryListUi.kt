@@ -89,7 +89,7 @@ class TextLibraryListUi : Fragment() {
                     action { executeMetadataExtraction() }
                 }
                 item("Embeddings", graphic = FontAwesomeIcon.MAP_MARKER.graphic) {
-                    textProperty().bind(Bindings.concat("Embeddings (", controller.embeddingStrategy.value.modelId, ")"))
+                    textProperty().bind(Bindings.concat("Embeddings (", controller.embeddingStrategy.value!!.strategy.modelId, ")"))
                     tooltip("Calculate embedding vectors for all chunks in the currently selected collection and embedding model.")
                     enableWhen { librarySelection.isNotNull }
                     action { executeEmbeddings() }

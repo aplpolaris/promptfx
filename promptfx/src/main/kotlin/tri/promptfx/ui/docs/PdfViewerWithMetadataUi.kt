@@ -87,7 +87,7 @@ class PdfViewerWithMetadataUi(
                             tooltip("Attempt to automatically find data using an LLM to extract likely metadata from document text.")
                             disableWhen(progress.activeProperty.or(controller.chatService.isNull()))
                             action {
-                                executeMetadataGuess(controller.chatService.value)
+                                executeMetadataGuess(controller.chatService.value!!.model)
                             }
                         }
                         val ttp = "The number of pages to use when guessing metadata from the document."

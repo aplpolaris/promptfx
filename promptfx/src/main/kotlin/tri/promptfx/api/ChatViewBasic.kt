@@ -48,7 +48,7 @@ class ChatViewBasic :
             numResponses = common.numResponses.value
         )
 
-        val result = model.value!!.chat(messages, params)
+        val result = model.value!!.model.chat(messages, params)
         return result.asPipelineResult()
     }
 
