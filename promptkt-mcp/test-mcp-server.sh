@@ -25,7 +25,7 @@ curl -s -X POST $SERVER_URL/mcp \
       "protocolVersion": "2025-06-18",
       "clientInfo": {"name": "test-client", "version": "1.0.0"}
     }
-  }' | jq .
+  }'
 
 # List prompts
 echo -e "\n3. List Prompts:"
@@ -35,7 +35,7 @@ curl -s -X POST $SERVER_URL/mcp \
     "jsonrpc": "2.0",
     "id": 2,
     "method": "prompts/list"
-  }' | jq .
+  }'
 
 # List tools
 echo -e "\n4. List Tools:"
@@ -45,7 +45,7 @@ curl -s -X POST $SERVER_URL/mcp \
     "jsonrpc": "2.0",
     "id": 3,
     "method": "tools/list"
-  }' | jq .
+  }'
 
 echo -e "\n=================================="
 echo "Testing complete!"

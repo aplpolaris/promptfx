@@ -133,65 +133,7 @@ Replace `<tool-name>` and arguments with actual tool name and required parameter
 
 ## Testing with a Shell Script
 
-Create a test script `test-mcp-server.sh`:
-
-```bash
-#!/bin/bash
-
-SERVER_URL="http://localhost:8080"
-
-echo "Testing MCP Server at $SERVER_URL"
-echo "=================================="
-
-# Health check
-echo -e "\n1. Health Check:"
-curl -s $SERVER_URL/health
-echo
-
-# Initialize
-echo -e "\n2. Initialize:"
-curl -s -X POST $SERVER_URL/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "initialize",
-    "params": {
-      "protocolVersion": "2025-06-18",
-      "clientInfo": {"name": "test-client", "version": "1.0.0"}
-    }
-  }' | jq .
-
-# List prompts
-echo -e "\n3. List Prompts:"
-curl -s -X POST $SERVER_URL/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "prompts/list"
-  }' | jq .
-
-# List tools
-echo -e "\n4. List Tools:"
-curl -s -X POST $SERVER_URL/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "tools/list"
-  }' | jq .
-
-echo -e "\n=================================="
-echo "Testing complete!"
-```
-
-Make it executable and run:
-
-```bash
-chmod +x test-mcp-server.sh
-./test-mcp-server.sh
-```
+See test script `test-mcp-server.sh` for a sample test script.
 
 ## MCP Protocol
 
