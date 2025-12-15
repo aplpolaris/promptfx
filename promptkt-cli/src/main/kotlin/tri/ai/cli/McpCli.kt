@@ -53,19 +53,19 @@ fun main(args: Array<String>) =
     McpCli().main(args)
 
 /**
- * Command-line interface for interacting with MCP (Model Context Protocol) prompt servers.
+ * Command-line interface for interacting with MCP (Model Context Protocol) servers.
  * Supports both embedded and remote MCP servers.
  */
 class McpCli : CliktCommand(
-    name = "mcp-prompt",
-    help = "Interface to MCP prompt servers - list, fill, and execute prompts, list and execute tools, or start an embedded server"
+    name = "mcp-fx",
+    help = "Interface to MCP servers - list, fill, and execute prompts, tools, and resources, or start an embedded server"
 ) {
     private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'embedded' for embedded server)")
         .default("embedded")
     private val registryConfig by option("--registry", "-r", help = "Path to MCP server registry configuration file (JSON or YAML)")
     private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for embedded server only)")
     private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for embedded server only)")
-    private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
+    private val verbose by option("--verbose", "-v", help = "Verbose output").flag("--no-verbose", default = false)
     
     private val registry: McpServerRegistry by lazy {
         if (registryConfig != null) {
@@ -104,6 +104,7 @@ class McpCli : CliktCommand(
         
         // Fallback to backward compatibility: treat as direct server specification
         return if (serverUrl == "embedded" || serverUrl == "local") {
+            if (verbose) echo("Using in-memory MCP server: $serverUrl")
             val library = loadPromptLibrary()
             val toolLibrary = loadToolLibrary()
             McpServerEmbedded(library, toolLibrary)
