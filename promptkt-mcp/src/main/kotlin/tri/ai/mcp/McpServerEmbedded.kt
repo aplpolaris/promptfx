@@ -32,8 +32,11 @@ import tri.ai.prompt.fill
 /**
  * Implements basic functionality of MCP prompt server based on in-memory prompt and tool libraries.
  */
-class McpServerEmbedded(val prompts: PromptLibrary = PromptLibrary(), val tools: ToolLibrary) :
-    McpServerAdapter, ToolLibrary by tools {
+class McpServerEmbedded(
+    val prompts: PromptLibrary = PromptLibrary(), 
+    val tools: ToolLibrary,
+    private val resources: List<McpResource> = emptyList()
+) : McpServerAdapter, ToolLibrary by tools {
 
     override fun toString() = "McpServer-Embedded"
 
@@ -54,17 +57,41 @@ class McpServerEmbedded(val prompts: PromptLibrary = PromptLibrary(), val tools:
         )))
     }
 
-    override suspend fun listResources(): List<McpResource> = emptyList()
+    override suspend fun listResources(): List<McpResource> = resources
 
     override suspend fun listResourceTemplates(): List<McpResourceTemplate> = emptyList()
 
     override suspend fun readResource(uri: String): McpReadResourceResponse {
-        throw McpServerException("Resource with URI '$uri' not found")
+        val resource = resources.find { it.uri == uri }
+            ?: throw McpServerException("Resource with URI '$uri' not found")
+        
+        // For sample resources, generate simple content based on the URI
+        val content = when {
+            uri.startsWith("file://") -> {
+                val filename = uri.substringAfterLast("/")
+                "Sample content for $filename\n\nThis is a test resource provided by the embedded MCP server."
+            }
+            uri.startsWith("data://") -> {
+                "Sample data resource: ${resource.description ?: resource.name}"
+            }
+            else -> "Content for ${resource.name}"
+        }
+        
+        return McpReadResourceResponse(
+            contents = listOf(
+                McpResourceContents(
+                    uri = uri,
+                    mimeType = resource.mimeType,
+                    text = content
+                )
+            )
+        )
     }
 
     override suspend fun getCapabilities() = McpServerCapabilities(
         prompts = McpServerCapability(listChanged = false),
-        tools = if (tools.listTools().isEmpty()) null else McpServerCapability(listChanged = false)
+        tools = if (tools.listTools().isEmpty()) null else McpServerCapability(listChanged = false),
+        resources = if (resources.isEmpty()) null else McpServerCapability(listChanged = false)
     )
 
     override suspend fun close() {

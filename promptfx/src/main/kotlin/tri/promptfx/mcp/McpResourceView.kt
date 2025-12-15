@@ -19,14 +19,211 @@
  */
 package tri.promptfx.mcp
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.geometry.Pos
+import javafx.scene.control.ListView
+import javafx.scene.layout.Priority
+import tornadofx.*
+import tri.ai.mcp.McpResource
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
 /** Plugin for the [McpResourceView]. */
-class McpResourcePlugin : NavigableWorkspaceViewImpl<McpResourceView>("MCP", "Resources", type = McpResourceView::class)
+class McpResourcePlugin : NavigableWorkspaceViewImpl<McpResourceView>("MCP", "MCP Resources", type = McpResourceView::class)
 
-/** View and try out MCP server prompts. */
+/** Data class to track resources with their server information. */
+data class ResourceWithServer(
+    val resource: McpResource,
+    val serverName: String
+)
+
+/** View and try out MCP server resources. */
 class McpResourceView : AiTaskView("MCP Resources", "View and test resources for configured MCP servers.") {
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+
+    private val mcpController = controller.mcpController
+    private val resourceEntries = observableListOf<ResourceWithServer>()
+    private var resourceFilter: (String) -> Boolean = { true }
+    private val filteredResourceEntries = observableListOf<ResourceWithServer>()
+    private val resourceSelection = SimpleObjectProperty<ResourceWithServer>()
+    private lateinit var resourceListView: ListView<ResourceWithServer>
+
+    private val resourceContentText = SimpleStringProperty("")
+
+    init {
+        // Load resources initially
+        loadResources()
+        
+        input {
+            toolbar {
+                textfield("") {
+                    promptText = "Search"
+                    setOnKeyPressed {
+                        resourceFilter = { text in it }
+                        refilter()
+                    }
+                }
+                spacer()
+                button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
+                    tooltip("Refresh the resource list.")
+                    action {
+                        loadResources()
+                    }
+                }
+            }
+            resourceListView = listview(filteredResourceEntries) {
+                vgrow = Priority.ALWAYS
+                resourceSelection.bind(this.selectionModel.selectedItemProperty())
+                cellFormat {
+                    text = "${it.resource.name} [${it.serverName}]"
+                    tooltip(it.resource.description ?: it.resource.uri)
+                }
+            }
+        }
+        outputPane.clear()
+        output {
+            scrollpane {
+                isFitToWidth = true
+                squeezebox(multiselect = true) {
+                    visibleWhen(resourceSelection.isNotNull)
+                    managedWhen(visibleProperty())
+                    vgrow = Priority.ALWAYS
+                    fold("MCP Server", expanded = true) {
+                        form {
+                            fieldset {
+                                field("Server Id") {
+                                    label(resourceSelection.stringBinding { it?.serverName ?: "" })
+                                }
+                            }
+                        }
+                    }
+                    fold("Resource Details", expanded = true) {
+                        form {
+                            fieldset("Resource Information") {
+                                field("Name") {
+                                    label(resourceSelection.stringBinding { it?.resource?.name ?: "" })
+                                }
+                                field("URI") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    text(resourceSelection.stringBinding { it?.resource?.uri ?: "" }) {
+                                        wrappingWidth = 400.0
+                                    }
+                                }
+                                field("Description") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    text(resourceSelection.stringBinding { it?.resource?.description ?: "N/A" }) {
+                                        wrappingWidth = 400.0
+                                    }
+                                }
+                                field("MIME Type") {
+                                    label(resourceSelection.stringBinding { it?.resource?.mimeType ?: "N/A" })
+                                }
+                            }
+                        }
+                    }
+                    fold("Read Resource", expanded = true) {
+                        form {
+                            fieldset("Actions") {
+                                buttonbar {
+                                    button("Read Resource") {
+                                        enableWhen(resourceSelection.isNotNull)
+                                        action { readResourceContent() }
+                                    }
+                                }
+                            }
+                            fieldset("Content") {
+                                field("Output") {
+                                    labelContainer.alignment = Pos.TOP_LEFT
+                                    textarea(resourceContentText) {
+                                        isEditable = false
+                                        isWrapText = true
+                                        prefRowCount = 12
+                                        vgrow = Priority.ALWAYS
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        hideParameters()
+        hideRunButton()
+    }
+
+    private fun readResourceContent() {
+        val resourceWithServer = resourceSelection.value ?: return
+        val resource = resourceWithServer.resource
+        val serverName = resourceWithServer.serverName
+
+        runAsync {
+            try {
+                val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    ?: return@runAsync "Error: Server '$serverName' not found"
+                
+                val response = kotlinx.coroutines.runBlocking {
+                    server.readResource(resource.uri)
+                }
+                
+                // Format the response content
+                val contentLines = response.contents.mapIndexed { index, content ->
+                    buildString {
+                        if (response.contents.size > 1) {
+                            appendLine("--- Content ${index + 1} ---")
+                        }
+                        appendLine("URI: ${content.uri}")
+                        content.mimeType?.let { appendLine("MIME Type: $it") }
+                        appendLine()
+                        when {
+                            content.text != null -> append(content.text)
+                            content.blob != null -> append("[Binary content (base64)]\n${content.blob}")
+                            else -> append("[Empty content]")
+                        }
+                    }
+                }
+                
+                contentLines.joinToString("\n\n")
+            } catch (e: Exception) {
+                "Error reading resource: ${e.message}"
+            }
+        } ui { result ->
+            resourceContentText.value = result
+        }
+    }
+
+    override suspend fun processUserInput(): AiPipelineResult {
+        return AiPipelineResult.todo()
+    }
+
+    private fun loadResources() {
+        runAsync {
+            val allResources = mutableListOf<ResourceWithServer>()
+            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+                try {
+                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    if (server != null) {
+                        val resources = kotlinx.coroutines.runBlocking {
+                            server.listResources()
+                        }
+                        resources.forEach { resource ->
+                            allResources.add(ResourceWithServer(resource, serverName))
+                        }
+                    }
+                } catch (e: Exception) {
+                    System.err.println("Error loading resources from server $serverName: ${e.message}")
+                }
+            }
+            allResources
+        } ui { resources ->
+            resourceEntries.setAll(resources)
+            refilter()
+        }
+    }
+
+    private fun refilter() {
+        filteredResourceEntries.setAll(resourceEntries.filter { resourceFilter(it.resource.name) })
+    }
 }

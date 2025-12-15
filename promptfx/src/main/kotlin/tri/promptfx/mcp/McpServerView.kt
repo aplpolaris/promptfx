@@ -354,6 +354,16 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 })
                             }
                         }
+
+                        field("Include Default Resources") {
+                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            managedWhen(visibleProperty())
+                            label {
+                                textProperty().bind(selectedServerConfig.stringBinding {
+                                    (it as? TestServerConfig)?.includeDefaultResources?.toString() ?: ""
+                                })
+                            }
+                        }
                     }
                 }
             }
