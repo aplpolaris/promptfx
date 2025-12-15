@@ -22,6 +22,7 @@ package tri.ai.mcp
 import kotlinx.coroutines.runBlocking
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.prompt.PromptLibrary
+import java.util.concurrent.CountDownLatch
 
 /**
  * Main class to run the MCP server over HTTP.
@@ -61,6 +62,19 @@ fun main(args: Array<String>) {
     println("Press Ctrl+C to stop the server")
     println("=".repeat(50))
     
-    // Keep the main thread alive
-    Thread.currentThread().join()
+    // Use a latch to keep the server running and handle shutdown gracefully
+    val shutdownLatch = CountDownLatch(1)
+    
+    // Add shutdown hook to handle Ctrl+C
+    Runtime.getRuntime().addShutdownHook(Thread {
+        println("\nShutting down MCP HTTP Server...")
+        runBlocking {
+            server.close()
+        }
+        println("Server stopped.")
+        shutdownLatch.countDown()
+    })
+    
+    // Wait for shutdown signal
+    shutdownLatch.await()
 }
