@@ -98,7 +98,7 @@ PromptFx supports two types of plugins that can be used to extend its functional
 ## UI View Plugins (NavigableWorkspaceView)
 
 UI view plugins allow you to add custom views and tabs to the PromptFx interface. These plugins:
-- Extend the `NavigableWorkspaceView` interface
+- Implement the `NavigableWorkspaceView` interface (typically by extending `NavigableWorkspaceViewImpl`)
 - Can add new functionality to any tab category (API, Tools, Documents, Text, etc.)
 - Are automatically discovered using Java's ServiceLoader mechanism
 - Can be packaged as standalone JAR files
@@ -260,7 +260,7 @@ servers:
 
 ### Configuration
 
-- **File Location**: Place the file at `config/mcp-servers.yaml` or in the PromptFx resources
+- **File Location**: Place the file at `config/mcp-servers.yaml` in the working directory, or customize the built-in servers by editing the default configuration in the PromptFx resources
 - **Server Names**: Each server must have a unique name (used as the key in the YAML)
 - **Description**: Human-readable description shown in the UI
 
