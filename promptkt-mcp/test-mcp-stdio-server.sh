@@ -4,6 +4,8 @@
 # This script sends JSON-RPC messages to stdin and reads responses from stdout
 #
 
+MAIN_CLASS="tri.ai.mcp.McpServerStdioMainKt"
+
 echo "Testing MCP Server over Stdio"
 echo "=================================="
 echo "Note: This requires a running MCP server process that communicates via stdio"
@@ -17,14 +19,14 @@ send_request() {
 }
 
 # Test via process substitution with a command that would start an MCP stdio server
-# For example: mvn exec:java -Dexec.mainClass="tri.ai.mcp.McpServerStdioMainKt"
+# For example: mvn exec:java -Dexec.mainClass="$MAIN_CLASS"
 
 echo "To test stdio server, you need to:"
 echo "1. Start the MCP stdio server in one terminal:"
-echo "   mvn exec:java -Dexec.mainClass=\"tri.ai.mcp.McpServerStdioMainKt\""
+echo "   mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\""
 echo ""
 echo "2. Pipe this script to it in another terminal:"
-echo "   ./test-mcp-stdio-server.sh | mvn exec:java -Dexec.mainClass=\"tri.ai.mcp.McpServerStdioMainKt\""
+echo "   ./test-mcp-stdio-server.sh | mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\""
 echo ""
 echo "Sending test requests to stdout (pipe to an MCP stdio server):"
 echo ""
