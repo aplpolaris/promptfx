@@ -19,6 +19,10 @@
  */
 package tri.ai.mcp
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.Beta
 import io.ktor.client.*
@@ -27,10 +31,11 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
-import tri.ai.core.tool.Executable
+import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
-import tri.ai.mcp.tool.StubTool
-import tri.util.json.jsonMapper
+import tri.util.fine
+import tri.util.info
+import tri.util.json.convertToKotlinxJsonObject
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -47,10 +52,11 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             }
         }
     }
-    
-
     private val requestId = AtomicLong(1)
-    
+    private val objectMapper = ObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .registerModule(KotlinModule.Builder().build())
+
     /**
      * Send a JSON-RPC request to the MCP server at /mcp endpoint
      */
@@ -98,7 +104,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             })
             
             val capabilitiesJson = result.jsonObject["capabilities"]?.jsonObject ?: return null
-            return jsonMapper.readValue(JsonSerializers.serialize(capabilitiesJson))
+            return objectMapper.readValue(JsonSerializers.serialize(capabilitiesJson))
         } catch (e: Exception) {
             // Capabilities endpoint is optional, so we don't throw an error
             return null
@@ -110,8 +116,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val result = sendJsonRpcRequest("prompts/list")
             val promptsJson = result.jsonObject["prompts"]?.jsonArray
                 ?: throw McpServerException("No prompts in response")
-            
-            return jsonMapper.readValue(JsonSerializers.serialize(promptsJson))
+            return objectMapper.readValue(JsonSerializers.serialize(promptsJson))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -135,7 +140,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             // Convert lowercase roles from MCP spec to capitalized roles for internal enum
             val resultWithCapitalizedRoles = capitalizeRolesInResult(result)
             
-            return jsonMapper.readValue(JsonSerializers.serialize(resultWithCapitalizedRoles))
+            return objectMapper.readValue(JsonSerializers.serialize(resultWithCapitalizedRoles))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -233,28 +238,13 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         }
     }
 
-    override suspend fun listTools(): List<Executable> {
+    override suspend fun listTools(): List<McpToolMetadata> {
         try {
             val result = sendJsonRpcRequest("tools/list")
+            fine<McpServerAdapterHttp>(result.toString(), null)
             val toolsJson = result.jsonObject["tools"]?.jsonArray
                 ?: throw McpServerException("No tools in response")
-            
-            // Tools are returned as StubTool instances from MCP servers
-            val toolsList = mutableListOf<Executable>()
-            for (toolElement in toolsJson) {
-                // Add hardCodedOutput field if it's missing (required by StubTool)
-                val toolWithHardCodedOutput = if (toolElement is JsonObject && !toolElement.containsKey("hardCodedOutput")) {
-                    buildJsonObject {
-                        toolElement.forEach { key, value -> put(key, value) }
-                        put("hardCodedOutput", buildJsonObject {})
-                    }
-                } else {
-                    toolElement
-                }
-                val tool = jsonMapper.readValue<StubTool>(JsonSerializers.serialize(toolWithHardCodedOutput))
-                toolsList.add(tool)
-            }
-            return toolsList
+            return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -262,39 +252,27 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         }
     }
 
-    override suspend fun getTool(name: String): Executable? {
+    override suspend fun getTool(name: String): McpToolMetadata? {
         val tools = listTools()
         return tools.find { it.name == name }
     }
 
-    override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
+    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResult {
         try {
             val params = buildJsonObject {
                 put("name", JsonPrimitive(name))
                 put("arguments", buildJsonObject {
                     args.forEach { (key, value) ->
-                        put(key, JsonPrimitive(value))
+                        put(key, convertToKotlinxJsonObject(objectMapper.convertValue(value)))
                     }
                 })
             }
-            
+
             val result = sendJsonRpcRequest("tools/call", params)
-            
-            // MCP spec returns content array, convert to McpToolResult format
-            val resultObj = result.jsonObject
-            val isError = resultObj["isError"]?.jsonPrimitive?.booleanOrNull ?: false
-            val contentArray = resultObj["content"]?.jsonArray
-            val structuredContent = resultObj["structuredContent"]
-            
-            return if (isError && contentArray != null && contentArray.isNotEmpty()) {
-                // Extract error message from first content item
-                val errorText = contentArray.firstOrNull()?.jsonObject?.get("text")?.jsonPrimitive?.content
-                McpToolResult(name, null, errorText)
-            } else {
-                // Use structured content if available, otherwise extract from content array
-                val output = structuredContent ?: contentArray?.firstOrNull()?.jsonObject?.get("text")
-                McpToolResult(name, output, null)
-            }
+            info<McpServerAdapterHttp>(result.toString())
+            return objectMapper
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .readValue<McpToolResult>(result.toString())
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -308,7 +286,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val resourcesJson = result.jsonObject["resources"]?.jsonArray
                 ?: throw McpServerException("No resources in response")
             
-            return jsonMapper.readValue(JsonSerializers.serialize(resourcesJson))
+            return objectMapper.readValue(JsonSerializers.serialize(resourcesJson))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -322,7 +300,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val templatesJson = result.jsonObject["resourceTemplates"]?.jsonArray
                 ?: throw McpServerException("No resource templates in response")
             
-            return jsonMapper.readValue(JsonSerializers.serialize(templatesJson))
+            return objectMapper.readValue(JsonSerializers.serialize(templatesJson))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -338,7 +316,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             
             val result = sendJsonRpcRequest("resources/read", params)
             
-            return jsonMapper.readValue(JsonSerializers.serialize(result))
+            return objectMapper.readValue(JsonSerializers.serialize(result))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {

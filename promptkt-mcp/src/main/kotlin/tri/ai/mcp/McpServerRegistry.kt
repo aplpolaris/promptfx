@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.mcp.tool.McpToolResult
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.mcp.tool.ToolLibrary
 import tri.ai.prompt.PromptLibrary
@@ -100,10 +101,10 @@ class McpServerRegistry(
             StarterToolLibrary()
         } else {
             object : ToolLibrary {
-                override suspend fun listTools() = emptyList<tri.ai.core.tool.Executable>()
+                override suspend fun listTools() = emptyList<tri.ai.mcp.tool.McpToolMetadata>()
                 override suspend fun getTool(name: String) = null
-                override suspend fun callTool(name: String, args: Map<String, String>) =
-                    tri.ai.mcp.tool.McpToolResult.error(name, "Tool library is disabled")
+                override suspend fun callTool(name: String, args: Map<String, Any?>) =
+                    McpToolResult.error("Tool library is disabled")
             }
         }
         

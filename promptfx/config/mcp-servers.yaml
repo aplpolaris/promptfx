@@ -20,7 +20,12 @@ servers:
     description: "Test server with sample prompts and tools for testing"
     includeDefaultPrompts: true
     includeDefaultTools: true
-  
+
+  weather:
+    type: stdio
+    description: "Weather MCP server"
+    command: "D:/code/mcp/kotlin-sdk/samples/weather-stdio-server/build/install/weather-stdio-server/bin/weather-stdio-server.bat"
+
   # Remote MCP server via HTTP
   # remote-example:
   #   type: http

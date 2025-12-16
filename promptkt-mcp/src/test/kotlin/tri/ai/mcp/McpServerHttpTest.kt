@@ -30,10 +30,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import tri.ai.core.MChatMessagePart
-import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.tool.Executable
+import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
 
 class McpServerHttpTest {
@@ -240,9 +238,9 @@ class McpServerHttpTest {
                 messages = listOf(MultimodalChatMessage.user("Test message"))
             )
 
-        override suspend fun listTools(): List<Executable> = emptyList()
+        override suspend fun listTools(): List<McpToolMetadata> = emptyList()
 
-        override suspend fun getTool(name: String): Executable? = null
+        override suspend fun getTool(name: String): McpToolMetadata? = null
 
         override suspend fun callTool(name: String, args: Map<String, String>) =
             McpToolResult(name, null, "Unsupported", null)

@@ -25,6 +25,7 @@ import tri.ai.core.MChatRole
 import tri.ai.mcp.JsonSerializers.serialize
 import tri.ai.mcp.JsonSerializers.toJsonElement
 import tri.ai.mcp.tool.McpToolResult
+import tri.util.json.convertToKotlinxJsonObject
 
 /**
  * Handles MCP-specific business logic for JSON-RPC requests.
@@ -144,14 +145,15 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
 
         /** Convert McpToolResponse to JsonElement */
         fun convertToolResponse(response: McpToolResult): JsonElement = buildJsonObject {
-            response.error?.let { error ->
+            response.isError?.let { error ->
                 put("isError", true)
                 putJsonArray("content") { add(textContent(error)) }
                 return@buildJsonObject
             }
-            response.output?.let { output ->
-                putJsonArray("content") { add(textContent(serialize(output))) }
-                put("structuredContent", output)
+            response.content?.let { output ->
+                val element = convertToKotlinxJsonObject(output)
+                putJsonArray("content") { add(textContent(serialize(element))) }
+                put("structuredContent", element)
             }
         }
 
