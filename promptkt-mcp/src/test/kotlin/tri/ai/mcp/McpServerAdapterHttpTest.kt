@@ -169,8 +169,8 @@ class McpServerAdapterHttpTest {
                 val result = adapter.callTool("test-tool", mapOf("input" to "test"))
                 println("testCallTool result: $result")
                 assertNotNull(result)
-                assertEquals("test-tool", result.name)
-                assertNull(result.error)
+                assertNotNull(result.content)
+                assertNull(result.isError)
             } finally {
                 adapter.close()
             }

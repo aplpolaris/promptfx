@@ -242,8 +242,8 @@ class McpServerHttpTest {
 
         override suspend fun getTool(name: String): McpToolMetadata? = null
 
-        override suspend fun callTool(name: String, args: Map<String, String>) =
-            McpToolResult(name, null, "Unsupported", null)
+        override suspend fun callTool(name: String, args: Map<String, Any?>) =
+            McpToolResult(content = null, isError = "Unsupported")
 
         override suspend fun listResources(): List<McpResource> = emptyList()
 

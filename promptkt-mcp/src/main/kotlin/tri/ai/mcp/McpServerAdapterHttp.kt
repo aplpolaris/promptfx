@@ -263,7 +263,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                 put("name", JsonPrimitive(name))
                 put("arguments", buildJsonObject {
                     args.forEach { (key, value) ->
-                        put(key, convertToKotlinxJsonObject(objectMapper.convertValue(value)))
+                        put(key, JsonSerializers.toJsonElement(value ?: JsonNull))
                     }
                 })
             }
@@ -272,7 +272,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             info<McpServerAdapterHttp>(result.toString())
             return objectMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue<McpToolResult>(result.toString())
+                .readValue<McpToolResult>(JsonSerializers.serialize(result))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
