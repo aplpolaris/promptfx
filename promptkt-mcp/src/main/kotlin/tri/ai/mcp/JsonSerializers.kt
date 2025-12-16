@@ -28,6 +28,7 @@ import tri.util.json.jsonMapper
  * Handles JSON serialization and deserialization for JSON-RPC messages.
  * Centralizes all JSON processing concerns.
  */
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 object JsonSerializers {
     private val json = Json {
         ignoreUnknownKeys = true
