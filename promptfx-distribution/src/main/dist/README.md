@@ -150,6 +150,145 @@ Additional information on runtime configuration can be found at https://github.c
 
 ---
 
+## 🔌 Plugins
+
+PromptFX supports two types of plugins that can be used to extend its functionality:
+
+### UI View Plugins (NavigableWorkspaceView)
+
+UI view plugins allow you to add custom views and tabs to the PromptFX interface. These plugins:
+- Implement the `NavigableWorkspaceView` interface (typically by extending `NavigableWorkspaceViewImpl`)
+- Can add new functionality to any tab category (API, Tools, Documents, Text, etc.)
+- Are automatically discovered using Java's ServiceLoader mechanism
+- Can be packaged as standalone JAR files
+
+#### Creating a View Plugin
+
+See the [promptfx-sample-plugin](https://github.com/aplpolaris/promptfx/tree/main/promptfx-sample-plugin) for a complete example. The key steps are:
+
+1. **Implement NavigableWorkspaceView**: Create a class that extends `NavigableWorkspaceViewImpl`
+   ```kotlin
+   class MyPlugin : NavigableWorkspaceViewImpl<MyView>(
+       "Category",        // Tab category
+       "View Name",       // View name
+       WorkspaceViewAffordance.INPUT_ONLY,
+       MyView::class
+   )
+   ```
+
+2. **Create the View**: Implement your UI using TornadoFX's `View` class
+   ```kotlin
+   class MyView : View("My Custom View") {
+       override val root = vbox {
+           // UI components
+       }
+   }
+   ```
+
+3. **Register the Plugin**: Create a service registration file containing your plugin's fully qualified class name:
+   ```
+   META-INF/services/tri.util.ui.NavigableWorkspaceView
+   ```
+
+4. **Build and Deploy**: Package as a JAR and place in the `config/plugins/` directory
+
+#### Installing View Plugins
+
+1. Build your plugin JAR file
+2. Copy the JAR to the `config/plugins/` directory (create it if it doesn't exist)
+3. Restart PromptFX - the plugin will be automatically discovered and loaded
+
+### Model Integration Plugins (TextPlugin)
+
+Model integration plugins allow you to add support for additional AI/ML model providers beyond OpenAI and Gemini. These plugins:
+- Implement the `TextPlugin` interface
+- Can provide chat models, embeddings, vision models, image generators, etc.
+- Are loaded from the `config/modules/` directory
+- Allow users to switch between different AI providers
+
+#### Creating a Model Plugin
+
+1. **Implement TextPlugin**: Create a class that implements the `TextPlugin` interface
+2. **Provide Models**: Implement methods to return your model implementations (chat models, embedding models, etc.)
+3. **Register the Plugin**: Create a service registration file containing your plugin's fully qualified class name:
+   ```
+   META-INF/services/tri.ai.core.TextPlugin
+   ```
+4. **Build and Deploy**: Package as a JAR and place in the `config/modules/` directory
+
+See the [promptkt-openai](https://github.com/aplpolaris/promptfx/tree/main/promptkt-openai) and [promptkt-gemini](https://github.com/aplpolaris/promptfx/tree/main/promptkt-gemini) modules for reference implementations.
+
+---
+
+## 🌐 Configuring MCP Servers
+
+The Model Context Protocol (MCP) allows PromptFX to connect to external servers that provide prompts, tools, and resources. The `mcp-servers.yaml` file configures which MCP servers are available.
+
+### File Structure
+
+```yaml
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Embedded server with custom prompts
+  custom-embedded:
+    type: embedded
+    description: "Embedded MCP server with custom prompts"
+    promptLibraryPath: "/path/to/custom/prompts.yaml"
+  
+  # Test server for development
+  test:
+    type: test
+    description: "Test server with sample prompts and tools"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
+  
+  # Remote MCP server via HTTP
+  remote-http:
+    type: http
+    description: "Remote MCP server via HTTP"
+    url: "http://localhost:8080/mcp"
+  
+  # Remote MCP server via stdio (process-based)
+  remote-stdio:
+    type: stdio
+    description: "MCP server via stdio"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    env:
+      NODE_ENV: "production"
+```
+
+### Server Types
+
+- **embedded**: Runs an MCP server in-memory with PromptFX
+  - Optional: `promptLibraryPath` - Path to custom prompt library YAML file
+  
+- **test**: Test server with built-in sample prompts and tools
+  - Optional: `includeDefaultPrompts` - Include default prompt library (true/false)
+  - Optional: `includeDefaultTools` - Include default tool library (true/false)
+  
+- **http**: Connect to a remote MCP server over HTTP
+  - Required: `url` - HTTP endpoint URL
+  
+- **stdio**: Connect to an MCP server via standard input/output
+  - Required: `command` - Command to execute
+  - Optional: `args` - Command-line arguments (array)
+  - Optional: `env` - Environment variables (map)
+
+### Configuration
+
+- **File Location**: Place the file at `config/mcp-servers.yaml` in the working directory, or customize the built-in servers by editing the default configuration in the PromptFX resources
+- **Server Names**: Each server must have a unique name (used as the key in the YAML)
+- **Description**: Human-readable description shown in the UI
+
+For more details on MCP servers, see the [promptkt-mcp module documentation](https://github.com/aplpolaris/promptfx/tree/main/promptkt-mcp).
+
+---
+
 ## 📚 Resources
 
 - **Main Repository**: [PromptFX on GitHub](https://github.com/aplpolaris/promptfx)
