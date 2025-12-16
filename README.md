@@ -126,7 +126,10 @@ See the [promptfx-sample-plugin](https://github.com/aplpolaris/promptfx/tree/mai
    }
    ```
 
-3. **Register the Plugin**: Create a service registration file at `META-INF/services/tri.util.ui.NavigableWorkspaceView` containing your plugin's fully qualified class name
+3. **Register the Plugin**: Create a service registration file containing your plugin's fully qualified class name:
+   ```
+   META-INF/services/tri.util.ui.NavigableWorkspaceView
+   ```
 
 4. **Build and Deploy**: Package as a JAR and place in the `config/plugins/` directory
 
@@ -148,7 +151,10 @@ Model integration plugins allow you to add support for additional AI/ML model pr
 
 1. **Implement TextPlugin**: Create a class that implements the `TextPlugin` interface
 2. **Provide Models**: Implement methods to return your model implementations (chat models, embedding models, etc.)
-3. **Register the Plugin**: Create a service registration file at `META-INF/services/tri.ai.core.TextPlugin`
+3. **Register the Plugin**: Create a service registration file containing your plugin's fully qualified class name:
+   ```
+   META-INF/services/tri.ai.core.TextPlugin
+   ```
 4. **Build and Deploy**: Package as a JAR and place in the `config/modules/` directory
 
 See the [promptkt-openai](https://github.com/aplpolaris/promptfx/tree/main/promptkt-openai) and [promptkt-gemini](https://github.com/aplpolaris/promptfx/tree/main/promptkt-gemini) modules for reference implementations.
