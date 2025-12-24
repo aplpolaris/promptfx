@@ -19,14 +19,12 @@
  */
 package tri.ai.mcp.tool
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.mcp.JsonSerializers.toJsonElement
@@ -54,7 +52,7 @@ data class StubTool(
         jsonMapper.convertValue(inputSchema),
         jsonMapper.convertValue(outputSchema)
     ) {
-        this.hardCodedOutput = (hardCodedOutput as? JsonElement) ?: toJsonElement(hardCodedOutput)
+        this.hardCodedOutput = (hardCodedOutput as? JsonElement) ?: hardCodedOutput.toJsonElement()
     }
 
     private var hardCodedOutput: JsonElement = buildJsonObject { }
@@ -64,7 +62,7 @@ data class StubTool(
     private var hardCodedNode: JsonNode
         get() = hardCodedOutput.toJsonNode()
         set(value) {
-            hardCodedOutput = toJsonElement(value)
+            hardCodedOutput = value.toJsonElement()
         }
 
     override suspend fun execute(input: JsonNode, context: ExecContext) =

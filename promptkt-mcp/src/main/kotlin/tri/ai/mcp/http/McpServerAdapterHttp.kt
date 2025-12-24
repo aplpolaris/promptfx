@@ -1,41 +1,44 @@
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.ai.mcp
+package tri.ai.mcp.http
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.Beta
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.serialization.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import tri.ai.mcp.JsonSerializers
+import tri.ai.mcp.JsonSerializers.toJsonElement
+import tri.ai.mcp.McpGetPromptResponse
+import tri.ai.mcp.McpPrompt
+import tri.ai.mcp.McpReadResourceResponse
+import tri.ai.mcp.McpResource
+import tri.ai.mcp.McpResourceTemplate
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerCapabilities
+import tri.ai.mcp.McpServerException
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
 import tri.util.fine
 import tri.util.info
-import tri.util.json.convertToKotlinxJsonObject
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -44,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 @Beta
 class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
-    
+
     private val httpClient = HttpClient(OkHttp) {
         engine {
             config {
@@ -69,26 +72,26 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                 put("params", params)
             }
         }
-        
+
         val response = httpClient.post("$baseUrl/mcp") {
             contentType(ContentType.Application.Json)
             setBody(JsonSerializers.serialize(request))
         }
-        
+
         if (!response.status.isSuccess()) {
             throw McpServerException("HTTP request failed: ${response.status}")
         }
-        
+
         val responseText = response.bodyAsText()
         val responseJson = Json.parseToJsonElement(responseText).jsonObject
-        
+
         // Check for JSON-RPC error
         if (responseJson.containsKey("error")) {
             val error = responseJson["error"]?.jsonObject
             val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
             throw McpServerException("JSON-RPC error: $message")
         }
-        
+
         return responseJson["result"] ?: JsonNull
     }
 
@@ -102,7 +105,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                     put("version", JsonPrimitive("0.1.0"))
                 })
             })
-            
+
             val capabilitiesJson = result.jsonObject["capabilities"]?.jsonObject ?: return null
             return objectMapper.readValue(JsonSerializers.serialize(capabilitiesJson))
         } catch (e: Exception) {
@@ -110,7 +113,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             return null
         }
     }
-    
+
     override suspend fun listPrompts(): List<McpPrompt> {
         try {
             val result = sendJsonRpcRequest("prompts/list")
@@ -123,7 +126,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             throw McpServerException("Error connecting to MCP server: ${e.message}")
         }
     }
-    
+
     override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
         try {
             val params = buildJsonObject {
@@ -134,12 +137,12 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                     }
                 })
             }
-            
+
             val result = sendJsonRpcRequest("prompts/get", params)
-            
+
             // Convert lowercase roles from MCP spec to capitalized roles for internal enum
             val resultWithCapitalizedRoles = capitalizeRolesInResult(result)
-            
+
             return objectMapper.readValue(JsonSerializers.serialize(resultWithCapitalizedRoles))
         } catch (e: McpServerException) {
             throw e
@@ -147,21 +150,21 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             throw McpServerException("Error getting prompt from MCP server: ${e.message}")
         }
     }
-    
+
     /**
      * Convert lowercase roles from MCP spec ("user", "assistant") to capitalized form ("User", "Assistant")
      * and convert content from single object to array format needed by internal MChatRole enum
      */
     private fun capitalizeRolesInResult(result: JsonElement): JsonElement {
         if (result !is JsonObject) return result
-        
+
         val messages = result["messages"]?.jsonArray ?: return result
         val updatedMessages = buildJsonArray {
             for (message in messages) {
                 if (message is JsonObject) {
                     val role = message["role"]?.jsonPrimitive?.content
                     val content = message["content"]
-                    
+
                     addJsonObject {
                         message.forEach { (key, value) ->
                             when (key) {
@@ -169,6 +172,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                                     // Capitalize first letter for internal enum
                                     put(key, JsonPrimitive(role?.replaceFirstChar { it.uppercase() } ?: "User"))
                                 }
+
                                 "content" -> {
                                     // Convert single content object to array if needed
                                     if (content is JsonObject) {
@@ -181,6 +185,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                                         put(key, value)
                                     }
                                 }
+
                                 else -> put(key, value)
                             }
                         }
@@ -190,7 +195,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                 }
             }
         }
-        
+
         return buildJsonObject {
             result.forEach { (key, value) ->
                 if (key == "messages") {
@@ -201,7 +206,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             }
         }
     }
-    
+
     /**
      * Convert MCP content format to internal format
      */
@@ -212,7 +217,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                 put("text", JsonPrimitive(content.toString()))
             }
         }
-        
+
         val type = content["type"]?.jsonPrimitive?.content
         return buildJsonObject {
             when (type) {
@@ -220,16 +225,19 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                     put("partType", JsonPrimitive("TEXT"))
                     content["text"]?.let { put("text", it) }
                 }
+
                 "image" -> {
                     put("partType", JsonPrimitive("IMAGE"))
                     content["data"]?.let { put("inlineData", it) }
                     content["mimeType"]?.let { put("mimeType", it) }
                 }
+
                 "audio" -> {
                     put("partType", JsonPrimitive("AUDIO"))
                     content["data"]?.let { put("inlineData", it) }
                     content["mimeType"]?.let { put("mimeType", it) }
                 }
+
                 else -> {
                     put("partType", JsonPrimitive("TEXT"))
                     put("text", JsonPrimitive(content.toString()))
@@ -263,7 +271,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
                 put("name", JsonPrimitive(name))
                 put("arguments", buildJsonObject {
                     args.forEach { (key, value) ->
-                        put(key, convertToKotlinxJsonObject(objectMapper.convertValue(value)))
+                        put(key, (value ?: JsonNull).toJsonElement())
                     }
                 })
             }
@@ -272,7 +280,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             info<McpServerAdapterHttp>(result.toString())
             return objectMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue<McpToolResult>(result.toString())
+                .readValue<McpToolResult>(JsonSerializers.serialize(result))
         } catch (e: McpServerException) {
             throw e
         } catch (e: Exception) {
@@ -285,7 +293,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val result = sendJsonRpcRequest("resources/list")
             val resourcesJson = result.jsonObject["resources"]?.jsonArray
                 ?: throw McpServerException("No resources in response")
-            
+
             return objectMapper.readValue(JsonSerializers.serialize(resourcesJson))
         } catch (e: McpServerException) {
             throw e
@@ -299,7 +307,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val result = sendJsonRpcRequest("resources/templates/list")
             val templatesJson = result.jsonObject["resourceTemplates"]?.jsonArray
                 ?: throw McpServerException("No resource templates in response")
-            
+
             return objectMapper.readValue(JsonSerializers.serialize(templatesJson))
         } catch (e: McpServerException) {
             throw e
@@ -313,9 +321,9 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val params = buildJsonObject {
                 put("uri", JsonPrimitive(uri))
             }
-            
+
             val result = sendJsonRpcRequest("resources/read", params)
-            
+
             return objectMapper.readValue(JsonSerializers.serialize(result))
         } catch (e: McpServerException) {
             throw e

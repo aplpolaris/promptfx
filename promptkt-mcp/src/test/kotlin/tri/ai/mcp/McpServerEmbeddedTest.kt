@@ -38,7 +38,7 @@ class McpServerEmbeddedTest {
     @Test
     fun testListPrompts() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
             val prompts = server.listPrompts()
             println(prompts)
             assertTrue(prompts.isNotEmpty(), "Should have at least one prompt")
@@ -49,7 +49,7 @@ class McpServerEmbeddedTest {
     @Test
     fun testListResources() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
             val resources = server.listResources()
             println(resources)
             assertTrue(resources.isEmpty(), "Default embedded server should have no resources")
@@ -60,7 +60,7 @@ class McpServerEmbeddedTest {
     @Test
     fun testListResourceTemplates() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
             val templates = server.listResourceTemplates()
             println(templates)
             assertTrue(templates.isEmpty(), "Default embedded server should have no resource templates")
@@ -71,7 +71,7 @@ class McpServerEmbeddedTest {
     @Test
     fun testReadResource_notFound() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
             try {
                 server.readResource("file:///nonexistent")
                 Assertions.fail("Expected McpServerException for nonexistent resource")
@@ -145,7 +145,7 @@ class McpServerEmbeddedTest {
     @Test
     fun testCapabilities() {
         runTest {
-            val adapter = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val adapter = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
 
             val capabilities = adapter.getCapabilities()
             println(capabilities)

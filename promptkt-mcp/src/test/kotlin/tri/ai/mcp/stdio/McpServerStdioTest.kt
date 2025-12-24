@@ -17,12 +17,13 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.stdio
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import tri.ai.mcp.McpServerEmbedded
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.prompt.PromptLibrary
 import java.nio.file.Files

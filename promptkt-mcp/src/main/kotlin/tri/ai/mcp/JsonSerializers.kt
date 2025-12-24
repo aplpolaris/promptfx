@@ -45,10 +45,6 @@ object JsonSerializers {
         json.encodeToString(element)
 
     /** Convert any DTO to JsonElement via Jackson -> string -> kotlinx JsonElement */
-    fun toJsonElement(obj: Any): JsonElement =
-        json.parseToJsonElement(jsonMapper.writeValueAsString(obj))
-
-    /** Convert any DTO to JsonElement via Jackson -> string -> kotlinx JsonElement */
     fun toJsonNode(obj: Any): JsonNode =
         jsonMapper.readTree(jsonMapper.writeValueAsString(obj))
 
@@ -56,7 +52,11 @@ object JsonSerializers {
     fun toStringMap(jsonObject: JsonObject): Map<String, String> =
         jsonObject.entries.associate { (k, v) -> k to v.jsonPrimitive.content }
 
+    /** Convert a general object to a kotlinx JsonElement */
+    fun Any.toJsonElement(): JsonElement =
+        json.parseToJsonElement(jsonMapper.writeValueAsString(this))
+
     /** Convert a kotlinx JsonElement to Jackson JsonNode */
-    fun JsonElement.toJsonNode() =
+    fun JsonElement.toJsonNode(): JsonNode =
         jsonMapper.readTree(json.encodeToString(this))
 }

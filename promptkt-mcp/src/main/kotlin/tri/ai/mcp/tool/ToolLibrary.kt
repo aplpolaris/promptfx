@@ -19,14 +19,11 @@
  */
 package tri.ai.mcp.tool
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.impl.WebSearchExecutable
-import tri.ai.mcp.JsonSerializers.toJsonNode
 import tri.util.json.jsonMapper
 import kotlin.String
 
@@ -50,7 +47,7 @@ class StarterToolLibrary: ToolLibrary {
         val inputNode = jsonMapper.valueToTree<JsonNode>(args)
         return try {
             val outputNode = tool.execute(inputNode, ExecContext())
-            McpToolResult(outputNode)
+            McpToolResult.createStructured(outputNode)
         } catch (e: Exception) {
             McpToolResult.error("Error executing tool: ${e.message}")
         }
@@ -69,38 +66,3 @@ object FakeTools {
     }
 }
 
-/** Metadata for a tool/function, following the MCP spec. */
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class McpToolMetadata(
-    val name: String,
-    val title: String? = null,
-    val description: String,
-    val inputSchema: JsonNode?, // Typically a JSON Schema object, or null for no params
-    val outputSchema: JsonNode?,
-    val annotations: Map<String, JsonNode>? = null // Optional: extra metadata
-)
-
-val McpToolMetadata.version: String?
-    get() = this.annotations?.get("version")?.asText()
-
-fun Executable.metadata() = McpToolMetadata(
-    name = this.name,
-    title = this.name,
-    description = this.description,
-    inputSchema = this.inputSchema?.let { toJsonNode(it) },
-    outputSchema = this.outputSchema?.let { toJsonNode(it) },
-    annotations = if (version == "none") null else mapOf("version" to TextNode(version))
-)
-
-/** Result of a tool/function call, following the MCP spec. */
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class McpToolResult(
-    val content: JsonNode?, // The primary result (could be String, Map, etc.)
-    val structuredContent: JsonNode? = null, // Optional: structured result
-    val isError: String? = null, // Non-null if tool failed
-    val metadata: JsonNode? = null // Optional: extra info (timings, logs, etc.)
-) {
-    companion object {
-        fun error(error: String) = McpToolResult(content = null, isError = error)
-    }
-}

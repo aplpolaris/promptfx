@@ -55,5 +55,5 @@ fun String.tryJson(): JsonNode? = try {
 /** Convert a Jackson [JsonNode] to a kotlinx.serialization [JsonObject]. */
 fun convertToKotlinxJsonObject(input: JsonNode): JsonObject {
     val jsonString = jsonMapper.writeValueAsString(input)
-    return Json.Default.parseToJsonElement(jsonString) as JsonObject
+    return Json.parseToJsonElement(jsonString) as JsonObject
 }

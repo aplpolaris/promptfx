@@ -19,19 +19,15 @@
  */
 package tri.promptfx.mcp
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.core.tool.ExecContext
-import tri.ai.core.tool.Executable
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.version
 import tri.ai.pips.AiPipelineResult

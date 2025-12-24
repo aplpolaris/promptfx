@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.registry
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -25,6 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import tri.ai.mcp.McpResource
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerEmbedded
+import tri.ai.mcp.http.McpServerAdapterHttp
+import tri.ai.mcp.stdio.McpServerAdapterStdio
+import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.mcp.tool.ToolLibrary
@@ -38,7 +44,7 @@ import java.io.File
 class McpServerRegistry(
     private val servers: Map<String, McpServerConfig>
 ) {
-    
+
     /**
      * Get a server adapter by name/ID.
      * @param name The name/ID of the server
@@ -48,17 +54,17 @@ class McpServerRegistry(
         val config = servers[name] ?: return null
         return createAdapter(config)
     }
-    
+
     /**
      * List all available server names/IDs.
      */
     fun listServerNames(): List<String> = servers.keys.toList()
-    
+
     /**
      * Get all server configurations.
      */
     fun getConfigs(): Map<String, McpServerConfig> = servers
-    
+
     private fun createAdapter(config: McpServerConfig): McpServerAdapter {
         return when (config) {
             is EmbeddedServerConfig -> createEmbeddedServer(config)
@@ -67,7 +73,7 @@ class McpServerRegistry(
             is TestServerConfig -> createTestServer(config)
         }
     }
-    
+
     private fun createEmbeddedServer(config: EmbeddedServerConfig): McpServerAdapter {
         val prompts = if (config.promptLibraryPath != null) {
             PromptLibrary.loadFromPath(config.promptLibraryPath)
@@ -76,11 +82,11 @@ class McpServerRegistry(
         }
         return McpServerEmbedded(prompts, StarterToolLibrary())
     }
-    
+
     private fun createStdioServerAdapter(config: StdioServerConfig): McpServerAdapter {
         return McpServerAdapterStdio(config.command, config.args, config.env)
     }
-    
+
     private fun createHttpServerAdapter(config: HttpServerConfig) =
         McpServerAdapterHttp(config.url)
 
@@ -96,18 +102,18 @@ class McpServerRegistry(
         } else {
             PromptLibrary()
         }
-        
+
         val tools: ToolLibrary = if (config.includeDefaultTools) {
             StarterToolLibrary()
         } else {
             object : ToolLibrary {
-                override suspend fun listTools() = emptyList<tri.ai.mcp.tool.McpToolMetadata>()
+                override suspend fun listTools() = emptyList<McpToolMetadata>()
                 override suspend fun getTool(name: String) = null
                 override suspend fun callTool(name: String, args: Map<String, Any?>) =
                     McpToolResult.error("Tool library is disabled")
             }
         }
-        
+
         val resources = if (config.includeDefaultResources) {
             listOf(
                 McpResource(
@@ -132,17 +138,17 @@ class McpServerRegistry(
         } else {
             emptyList()
         }
-        
+
         return McpServerEmbedded(prompts, tools, resources)
     }
-    
+
     companion object {
         private val jsonMapper = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
-        
+
         private val yamlMapper = ObjectMapper(YAMLFactory())
             .registerModule(KotlinModule.Builder().build())
-        
+
         /**
          * Load registry from a JSON file.
          */
@@ -150,7 +156,7 @@ class McpServerRegistry(
             val config = jsonMapper.readValue<McpServerRegistryConfig>(file)
             return McpServerRegistry(config.servers)
         }
-        
+
         /**
          * Load registry from a YAML file.
          */
@@ -158,7 +164,7 @@ class McpServerRegistry(
             val config = yamlMapper.readValue<McpServerRegistryConfig>(file)
             return McpServerRegistry(config.servers)
         }
-        
+
         /**
          * Load registry from a file (auto-detect JSON or YAML based on extension).
          */
@@ -170,7 +176,7 @@ class McpServerRegistry(
                 else -> throw IllegalArgumentException("Unsupported file format: $path. Use .json, .yaml, or .yml")
             }
         }
-        
+
         /**
          * Create a default registry with built-in server configurations.
          */

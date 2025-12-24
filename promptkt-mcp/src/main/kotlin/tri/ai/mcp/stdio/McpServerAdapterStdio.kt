@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.stdio
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -25,6 +25,14 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.Beta
 import kotlinx.serialization.json.*
+import tri.ai.mcp.McpGetPromptResponse
+import tri.ai.mcp.McpPrompt
+import tri.ai.mcp.McpReadResourceResponse
+import tri.ai.mcp.McpResource
+import tri.ai.mcp.McpResourceTemplate
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerCapabilities
+import tri.ai.mcp.McpServerException
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
 import tri.util.fine
