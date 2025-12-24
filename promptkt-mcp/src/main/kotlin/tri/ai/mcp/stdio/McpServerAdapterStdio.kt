@@ -17,15 +17,27 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.stdio
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.Beta
 import kotlinx.serialization.json.*
-import tri.ai.core.tool.Executable
+import tri.ai.mcp.McpGetPromptResponse
+import tri.ai.mcp.McpPrompt
+import tri.ai.mcp.McpReadResourceResponse
+import tri.ai.mcp.McpResource
+import tri.ai.mcp.McpResourceTemplate
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerCapabilities
+import tri.ai.mcp.McpServerException
+import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResult
+import tri.util.fine
+import tri.util.info
+import tri.util.json.jsonMapper
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -46,7 +58,9 @@ class McpServerAdapterStdio(
     private var writer: OutputStreamWriter? = null
     private var reader: BufferedReader? = null
     private val requestId = AtomicInteger(0)
-    private val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+    private val objectMapper = ObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .registerModule(KotlinModule.Builder().build())
     
     init {
         startProcess()
@@ -124,25 +138,30 @@ class McpServerAdapterStdio(
         }
     }
 
-    override suspend fun listTools(): List<Executable> {
+    override suspend fun listTools(): List<McpToolMetadata> {
         try {
             val result = sendRequest("tools/list")
-            val wrapper = objectMapper.readValue<Map<String, List<Executable>>>(result.toString())
-            return wrapper["tools"] ?: emptyList()
+            fine<McpServerAdapterStdio>(result.toString(), null)
+            val toolsJson = result.jsonObject["tools"]?.jsonArray
+                ?: throw McpServerException("No tools in response")
+            return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
         } catch (e: Exception) {
             throw McpServerException("Error listing tools from stdio server: ${e.message}", e)
         }
     }
 
-    override suspend fun getTool(name: String): Executable? {
+    override suspend fun getTool(name: String): McpToolMetadata? {
         val tools = listTools()
         return tools.find { it.name == name }
     }
 
-    override suspend fun callTool(name: String, args: Map<String, String>): McpToolResult {
+    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResult {
         try {
             val result = sendRequest("tools/call", mapOf("name" to name, "arguments" to args))
-            return objectMapper.readValue<McpToolResult>(result.toString())
+            info<McpServerAdapterStdio>(result.toString())
+            return jsonMapper
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .readValue<McpToolResult>(result.toString())
         } catch (e: Exception) {
             throw McpServerException("Error calling tool on stdio server: ${e.message}", e)
         }

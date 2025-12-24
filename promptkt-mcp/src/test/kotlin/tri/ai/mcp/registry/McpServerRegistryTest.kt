@@ -1,28 +1,11 @@
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.ai.mcp
+package tri.ai.mcp.registry
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import tri.ai.mcp.McpServerEmbedded
+import tri.ai.mcp.http.McpServerAdapterHttp
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -34,7 +17,7 @@ class McpServerRegistryTest {
     @Test
     fun testDefaultRegistry() {
         val registry = McpServerRegistry.default()
-        
+
         val serverNames = registry.listServerNames()
         assertTrue(serverNames.contains("embedded"))
         assertTrue(serverNames.contains("test"))
@@ -45,14 +28,14 @@ class McpServerRegistryTest {
         runTest {
             val registry = McpServerRegistry.default()
             val server = registry.getServer("embedded")
-            
+
             assertNotNull(server)
             assertTrue(server is McpServerEmbedded)
-            
+
             // Verify it works
             val prompts = server!!.listPrompts()
             assertNotNull(prompts)
-            
+
             server.close()
         }
     }
@@ -62,19 +45,19 @@ class McpServerRegistryTest {
         runTest {
             val registry = McpServerRegistry.default()
             val server = registry.getServer("test")
-            
+
             assertNotNull(server)
             assertTrue(server is McpServerEmbedded)
-            
+
             // Verify it has prompts and tools
             val prompts = server!!.listPrompts()
             assertNotNull(prompts)
             assertTrue(prompts.isNotEmpty())
-            
+
             val tools = server.listTools()
             assertNotNull(tools)
             assertTrue(tools.isNotEmpty())
-            
+
             server.close()
         }
     }
@@ -83,7 +66,7 @@ class McpServerRegistryTest {
     fun testGetNonExistentServer() {
         val registry = McpServerRegistry.default()
         val server = registry.getServer("nonexistent")
-        
+
         assertNull(server)
     }
 
@@ -107,7 +90,7 @@ class McpServerRegistryTest {
         )
 
         val registry = McpServerRegistry.loadFromYaml(yamlFile.toFile())
-        
+
         val serverNames = registry.listServerNames()
         assertEquals(3, serverNames.size)
         assertTrue(serverNames.contains("test-embedded"))
@@ -137,7 +120,7 @@ class McpServerRegistryTest {
         )
 
         val registry = McpServerRegistry.loadFromJson(jsonFile.toFile())
-        
+
         val serverNames = registry.listServerNames()
         assertEquals(2, serverNames.size)
         assertTrue(serverNames.contains("test-embedded"))
@@ -157,7 +140,7 @@ class McpServerRegistryTest {
         )
 
         val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
-        
+
         val serverNames = registry.listServerNames()
         assertEquals(1, serverNames.size)
         assertTrue(serverNames.contains("test-server"))
@@ -180,7 +163,7 @@ class McpServerRegistryTest {
         )
 
         val registry = McpServerRegistry.loadFromFile(jsonFile.toString())
-        
+
         val serverNames = registry.listServerNames()
         assertEquals(1, serverNames.size)
         assertTrue(serverNames.contains("test-server"))
@@ -200,14 +183,14 @@ class McpServerRegistryTest {
     fun testGetConfigs() {
         val registry = McpServerRegistry.default()
         val configs = registry.getConfigs()
-        
+
         assertNotNull(configs)
         assertTrue(configs.containsKey("embedded"))
         assertTrue(configs.containsKey("test"))
-        
+
         val embeddedConfig = configs["embedded"]
         assertTrue(embeddedConfig is EmbeddedServerConfig)
-        
+
         val testConfig = configs["test"]
         assertTrue(testConfig is TestServerConfig)
     }
@@ -228,10 +211,10 @@ class McpServerRegistryTest {
 
             val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
             val server = registry.getServer("remote")
-            
+
             assertNotNull(server)
             assertTrue(server is McpServerAdapterHttp)
-            
+
             server!!.close()
         }
     }
@@ -267,13 +250,13 @@ class McpServerRegistryTest {
         runTest {
             val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
             val server = registry.getServer("custom")
-            
+
             assertNotNull(server)
             assertTrue(server is McpServerEmbedded)
-            
+
             val prompts = server!!.listPrompts()
             assertTrue(prompts.any { it.name == "test/custom-prompt" })
-            
+
             server.close()
         }
     }
@@ -296,13 +279,13 @@ class McpServerRegistryTest {
 
             val registry1 = McpServerRegistry.loadFromFile(yamlFile1.toString())
             val server1 = registry1.getServer("test-prompts-only")!!
-            
+
             val prompts1 = server1.listPrompts()
             val tools1 = server1.listTools()
-            
+
             assertTrue(prompts1.isNotEmpty(), "Should have prompts")
             assertTrue(tools1.isEmpty(), "Should not have tools")
-            
+
             server1.close()
 
             // Test with tools only
@@ -320,13 +303,13 @@ class McpServerRegistryTest {
 
             val registry2 = McpServerRegistry.loadFromFile(yamlFile2.toString())
             val server2 = registry2.getServer("test-tools-only")!!
-            
+
             val prompts2 = server2.listPrompts()
             val tools2 = server2.listTools()
-            
+
             assertTrue(prompts2.isEmpty(), "Should not have prompts")
             assertTrue(tools2.isNotEmpty(), "Should have tools")
-            
+
             server2.close()
 
             // Test with neither
@@ -344,13 +327,13 @@ class McpServerRegistryTest {
 
             val registry3 = McpServerRegistry.loadFromFile(yamlFile3.toString())
             val server3 = registry3.getServer("test-empty")!!
-            
+
             val prompts3 = server3.listPrompts()
             val tools3 = server3.listTools()
-            
+
             assertTrue(prompts3.isEmpty(), "Should not have prompts")
             assertTrue(tools3.isEmpty(), "Should not have tools")
-            
+
             server3.close()
         }
     }

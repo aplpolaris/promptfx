@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.stdio
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,6 +25,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.mcp.McpServerEmbedded
+import tri.ai.mcp.McpServerException
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary

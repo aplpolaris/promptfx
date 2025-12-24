@@ -38,10 +38,7 @@ import tri.ai.gemini.GeminiAiPlugin
 import tri.ai.gemini.GeminiSettings
 import tri.ai.geminisdk.GeminiSdkPlugin
 import tri.ai.geminisdk.GeminiSdkSettings
-import tri.ai.mcp.EmbeddedServerConfig
-import tri.ai.mcp.HttpServerConfig
-import tri.ai.mcp.StdioServerConfig
-import tri.ai.mcp.TestServerConfig
+import tri.ai.mcp.registry.*
 import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.api.OpenAiApiPlugin
@@ -165,7 +162,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label("Policy Type: ${PromptFxModels.policy.javaClass.simpleName}")
                 label("Show Banner: ${PromptFxModels.policy.isShowBanner}")
                 label("Default Completion Model: ${PromptFxModels.policy.textCompletionModelDefault().modelId}")
-                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault()!!.modelId}")
+                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault().modelId}")
                 label("Default Embedding Model: ${PromptFxModels.policy.embeddingModelDefault().modelId}")
             }
 

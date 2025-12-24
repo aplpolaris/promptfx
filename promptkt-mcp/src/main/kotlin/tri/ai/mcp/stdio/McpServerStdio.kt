@@ -17,8 +17,10 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.stdio
 
+import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerHandler
 import java.io.InputStream
 import java.io.PrintStream
 

@@ -19,6 +19,7 @@
  */
 package tri.ai.mcp
 
+import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import tri.util.json.jsonMapper
@@ -44,14 +45,18 @@ object JsonSerializers {
         json.encodeToString(element)
 
     /** Convert any DTO to JsonElement via Jackson -> string -> kotlinx JsonElement */
-    fun toJsonElement(obj: Any): JsonElement =
-        json.parseToJsonElement(jsonMapper.writeValueAsString(obj))
+    fun toJsonNode(obj: Any): JsonNode =
+        jsonMapper.readTree(jsonMapper.writeValueAsString(obj))
 
     /** Convert a JsonObject like {"k":"v"} into Map<String,String> */
     fun toStringMap(jsonObject: JsonObject): Map<String, String> =
         jsonObject.entries.associate { (k, v) -> k to v.jsonPrimitive.content }
 
+    /** Convert a general object to a kotlinx JsonElement */
+    fun Any.toJsonElement(): JsonElement =
+        json.parseToJsonElement(jsonMapper.writeValueAsString(this))
+
     /** Convert a kotlinx JsonElement to Jackson JsonNode */
-    fun JsonElement.toJsonNode() =
+    fun JsonElement.toJsonNode(): JsonNode =
         jsonMapper.readTree(json.encodeToString(this))
 }

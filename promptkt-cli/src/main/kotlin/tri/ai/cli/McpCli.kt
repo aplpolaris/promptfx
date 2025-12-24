@@ -29,24 +29,20 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import tri.ai.core.TextPlugin
-import tri.ai.mcp.McpServerEmbedded
 import tri.ai.mcp.McpServerAdapter
+import tri.ai.mcp.McpServerEmbedded
 import tri.ai.mcp.McpServerException
-import tri.ai.mcp.McpServerRegistry
-import tri.ai.mcp.McpServerAdapterHttp
-import tri.ai.mcp.McpServerStdio
+import tri.ai.mcp.http.McpServerAdapterHttp
+import tri.ai.mcp.registry.McpServerRegistry
+import tri.ai.mcp.stdio.McpServerStdio
+import tri.ai.mcp.tool.McpContent
 import tri.ai.mcp.tool.StarterToolLibrary
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
-import tri.util.json.jsonMapper
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) =
@@ -399,43 +395,41 @@ class McpCli : CliktCommand(
                 val result = adapter.callTool(toolName, args)
                 if (this@McpCli.verbose) {
                     echo("=".repeat(50))
-                    echo("Response from tool ${result.name}:")
+                    echo("Response from tool ${toolName}:")
                 }
-                if (result.error != null) {
-                    throw McpServerException("Tool execution error: ${result.error}")
+                if (result.isError == true) {
+                    throw McpServerException("Tool execution error: ${result.errorMessage()}")
                 }
                 if (this@McpCli.verbose && result.metadata != null) {
                     echo("Response Metadata: ${result.metadata}")
                 }
 
-                if (result.output == null) {
+                if (result.content.isEmpty()) {
                     echo("No output received from the tool.")
                 } else {
                     if (this@McpCli.verbose)
                         echo("Tool Output:")
-                    val output = result.output
-                    if ((output as? JsonObject)?.get("result") != null) {
-                        val text = output["result"]!!
-                        var printed = false
-                        if (text is JsonPrimitive) {
-                            // try to parse JSON and pretty print top-level key-value pairs
-                            try {
-                                val parsed = jsonMapper.readTree(text.content)
-                                if (parsed is ObjectNode) {
-                                    parsed.properties().forEach { (k, v) ->
-                                        echo("  - $k: $v")
-                                    }
-                                }
-                                printed = true
-                            } catch (e: Exception) {
-                                // Ignore parse errors, just print raw text
+                    val output = result.content
+                    output.forEach { content ->
+                        when (content) {
+                            is McpContent.Text -> echo(content.text)
+                            is McpContent.Image -> echo("Image (MIME: ${content.mimeType}, base64 length: ${content.data.length})")
+                            is McpContent.Audio -> echo("Audio (MIME: ${content.mimeType}, base64 length: ${content.data.length})")
+                            is McpContent.ResourceLink -> {
+                                echo("Resource Link:")
+                                echo("  URI: ${content.uri}")
+                                echo("  Name: ${content.name}")
+                                if (content.title != null) echo("  Title: ${content.title}")
+                                if (content.description != null) echo("  Description: ${content.description}")
+                                if (content.mimeType != null) echo("  MIME Type: ${content.mimeType}")
+                            }
+                            is McpContent.Resource -> {
+                                echo("Embedded Resource:")
+                                echo("  URI: ${content.uri}")
+                                echo("  Text: ${content.text}")
+                                if (content.mimeType != null) echo("  MIME Type: ${content.mimeType}")
                             }
                         }
-                        if (!printed)
-                            echo(Json { prettyPrint = true }.encodeToString(text))
-                    } else {
-                        // Print the whole output as pretty JSON
-                        echo(Json { prettyPrint = true }.encodeToString(output))
                     }
                 }
             } catch (e: McpServerException) {

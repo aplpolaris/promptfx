@@ -23,8 +23,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import tri.ai.mcp.McpServerRegistry
-import java.io.File
+import tri.ai.mcp.registry.McpServerRegistry
 import java.nio.file.Path
 
 class PromptFxMcpControllerTest {

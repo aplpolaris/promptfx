@@ -1,37 +1,27 @@
-/*-
- * #%L
- * tri.promptfx:promptkt
- * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-package tri.ai.mcp
+package tri.ai.mcp.http
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.request.receiveText
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import tri.ai.mcp.JsonRpcHandler
+import tri.ai.mcp.JsonSerializers
 
 /**
  * Handles JSON-RPC 2.0 message routing over HTTP.
@@ -49,7 +39,7 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                     handleJsonRpcRequest(call)
                 }
                 get("/health") {
-                    call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.OK)
+                    call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.Companion.OK)
                 }
             }
         }.start(wait = false)
@@ -79,12 +69,12 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                 } else if (method == "notifications/close") {
                     // Special case: close notification should exit
                     // Respond first, then close to avoid race condition
-                    call.respond(HttpStatusCode.NoContent)
-                    kotlinx.coroutines.delay(100) // Allow response to be sent
+                    call.respond(HttpStatusCode.Companion.NoContent)
+                    delay(100) // Allow response to be sent
                     close()
                 } else if (method?.startsWith("notifications/") == true) {
                     // Other notifications have no response
-                    call.respond(HttpStatusCode.NoContent)
+                    call.respond(HttpStatusCode.Companion.NoContent)
                 } else {
                     call.respondJsonRpcError(id, -32601, "Method not found: $method")
                 }
@@ -102,7 +92,7 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
             if (id != null) put("id", id)
             put("result", result)
         }
-        respondText(JsonSerializers.serialize(resp), ContentType.Application.Json, HttpStatusCode.OK)
+        respondText(JsonSerializers.serialize(resp), ContentType.Application.Json, HttpStatusCode.Companion.OK)
     }
 
     private suspend fun ApplicationCall.respondJsonRpcError(id: JsonElement?, code: Int, message: String) {
@@ -114,7 +104,7 @@ class HttpJsonRpcMessageRouter(private val handler: JsonRpcHandler) {
                 put("message", JsonPrimitive(message))
             })
         }
-        respondText(JsonSerializers.serialize(err), ContentType.Application.Json, HttpStatusCode.OK)
+        respondText(JsonSerializers.serialize(err), ContentType.Application.Json, HttpStatusCode.Companion.OK)
     }
 
     fun close() {
