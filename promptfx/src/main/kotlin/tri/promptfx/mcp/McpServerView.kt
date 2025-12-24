@@ -27,7 +27,11 @@ import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.mcp.*
+import tri.ai.mcp.registry.EmbeddedServerConfig
+import tri.ai.mcp.registry.HttpServerConfig
+import tri.ai.mcp.registry.McpServerConfig
+import tri.ai.mcp.registry.StdioServerConfig
+import tri.ai.mcp.registry.TestServerConfig
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
@@ -176,7 +180,6 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                         is HttpServerConfig -> "HTTP"
                                         is TestServerConfig -> "Test"
                                         null -> ""
-                                        else -> it::class.simpleName ?: "Unknown"
                                     }
                                 })
                             }
@@ -274,7 +277,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                     // Type-specific configuration details
                     fieldset {
-                        textProperty().bind(selectedServerConfig.stringBinding { "Details" })
+                        textProperty.bind(selectedServerConfig.stringBinding { "Details" })
 
                         // Embedded Server Config
                         field("Prompt Library Path") {
@@ -311,7 +314,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                         field("Environment") {
                             visibleWhen(selectedServerConfig.booleanBinding {
-                                it is StdioServerConfig && (it as StdioServerConfig).env.isNotEmpty()
+                                it is StdioServerConfig && it.env.isNotEmpty()
                             })
                             managedWhen(visibleProperty())
                             label {

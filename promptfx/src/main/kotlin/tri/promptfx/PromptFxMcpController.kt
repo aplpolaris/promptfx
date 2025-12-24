@@ -20,7 +20,7 @@
 package tri.promptfx
 
 import tornadofx.Controller
-import tri.ai.mcp.McpServerRegistry
+import tri.ai.mcp.registry.McpServerRegistry
 import java.io.File
 
 /** Controller for MCP servers configuration in [PromptFx]. */

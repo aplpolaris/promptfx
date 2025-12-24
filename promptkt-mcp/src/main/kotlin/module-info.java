@@ -39,5 +39,6 @@ module tri.promptkt.mcp {
     exports tri.ai.mcp.tool;
 
     opens tri.ai.mcp to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp.registry to com.fasterxml.jackson.databind;
     opens tri.ai.mcp.tool to com.fasterxml.jackson.databind, kotlin.reflect;
 }
