@@ -78,7 +78,8 @@ class McpServerViewTest {
             hasResources = false,
             promptsCount = 5,
             toolsCount = 3,
-            resourcesCount = 0
+            resourcesCount = 0,
+            resourceTemplatesCount = 0
         )
         
         assertTrue(info1.hasPrompts)
@@ -86,6 +87,7 @@ class McpServerViewTest {
         assertFalse(info1.hasResources)
         assertEquals(5, info1.promptsCount)
         assertEquals(3, info1.toolsCount)
+        assertEquals(0, info1.resourceTemplatesCount)
         assertNull(info1.error)
         
         // Test error state

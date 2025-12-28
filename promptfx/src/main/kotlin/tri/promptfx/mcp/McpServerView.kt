@@ -48,6 +48,7 @@ data class ProviderCapabilityInfo(
     val promptsCount: Int = 0,
     val toolsCount: Int = 0,
     val resourcesCount: Int = 0,
+    val resourceTemplatesCount: Int = 0,
     val error: String? = null
 )
 
@@ -253,7 +254,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                     textProperty().bind(capInfo.stringBinding {
                                         when {
                                             it?.error != null -> "Error"
-                                            it?.hasResources == true -> "Supported (${it.resourcesCount} resources)"
+                                            it?.hasResources == true -> "Supported (${it.resourcesCount} resources, ${it.resourceTemplatesCount} templates)"
                                             else -> "Not supported"
                                         }
                                     })
@@ -406,8 +407,25 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         0
                     }
                     
-                    // Resources API is not yet implemented in the interface
-                    val resourcesCount = 0
+                    val resourcesCount = if (capabilities?.resources != null) {
+                        try {
+                            provider.listResources().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
+                        0
+                    }
+                    
+                    val resourceTemplatesCount = if (capabilities?.resources != null) {
+                        try {
+                            provider.listResourceTemplates().size
+                        } catch (e: Exception) {
+                            0
+                        }
+                    } else {
+                        0
+                    }
                     
                     ProviderCapabilityInfo(
                         hasPrompts = capabilities?.prompts != null,
@@ -415,7 +433,8 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         hasResources = capabilities?.resources != null,
                         promptsCount = promptsCount,
                         toolsCount = toolsCount,
-                        resourcesCount = resourcesCount
+                        resourcesCount = resourcesCount,
+                        resourceTemplatesCount = resourceTemplatesCount
                     )
                 } catch (e: Exception) {
                     ProviderCapabilityInfo(error = "Error: ${e.message}")
