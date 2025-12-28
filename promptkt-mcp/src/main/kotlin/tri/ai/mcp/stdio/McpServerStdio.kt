@@ -85,10 +85,10 @@ class McpServerStdioRouter(private val handler: JsonRpcHandler) {
                 val result = handler.handleRequest(method, params)
                 if (result != null) {
                     writeResult(out, id, result)
-                } else if (method == "notifications/close") {
+                } else if (method == McpJsonRpcHandler.METHOD_NOTIFICATIONS_CLOSE) {
                     // Special case: close notification should exit
                     return
-                } else if (method?.startsWith("notifications/") == true) {
+                } else if (method?.startsWith(McpJsonRpcHandler.METHOD_NOTIFICATIONS_PREFIX) == true) {
                     // Other notifications have no response
                 } else {
                     writeError(out, id, -32601, "Method not found: $method")

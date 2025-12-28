@@ -108,13 +108,13 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
                 val result = handler.handleRequest(method, params)
                 if (result != null) {
                     call.respondJsonRpcResult(id, result)
-                } else if (method == "notifications/close") {
+                } else if (method == McpJsonRpcHandler.METHOD_NOTIFICATIONS_CLOSE) {
                     // Special case: close notification should exit
                     // Respond first, then close to avoid race condition
                     call.respond(HttpStatusCode.Companion.NoContent)
                     delay(100) // Allow response to be sent
                     close()
-                } else if (method?.startsWith("notifications/") == true) {
+                } else if (method?.startsWith(McpJsonRpcHandler.METHOD_NOTIFICATIONS_PREFIX) == true) {
                     // Other notifications have no response
                     call.respond(HttpStatusCode.Companion.NoContent)
                 } else {
