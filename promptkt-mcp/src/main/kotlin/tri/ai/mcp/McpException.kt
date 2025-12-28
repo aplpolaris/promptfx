@@ -19,5 +19,5 @@
  */
 package tri.ai.mcp
 
-/** Exception thrown when a prompt is not found. */
-class McpServerException(message: String, x: Throwable? = null) : Exception(message, x)
+/** Exception thrown when there is an MCP error. */
+class McpException(message: String, x: Throwable? = null) : Exception(message, x)

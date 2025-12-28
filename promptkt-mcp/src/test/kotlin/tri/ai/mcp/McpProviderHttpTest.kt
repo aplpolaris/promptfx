@@ -1,4 +1,23 @@
-package tri.ai.mcp.http
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.mcp
 
 import io.ktor.http.ContentType
 import io.ktor.server.application.call
@@ -18,7 +37,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class McpServerAdapterHttpTest {
+class McpProviderHttpTest {
 
     companion object {
         private const val TEST_PORT = 9876
@@ -63,32 +82,32 @@ class McpServerAdapterHttpTest {
     @Test
     fun testGetCapabilities() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
 
-            val capabilities = adapter.getCapabilities()
+            val capabilities = provider.getCapabilities()
             println("testGetCapabilities result: $capabilities")
             assertNotNull(capabilities)
             assertNotNull(capabilities?.prompts)
             assertEquals(false, capabilities?.prompts?.listChanged)
 
-            adapter.close()
+            provider.close()
         }
     }
 
     @Test
     fun testListPrompts() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
 
             try {
-                val prompts = adapter.listPrompts()
+                val prompts = provider.listPrompts()
                 println("testListPrompts result: $prompts")
                 assertNotNull(prompts)
                 assertTrue(prompts.size == 1, "Should have at least one prompt")
                 assertEquals("test-prompt", prompts[0].name)
                 assertEquals("Test Prompt", prompts[0].title)
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }
@@ -96,16 +115,16 @@ class McpServerAdapterHttpTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
 
             try {
-                val response = adapter.getPrompt("test-prompt", mapOf("arg1" to "value1"))
+                val response = provider.getPrompt("test-prompt", mapOf("arg1" to "value1"))
                 println("testGetPrompt result: $response")
                 assertNotNull(response)
                 assertEquals("Test prompt response", response.description)
                 assertTrue(response.messages.size == 1, "Should have at least one message")
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }
@@ -113,16 +132,16 @@ class McpServerAdapterHttpTest {
     @Test
     fun testListTools() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
 
             try {
-                val tools = adapter.listTools()
+                val tools = provider.listTools()
                 println("testListTools result: $tools")
                 assertNotNull(tools)
                 assertTrue(tools.size == 1, "Should have at least one tool")
                 assertEquals("test-tool", tools[0].name)
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }
@@ -130,15 +149,15 @@ class McpServerAdapterHttpTest {
     @Test
     fun testGetTool() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
 
             try {
-                val tool = adapter.getTool("test-tool")
+                val tool = provider.getTool("test-tool")
                 println("testGetTool result: $tool")
                 assertNotNull(tool, "Tool should be found")
                 assertEquals("test-tool", tool?.name)
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }
@@ -146,15 +165,15 @@ class McpServerAdapterHttpTest {
     @Test
     fun testCallTool() {
         runTest {
-            val adapter = McpServerAdapterHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL)
             try {
-                val result = adapter.callTool("test-tool", mapOf("input" to "test"))
+                val result = provider.callTool("test-tool", mapOf("input" to "test"))
                 println("testCallTool result: $result")
                 assertNotNull(result)
                 assertNotNull(result.content)
                 assertNull(result.isError)
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }
@@ -162,17 +181,17 @@ class McpServerAdapterHttpTest {
     @Test
     fun testConnectionError() {
         runTest {
-            val adapter = McpServerAdapterHttp("http://localhost:99999")
+            val provider = McpProviderHttp("http://localhost:99999")
 
             try {
                 try {
-                    adapter.listPrompts()
+                    provider.listPrompts()
                     fail("Should have thrown an exception")
                 } catch (e: Exception) {
                     // Expected
                 }
             } finally {
-                adapter.close()
+                provider.close()
             }
         }
     }

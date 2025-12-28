@@ -1,8 +1,27 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp.http
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.tool.StarterToolLibrary
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.prompt.PromptLibrary
 import java.util.concurrent.CountDownLatch
 
@@ -23,13 +42,13 @@ fun main(args: Array<String>) {
             .list { it.category?.startsWith("research") == true }
             .forEach { addPrompt(it) }
     }
-    val tools = StarterToolLibrary()
+    val tools = McpToolLibraryStarter()
 
     // Create embedded server with prompts and tools
-    val adapter = McpServerEmbedded(prompts, tools)
+    val provider = McpProviderEmbedded(prompts, tools)
 
     // Create and start HTTP server
-    val server = McpServerHttp(adapter, port)
+    val server = McpServerHttp(provider, port)
     server.startServer()
 
     println("✓ MCP HTTP Server is running!")

@@ -23,25 +23,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.McpServerException
-import tri.ai.mcp.tool.StarterToolLibrary
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintStream
 
-class McpServerAdapterStdioTest {
+class McpServerStdioIntegrationTest {
 
     /**
      * Test that uses McpServerStdio to run a test server over stdio,
-     * then uses McpServerAdapterStdio to connect to it.
+     * then uses McpProviderStdio to connect to it.
      */
     @Test
-    fun testStdioAdapterWithRealServer() {
+    fun `test McpServerStdio with McpProviderStdio over stdio`() {
         runTest {
             // Create a simple prompt library for testing
             val promptLibrary = PromptLibrary().apply {
@@ -57,14 +57,14 @@ class McpServerAdapterStdioTest {
                 )
             }
 
-            // Create test server with embedded adapter
-            val embeddedServer = McpServerEmbedded(promptLibrary, StarterToolLibrary())
+            // Create test server with embedded provider
+            val embeddedServer = McpProviderEmbedded(promptLibrary, McpToolLibraryStarter())
             val stdioServer = McpServerStdio(embeddedServer)
 
             // Set up piped streams to connect server and client
             val serverInputStream = PipedInputStream()
             val clientOutputStream = PipedOutputStream(serverInputStream)
-            
+
             val clientInputStream = PipedInputStream()
             val serverOutputStream = PipedOutputStream(clientInputStream)
 
@@ -87,43 +87,43 @@ class McpServerAdapterStdioTest {
                 // Create a wrapper process that uses the piped streams
                 // We need to test using ProcessBuilder approach
                 // For this test, we'll use a simpler approach with a Kotlin script
-                
+
                 // Test basic operations by writing directly to the pipe
                 println("\n=== Testing Stdio Server Connection ===")
-                
+
                 // Test 1: List prompts
                 val listPromptsRequest = """{"jsonrpc":"2.0","id":1,"method":"prompts/list"}""" + "\n"
                 clientOutputStream.write(listPromptsRequest.toByteArray())
                 clientOutputStream.flush()
-                
+
                 // Read response
                 val response1 = clientInputStream.bufferedReader().readLine()
                 println("List prompts response: $response1")
                 assertNotNull(response1)
                 assertTrue(response1.contains("test/stdio-prompt"), "Response should contain test prompt: $response1")
-                
+
                 // Test 2: Initialize (which returns capabilities)
                 val initializeRequest = """{"jsonrpc":"2.0","id":2,"method":"initialize","params":{}}""" + "\n"
                 clientOutputStream.write(initializeRequest.toByteArray())
                 clientOutputStream.flush()
-                
+
                 val response2 = clientInputStream.bufferedReader().readLine()
                 println("Initialize response: $response2")
                 assertNotNull(response2)
                 assertTrue(response2.contains("capabilities") || response2.contains("serverInfo"), "Response should contain initialization info: $response2")
-                
+
                 // Test 3: List tools
                 val listToolsRequest = """{"jsonrpc":"2.0","id":3,"method":"tools/list"}""" + "\n"
                 clientOutputStream.write(listToolsRequest.toByteArray())
                 clientOutputStream.flush()
-                
+
                 val response3 = clientInputStream.bufferedReader().readLine()
                 println("List tools response: $response3")
                 assertNotNull(response3)
                 // Tools list should be present
-                
+
                 println("=== All Stdio Tests Passed ===\n")
-                
+
             } finally {
                 // Clean up
                 clientOutputStream.close()
@@ -132,40 +132,6 @@ class McpServerAdapterStdioTest {
                 serverOutputStream.close()
                 serverJob.cancel()
                 stdioServer.close()
-            }
-        }
-    }
-
-    @Test
-    fun testStdioAdapterInvalidCommand() {
-        // Test that we get an appropriate error when trying to connect to a nonexistent command
-        assertThrows(Exception::class.java) {
-            runTest {
-                val adapter = McpServerAdapterStdio("nonexistent-command-12345")
-                adapter.close()
-            }
-        }
-    }
-
-    @Test
-    fun testStdioAdapterWithArgs() {
-        runTest {
-            // Test that args are passed correctly (will fail since echo doesn't respond properly)
-            try {
-                val adapter = McpServerAdapterStdio("echo", listOf("test"))
-                
-                // This should fail when trying to communicate
-                try {
-                    adapter.listPrompts()
-                    fail("Should have thrown an exception")
-                } catch (e: McpServerException) {
-                    println("testStdioAdapterWithArgs error (expected): ${e.message}")
-                }
-                
-                adapter.close()
-            } catch (e: Exception) {
-                // Command might not exist on all systems
-                println("testStdioAdapterWithArgs - command not found (expected on some systems)")
             }
         }
     }

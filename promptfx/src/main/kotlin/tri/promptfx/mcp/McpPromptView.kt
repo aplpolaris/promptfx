@@ -90,9 +90,9 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
     private fun loadPrompts() {
         runBlocking {
             val allPrompts = mutableListOf<McpPromptWithServer>()
-            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
                 try {
-                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
                     if (server != null) {
                         val prompts = server.listPrompts()
                         allPrompts.addAll(prompts.map { McpPromptWithServer(it, serverName) })

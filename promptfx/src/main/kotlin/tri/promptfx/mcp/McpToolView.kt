@@ -195,7 +195,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
             try {
                 val inputNode: Map<String, Any?> = jsonMapper.readValue<Map<String, Any?>>(inputJson)
                 val output = kotlinx.coroutines.runBlocking {
-                    val server = mcpController.mcpServerRegistry.getServer(toolWithServer.serverName)
+                    val server = mcpController.mcpProviderRegistry.getProvider(toolWithServer.serverName)
                         ?: throw IllegalStateException("MCP server '${toolWithServer.serverName}' not found")
                     val result = server.callTool(toolWithServer.tool.name, inputNode)
                     result.content
@@ -219,9 +219,9 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     private fun loadTools() {
         runAsync {
             val allTools = mutableListOf<ToolWithServer>()
-            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
                 try {
-                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
                     if (server != null) {
                         val tools = kotlinx.coroutines.runBlocking {
                             server.listTools()

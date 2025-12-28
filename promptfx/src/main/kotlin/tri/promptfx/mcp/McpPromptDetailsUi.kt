@@ -30,7 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import tornadofx.*
-import tri.ai.mcp.McpGetPromptResponse
+import tri.ai.mcp.McpPromptResponse
 import tri.promptfx.PromptFxMcpController
 
 /** View showing details of an MCP prompt. */
@@ -39,7 +39,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
     private val mcpController: PromptFxMcpController by inject()
     var promptWithServer = SimpleObjectProperty<McpPromptWithServer>()
     private val argumentValues = mutableMapOf<String, SimpleStringProperty>()
-    private val promptResponse = SimpleObjectProperty<McpGetPromptResponse?>()
+    private val promptResponse = SimpleObjectProperty<McpPromptResponse?>()
 
     override val root = vbox {
         vgrow = Priority.ALWAYS
@@ -173,7 +173,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
         
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val server = mcpController.mcpServerRegistry.getServer(pws.serverName)
+                val server = mcpController.mcpProviderRegistry.getProvider(pws.serverName)
                 if (server != null) {
                     val args = argumentValues.mapValues { it.value.value }
                     val response = server.getPrompt(pws.prompt.name, args)
@@ -184,7 +184,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                 } else {
                     Platform.runLater {
                         // Create an error response
-                        promptResponse.set(McpGetPromptResponse(
+                        promptResponse.set(McpPromptResponse(
                             description = "Error: Server '${pws.serverName}' not found",
                             messages = emptyList()
                         ))
@@ -193,7 +193,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
             } catch (e: Exception) {
                 Platform.runLater {
                     // Create an error response
-                    promptResponse.set(McpGetPromptResponse(
+                    promptResponse.set(McpPromptResponse(
                         description = "Error executing prompt: ${e.message}",
                         messages = emptyList()
                     ))

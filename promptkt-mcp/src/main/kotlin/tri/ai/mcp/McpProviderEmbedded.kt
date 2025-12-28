@@ -25,18 +25,18 @@ import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.mcp.tool.ToolLibrary
+import tri.ai.mcp.tool.McpToolLibrary
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
 /**
- * Implements basic functionality of MCP prompt server based on in-memory prompt and tool libraries.
+ * MCP provider using in-memory prompt and tool libraries.
  */
-class McpServerEmbedded(
-    val prompts: PromptLibrary = PromptLibrary(), 
-    val tools: ToolLibrary,
+class McpProviderEmbedded(
+    val prompts: PromptLibrary = PromptLibrary(),
+    val tools: McpToolLibrary,
     private val resources: List<McpResource> = emptyList()
-) : McpServerAdapter, ToolLibrary by tools {
+) : McpProvider, McpToolLibrary by tools {
 
     override fun toString() = "McpServer-Embedded"
 
@@ -45,11 +45,11 @@ class McpServerEmbedded(
         prompts.list().map { it.toMcpContract() }
 
     /** Gets result of filling a prompt with arguments. */
-    override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
+    override suspend fun getPrompt(name: String, args: Map<String, String>): McpPromptResponse {
         val prompt = prompts.get(name)
-            ?: throw McpServerException("Prompt with name '$name' not found")
+            ?: throw McpException("Prompt with name '$name' not found")
         val filled = prompt.fill(args)
-        return McpGetPromptResponse(
+        return McpPromptResponse(
             description = prompt.description ?: prompt.title(),
             listOf(MultimodalChatMessage(
                 role = MChatRole.User,
@@ -61,9 +61,9 @@ class McpServerEmbedded(
 
     override suspend fun listResourceTemplates(): List<McpResourceTemplate> = emptyList()
 
-    override suspend fun readResource(uri: String): McpReadResourceResponse {
+    override suspend fun readResource(uri: String): McpResourceResponse {
         val resource = resources.find { it.uri == uri }
-            ?: throw McpServerException("Resource with URI '$uri' not found")
+            ?: throw McpException("Resource with URI '$uri' not found")
         
         // For sample resources, generate simple content based on the URI
         val content = when {
@@ -77,7 +77,7 @@ class McpServerEmbedded(
             else -> "Content for ${resource.name}"
         }
         
-        return McpReadResourceResponse(
+        return McpResourceResponse(
             contents = listOf(
                 McpResourceContents(
                     uri = uri,
@@ -88,14 +88,14 @@ class McpServerEmbedded(
         )
     }
 
-    override suspend fun getCapabilities() = McpServerCapabilities(
-        prompts = McpServerCapability(listChanged = false),
-        tools = if (tools.listTools().isEmpty()) null else McpServerCapability(listChanged = false),
-        resources = if (resources.isEmpty()) null else McpServerCapability(listChanged = false)
+    override suspend fun getCapabilities() = McpCapabilities(
+        prompts = McpCapability(listChanged = false),
+        tools = if (tools.listTools().isEmpty()) null else McpCapability(listChanged = false),
+        resources = if (resources.isEmpty()) null else McpCapability(listChanged = false)
     )
 
     override suspend fun close() {
-        // Nothing to close for embedded adapter
+        // Nothing to close for embedded provider
     }
 
 }
@@ -103,7 +103,7 @@ class McpServerEmbedded(
 /** Response returned from a prompt request. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Serializable
-data class McpGetPromptResponse(
+data class McpPromptResponse(
     val description: String? = null,
     val messages: List<MultimodalChatMessage>
 )

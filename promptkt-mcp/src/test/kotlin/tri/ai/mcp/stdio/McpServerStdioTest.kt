@@ -23,8 +23,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.tool.StarterToolLibrary
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.prompt.PromptLibrary
 import java.nio.file.Files
 import java.nio.file.Path
@@ -54,7 +54,7 @@ class McpServerStdioTest {
             )
 
             val customLibrary = PromptLibrary.loadFromPath(promptFile.toString())
-            val server = McpServerStdio(McpServerEmbedded(customLibrary, StarterToolLibrary()))
+            val server = McpServerStdio(McpProviderEmbedded(customLibrary, McpToolLibraryStarter()))
 
             // Verify the server uses the custom library by checking what prompts are available
             // We can't easily test the stdio functionality, but we can verify the library integration
@@ -67,9 +67,10 @@ class McpServerStdioTest {
     @Test
     fun testCreateWithDefaultLibrary() {
         runTest {
-            val server = McpServerStdio(McpServerEmbedded(tools = StarterToolLibrary()))
+            val server = McpServerStdio(McpProviderEmbedded(tools = McpToolLibraryStarter()))
             assertNotNull(server, "Server should be created with default library")
             server.close()
         }
     }
+
 }

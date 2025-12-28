@@ -81,7 +81,7 @@ class StubToolTest {
 
     @Test
     fun testWrite_library() {
-        val tools = mapOf("tools" to StarterToolLibrary().tools.filter { it is StubTool })
+        val tools = mapOf("tools" to McpToolLibraryStarter().tools.filter { it is StubTool })
         println(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(tools))
     }
 
@@ -90,7 +90,7 @@ class StubToolTest {
         val resource = this::class.java.getResource("resources/stub-tools.json")!!
         val loadedTools = MAPPER.readValue<Map<String,List<StubTool>>>(resource)
         println(loadedTools)
-        StarterToolLibrary().apply {
+        McpToolLibraryStarter().apply {
             this.tools = loadedTools["tools"]!!
         }
     }

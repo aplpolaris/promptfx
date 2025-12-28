@@ -1,24 +1,41 @@
-package tri.ai.mcp.registry
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.mcp
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.http.McpServerAdapterHttp
 import java.nio.file.Files
 import java.nio.file.Path
 
-class McpServerRegistryTest {
+class McpProviderRegistryTest {
 
     @TempDir
     lateinit var tempDir: Path
 
     @Test
     fun testDefaultRegistry() {
-        val registry = McpServerRegistry.default()
+        val registry = McpProviderRegistry.default()
 
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertTrue(serverNames.contains("embedded"))
         assertTrue(serverNames.contains("test"))
     }
@@ -26,11 +43,11 @@ class McpServerRegistryTest {
     @Test
     fun testGetEmbeddedServer() {
         runTest {
-            val registry = McpServerRegistry.default()
-            val server = registry.getServer("embedded")
+            val registry = McpProviderRegistry.default()
+            val server = registry.getProvider("embedded")
 
             assertNotNull(server)
-            assertTrue(server is McpServerEmbedded)
+            assertTrue(server is McpProviderEmbedded)
 
             // Verify it works
             val prompts = server!!.listPrompts()
@@ -43,11 +60,11 @@ class McpServerRegistryTest {
     @Test
     fun testGetTestServer() {
         runTest {
-            val registry = McpServerRegistry.default()
-            val server = registry.getServer("test")
+            val registry = McpProviderRegistry.default()
+            val server = registry.getProvider("test")
 
             assertNotNull(server)
-            assertTrue(server is McpServerEmbedded)
+            assertTrue(server is McpProviderEmbedded)
 
             // Verify it has prompts and tools
             val prompts = server!!.listPrompts()
@@ -64,8 +81,8 @@ class McpServerRegistryTest {
 
     @Test
     fun testGetNonExistentServer() {
-        val registry = McpServerRegistry.default()
-        val server = registry.getServer("nonexistent")
+        val registry = McpProviderRegistry.default()
+        val server = registry.getProvider("nonexistent")
 
         assertNull(server)
     }
@@ -89,9 +106,9 @@ class McpServerRegistryTest {
         """.trimIndent()
         )
 
-        val registry = McpServerRegistry.loadFromYaml(yamlFile.toFile())
+        val registry = McpProviderRegistry.loadFromYaml(yamlFile.toFile())
 
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertEquals(3, serverNames.size)
         assertTrue(serverNames.contains("test-embedded"))
         assertTrue(serverNames.contains("test-http"))
@@ -119,9 +136,9 @@ class McpServerRegistryTest {
         """.trimIndent()
         )
 
-        val registry = McpServerRegistry.loadFromJson(jsonFile.toFile())
+        val registry = McpProviderRegistry.loadFromJson(jsonFile.toFile())
 
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertEquals(2, serverNames.size)
         assertTrue(serverNames.contains("test-embedded"))
         assertTrue(serverNames.contains("test-http"))
@@ -139,9 +156,9 @@ class McpServerRegistryTest {
         """.trimIndent()
         )
 
-        val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
+        val registry = McpProviderRegistry.loadFromFile(yamlFile.toString())
 
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertEquals(1, serverNames.size)
         assertTrue(serverNames.contains("test-server"))
     }
@@ -162,9 +179,9 @@ class McpServerRegistryTest {
         """.trimIndent()
         )
 
-        val registry = McpServerRegistry.loadFromFile(jsonFile.toString())
+        val registry = McpProviderRegistry.loadFromFile(jsonFile.toString())
 
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertEquals(1, serverNames.size)
         assertTrue(serverNames.contains("test-server"))
     }
@@ -175,13 +192,13 @@ class McpServerRegistryTest {
         Files.writeString(txtFile, "invalid content")
 
         assertThrows(IllegalArgumentException::class.java) {
-            McpServerRegistry.loadFromFile(txtFile.toString())
+            McpProviderRegistry.loadFromFile(txtFile.toString())
         }
     }
 
     @Test
     fun testGetConfigs() {
-        val registry = McpServerRegistry.default()
+        val registry = McpProviderRegistry.default()
         val configs = registry.getConfigs()
 
         assertNotNull(configs)
@@ -189,10 +206,10 @@ class McpServerRegistryTest {
         assertTrue(configs.containsKey("test"))
 
         val embeddedConfig = configs["embedded"]
-        assertTrue(embeddedConfig is EmbeddedServerConfig)
+        assertTrue(embeddedConfig is EmbeddedProviderConfig)
 
         val testConfig = configs["test"]
-        assertTrue(testConfig is TestServerConfig)
+        assertTrue(testConfig is TestProviderConfig)
     }
 
     @Test
@@ -209,11 +226,11 @@ class McpServerRegistryTest {
             """.trimIndent()
             )
 
-            val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
-            val server = registry.getServer("remote")
+            val registry = McpProviderRegistry.loadFromFile(yamlFile.toString())
+            val server = registry.getProvider("remote")
 
             assertNotNull(server)
-            assertTrue(server is McpServerAdapterHttp)
+            assertTrue(server is McpProviderHttp)
 
             server!!.close()
         }
@@ -248,11 +265,11 @@ class McpServerRegistryTest {
         )
 
         runTest {
-            val registry = McpServerRegistry.loadFromFile(yamlFile.toString())
-            val server = registry.getServer("custom")
+            val registry = McpProviderRegistry.loadFromFile(yamlFile.toString())
+            val server = registry.getProvider("custom")
 
             assertNotNull(server)
-            assertTrue(server is McpServerEmbedded)
+            assertTrue(server is McpProviderEmbedded)
 
             val prompts = server!!.listPrompts()
             assertTrue(prompts.any { it.name == "test/custom-prompt" })
@@ -277,8 +294,8 @@ class McpServerRegistryTest {
             """.trimIndent()
             )
 
-            val registry1 = McpServerRegistry.loadFromFile(yamlFile1.toString())
-            val server1 = registry1.getServer("test-prompts-only")!!
+            val registry1 = McpProviderRegistry.loadFromFile(yamlFile1.toString())
+            val server1 = registry1.getProvider("test-prompts-only")!!
 
             val prompts1 = server1.listPrompts()
             val tools1 = server1.listTools()
@@ -301,8 +318,8 @@ class McpServerRegistryTest {
             """.trimIndent()
             )
 
-            val registry2 = McpServerRegistry.loadFromFile(yamlFile2.toString())
-            val server2 = registry2.getServer("test-tools-only")!!
+            val registry2 = McpProviderRegistry.loadFromFile(yamlFile2.toString())
+            val server2 = registry2.getProvider("test-tools-only")!!
 
             val prompts2 = server2.listPrompts()
             val tools2 = server2.listTools()
@@ -325,8 +342,8 @@ class McpServerRegistryTest {
             """.trimIndent()
             )
 
-            val registry3 = McpServerRegistry.loadFromFile(yamlFile3.toString())
-            val server3 = registry3.getServer("test-empty")!!
+            val registry3 = McpProviderRegistry.loadFromFile(yamlFile3.toString())
+            val server3 = registry3.getProvider("test-empty")!!
 
             val prompts3 = server3.listPrompts()
             val tools3 = server3.listTools()

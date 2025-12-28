@@ -20,16 +20,16 @@
 package tri.promptfx
 
 import tornadofx.Controller
-import tri.ai.mcp.registry.McpServerRegistry
+import tri.ai.mcp.McpProviderRegistry
 import java.io.File
 
 /** Controller for MCP servers configuration in [PromptFx]. */
 class PromptFxMcpController : Controller() {
 
     /** Registry of MCP servers loaded from configuration file. */
-    val mcpServerRegistry: McpServerRegistry = loadRegistry()
+    val mcpProviderRegistry: McpProviderRegistry = loadRegistry()
 
-    private fun loadRegistry(): McpServerRegistry {
+    private fun loadRegistry(): McpProviderRegistry {
         // First, try to load from runtime config files
         val runtimeFile = setOf(
             File("mcp-servers.yaml"),
@@ -37,7 +37,7 @@ class PromptFxMcpController : Controller() {
         ).firstOrNull { it.exists() }
         
         if (runtimeFile != null) {
-            return McpServerRegistry.loadFromYaml(runtimeFile)
+            return McpProviderRegistry.loadFromYaml(runtimeFile)
         }
         
         // Fall back to built-in resource file
@@ -52,10 +52,10 @@ class PromptFxMcpController : Controller() {
                     input.copyTo(output)
                 }
             }
-            McpServerRegistry.loadFromYaml(tempFile)
+            McpProviderRegistry.loadFromYaml(tempFile)
         } else {
             // Fallback to default registry if no config file found
-            McpServerRegistry.default()
+            McpProviderRegistry.default()
         }
     }
 }

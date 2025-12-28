@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.convertValue
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import tri.ai.core.tool.ExecContext
@@ -67,5 +68,14 @@ data class StubTool(
 
     override suspend fun execute(input: JsonNode, context: ExecContext) =
         hardCodedOutput.toJsonNode()
+
+    companion object {
+        /** Loads some stub tools from resources/stub-tools.json */
+        fun loadFromResources(): List<StubTool> {
+            val resource = this::class.java.getResource("resources/stub-tools.json")!!
+            val loadedTools = jsonMapper.readValue<Map<String, List<StubTool>>>(resource)
+            return loadedTools.values.flatten()
+        }
+    }
 
 }

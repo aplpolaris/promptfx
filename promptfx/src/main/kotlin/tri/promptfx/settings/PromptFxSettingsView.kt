@@ -38,7 +38,10 @@ import tri.ai.gemini.GeminiAiPlugin
 import tri.ai.gemini.GeminiSettings
 import tri.ai.geminisdk.GeminiSdkPlugin
 import tri.ai.geminisdk.GeminiSdkSettings
-import tri.ai.mcp.registry.*
+import tri.ai.mcp.EmbeddedProviderConfig
+import tri.ai.mcp.HttpProviderConfig
+import tri.ai.mcp.StdioProviderConfig
+import tri.ai.mcp.TestProviderConfig
 import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.api.OpenAiApiPlugin
@@ -344,14 +347,14 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
     private fun showMcpServersDetails() {
         with(detailPane) {
             val mcpController = find<PromptFxMcpController>()
-            val registry = mcpController.mcpServerRegistry
+            val registry = mcpController.mcpProviderRegistry
             
             // Registry Information
             vbox(5) {
                 label("MCP Server Registry:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
-                label("Total Configured Servers: ${registry.listServerNames().size}")
+                label("Total Configured Servers: ${registry.listProviderNames().size}")
             }
             
             separator()
@@ -398,7 +401,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                             
                             // Show config-specific details
                             when (config) {
-                                is StdioServerConfig -> {
+                                is StdioProviderConfig -> {
                                     label("  Command: ${config.command}")
                                     if (config.args.isNotEmpty()) {
                                         label("  Arguments: ${config.args.joinToString(" ")}")
@@ -407,15 +410,15 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                                         label("  Environment Variables: ${config.env.size}")
                                     }
                                 }
-                                is HttpServerConfig -> {
+                                is HttpProviderConfig -> {
                                     label("  URL: ${config.url}")
                                 }
-                                is EmbeddedServerConfig -> {
+                                is EmbeddedProviderConfig -> {
                                     config.promptLibraryPath?.let { path ->
                                         label("  Prompt Library: $path")
                                     }
                                 }
-                                is TestServerConfig -> {
+                                is TestProviderConfig -> {
                                     label("  Include Default Prompts: ${config.includeDefaultPrompts}")
                                     label("  Include Default Tools: ${config.includeDefaultTools}")
                                     label("  Include Default Resources: ${config.includeDefaultResources}")

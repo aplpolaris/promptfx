@@ -1,10 +1,28 @@
-package tri.ai.mcp.http
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.mcp
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.google.common.annotations.Beta
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.post
@@ -25,28 +43,18 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import tri.ai.mcp.JsonSerializers
 import tri.ai.mcp.JsonSerializers.toJsonElement
-import tri.ai.mcp.McpGetPromptResponse
-import tri.ai.mcp.McpPrompt
-import tri.ai.mcp.McpReadResourceResponse
-import tri.ai.mcp.McpResource
-import tri.ai.mcp.McpResourceTemplate
-import tri.ai.mcp.McpServerAdapter
-import tri.ai.mcp.McpServerCapabilities
-import tri.ai.mcp.McpServerException
 import tri.ai.mcp.tool.McpToolMetadata
-import tri.ai.mcp.tool.McpToolResult
+import tri.ai.mcp.tool.McpToolResponse
 import tri.util.fine
 import tri.util.info
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Remote MCP server adapter that connects to external MCP servers via HTTP using JSON-RPC 2.0.
+ * MCP provider for an external HTTP MCP server.
  * Follows the MCP specification for HTTP transport: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http
  */
-@Beta
-class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
+class McpProviderHttp(private val baseUrl: String) : McpProvider {
 
     private val httpClient = HttpClient(OkHttp) {
         engine {
@@ -79,7 +87,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         }
 
         if (!response.status.isSuccess()) {
-            throw McpServerException("HTTP request failed: ${response.status}")
+            throw McpException("HTTP request failed: ${response.status}")
         }
 
         val responseText = response.bodyAsText()
@@ -89,13 +97,13 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         if (responseJson.containsKey("error")) {
             val error = responseJson["error"]?.jsonObject
             val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
-            throw McpServerException("JSON-RPC error: $message")
+            throw McpException("JSON-RPC error: $message")
         }
 
         return responseJson["result"] ?: JsonNull
     }
 
-    override suspend fun getCapabilities(): McpServerCapabilities? {
+    override suspend fun getCapabilities(): McpCapabilities? {
         try {
             val result = sendJsonRpcRequest("initialize", buildJsonObject {
                 put("protocolVersion", JsonPrimitive("2024-11-05"))
@@ -118,16 +126,16 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         try {
             val result = sendJsonRpcRequest("prompts/list")
             val promptsJson = result.jsonObject["prompts"]?.jsonArray
-                ?: throw McpServerException("No prompts in response")
+                ?: throw McpException("No prompts in response")
             return objectMapper.readValue(JsonSerializers.serialize(promptsJson))
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error connecting to MCP server: ${e.message}")
+            throw McpException("Error connecting to MCP server: ${e.message}")
         }
     }
 
-    override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
+    override suspend fun getPrompt(name: String, args: Map<String, String>): McpPromptResponse {
         try {
             val params = buildJsonObject {
                 put("name", JsonPrimitive(name))
@@ -144,10 +152,10 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val resultWithCapitalizedRoles = capitalizeRolesInResult(result)
 
             return objectMapper.readValue(JsonSerializers.serialize(resultWithCapitalizedRoles))
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error getting prompt from MCP server: ${e.message}")
+            throw McpException("Error getting prompt from MCP server: ${e.message}")
         }
     }
 
@@ -249,14 +257,14 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
     override suspend fun listTools(): List<McpToolMetadata> {
         try {
             val result = sendJsonRpcRequest("tools/list")
-            fine<McpServerAdapterHttp>(result.toString(), null)
+            fine<McpProviderHttp>(result.toString(), null)
             val toolsJson = result.jsonObject["tools"]?.jsonArray
-                ?: throw McpServerException("No tools in response")
+                ?: throw McpException("No tools in response")
             return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error connecting to MCP server: ${e.message}", e)
+            throw McpException("Error connecting to MCP server: ${e.message}", e)
         }
     }
 
@@ -265,7 +273,7 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         return tools.find { it.name == name }
     }
 
-    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResult {
+    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResponse {
         try {
             val params = buildJsonObject {
                 put("name", JsonPrimitive(name))
@@ -277,14 +285,14 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             }
 
             val result = sendJsonRpcRequest("tools/call", params)
-            info<McpServerAdapterHttp>(result.toString())
+            info<McpProviderHttp>(result.toString())
             return objectMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue<McpToolResult>(JsonSerializers.serialize(result))
-        } catch (e: McpServerException) {
+                .readValue<McpToolResponse>(JsonSerializers.serialize(result))
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error calling tool on MCP server: ${e.message}", e)
+            throw McpException("Error calling tool on MCP server: ${e.message}", e)
         }
     }
 
@@ -292,13 +300,13 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         try {
             val result = sendJsonRpcRequest("resources/list")
             val resourcesJson = result.jsonObject["resources"]?.jsonArray
-                ?: throw McpServerException("No resources in response")
+                ?: throw McpException("No resources in response")
 
             return objectMapper.readValue(JsonSerializers.serialize(resourcesJson))
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error listing resources from MCP server: ${e.message}", e)
+            throw McpException("Error listing resources from MCP server: ${e.message}", e)
         }
     }
 
@@ -306,17 +314,17 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
         try {
             val result = sendJsonRpcRequest("resources/templates/list")
             val templatesJson = result.jsonObject["resourceTemplates"]?.jsonArray
-                ?: throw McpServerException("No resource templates in response")
+                ?: throw McpException("No resource templates in response")
 
             return objectMapper.readValue(JsonSerializers.serialize(templatesJson))
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error listing resource templates from MCP server: ${e.message}", e)
+            throw McpException("Error listing resource templates from MCP server: ${e.message}", e)
         }
     }
 
-    override suspend fun readResource(uri: String): McpReadResourceResponse {
+    override suspend fun readResource(uri: String): McpResourceResponse {
         try {
             val params = buildJsonObject {
                 put("uri", JsonPrimitive(uri))
@@ -325,10 +333,10 @@ class McpServerAdapterHttp(private val baseUrl: String) : McpServerAdapter {
             val result = sendJsonRpcRequest("resources/read", params)
 
             return objectMapper.readValue(JsonSerializers.serialize(result))
-        } catch (e: McpServerException) {
+        } catch (e: McpException) {
             throw e
         } catch (e: Exception) {
-            throw McpServerException("Error reading resource from MCP server: ${e.message}", e)
+            throw McpException("Error reading resource from MCP server: ${e.message}", e)
         }
     }
 

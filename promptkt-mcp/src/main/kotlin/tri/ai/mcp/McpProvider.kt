@@ -19,30 +19,32 @@
  */
 package tri.ai.mcp
 
-import tri.ai.mcp.tool.ToolLibrary
+import tri.ai.mcp.tool.McpToolLibrary
 
 /**
- * Interface for connecting to MCP prompt servers, whether capabilities provided are embedded
- * or accessible via stdio, http, etc.
+ * Functionality of an MCP provider (server). Implementations may proxy a remote MCP server, or may be instantiated locally.
+ * This library uses the term "provider" to indicate any class that provides MCP services, whether local or remote.
+ * The term "server" is reserved for runnable classes that set up a server process according to the MCP specification.
+ *
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
  * @see https://modelcontextprotocol.io/specification/2025-06-18/server/resources
  */
-interface McpServerAdapter: ToolLibrary {
+interface McpProvider: McpToolLibrary {
 
     /** Get server capabilities. */
-    suspend fun getCapabilities(): McpServerCapabilities?
+    suspend fun getCapabilities(): McpCapabilities?
 
     /** List all available prompts from the server. */
     suspend fun listPrompts(): List<McpPrompt>
     /** Get a filled prompt with the given arguments. */
-    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpGetPromptResponse
+    suspend fun getPrompt(name: String, args: Map<String, String> = emptyMap()): McpPromptResponse
 
     /** List all available resources from the server. */
     suspend fun listResources(): List<McpResource>
     /** List all available resource templates from the server. */
     suspend fun listResourceTemplates(): List<McpResourceTemplate>
     /** Read a resource by URI. */
-    suspend fun readResource(uri: String): McpReadResourceResponse
+    suspend fun readResource(uri: String): McpResourceResponse
 
     /** Close the connection to the server. */
     suspend fun close()

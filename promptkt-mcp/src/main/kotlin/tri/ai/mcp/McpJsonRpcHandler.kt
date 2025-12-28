@@ -23,13 +23,13 @@ import kotlinx.serialization.json.*
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.mcp.JsonSerializers.toJsonElement
-import tri.ai.mcp.tool.McpToolResult
+import tri.ai.mcp.tool.McpToolResponse
 
 /**
  * Handles MCP-specific business logic for JSON-RPC requests.
  * Focuses on MCP protocol implementation without JSON-RPC concerns.
  */
-class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
+class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
 
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
@@ -84,7 +84,7 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
         put("tools", server.listTools().toJsonElement())
     }
 
-    private suspend fun handleToolsCall(params: JsonObject?): McpToolResult {
+    private suspend fun handleToolsCall(params: JsonObject?): McpToolResponse {
         val name = params?.get("name")?.jsonPrimitive?.content
         require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
         val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
@@ -115,7 +115,7 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
 
     companion object {
         /** Convert McpPrompt to JsonElement */
-        fun convertPromptResponse(response: McpGetPromptResponse): JsonElement = buildJsonObject {
+        fun convertPromptResponse(response: McpPromptResponse): JsonElement = buildJsonObject {
             response.description?.let { put("description", it) }
             put("messages", buildJsonArray {
                 for (msg in response.messages) {

@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp.tool
 
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -8,7 +27,7 @@ import tri.ai.mcp.McpResource
 
 /** Result of a tool/function call, following the MCP spec. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-data class McpToolResult(
+data class McpToolResponse(
     val content: List<McpContent>,
     val structuredContent: JsonNode? = null, // Optional: structured result
     val isError: Boolean? = null, // Non-null if tool failed
@@ -28,13 +47,13 @@ data class McpToolResult(
 
     companion object {
         /** Errors are wrapped as text content. */
-        fun error(error: String) = McpToolResult(
+        fun error(error: String) = McpToolResponse(
             content = listOf(McpContent.Text(error)),
             isError = true
         )
 
         /** Convert structured output to McpToolResult. */
-        fun createStructured(node: JsonNode) = McpToolResult(
+        fun createStructured(node: JsonNode) = McpToolResponse(
             content = listOf(McpContent.Text(node.toString())),
             structuredContent = node,
         )

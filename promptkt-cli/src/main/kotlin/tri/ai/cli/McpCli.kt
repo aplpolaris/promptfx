@@ -30,14 +30,14 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
-import tri.ai.mcp.McpServerAdapter
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.McpServerException
-import tri.ai.mcp.http.McpServerAdapterHttp
-import tri.ai.mcp.registry.McpServerRegistry
+import tri.ai.mcp.McpProvider
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.McpException
+import tri.ai.mcp.McpProviderHttp
+import tri.ai.mcp.McpProviderRegistry
 import tri.ai.mcp.stdio.McpServerStdio
 import tri.ai.mcp.tool.McpContent
-import tri.ai.mcp.tool.StarterToolLibrary
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
@@ -50,7 +50,7 @@ fun main(args: Array<String>) =
 
 /**
  * Command-line interface for interacting with MCP (Model Context Protocol) servers.
- * Supports both embedded and remote MCP servers.
+ * Supports both embedded and remote MCP providers.
  */
 class McpCli : CliktCommand(
     name = "mcp-fx",
@@ -63,12 +63,12 @@ class McpCli : CliktCommand(
     private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for embedded server only)")
     private val verbose by option("--verbose", "-v", help = "Verbose output").flag("--no-verbose", default = false)
     
-    private val registry: McpServerRegistry by lazy {
+    private val registry: McpProviderRegistry by lazy {
         if (registryConfig != null) {
             if (verbose) echo("Loading MCP server registry from: $registryConfig")
-            McpServerRegistry.loadFromFile(registryConfig!!)
+            McpProviderRegistry.loadFromFile(registryConfig!!)
         } else {
-            McpServerRegistry.default()
+            McpProviderRegistry.default()
         }
     }
 
@@ -90,9 +90,9 @@ class McpCli : CliktCommand(
 
     //region INIT
 
-    private fun createAdapter(): McpServerAdapter {
+    private fun createAdapter(): McpProvider {
         // First try to get from registry
-        val fromRegistry = registry.getServer(serverUrl)
+        val fromRegistry = registry.getProvider(serverUrl)
         if (fromRegistry != null) {
             if (verbose) echo("Using MCP server from registry: $serverUrl")
             return fromRegistry
@@ -103,10 +103,10 @@ class McpCli : CliktCommand(
             if (verbose) echo("Using in-memory MCP server: $serverUrl")
             val library = loadPromptLibrary()
             val toolLibrary = loadToolLibrary()
-            McpServerEmbedded(library, toolLibrary)
+            McpProviderEmbedded(library, toolLibrary)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
-            McpServerAdapterHttp(serverUrl)
+            McpProviderHttp(serverUrl)
         }
     }
 
@@ -124,7 +124,7 @@ class McpCli : CliktCommand(
         }
     }
 
-    private fun loadToolLibrary() = StarterToolLibrary()
+    private fun loadToolLibrary() = McpToolLibraryStarter()
 
     //endregion
 
@@ -165,7 +165,7 @@ class McpCli : CliktCommand(
                     }
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -210,7 +210,7 @@ class McpCli : CliktCommand(
                         }
                     }
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -271,7 +271,7 @@ class McpCli : CliktCommand(
                     val model = try {
                         TextPlugin.multimodalModel(model)
                     } catch (x: NoSuchElementException) {
-                        throw McpServerException(
+                        throw McpException(
                             "Model '$model' not found. Available models: ${
                                 TextPlugin.chatModels().joinToString { it.modelId }
                             }", x
@@ -305,7 +305,7 @@ class McpCli : CliktCommand(
                     }
 
                     model.close()
-                } catch (e: McpServerException) {
+                } catch (e: McpException) {
                     echo("Error: ${e.message}", err = true)
                     exitProcess(1)
                 } finally {
@@ -345,7 +345,7 @@ class McpCli : CliktCommand(
                     this@McpCli.printSchema(tool.outputSchema, "Output properties")
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -389,7 +389,7 @@ class McpCli : CliktCommand(
                 }
                 val tool = adapter.getTool(toolName)
                 if (tool == null) {
-                    throw McpServerException("Tool with name '$toolName' not found.")
+                    throw McpException("Tool with name '$toolName' not found.")
                 }
 
                 val result = adapter.callTool(toolName, args)
@@ -398,7 +398,7 @@ class McpCli : CliktCommand(
                     echo("Response from tool ${toolName}:")
                 }
                 if (result.isError == true) {
-                    throw McpServerException("Tool execution error: ${result.errorMessage()}")
+                    throw McpException("Tool execution error: ${result.errorMessage()}")
                 }
                 if (this@McpCli.verbose && result.metadata != null) {
                     echo("Response Metadata: ${result.metadata}")
@@ -432,7 +432,7 @@ class McpCli : CliktCommand(
                         }
                     }
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -475,7 +475,7 @@ class McpCli : CliktCommand(
                     }
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -514,7 +514,7 @@ class McpCli : CliktCommand(
                     }
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -560,7 +560,7 @@ class McpCli : CliktCommand(
                     }
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -580,7 +580,7 @@ class McpCli : CliktCommand(
             runBlocking {
                 val prompts = this@McpCli.loadPromptLibrary()
                 val tools = this@McpCli.loadToolLibrary()
-                val locServer = McpServerEmbedded(prompts, tools)
+                val locServer = McpProviderEmbedded(prompts, tools)
                 McpServerStdio(locServer).startServer(System.`in`, System.out)
             }
         }

@@ -29,7 +29,7 @@ class McpServerViewTest {
     @Test
     fun `test controller loads servers from registry`() {
         val controller = PromptFxMcpController()
-        val serverNames = controller.mcpServerRegistry.listServerNames()
+        val serverNames = controller.mcpProviderRegistry.listProviderNames()
         
         // Should have at least the default servers
         assertTrue(serverNames.isNotEmpty(), "Should have at least one server")
@@ -40,7 +40,7 @@ class McpServerViewTest {
     @Test
     fun `test server configs are accessible`() {
         val controller = PromptFxMcpController()
-        val configs = controller.mcpServerRegistry.getConfigs()
+        val configs = controller.mcpProviderRegistry.getConfigs()
         
         // Should be able to access configs
         assertNotNull(configs["embedded"], "Should have embedded server config")
@@ -59,7 +59,7 @@ class McpServerViewTest {
         val controller = PromptFxMcpController()
         
         // Test the embedded server
-        val embeddedServer = controller.mcpServerRegistry.getServer("embedded")
+        val embeddedServer = controller.mcpProviderRegistry.getProvider("embedded")
         assertNotNull(embeddedServer, "Should be able to get embedded server")
         
         val capabilities = embeddedServer?.getCapabilities()
@@ -72,7 +72,7 @@ class McpServerViewTest {
     @Test
     fun `test server capability info data class`() {
         // Test that ServerCapabilityInfo can be created and used
-        val info1 = ServerCapabilityInfo(
+        val info1 = ProviderCapabilityInfo(
             hasPrompts = true,
             hasTools = true,
             hasResources = false,
@@ -89,7 +89,7 @@ class McpServerViewTest {
         assertNull(info1.error)
         
         // Test error state
-        val info2 = ServerCapabilityInfo(error = "Connection failed")
+        val info2 = ProviderCapabilityInfo(error = "Connection failed")
         assertNotNull(info2.error)
         assertEquals("Connection failed", info2.error)
     }

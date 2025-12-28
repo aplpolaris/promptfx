@@ -17,24 +17,15 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp.stdio
+package tri.ai.mcp
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.google.common.annotations.Beta
 import kotlinx.serialization.json.*
-import tri.ai.mcp.McpGetPromptResponse
-import tri.ai.mcp.McpPrompt
-import tri.ai.mcp.McpReadResourceResponse
-import tri.ai.mcp.McpResource
-import tri.ai.mcp.McpResourceTemplate
-import tri.ai.mcp.McpServerAdapter
-import tri.ai.mcp.McpServerCapabilities
-import tri.ai.mcp.McpServerException
 import tri.ai.mcp.tool.McpToolMetadata
-import tri.ai.mcp.tool.McpToolResult
+import tri.ai.mcp.tool.McpToolResponse
 import tri.util.fine
 import tri.util.info
 import tri.util.json.jsonMapper
@@ -44,15 +35,14 @@ import java.io.OutputStreamWriter
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Remote MCP server adapter that connects to external MCP servers via stdio.
+ * Remote MCP provider that connects to external MCP servers via stdio.
  * Launches an external process and communicates with it using JSON-RPC over stdio.
  */
-@Beta
-class McpServerAdapterStdio(
+class McpProviderStdio(
     private val command: String,
     private val args: List<String> = emptyList(),
     private val env: Map<String, String> = emptyMap()
-) : McpServerAdapter {
+) : McpProvider {
     
     private var process: Process? = null
     private var writer: OutputStreamWriter? = null
@@ -95,25 +85,25 @@ class McpServerAdapterStdio(
             
             // Read response
             val line = reader?.readLine() 
-                ?: throw McpServerException("No response from stdio server")
+                ?: throw McpException("No response from stdio server")
             
             val response = Json.parseToJsonElement(line).jsonObject
             
             if (response.containsKey("error")) {
                 val error = response["error"]?.jsonObject
                 val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
-                throw McpServerException("Stdio server error: $message")
+                throw McpException("Stdio server error: $message")
             }
             
             return response["result"] ?: JsonNull
         }
     }
 
-    override suspend fun getCapabilities(): McpServerCapabilities? {
+    override suspend fun getCapabilities(): McpCapabilities? {
         try {
             val result = sendRequest("capabilities")
             if (result is JsonNull) return null
-            return objectMapper.readValue<McpServerCapabilities>(result.toString())
+            return objectMapper.readValue<McpCapabilities>(result.toString())
         } catch (e: Exception) {
             return null
         }
@@ -125,28 +115,28 @@ class McpServerAdapterStdio(
             val wrapper = objectMapper.readValue<Map<String, List<McpPrompt>>>(result.toString())
             return wrapper["prompts"] ?: emptyList()
         } catch (e: Exception) {
-            throw McpServerException("Error listing prompts from stdio server: ${e.message}", e)
+            throw McpException("Error listing prompts from stdio server: ${e.message}", e)
         }
     }
 
-    override suspend fun getPrompt(name: String, args: Map<String, String>): McpGetPromptResponse {
+    override suspend fun getPrompt(name: String, args: Map<String, String>): McpPromptResponse {
         try {
             val result = sendRequest("prompts/get", mapOf("name" to name, "arguments" to args))
-            return objectMapper.readValue<McpGetPromptResponse>(result.toString())
+            return objectMapper.readValue<McpPromptResponse>(result.toString())
         } catch (e: Exception) {
-            throw McpServerException("Error getting prompt from stdio server: ${e.message}", e)
+            throw McpException("Error getting prompt from stdio server: ${e.message}", e)
         }
     }
 
     override suspend fun listTools(): List<McpToolMetadata> {
         try {
             val result = sendRequest("tools/list")
-            fine<McpServerAdapterStdio>(result.toString(), null)
+            fine<McpProviderStdio>(result.toString(), null)
             val toolsJson = result.jsonObject["tools"]?.jsonArray
-                ?: throw McpServerException("No tools in response")
+                ?: throw McpException("No tools in response")
             return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
         } catch (e: Exception) {
-            throw McpServerException("Error listing tools from stdio server: ${e.message}", e)
+            throw McpException("Error listing tools from stdio server: ${e.message}", e)
         }
     }
 
@@ -155,15 +145,15 @@ class McpServerAdapterStdio(
         return tools.find { it.name == name }
     }
 
-    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResult {
+    override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResponse {
         try {
             val result = sendRequest("tools/call", mapOf("name" to name, "arguments" to args))
-            info<McpServerAdapterStdio>(result.toString())
+            info<McpProviderStdio>(result.toString())
             return jsonMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue<McpToolResult>(result.toString())
+                .readValue<McpToolResponse>(result.toString())
         } catch (e: Exception) {
-            throw McpServerException("Error calling tool on stdio server: ${e.message}", e)
+            throw McpException("Error calling tool on stdio server: ${e.message}", e)
         }
     }
 
@@ -173,7 +163,7 @@ class McpServerAdapterStdio(
             val wrapper = objectMapper.readValue<Map<String, List<McpResource>>>(result.toString())
             return wrapper["resources"] ?: emptyList()
         } catch (e: Exception) {
-            throw McpServerException("Error listing resources from stdio server: ${e.message}", e)
+            throw McpException("Error listing resources from stdio server: ${e.message}", e)
         }
     }
 
@@ -183,16 +173,16 @@ class McpServerAdapterStdio(
             val wrapper = objectMapper.readValue<Map<String, List<McpResourceTemplate>>>(result.toString())
             return wrapper["resourceTemplates"] ?: emptyList()
         } catch (e: Exception) {
-            throw McpServerException("Error listing resource templates from stdio server: ${e.message}", e)
+            throw McpException("Error listing resource templates from stdio server: ${e.message}", e)
         }
     }
 
-    override suspend fun readResource(uri: String): McpReadResourceResponse {
+    override suspend fun readResource(uri: String): McpResourceResponse {
         try {
             val result = sendRequest("resources/read", mapOf("uri" to uri))
-            return objectMapper.readValue<McpReadResourceResponse>(result.toString())
+            return objectMapper.readValue<McpResourceResponse>(result.toString())
         } catch (e: Exception) {
-            throw McpServerException("Error reading resource from stdio server: ${e.message}", e)
+            throw McpException("Error reading resource from stdio server: ${e.message}", e)
         }
     }
 

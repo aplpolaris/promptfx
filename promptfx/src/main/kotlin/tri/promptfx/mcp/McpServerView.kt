@@ -27,11 +27,11 @@ import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
-import tri.ai.mcp.registry.EmbeddedServerConfig
-import tri.ai.mcp.registry.HttpServerConfig
-import tri.ai.mcp.registry.McpServerConfig
-import tri.ai.mcp.registry.StdioServerConfig
-import tri.ai.mcp.registry.TestServerConfig
+import tri.ai.mcp.EmbeddedProviderConfig
+import tri.ai.mcp.HttpProviderConfig
+import tri.ai.mcp.McpProviderConfig
+import tri.ai.mcp.StdioProviderConfig
+import tri.ai.mcp.TestProviderConfig
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
@@ -40,8 +40,8 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 /** Plugin for the [McpServerView]. */
 class McpServerPlugin : NavigableWorkspaceViewImpl<McpServerView>("MCP", "MCP Servers", type = McpServerView::class)
 
-/** Data class to hold server capability information. */
-data class ServerCapabilityInfo(
+/** Data class to hold provider capability information. */
+data class ProviderCapabilityInfo(
     val hasPrompts: Boolean = false,
     val hasTools: Boolean = false,
     val hasResources: Boolean = false,
@@ -51,32 +51,32 @@ data class ServerCapabilityInfo(
     val error: String? = null
 )
 
-/** View and try out MCP server prompts. */
+/** View to show registered MCP providers. */
 class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.") {
 
     private val mcpController: PromptFxMcpController by inject()
-    private val serverNames = observableListOf<String>()
-    private val selectedServerName = SimpleObjectProperty<String>()
-    private val selectedServerConfig = SimpleObjectProperty<McpServerConfig>()
-    private val serverCapabilities = mutableMapOf<String, SimpleObjectProperty<ServerCapabilityInfo>>()
+    private val providerNames = observableListOf<String>()
+    private val selectedProviderName = SimpleObjectProperty<String>()
+    private val selectedConfig = SimpleObjectProperty<McpProviderConfig>()
+    private val providerCapabilities = mutableMapOf<String, SimpleObjectProperty<ProviderCapabilityInfo>>()
     
-    private fun getCapabilityInfo(serverName: String): SimpleObjectProperty<ServerCapabilityInfo> {
-        return serverCapabilities.getOrPut(serverName) {
-            SimpleObjectProperty(ServerCapabilityInfo())
+    private fun getCapabilityInfo(name: String): SimpleObjectProperty<ProviderCapabilityInfo> {
+        return providerCapabilities.getOrPut(name) {
+            SimpleObjectProperty(ProviderCapabilityInfo())
         }
     }
 
     init {
-        // Load server names from registry
-        serverNames.setAll(mcpController.mcpServerRegistry.listServerNames())
+        // Load names from registry
+        providerNames.setAll(mcpController.mcpProviderRegistry.listProviderNames())
 
         // Update config when server is selected
-        selectedServerName.onChange { serverName ->
-            selectedServerConfig.value = serverName?.let {
-                mcpController.mcpServerRegistry.getConfigs()[it]
+        selectedProviderName.onChange { name ->
+            selectedConfig.value = name?.let {
+                mcpController.mcpProviderRegistry.getConfigs()[it]
             }
             // Query capabilities when server is selected
-            serverName?.let { queryServerCapabilities(it) }
+            name?.let { queryServerCapabilities(it) }
         }
 
         hideParameters()
@@ -93,13 +93,13 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     button("", FontAwesomeIconView(FontAwesomeIcon.REFRESH)) {
                         tooltip("Refresh server list")
                         action {
-                            serverNames.setAll(mcpController.mcpServerRegistry.listServerNames())
+                            providerNames.setAll(mcpController.mcpProviderRegistry.listProviderNames())
                         }
                     }
                 }
-                listview(serverNames) {
+                listview(providerNames) {
                     vgrow = Priority.ALWAYS
-                    selectedServerName.bind(this.selectionModel.selectedItemProperty())
+                    selectedProviderName.bind(this.selectionModel.selectedItemProperty())
                     cellFormat { serverName ->
                         graphic = hbox(spacing = 5.0) {
                             label(serverName) {
@@ -158,11 +158,11 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                 padding = insets(10.0)
                 spacing = 10.0
 
-                visibleWhen(selectedServerName.isNotNull)
+                visibleWhen(selectedProviderName.isNotNull)
                 managedWhen(visibleProperty())
 
                 label {
-                    textProperty().bind(selectedServerName)
+                    textProperty().bind(selectedProviderName)
                     style {
                         fontSize = 18.px
                         fontWeight = FontWeight.BOLD
@@ -173,12 +173,12 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     fieldset("Server Configuration") {
                         field("Type") {
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
+                                textProperty().bind(selectedConfig.stringBinding {
                                     when (it) {
-                                        is EmbeddedServerConfig -> "Embedded"
-                                        is StdioServerConfig -> "Stdio"
-                                        is HttpServerConfig -> "HTTP"
-                                        is TestServerConfig -> "Test"
+                                        is EmbeddedProviderConfig -> "Embedded"
+                                        is StdioProviderConfig -> "Stdio"
+                                        is HttpProviderConfig -> "HTTP"
+                                        is TestProviderConfig -> "Test"
                                         null -> ""
                                     }
                                 })
@@ -188,7 +188,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         field("Description") {
                             label {
                                 isWrapText = true
-                                textProperty().bind(selectedServerConfig.stringBinding {
+                                textProperty().bind(selectedConfig.stringBinding {
                                     it?.description ?: "No description available"
                                 })
                             }
@@ -197,7 +197,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                     // Capabilities information
                     fieldset("Capabilities") {
-                        val capInfo = selectedServerName.objectBinding { name ->
+                        val capInfo = selectedProviderName.objectBinding { name ->
                             name?.let { getCapabilityInfo(it).value }
                         }
                         
@@ -277,50 +277,50 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                     // Type-specific configuration details
                     fieldset {
-                        textProperty.bind(selectedServerConfig.stringBinding { "Details" })
+                        textProperty.bind(selectedConfig.stringBinding { "Details" })
 
                         // Embedded Server Config
                         field("Prompt Library Path") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is EmbeddedServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is EmbeddedProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? EmbeddedServerConfig)?.promptLibraryPath ?: "(default)"
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? EmbeddedProviderConfig)?.promptLibraryPath ?: "(default)"
                                 })
                             }
                         }
 
                         // Stdio Server Config
                         field("Command") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is StdioProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? StdioServerConfig)?.command ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? StdioProviderConfig)?.command ?: ""
                                 })
                             }
                         }
 
                         field("Arguments") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is StdioServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is StdioProviderConfig })
                             managedWhen(visibleProperty())
                             label {
                                 isWrapText = true
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? StdioServerConfig)?.args?.joinToString(" ") ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? StdioProviderConfig)?.args?.joinToString(" ") ?: ""
                                 })
                             }
                         }
 
                         field("Environment") {
-                            visibleWhen(selectedServerConfig.booleanBinding {
-                                it is StdioServerConfig && it.env.isNotEmpty()
+                            visibleWhen(selectedConfig.booleanBinding {
+                                it is StdioProviderConfig && it.env.isNotEmpty()
                             })
                             managedWhen(visibleProperty())
                             label {
                                 isWrapText = true
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? StdioServerConfig)?.env?.entries?.joinToString("\n") { "${it.key}=${it.value}" }
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? StdioProviderConfig)?.env?.entries?.joinToString("\n") { "${it.key}=${it.value}" }
                                         ?: ""
                                 })
                             }
@@ -328,42 +328,42 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                         // HTTP Server Config
                         field("URL") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is HttpServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is HttpProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? HttpServerConfig)?.url ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? HttpProviderConfig)?.url ?: ""
                                 })
                             }
                         }
 
                         // Test Server Config
                         field("Include Default Prompts") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is TestProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? TestServerConfig)?.includeDefaultPrompts?.toString() ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? TestProviderConfig)?.includeDefaultPrompts?.toString() ?: ""
                                 })
                             }
                         }
 
                         field("Include Default Tools") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is TestProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? TestServerConfig)?.includeDefaultTools?.toString() ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? TestProviderConfig)?.includeDefaultTools?.toString() ?: ""
                                 })
                             }
                         }
 
                         field("Include Default Resources") {
-                            visibleWhen(selectedServerConfig.booleanBinding { it is TestServerConfig })
+                            visibleWhen(selectedConfig.booleanBinding { it is TestProviderConfig })
                             managedWhen(visibleProperty())
                             label {
-                                textProperty().bind(selectedServerConfig.stringBinding {
-                                    (it as? TestServerConfig)?.includeDefaultResources?.toString() ?: ""
+                                textProperty().bind(selectedConfig.stringBinding {
+                                    (it as? TestProviderConfig)?.includeDefaultResources?.toString() ?: ""
                                 })
                             }
                         }
@@ -380,15 +380,15 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
         runAsync {
             runBlocking {
                 try {
-                    val adapter = mcpController.mcpServerRegistry.getServer(serverName)
-                        ?: return@runBlocking ServerCapabilityInfo(error = "Server not found")
+                    val provider = mcpController.mcpProviderRegistry.getProvider(serverName)
+                        ?: return@runBlocking ProviderCapabilityInfo(error = "Server not found")
                     
-                    val capabilities = adapter.getCapabilities()
+                    val capabilities = provider.getCapabilities()
                     
                     // Only query for counts if the capability is supported
                     val promptsCount = if (capabilities?.prompts != null) {
                         try {
-                            adapter.listPrompts().size
+                            provider.listPrompts().size
                         } catch (e: Exception) {
                             0
                         }
@@ -398,7 +398,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     
                     val toolsCount = if (capabilities?.tools != null) {
                         try {
-                            adapter.listTools().size
+                            provider.listTools().size
                         } catch (e: Exception) {
                             0
                         }
@@ -406,10 +406,10 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         0
                     }
                     
-                    // Resources API is not yet implemented in the adapter interface
+                    // Resources API is not yet implemented in the interface
                     val resourcesCount = 0
                     
-                    ServerCapabilityInfo(
+                    ProviderCapabilityInfo(
                         hasPrompts = capabilities?.prompts != null,
                         hasTools = capabilities?.tools != null,
                         hasResources = capabilities?.resources != null,
@@ -418,7 +418,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                         resourcesCount = resourcesCount
                     )
                 } catch (e: Exception) {
-                    ServerCapabilityInfo(error = "Error: ${e.message}")
+                    ProviderCapabilityInfo(error = "Error: ${e.message}")
                 }
             }
         } ui { result ->

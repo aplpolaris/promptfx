@@ -161,7 +161,7 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
 
         runAsync {
             try {
-                val server = mcpController.mcpServerRegistry.getServer(serverName)
+                val server = mcpController.mcpProviderRegistry.getProvider(serverName)
                     ?: return@runAsync "Error: Server '$serverName' not found"
                 
                 val response = kotlinx.coroutines.runBlocking {
@@ -201,9 +201,9 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
     private fun loadResources() {
         runAsync {
             val allResources = mutableListOf<ResourceWithServer>()
-            for (serverName in mcpController.mcpServerRegistry.listServerNames()) {
+            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
                 try {
-                    val server = mcpController.mcpServerRegistry.getServer(serverName)
+                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
                     if (server != null) {
                         val resources = kotlinx.coroutines.runBlocking {
                             server.listResources()

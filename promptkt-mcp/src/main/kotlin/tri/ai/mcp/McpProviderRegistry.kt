@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp.registry
+package tri.ai.mcp
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -25,73 +25,68 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.mcp.McpResource
-import tri.ai.mcp.McpServerAdapter
-import tri.ai.mcp.McpServerEmbedded
-import tri.ai.mcp.http.McpServerAdapterHttp
-import tri.ai.mcp.stdio.McpServerAdapterStdio
 import tri.ai.mcp.tool.McpToolMetadata
-import tri.ai.mcp.tool.McpToolResult
-import tri.ai.mcp.tool.StarterToolLibrary
-import tri.ai.mcp.tool.ToolLibrary
+import tri.ai.mcp.tool.McpToolResponse
+import tri.ai.mcp.tool.McpToolLibraryStarter
+import tri.ai.mcp.tool.McpToolLibrary
 import tri.ai.prompt.PromptLibrary
 import java.io.File
 
 /**
- * Registry for MCP servers that can be configured via JSON or YAML.
- * Provides a central place to define and access multiple MCP server configurations.
+ * Registry for MCP providers that can be configured via JSON or YAML.
+ * Provides a central place to define and access multiple MCP provider configurations.
  */
-class McpServerRegistry(
-    private val servers: Map<String, McpServerConfig>
+class McpProviderRegistry(
+    private val providers: Map<String, McpProviderConfig>
 ) {
 
     /**
-     * Get a server adapter by name/ID.
-     * @param name The name/ID of the server
-     * @return The server adapter, or null if not found
+     * Get a provider by name/ID.
+     * @param name The name/ID of the provider
+     * @return The provider, or null if not found
      */
-    fun getServer(name: String): McpServerAdapter? {
-        val config = servers[name] ?: return null
-        return createAdapter(config)
+    fun getProvider(name: String): McpProvider? {
+        val config = providers[name] ?: return null
+        return createProvider(config)
     }
 
     /**
-     * List all available server names/IDs.
+     * List all available provider names/IDs.
      */
-    fun listServerNames(): List<String> = servers.keys.toList()
+    fun listProviderNames(): List<String> = providers.keys.toList()
 
     /**
-     * Get all server configurations.
+     * Get all provider configurations.
      */
-    fun getConfigs(): Map<String, McpServerConfig> = servers
+    fun getConfigs(): Map<String, McpProviderConfig> = providers
 
-    private fun createAdapter(config: McpServerConfig): McpServerAdapter {
+    private fun createProvider(config: McpProviderConfig): McpProvider {
         return when (config) {
-            is EmbeddedServerConfig -> createEmbeddedServer(config)
-            is StdioServerConfig -> createStdioServerAdapter(config)
-            is HttpServerConfig -> createHttpServerAdapter(config)
-            is TestServerConfig -> createTestServer(config)
+            is EmbeddedProviderConfig -> createEmbeddedProvider(config)
+            is StdioProviderConfig -> createStdioProvider(config)
+            is HttpProviderConfig -> createHttpProvider(config)
+            is TestProviderConfig -> createTestProvider(config)
         }
     }
 
-    private fun createEmbeddedServer(config: EmbeddedServerConfig): McpServerAdapter {
+    private fun createEmbeddedProvider(config: EmbeddedProviderConfig): McpProvider {
         val prompts = if (config.promptLibraryPath != null) {
             PromptLibrary.loadFromPath(config.promptLibraryPath)
         } else {
             PromptLibrary()
         }
-        return McpServerEmbedded(prompts, StarterToolLibrary())
+        return McpProviderEmbedded(prompts, McpToolLibraryStarter())
     }
 
-    private fun createStdioServerAdapter(config: StdioServerConfig): McpServerAdapter {
-        return McpServerAdapterStdio(config.command, config.args, config.env)
+    private fun createStdioProvider(config: StdioProviderConfig): McpProvider {
+        return McpProviderStdio(config.command, config.args, config.env)
     }
 
-    private fun createHttpServerAdapter(config: HttpServerConfig) =
-        McpServerAdapterHttp(config.url)
+    private fun createHttpProvider(config: HttpProviderConfig) =
+        McpProviderHttp(config.url)
 
-    private fun createTestServer(config: TestServerConfig): McpServerAdapter {
-        // Test server uses a fixed set of samples/built-ins
+    private fun createTestProvider(config: TestProviderConfig): McpProvider {
+        // Test provider uses a fixed set of samples/built-ins
         val prompts = if (config.includeDefaultPrompts) {
             PromptLibrary().apply {
                 // Add sample prompts from the main library
@@ -103,14 +98,14 @@ class McpServerRegistry(
             PromptLibrary()
         }
 
-        val tools: ToolLibrary = if (config.includeDefaultTools) {
-            StarterToolLibrary()
+        val tools: McpToolLibrary = if (config.includeDefaultTools) {
+            McpToolLibraryStarter()
         } else {
-            object : ToolLibrary {
+            object : McpToolLibrary {
                 override suspend fun listTools() = emptyList<McpToolMetadata>()
                 override suspend fun getTool(name: String) = null
                 override suspend fun callTool(name: String, args: Map<String, Any?>) =
-                    McpToolResult.error("Tool library is disabled")
+                    McpToolResponse.error("Tool library is disabled")
             }
         }
 
@@ -139,7 +134,7 @@ class McpServerRegistry(
             emptyList()
         }
 
-        return McpServerEmbedded(prompts, tools, resources)
+        return McpProviderEmbedded(prompts, tools, resources)
     }
 
     companion object {
@@ -152,23 +147,23 @@ class McpServerRegistry(
         /**
          * Load registry from a JSON file.
          */
-        fun loadFromJson(file: File): McpServerRegistry {
-            val config = jsonMapper.readValue<McpServerRegistryConfig>(file)
-            return McpServerRegistry(config.servers)
+        fun loadFromJson(file: File): McpProviderRegistry {
+            val config = jsonMapper.readValue<McpProviderRegistryConfig>(file)
+            return McpProviderRegistry(config.servers)
         }
 
         /**
          * Load registry from a YAML file.
          */
-        fun loadFromYaml(file: File): McpServerRegistry {
-            val config = yamlMapper.readValue<McpServerRegistryConfig>(file)
-            return McpServerRegistry(config.servers)
+        fun loadFromYaml(file: File): McpProviderRegistry {
+            val config = yamlMapper.readValue<McpProviderRegistryConfig>(file)
+            return McpProviderRegistry(config.servers)
         }
 
         /**
          * Load registry from a file (auto-detect JSON or YAML based on extension).
          */
-        fun loadFromFile(path: String): McpServerRegistry {
+        fun loadFromFile(path: String): McpProviderRegistry {
             val file = File(path)
             return when {
                 path.endsWith(".json") -> loadFromJson(file)
@@ -178,16 +173,16 @@ class McpServerRegistry(
         }
 
         /**
-         * Create a default registry with built-in server configurations.
+         * Create a default registry with built-in provider configurations.
          */
-        fun default(): McpServerRegistry {
-            return McpServerRegistry(
+        fun default(): McpProviderRegistry {
+            return McpProviderRegistry(
                 mapOf(
-                    "embedded" to EmbeddedServerConfig(
-                        description = "Embedded MCP server with default libraries"
+                    "embedded" to EmbeddedProviderConfig(
+                        description = "Embedded MCP provider with default libraries"
                     ),
-                    "test" to TestServerConfig(
-                        description = "Test server with sample prompts and tools"
+                    "test" to TestProviderConfig(
+                        description = "Test provider with sample prompts and tools"
                     )
                 )
             )
@@ -196,14 +191,14 @@ class McpServerRegistry(
 }
 
 /**
- * Configuration for the MCP server registry.
+ * Configuration for the MCP provider registry.
  */
-data class McpServerRegistryConfig(
-    val servers: Map<String, McpServerConfig>
+data class McpProviderRegistryConfig(
+    val servers: Map<String, McpProviderConfig>
 )
 
 /**
- * Base class for MCP server configurations.
+ * Base class for MCP provider configurations.
  */
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -211,47 +206,47 @@ data class McpServerRegistryConfig(
     property = "type"
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(value = EmbeddedServerConfig::class, name = "embedded"),
-    JsonSubTypes.Type(value = StdioServerConfig::class, name = "stdio"),
-    JsonSubTypes.Type(value = HttpServerConfig::class, name = "http"),
-    JsonSubTypes.Type(value = TestServerConfig::class, name = "test")
+    JsonSubTypes.Type(value = EmbeddedProviderConfig::class, name = "embedded"),
+    JsonSubTypes.Type(value = StdioProviderConfig::class, name = "stdio"),
+    JsonSubTypes.Type(value = HttpProviderConfig::class, name = "http"),
+    JsonSubTypes.Type(value = TestProviderConfig::class, name = "test")
 )
-sealed class McpServerConfig {
+sealed class McpProviderConfig {
     abstract val description: String?
 }
 
 /**
- * Configuration for an embedded MCP server (running in the same process).
+ * Configuration for an embedded MCP provider (running in the same process).
  */
-data class EmbeddedServerConfig(
+data class EmbeddedProviderConfig(
     override val description: String? = null,
     val promptLibraryPath: String? = null
-) : McpServerConfig()
+) : McpProviderConfig()
 
 /**
  * Configuration for a remote MCP server via stdio.
  */
-data class StdioServerConfig(
+data class StdioProviderConfig(
     override val description: String? = null,
     val command: String,
     val args: List<String> = emptyList(),
     val env: Map<String, String> = emptyMap()
-) : McpServerConfig()
+) : McpProviderConfig()
 
 /**
  * Configuration for a remote MCP server via HTTP.
  */
-data class HttpServerConfig(
+data class HttpProviderConfig(
     override val description: String? = null,
     val url: String
-) : McpServerConfig()
+) : McpProviderConfig()
 
 /**
- * Configuration for a test server with built-in samples.
+ * Configuration for a test provider with built-in samples.
  */
-data class TestServerConfig(
+data class TestProviderConfig(
     override val description: String? = null,
     val includeDefaultPrompts: Boolean = true,
     val includeDefaultTools: Boolean = true,
     val includeDefaultResources: Boolean = true
-) : McpServerConfig()
+) : McpProviderConfig()

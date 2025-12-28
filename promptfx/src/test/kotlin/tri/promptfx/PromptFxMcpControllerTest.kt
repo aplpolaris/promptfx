@@ -23,7 +23,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import tri.ai.mcp.registry.McpServerRegistry
+import tri.ai.mcp.McpProviderRegistry
 import java.nio.file.Path
 
 class PromptFxMcpControllerTest {
@@ -32,16 +32,16 @@ class PromptFxMcpControllerTest {
     fun testControllerLoadsRegistry() {
         val controller = PromptFxMcpController()
         
-        assertNotNull(controller.mcpServerRegistry)
-        assertTrue(controller.mcpServerRegistry is McpServerRegistry)
+        assertNotNull(controller.mcpProviderRegistry)
+        assertTrue(controller.mcpProviderRegistry is McpProviderRegistry)
     }
 
     @Test
     fun testRegistryHasExpectedServers() {
         val controller = PromptFxMcpController()
-        val registry = controller.mcpServerRegistry
+        val registry = controller.mcpProviderRegistry
         
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         
         // Should have at least the default servers
         assertTrue(serverNames.contains("embedded"))
@@ -52,14 +52,14 @@ class PromptFxMcpControllerTest {
     fun testRegistryCanGetServers() {
         runTest {
             val controller = PromptFxMcpController()
-            val registry = controller.mcpServerRegistry
+            val registry = controller.mcpProviderRegistry
             
             // Should be able to get the embedded server
-            val embeddedServer = registry.getServer("embedded")
+            val embeddedServer = registry.getProvider("embedded")
             assertNotNull(embeddedServer)
             
             // Should be able to get the test server
-            val testServer = registry.getServer("test")
+            val testServer = registry.getProvider("test")
             assertNotNull(testServer)
             
             // Clean up
@@ -71,9 +71,9 @@ class PromptFxMcpControllerTest {
     @Test
     fun testRegistryReturnsNullForNonExistentServer() {
         val controller = PromptFxMcpController()
-        val registry = controller.mcpServerRegistry
+        val registry = controller.mcpProviderRegistry
         
-        val nonExistentServer = registry.getServer("nonexistent")
+        val nonExistentServer = registry.getProvider("nonexistent")
         assertNull(nonExistentServer)
     }
 
@@ -95,10 +95,10 @@ class PromptFxMcpControllerTest {
         """.trimIndent())
         
         // Load registry directly from the file
-        val registry = McpServerRegistry.loadFromYaml(configFile)
+        val registry = McpProviderRegistry.loadFromYaml(configFile)
         
         // Should have the runtime-test server
-        val serverNames = registry.listServerNames()
+        val serverNames = registry.listProviderNames()
         assertTrue(serverNames.contains("runtime-test"), "Should contain runtime-test server from config/mcp-servers.yaml")
         
         // Clean up

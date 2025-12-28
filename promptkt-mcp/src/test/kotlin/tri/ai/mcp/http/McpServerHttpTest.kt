@@ -1,3 +1,22 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package tri.ai.mcp.http
 
 import io.ktor.client.HttpClient
@@ -22,7 +41,7 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.mcp.*
 import tri.ai.mcp.tool.McpToolMetadata
-import tri.ai.mcp.tool.McpToolResult
+import tri.ai.mcp.tool.McpToolResponse
 
 class McpServerHttpTest {
 
@@ -33,6 +52,9 @@ class McpServerHttpTest {
     @BeforeEach
     fun setup() {
         httpClient = HttpClient(OkHttp)
+        val provider = createTestProvider()
+        mcpServer = McpServerHttp(provider, testPort)
+        mcpServer.startServer()
     }
 
     @AfterEach
@@ -68,10 +90,6 @@ class McpServerHttpTest {
     @Test
     fun testStartServerAndInitialize() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = sendJsonRpcRequest("initialize", null)
@@ -86,10 +104,6 @@ class McpServerHttpTest {
     @Test
     fun testHealthCheck() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = httpClient.get("http://localhost:$testPort/health")
@@ -102,10 +116,6 @@ class McpServerHttpTest {
     @Test
     fun testListPrompts() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = sendJsonRpcRequest("prompts/list", null)
@@ -119,10 +129,6 @@ class McpServerHttpTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val params = buildJsonObject {
@@ -140,10 +146,6 @@ class McpServerHttpTest {
     @Test
     fun testListTools() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = sendJsonRpcRequest("tools/list", null)
@@ -156,10 +158,6 @@ class McpServerHttpTest {
     @Test
     fun testInvalidMethod() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = sendJsonRpcRequest("invalid/method", null)
@@ -173,10 +171,6 @@ class McpServerHttpTest {
     @Test
     fun testMalformedRequest() {
         runTest {
-            val adapter = createTestAdapter()
-            mcpServer = McpServerHttp(adapter, testPort)
-            mcpServer.startServer()
-
             waitForServerReady()
 
             val response = httpClient.post("http://localhost:$testPort/mcp") {
@@ -209,9 +203,9 @@ class McpServerHttpTest {
         return response.bodyAsText()
     }
 
-    private fun createTestAdapter() = object : McpServerAdapter {
-        override suspend fun getCapabilities() = McpServerCapabilities(
-            prompts = McpServerCapability(listChanged = false),
+    private fun createTestProvider() = object : McpProvider {
+        override suspend fun getCapabilities() = McpCapabilities(
+            prompts = McpCapability(listChanged = false),
             tools = null
         )
         override suspend fun listPrompts() = listOf(
@@ -223,7 +217,7 @@ class McpServerHttpTest {
         )
 
         override suspend fun getPrompt(name: String, args: Map<String, String>) =
-            McpGetPromptResponse(
+            McpPromptResponse(
                 description = "Test prompt response",
                 messages = listOf(MultimodalChatMessage.Companion.user("Test message"))
             )
@@ -232,14 +226,14 @@ class McpServerHttpTest {
 
         override suspend fun getTool(name: String): McpToolMetadata? = null
 
-        override suspend fun callTool(name: String, args: Map<String, Any?>) = McpToolResult.error("Unsupported")
+        override suspend fun callTool(name: String, args: Map<String, Any?>) = McpToolResponse.error("Unsupported")
 
         override suspend fun listResources(): List<McpResource> = emptyList()
 
         override suspend fun listResourceTemplates(): List<McpResourceTemplate> = emptyList()
 
-        override suspend fun readResource(uri: String): McpReadResourceResponse {
-            throw McpServerException("Resource not found: $uri")
+        override suspend fun readResource(uri: String): McpResourceResponse {
+            throw McpException("Resource not found: $uri")
         }
 
         override suspend fun close() {

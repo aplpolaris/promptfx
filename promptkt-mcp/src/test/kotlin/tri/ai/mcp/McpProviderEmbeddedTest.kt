@@ -27,91 +27,91 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MPartType
-import tri.ai.mcp.tool.StarterToolLibrary
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.prompt.PromptArgDef
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 
-class McpServerEmbeddedTest {
+class McpProviderEmbeddedTest {
 
     @Test
     fun testListPrompts() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
-            val prompts = server.listPrompts()
+            val provider = McpProviderEmbedded(PromptLibrary.INSTANCE, McpToolLibraryStarter())
+            val prompts = provider.listPrompts()
             println(prompts)
             assertTrue(prompts.isNotEmpty(), "Should have at least one prompt")
-            server.close()
+            provider.close()
         }
     }
 
     @Test
     fun testListResources() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
-            val resources = server.listResources()
+            val provider = McpProviderEmbedded(PromptLibrary.INSTANCE, McpToolLibraryStarter())
+            val resources = provider.listResources()
             println(resources)
-            assertTrue(resources.isEmpty(), "Default embedded server should have no resources")
-            server.close()
+            assertTrue(resources.isEmpty(), "Default embedded provider should have no resources")
+            provider.close()
         }
     }
 
     @Test
     fun testListResourceTemplates() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
-            val templates = server.listResourceTemplates()
+            val provider = McpProviderEmbedded(PromptLibrary.INSTANCE, McpToolLibraryStarter())
+            val templates = provider.listResourceTemplates()
             println(templates)
-            assertTrue(templates.isEmpty(), "Default embedded server should have no resource templates")
-            server.close()
+            assertTrue(templates.isEmpty(), "Default embedded provider should have no resource templates")
+            provider.close()
         }
     }
 
     @Test
     fun testReadResource_notFound() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
+            val provider = McpProviderEmbedded(PromptLibrary.INSTANCE, McpToolLibraryStarter())
             try {
-                server.readResource("file:///nonexistent")
-                Assertions.fail("Expected McpServerException for nonexistent resource")
-            } catch (e: McpServerException) {
+                provider.readResource("file:///nonexistent")
+                Assertions.fail("Expected McpproviderException for nonexistent resource")
+            } catch (e: McpException) {
                 // Expected
             }
-            server.close()
+            provider.close()
         }
     }
 
     @Test
     fun testGetPrompt() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val provider = McpProviderEmbedded(PromptLibrary.Companion.INSTANCE, McpToolLibraryStarter())
 
             // Test getting a prompt that exists
-            val firstPrompt = server.listPrompts().first()
-            val response = server.getPrompt(firstPrompt.name)
+            val firstPrompt = provider.listPrompts().first()
+            val response = provider.getPrompt(firstPrompt.name)
             println(response)
             Assertions.assertNotNull(response)
             assertFalse(response.messages.isEmpty())
 
             // Test getting a prompt that doesn't exist
             try {
-                server.getPrompt("nonexistent-prompt")
-                Assertions.fail("Expected McpServerException")
-            } catch (e: McpServerException) {
+                provider.getPrompt("nonexistent-prompt")
+                Assertions.fail("Expected McpproviderException")
+            } catch (e: McpException) {
                 // Expected
             }
 
-            server.close()
+            provider.close()
         }
     }
 
     @Test
     fun testGetPrompt_arguments() {
         runTest {
-            val server = McpServerEmbedded(PromptLibrary.Companion.INSTANCE, StarterToolLibrary())
+            val provider = McpProviderEmbedded(PromptLibrary.Companion.INSTANCE, McpToolLibraryStarter())
 
-            val response = server.getPrompt(
+            val response = provider.getPrompt(
                 "text-qa/answer", mapOf(
                     "instruct" to "What is the meaning of life?",
                     "input" to "42"
@@ -138,21 +138,21 @@ class McpServerEmbeddedTest {
                 ), response.messages[0].content
             )
 
-            server.close()
+            provider.close()
         }
     }
 
     @Test
     fun testCapabilities() {
         runTest {
-            val adapter = McpServerEmbedded(PromptLibrary.INSTANCE, StarterToolLibrary())
+            val provider = McpProviderEmbedded(PromptLibrary.INSTANCE, McpToolLibraryStarter())
 
-            val capabilities = adapter.getCapabilities()
+            val capabilities = provider.getCapabilities()
             println(capabilities)
             Assertions.assertNotNull(capabilities)
             Assertions.assertNotNull(capabilities.prompts)
 
-            adapter.close()
+            provider.close()
         }
     }
 

@@ -17,20 +17,14 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.mcp
+package tri.ai.mcp.tool
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import kotlinx.serialization.Serializable
+import com.fasterxml.jackson.module.kotlin.readValue
+import tri.util.json.jsonMapper
+import kotlin.String
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@Serializable
-data class McpServerCapabilities(
-    val prompts: McpServerCapability? = null,
-    val tools: McpServerCapability? = null,
-    val resources: McpServerCapability? = null
-)
-
-@Serializable
-data class McpServerCapability(
-    val listChanged: Boolean = false
-)
+interface McpToolLibrary {
+    suspend fun listTools(): List<McpToolMetadata>
+    suspend fun getTool(name: String): McpToolMetadata?
+    suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResponse
+}

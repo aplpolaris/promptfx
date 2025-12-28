@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,26 +17,20 @@
  * limitations under the License.
  * #L%
  */
+package tri.ai.mcp
 
-module tri.promptkt.mcp {
-    requires transitive tri.promptkt.pips;
-    requires transitive kotlin.stdlib;
+import com.fasterxml.jackson.annotation.JsonInclude
+import kotlinx.serialization.Serializable
 
-    requires com.fasterxml.jackson.databind;
-    requires com.google.common;
-    requires io.ktor.client.core;
-    requires io.ktor.server.core;
-    requires io.ktor.server.netty;
-    requires io.ktor.server.host.common;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Serializable
+data class McpCapabilities(
+    val prompts: McpCapability? = null,
+    val tools: McpCapability? = null,
+    val resources: McpCapability? = null
+)
 
-    requires kotlinx.serialization.core;
-    requires kotlinx.serialization.json;
-
-    exports tri.ai.mcp;
-    exports tri.ai.mcp.http;
-    exports tri.ai.mcp.stdio;
-    exports tri.ai.mcp.tool;
-
-    opens tri.ai.mcp to com.fasterxml.jackson.databind;
-    opens tri.ai.mcp.tool to com.fasterxml.jackson.databind, kotlin.reflect;
-}
+@Serializable
+data class McpCapability(
+    val listChanged: Boolean = false
+)
