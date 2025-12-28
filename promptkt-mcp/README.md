@@ -18,10 +18,10 @@ To start the MCP HTTP server:
 mvn clean install
 
 # Run the HTTP server (default port 8080)
-mvn exec:java -Dexec.mainClass="tri.ai.mcp.McpServerHttpMainKt"
+mvn exec:java -Dexec.mainClass="tri.ai.mcp.http.McpServerHttpMainKt"
 
 # Or specify a custom port
-mvn exec:java -Dexec.mainClass="tri.ai.mcp.McpServerHttpMainKt" -Dexec.args="9000"
+mvn exec:java -Dexec.mainClass="tri.ai.mcp.http.McpServerHttpMainKt" -Dexec.args="9000"
 ```
 
 The server will start and display:
@@ -30,7 +30,30 @@ The server will start and display:
 - Health check endpoint
 - Number of available prompts and tools
 
-## Testing the MCP Server
+## Running the MCP Stdio Server
+
+To start the MCP Stdio server:
+
+```bash
+# Build the project first
+mvn clean install
+
+# Run the Stdio server
+mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt"
+```
+
+The server will:
+- Read JSON-RPC 2.0 requests from standard input (stdin)
+- Write JSON-RPC 2.0 responses to standard output (stdout)
+- Write server status messages to standard error (stderr)
+- Display number of available prompts and tools on startup
+
+The Stdio server is ideal for:
+- Integration with MCP clients that use stdio transport
+- Running as a subprocess in other applications
+- Testing with command-line tools
+
+## Testing the MCP HTTP Server
 
 ### Health Check
 
@@ -130,6 +153,30 @@ curl -X POST http://localhost:8080/mcp \
 ```
 
 Replace `<tool-name>` and arguments with actual tool name and required parameters.
+
+## Testing the MCP Stdio Server
+
+The Stdio server can be tested by sending JSON-RPC 2.0 requests to its standard input. Here are some examples:
+
+### Initialize Connection
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"test-client","version":"1.0.0"}}}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+```
+
+### List Available Prompts
+
+```bash
+echo '{"jsonrpc":"2.0","id":2,"method":"prompts/list"}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+```
+
+### List Available Tools
+
+```bash
+echo '{"jsonrpc":"2.0","id":3,"method":"tools/list"}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+```
+
+Note: The `2>/dev/null` redirects stderr (server status messages) so you only see the JSON-RPC responses on stdout.
 
 ## Testing with a Shell Script
 
