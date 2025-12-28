@@ -22,7 +22,6 @@ package tri.ai.mcp
 import kotlinx.serialization.json.*
 import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
-import tri.ai.mcp.JsonSerializers.serialize
 import tri.ai.mcp.JsonSerializers.toJsonElement
 import tri.ai.mcp.tool.McpToolResult
 
@@ -43,7 +42,7 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
 
             // --- Optional surfaces with empty responses ---
             "tools/list" -> handleToolsList()
-            "tools/call" -> handleToolsCall(params)
+            "tools/call" -> handleToolsCall(params).toJsonElement()
             "resources/list" -> handleResourcesList()
             "resources/templates/list" -> handleResourceTemplatesList()
             "resources/read" -> handleResourcesRead(params)
@@ -67,12 +66,12 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
                 put("name", "promptfx-prompts")
                 put("version", "0.1.0")
             })
-            capabilities?.let { put("capabilities", JsonSerializers.toJsonElement(it)) }
+            capabilities?.let { put("capabilities", it.toJsonElement()) }
         }
     }
 
     private suspend fun handlePromptsList() = buildJsonObject {
-        put("prompts", toJsonElement(server.listPrompts()))
+        put("prompts", server.listPrompts().toJsonElement())
     }
     private suspend fun handlePromptsGet(params: JsonObject?): JsonElement {
         val name = params?.get("name")?.jsonPrimitive?.content
@@ -82,25 +81,26 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
     }
 
     private suspend fun handleToolsList() = buildJsonObject {
-        put("tools", toJsonElement(server.listTools()))
+        put("tools", server.listTools().toJsonElement())
     }
-    private suspend fun handleToolsCall(params: JsonObject?): JsonElement {
+
+    private suspend fun handleToolsCall(params: JsonObject?): McpToolResult {
         val name = params?.get("name")?.jsonPrimitive?.content
         require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
         val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
-        return convertToolResponse(server.callTool(name, argsMap))
+        return server.callTool(name, argsMap)
     }
 
     private suspend fun handleResourcesList() = buildJsonObject {
-        put("resources", toJsonElement(server.listResources()))
+        put("resources", server.listResources().toJsonElement())
     }
     private suspend fun handleResourceTemplatesList() = buildJsonObject {
-        put("resourceTemplates", toJsonElement(server.listResourceTemplates()))
+        put("resourceTemplates", server.listResourceTemplates().toJsonElement())
     }
     private suspend fun handleResourcesRead(params: JsonObject?): JsonElement {
         val uri = params?.get("uri")?.jsonPrimitive?.content
         require(!uri.isNullOrBlank()) { "Invalid params: 'uri' is required" }
-        return toJsonElement(server.readResource(uri))
+        return server.readResource(uri).toJsonElement()
     }
     private suspend fun handleNotificationsInitialized() = null
     private suspend fun handleNotificationsClose(): JsonElement? {
@@ -140,19 +140,6 @@ class McpServerHandler(private val server: McpServerAdapter) : JsonRpcHandler {
                     }
                 }
             })
-        }
-
-        /** Convert McpToolResponse to JsonElement */
-        fun convertToolResponse(response: McpToolResult): JsonElement = buildJsonObject {
-            response.error?.let { error ->
-                put("isError", true)
-                putJsonArray("content") { add(textContent(error)) }
-                return@buildJsonObject
-            }
-            response.output?.let { output ->
-                putJsonArray("content") { add(textContent(serialize(output))) }
-                put("structuredContent", output)
-            }
         }
 
         /** Map your chat role enum to MCP's lowercase roles. Adjust as needed for your enum. */

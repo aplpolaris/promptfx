@@ -52,7 +52,7 @@ data class StubTool(
         jsonMapper.convertValue(inputSchema),
         jsonMapper.convertValue(outputSchema)
     ) {
-        this.hardCodedOutput = (hardCodedOutput as? JsonElement) ?: toJsonElement(hardCodedOutput)
+        this.hardCodedOutput = (hardCodedOutput as? JsonElement) ?: hardCodedOutput.toJsonElement()
     }
 
     private var hardCodedOutput: JsonElement = buildJsonObject { }
@@ -62,7 +62,7 @@ data class StubTool(
     private var hardCodedNode: JsonNode
         get() = hardCodedOutput.toJsonNode()
         set(value) {
-            hardCodedOutput = toJsonElement(value)
+            hardCodedOutput = value.toJsonElement()
         }
 
     override suspend fun execute(input: JsonNode, context: ExecContext) =

@@ -19,18 +19,17 @@
  */
 package tri.promptfx.mcp
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.core.tool.ExecContext
-import tri.ai.core.tool.Executable
+import tri.ai.mcp.tool.McpToolMetadata
+import tri.ai.mcp.tool.version
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
@@ -42,7 +41,7 @@ class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "MCP Tools"
 
 /** Data class to track tools with their server information. */
 data class ToolWithServer(
-    val tool: Executable,
+    val tool: McpToolMetadata,
     val serverName: String
 )
 
@@ -190,16 +189,18 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
 
     private fun runToolExecution() {
         val toolWithServer = toolSelection.value ?: return
-        val tool = toolWithServer.tool
         val inputJson = toolInputText.value
 
         runAsync {
             try {
-                val inputNode: JsonNode = jsonMapper.readTree(inputJson)
+                val inputNode: Map<String, Any?> = jsonMapper.readValue<Map<String, Any?>>(inputJson)
                 val output = kotlinx.coroutines.runBlocking {
-                    tool.execute(inputNode, ExecContext())
+                    val server = mcpController.mcpServerRegistry.getServer(toolWithServer.serverName)
+                        ?: throw IllegalStateException("MCP server '${toolWithServer.serverName}' not found")
+                    val result = server.callTool(toolWithServer.tool.name, inputNode)
+                    result.content
                 }
-                "Success:\n${output.toPrettyString()}"
+                "Success:\n${jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(output)}"
             } catch (e: Exception) {
                 "Error: ${e.message}"
             }

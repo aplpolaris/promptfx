@@ -33,8 +33,12 @@ module tri.promptkt.mcp {
     requires kotlinx.serialization.json;
 
     exports tri.ai.mcp;
+    exports tri.ai.mcp.http;
+    exports tri.ai.mcp.registry;
+    exports tri.ai.mcp.stdio;
     exports tri.ai.mcp.tool;
 
     opens tri.ai.mcp to com.fasterxml.jackson.databind;
+    opens tri.ai.mcp.registry to com.fasterxml.jackson.databind;
     opens tri.ai.mcp.tool to com.fasterxml.jackson.databind, kotlin.reflect;
 }
