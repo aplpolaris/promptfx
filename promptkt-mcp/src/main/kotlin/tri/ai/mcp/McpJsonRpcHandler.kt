@@ -34,24 +34,24 @@ class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
             // --- Required handshake (advertise prompts capability only) ---
-            "initialize" -> handleInitialize()
+            METHOD_INITIALIZE -> handleInitialize()
 
             // --- Prompts surfaces ---
-            "prompts/list" -> handlePromptsList()
-            "prompts/get" -> handlePromptsGet(params)
+            METHOD_PROMPTS_LIST -> handlePromptsList()
+            METHOD_PROMPTS_GET -> handlePromptsGet(params)
 
             // --- Optional surfaces with empty responses ---
-            "tools/list" -> handleToolsList()
-            "tools/call" -> handleToolsCall(params).toJsonElement()
-            "resources/list" -> handleResourcesList()
-            "resources/templates/list" -> handleResourceTemplatesList()
-            "resources/read" -> handleResourcesRead(params)
+            METHOD_TOOLS_LIST -> handleToolsList()
+            METHOD_TOOLS_CALL -> handleToolsCall(params).toJsonElement()
+            METHOD_RESOURCES_LIST -> handleResourcesList()
+            METHOD_RESOURCES_TEMPLATES_LIST -> handleResourceTemplatesList()
+            METHOD_RESOURCES_READ -> handleResourcesRead(params)
 
             // --- Notifications with no responses ---
-            "notifications/initialized" -> handleNotificationsInitialized()
+            METHOD_NOTIFICATIONS_INITIALIZED -> handleNotificationsInitialized()
 
             // --- Graceful shutdown notification ---
-            "notifications/close" -> handleNotificationsClose()
+            METHOD_NOTIFICATIONS_CLOSE -> handleNotificationsClose()
 
             // Unknown/unsupported method
             else -> null
@@ -114,6 +114,19 @@ class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
     //region Response Conversion Logic
 
     companion object {
+        // RPC method name constants
+        const val METHOD_INITIALIZE = "initialize"
+        const val METHOD_PROMPTS_LIST = "prompts/list"
+        const val METHOD_PROMPTS_GET = "prompts/get"
+        const val METHOD_TOOLS_LIST = "tools/list"
+        const val METHOD_TOOLS_CALL = "tools/call"
+        const val METHOD_RESOURCES_LIST = "resources/list"
+        const val METHOD_RESOURCES_TEMPLATES_LIST = "resources/templates/list"
+        const val METHOD_RESOURCES_READ = "resources/read"
+        const val METHOD_NOTIFICATIONS_INITIALIZED = "notifications/initialized"
+        const val METHOD_NOTIFICATIONS_CLOSE = "notifications/close"
+        const val METHOD_NOTIFICATIONS_PREFIX = "notifications/"
+
         /** Convert McpPrompt to JsonElement */
         fun convertPromptResponse(response: McpPromptResponse): JsonElement = buildJsonObject {
             response.description?.let { put("description", it) }
