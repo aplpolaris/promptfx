@@ -41,6 +41,7 @@ class McpProviderStdioTest {
         assertThrows(Exception::class.java) {
             runTest {
                 val provider = McpProviderStdio("nonexistent-command-12345")
+                provider.initialize()
                 provider.close()
             }
         }
@@ -72,25 +73,15 @@ class McpProviderStdioTest {
     @Test
     @Disabled("integration test requires connecting to a specific external MCP stdio server")
     fun testExternal() {
-        val cmd =
-            "D:/code/mcp/kotlin-sdk/samples/weather-stdio-server/build/install/weather-stdio-server/bin/weather-stdio-server.bat"
-        val provider = McpProviderStdio(command = cmd)
+        val provider = McpProviderStdio("C:\\Program Files\\nodejs\\npx.cmd", args = listOf("-y", "@modelcontextprotocol/server-everything"))
 
         runProviderTest(provider)
 
         runTest {
             println("-".repeat(40))
-            val call1 = provider.callTool("get_alerts", mapOf("state" to "MD")).content.first() as McpContent.Text
+            val call = provider.callTool("echo", mapOf("message" to "Hello World")).content.first() as McpContent.Text
             println("-".repeat(20))
-            println(call1.text)
-            println("-".repeat(40))
-            val call2 = provider.callTool(
-                "get_forecast",
-                mapOf("latitude" to "39.24", "longitude" to "-76.84")
-            ).content.first() as McpContent.Text
-            println("-".repeat(20))
-            println(call2.text)
-
+            println(call.text)
             provider.close()
         }
     }
@@ -102,6 +93,7 @@ fun runProviderTest(provider: McpProvider) {
     runTest {
         println("-".repeat(40))
         try {
+            println(provider.initialize())
             println(provider.getCapabilities())
         } catch (e: McpException) {
             println("getCapabilities error: ${e.message}")

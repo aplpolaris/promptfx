@@ -114,6 +114,7 @@ curl -X POST http://localhost:8080/mcp \
     "method": "initialize",
     "params": {
       "protocolVersion": "2025-06-18",
+      "capabilities": {},
       "clientInfo": {
         "name": "test-client",
         "version": "1.0.0"
@@ -200,7 +201,7 @@ The Stdio server can be tested by sending JSON-RPC 2.0 requests to its standard 
 
 Initialize connection:
 ```json
-{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"test-client","version":"1.0.0"}}}
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}
 ```
 
 List Available Prompts:
@@ -212,3 +213,16 @@ List Available Tools:
 ```json
 {"jsonrpc":"2.0","id":3,"method":"tools/list"}
 ```
+
+## Additional Notes
+
+**MCP Inspector** is useful for testing MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. Run with
+```bash
+npx @modelcontextprotocol/inspector <command>`
+```
+
+Run a test MCP server over `stdio` with:
+```bash
+npx @modelcontextprotocol/server-everything
+```
+This requires (i) 

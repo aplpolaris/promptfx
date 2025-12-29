@@ -204,6 +204,7 @@ class McpServerHttpTest {
     }
 
     private fun createTestProvider() = object : McpProvider {
+        override suspend fun initialize() {}
         override suspend fun getCapabilities() = McpCapabilities(
             prompts = McpCapability(listChanged = false),
             tools = null

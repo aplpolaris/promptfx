@@ -29,7 +29,7 @@ import tri.ai.mcp.tool.McpToolResponse
  * Handles MCP-specific business logic for JSON-RPC requests.
  * Focuses on MCP protocol implementation without JSON-RPC concerns.
  */
-class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
+class McpJsonRpcHandler(private val provider: McpProvider) : JsonRpcHandler {
 
     override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
         return when (method) {
@@ -58,60 +58,62 @@ class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
         }
     }
 
+    //region METHOD HANDLERS
+
     private suspend fun handleInitialize(): JsonElement {
-        val capabilities = server.getCapabilities()
+        val capabilities = provider.getCapabilities()
         return buildJsonObject {
             put("protocolVersion", "2025-06-18")
+            put("capabilities", capabilities?.toJsonElement() ?: buildJsonObject { })
             put("serverInfo", buildJsonObject {
                 put("name", "promptfx-prompts")
                 put("version", "0.1.0")
             })
-            capabilities?.let { put("capabilities", it.toJsonElement()) }
         }
     }
 
     private suspend fun handlePromptsList() = buildJsonObject {
-        put("prompts", server.listPrompts().toJsonElement())
+        put("prompts", provider.listPrompts().toJsonElement())
     }
     private suspend fun handlePromptsGet(params: JsonObject?): JsonElement {
         val name = params?.get("name")?.jsonPrimitive?.content
         require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
         val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
-        return convertPromptResponse(server.getPrompt(name, argsMap))
+        return convertPromptResponse(provider.getPrompt(name, argsMap))
     }
 
     private suspend fun handleToolsList() = buildJsonObject {
-        put("tools", server.listTools().toJsonElement())
+        put("tools", provider.listTools().toJsonElement())
     }
 
     private suspend fun handleToolsCall(params: JsonObject?): McpToolResponse {
         val name = params?.get("name")?.jsonPrimitive?.content
         require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
         val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
-        return server.callTool(name, argsMap)
+        return provider.callTool(name, argsMap)
     }
 
     private suspend fun handleResourcesList() = buildJsonObject {
-        put("resources", server.listResources().toJsonElement())
+        put("resources", provider.listResources().toJsonElement())
     }
     private suspend fun handleResourceTemplatesList() = buildJsonObject {
-        put("resourceTemplates", server.listResourceTemplates().toJsonElement())
+        put("resourceTemplates", provider.listResourceTemplates().toJsonElement())
     }
     private suspend fun handleResourcesRead(params: JsonObject?): JsonElement {
         val uri = params?.get("uri")?.jsonPrimitive?.content
         require(!uri.isNullOrBlank()) { "Invalid params: 'uri' is required" }
-        return server.readResource(uri).toJsonElement()
+        return provider.readResource(uri).toJsonElement()
     }
     private suspend fun handleNotificationsInitialized() = null
     private suspend fun handleNotificationsClose(): JsonElement? {
         // No response for notifications, caller should exit
-        runCatching { server.close() }
+        runCatching { provider.close() }
         return null
     }
 
     private fun objwithemptylist(id: String) = buildJsonObject { put(id, buildJsonArray { }) }
 
-    //region Response Conversion Logic
+    //endregion
 
     companion object {
         // RPC method name constants
@@ -126,6 +128,18 @@ class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
         const val METHOD_NOTIFICATIONS_INITIALIZED = "notifications/initialized"
         const val METHOD_NOTIFICATIONS_CLOSE = "notifications/close"
         const val METHOD_NOTIFICATIONS_PREFIX = "notifications/"
+
+        /** Standard client parameters for MCP initialization */
+        val PROMPTFX_CLIENT_PARAMS = buildJsonObject {
+            put("protocolVersion", JsonPrimitive("2025-06-18"))
+            put("capabilities", buildJsonObject {})
+            put("clientInfo", buildJsonObject {
+                put("name", JsonPrimitive("promptfx-http-client"))
+                put("version", JsonPrimitive("0.1.0"))
+            })
+        }
+
+        //region Response Conversion Logic
 
         /** Convert McpPrompt to JsonElement */
         fun convertPromptResponse(response: McpPromptResponse): JsonElement = buildJsonObject {
@@ -199,7 +213,7 @@ class McpJsonRpcHandler(private val server: McpProvider) : JsonRpcHandler {
             put("type", "text")
             put("text", s)
         }
+        //endregion
     }
 
-    //endregion
 }

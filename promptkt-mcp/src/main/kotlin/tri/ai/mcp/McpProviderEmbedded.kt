@@ -40,6 +40,8 @@ class McpProviderEmbedded(
 
     override fun toString() = "McpServer-Embedded"
 
+    override suspend fun initialize() { }
+
     /** List prompt information. */
     override suspend fun listPrompts(): List<McpPrompt> =
         prompts.list().map { it.toMcpContract() }

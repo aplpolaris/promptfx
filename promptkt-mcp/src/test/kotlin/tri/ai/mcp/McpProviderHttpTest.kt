@@ -62,7 +62,7 @@ class McpProviderHttpTest {
                         val method = json["method"]?.jsonPrimitive?.content
                         val id = json["id"]
                         val response = when (method) {
-                            METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
+                            METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2025-06-18","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
                             METHOD_NOTIFICATIONS_INITIALIZED -> """{"jsonrpc":"2.0","id":$id,"result":{}}"""
                             METHOD_PROMPTS_LIST -> """{"jsonrpc":"2.0","id":$id,"result":{"prompts":[{"name":"test-prompt","title":"Test Prompt","description":"A test prompt"}]}}"""
                             METHOD_PROMPTS_GET -> """{"jsonrpc":"2.0","id":$id,"result":{"description":"Test prompt response","messages":[{"role":"user","content":{"type":"text","text":"Test message"}}]}}"""
@@ -205,7 +205,8 @@ class McpProviderHttpTest {
     @Test
     @Disabled("This test requires an external MCP HTTP server to be running at the specified URL")
     fun testExternal() {
-        val url = "https://seolinkmap.com/mcp"
+        val url1 = "https://seolinkmap.com/mcp"
+        val url = "https://your-test-server/mcp"
         val provider = McpProviderHttp(url)
         runTest {
             println(provider.getCapabilities())

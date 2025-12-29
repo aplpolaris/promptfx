@@ -103,7 +103,7 @@ class McpServerStdioIntegrationTest {
                 assertTrue(response1.contains("test/stdio-prompt"), "Response should contain test prompt: $response1")
 
                 // Test 2: Initialize (which returns capabilities)
-                val initializeRequest = """{"jsonrpc":"2.0","id":2,"method":"initialize","params":{}}""" + "\n"
+                val initializeRequest = """{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion": "2025-06-18","capabilities":{}}}""" + "\n"
                 clientOutputStream.write(initializeRequest.toByteArray())
                 clientOutputStream.flush()
 
