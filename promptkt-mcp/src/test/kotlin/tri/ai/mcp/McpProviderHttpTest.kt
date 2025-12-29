@@ -230,7 +230,8 @@ class McpProviderHttpTest {
                             call.response.headers.append("Mcp-Session-Id", TEST_SESSION_ID)
                         } else {
                             // For all other methods after initialize, verify session ID is present
-                            if (method != METHOD_NOTIFICATIONS_INITIALIZED && sessionIdHeader == TEST_SESSION_ID) {
+                            // (including METHOD_NOTIFICATIONS_INITIALIZED which is sent right after initialize)
+                            if (sessionIdHeader == TEST_SESSION_ID) {
                                 receivedSessionIdInSubsequentRequest = true
                             }
                         }
