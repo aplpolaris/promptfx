@@ -49,6 +49,7 @@ class McpProviderHttpTest {
     companion object {
         private const val TEST_PORT = 9876
         private const val BASE_URL = "http://localhost:$TEST_PORT"
+        private const val TEST_SESSION_ID = "test-session-123"
         private lateinit var server: NettyApplicationEngine
 
         @JvmStatic
@@ -61,6 +62,12 @@ class McpProviderHttpTest {
                         val json = Json.parseToJsonElement(body).jsonObject
                         val method = json["method"]?.jsonPrimitive?.content
                         val id = json["id"]
+                        
+                        // For initialize method, add session ID header to response
+                        if (method == METHOD_INITIALIZE) {
+                            call.response.headers.append("Mcp-Session-Id", TEST_SESSION_ID)
+                        }
+                        
                         val response = when (method) {
                             METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
                             METHOD_NOTIFICATIONS_INITIALIZED -> """{"jsonrpc":"2.0","id":$id,"result":{}}"""
@@ -198,6 +205,62 @@ class McpProviderHttpTest {
                 }
             } finally {
                 provider.close()
+            }
+        }
+    }
+
+    @Test
+    fun testSessionIdHandling() {
+        runTest {
+            // Create a new test server that verifies session ID is sent
+            val sessionCheckPort = 9877
+            var receivedSessionIdInSubsequentRequest = false
+            
+            val sessionCheckServer = embeddedServer(Netty, port = sessionCheckPort) {
+                routing {
+                    post("/mcp") {
+                        val body = call.receiveText()
+                        val json = Json.parseToJsonElement(body).jsonObject
+                        val method = json["method"]?.jsonPrimitive?.content
+                        val id = json["id"]
+                        val sessionIdHeader = call.request.headers["Mcp-Session-Id"]
+                        
+                        // For initialize method, add session ID header to response
+                        if (method == METHOD_INITIALIZE) {
+                            call.response.headers.append("Mcp-Session-Id", TEST_SESSION_ID)
+                        } else {
+                            // For all other methods after initialize, verify session ID is present
+                            if (method != METHOD_NOTIFICATIONS_INITIALIZED && sessionIdHeader == TEST_SESSION_ID) {
+                                receivedSessionIdInSubsequentRequest = true
+                            }
+                        }
+                        
+                        val response = when (method) {
+                            METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
+                            METHOD_NOTIFICATIONS_INITIALIZED -> """{"jsonrpc":"2.0","id":$id,"result":{}}"""
+                            METHOD_PROMPTS_LIST -> """{"jsonrpc":"2.0","id":$id,"result":{"prompts":[{"name":"test-prompt","title":"Test Prompt","description":"A test prompt"}]}}"""
+                            else -> """{"jsonrpc":"2.0","id":$id,"error":{"code":-32601,"message":"Method not found"}}"""
+                        }
+                        call.respondText(response, ContentType.Application.Json)
+                    }
+                }
+            }.start(wait = false)
+            
+            Thread.sleep(500) // Wait for server to start
+            
+            try {
+                val provider = McpProviderHttp("http://localhost:$sessionCheckPort")
+                try {
+                    // This should trigger initialize and then call prompts/list
+                    provider.listPrompts()
+                    
+                    // Verify that session ID was received in subsequent request
+                    assertTrue(receivedSessionIdInSubsequentRequest, "Session ID should be sent in subsequent requests after initialization")
+                } finally {
+                    provider.close()
+                }
+            } finally {
+                sessionCheckServer.stop(1000, 2000)
             }
         }
     }

@@ -25,8 +25,10 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -77,6 +79,7 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
     }
     private val initialized = AtomicBoolean(false)
     private var capabilities: McpCapabilities? = null
+    private var sessionId: String? = null
     private val requestId = AtomicLong(1)
     private val objectMapper = ObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -217,8 +220,8 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
             if (initialized.get()) return
 
             try {
-                val result = runBlocking {
-                    sendJsonRpcInitialization(METHOD_INITIALIZE, buildJsonObject {
+                val (result, response) = runBlocking {
+                    sendJsonRpcInitializationWithResponse(METHOD_INITIALIZE, buildJsonObject {
                         put("protocolVersion", JsonPrimitive("2024-11-05"))
                         put("capabilities", buildJsonObject {})
                         put("clientInfo", buildJsonObject {
@@ -227,6 +230,13 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
                         })
                     })
                 }
+                
+                // Extract session ID from response headers
+                response.headers["Mcp-Session-Id"]?.let { mcpSessionId ->
+                    sessionId = mcpSessionId
+                    info<McpProviderHttp>("Received Mcp-Session-Id: $mcpSessionId")
+                }
+                
                 info<McpProviderHttp>("Initialized MCP HTTP provider with server response: $result")
                 capabilities = result.jsonObject["capabilities"]?.jsonObject?.let {
                     objectMapper.readValue(JsonSerializers.serialize(it))
@@ -250,6 +260,12 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
 
     /** Send a JSON-RPC request to the MCP server at /mcp endpoint, without trying to initialize. */
     private suspend fun sendJsonRpcInitialization(method: String, params: JsonObject? = null): JsonElement {
+        val (result, _) = sendJsonRpcInitializationWithResponse(method, params)
+        return result
+    }
+
+    /** Send a JSON-RPC request to the MCP server at /mcp endpoint, without trying to initialize, and return both result and response. */
+    private suspend fun sendJsonRpcInitializationWithResponse(method: String, params: JsonObject? = null): Pair<JsonElement, HttpResponse> {
         val request = buildJsonObject {
             put("jsonrpc", JsonPrimitive("2.0"))
             put("id", JsonPrimitive(requestId.getAndIncrement()))
@@ -262,6 +278,8 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
         val response = httpClient.post("$baseUrl/mcp") {
             contentType(ContentType.Application.Json)
             setBody(JsonSerializers.serialize(request))
+            // Add session ID header if available
+            sessionId?.let { header("Mcp-Session-Id", it) }
         }
         if (!response.status.isSuccess()) {
             println(request)
@@ -271,14 +289,14 @@ class McpProviderHttp(_baseUrl: String) : McpProvider {
 
         val responseText = response.bodyAsText()
         if (responseText.isEmpty())
-            return JsonNull
+            return JsonNull to response
         val responseJson = Json.parseToJsonElement(responseText).jsonObject
         if (responseJson.containsKey("error")) {
             val error = responseJson["error"]?.jsonObject
             val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
             throw McpException("JSON-RPC error: $message")
         }
-        return responseJson["result"] ?: JsonNull
+        return (responseJson["result"] ?: JsonNull) to response
     }
 
     /**
