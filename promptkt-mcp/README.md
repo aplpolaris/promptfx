@@ -1,6 +1,7 @@
 # PromptKt MCP
 
 This module provides MCP (Model Context Protocol) server and client implementations for Kotlin.
+See the [Model Context Protocol](https://modelcontextprotocol.io/) specification for details on the protocol and methods.
 
 ## Features
 
@@ -9,9 +10,75 @@ This module provides MCP (Model Context Protocol) server and client implementati
 - **MCP Client**: Connect to remote MCP servers via HTTP or Stdio
 - **Embedded Server**: Run an MCP server in-memory with custom prompts and tools
 
-## Running the MCP HTTP Server
+### Supported Methods
 
-To start the MCP HTTP server:
+- `initialize` - Initialize the connection with the server
+- `prompts/list` - List all available prompts
+- `prompts/get` - Get a specific prompt with arguments
+- `tools/list` - List all available tools
+- `tools/call` - Call a specific tool with arguments
+- `resources/list` - List available resources (if supported)
+- `resources/read` - Get a specific resource (if supported)
+- `resources/templates/list` - List available resource templates (if supported)
+
+## Connecting to External MCP Servers
+
+You can connect to external MCP servers using the `McpProviderHttp` and `McpProviderStdio` classes.
+
+### Streamable HTTP MCP Servers
+
+MCP servers over `Streamable HTTP` are persistent HTTP servers that support client/server communications via HTTP.
+See https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http. Use `McpProviderHttp` to connect to these servers:
+
+```kotlin
+val provider = McpProviderHttp("http://mcp-server.example.com/mcp")
+val capabilities = provider.getCapabilities()
+val prompts = provider.listPrompts()
+val tools = provider.listTools()
+val result = provider.callTool("tool-name", mapOf("arg1" to "value1"))
+val textResult = result.content.first() as McpContent.Text
+println(textResult)
+provider.close()
+```
+
+### Stdio MCP Servers
+
+MCP servers over `stdio` typically function as a local process that you can launch and send/receive JSON-RPC MCP messages.
+Use `McpProviderStdio` to launch these servers locally and use them in code:
+
+```kotlin
+val provider = McpProviderStdio(
+    command = "path/to/executable",
+    args = listOf("arg1", "arg2"),
+    env = mapOf("var1" to "value1", "var2" to "value2")
+)
+val capabilities = provider.getCapabilities()
+val prompts = provider.listPrompts()
+val tools = provider.listTools()
+val result = provider.callTool("tool-name", mapOf("arg1" to "value1"))
+val textResult = result.content.first() as McpContent.Text
+println(textResult)
+provider.close()
+```
+
+## Hosting MCP Servers
+
+You can host your own MCP servers using the provided HTTP and Stdio server implementations.
+The examples here are for testing only and not intended for production use.
+
+The default server configuration:
+- Prompts: Includes research-related prompts from the PromptLibrary
+- Tools: Includes tools from StarterToolLibrary
+- Resources: none
+
+To customize prompts, tools, and resources, modify the `McpServerHttpMain.kt` or `McpServerStdioMain.kt` file or create your own main class.
+
+### Running the MCP HTTP Server
+
+The MCP HTTP server supports POST requests only. It has the following configuration:
+- Port: 8080 (can be customized via command-line argument)
+
+To start an MCP HTTP server:
 
 ```bash
 # Build the project first
@@ -28,47 +95,16 @@ The server will start and display:
 - Server URL
 - MCP endpoint path
 - Health check endpoint
-- Number of available prompts and tools
+- Number of available prompts, tools, and resources
 
-## Running the MCP Stdio Server
+#### Testing the MCP HTTP Server
 
-To start the MCP Stdio server:
-
-```bash
-# Build the project first
-mvn clean install
-
-# Run the Stdio server
-mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt"
-```
-
-The server will:
-- Read JSON-RPC 2.0 requests from standard input (stdin)
-- Write JSON-RPC 2.0 responses to standard output (stdout)
-- Write server status messages to standard error (stderr)
-- Display number of available prompts and tools on startup
-
-The Stdio server is ideal for:
-- Integration with MCP clients that use stdio transport
-- Running as a subprocess in other applications
-- Testing with command-line tools
-
-## Testing the MCP HTTP Server
-
-### Health Check
-
-Check if the server is running:
-
+Check if the server is running (expect response `OK`):
 ```bash
 curl http://localhost:8080/health
 ```
 
-Expected response: `OK`
-
-### Initialize Connection
-
 Send an initialize request to the MCP server:
-
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
@@ -86,10 +122,7 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-Expected response includes server info and capabilities.
-
-### List Available Prompts
-
+List available prompts:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
@@ -100,10 +133,7 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-Expected response contains a list of available prompts.
-
-### Get a Specific Prompt
-
+Get a prompt:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
@@ -118,10 +148,7 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-Replace `<prompt-name>` with an actual prompt name from the list.
-
-### List Available Tools
-
+List available tools:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
@@ -132,10 +159,7 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-Expected response contains a list of available tools.
-
-### Call a Tool
-
+Call a tool:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
@@ -152,53 +176,39 @@ curl -X POST http://localhost:8080/mcp \
   }'
 ```
 
-Replace `<tool-name>` and arguments with actual tool name and required parameters.
+### Running the MCP Stdio Server
+
+To start the MCP Stdio server (with sample prompts and tools):
+
+```bash
+# Build the project first
+mvn clean install
+
+# Run the Stdio server
+mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt"
+```
+
+The server will:
+- Read JSON-RPC 2.0 requests from standard input (stdin)
+- Write JSON-RPC 2.0 responses to standard output (stdout)
+- Write server status messages to standard error (stderr)
+- Display number of available prompts, tools, and resources on startup
 
 ## Testing the MCP Stdio Server
 
-The Stdio server can be tested by sending JSON-RPC 2.0 requests to its standard input. Here are some examples:
+The Stdio server can be tested by sending JSON-RPC 2.0 requests to its standard input. Here are some sample messages that can be copied directly into the input:
 
-### Initialize Connection
-
-```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"test-client","version":"1.0.0"}}}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+Initialize connection:
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"test-client","version":"1.0.0"}}}
 ```
 
-### List Available Prompts
-
-```bash
-echo '{"jsonrpc":"2.0","id":2,"method":"prompts/list"}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+List Available Prompts:
+```json
+{"jsonrpc":"2.0","id":2,"method":"prompts/list"}
 ```
 
-### List Available Tools
-
-```bash
-echo '{"jsonrpc":"2.0","id":3,"method":"tools/list"}' | mvn exec:java -Dexec.mainClass="tri.ai.mcp.stdio.McpServerStdioMainKt" 2>/dev/null
+List Available Tools:
+```json
+{"jsonrpc":"2.0","id":3,"method":"tools/list"}
 ```
-
-Note: The `2>/dev/null` redirects stderr (server status messages) so you only see the JSON-RPC responses on stdout.
-
-## Testing with a Shell Script
-
-See test script `test-mcp-server.sh` for a sample test script.
-
-## MCP Protocol
-
-The server implements the [Model Context Protocol](https://modelcontextprotocol.io/) specification, which uses JSON-RPC 2.0 over HTTP.
-
-### Supported Methods
-
-- `initialize` - Initialize the connection with the server
-- `prompts/list` - List all available prompts
-- `prompts/get` - Get a specific prompt with arguments
-- `tools/list` - List all available tools
-- `tools/call` - Call a specific tool with arguments
-
-## Configuration
-
-The default server configuration:
-- Port: 8080 (can be customized via command-line argument)
-- Prompts: Includes research-related prompts from the PromptLibrary
-- Tools: Includes tools from StarterToolLibrary
-
-To customize prompts and tools, modify the `McpServerHttpMain.kt` file or create your own main class.

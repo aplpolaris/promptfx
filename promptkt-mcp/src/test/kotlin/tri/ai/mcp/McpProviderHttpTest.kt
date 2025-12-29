@@ -35,7 +35,14 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_INITIALIZE
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_NOTIFICATIONS_INITIALIZED
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_PROMPTS_GET
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_PROMPTS_LIST
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_TOOLS_CALL
+import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_TOOLS_LIST
 
 class McpProviderHttpTest {
 
@@ -54,16 +61,15 @@ class McpProviderHttpTest {
                         val json = Json.parseToJsonElement(body).jsonObject
                         val method = json["method"]?.jsonPrimitive?.content
                         val id = json["id"]
-
                         val response = when (method) {
-                            "initialize" -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
-                            "prompts/list" -> """{"jsonrpc":"2.0","id":$id,"result":{"prompts":[{"name":"test-prompt","title":"Test Prompt","description":"A test prompt"}]}}"""
-                            "prompts/get" -> """{"jsonrpc":"2.0","id":$id,"result":{"description":"Test prompt response","messages":[{"role":"user","content":{"type":"text","text":"Test message"}}]}}"""
-                            "tools/list" -> """{"jsonrpc":"2.0","id":$id,"result":{"tools":[{"name":"test-tool","description":"A test tool","version":"1.0.0","inputSchema":{},"outputSchema":{}}]}}"""
-                            "tools/call" -> """{"jsonrpc":"2.0","id":$id,"result":{"content":[{"type":"text","text":"test output"}],"structuredContent":{"result":"test output"}}}"""
+                            METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
+                            METHOD_NOTIFICATIONS_INITIALIZED -> """{"jsonrpc":"2.0","id":$id,"result":{}}"""
+                            METHOD_PROMPTS_LIST -> """{"jsonrpc":"2.0","id":$id,"result":{"prompts":[{"name":"test-prompt","title":"Test Prompt","description":"A test prompt"}]}}"""
+                            METHOD_PROMPTS_GET -> """{"jsonrpc":"2.0","id":$id,"result":{"description":"Test prompt response","messages":[{"role":"user","content":{"type":"text","text":"Test message"}}]}}"""
+                            METHOD_TOOLS_LIST -> """{"jsonrpc":"2.0","id":$id,"result":{"tools":[{"name":"test-tool","description":"A test tool","version":"1.0.0","inputSchema":{},"outputSchema":{}}]}}"""
+                            METHOD_TOOLS_CALL -> """{"jsonrpc":"2.0","id":$id,"result":{"content":[{"type":"text","text":"test output"}],"structuredContent":{"result":"test output"}}}"""
                             else -> """{"jsonrpc":"2.0","id":$id,"error":{"code":-32601,"message":"Method not found"}}"""
                         }
-
                         call.respondText(response, ContentType.Application.Json)
                     }
                 }
@@ -195,4 +201,17 @@ class McpProviderHttpTest {
             }
         }
     }
+
+    @Test
+    @Disabled("This test requires an external MCP HTTP server to be running at the specified URL")
+    fun testExternal() {
+        val url = "https://seolinkmap.com/mcp"
+        val provider = McpProviderHttp(url)
+        runTest {
+            println(provider.getCapabilities())
+            println(provider.listTools())
+            provider.close()
+        }
+    }
+
 }

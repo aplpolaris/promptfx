@@ -105,7 +105,7 @@ class McpProviderStdio(
             if (result is JsonNull) return null
             return objectMapper.readValue<McpCapabilities>(result.toString())
         } catch (e: Exception) {
-            return null
+            throw McpException("Error getting capabilities from stdio server: ${e.message}", e)
         }
     }
 
@@ -148,7 +148,7 @@ class McpProviderStdio(
     override suspend fun callTool(name: String, args: Map<String, Any?>): McpToolResponse {
         try {
             val result = sendRequest("tools/call", mapOf("name" to name, "arguments" to args))
-            info<McpProviderStdio>(result.toString())
+            fine<McpProviderStdio>(result.toString())
             return jsonMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .readValue<McpToolResponse>(result.toString())
