@@ -51,7 +51,7 @@ import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.McpToolResponse
 import tri.util.fine
 import tri.util.info
-import tri.util.json.jsonMapper
+import tri.util.warning
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.forEach
@@ -110,14 +110,14 @@ abstract class McpProviderSupport: McpProvider {
 
             try {
                 val result = runBlocking {
-                    sendJsonRpcInitialization(METHOD_INITIALIZE, PROMPTFX_CLIENT_PARAMS)
+                    sendJsonRpc(METHOD_INITIALIZE, PROMPTFX_CLIENT_PARAMS)
                 }
                 info<McpProviderHttp>("Initialized MCP provider with response: $result")
                 capabilities = result.jsonObject["capabilities"]?.jsonObject?.let {
                     objectMapper.readValue(JsonSerializers.serialize(it))
                 }
                 runBlocking {
-                    sendJsonRpcInitialization(METHOD_NOTIFICATIONS_INITIALIZED)
+                    sendJsonRpc(METHOD_NOTIFICATIONS_INITIALIZED)
                 }
                 initialized.set(true)
             } catch (e: Exception) {
@@ -134,7 +134,7 @@ abstract class McpProviderSupport: McpProvider {
 
     override suspend fun listPrompts(): List<McpPrompt> {
         try {
-            val result = sendJsonRpcRequest(METHOD_PROMPTS_LIST)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_PROMPTS_LIST)
             val promptsJson = result.jsonObject["prompts"]?.jsonArray
                 ?: throw McpException("No prompts in response")
             return objectMapper.readValue(JsonSerializers.serialize(promptsJson))
@@ -155,7 +155,7 @@ abstract class McpProviderSupport: McpProvider {
                     }
                 })
             }
-            val result = sendJsonRpcRequest(METHOD_PROMPTS_GET, params)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_PROMPTS_GET, params)
             return objectMapper.readValue(JsonSerializers.serialize(result.withCapitalizedRoles()))
         } catch (e: McpException) {
             throw e
@@ -165,15 +165,18 @@ abstract class McpProviderSupport: McpProvider {
     }
 
     override suspend fun listTools(): List<McpToolMetadata> {
+        var result: JsonElement? = null
         try {
-            val result = sendJsonRpcRequest(METHOD_TOOLS_LIST)
+            result = sendJsonRpcWithInitializationCheck(METHOD_TOOLS_LIST)
             fine<McpProviderHttp>(result.toString(), null)
             val toolsJson = result.jsonObject["tools"]?.jsonArray
                 ?: throw McpException("No tools in response")
             return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
         } catch (e: McpException) {
+            info<McpProviderHttp>(result?.toString() ?: "unexpected result")
             throw e
         } catch (e: Exception) {
+            info<McpProviderHttp>(result?.toString() ?: "unexpected result")
             throw McpException("Error connecting to MCP server: ${e.message}", e)
         }
     }
@@ -194,7 +197,7 @@ abstract class McpProviderSupport: McpProvider {
                 })
             }
 
-            val result = sendJsonRpcRequest(METHOD_TOOLS_CALL, params)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_TOOLS_CALL, params)
             fine<McpProviderHttp>(result.toString())
             return objectMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -208,7 +211,7 @@ abstract class McpProviderSupport: McpProvider {
 
     override suspend fun listResources(): List<McpResource> {
         try {
-            val result = sendJsonRpcRequest(METHOD_RESOURCES_LIST)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_RESOURCES_LIST)
             val resourcesJson = result.jsonObject["resources"]?.jsonArray
                 ?: throw McpException("No resources in response")
 
@@ -222,7 +225,7 @@ abstract class McpProviderSupport: McpProvider {
 
     override suspend fun listResourceTemplates(): List<McpResourceTemplate> {
         try {
-            val result = sendJsonRpcRequest(METHOD_RESOURCES_TEMPLATES_LIST)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_RESOURCES_TEMPLATES_LIST)
             val templatesJson = result.jsonObject["resourceTemplates"]?.jsonArray
                 ?: throw McpException("No resource templates in response")
 
@@ -240,7 +243,7 @@ abstract class McpProviderSupport: McpProvider {
                 put("uri", JsonPrimitive(uri))
             }
 
-            val result = sendJsonRpcRequest(METHOD_RESOURCES_READ, params)
+            val result = sendJsonRpcWithInitializationCheck(METHOD_RESOURCES_READ, params)
 
             return objectMapper.readValue(JsonSerializers.serialize(result))
         } catch (e: McpException) {
@@ -253,10 +256,10 @@ abstract class McpProviderSupport: McpProvider {
     //endregion
 
     /** Send a JSON-RPC request to the MCP server at /mcp endpoint. */
-    protected abstract suspend fun sendJsonRpcRequest(method: String, params: JsonObject? = null): JsonElement
+    protected abstract suspend fun sendJsonRpcWithInitializationCheck(method: String, params: JsonObject? = null): JsonElement
 
     /** Send a JSON-RPC request to the MCP server at /mcp endpoint, without trying to initialize. */
-    protected abstract suspend fun sendJsonRpcInitialization(method: String, params: JsonObject? = null): JsonElement
+    protected abstract suspend fun sendJsonRpc(method: String, params: JsonObject? = null): JsonElement
 
     //region INTERNAL UTILS
 

@@ -24,6 +24,7 @@ import tri.ai.core.MChatMessagePart
 import tri.ai.core.MChatRole
 import tri.ai.mcp.JsonSerializers.toJsonElement
 import tri.ai.mcp.tool.McpToolResponse
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Handles MCP-specific business logic for JSON-RPC requests.
@@ -137,6 +138,16 @@ class McpJsonRpcHandler(private val provider: McpProvider) : JsonRpcHandler {
                 put("name", JsonPrimitive("promptfx-http-client"))
                 put("version", JsonPrimitive("0.1.0"))
             })
+        }
+
+        fun buildJsonRpc(method: String, requestId: AtomicInteger, params: JsonElement?) = buildJsonObject {
+            put("jsonrpc", JsonPrimitive("2.0"))
+            if (!method.startsWith(METHOD_NOTIFICATIONS_PREFIX))
+                put("id", JsonPrimitive(requestId.getAndIncrement()))
+            put("method", JsonPrimitive(method))
+            if (params != null) {
+                put("params", params)
+            }
         }
 
         //region Response Conversion Logic

@@ -25,7 +25,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
-import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_NOTIFICATIONS_PREFIX
+import tri.ai.mcp.McpJsonRpcHandler.Companion.buildJsonRpc
 
 /**
  * MCP provider for an external Streamable HTTP MCP server.
@@ -41,30 +41,26 @@ class McpProviderHttp(_baseUrl: String) : McpProviderSupport() {
             }
         }
     }
+    private var mcpSessionId: String? = null
 
-    override suspend fun sendJsonRpcRequest(method: String, params: JsonObject?): JsonElement {
+    override suspend fun sendJsonRpcWithInitializationCheck(method: String, params: JsonObject?): JsonElement {
         initialize()
-        return sendJsonRpcInitialization(method, params)
+        return sendJsonRpc(method, params)
     }
 
-    override suspend fun sendJsonRpcInitialization(method: String, params: JsonObject?): JsonElement {
-        val request = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            if (!method.startsWith(METHOD_NOTIFICATIONS_PREFIX))
-                put("id", JsonPrimitive(requestId.getAndIncrement()))
-            put("method", JsonPrimitive(method))
-            if (params != null) {
-                put("params", params)
-            }
-        }
+    override suspend fun sendJsonRpc(method: String, params: JsonObject?): JsonElement {
+        val request = buildJsonRpc(method, requestId, params)
 
         val response = httpClient.post("$baseUrl/mcp") {
             contentType(ContentType.Application.Json)
             setBody(JsonSerializers.serialize(request))
+            mcpSessionId?.let { header(HEADER_MCP_SESSION_ID, it) }
         }
-        if (!response.status.isSuccess()) {
+
+        if (!response.status.isSuccess())
             throw McpException("HTTP request failed: ${response.status}")
-        }
+        // always update the MCP session id if found
+        response.headers[HEADER_MCP_SESSION_ID]?.let { mcpSessionId = it }
 
         val responseText = response.bodyAsText()
         if (responseText.isEmpty())
@@ -75,11 +71,18 @@ class McpProviderHttp(_baseUrl: String) : McpProviderSupport() {
             val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
             throw McpException("JSON-RPC error: $message")
         }
-        return responseJson["result"] ?: JsonNull
+        if (!responseJson.containsKey("result")) {
+            throw McpException("Invalid JSON-RPC response without result: $responseJson")
+        }
+        return responseJson["result"]!!
     }
 
     override suspend fun close() {
         httpClient.close()
+    }
+
+    companion object {
+        const val HEADER_MCP_SESSION_ID = "Mcp-Session-Id"
     }
 
 }

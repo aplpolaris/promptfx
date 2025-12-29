@@ -205,8 +205,8 @@ class McpProviderHttpTest {
     @Test
     @Disabled("This test requires an external MCP HTTP server to be running at the specified URL")
     fun testExternal() {
-        val url1 = "https://seolinkmap.com/mcp"
-        val url = "https://your-test-server/mcp"
+        val url = "https://seolinkmap.com/mcp"
+//        val url = "https://your-test-server/mcp"
         val provider = McpProviderHttp(url)
         runTest {
             println(provider.getCapabilities())

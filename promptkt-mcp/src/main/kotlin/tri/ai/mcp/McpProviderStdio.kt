@@ -20,7 +20,7 @@
 package tri.ai.mcp
 
 import kotlinx.serialization.json.*
-import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_NOTIFICATIONS_PREFIX
+import tri.ai.mcp.McpJsonRpcHandler.Companion.buildJsonRpc
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -52,42 +52,33 @@ class McpProviderStdio(
     }
 
     /** Send a JSON-RPC request to the MCP server at /mcp endpoint. */
-    override suspend fun sendJsonRpcRequest(method: String, params: JsonObject?): JsonElement {
+    override suspend fun sendJsonRpcWithInitializationCheck(method: String, params: JsonObject?): JsonElement {
         initialize()
-        return sendJsonRpcInitialization(method, params)
+        return sendJsonRpc(method, params)
     }
 
     /** Send a JSON-RPC request to the MCP server at /mcp endpoint, without trying to initialize. */
-    override suspend fun sendJsonRpcInitialization(method: String, params: JsonObject?): JsonElement {
+    override suspend fun sendJsonRpc(method: String, params: JsonObject?): JsonElement {
         if (process == null)
             startProcess()
-        val request = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            if (!method.startsWith(METHOD_NOTIFICATIONS_PREFIX))
-                put("id", JsonPrimitive(requestId.getAndIncrement()))
-            put("method", JsonPrimitive(method))
-            if (params != null) {
-                put("params", params)
-            }
-        }
-
         synchronized(this) {
+            val request = buildJsonRpc(method, requestId, params)
             writer?.write(request.toString() + "\n")
             writer?.flush()
 
-            // Read response
-            val line = reader?.readLine()
-                ?: throw McpException("No response from stdio server")
+            val line = reader?.readLine() ?: throw McpException("No response from stdio server")
 
-            val response = Json.parseToJsonElement(line).jsonObject
-
-            if (response.containsKey("error")) {
-                val error = response["error"]?.jsonObject
+            val responseJson = Json.parseToJsonElement(line).jsonObject
+            if (responseJson.containsKey("error")) {
+                val error = responseJson["error"]?.jsonObject
                 val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
                 throw McpException("Stdio server error: $message")
             }
-
-            return response["result"] ?: JsonNull
+            if (!responseJson.containsKey("result")) {
+                println(responseJson)
+                throw McpException("Invalid JSON-RPC response: missing result")
+            }
+            return responseJson["result"]!!
         }
     }
 
