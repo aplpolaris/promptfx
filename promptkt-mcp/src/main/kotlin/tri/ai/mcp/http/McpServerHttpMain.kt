@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
     println("MCP Endpoint: http://localhost:$port/mcp")
     println("Health Check: http://localhost:$port/health")
     println()
-    println("Available prompts: ${provider.listPrompts().size}")
+    println("Available prompts: ${runBlocking { provider.listPrompts().size }}")
     println("Available tools: ${runBlocking { provider.listTools().size }}")
     println("Available resources: ${runBlocking { provider.listResources().size }}")
     println()
