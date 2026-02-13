@@ -25,6 +25,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.request.receiveText
+import io.ktor.server.response.header
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -43,6 +44,7 @@ import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_PROMPTS_GET
 import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_PROMPTS_LIST
 import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_TOOLS_CALL
 import tri.ai.mcp.McpJsonRpcHandler.Companion.METHOD_TOOLS_LIST
+import java.util.concurrent.atomic.AtomicReference
 
 class McpProviderHttpTest {
 
@@ -50,6 +52,7 @@ class McpProviderHttpTest {
         private const val TEST_PORT = 9876
         private const val BASE_URL = "http://localhost:$TEST_PORT"
         private lateinit var server: NettyApplicationEngine
+        private val lastReceivedSessionId = AtomicReference<String?>()
 
         @JvmStatic
         @BeforeAll
@@ -61,6 +64,11 @@ class McpProviderHttpTest {
                         val json = Json.parseToJsonElement(body).jsonObject
                         val method = json["method"]?.jsonPrimitive?.content
                         val id = json["id"]
+                        
+                        // Track received session ID for verification
+                        val receivedSessionId = call.request.headers[McpProviderHttp.HEADER_MCP_SESSION_ID]
+                        lastReceivedSessionId.set(receivedSessionId)
+                        
                         val response = when (method) {
                             METHOD_INITIALIZE -> """{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2025-06-18","serverInfo":{"name":"test-server","version":"1.0.0"},"capabilities":{"prompts":{"listChanged":false},"tools":null}}}"""
                             METHOD_NOTIFICATIONS_INITIALIZED -> """{"jsonrpc":"2.0","id":$id,"result":{}}"""
@@ -70,6 +78,12 @@ class McpProviderHttpTest {
                             METHOD_TOOLS_CALL -> """{"jsonrpc":"2.0","id":$id,"result":{"content":[{"type":"text","text":"test output"}],"structuredContent":{"result":"test output"}}}"""
                             else -> """{"jsonrpc":"2.0","id":$id,"error":{"code":-32601,"message":"Method not found"}}"""
                         }
+                        
+                        // Send session ID in response for initialize method
+                        if (method == METHOD_INITIALIZE) {
+                            call.response.header(McpProviderHttp.HEADER_MCP_SESSION_ID, "test-session-123")
+                        }
+                        
                         call.respondText(response, ContentType.Application.Json)
                     }
                 }
@@ -196,6 +210,35 @@ class McpProviderHttpTest {
                 } catch (e: Exception) {
                     // Expected
                 }
+            } finally {
+                provider.close()
+            }
+        }
+    }
+
+    @Test
+    fun testSessionIdHandling() {
+        runTest {
+            val provider = McpProviderHttp(BASE_URL)
+
+            try {
+                // Reset session ID tracker
+                lastReceivedSessionId.set(null)
+                
+                // First call - initialize which should receive session ID from server
+                val capabilities = provider.getCapabilities()
+                assertNotNull(capabilities)
+                
+                // Clear the tracker before next call
+                lastReceivedSessionId.set(null)
+                
+                // Second call - should send session ID in header
+                val prompts = provider.listPrompts()
+                assertNotNull(prompts)
+                
+                // Verify that the session ID was sent in the request header
+                assertEquals("test-session-123", lastReceivedSessionId.get(), 
+                    "Session ID should be sent in subsequent requests after initialization")
             } finally {
                 provider.close()
             }
