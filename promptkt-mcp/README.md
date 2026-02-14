@@ -31,6 +31,7 @@ MCP servers over `Streamable HTTP` are persistent HTTP servers that support clie
 See https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http. Use `McpProviderHttp` to connect to these servers:
 
 ```kotlin
+// With SSE (Server-Sent Events) support enabled by default
 val provider = McpProviderHttp("http://mcp-server.example.com/mcp")
 val capabilities = provider.getCapabilities()
 val prompts = provider.listPrompts()
@@ -39,7 +40,18 @@ val result = provider.callTool("tool-name", mapOf("arg1" to "value1"))
 val textResult = result.content.first() as McpContent.Text
 println(textResult)
 provider.close()
+
+// Disable SSE if server doesn't support it
+val providerNoSse = McpProviderHttp("http://mcp-server.example.com/mcp", enableSse = false)
 ```
+
+**SSE Support**: The `McpProviderHttp` client now supports the full MCP streamable HTTP specification, including:
+- Session ID management via `Mcp-Session-Id` header
+- Server-Sent Events (SSE) channel for receiving asynchronous server messages (via GET to `/mcp`)
+- POST requests for sending commands (existing behavior)
+- Handling both synchronous JSON-RPC responses and asynchronous SSE messages
+
+The SSE connection is automatically established during initialization when a session ID is received. Set `enableSse = false` to disable SSE support for servers that only support simple POST-based communication.
 
 ### Stdio MCP Servers
 
