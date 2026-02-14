@@ -77,21 +77,21 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
     
     private fun updateCapabilityUIText(info: ProviderCapabilityInfo) {
         promptsText.value = when {
-            info.loading -> "Loading..."
+            info.loading -> "Connecting..."
             info.error != null -> "Error"
             info.hasPrompts -> "Supported (${info.promptsCount} prompts)"
             else -> "Not supported"
         }
         
         toolsText.value = when {
-            info.loading -> "Loading..."
+            info.loading -> "Connecting..."
             info.error != null -> "Error"
             info.hasTools -> "Supported (${info.toolsCount} tools)"
             else -> "Not supported"
         }
         
         resourcesText.value = when {
-            info.loading -> "Loading..."
+            info.loading -> "Connecting..."
             info.error != null -> "Error"
             info.hasResources -> "Supported (${info.resourcesCount} resources, ${info.resourceTemplatesCount} templates)"
             else -> "Not supported"
