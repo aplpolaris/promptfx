@@ -170,7 +170,7 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
                 val server = mcpController.mcpProviderRegistry.getProvider(serverName)
                     ?: return@runAsync "Error: Server '$serverName' not found"
                 
-                val response = kotlinx.coroutines.runBlocking {
+                val response = runBlocking {
                     server.readResource(resource.uri)
                 }
                 
@@ -180,9 +180,6 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
                         if (response.contents.size > 1) {
                             appendLine("--- Content ${index + 1} ---")
                         }
-                        appendLine("URI: ${content.uri}")
-                        content.mimeType?.let { appendLine("MIME Type: $it") }
-                        appendLine()
                         when {
                             content.text != null -> append(content.text)
                             content.blob != null -> append("[Binary content (base64)]\n${content.blob}")
