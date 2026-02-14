@@ -207,8 +207,24 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
     private suspend fun handleSseEvent(eventType: String?, data: String) {
         info<McpProviderHttp>("Received SSE event: type=$eventType, data=$data")
         
+        // Some event types (like endpoint events) may send plain text, not JSON
+        // Only attempt to parse as JSON for message events or if no event type is specified
+        if (eventType != null && eventType != "message") {
+            info<McpProviderHttp>("Non-message event type '$eventType', skipping JSON parsing")
+            return
+        }
+        
         try {
-            val json = Json.parseToJsonElement(data).jsonObject
+            val json = try {
+                Json.parseToJsonElement(data).jsonObject
+            } catch (e: Exception) {
+                throw McpSseParseException(
+                    "Failed to parse SSE event data as JSON",
+                    eventType,
+                    data,
+                    e
+                )
+            }
             
             // Check if this is a JSON-RPC response
             if (json.containsKey("jsonrpc") && json.containsKey("id")) {
@@ -224,14 +240,27 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
                             pending.complete(json["result"] ?: JsonNull)
                         }
                         return
+                    } else {
+                        info<McpProviderHttp>("Received JSON-RPC response for request ID $id but no pending request found")
                     }
+                } else {
+                    throw McpSseInvalidDataException(
+                        "JSON-RPC response has invalid or missing 'id' field",
+                        eventType,
+                        data
+                    )
                 }
             }
             
             // Queue other messages for processing
+            info<McpProviderHttp>("Queueing non-response message for processing")
             sseMessageQueue.send(json)
+        } catch (e: McpSseParseException) {
+            warning<McpProviderHttp>("SSE parse error (type=${e.eventType}): ${e.message}")
+        } catch (e: McpSseInvalidDataException) {
+            warning<McpProviderHttp>("SSE invalid data (type=${e.eventType}): ${e.message}")
         } catch (e: Exception) {
-            warning<McpProviderHttp>("Error parsing SSE event data: ${e.message}")
+            warning<McpProviderHttp>("Unexpected error handling SSE event (type=$eventType): ${e.message}")
         }
     }
 

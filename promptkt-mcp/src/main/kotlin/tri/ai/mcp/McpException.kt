@@ -20,4 +20,12 @@
 package tri.ai.mcp
 
 /** Exception thrown when there is an MCP error. */
-class McpException(message: String, x: Throwable? = null) : Exception(message, x)
+open class McpException(message: String, x: Throwable? = null) : Exception(message, x)
+
+/** Exception thrown when SSE event data cannot be parsed. */
+class McpSseParseException(message: String, val eventType: String?, val rawData: String, cause: Throwable? = null) 
+    : McpException(message, cause)
+
+/** Exception thrown when SSE event contains unexpected or invalid data. */
+class McpSseInvalidDataException(message: String, val eventType: String?, val data: String) 
+    : McpException(message)
