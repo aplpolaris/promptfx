@@ -19,16 +19,15 @@
  */
 package tri.ai.mcp
 
-import io.ktor.http.ContentType
-import io.ktor.server.application.call
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
-import io.ktor.server.request.receiveText
-import io.ktor.server.response.header
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.post
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -102,7 +101,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetCapabilities() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             val capabilities = provider.getCapabilities()
             println("testGetCapabilities result: $capabilities")
@@ -117,7 +116,7 @@ class McpProviderHttpTest {
     @Test
     fun testListPrompts() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val prompts = provider.listPrompts()
@@ -135,7 +134,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val response = provider.getPrompt("test-prompt", mapOf("arg1" to "value1"))
@@ -152,7 +151,7 @@ class McpProviderHttpTest {
     @Test
     fun testListTools() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val tools = provider.listTools()
@@ -169,7 +168,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetTool() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val tool = provider.getTool("test-tool")
@@ -185,7 +184,7 @@ class McpProviderHttpTest {
     @Test
     fun testCallTool() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
             try {
                 val result = provider.callTool("test-tool", mapOf("input" to "test"))
                 println("testCallTool result: $result")
@@ -201,7 +200,7 @@ class McpProviderHttpTest {
     @Test
     fun testConnectionError() {
         runTest {
-            val provider = McpProviderHttp("http://localhost:99999")
+            val provider = McpProviderHttp("http://localhost:99999", enableSse = false)
 
             try {
                 try {
@@ -219,7 +218,7 @@ class McpProviderHttpTest {
     @Test
     fun testSessionIdHandling() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 // Reset session ID tracker
@@ -250,11 +249,40 @@ class McpProviderHttpTest {
     fun testExternal() {
         val url = "https://seolinkmap.com/mcp"
 //        val url = "https://your-test-server/mcp"
-        val provider = McpProviderHttp(url)
-        runTest {
+        val provider = McpProviderHttp(url, enableSse = true)
+        runBlocking { // must use runBlocking rather than runTest to allow for long-running SSE connection
             println(provider.getCapabilities())
+            delay(500L)
             println(provider.listTools())
+            delay(500L)
             provider.close()
+        }
+    }
+
+    @Test
+    @Disabled("SSE test requires an SSE-enabled mock server")
+    fun testSseConnection() {
+        runTest {
+            val provider = McpProviderHttp(BASE_URL, enableSse = true)
+            
+            try {
+                // Initialize should trigger SSE connection
+                val capabilities = provider.getCapabilities()
+                assertNotNull(capabilities)
+                
+                // Give SSE time to connect
+                val sseConnectionDelayMs = 1000L
+                delay(sseConnectionDelayMs)
+                
+                // This test is disabled because our mock server doesn't support SSE
+                // In a real SSE-enabled server, we would verify:
+                // 1. SSE connection is established after initialization
+                // 2. Messages can be received via SSE
+                // 3. POST requests still work alongside SSE
+                
+            } finally {
+                provider.close()
+            }
         }
     }
 

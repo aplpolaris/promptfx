@@ -42,6 +42,7 @@ class McpServerPlugin : NavigableWorkspaceViewImpl<McpServerView>("MCP", "MCP Se
 
 /** Data class to hold provider capability information. */
 data class ProviderCapabilityInfo(
+    val loading: Boolean = false,
     val hasPrompts: Boolean = false,
     val hasTools: Boolean = false,
     val hasResources: Boolean = false,
@@ -59,12 +60,44 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
     private val providerNames = observableListOf<String>()
     private val selectedProviderName = SimpleObjectProperty<String>()
     private val selectedConfig = SimpleObjectProperty<McpProviderConfig>()
-    private val providerCapabilities = mutableMapOf<String, SimpleObjectProperty<ProviderCapabilityInfo>>()
+    private val providerCapabilitiesCache = mutableMapOf<String, ProviderCapabilityInfo>()
+    private lateinit var serverListView: javafx.scene.control.ListView<String>
     
-    private fun getCapabilityInfo(name: String): SimpleObjectProperty<ProviderCapabilityInfo> {
-        return providerCapabilities.getOrPut(name) {
-            SimpleObjectProperty(ProviderCapabilityInfo())
+    // Dedicated UI properties for capability text
+    private val promptsText = SimpleObjectProperty<String>("")
+    private val toolsText = SimpleObjectProperty<String>("")
+    private val resourcesText = SimpleObjectProperty<String>("")
+    private val errorText = SimpleObjectProperty<String>("")
+    
+    private fun getCachedCapabilityInfo(name: String): ProviderCapabilityInfo {
+        return providerCapabilitiesCache.getOrPut(name) {
+            ProviderCapabilityInfo()
         }
+    }
+    
+    private fun updateCapabilityUIText(info: ProviderCapabilityInfo) {
+        promptsText.value = when {
+            info.loading -> "Connecting..."
+            info.error != null -> "Error"
+            info.hasPrompts -> "Supported (${info.promptsCount} prompts)"
+            else -> "Not supported"
+        }
+        
+        toolsText.value = when {
+            info.loading -> "Connecting..."
+            info.error != null -> "Error"
+            info.hasTools -> "Supported (${info.toolsCount} tools)"
+            else -> "Not supported"
+        }
+        
+        resourcesText.value = when {
+            info.loading -> "Connecting..."
+            info.error != null -> "Error"
+            info.hasResources -> "Supported (${info.resourcesCount} resources, ${info.resourceTemplatesCount} templates)"
+            else -> "Not supported"
+        }
+        
+        errorText.value = info.error ?: ""
     }
 
     init {
@@ -77,7 +110,11 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                 mcpController.mcpProviderRegistry.getConfigs()[it]
             }
             // Query capabilities when server is selected
-            name?.let { queryServerCapabilities(it) }
+            if (name != null) {
+                val cached = getCachedCapabilityInfo(name)
+                updateCapabilityUIText(cached)
+                queryServerCapabilities(name)
+            }
         }
 
         hideParameters()
@@ -100,6 +137,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                 }
                 listview(providerNames) {
                     vgrow = Priority.ALWAYS
+                    serverListView = this
                     selectedProviderName.bind(this.selectionModel.selectedItemProperty())
                     cellFormat { serverName ->
                         graphic = hbox(spacing = 5.0) {
@@ -108,17 +146,15 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                             }
                             spacer()
                             
-                            val capInfo = getCapabilityInfo(serverName)
+                            val capInfo = getCachedCapabilityInfo(serverName)
                             
                             // Show icons for supported capabilities
                             hbox(spacing = 3.0) {
-                                visibleWhen(capInfo.booleanBinding { 
-                                    it != null && (it.hasPrompts || it.hasTools || it.hasResources) 
-                                })
+                                isVisible = capInfo.hasPrompts || capInfo.hasTools || capInfo.hasResources
                                 
                                 // Prompts icon
                                 label {
-                                    visibleWhen(capInfo.booleanBinding { it?.hasPrompts == true })
+                                    isVisible = capInfo.hasPrompts
                                     graphic = FontAwesomeIconView(FontAwesomeIcon.FILE_TEXT_ALT).apply {
                                         glyphSize = 12
                                         fill = Color.DODGERBLUE
@@ -128,7 +164,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 
                                 // Tools icon
                                 label {
-                                    visibleWhen(capInfo.booleanBinding { it?.hasTools == true })
+                                    isVisible = capInfo.hasTools
                                     graphic = FontAwesomeIconView(FontAwesomeIcon.WRENCH).apply {
                                         glyphSize = 12
                                         fill = Color.ORANGE
@@ -138,7 +174,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 
                                 // Resources icon
                                 label {
-                                    visibleWhen(capInfo.booleanBinding { it?.hasResources == true })
+                                    isVisible = capInfo.hasResources
                                     graphic = FontAwesomeIconView(FontAwesomeIcon.DATABASE).apply {
                                         glyphSize = 12
                                         fill = Color.GREEN
@@ -198,10 +234,6 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
                     // Capabilities information
                     fieldset("Capabilities") {
-                        val capInfo = selectedProviderName.objectBinding { name ->
-                            name?.let { getCapabilityInfo(it).value }
-                        }
-                        
                         field("Prompts") {
                             hbox(spacing = 5.0) {
                                 label {
@@ -211,13 +243,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                     }
                                 }
                                 label {
-                                    textProperty().bind(capInfo.stringBinding {
-                                        when {
-                                            it?.error != null -> "Error"
-                                            it?.hasPrompts == true -> "Supported (${it.promptsCount} prompts)"
-                                            else -> "Not supported"
-                                        }
-                                    })
+                                    textProperty().bind(promptsText)
                                 }
                             }
                         }
@@ -231,13 +257,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                     }
                                 }
                                 label {
-                                    textProperty().bind(capInfo.stringBinding {
-                                        when {
-                                            it?.error != null -> "Error"
-                                            it?.hasTools == true -> "Supported (${it.toolsCount} tools)"
-                                            else -> "Not supported"
-                                        }
-                                    })
+                                    textProperty().bind(toolsText)
                                 }
                             }
                         }
@@ -251,27 +271,21 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                     }
                                 }
                                 label {
-                                    textProperty().bind(capInfo.stringBinding {
-                                        when {
-                                            it?.error != null -> "Error"
-                                            it?.hasResources == true -> "Supported (${it.resourcesCount} resources, ${it.resourceTemplatesCount} templates)"
-                                            else -> "Not supported"
-                                        }
-                                    })
+                                    textProperty().bind(resourcesText)
                                 }
                             }
                         }
                         
                         // Show error message if there was an issue querying capabilities
                         field("Status") {
-                            visibleWhen(capInfo.booleanBinding { it?.error != null })
+                            visibleWhen(errorText.booleanBinding { !it.isNullOrEmpty() })
                             managedWhen(visibleProperty())
                             label {
                                 isWrapText = true
                                 style {
                                     textFill = Color.RED
                                 }
-                                textProperty().bind(capInfo.stringBinding { it?.error ?: "" })
+                                textProperty().bind(errorText)
                             }
                         }
                     }
@@ -375,7 +389,10 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
     }
 
     private fun queryServerCapabilities(serverName: String) {
-        val capabilityProp = getCapabilityInfo(serverName)
+        // Set loading state immediately in cache and UI
+        val loadingInfo = ProviderCapabilityInfo(loading = true)
+        providerCapabilitiesCache[serverName] = loadingInfo
+        updateCapabilityUIText(loadingInfo)
         
         // Run query in background using coroutine
         runAsync {
@@ -384,49 +401,44 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     val provider = mcpController.mcpProviderRegistry.getProvider(serverName)
                         ?: return@runBlocking ProviderCapabilityInfo(error = "Server not found")
                     
+                    // Step 1: Get capabilities first
                     val capabilities = provider.getCapabilities()
                     
-                    // Only query for counts if the capability is supported
-                    val promptsCount = if (capabilities?.prompts != null) {
+                    // Step 2: Query for counts sequentially
+                    var promptsCount = 0
+                    if (capabilities?.prompts != null) {
                         try {
-                            provider.listPrompts().size
+                            promptsCount = provider.listPrompts().size
                         } catch (e: Exception) {
-                            0
+                            // Keep count as 0
                         }
-                    } else {
-                        0
                     }
                     
-                    val toolsCount = if (capabilities?.tools != null) {
+                    var toolsCount = 0
+                    if (capabilities?.tools != null) {
                         try {
-                            provider.listTools().size
+                            toolsCount = provider.listTools().size
                         } catch (e: Exception) {
-                            0
+                            // Keep count as 0
                         }
-                    } else {
-                        0
                     }
                     
-                    val resourcesCount = if (capabilities?.resources != null) {
+                    var resourcesCount = 0
+                    var resourceTemplatesCount = 0
+                    if (capabilities?.resources != null) {
                         try {
-                            provider.listResources().size
+                            resourcesCount = provider.listResources().size
                         } catch (e: Exception) {
-                            0
+                            // Keep count as 0
                         }
-                    } else {
-                        0
+                        try {
+                            resourceTemplatesCount = provider.listResourceTemplates().size
+                        } catch (e: Exception) {
+                            // Keep count as 0
+                        }
                     }
                     
-                    val resourceTemplatesCount = if (capabilities?.resources != null) {
-                        try {
-                            provider.listResourceTemplates().size
-                        } catch (e: Exception) {
-                            0
-                        }
-                    } else {
-                        0
-                    }
-                    
+                    // Step 3: Return final result with all information
                     ProviderCapabilityInfo(
                         hasPrompts = capabilities?.prompts != null,
                         hasTools = capabilities?.tools != null,
@@ -441,7 +453,11 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                 }
             }
         } ui { result ->
-            capabilityProp.value = result
+            // Update both cache and UI properties
+            providerCapabilitiesCache[serverName] = result
+            updateCapabilityUIText(result)
+            // Refresh the list view to update icons
+            serverListView.refresh()
         }
     }
 

@@ -89,10 +89,20 @@ class McpServerViewTest {
         assertEquals(3, info1.toolsCount)
         assertEquals(0, info1.resourceTemplatesCount)
         assertNull(info1.error)
+        assertFalse(info1.loading)
         
         // Test error state
         val info2 = ProviderCapabilityInfo(error = "Connection failed")
         assertNotNull(info2.error)
         assertEquals("Connection failed", info2.error)
+        assertFalse(info2.loading)
+        
+        // Test loading state
+        val info3 = ProviderCapabilityInfo(loading = true)
+        assertTrue(info3.loading)
+        assertFalse(info3.hasPrompts)
+        assertFalse(info3.hasTools)
+        assertFalse(info3.hasResources)
+        assertNull(info3.error)
     }
 }
