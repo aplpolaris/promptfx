@@ -26,11 +26,13 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.mcp.McpResource
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.warning
 
 /** Plugin for the [McpResourceView]. */
 class McpResourcePlugin : NavigableWorkspaceViewImpl<McpResourceView>("MCP", "MCP Resources", type = McpResourceView::class)
@@ -52,6 +54,10 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
     private lateinit var resourceListView: ListView<ResourceWithServer>
 
     private val resourceContentText = SimpleStringProperty("")
+    
+    companion object {
+        private const val RESOURCE_LOAD_TIMEOUT_MS = 10000L
+    }
 
     init {
         // Load resources initially
@@ -199,27 +205,38 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
     }
 
     private fun loadResources() {
-        runAsync {
-            val allResources = mutableListOf<ResourceWithServer>()
-            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
+        // Clear existing entries before loading new ones
+        resourceEntries.clear()
+        
+        val serverNames = mcpController.mcpProviderRegistry.listProviderNames()
+        
+        // Launch a separate coroutine for each server to load resources concurrently
+        serverNames.forEach { serverName ->
+            runAsync {
                 try {
-                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
-                    if (server != null) {
-                        val resources = kotlinx.coroutines.runBlocking {
-                            server.listResources()
-                        }
-                        resources.forEach { resource ->
-                            allResources.add(ResourceWithServer(resource, serverName))
+                    runBlocking {
+                        withTimeout(RESOURCE_LOAD_TIMEOUT_MS) {
+                            val server = mcpController.mcpProviderRegistry.getProvider(serverName)
+                            if (server != null) {
+                                val resources = server.listResources()
+                                resources.map { ResourceWithServer(it, serverName) }
+                            } else {
+                                emptyList()
+                            }
                         }
                     }
+                } catch (e: TimeoutCancellationException) {
+                    warning<McpResourceView>("Timeout loading resources from server '$serverName' after ${RESOURCE_LOAD_TIMEOUT_MS}ms")
+                    emptyList()
                 } catch (e: Exception) {
-                    System.err.println("Error loading resources from server $serverName: ${e.message}")
+                    warning<McpResourceView>("Failed to load resources from server '$serverName': ${e.message}")
+                    emptyList()
                 }
+            } ui { resources ->
+                // Update the observable list incrementally as each server responds
+                resourceEntries.addAll(resources)
+                refilter()
             }
-            allResources
-        } ui { resources ->
-            resourceEntries.setAll(resources)
-            refilter()
         }
     }
 

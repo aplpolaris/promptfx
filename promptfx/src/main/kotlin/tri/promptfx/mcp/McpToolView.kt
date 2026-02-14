@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.version
@@ -35,6 +36,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.json.jsonMapper
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.warning
 
 /** Plugin for the [McpToolView]. */
 class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "MCP Tools", type = McpToolView::class)
@@ -57,6 +59,10 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
 
     private val toolInputText = SimpleStringProperty("{}")
     private val toolOutputText = SimpleStringProperty("")
+    
+    companion object {
+        private const val TOOL_LOAD_TIMEOUT_MS = 10000L
+    }
 
     init {
         // Load tools initially
@@ -217,27 +223,38 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     }
 
     private fun loadTools() {
-        runAsync {
-            val allTools = mutableListOf<ToolWithServer>()
-            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
+        // Clear existing entries before loading new ones
+        toolEntries.clear()
+        
+        val serverNames = mcpController.mcpProviderRegistry.listProviderNames()
+        
+        // Launch a separate coroutine for each server to load tools concurrently
+        serverNames.forEach { serverName ->
+            runAsync {
                 try {
-                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
-                    if (server != null) {
-                        val tools = kotlinx.coroutines.runBlocking {
-                            server.listTools()
-                        }
-                        tools.forEach { tool ->
-                            allTools.add(ToolWithServer(tool, serverName))
+                    runBlocking {
+                        withTimeout(TOOL_LOAD_TIMEOUT_MS) {
+                            val server = mcpController.mcpProviderRegistry.getProvider(serverName)
+                            if (server != null) {
+                                val tools = server.listTools()
+                                tools.map { ToolWithServer(it, serverName) }
+                            } else {
+                                emptyList()
+                            }
                         }
                     }
+                } catch (e: TimeoutCancellationException) {
+                    warning<McpToolView>("Timeout loading tools from server '$serverName' after ${TOOL_LOAD_TIMEOUT_MS}ms")
+                    emptyList()
                 } catch (e: Exception) {
-                    println("Error loading tools from server $serverName: ${e.message}")
+                    warning<McpToolView>("Failed to load tools from server '$serverName': ${e.message}")
+                    emptyList()
                 }
+            } ui { tools ->
+                // Update the observable list incrementally as each server responds
+                toolEntries.addAll(tools)
+                refilter()
             }
-            allTools
-        } ui { tools ->
-            toolEntries.setAll(tools)
-            refilter()
         }
     }
 
