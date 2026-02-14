@@ -19,16 +19,15 @@
  */
 package tri.ai.mcp
 
-import io.ktor.http.ContentType
-import io.ktor.server.application.call
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
-import io.ktor.server.request.receiveText
-import io.ktor.server.response.header
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.post
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -250,10 +249,12 @@ class McpProviderHttpTest {
     fun testExternal() {
         val url = "https://seolinkmap.com/mcp"
 //        val url = "https://your-test-server/mcp"
-        val provider = McpProviderHttp(url, enableSse = false)
-        runTest {
+        val provider = McpProviderHttp(url, enableSse = true)
+        runBlocking { // must use runBlocking rather than runTest to allow for long-running SSE connection
             println(provider.getCapabilities())
+            delay(500L)
             println(provider.listTools())
+            delay(500L)
             provider.close()
         }
     }
@@ -271,7 +272,7 @@ class McpProviderHttpTest {
                 
                 // Give SSE time to connect
                 val sseConnectionDelayMs = 1000L
-                kotlinx.coroutines.delay(sseConnectionDelayMs)
+                delay(sseConnectionDelayMs)
                 
                 // This test is disabled because our mock server doesn't support SSE
                 // In a real SSE-enabled server, we would verify:

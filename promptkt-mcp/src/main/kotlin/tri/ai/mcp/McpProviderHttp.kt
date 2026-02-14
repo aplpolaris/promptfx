@@ -78,7 +78,6 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         val pendingDeferred = if (enableSse && sseConnected && requestIdValue != null) {
             val deferred = CompletableDeferred<JsonElement>()
             pendingResponses[requestIdValue] = deferred
-            info<McpProviderHttp>("Pre-registered pending response for request ID: $requestIdValue")
             deferred
         } else null
 
@@ -94,6 +93,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         if (!response.status.isSuccess()) {
             // Clean up pending response on failure
             if (requestIdValue != null) {
+                info<McpProviderHttp>("HTTP request failed, removing pending response for request ID: $requestIdValue")
                 pendingResponses.remove(requestIdValue)
             }
             throw McpException("HTTP request failed: ${response.status}")
@@ -104,7 +104,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         if (newSessionId != null && newSessionId != mcpSessionId) {
             mcpSessionId = newSessionId
             // Start SSE connection after getting session ID (only on first initialization)
-            if (enableSse && !sseConnected && method == McpJsonRpcHandler.Companion.METHOD_INITIALIZE) {
+            if (enableSse && !sseConnected && method == McpJsonRpcHandler.METHOD_INITIALIZE) {
                 startSseConnection()
                 // Give SSE a moment to establish connection
                 delay(100)
@@ -139,10 +139,9 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         }
         
         // We got a valid JSON-RPC response directly, so clean up the pending response if registered
-        if (requestIdValue != null) {
+        if (requestIdValue != null)
             pendingResponses.remove(requestIdValue)
-        }
-        
+
         // Handle JSON-RPC error responses
         if (responseJson.containsKey("error")) {
             val error = responseJson["error"]?.jsonObject
