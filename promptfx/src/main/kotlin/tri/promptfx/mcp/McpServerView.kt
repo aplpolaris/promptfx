@@ -42,6 +42,7 @@ class McpServerPlugin : NavigableWorkspaceViewImpl<McpServerView>("MCP", "MCP Se
 
 /** Data class to hold provider capability information. */
 data class ProviderCapabilityInfo(
+    val loading: Boolean = false,
     val hasPrompts: Boolean = false,
     val hasTools: Boolean = false,
     val hasResources: Boolean = false,
@@ -213,6 +214,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 label {
                                     textProperty().bind(capInfo.stringBinding {
                                         when {
+                                            it?.loading == true -> "Loading..."
                                             it?.error != null -> "Error"
                                             it?.hasPrompts == true -> "Supported (${it.promptsCount} prompts)"
                                             else -> "Not supported"
@@ -233,6 +235,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 label {
                                     textProperty().bind(capInfo.stringBinding {
                                         when {
+                                            it?.loading == true -> "Loading..."
                                             it?.error != null -> "Error"
                                             it?.hasTools == true -> "Supported (${it.toolsCount} tools)"
                                             else -> "Not supported"
@@ -253,6 +256,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                                 label {
                                     textProperty().bind(capInfo.stringBinding {
                                         when {
+                                            it?.loading == true -> "Loading..."
                                             it?.error != null -> "Error"
                                             it?.hasResources == true -> "Supported (${it.resourcesCount} resources, ${it.resourceTemplatesCount} templates)"
                                             else -> "Not supported"
@@ -376,6 +380,9 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
 
     private fun queryServerCapabilities(serverName: String) {
         val capabilityProp = getCapabilityInfo(serverName)
+        
+        // Set loading state immediately
+        capabilityProp.value = ProviderCapabilityInfo(loading = true)
         
         // Run query in background using coroutine
         runAsync {
