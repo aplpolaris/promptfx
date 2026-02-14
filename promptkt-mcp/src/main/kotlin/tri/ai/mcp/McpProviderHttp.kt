@@ -33,7 +33,6 @@ import tri.ai.mcp.McpJsonRpcHandler.Companion.buildJsonRpc
 import tri.util.fine
 import tri.util.warning
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  * MCP provider for an external Streamable HTTP MCP server.
@@ -79,7 +78,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             setBody(JsonSerializers.serialize(request))
             mcpSessionId?.let { header(HEADER_MCP_SESSION_ID, it) }
             timeout {
-                requestTimeoutMillis = 30000 // 30 seconds for POST requests
+                requestTimeoutMillis = REQUEST_TIMEOUT_MS
             }
         }
 
@@ -219,7 +218,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         }
     }
 
-    private suspend fun waitForSseResponse(requestId: Int, timeoutMs: Long = 30000): JsonElement {
+    private suspend fun waitForSseResponse(requestId: Int, timeoutMs: Long = REQUEST_TIMEOUT_MS): JsonElement {
         val deferred = CompletableDeferred<JsonElement>()
         pendingResponses[requestId] = deferred
         
@@ -236,12 +235,19 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         sseScope.cancel()
         sseConnected = false
         sseMessageQueue.close()
+        
+        // Complete all pending responses exceptionally to prevent hanging
+        pendingResponses.values.forEach { deferred ->
+            deferred.completeExceptionally(McpException("Connection closed"))
+        }
         pendingResponses.clear()
+        
         httpClient.close()
     }
 
     companion object {
         const val HEADER_MCP_SESSION_ID = "Mcp-Session-Id"
+        private const val REQUEST_TIMEOUT_MS = 30000L // 30 seconds
     }
 
 }

@@ -270,7 +270,8 @@ class McpProviderHttpTest {
                 assertNotNull(capabilities)
                 
                 // Give SSE time to connect
-                kotlinx.coroutines.delay(1000)
+                val sseConnectionDelayMs = 1000L
+                kotlinx.coroutines.delay(sseConnectionDelayMs)
                 
                 // This test is disabled because our mock server doesn't support SSE
                 // In a real SSE-enabled server, we would verify:
