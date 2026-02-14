@@ -211,7 +211,9 @@ data class McpProviderRegistryConfig(
     val mcpServers: Map<String, McpProviderConfig>? = null
 ) {
     /**
-     * Get the server configurations, preferring mcpServers if both are present.
+     * Get the server configurations.
+     * Note: mcpServers takes precedence over servers when both are present,
+     * allowing users to migrate from PromptFx format to Claude Desktop format.
      */
     fun allServers(): Map<String, McpProviderConfig> {
         return mcpServers ?: servers ?: emptyMap()
@@ -283,7 +285,7 @@ class McpProviderConfigDeserializer : JsonDeserializer<McpProviderConfig>() {
                 "stdio" -> mapper.treeToValue(node, StdioProviderConfig::class.java)
                 "http" -> mapper.treeToValue(node, HttpProviderConfig::class.java)
                 "test" -> mapper.treeToValue(node, TestProviderConfig::class.java)
-                else -> throw IllegalArgumentException("Unknown provider type: $type")
+                else -> throw IllegalArgumentException("Unknown provider type: \"$type\". Valid types are: embedded, stdio, http, test")
             }
         }
         
@@ -291,7 +293,7 @@ class McpProviderConfigDeserializer : JsonDeserializer<McpProviderConfig>() {
         return when {
             node.has("command") -> mapper.treeToValue(node, StdioProviderConfig::class.java)
             node.has("url") -> mapper.treeToValue(node, HttpProviderConfig::class.java)
-            else -> throw IllegalArgumentException("Cannot infer provider type from config: $node")
+            else -> throw IllegalArgumentException("Cannot infer provider type: expected either \"command\" field for stdio server or \"url\" field for HTTP server, but neither was found in config: $node")
         }
     }
 }
