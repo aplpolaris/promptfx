@@ -88,20 +88,24 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
     }
 
     private fun loadPrompts() {
-        runBlocking {
-            val allPrompts = mutableListOf<McpPromptWithServer>()
-            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
-                try {
-                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
-                    if (server != null) {
-                        val prompts = server.listPrompts()
-                        allPrompts.addAll(prompts.map { McpPromptWithServer(it, serverName) })
+        runAsync {
+            runBlocking {
+                val allPrompts = mutableListOf<McpPromptWithServer>()
+                for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
+                    try {
+                        val server = mcpController.mcpProviderRegistry.getProvider(serverName)
+                        if (server != null) {
+                            val prompts = server.listPrompts()
+                            allPrompts.addAll(prompts.map { McpPromptWithServer(it, serverName) })
+                        }
+                    } catch (e: Exception) {
+                        println("Failed to load prompts from server '$serverName': ${e.message}")
                     }
-                } catch (e: Exception) {
-                    println("Failed to load prompts from server '$serverName': ${e.message}")
                 }
+                allPrompts
             }
-            promptEntries.setAll(allPrompts)
+        } ui { prompts ->
+            promptEntries.setAll(prompts)
             refilter()
         }
     }
