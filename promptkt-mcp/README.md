@@ -225,4 +225,3 @@ Run a test MCP server over `stdio` with:
 ```bash
 npx @modelcontextprotocol/server-everything
 ```
-This requires (i) 

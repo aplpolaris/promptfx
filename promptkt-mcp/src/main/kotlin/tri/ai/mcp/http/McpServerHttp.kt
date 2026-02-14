@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,6 +104,8 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
             val method = req["method"]?.jsonPrimitive?.contentOrNull
             val params = req["params"]?.jsonObject
 
+            println("Received JSON-RPC request: method=$method, id=$id")
+
             try {
                 val result = handler.handleRequest(method, params)
                 if (result != null) {
@@ -111,12 +113,12 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
                 } else if (method == McpJsonRpcHandler.METHOD_NOTIFICATIONS_CLOSE) {
                     // Special case: close notification should exit
                     // Respond first, then close to avoid race condition
-                    call.respond(HttpStatusCode.Companion.NoContent)
+                    call.respond(HttpStatusCode.NoContent)
                     delay(100) // Allow response to be sent
                     close()
                 } else if (method?.startsWith(McpJsonRpcHandler.METHOD_NOTIFICATIONS_PREFIX) == true) {
                     // Other notifications have no response
-                    call.respond(HttpStatusCode.Companion.NoContent)
+                    call.respond(HttpStatusCode.NoContent)
                 } else {
                     call.respondJsonRpcError(id, -32601, "Method not found: $method")
                 }
@@ -134,6 +136,7 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
             if (id != null) put("id", id)
             put("result", result)
         }
+        println("Responding with JSON-RPC result: id=$id")
         respondText(JsonSerializers.serialize(resp), ContentType.Application.Json, HttpStatusCode.Companion.OK)
     }
 
@@ -146,10 +149,12 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
                 put("message", JsonPrimitive(message))
             })
         }
-        respondText(JsonSerializers.serialize(err), ContentType.Application.Json, HttpStatusCode.Companion.OK)
+        println("Responding with JSON-RPC error: id=$id, code=$code, message=$message")
+        respondText(JsonSerializers.serialize(err), ContentType.Application.Json, HttpStatusCode.OK)
     }
 
     fun close() {
+        println("Stopping MCP HTTP Server...")
         server?.stop(1000, 2000)
     }
 
