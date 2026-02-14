@@ -258,4 +258,30 @@ class McpProviderHttpTest {
         }
     }
 
+    @Test
+    @Disabled("SSE test requires an SSE-enabled mock server")
+    fun testSseConnection() {
+        runTest {
+            val provider = McpProviderHttp(BASE_URL, enableSse = true)
+            
+            try {
+                // Initialize should trigger SSE connection
+                val capabilities = provider.getCapabilities()
+                assertNotNull(capabilities)
+                
+                // Give SSE time to connect
+                kotlinx.coroutines.delay(1000)
+                
+                // This test is disabled because our mock server doesn't support SSE
+                // In a real SSE-enabled server, we would verify:
+                // 1. SSE connection is established after initialization
+                // 2. Messages can be received via SSE
+                // 3. POST requests still work alongside SSE
+                
+            } finally {
+                provider.close()
+            }
+        }
+    }
+
 }
