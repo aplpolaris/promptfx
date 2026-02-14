@@ -98,91 +98,82 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         output {
             scrollpane {
                 isFitToWidth = true
-                squeezebox(multiselect = true) {
+                form {
                     visibleWhen(toolSelection.isNotNull)
                     managedWhen(visibleProperty())
                     vgrow = Priority.ALWAYS
-                    fold("MCP Server", expanded = true) {
-                        form {
-                            fieldset {
-                                field("Server Id") {
-                                    label(toolSelection.stringBinding { it?.serverName ?: "" })
-                                }
+                    
+                    fieldset("MCP Server Information") {
+                        field("Server Id") {
+                            label(toolSelection.stringBinding { it?.serverName ?: "" })
+                        }
+                    }
+                    
+                    fieldset("Tool Information") {
+                        field("Name") {
+                            label(toolSelection.stringBinding { it?.tool?.name ?: "" })
+                        }
+                        field("Description") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            text(toolSelection.stringBinding { it?.tool?.description ?: "N/A" }) {
+                                wrappingWidth = 400.0
+                            }
+                        }
+                        field("Version") {
+                            label(toolSelection.stringBinding { it?.tool?.version ?: "" })
+                        }
+                    }
+                    
+                    fieldset("Input Schema") {
+                        field("Schema") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 5
+                                textProperty().bind(toolSelection.stringBinding {
+                                    it?.tool?.inputSchema?.toPrettyString() ?: "No schema available"
+                                })
                             }
                         }
                     }
-                    fold("Tool Details", expanded = true) {
-                        form {
-                            fieldset("Tool Information") {
-                                field("Name") {
-                                    label(toolSelection.stringBinding { it?.tool?.name ?: "" })
-                                }
-                                field("Description") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    text(toolSelection.stringBinding { it?.tool?.description ?: "N/A" }) {
-                                        wrappingWidth = 400.0
-                                    }
-                                }
-                                field("Version") {
-                                    label(toolSelection.stringBinding { it?.tool?.version ?: "" })
-                                }
-                            }
-                            fieldset("Input") {
-                                field("Schema") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        textProperty().bind(toolSelection.stringBinding {
-                                            it?.tool?.inputSchema?.toPrettyString() ?: "No schema available"
-                                        })
-                                    }
-                                }
-                            }
-                            fieldset("Output") {
-                                field("Schema") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        textProperty().bind(toolSelection.stringBinding {
-                                            it?.tool?.outputSchema?.toPrettyString() ?: "No schema available"
-                                        })
-                                    }
-                                }
+                    
+                    fieldset("Output Schema") {
+                        field("Schema") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 5
+                                textProperty().bind(toolSelection.stringBinding {
+                                    it?.tool?.outputSchema?.toPrettyString() ?: "No schema available"
+                                })
                             }
                         }
                     }
-                    fold("Try Tool", expanded = true) {
-                        form {
-                            fieldset("Input") {
-                                field("Parameters (JSON)") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea(toolInputText) {
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        promptText = """{"param1": "value1"}"""
-                                    }
-                                }
-                                buttonbar {
-                                    button("Execute Tool") {
-                                        enableWhen(toolSelection.isNotNull)
-                                        action { runToolExecution() }
-                                    }
-                                }
+                    
+                    fieldset("Try Tool") {
+                        field("Parameters (JSON)") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea(toolInputText) {
+                                isWrapText = true
+                                prefRowCount = 5
+                                promptText = """{"param1": "value1"}"""
                             }
-                            fieldset("Output") {
-                                field("JSON") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea(toolOutputText) {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 8
-                                        vgrow = Priority.ALWAYS
-                                    }
-                                }
+                        }
+                        buttonbar {
+                            button("Execute Tool") {
+                                enableWhen(toolSelection.isNotNull)
+                                action { runToolExecution() }
+                            }
+                        }
+                        field("Output (JSON)") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea(toolOutputText) {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 8
+                                vgrow = Priority.ALWAYS
                             }
                         }
                     }

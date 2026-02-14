@@ -93,63 +93,52 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
         output {
             scrollpane {
                 isFitToWidth = true
-                squeezebox(multiselect = true) {
+                form {
                     visibleWhen(resourceSelection.isNotNull)
                     managedWhen(visibleProperty())
                     vgrow = Priority.ALWAYS
-                    fold("MCP Server", expanded = true) {
-                        form {
-                            fieldset {
-                                field("Server Id") {
-                                    label(resourceSelection.stringBinding { it?.serverName ?: "" })
-                                }
-                            }
+                    
+                    fieldset("MCP Server Information") {
+                        field("Server Id") {
+                            label(resourceSelection.stringBinding { it?.serverName ?: "" })
                         }
                     }
-                    fold("Resource Details", expanded = true) {
-                        form {
-                            fieldset("Resource Information") {
-                                field("Name") {
-                                    label(resourceSelection.stringBinding { it?.resource?.name ?: "" })
-                                }
-                                field("URI") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    text(resourceSelection.stringBinding { it?.resource?.uri ?: "" }) {
-                                        wrappingWidth = 400.0
-                                    }
-                                }
-                                field("Description") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    text(resourceSelection.stringBinding { it?.resource?.description ?: "N/A" }) {
-                                        wrappingWidth = 400.0
-                                    }
-                                }
-                                field("MIME Type") {
-                                    label(resourceSelection.stringBinding { it?.resource?.mimeType ?: "N/A" })
-                                }
+                    
+                    fieldset("Resource Information") {
+                        field("Name") {
+                            label(resourceSelection.stringBinding { it?.resource?.name ?: "" })
+                        }
+                        field("URI") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            text(resourceSelection.stringBinding { it?.resource?.uri ?: "" }) {
+                                wrappingWidth = 400.0
                             }
                         }
-                    }
-                    fold("Read Resource", expanded = true) {
-                        form {
-                            fieldset("Actions") {
-                                buttonbar {
-                                    button("Read Resource") {
-                                        enableWhen(resourceSelection.isNotNull)
-                                        action { readResourceContent() }
-                                    }
-                                }
+                        field("Description") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            text(resourceSelection.stringBinding { it?.resource?.description ?: "N/A" }) {
+                                wrappingWidth = 400.0
                             }
-                            fieldset("Content") {
-                                field("Output") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea(resourceContentText) {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 12
-                                        vgrow = Priority.ALWAYS
-                                    }
-                                }
+                        }
+                        field("MIME Type") {
+                            label(resourceSelection.stringBinding { it?.resource?.mimeType ?: "N/A" })
+                        }
+                    }
+                    
+                    fieldset("Read Resource") {
+                        buttonbar {
+                            button("Read Resource") {
+                                enableWhen(resourceSelection.isNotNull)
+                                action { readResourceContent() }
+                            }
+                        }
+                        field("Content") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea(resourceContentText) {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 12
+                                vgrow = Priority.ALWAYS
                             }
                         }
                     }
