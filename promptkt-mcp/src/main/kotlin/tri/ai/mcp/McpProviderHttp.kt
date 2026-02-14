@@ -73,6 +73,15 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         val request = buildJsonRpc(method, requestId, params)
         val requestIdValue = request["id"]?.jsonPrimitive?.intOrNull
 
+        // If SSE is enabled and connected, pre-register a pending response to avoid race conditions
+        // where the SSE event arrives before we can register after receiving a queued response
+        val pendingDeferred = if (enableSse && sseConnected && requestIdValue != null) {
+            val deferred = CompletableDeferred<JsonElement>()
+            pendingResponses[requestIdValue] = deferred
+            info<McpProviderHttp>("Pre-registered pending response for request ID: $requestIdValue")
+            deferred
+        } else null
+
         val response = httpClient.post("$baseUrl/mcp") {
             contentType(ContentType.Application.Json)
             setBody(JsonSerializers.serialize(request))
@@ -82,8 +91,13 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             }
         }
 
-        if (!response.status.isSuccess())
+        if (!response.status.isSuccess()) {
+            // Clean up pending response on failure
+            if (requestIdValue != null) {
+                pendingResponses.remove(requestIdValue)
+            }
             throw McpException("HTTP request failed: ${response.status}")
+        }
         
         // Always update the MCP session id if found
         val newSessionId = response.headers[HEADER_MCP_SESSION_ID]
@@ -92,15 +106,17 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             // Start SSE connection after getting session ID (only on first initialization)
             if (enableSse && !sseConnected && method == McpJsonRpcHandler.Companion.METHOD_INITIALIZE) {
                 startSseConnection()
+                // Give SSE a moment to establish connection
+                delay(100)
             }
         }
 
         val responseText = response.bodyAsText()
         if (responseText.isEmpty()) {
-            // If we have SSE enabled and a request ID, wait for response from SSE
-            if (enableSse && sseConnected && requestIdValue != null) {
+            // If we have SSE enabled and a pending response registered, wait for it
+            if (pendingDeferred != null) {
                 info<McpProviderHttp>("Empty response received, waiting for SSE response for request ID: $requestIdValue")
-                return waitForSseResponse(requestIdValue)
+                return waitForSseResponse(requestIdValue!!, pendingDeferred)
             }
             return JsonNull
         }
@@ -114,12 +130,17 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         if (!isJsonRpcResponse) {
             // Response is not a JSON-RPC response (e.g., {"status":"queued"})
             // Wait for the actual response via SSE
-            if (enableSse && sseConnected && requestIdValue != null) {
+            if (pendingDeferred != null) {
                 info<McpProviderHttp>("Non-JSON-RPC response received: $responseJson, waiting for SSE response for request ID: $requestIdValue")
-                return waitForSseResponse(requestIdValue)
+                return waitForSseResponse(requestIdValue!!, pendingDeferred)
             }
             // If SSE is not enabled or not connected, treat this as an error
             throw McpException("Invalid JSON-RPC response without result or error: $responseJson")
+        }
+        
+        // We got a valid JSON-RPC response directly, so clean up the pending response if registered
+        if (requestIdValue != null) {
+            pendingResponses.remove(requestIdValue)
         }
         
         // Handle JSON-RPC error responses
@@ -264,10 +285,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         }
     }
 
-    private suspend fun waitForSseResponse(requestId: Int, timeoutMs: Long = REQUEST_TIMEOUT_MS): JsonElement {
-        val deferred = CompletableDeferred<JsonElement>()
-        pendingResponses[requestId] = deferred
-        
+    private suspend fun waitForSseResponse(requestId: Int, deferred: CompletableDeferred<JsonElement>, timeoutMs: Long = REQUEST_TIMEOUT_MS): JsonElement {
         return withTimeoutOrNull(timeoutMs) {
             deferred.await()
         } ?: run {
