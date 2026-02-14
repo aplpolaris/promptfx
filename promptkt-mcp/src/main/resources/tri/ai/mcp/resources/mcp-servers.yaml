@@ -1,5 +1,23 @@
 # MCP Server Registry Configuration
 # This file defines available MCP servers that can be used by the CLI
+#
+# Supports two formats:
+#
+# 1. PromptFx format (with explicit "type" field):
+#    servers:
+#      my-server:
+#        type: stdio
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# 2. Claude Desktop/OpenAI format (type inferred from fields):
+#    mcpServers:
+#      my-server:
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# Both formats are supported for backward compatibility.
+
 servers:
   # Embedded server with default libraries
   embedded:
@@ -19,17 +37,25 @@ servers:
     includeDefaultPrompts: true
     includeDefaultTools: true
   
-  # Remote MCP server via HTTP
+  # Remote MCP server via HTTP (PromptFx format with type)
   remote-example:
     type: http
     description: "Remote MCP server via HTTP"
     url: "http://localhost:8080/mcp"
   
-  # Remote MCP server via stdio (example - not yet implemented)
-  # stdio-example:
-  #   type: stdio
-  #   description: "Remote MCP server via stdio"
+  # Remote MCP server via stdio (Claude Desktop compatible format - type inferred)
+  # filesystem:
   #   command: "npx"
   #   args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  
+  # Remote MCP server via stdio with env vars (Claude Desktop compatible)
+  # weather:
+  #   command: "node"
+  #   args: ["/path/to/weather/server.js"]
   #   env:
-  #     NODE_ENV: "production"
+  #     API_KEY: "your-api-key"
+  
+  # HTTP server (Claude Desktop compatible format - type inferred)
+  # brave-search:
+  #   url: "http://localhost:8080/mcp"
+

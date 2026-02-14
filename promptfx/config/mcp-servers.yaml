@@ -1,6 +1,23 @@
 # MCP Server Registry Configuration (Runtime)
 # This file defines available MCP servers that can be used by PromptFx at runtime
 # Place this file in the config/ directory to override the built-in MCP server configurations
+#
+# Supports two formats:
+#
+# 1. PromptFx format (with explicit "type" field):
+#    servers:
+#      my-server:
+#        type: stdio
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# 2. Claude Desktop/OpenAI format (type inferred from fields):
+#    mcpServers:
+#      my-server:
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# Both formats are supported for backward compatibility.
 
 servers:
   # Embedded server with default libraries
@@ -32,11 +49,21 @@ servers:
   #   description: "Remote MCP server via HTTP"
   #   url: "http://localhost:8080/mcp"
   
-  # Remote MCP server via stdio
-  # stdio-example:
-  #   type: stdio
-  #   description: "Remote MCP server via stdio"
+  # Claude Desktop compatible format examples (type inferred from fields):
+  
+  # Remote MCP server via stdio (Claude Desktop compatible)
+  # filesystem:
   #   command: "npx"
   #   args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  
+  # Remote MCP server via stdio with env vars
+  # weather-node:
+  #   command: "node"
+  #   args: ["/path/to/weather/server.js"]
   #   env:
-  #     NODE_ENV: "production"
+  #     API_KEY: "your-api-key"
+  
+  # HTTP server (Claude Desktop compatible)
+  # brave-search:
+  #   url: "http://localhost:8080/mcp"
+

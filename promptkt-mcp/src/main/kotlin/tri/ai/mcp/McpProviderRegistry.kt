@@ -19,9 +19,15 @@
  */
 package tri.ai.mcp
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -138,18 +144,24 @@ class McpProviderRegistry(
     }
 
     companion object {
+        private val configModule = SimpleModule().apply {
+            addDeserializer(McpProviderConfig::class.java, McpProviderConfigDeserializer())
+        }
+        
         private val jsonMapper = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
+            .registerModule(configModule)
 
         private val yamlMapper = ObjectMapper(YAMLFactory())
             .registerModule(KotlinModule.Builder().build())
+            .registerModule(configModule)
 
         /**
          * Load registry from a JSON file.
          */
         fun loadFromJson(file: File): McpProviderRegistry {
             val config = jsonMapper.readValue<McpProviderRegistryConfig>(file)
-            return McpProviderRegistry(config.servers)
+            return McpProviderRegistry(config.allServers())
         }
 
         /**
@@ -157,7 +169,7 @@ class McpProviderRegistry(
          */
         fun loadFromYaml(file: File): McpProviderRegistry {
             val config = yamlMapper.readValue<McpProviderRegistryConfig>(file)
-            return McpProviderRegistry(config.servers)
+            return McpProviderRegistry(config.allServers())
         }
 
         /**
@@ -192,25 +204,24 @@ class McpProviderRegistry(
 
 /**
  * Configuration for the MCP provider registry.
+ * Supports both "servers" (PromptFx format) and "mcpServers" (Claude Desktop/OpenAI format).
  */
 data class McpProviderRegistryConfig(
-    val servers: Map<String, McpProviderConfig>
-)
+    val servers: Map<String, McpProviderConfig>? = null,
+    val mcpServers: Map<String, McpProviderConfig>? = null
+) {
+    /**
+     * Get the server configurations, preferring mcpServers if both are present.
+     */
+    fun allServers(): Map<String, McpProviderConfig> {
+        return mcpServers ?: servers ?: emptyMap()
+    }
+}
 
 /**
  * Base class for MCP provider configurations.
+ * Supports both explicit type field (PromptFx format) and inferred type (Claude Desktop/OpenAI format).
  */
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.PROPERTY,
-    property = "type"
-)
-@JsonSubTypes(
-    JsonSubTypes.Type(value = EmbeddedProviderConfig::class, name = "embedded"),
-    JsonSubTypes.Type(value = StdioProviderConfig::class, name = "stdio"),
-    JsonSubTypes.Type(value = HttpProviderConfig::class, name = "http"),
-    JsonSubTypes.Type(value = TestProviderConfig::class, name = "test")
-)
 sealed class McpProviderConfig {
     abstract val description: String?
 }
@@ -218,6 +229,7 @@ sealed class McpProviderConfig {
 /**
  * Configuration for an embedded MCP provider (running in the same process).
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class EmbeddedProviderConfig(
     override val description: String? = null,
     val promptLibraryPath: String? = null
@@ -226,6 +238,7 @@ data class EmbeddedProviderConfig(
 /**
  * Configuration for a remote MCP server via stdio.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class StdioProviderConfig(
     override val description: String? = null,
     val command: String,
@@ -236,6 +249,7 @@ data class StdioProviderConfig(
 /**
  * Configuration for a remote MCP server via HTTP.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class HttpProviderConfig(
     override val description: String? = null,
     val url: String
@@ -244,9 +258,40 @@ data class HttpProviderConfig(
 /**
  * Configuration for a test provider with built-in samples.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class TestProviderConfig(
     override val description: String? = null,
     val includeDefaultPrompts: Boolean = true,
     val includeDefaultTools: Boolean = true,
     val includeDefaultResources: Boolean = true
 ) : McpProviderConfig()
+
+/**
+ * Custom deserializer for McpProviderConfig that supports both explicit type field
+ * (PromptFx format) and inferred type (Claude Desktop/OpenAI format).
+ */
+class McpProviderConfigDeserializer : JsonDeserializer<McpProviderConfig>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): McpProviderConfig {
+        val node = p.codec.readTree<JsonNode>(p)
+        val mapper = p.codec as ObjectMapper
+        
+        // Check if explicit type field exists (PromptFx format)
+        val typeNode = node.get("type")
+        if (typeNode != null) {
+            return when (val type = typeNode.asText()) {
+                "embedded" -> mapper.treeToValue(node, EmbeddedProviderConfig::class.java)
+                "stdio" -> mapper.treeToValue(node, StdioProviderConfig::class.java)
+                "http" -> mapper.treeToValue(node, HttpProviderConfig::class.java)
+                "test" -> mapper.treeToValue(node, TestProviderConfig::class.java)
+                else -> throw IllegalArgumentException("Unknown provider type: $type")
+            }
+        }
+        
+        // Infer type from fields (Claude Desktop/OpenAI format)
+        return when {
+            node.has("command") -> mapper.treeToValue(node, StdioProviderConfig::class.java)
+            node.has("url") -> mapper.treeToValue(node, HttpProviderConfig::class.java)
+            else -> throw IllegalArgumentException("Cannot infer provider type from config: $node")
+        }
+    }
+}

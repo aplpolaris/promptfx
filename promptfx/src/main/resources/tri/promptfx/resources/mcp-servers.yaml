@@ -1,5 +1,23 @@
 # MCP Server Registry Configuration
 # This file defines available MCP servers that can be used by PromptFx
+#
+# Supports two formats:
+#
+# 1. PromptFx format (with explicit "type" field):
+#    servers:
+#      my-server:
+#        type: stdio
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# 2. Claude Desktop/OpenAI format (type inferred from fields):
+#    mcpServers:
+#      my-server:
+#        command: "npx"
+#        args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+#
+# Both formats are supported for backward compatibility.
+
 servers:
   # Embedded server with default libraries
   embedded:
@@ -12,3 +30,4 @@ servers:
     description: "Test server with sample prompts and tools for testing"
     includeDefaultPrompts: true
     includeDefaultTools: true
+

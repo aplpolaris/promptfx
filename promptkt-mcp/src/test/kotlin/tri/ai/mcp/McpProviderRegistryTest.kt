@@ -354,4 +354,146 @@ class McpProviderRegistryTest {
             server3.close()
         }
     }
+
+    @Test
+    fun testClaudeDesktopFormatWithMcpServersKey() {
+        val jsonFile = tempDir.resolve("claude-desktop.json")
+        Files.writeString(
+            jsonFile, """
+            {
+              "mcpServers": {
+                "filesystem": {
+                  "command": "npx",
+                  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+                },
+                "weather": {
+                  "command": "node",
+                  "args": ["/path/to/weather/server.js"],
+                  "env": {
+                    "API_KEY": "secret"
+                  }
+                }
+              }
+            }
+        """.trimIndent()
+        )
+
+        val registry = McpProviderRegistry.loadFromFile(jsonFile.toString())
+
+        val serverNames = registry.listProviderNames()
+        assertEquals(2, serverNames.size)
+        assertTrue(serverNames.contains("filesystem"))
+        assertTrue(serverNames.contains("weather"))
+
+        val configs = registry.getConfigs()
+        val filesystemConfig = configs["filesystem"] as? StdioProviderConfig
+        assertNotNull(filesystemConfig)
+        assertEquals("npx", filesystemConfig?.command)
+        assertEquals(listOf("-y", "@modelcontextprotocol/server-filesystem", "/tmp"), filesystemConfig?.args)
+
+        val weatherConfig = configs["weather"] as? StdioProviderConfig
+        assertNotNull(weatherConfig)
+        assertEquals("node", weatherConfig?.command)
+        assertEquals(mapOf("API_KEY" to "secret"), weatherConfig?.env)
+    }
+
+    @Test
+    fun testClaudeDesktopFormatWithHttpServer() {
+        val jsonFile = tempDir.resolve("claude-http.json")
+        Files.writeString(
+            jsonFile, """
+            {
+              "mcpServers": {
+                "brave-search": {
+                  "url": "http://localhost:8080/mcp"
+                }
+              }
+            }
+        """.trimIndent()
+        )
+
+        val registry = McpProviderRegistry.loadFromFile(jsonFile.toString())
+
+        val serverNames = registry.listProviderNames()
+        assertEquals(1, serverNames.size)
+        assertTrue(serverNames.contains("brave-search"))
+
+        val configs = registry.getConfigs()
+        val httpConfig = configs["brave-search"] as? HttpProviderConfig
+        assertNotNull(httpConfig)
+        assertEquals("http://localhost:8080/mcp", httpConfig?.url)
+    }
+
+    @Test
+    fun testTypeInferenceWithoutTypeField() {
+        val yamlFile = tempDir.resolve("inferred-types.yaml")
+        Files.writeString(
+            yamlFile, """
+            servers:
+              stdio-server:
+                command: "node"
+                args: ["server.js"]
+              http-server:
+                url: "http://localhost:8080/mcp"
+        """.trimIndent()
+        )
+
+        val registry = McpProviderRegistry.loadFromFile(yamlFile.toString())
+
+        val configs = registry.getConfigs()
+        assertTrue(configs["stdio-server"] is StdioProviderConfig)
+        assertTrue(configs["http-server"] is HttpProviderConfig)
+    }
+
+    @Test
+    fun testBackwardCompatibilityWithTypeField() {
+        val yamlFile = tempDir.resolve("with-type.yaml")
+        Files.writeString(
+            yamlFile, """
+            servers:
+              stdio-server:
+                type: stdio
+                command: "node"
+                args: ["server.js"]
+              http-server:
+                type: http
+                url: "http://localhost:8080/mcp"
+        """.trimIndent()
+        )
+
+        val registry = McpProviderRegistry.loadFromFile(yamlFile.toString())
+
+        val configs = registry.getConfigs()
+        assertTrue(configs["stdio-server"] is StdioProviderConfig)
+        assertTrue(configs["http-server"] is HttpProviderConfig)
+    }
+
+    @Test
+    fun testMcpServersPreferredOverServers() {
+        val jsonFile = tempDir.resolve("both-keys.json")
+        Files.writeString(
+            jsonFile, """
+            {
+              "servers": {
+                "old-server": {
+                  "type": "test"
+                }
+              },
+              "mcpServers": {
+                "new-server": {
+                  "command": "node",
+                  "args": ["server.js"]
+                }
+              }
+            }
+        """.trimIndent()
+        )
+
+        val registry = McpProviderRegistry.loadFromFile(jsonFile.toString())
+
+        val serverNames = registry.listProviderNames()
+        assertEquals(1, serverNames.size)
+        assertTrue(serverNames.contains("new-server"))
+        assertFalse(serverNames.contains("old-server"))
+    }
 }

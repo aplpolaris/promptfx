@@ -61,6 +61,96 @@ println(textResult)
 provider.close()
 ```
 
+## MCP Server Configuration
+
+PromptKt MCP supports configuring multiple MCP servers via YAML or JSON configuration files. The configuration format is **compatible with Claude Desktop and OpenAI products**, supporting both explicit type declaration and type inference.
+
+### Configuration Formats
+
+Two formats are supported:
+
+#### 1. Claude Desktop / OpenAI Format (Recommended)
+
+Uses `mcpServers` as the top-level key and infers the server type from the fields present:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "weather": {
+      "command": "node",
+      "args": ["/path/to/weather/server.js"],
+      "env": {
+        "API_KEY": "your-api-key"
+      }
+    },
+    "brave-search": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+```
+
+YAML equivalent:
+
+```yaml
+mcpServers:
+  filesystem:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  
+  weather:
+    command: "node"
+    args: ["/path/to/weather/server.js"]
+    env:
+      API_KEY: "your-api-key"
+  
+  brave-search:
+    url: "http://localhost:8080/mcp"
+```
+
+#### 2. PromptFx Format (Also Supported)
+
+Uses `servers` as the top-level key and includes an explicit `type` field:
+
+```yaml
+servers:
+  filesystem:
+    type: stdio
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  
+  brave-search:
+    type: http
+    url: "http://localhost:8080/mcp"
+  
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default libraries"
+```
+
+### Type Inference
+
+When using the Claude Desktop format (without explicit `type` field), the server type is automatically inferred:
+
+- **Stdio server**: Has a `command` field
+- **HTTP server**: Has a `url` field
+- **Embedded/Test servers**: Must use explicit `type` field (PromptFx-specific)
+
+### Loading Configuration
+
+```kotlin
+// Load from file (auto-detects format)
+val registry = McpProviderRegistry.loadFromFile("config/mcp-servers.yaml")
+
+// Get a provider
+val provider = registry.getProvider("filesystem")
+val prompts = provider?.listPrompts()
+```
+
 ## Hosting MCP Servers
 
 You can host your own MCP servers using the provided HTTP and Stdio server implementations.
