@@ -430,7 +430,7 @@ Create a configuration file (JSON or YAML) to define your MCP providers:
     "research-server": {
       "type": "http",
       "description": "Research tools MCP server",
-      "url": "http://research-server:8080/mcp"
+      "url": "http://localhost:8081/mcp"
     },
     "code-analysis": {
       "type": "stdio",
@@ -462,7 +462,7 @@ servers:
   research-server:
     type: http
     description: Research tools MCP server
-    url: http://research-server:8080/mcp
+    url: http://localhost:8081/mcp
     
   code-analysis:
     type: stdio

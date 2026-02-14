@@ -46,92 +46,9 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Function to send a request and check response
-test_stdio_request() {
-    local description=$1
-    local request=$2
-    local expected_pattern=$3
-    
-    echo -e "${YELLOW}Testing: ${description}${NC}"
-    echo "Request: ${request}"
-    
-    # Send request to stdin and capture stdout
-    echo "${request}" > "${INPUT_FILE}"
-    
-    # Read one line of JSON response
-    response=$(cat "${INPUT_FILE}" | ${SERVER_CMD} 2>"${ERROR_FILE}" | head -n 1)
-    
-    echo "Response: ${response}"
-    
-    if echo "${response}" | grep -q "${expected_pattern}"; then
-        echo -e "${GREEN}✓ PASSED${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ FAILED${NC}"
-        echo "Expected pattern: ${expected_pattern}"
-        if [ -s "${ERROR_FILE}" ]; then
-            echo "Server errors:"
-            cat "${ERROR_FILE}"
-        fi
-        return 1
-    fi
-    echo ""
-}
-
-# Alternative approach: Start server once and send multiple requests
-echo -e "${BLUE}Starting MCP Stdio server...${NC}"
+# Alternative approach: Send all requests in batch to stdio server
+echo -e "${BLUE}Preparing batch test requests...${NC}"
 echo ""
-
-# Start the server in background
-${SERVER_CMD} > "${OUTPUT_FILE}" 2>"${ERROR_FILE}" &
-SERVER_PID=$!
-
-# Wait a moment for server to start
-sleep 2
-
-# Check if server is still running
-if ! kill -0 ${SERVER_PID} 2>/dev/null; then
-    echo -e "${RED}Failed to start server${NC}"
-    if [ -s "${ERROR_FILE}" ]; then
-        echo "Server errors:"
-        cat "${ERROR_FILE}"
-    fi
-    exit 1
-fi
-
-echo -e "${GREEN}Server started (PID: ${SERVER_PID})${NC}"
-echo ""
-
-# Function to send requests to running server
-send_request() {
-    local description=$1
-    local request=$2
-    local expected_pattern=$3
-    
-    echo -e "${YELLOW}Testing: ${description}${NC}"
-    echo "Request: ${request}"
-    
-    # Send request to the server's stdin
-    echo "${request}" >&${SERVER_INPUT_FD}
-    
-    # Wait briefly for response
-    sleep 1
-    
-    # Check output file for response
-    if tail -n 1 "${OUTPUT_FILE}" | grep -q "${expected_pattern}"; then
-        echo -e "${GREEN}✓ PASSED${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ FAILED (pattern not found)${NC}"
-        echo "Last response line:"
-        tail -n 1 "${OUTPUT_FILE}"
-        return 1
-    fi
-    echo ""
-}
-
-# Open file descriptor for server input
-exec {SERVER_INPUT_FD}>&${SERVER_PID}
 
 echo "================================================"
 echo "Sending test requests..."
