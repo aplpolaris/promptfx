@@ -102,7 +102,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetCapabilities() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             val capabilities = provider.getCapabilities()
             println("testGetCapabilities result: $capabilities")
@@ -117,7 +117,7 @@ class McpProviderHttpTest {
     @Test
     fun testListPrompts() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val prompts = provider.listPrompts()
@@ -135,7 +135,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetPrompt() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val response = provider.getPrompt("test-prompt", mapOf("arg1" to "value1"))
@@ -152,7 +152,7 @@ class McpProviderHttpTest {
     @Test
     fun testListTools() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val tools = provider.listTools()
@@ -169,7 +169,7 @@ class McpProviderHttpTest {
     @Test
     fun testGetTool() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 val tool = provider.getTool("test-tool")
@@ -185,7 +185,7 @@ class McpProviderHttpTest {
     @Test
     fun testCallTool() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
             try {
                 val result = provider.callTool("test-tool", mapOf("input" to "test"))
                 println("testCallTool result: $result")
@@ -201,7 +201,7 @@ class McpProviderHttpTest {
     @Test
     fun testConnectionError() {
         runTest {
-            val provider = McpProviderHttp("http://localhost:99999")
+            val provider = McpProviderHttp("http://localhost:99999", enableSse = false)
 
             try {
                 try {
@@ -219,7 +219,7 @@ class McpProviderHttpTest {
     @Test
     fun testSessionIdHandling() {
         runTest {
-            val provider = McpProviderHttp(BASE_URL)
+            val provider = McpProviderHttp(BASE_URL, enableSse = false)
 
             try {
                 // Reset session ID tracker
@@ -250,7 +250,7 @@ class McpProviderHttpTest {
     fun testExternal() {
         val url = "https://seolinkmap.com/mcp"
 //        val url = "https://your-test-server/mcp"
-        val provider = McpProviderHttp(url)
+        val provider = McpProviderHttp(url, enableSse = false)
         runTest {
             println(provider.getCapabilities())
             println(provider.listTools())
