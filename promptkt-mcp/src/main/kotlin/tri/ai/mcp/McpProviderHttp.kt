@@ -30,7 +30,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.json.*
 import tri.ai.mcp.McpJsonRpcHandler.Companion.buildJsonRpc
-import tri.util.fine
+import tri.util.info
 import tri.util.warning
 import java.util.concurrent.ConcurrentHashMap
 
@@ -99,20 +99,37 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         if (responseText.isEmpty()) {
             // If we have SSE enabled and a request ID, wait for response from SSE
             if (enableSse && sseConnected && requestIdValue != null) {
+                info<McpProviderHttp>("Empty response received, waiting for SSE response for request ID: $requestIdValue")
                 return waitForSseResponse(requestIdValue)
             }
             return JsonNull
         }
         
         val responseJson = Json.parseToJsonElement(responseText).jsonObject
+        
+        // Check if this is a valid JSON-RPC response
+        val isJsonRpcResponse = responseJson.containsKey("jsonrpc") && 
+                                (responseJson.containsKey("result") || responseJson.containsKey("error"))
+        
+        if (!isJsonRpcResponse) {
+            // Response is not a JSON-RPC response (e.g., {"status":"queued"})
+            // Wait for the actual response via SSE
+            if (enableSse && sseConnected && requestIdValue != null) {
+                info<McpProviderHttp>("Non-JSON-RPC response received: $responseJson, waiting for SSE response for request ID: $requestIdValue")
+                return waitForSseResponse(requestIdValue)
+            }
+            // If SSE is not enabled or not connected, treat this as an error
+            throw McpException("Invalid JSON-RPC response without result or error: $responseJson")
+        }
+        
+        // Handle JSON-RPC error responses
         if (responseJson.containsKey("error")) {
             val error = responseJson["error"]?.jsonObject
             val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
             throw McpException("JSON-RPC error: $message")
         }
-        if (!responseJson.containsKey("result")) {
-            throw McpException("Invalid JSON-RPC response without result: $responseJson")
-        }
+        
+        // Return the result
         return responseJson["result"]!!
     }
 
@@ -124,7 +141,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             return
         }
 
-        fine<McpProviderHttp>("Starting SSE connection with session ID: $sessionId")
+        info<McpProviderHttp>("Starting SSE connection with session ID: $sessionId")
         sseJob = sseScope.launch {
             try {
                 httpClient.prepareGet("$baseUrl/mcp") {
@@ -138,7 +155,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
                     }
 
                     sseConnected = true
-                    fine<McpProviderHttp>("SSE connection established")
+                    info<McpProviderHttp>("SSE connection established")
                     
                     val channel = response.bodyAsChannel()
                     processSseStream(channel)
@@ -183,12 +200,12 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             warning<McpProviderHttp>("Error processing SSE stream: ${e.message}")
         } finally {
             sseConnected = false
-            fine<McpProviderHttp>("SSE connection closed")
+            info<McpProviderHttp>("SSE connection closed")
         }
     }
 
     private suspend fun handleSseEvent(eventType: String?, data: String) {
-        fine<McpProviderHttp>("Received SSE event: type=$eventType, data=$data")
+        info<McpProviderHttp>("Received SSE event: type=$eventType, data=$data")
         
         try {
             val json = Json.parseToJsonElement(data).jsonObject
