@@ -59,6 +59,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
     private var mcpSessionId: String? = null
     
     // SSE support
+    private val sseScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var sseJob: Job? = null
     private val sseMessageQueue = Channel<JsonObject>(Channel.UNLIMITED)
     private val pendingResponses = ConcurrentHashMap<Int, CompletableDeferred<JsonElement>>()
@@ -71,7 +72,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
 
     override suspend fun sendJsonRpc(method: String, params: JsonObject?): JsonElement {
         val request = buildJsonRpc(method, requestId, params)
-        val reqId = request["id"]?.jsonPrimitive?.intOrNull
+        val requestIdValue = request["id"]?.jsonPrimitive?.intOrNull
 
         val response = httpClient.post("$baseUrl/mcp") {
             contentType(ContentType.Application.Json)
@@ -98,8 +99,8 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         val responseText = response.bodyAsText()
         if (responseText.isEmpty()) {
             // If we have SSE enabled and a request ID, wait for response from SSE
-            if (enableSse && sseConnected && reqId != null) {
-                return waitForSseResponse(reqId)
+            if (enableSse && sseConnected && requestIdValue != null) {
+                return waitForSseResponse(requestIdValue)
             }
             return JsonNull
         }
@@ -125,7 +126,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
         }
 
         fine<McpProviderHttp>("Starting SSE connection with session ID: $sessionId")
-        sseJob = CoroutineScope(Dispatchers.IO).launch {
+        sseJob = sseScope.launch {
             try {
                 httpClient.prepareGet("$baseUrl/mcp") {
                     header(HEADER_MCP_SESSION_ID, sessionId)
@@ -151,7 +152,6 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
     }
 
     private suspend fun processSseStream(channel: ByteReadChannel) {
-        val buffer = StringBuilder()
         var eventType: String? = null
         var eventData = StringBuilder()
 
@@ -233,6 +233,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
 
     override suspend fun close() {
         sseJob?.cancel()
+        sseScope.cancel()
         sseConnected = false
         sseMessageQueue.close()
         pendingResponses.clear()
