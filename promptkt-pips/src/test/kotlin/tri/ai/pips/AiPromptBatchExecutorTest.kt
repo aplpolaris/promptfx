@@ -35,10 +35,10 @@ import tri.util.json.jsonWriter
 
 class AiPromptBatchExecutorTest {
 
-    private val defaultTextCompletion = TextPlugin.textCompletionModels().first()
+    private val defaultTextCompletion = TextPlugin.textCompletionModels().firstOrNull()
 
     private val batch = AiPromptBatchCyclic("test-batch-languages").apply {
-        model = defaultTextCompletion.modelId
+        model = defaultTextCompletion?.modelId ?: "not a model"
         prompt = listOf("Translate {{text}} into {{language}}.")
         promptParams = mapOf("text" to "Hello, world!", "language" to listOf("French", "German"))
         runs = 2
@@ -53,7 +53,7 @@ class AiPromptBatchExecutorTest {
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
     private val modelInfo2 = AiModelInfo(
-        defaultTextCompletion.modelId,
+        defaultTextCompletion?.modelId ?: "not a model",
         mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
 
@@ -73,7 +73,7 @@ class AiPromptBatchExecutorTest {
         runBlocking {
             val batch = AiPromptBatchCyclic.repeat("test-batch-repeat",
                 PromptInfo("Generate a random number between 1 and 100."),
-                AiModelInfo(defaultTextCompletion.modelId),
+                AiModelInfo(defaultTextCompletion!!.modelId),
                 4
             )
             val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor())
