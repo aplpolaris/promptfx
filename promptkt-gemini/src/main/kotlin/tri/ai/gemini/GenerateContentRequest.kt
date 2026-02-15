@@ -545,7 +545,7 @@ data class Error(
 data class UsageMetadata(
     val promptTokenCount: Int,
     val cachedContentTokenCount: Int? = null,
-    val candidatesTokenCount: Int,
+    val candidatesTokenCount: Int? = null,
     val totalTokenCount: Int
 )
 

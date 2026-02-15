@@ -102,7 +102,7 @@ class GeminiClientTest {
             with (response.usageMetadata) {
                 assert(this != null)
                 assertEquals(11, this!!.promptTokenCount)
-                assert(candidatesTokenCount > 10)
+                assert(candidatesTokenCount!! > 10)
                 assert(totalTokenCount > 20)
             }
             assert(response.usageMetadata != null)
