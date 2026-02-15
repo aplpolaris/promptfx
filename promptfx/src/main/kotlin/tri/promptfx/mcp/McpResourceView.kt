@@ -68,8 +68,8 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
             toolbar {
                 textfield("") {
                     promptText = "Search"
-                    setOnKeyPressed {
-                        resourceFilter = { text in it }
+                    textProperty().addListener { _, _, newValue ->
+                        resourceFilter = { it.contains(newValue, ignoreCase = true) }
                         refilter()
                     }
                 }

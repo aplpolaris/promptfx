@@ -56,8 +56,8 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
             toolbar {
                 textfield("") {
                     promptText = "Search"
-                    setOnKeyPressed {
-                        promptNameFilter = { text in it }
+                    textProperty().addListener { _, _, newValue ->
+                        promptNameFilter = { it.contains(newValue, ignoreCase = true) }
                         refilter()
                     }
                 }
