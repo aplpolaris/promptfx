@@ -85,7 +85,7 @@ npx @modelcontextprotocol/server-everything
 Test it in code:
 ```kotlin
 val provider = McpProviderStdio(
-    command = "npx",
+    command = "npx", // may need to provide full path
     args = listOf("@modelcontextprotocol/server-everything")
 )
 val capabilities = provider.getCapabilities()
@@ -252,8 +252,9 @@ List Available Tools:
 
 Requires Node.js and npx. Run with a stdio server command:
 ```bash
-npx @modelcontextprotocol/inspector npx @modelcontextprotocol/server-everything
+npx @modelcontextprotocol/inspector
 ```
+This will launch MCP inspector on `localhost` and provide a webpage for connecting to MCP servers and testing.
 
 ## Using Embedded MCP Servers
 

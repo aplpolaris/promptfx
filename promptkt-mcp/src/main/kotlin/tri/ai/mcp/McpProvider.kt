@@ -112,7 +112,7 @@ abstract class McpProviderSupport: McpProvider {
                 val result = runBlocking {
                     sendJsonRpc(METHOD_INITIALIZE, PROMPTFX_CLIENT_PARAMS)
                 }
-                fine<McpProviderHttp>("Initialized MCP provider with response: $result")
+                fine<McpProvider>("Initialized MCP provider with response: $result")
                 capabilities = result.jsonObject["capabilities"]?.jsonObject?.let {
                     objectMapper.readValue(JsonSerializers.serialize(it))
                 }
@@ -121,8 +121,7 @@ abstract class McpProviderSupport: McpProvider {
                 }
                 initialized.set(true)
             } catch (e: Exception) {
-                e.cause?.printStackTrace()
-                throw McpException("Error initializing MCP HTTP provider: ${e.message}", e)
+                throw McpException("Error initializing MCP provider: ${e.message}", e)
             }
         }
     }
@@ -168,15 +167,15 @@ abstract class McpProviderSupport: McpProvider {
         var result: JsonElement? = null
         try {
             result = sendJsonRpcWithInitializationCheck(METHOD_TOOLS_LIST)
-            fine<McpProviderHttp>(result.toString(), null)
+            fine<McpProvider>(result.toString(), null)
             val toolsJson = result.jsonObject["tools"]?.jsonArray
                 ?: throw McpException("No tools in response")
             return toolsJson.map { objectMapper.readValue<McpToolMetadata>(it.toString()) }
         } catch (e: McpException) {
-            info<McpProviderHttp>(result?.toString() ?: "unexpected result")
+            info<McpProvider>(result?.toString() ?: "unexpected result")
             throw e
         } catch (e: Exception) {
-            info<McpProviderHttp>(result?.toString() ?: "unexpected result")
+            info<McpProvider>(result?.toString() ?: "unexpected result")
             throw McpException("Error connecting to MCP server: ${e.message}", e)
         }
     }
@@ -198,7 +197,7 @@ abstract class McpProviderSupport: McpProvider {
             }
 
             val result = sendJsonRpcWithInitializationCheck(METHOD_TOOLS_CALL, params)
-            fine<McpProviderHttp>(result.toString())
+            fine<McpProvider>(result.toString())
             return objectMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .readValue<McpToolResponse>(JsonSerializers.serialize(result))
