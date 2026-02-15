@@ -13,15 +13,20 @@
     <inceptionYear>2023</inceptionYear>
 
     <modules>
+        <!-- Core API -->
         <module>promptkt-core</module>
+        <!-- API client modules -->
         <module>promptkt-openai</module>
         <module>promptkt-gemini</module>
         <module>promptkt-gemini-sdk</module>
+        <!-- AI processing and utilities -->
         <module>promptkt-pips</module>
         <module>promptkt-docs</module>
         <module>promptkt-mcp</module>
         <module>promptkt-cli</module>
+        <!-- UI -->
         <module>promptfx</module>
+        <!-- plugin samples -->
         <module>promptfx-sample-view-plugin</module>
         <module>promptfx-sample-api-plugin</module>
     </modules>
