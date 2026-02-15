@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import tornadofx.*
 import tri.ai.mcp.McpPromptResponse
 import tri.promptfx.PromptFxMcpController
+import tri.util.ui.graphic
 
 /** View showing details of an MCP prompt. */
 class McpPromptDetailsUi : Fragment("MCP Prompt") {
@@ -79,10 +80,8 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                         }
                     }
                 }
-                fieldset("Try Prompt") {
-                    vbox {
-                        spacing = 10.0
-                        
+                fieldset("Get Prompt") {
+                    vbox(10.0) {
                         // Dynamically create input fields for each argument
                         promptWithServer.onChange { pwsValue ->
                             children.clear()
@@ -93,8 +92,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                                 val valueProperty = SimpleStringProperty("")
                                 argumentValues[arg.name] = valueProperty
                                 
-                                hbox {
-                                    spacing = 5.0
+                                hbox(5.0) {
                                     label(arg.name) {
                                         minWidth = 100.0
                                         if (arg.required) {
@@ -108,13 +106,8 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                                 }
                             }
                             
-                            // Add execute button
-                            hbox {
-                                spacing = 10.0
-                                alignment = Pos.CENTER_LEFT
-                                paddingTop = 10.0
-                                
-                                button("Get Filled Prompt", FontAwesomeIconView(FontAwesomeIcon.PLAY)) {
+                            hbox(alignment = Pos.CENTER_LEFT) {
+                                button("Get Filled Prompt", FontAwesomeIcon.PLAY.graphic) {
                                     action {
                                         executePrompt()
                                     }
@@ -123,7 +116,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                         }
                     }
                 }
-                fieldset("Prompt Result") {
+                fieldset("Response") {
                     visibleWhen(promptResponse.isNotNull)
                     managedWhen(visibleProperty())
                     
@@ -135,8 +128,7 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                     }
                     
                     // Dynamically create a field for each message
-                    vbox {
-                        spacing = 10.0
+                    vbox(10.0) {
                         promptResponse.onChange { response ->
                             children.clear()
                             response?.messages?.forEachIndexed { index, message ->
@@ -147,13 +139,12 @@ class McpPromptDetailsUi : Fragment("MCP Prompt") {
                                         }
                                         field("Content") {
                                             labelContainer.alignment = Pos.TOP_LEFT
-                                            vbox {
-                                                spacing = 5.0
+                                            vbox(5.0) {
                                                 message.content?.forEach { part ->
-                                                    textarea(part?.text ?: "") {
+                                                    textarea(part.text ?: "") {
                                                         isEditable = false
                                                         isWrapText = true
-                                                        prefRowCount = 5
+                                                        prefRowCount = 8
                                                     }
                                                 }
                                             }

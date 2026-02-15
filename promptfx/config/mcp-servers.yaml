@@ -27,11 +27,11 @@ servers:
     command: "D:/code/mcp/kotlin-sdk/samples/weather-stdio-server/build/install/weather-stdio-server/bin/weather-stdio-server.bat"
 
   # Remote MCP server via HTTP
-  # remote-example:
-  #   type: http
-  #   description: "Remote MCP server via HTTP"
-  #   url: "http://localhost:8080/mcp"
-  
+#  remote-example:
+#    type: http
+#    description: "Remote MCP server via HTTP"
+#    url: "https://seolinkmap.com/mcp"
+#
   # Remote MCP server via stdio
   # stdio-example:
   #   type: stdio

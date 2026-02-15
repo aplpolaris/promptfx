@@ -25,18 +25,19 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.warning
 
 /** Plugin for the [McpPromptView]. */
 class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "MCP Prompts", type = McpPromptView::class)
 
 /** View and try out MCP server prompts. */
-class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers.") {
+class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers (prompts/list, prompts/get).") {
 
     private val mcpController: PromptFxMcpController by inject()
 
@@ -45,14 +46,18 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
     private val filteredPromptEntries = observableListOf<McpPromptWithServer>()
     private val promptSelection = SimpleObjectProperty<McpPromptWithServer>()
     private lateinit var promptListView: ListView<McpPromptWithServer>
+    
+    companion object {
+        private const val PROMPT_LOAD_TIMEOUT_MS = 10000L
+    }
 
     init {
         input {
             toolbar {
                 textfield("") {
                     promptText = "Search"
-                    setOnKeyPressed {
-                        promptNameFilter = { text in it }
+                    textProperty().addListener { _, _, newValue ->
+                        promptNameFilter = { it.contains(newValue, ignoreCase = true) }
                         refilter()
                     }
                 }
@@ -88,21 +93,38 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
     }
 
     private fun loadPrompts() {
-        runBlocking {
-            val allPrompts = mutableListOf<McpPromptWithServer>()
-            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
+        // Clear existing entries before loading new ones
+        promptEntries.clear()
+        
+        val serverNames = mcpController.mcpProviderRegistry.listProviderNames()
+        
+        // Launch a separate coroutine for each server to load prompts concurrently
+        serverNames.forEach { serverName ->
+            runAsync {
                 try {
-                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
-                    if (server != null) {
-                        val prompts = server.listPrompts()
-                        allPrompts.addAll(prompts.map { McpPromptWithServer(it, serverName) })
+                    runBlocking {
+                        withTimeout(PROMPT_LOAD_TIMEOUT_MS) {
+                            val server = mcpController.mcpProviderRegistry.getProvider(serverName)
+                            if (server != null) {
+                                val prompts = server.listPrompts()
+                                prompts.map { McpPromptWithServer(it, serverName) }
+                            } else {
+                                emptyList()
+                            }
+                        }
                     }
+                } catch (e: TimeoutCancellationException) {
+                    warning<McpPromptView>("Timeout loading prompts from server '$serverName' after ${PROMPT_LOAD_TIMEOUT_MS}ms")
+                    emptyList()
                 } catch (e: Exception) {
-                    println("Failed to load prompts from server '$serverName': ${e.message}")
+                    warning<McpPromptView>("Failed to load prompts from server '$serverName': ${e.message}")
+                    emptyList()
                 }
+            } ui { prompts ->
+                // Update the observable list incrementally as each server responds
+                promptEntries.addAll(prompts)
+                refilter()
             }
-            promptEntries.setAll(allPrompts)
-            refilter()
         }
     }
 

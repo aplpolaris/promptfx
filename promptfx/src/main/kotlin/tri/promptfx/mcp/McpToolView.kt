@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
+import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.version
@@ -35,6 +36,8 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.json.jsonMapper
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.graphic
+import tri.util.warning
 
 /** Plugin for the [McpToolView]. */
 class McpToolPlugin : NavigableWorkspaceViewImpl<McpToolView>("MCP", "MCP Tools", type = McpToolView::class)
@@ -46,7 +49,7 @@ data class ToolWithServer(
 )
 
 /** View and try out MCP server tools. */
-class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured MCP servers.") {
+class McpToolView : AiTaskView("MCP Tools", "View and call tools for configured MCP servers (tools/list, tools/call).") {
 
     private val mcpController = controller.mcpController
     private val toolEntries = observableListOf<ToolWithServer>()
@@ -56,7 +59,11 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     private lateinit var toolListView: ListView<ToolWithServer>
 
     private val toolInputText = SimpleStringProperty("{}")
-    private val toolOutputText = SimpleStringProperty("")
+    private val outputContentText = SimpleStringProperty("")
+    
+    companion object {
+        private const val TOOL_LOAD_TIMEOUT_MS = 10000L
+    }
 
     init {
         // Load tools initially
@@ -92,91 +99,81 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         output {
             scrollpane {
                 isFitToWidth = true
-                squeezebox(multiselect = true) {
+                form {
                     visibleWhen(toolSelection.isNotNull)
                     managedWhen(visibleProperty())
                     vgrow = Priority.ALWAYS
-                    fold("MCP Server", expanded = true) {
-                        form {
-                            fieldset {
-                                field("Server Id") {
-                                    label(toolSelection.stringBinding { it?.serverName ?: "" })
-                                }
+                    
+                    fieldset("MCP Server Information") {
+                        field("Server Id") {
+                            label(toolSelection.stringBinding { it?.serverName ?: "" })
+                        }
+                    }
+                    
+                    fieldset("Tool Metdata") {
+                        field("Name") {
+                            label(toolSelection.stringBinding { it?.tool?.name ?: "" })
+                        }
+                        field("Title") {
+                            label(toolSelection.stringBinding { it?.tool?.title ?: "" })
+                        }
+                        field("Description") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            text(toolSelection.stringBinding { it?.tool?.description ?: "N/A" }) {
+                                wrappingWidth = 400.0
+                            }
+                        }
+                        field("Version") {
+                            label(toolSelection.stringBinding { it?.tool?.version ?: "" })
+                        }
+                        field("Input Schema") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 5
+                                textProperty().bind(toolSelection.stringBinding {
+                                    it?.tool?.inputSchema?.toPrettyString() ?: "No schema available"
+                                })
+                            }
+                        }
+                        field("Output Schema") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 5
+                                textProperty().bind(toolSelection.stringBinding {
+                                    it?.tool?.outputSchema?.toPrettyString() ?: "No schema available"
+                                })
                             }
                         }
                     }
-                    fold("Tool Details", expanded = true) {
-                        form {
-                            fieldset("Tool Information") {
-                                field("Name") {
-                                    label(toolSelection.stringBinding { it?.tool?.name ?: "" })
-                                }
-                                field("Description") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    text(toolSelection.stringBinding { it?.tool?.description ?: "N/A" }) {
-                                        wrappingWidth = 400.0
-                                    }
-                                }
-                                field("Version") {
-                                    label(toolSelection.stringBinding { it?.tool?.version ?: "" })
-                                }
+                    
+                    fieldset("Call Tool") {
+                        field("Parameters (JSON)") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea(toolInputText) {
+                                isWrapText = true
+                                prefRowCount = 5
+                                promptText = """{"param1": "value1"}"""
                             }
-                            fieldset("Input") {
-                                field("Schema") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        textProperty().bind(toolSelection.stringBinding {
-                                            it?.tool?.inputSchema?.toPrettyString() ?: "No schema available"
-                                        })
-                                    }
-                                }
-                            }
-                            fieldset("Output") {
-                                field("Schema") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        textProperty().bind(toolSelection.stringBinding {
-                                            it?.tool?.outputSchema?.toPrettyString() ?: "No schema available"
-                                        })
-                                    }
-                                }
+                        }
+                        hbox(alignment = Pos.CENTER_LEFT) {
+                            button("Call Tool", FontAwesomeIcon.PLAY.graphic) {
+                                action { runToolExecution() }
                             }
                         }
                     }
-                    fold("Try Tool", expanded = true) {
-                        form {
-                            fieldset("Input") {
-                                field("Parameters (JSON)") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea(toolInputText) {
-                                        isWrapText = true
-                                        prefRowCount = 5
-                                        promptText = """{"param1": "value1"}"""
-                                    }
-                                }
-                                buttonbar {
-                                    button("Execute Tool") {
-                                        enableWhen(toolSelection.isNotNull)
-                                        action { runToolExecution() }
-                                    }
-                                }
-                            }
-                            fieldset("Output") {
-                                field("JSON") {
-                                    labelContainer.alignment = Pos.TOP_LEFT
-                                    textarea(toolOutputText) {
-                                        isEditable = false
-                                        isWrapText = true
-                                        prefRowCount = 8
-                                        vgrow = Priority.ALWAYS
-                                    }
-                                }
+                    fieldset("Response") {
+                        visibleWhen(outputContentText.isNotEmpty)
+                        field("Content") {
+                            labelContainer.alignment = Pos.TOP_LEFT
+                            textarea(outputContentText) {
+                                isEditable = false
+                                isWrapText = true
+                                prefRowCount = 8
+                                vgrow = Priority.ALWAYS
                             }
                         }
                     }
@@ -194,18 +191,26 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         runAsync {
             try {
                 val inputNode: Map<String, Any?> = jsonMapper.readValue<Map<String, Any?>>(inputJson)
-                val output = kotlinx.coroutines.runBlocking {
+                val output = runBlocking {
                     val server = mcpController.mcpProviderRegistry.getProvider(toolWithServer.serverName)
                         ?: throw IllegalStateException("MCP server '${toolWithServer.serverName}' not found")
                     val result = server.callTool(toolWithServer.tool.name, inputNode)
-                    result.content
+                    result
                 }
-                "Success:\n${jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(output)}"
+                if (output.isError == true) {
+                    "Error reported by MCP server: " + (output.errorMessage() ?: "Unknown")
+                } else if (output.structuredContent != null) {
+                    output.structuredContent!!.toPrettyString()
+                } else {
+                    output.content.joinToString("\n\n") {
+                        jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(it)
+                    }
+                }
             } catch (e: Exception) {
                 "Error: ${e.message}"
             }
         } ui { result ->
-            toolOutputText.value = result
+            outputContentText.value = result
         }
     }
 
@@ -217,27 +222,38 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     }
 
     private fun loadTools() {
-        runAsync {
-            val allTools = mutableListOf<ToolWithServer>()
-            for (serverName in mcpController.mcpProviderRegistry.listProviderNames()) {
+        // Clear existing entries before loading new ones
+        toolEntries.clear()
+        
+        val serverNames = mcpController.mcpProviderRegistry.listProviderNames()
+        
+        // Launch a separate coroutine for each server to load tools concurrently
+        serverNames.forEach { serverName ->
+            runAsync {
                 try {
-                    val server = mcpController.mcpProviderRegistry.getProvider(serverName)
-                    if (server != null) {
-                        val tools = kotlinx.coroutines.runBlocking {
-                            server.listTools()
-                        }
-                        tools.forEach { tool ->
-                            allTools.add(ToolWithServer(tool, serverName))
+                    runBlocking {
+                        withTimeout(TOOL_LOAD_TIMEOUT_MS) {
+                            val server = mcpController.mcpProviderRegistry.getProvider(serverName)
+                            if (server != null) {
+                                val tools = server.listTools()
+                                tools.map { ToolWithServer(it, serverName) }
+                            } else {
+                                emptyList()
+                            }
                         }
                     }
+                } catch (e: TimeoutCancellationException) {
+                    warning<McpToolView>("Timeout loading tools from server '$serverName' after ${TOOL_LOAD_TIMEOUT_MS}ms")
+                    emptyList()
                 } catch (e: Exception) {
-                    println("Error loading tools from server $serverName: ${e.message}")
+                    warning<McpToolView>("Failed to load tools from server '$serverName': ${e.message}")
+                    emptyList()
                 }
+            } ui { tools ->
+                // Update the observable list incrementally as each server responds
+                toolEntries.addAll(tools)
+                refilter()
             }
-            allTools
-        } ui { tools ->
-            toolEntries.setAll(tools)
-            refilter()
         }
     }
 

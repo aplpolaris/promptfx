@@ -112,7 +112,7 @@ abstract class McpProviderSupport: McpProvider {
                 val result = runBlocking {
                     sendJsonRpc(METHOD_INITIALIZE, PROMPTFX_CLIENT_PARAMS)
                 }
-                info<McpProviderHttp>("Initialized MCP provider with response: $result")
+                fine<McpProviderHttp>("Initialized MCP provider with response: $result")
                 capabilities = result.jsonObject["capabilities"]?.jsonObject?.let {
                     objectMapper.readValue(JsonSerializers.serialize(it))
                 }
