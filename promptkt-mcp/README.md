@@ -5,10 +5,10 @@ See the [Model Context Protocol](https://modelcontextprotocol.io/) specification
 
 ## Features
 
-- **MCP Server over HTTP**: Run an MCP server that can be accessed via HTTP POST requests
-- **MCP Server over Stdio**: Run an MCP server that communicates via standard input/output
-- **MCP Client**: Connect to remote MCP servers via HTTP or Stdio
-- **Embedded Server**: Run an MCP server in-memory with custom prompts and tools
+- **Connect to External MCP Servers**: Connect to any MCP server over HTTP or stdio using the provided client implementations. Supports both synchronous and asynchronous communication.
+- **Host Your Own MCP Server**: Easily create and host your own MCP servers over HTTP or stdio with customizable prompts, tools, and resources. The provided server implementations are intended for testing and demonstration purposes and can be extended for production use.
+- **Embedded Servers**: The server implementations can be embedded within your own applications, allowing you to expose MCP functionality as part of a larger system.
+- **MCP Server Registration**: Register multiple MCP servers within the same application, each with its own configuration and capabilities.
 
 ### Supported Methods
 
@@ -73,6 +73,18 @@ println(textResult)
 provider.close()
 ```
 
+#### Testing with "Server Everything"
+
+You can use "Server Everything" to quickly test the `McpProviderStdio` client.
+Run a test MCP server over `stdio` with:
+```bash
+npx @modelcontextprotocol/server-everything
+```
+
+(briefly describe installation requirements)
+
+(briefly provide sample of how to run and test it in code here)
+
 ## Hosting MCP Servers
 
 You can host your own MCP servers using the provided HTTP and Stdio server implementations.
@@ -109,7 +121,7 @@ The server will start and display:
 - Health check endpoint
 - Number of available prompts, tools, and resources
 
-#### Testing the MCP HTTP Server
+#### Testing the MCP HTTP Server with Curl
 
 Check if the server is running (expect response `OK`):
 ```bash
@@ -207,7 +219,7 @@ The server will:
 - Write server status messages to standard error (stderr)
 - Display number of available prompts, tools, and resources on startup
 
-## Testing the MCP Stdio Server
+#### Testing the MCP Stdio Server
 
 The Stdio server can be tested by sending JSON-RPC 2.0 requests to its standard input. Here are some sample messages that can be copied directly into the input:
 
@@ -226,14 +238,18 @@ List Available Tools:
 {"jsonrpc":"2.0","id":3,"method":"tools/list"}
 ```
 
-## Additional Notes
+### Testing MCP Servers with MCP Inspector
 
-**MCP Inspector** is useful for testing MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. Run with
+**MCP Inspector** is useful for testing both HTTP and stdio MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. Run with
 ```bash
 npx @modelcontextprotocol/inspector <command>`
 ```
+(describe basics of what's needed to install and use npx)
 
-Run a test MCP server over `stdio` with:
-```bash
-npx @modelcontextprotocol/server-everything
-```
+## Using Embedded MCP Servers
+
+(this section needs to be completed -- describe how to create servers with tools and capabilities in code, without any external processes)
+
+## Managing Multiple MCP Servers
+
+(complete with discussion of provider registration and config files)

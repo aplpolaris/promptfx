@@ -31,6 +31,8 @@ import tri.ai.prompt.trace.AiPromptTrace
  */
 class SampleTextPlugin : TextPlugin {
 
+    override fun isApiConfigured() = true
+
     override fun modelSource() = "SampleText"
 
     override fun modelInfo() = listOf(
