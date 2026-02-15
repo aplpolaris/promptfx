@@ -77,14 +77,17 @@ promptfx/
 ├── promptfx-[version].jar         # Main application JAR (includes all dependencies)
 ├── apikey.txt                     # (optional) OpenAI API key
 ├── apikey-gemini.txt              # (optional) Gemini API key
-└── config/                        # YAML configuration files
-    ├── openai-models.yaml
-    ├── gemini-models.yaml
-    ├── prompts.yaml
-    ├── views.yaml
-    ├── views-links.yaml
-    ├── modes.yaml
-    └── starship.yaml
+├── config/                        # YAML configuration files
+│   ├── openai-models.yaml
+│   ├── openai-api-config.yaml
+│   ├── gemini-models.yaml
+│   ├── ollama-models.yaml
+│   ├── views.yaml
+│   ├── modes.yaml
+│   ├── starship.yaml
+│   └── plugins/                   # Plugin configuration
+└── prompts/                       # Custom prompt templates
+    └── custom-prompts.yaml
 ```
 
 ### 🔐 API Key Setup
@@ -115,8 +118,9 @@ PromptFX uses YAML files to configure models, views, prompts, and runtime behavi
 | File | Purpose                                                    |
 |------|------------------------------------------------------------|
 | `openai-models.yaml` | Available OpenAI models                                    |
+| `openai-api-config.yaml` | OpenAI API configuration settings                         |
 | `gemini-models.yaml` | Available Google Gemini models                             |
-| `prompts.yaml` | Prompt templates                                           |
+| `ollama-models.yaml` | Available Ollama models (local model support)              |
 | `modes.yaml` | Lists of options (used in prompt templates and some views) |
 | `views.yaml` | Configurations of custom views                             |
 | `views-links.yaml` | Documentation links displayed in navigation panes          |
@@ -145,6 +149,16 @@ MCP:
 ```
 
 You can add links for any tab category (API, MCP, Prompts, Text, Documents, etc.) by creating groups with labels and URLs. The links will automatically appear at the bottom of the corresponding navigation pane under "Documentation/Links".
+
+### 📝 Custom Prompts
+
+Custom prompt templates can be added or modified in the `prompts/` folder:
+
+| File | Purpose                                                    |
+|------|------------------------------------------------------------|
+| `custom-prompts.yaml` | Custom prompt templates that override or extend defaults   |
+
+The `prompts/` folder is scanned recursively, so you can organize your prompts into subdirectories if desired.
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
 

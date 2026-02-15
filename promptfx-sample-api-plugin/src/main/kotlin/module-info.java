@@ -1,8 +1,8 @@
 /*-
  * #%L
- * tri.promptfx:promptfx-sample-plugin
+ * tri.promptfx:promptfx-sample-api-plugin
  * %%
- * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2025 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,16 @@
  * limitations under the License.
  * #L%
  */
-import tri.promptfx.sample.SamplePlugin;
-import tri.util.ui.NavigableWorkspaceView;
+import tri.ai.core.TextPlugin;
+import tri.promptfx.sample.textplugin.SampleTextPlugin;
 
-module tri.promptfx.sample.plugin {
-    requires transitive tri.promptfx;
+module tri.promptfx.sample.api.plugin {
+    requires transitive tri.promptkt.core;
     requires kotlin.stdlib;
-    requires tornadofx;
-    requires javafx.controls;
-    requires javafx.fxml;
-    requires javafx.graphics;
 
-    exports tri.promptfx.sample;
+    exports tri.promptfx.sample.textplugin;
 
     // services (service loader API)
-    uses tri.util.ui.NavigableWorkspaceView;
-    provides NavigableWorkspaceView with SamplePlugin;
+    uses tri.ai.core.TextPlugin;
+    provides TextPlugin with SampleTextPlugin;
 }

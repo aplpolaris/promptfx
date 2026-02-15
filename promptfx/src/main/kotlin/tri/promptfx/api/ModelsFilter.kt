@@ -114,7 +114,7 @@ class ModalityFilter(val attribute: (ModelInfo) -> List<DataModality>) {
         if (selectedFlags.isEmpty()) return { true } // If no modalities selected, show all
         return { model -> 
             val modelModalities = attribute(model)
-            modelModalities.any { it in selectedFlags }
+            modelModalities.isEmpty() || modelModalities.any { it in selectedFlags }
         }
     }
 

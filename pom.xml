@@ -22,7 +22,8 @@
         <module>promptkt-mcp</module>
         <module>promptkt-cli</module>
         <module>promptfx</module>
-        <module>promptfx-sample-plugin</module>
+        <module>promptfx-sample-view-plugin</module>
+        <module>promptfx-sample-api-plugin</module>
     </modules>
 
     <!-- configuration of the default license to use -->

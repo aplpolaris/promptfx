@@ -117,16 +117,14 @@ interface TextPlugin {
             imageGeneratorModels().first { it.modelId == modelId }
 
         /**
-         * Return a [ClassLoader] that looks for files in the "config/modules"
+         * Return a [ClassLoader] that looks for files in the "config/plugins"
          * directory, in addition to the normal system class loader.
          * @return singleton instance of plugins class loader
          */
         private fun pluginsDirClassLoader(): ClassLoader? {
-            // look for jar plugins
-            val jars = File("config/modules/")
+            val jars = File("config/plugins/")
                 .listFiles { _: File?, name: String -> name.endsWith(".jar") }
             return if (jars != null) {
-                info<TextPlugin>("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
                 // create urls for jars
                 val urls = mutableListOf<URL>()
                 for (f in jars) {
