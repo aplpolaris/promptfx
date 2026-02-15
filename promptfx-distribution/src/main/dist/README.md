@@ -150,7 +150,50 @@ You may customize the base API URL and some basic API parameters, and reference 
 |------|------------------------------------------------------------|
 | `mcp-servers.yaml` | Configurations for Model Context Protocol (MCP) servers |
 
-(describe how this works)
+The `mcp-servers.yaml` file is used to configure connections to Model Context Protocol (MCP) servers. MCP servers provide additional tools, prompts, and resources that can be accessed from within PromptFX. You can connect to multiple servers simultaneously, each with its own configuration.
+
+**Supported Server Types:**
+
+- **embedded**: An in-process server using default or custom prompt libraries
+- **test**: A test server with sample prompts and tools for development
+- **http**: A remote MCP server accessible via HTTP endpoint
+- **stdio**: A local MCP server process that communicates via standard input/output
+
+**Example configuration:**
+```yaml
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Test server with samples
+  test:
+    type: test
+    description: "Test server with sample prompts and tools"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
+    includeDefaultResources: true
+  
+  # Remote HTTP server
+  remote-http:
+    type: http
+    description: "Remote MCP server via HTTP"
+    url: "http://localhost:8080/mcp"
+  
+  # Remote stdio server (e.g., filesystem server)
+  filesystem:
+    type: stdio
+    description: "MCP filesystem server"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/directory"]
+    env:
+      NODE_ENV: "production"
+```
+
+Once configured, MCP servers can be accessed from the **MCP** tab in the PromptFX UI, where you can browse available prompts, tools, and resources, and execute them interactively.
+
+For more information on MCP servers and available implementations, see the [Model Context Protocol documentation](https://modelcontextprotocol.io/).
 
 #### View Customization
 
@@ -197,15 +240,89 @@ Custom prompt templates can be added or modified in the `prompts/` folder:
 | `custom-prompts.yaml` | Custom prompt templates that override or extend defaults   |
 
 The `prompts/` folder is scanned recursively, so you can organize your prompts into subdirectories if desired.
-Prompts are accessibly within the `Prompt Library` view in the UI, and can be used in custom views.
+Prompts are accessible within the `Prompt Library` view in the UI, and can be used in custom views.
 
-(provide an example yaml template)
+**Example prompt template:**
+```yaml
+prompts:
+  - id: text-extract/author@1.0.0
+    title: Extract Author
+    description: Extracts the author name from input text
+    template: |
+      Input: {{{input}}}
+      Author:
+  
+  - id: text-summarize/simplify-audience@1.0.0
+    title: Simplify Text for Audience
+    template: |
+      Simplify the following text into 1-2 short sentences explaining the main idea.
+      Write it for {{audience}}.
+      ```
+      {{{input}}}
+      ```
+```
+
+Prompts use Mustache templating syntax with `{{{variable}}}` for unescaped content and `{{variable}}` for escaped content.
+See the `prompts/README.md` file for more details on prompt structure and usage.
 
 ---
 
 ### 🧩 Plugins
 
-(write section on two types of plugins -- API plugins and view plugins)
+PromptFX supports two types of plugins that extend its functionality:
+
+#### API Plugins (TextPlugin)
+
+API plugins add support for new AI model providers by implementing the `TextPlugin` interface. These plugins can provide:
+- Chat models
+- Text completion models
+- Embedding models
+- Vision models
+- Audio models
+
+**Example implementation:**
+```kotlin
+class SampleTextPlugin : TextPlugin {
+    override fun modelSource() = "SampleText"
+    override fun chatModels() = listOf(SampleChatModel())
+    override fun textCompletionModels() = listOf(SampleTextCompletionModel())
+    override fun embeddingModels() = emptyList<EmbeddingModel>()
+}
+```
+
+Once installed, models from your plugin will appear under your custom source name in all model selection dropdowns throughout PromptFX.
+
+#### View Plugins (NavigableWorkspaceView)
+
+View plugins add custom UI views to the PromptFX workspace. These can provide specialized interfaces for:
+- Custom workflows
+- Data visualization
+- Integration with external tools
+- Specialized AI interactions
+
+**Example implementation:**
+```kotlin
+class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>(
+    "Sample",           // Category name
+    "Hello World",      // View name
+    WorkspaceViewAffordance.INPUT_ONLY,  // Capabilities
+    SampleView::class   // View class
+)
+```
+
+#### Installing Plugins
+
+1. Build your plugin as a JAR file
+2. Copy the JAR to the `config/plugins/` directory
+3. Restart PromptFX
+
+Plugins are automatically discovered using Java's ServiceLoader mechanism. They must be properly registered in `META-INF/services/` or `module-info.java`.
+
+See the sample plugins in the repository for complete examples:
+- `promptfx-sample-api-plugin/` - API plugin example
+- `promptfx-sample-view-plugin/` - View plugin example
+
+For more details, see `config/plugins/README.md`.
 
 ---
 
