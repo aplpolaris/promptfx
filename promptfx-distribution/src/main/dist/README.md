@@ -271,58 +271,14 @@ See the `prompts/README.md` file for more details on prompt structure and usage.
 
 PromptFX supports two types of plugins that extend its functionality:
 
-#### API Plugins (TextPlugin)
+- **API Plugins (TextPlugin)**: Add support for new AI model providers (chat, completion, embedding, vision, audio models)
+- **View Plugins (NavigableWorkspaceView)**: Add custom UI views to the PromptFX workspace
 
-API plugins add support for new AI model providers by implementing the `TextPlugin` interface. These plugins can provide:
-- Chat models
-- Text completion models
-- Embedding models
-- Vision models
-- Audio models
+Plugins are installed by copying JAR files to the `config/plugins/` directory and restarting PromptFX. They are automatically discovered using Java's ServiceLoader mechanism.
 
-**Example implementation:**
-```kotlin
-class SampleTextPlugin : TextPlugin {
-    override fun modelSource() = "SampleText"
-    override fun chatModels() = listOf(SampleChatModel())
-    override fun textCompletionModels() = listOf(SampleTextCompletionModel())
-    override fun embeddingModels() = emptyList<EmbeddingModel>()
-}
-```
-
-Once installed, models from your plugin will appear under your custom source name in all model selection dropdowns throughout PromptFX.
-
-#### View Plugins (NavigableWorkspaceView)
-
-View plugins add custom UI views to the PromptFX workspace. These can provide specialized interfaces for:
-- Custom workflows
-- Data visualization
-- Integration with external tools
-- Specialized AI interactions
-
-**Example implementation:**
-```kotlin
-class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>(
-    "Sample",           // Category name
-    "Hello World",      // View name
-    WorkspaceViewAffordance.INPUT_ONLY,  // Capabilities
-    SampleView::class   // View class
-)
-```
-
-#### Installing Plugins
-
-1. Build your plugin as a JAR file
-2. Copy the JAR to the `config/plugins/` directory
-3. Restart PromptFX
-
-Plugins are automatically discovered using Java's ServiceLoader mechanism. They must be properly registered in `META-INF/services/` or `module-info.java`.
-
-See the sample plugins in the repository for complete examples:
+See `config/plugins/README.md` for detailed information on plugin types, installation, and development. Sample plugins are available in the repository:
 - `promptfx-sample-api-plugin/` - API plugin example
 - `promptfx-sample-view-plugin/` - View plugin example
-
-For more details, see `config/plugins/README.md`.
 
 ---
 

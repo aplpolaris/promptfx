@@ -48,78 +48,10 @@ prompts:
       ```
 ```
 
-### Prompt Fields
-
-- **id** (required): Unique identifier in format `category/name@version`
-  - Example: `text-extract/dates@1.0.0`
-  - Used internally to reference the prompt
-  
-- **title** (required): Display name shown in the UI
-  - Example: "Extract Dates from Text"
-  
-- **description** (optional): Explains what the prompt does
-  - Shown as a tooltip or help text in the UI
-  
-- **template** (required): The actual prompt text
-  - Supports Mustache templating syntax
-  - Use `{{variable}}` for HTML-escaped content
-  - Use `{{{variable}}}` for raw/unescaped content (recommended for user inputs)
-
-## Common Variables
-
-Different PromptFx views provide different variables to prompts:
-
-### General Text Processing
-- `{{{input}}}` - Main text input from the user
-- `{{audience}}` - Target audience (when specified)
-- `{{format}}` - Desired output format
-
-### Document Insights (Map/Reduce)
-- `{{{input}}}` - Document snippet or text chunk
-- `{{name}}` - Document or snippet name
-
-### Document Q&A
-- `{{{instruct}}}` - User's question
-- `{{{input}}}` - Relevant document sections
-- `{{matches}}` - List of matching snippets (for snippet-joiner prompts)
-- `{{name}}` - Snippet or document name
-- `{{{text}}}` - Snippet text content
-
-### Image Analysis
-- Images are automatically included based on the view
-- Prompts should describe what to extract or analyze
-
-## Prompt Categories
-
-Organize prompts by category using ID prefixes:
-
-- **text-extract/*** - Extraction tasks (dates, names, entities, etc.)
-- **text-summarize/*** - Summarization tasks
-- **text-transform/*** - Text transformation and rewriting
-- **docs-map/*** - Document insights map operations (run on each chunk)
-- **docs-reduce/*** - Document insights reduce operations (combine results)
-- **docs-qa/answer-*** - Document Q&A answer generation
-- **snippet-joiner/*** - Combining text chunks for Q&A
-- **image-describe/*** - Image analysis and description
-- **custom/*** - Your custom category
-
-## Overriding Default Prompts
-
-To override a built-in prompt, use the same `id` as the default prompt. Your custom version will take precedence.
-
-For example, to customize the date extraction prompt:
-
-```yaml
-prompts:
-  - id: text-extract/dates@1.0.0
-    title: Extract Dates (Custom)
-    description: Extract dates with custom formatting
-    template: |
-      Extract a list of dates from the following text, and format as {{DATE_FORMAT}}.
-      '''
-      {{{input}}}
-      '''
-```
+**Notes:**
+- Prompts use Mustache templating syntax. The variable `{{{input}}}` is commonly used for the main text input from the user when prompts are used within views.
+- Prompt IDs can be organized by category using prefixes, e.g., in `text-extract/dates@1.0.0`, the `text-extract` prefix is used as a category, and `1.0.0` is the version.
+- Custom prompts with the same ID as a built-in prompt will override the built-in prompt.
 
 ## Examples
 
@@ -210,7 +142,6 @@ Once defined, your custom prompts can be used in several ways:
 3. **Use versions**: Include `@1.0.0` in IDs for future compatibility
 4. **Triple braces for input**: Use `{{{input}}}` to avoid HTML escaping issues
 5. **Test thoroughly**: Try prompts with various inputs before deploying
-6. **Organize by category**: Use consistent ID prefixes for related prompts
 
 ## Reference
 
