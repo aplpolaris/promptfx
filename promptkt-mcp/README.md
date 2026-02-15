@@ -364,24 +364,6 @@ The `McpProviderRegistry` allows you to configure and manage multiple MCP server
 - Loading server configurations from JSON or YAML files
 - Dynamically creating servers based on configuration
 
-### Using the Default Registry
-
-The default registry includes built-in "embedded" and "test" servers:
-
-```kotlin
-import tri.ai.mcp.McpProviderRegistry
-
-// Load default registry
-val registry = McpProviderRegistry.default()
-
-// List available servers
-val serverNames = registry.listProviderNames() // ["embedded", "test"]
-
-// Get a specific server
-val server = registry.getProvider("embedded")
-val prompts = server?.listPrompts()
-server?.close()
-```
 
 ### Loading from Configuration Files
 
@@ -431,56 +413,12 @@ Load and use the registry:
 // Load from file (auto-detects JSON or YAML)
 val registry = McpProviderRegistry.loadFromFile("mcp-servers.yaml")
 
-// Or explicitly load YAML or JSON
-val yamlRegistry = McpProviderRegistry.loadFromYaml(File("mcp-servers.yaml"))
-val jsonRegistry = McpProviderRegistry.loadFromJson(File("mcp-servers.json"))
-
 // Use servers from registry
 val server = registry.getProvider("remote-http")
 val capabilities = server?.getCapabilities()
 server?.close()
 ```
 
-### Configuration Types
-
-The registry supports four configuration types:
-
-#### Embedded Server
-```yaml
-my-embedded:
-  type: embedded
-  description: "Embedded server description"
-  promptLibraryPath: "/optional/path/to/prompts.yaml"  # Optional
-```
-
-#### HTTP Server
-```yaml
-my-http:
-  type: http
-  description: "HTTP server description"
-  url: "http://example.com/mcp"
-```
-
-#### Stdio Server
-```yaml
-my-stdio:
-  type: stdio
-  description: "Stdio server description"
-  command: "path/to/executable"
-  args: ["arg1", "arg2"]  # Optional
-  env:  # Optional
-    VAR1: "value1"
-```
-
-#### Test Server
-```yaml
-my-test:
-  type: test
-  description: "Test server with samples"
-  includeDefaultPrompts: true   # Optional, default: true
-  includeDefaultTools: true     # Optional, default: true
-  includeDefaultResources: true # Optional, default: true
-```
 
 ### Example: Using Multiple Servers
 
