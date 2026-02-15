@@ -73,7 +73,10 @@ class McpProviderStdioTest {
     @Test
     @Disabled("integration test requires connecting to a specific external MCP stdio server")
     fun testExternal() {
-        val provider = McpProviderStdio("C:\\Program Files\\nodejs\\npx.cmd", args = listOf("-y", "@modelcontextprotocol/server-everything"))
+        val provider = McpProviderStdio(
+            "C:\\Program Files\\nodejs\\npx.cmd",
+            args = listOf("-y", "@modelcontextprotocol/server-everything")
+        )
 
         runProviderTest(provider)
 
@@ -86,6 +89,22 @@ class McpProviderStdioTest {
         }
     }
 
+    @Test
+    @Disabled("integration test requires connecting to a specific external MCP stdio server")
+    fun testExternalAlt() {
+        val provider = McpProviderStdio(
+            "C:\\Program Files\\nodejs\\npx.cmd",
+            args = listOf("-y", "@modelcontextprotocol/server-everything")
+        )
+        runTest {
+            val capabilities = provider.getCapabilities()
+            println(capabilities)
+            val tools = provider.listTools()
+            println(tools)
+            provider.close()
+        }
+    }
+
 }
 
 /** Execute a generic test of MCP protocol functions on the given provider. */
@@ -93,37 +112,42 @@ fun runProviderTest(provider: McpProvider) {
     runTest {
         println("-".repeat(40))
         try {
-            println(provider.initialize())
+            provider.initialize()
             println(provider.getCapabilities())
         } catch (e: McpException) {
             println("getCapabilities error: ${e.message}")
         }
         println("-".repeat(40))
+        println("PROMPTS:")
         try {
-            println(provider.listPrompts())
+            println(provider.listPrompts().joinToString("\n") { " - ${it.name}: $it" })
         } catch (e: McpException) {
             println("listPrompts error: ${e.message}")
         }
         println("-".repeat(40))
+        println("TOOLS:")
         try {
-            println(provider.listTools())
+            println(provider.listTools().joinToString("\n") { " - ${it.name}: $it" })
         } catch (e: McpException) {
             println("listTools error: ${e.message}")
         }
         println("-".repeat(40))
+        println("RESOURCES:")
         try {
-            println(provider.listResources())
+            println(provider.listResources().joinToString("\n") { " - ${it.name}: $it" })
         } catch (e: McpException) {
             println("listResources error: ${e.message}")
         }
         println("-".repeat(40))
+        println("RESOURCE TEMPLATES:")
         try {
-            println(provider.listResourceTemplates())
+            println(provider.listResourceTemplates().joinToString("\n") { " - ${it.name}: $it" })
         } catch (e: McpException) {
             println("listResourceTemplates error: ${e.message}")
         }
 
         println("-".repeat(40))
+        println("TOOL DETAILS:")
         provider.listTools().forEach { tool ->
             println("${ANSI_BOLD}Name$ANSI_RESET: ${tool.name}")
             println("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${tool.description}$ANSI_RESET")

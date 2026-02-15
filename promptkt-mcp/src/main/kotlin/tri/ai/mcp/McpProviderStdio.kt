@@ -21,6 +21,8 @@ package tri.ai.mcp
 
 import kotlinx.serialization.json.*
 import tri.ai.mcp.McpJsonRpcHandler.Companion.buildJsonRpc
+import tri.util.info
+import tri.util.warning
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -74,8 +76,13 @@ class McpProviderStdio(
                 val message = error?.get("message")?.jsonPrimitive?.content ?: "Unknown error"
                 throw McpException("Stdio server error: $message")
             }
+            val method = responseJson.get("method")?.jsonPrimitive?.content
+            if (method != null && method.startsWith("notifications/")) {
+                info<McpProviderStdio>("Received notification: $method")
+                return JsonNull
+            }
             if (!responseJson.containsKey("result")) {
-                println(responseJson)
+                warning<McpProviderStdio>("Unsupported response: $responseJson")
                 throw McpException("Invalid JSON-RPC response: missing result")
             }
             return responseJson["result"]!!
