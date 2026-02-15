@@ -250,9 +250,9 @@ List Available Tools:
 
 **MCP Inspector** is useful for testing both HTTP and stdio MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. 
 
-Requires Node.js and npx. Run with:
+Requires Node.js and npx. Run with a stdio server command:
 ```bash
-npx @modelcontextprotocol/inspector <command>
+npx @modelcontextprotocol/inspector npx @modelcontextprotocol/server-everything
 ```
 
 ## Using Embedded MCP Servers
@@ -282,7 +282,7 @@ val server = McpProviderEmbedded(
 val capabilities = server.getCapabilities()
 val prompts = server.listPrompts()
 val tools = server.listTools()
-val result = server.callTool("tool-name", mapOf("arg" to "value"))
+val result = server.callTool("test_sentiment_analysis", mapOf("input_text" to "I love Kotlin!"))
 server.close()
 ```
 
@@ -498,7 +498,7 @@ val embeddedPrompts = embeddedServer?.listPrompts()
 val httpTools = httpServer?.listTools()
 
 // Call tool on stdio server
-val result = stdioServer?.callTool("tool-name", mapOf("arg" to "value"))
+val result = stdioServer?.callTool("test_aircraft_type_lookup", mapOf("type_code" to "B738"))
 
 // Clean up
 embeddedServer?.close()
