@@ -36,6 +36,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.json.jsonMapper
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.graphic
 import tri.util.warning
 
 /** Plugin for the [McpToolView]. */
@@ -48,7 +49,7 @@ data class ToolWithServer(
 )
 
 /** View and try out MCP server tools. */
-class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured MCP servers.") {
+class McpToolView : AiTaskView("MCP Tools", "View and call tools for configured MCP servers (tools/list, tools/call).") {
 
     private val mcpController = controller.mcpController
     private val toolEntries = observableListOf<ToolWithServer>()
@@ -58,7 +59,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
     private lateinit var toolListView: ListView<ToolWithServer>
 
     private val toolInputText = SimpleStringProperty("{}")
-    private val toolOutputText = SimpleStringProperty("")
+    private val outputContentText = SimpleStringProperty("")
     
     companion object {
         private const val TOOL_LOAD_TIMEOUT_MS = 10000L
@@ -109,9 +110,12 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                         }
                     }
                     
-                    fieldset("Tool Information") {
+                    fieldset("Tool Metdata") {
                         field("Name") {
                             label(toolSelection.stringBinding { it?.tool?.name ?: "" })
+                        }
+                        field("Title") {
+                            label(toolSelection.stringBinding { it?.tool?.title ?: "" })
                         }
                         field("Description") {
                             labelContainer.alignment = Pos.TOP_LEFT
@@ -122,10 +126,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                         field("Version") {
                             label(toolSelection.stringBinding { it?.tool?.version ?: "" })
                         }
-                    }
-                    
-                    fieldset("Input Schema") {
-                        field("Schema") {
+                        field("Input Schema") {
                             labelContainer.alignment = Pos.TOP_LEFT
                             textarea {
                                 isEditable = false
@@ -136,10 +137,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                                 })
                             }
                         }
-                    }
-                    
-                    fieldset("Output Schema") {
-                        field("Schema") {
+                        field("Output Schema") {
                             labelContainer.alignment = Pos.TOP_LEFT
                             textarea {
                                 isEditable = false
@@ -152,7 +150,7 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                         }
                     }
                     
-                    fieldset("Try Tool") {
+                    fieldset("Call Tool") {
                         field("Parameters (JSON)") {
                             labelContainer.alignment = Pos.TOP_LEFT
                             textarea(toolInputText) {
@@ -161,15 +159,17 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
                                 promptText = """{"param1": "value1"}"""
                             }
                         }
-                        buttonbar {
-                            button("Execute Tool") {
-                                enableWhen(toolSelection.isNotNull)
+                        hbox(alignment = Pos.CENTER_LEFT) {
+                            button("Call Tool", FontAwesomeIcon.PLAY.graphic) {
                                 action { runToolExecution() }
                             }
                         }
-                        field("Output (JSON)") {
+                    }
+                    fieldset("Response") {
+                        visibleWhen(outputContentText.isNotEmpty)
+                        field("Content") {
                             labelContainer.alignment = Pos.TOP_LEFT
-                            textarea(toolOutputText) {
+                            textarea(outputContentText) {
                                 isEditable = false
                                 isWrapText = true
                                 prefRowCount = 8
@@ -191,18 +191,26 @@ class McpToolView : AiTaskView("MCP Tools", "View and test tools for configured 
         runAsync {
             try {
                 val inputNode: Map<String, Any?> = jsonMapper.readValue<Map<String, Any?>>(inputJson)
-                val output = kotlinx.coroutines.runBlocking {
+                val output = runBlocking {
                     val server = mcpController.mcpProviderRegistry.getProvider(toolWithServer.serverName)
                         ?: throw IllegalStateException("MCP server '${toolWithServer.serverName}' not found")
                     val result = server.callTool(toolWithServer.tool.name, inputNode)
-                    result.content
+                    result
                 }
-                "Success:\n${jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(output)}"
+                if (output.isError == true) {
+                    "Error reported by MCP server: " + (output.errorMessage() ?: "Unknown")
+                } else if (output.structuredContent != null) {
+                    output.structuredContent!!.toPrettyString()
+                } else {
+                    output.content.joinToString("\n\n") {
+                        jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(it)
+                    }
+                }
             } catch (e: Exception) {
                 "Error: ${e.message}"
             }
         } ui { result ->
-            toolOutputText.value = result
+            outputContentText.value = result
         }
     }
 

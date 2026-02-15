@@ -32,6 +32,7 @@ import tri.ai.mcp.McpResource
 import tri.ai.pips.AiPipelineResult
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
+import tri.util.ui.graphic
 import tri.util.warning
 
 /** Plugin for the [McpResourceView]. */
@@ -44,7 +45,7 @@ data class ResourceWithServer(
 )
 
 /** View and try out MCP server resources. */
-class McpResourceView : AiTaskView("MCP Resources", "View and test resources for configured MCP servers.") {
+class McpResourceView : AiTaskView("MCP Resources", "View and test resources for configured MCP servers (resources/list, resources/read).") {
 
     private val mcpController = controller.mcpController
     private val resourceEntries = observableListOf<ResourceWithServer>()
@@ -104,15 +105,18 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
                         }
                     }
                     
-                    fieldset("Resource Information") {
-                        field("Name") {
-                            label(resourceSelection.stringBinding { it?.resource?.name ?: "" })
-                        }
+                    fieldset("Resource Metadata") {
                         field("URI") {
                             labelContainer.alignment = Pos.TOP_LEFT
                             text(resourceSelection.stringBinding { it?.resource?.uri ?: "" }) {
                                 wrappingWidth = 400.0
                             }
+                        }
+                        field("Name") {
+                            label(resourceSelection.stringBinding { it?.resource?.name ?: "" })
+                        }
+                        field("Title") {
+                            label(resourceSelection.stringBinding { it?.resource?.title ?: "" })
                         }
                         field("Description") {
                             labelContainer.alignment = Pos.TOP_LEFT
@@ -126,12 +130,15 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
                     }
                     
                     fieldset("Read Resource") {
-                        buttonbar {
-                            button("Read Resource") {
-                                enableWhen(resourceSelection.isNotNull)
+                        hbox(alignment = Pos.CENTER_LEFT) {
+                            button("Read Resource", FontAwesomeIcon.PLAY.graphic) {
                                 action { readResourceContent() }
                             }
                         }
+                    }
+
+                    fieldset("Response") {
+                        visibleWhen(resourceContentText.isNotEmpty)
                         field("Content") {
                             labelContainer.alignment = Pos.TOP_LEFT
                             textarea(resourceContentText) {

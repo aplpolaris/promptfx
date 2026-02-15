@@ -37,7 +37,7 @@ import tri.util.warning
 class McpPromptPlugin : NavigableWorkspaceViewImpl<McpPromptView>("MCP", "MCP Prompts", type = McpPromptView::class)
 
 /** View and try out MCP server prompts. */
-class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers.") {
+class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for configured MCP servers (prompts/list, prompts/get).") {
 
     private val mcpController: PromptFxMcpController by inject()
 
