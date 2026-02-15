@@ -75,15 +75,23 @@ provider.close()
 
 #### Testing with "Server Everything"
 
-You can use "Server Everything" to quickly test the `McpProviderStdio` client.
+You can use "Server Everything" to quickly test the `McpProviderStdio` client. This requires Node.js and npx to be installed.
+
 Run a test MCP server over `stdio` with:
 ```bash
 npx @modelcontextprotocol/server-everything
 ```
 
-(briefly describe installation requirements)
-
-(briefly provide sample of how to run and test it in code here)
+Test it in code:
+```kotlin
+val provider = McpProviderStdio(
+    command = "npx",
+    args = listOf("@modelcontextprotocol/server-everything")
+)
+val capabilities = provider.getCapabilities()
+val tools = provider.listTools()
+provider.close()
+```
 
 ## Hosting MCP Servers
 
@@ -240,16 +248,260 @@ List Available Tools:
 
 ### Testing MCP Servers with MCP Inspector
 
-**MCP Inspector** is useful for testing both HTTP and stdio MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. Run with
+**MCP Inspector** is useful for testing both HTTP and stdio MCP servers: https://modelcontextprotocol.io/docs/tools/inspector. 
+
+Requires Node.js and npx. Run with:
 ```bash
-npx @modelcontextprotocol/inspector <command>`
+npx @modelcontextprotocol/inspector <command>
 ```
-(describe basics of what's needed to install and use npx)
 
 ## Using Embedded MCP Servers
 
-(this section needs to be completed -- describe how to create servers with tools and capabilities in code, without any external processes)
+Embedded servers allow you to create MCP servers directly in your Kotlin code without launching external processes. This is useful for:
+- Creating custom in-process servers with your own prompts and tools
+- Testing MCP functionality without network communication
+- Embedding MCP capabilities into larger applications
+- Using as a base for HTTP or stdio server implementations
+
+### Creating an Embedded Server
+
+Use `McpProviderEmbedded` to create a server with custom prompts and tools:
+
+```kotlin
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.tool.McpToolLibraryStarter
+import tri.ai.prompt.PromptLibrary
+
+// Create with default libraries
+val server = McpProviderEmbedded(
+    prompts = PromptLibrary.INSTANCE,
+    tools = McpToolLibraryStarter()
+)
+
+// Use the server
+val capabilities = server.getCapabilities()
+val prompts = server.listPrompts()
+val tools = server.listTools()
+val result = server.callTool("tool-name", mapOf("arg" to "value"))
+server.close()
+```
+
+### Custom Prompts and Tools
+
+You can create a server with your own prompt library and custom tools:
+
+```kotlin
+import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.PromptDef
+import tri.ai.mcp.tool.McpToolLibrary
+import tri.ai.mcp.tool.McpToolMetadata
+import tri.ai.mcp.tool.McpToolResponse
+
+// Create custom prompt library
+val customPrompts = PromptLibrary().apply {
+    addPrompt(PromptDef(
+        id = "my-prompt@1.0",
+        name = "my-prompt",
+        title = "My Custom Prompt",
+        description = "A custom prompt template",
+        template = "Process {{input}} and return results."
+    ))
+}
+
+// Create custom tool library
+val customTools = object : McpToolLibrary {
+    override suspend fun listTools() = listOf(
+        McpToolMetadata(
+            name = "my-tool",
+            description = "My custom tool",
+            inputSchema = mapOf("type" to "object")
+        )
+    )
+    
+    override suspend fun getTool(name: String) = 
+        listTools().find { it.name == name }
+    
+    override suspend fun callTool(name: String, args: Map<String, Any?>) =
+        McpToolResponse.text("Tool result for: $args")
+}
+
+// Create embedded server with custom libraries
+val customServer = McpProviderEmbedded(
+    prompts = customPrompts,
+    tools = customTools
+)
+```
+
+### Using Embedded Servers with HTTP or Stdio
+
+Embedded servers can be used as the backend for HTTP or stdio servers:
+
+```kotlin
+import tri.ai.mcp.http.McpServerHttp
+import tri.ai.mcp.stdio.McpServerStdio
+
+// Create embedded server
+val embeddedServer = McpProviderEmbedded(
+    prompts = PromptLibrary.INSTANCE,
+    tools = McpToolLibraryStarter()
+)
+
+// Expose via HTTP
+val httpServer = McpServerHttp(embeddedServer, port = 8080)
+httpServer.startServer()
+
+// Or expose via stdio
+val stdioServer = McpServerStdio(embeddedServer)
+stdioServer.startServer(System.`in`, System.out)
+```
 
 ## Managing Multiple MCP Servers
 
-(complete with discussion of provider registration and config files)
+The `McpProviderRegistry` allows you to configure and manage multiple MCP servers from a single configuration file. This is useful for:
+- Managing multiple server connections in one place
+- Switching between different server configurations
+- Loading server configurations from JSON or YAML files
+- Dynamically creating servers based on configuration
+
+### Using the Default Registry
+
+The default registry includes built-in "embedded" and "test" servers:
+
+```kotlin
+import tri.ai.mcp.McpProviderRegistry
+
+// Load default registry
+val registry = McpProviderRegistry.default()
+
+// List available servers
+val serverNames = registry.listProviderNames() // ["embedded", "test"]
+
+// Get a specific server
+val server = registry.getProvider("embedded")
+val prompts = server?.listPrompts()
+server?.close()
+```
+
+### Loading from Configuration Files
+
+You can define server configurations in YAML or JSON:
+
+**Example: mcp-servers.yaml**
+```yaml
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Embedded server with custom prompts
+  custom-embedded:
+    type: embedded
+    description: "Embedded MCP server with custom prompts"
+    promptLibraryPath: "/path/to/custom/prompts.yaml"
+  
+  # Test server with samples
+  test:
+    type: test
+    description: "Test server with sample prompts and tools"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
+    includeDefaultResources: true
+  
+  # Remote HTTP server
+  remote-http:
+    type: http
+    description: "Remote MCP server via HTTP"
+    url: "http://localhost:8080/mcp"
+  
+  # Remote stdio server
+  remote-stdio:
+    type: stdio
+    description: "Remote MCP server via stdio"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    env:
+      NODE_ENV: "production"
+```
+
+Load and use the registry:
+
+```kotlin
+// Load from file (auto-detects JSON or YAML)
+val registry = McpProviderRegistry.loadFromFile("mcp-servers.yaml")
+
+// Or explicitly load YAML or JSON
+val yamlRegistry = McpProviderRegistry.loadFromYaml(File("mcp-servers.yaml"))
+val jsonRegistry = McpProviderRegistry.loadFromJson(File("mcp-servers.json"))
+
+// Use servers from registry
+val server = registry.getProvider("remote-http")
+val capabilities = server?.getCapabilities()
+server?.close()
+```
+
+### Configuration Types
+
+The registry supports four configuration types:
+
+#### Embedded Server
+```yaml
+my-embedded:
+  type: embedded
+  description: "Embedded server description"
+  promptLibraryPath: "/optional/path/to/prompts.yaml"  # Optional
+```
+
+#### HTTP Server
+```yaml
+my-http:
+  type: http
+  description: "HTTP server description"
+  url: "http://example.com/mcp"
+```
+
+#### Stdio Server
+```yaml
+my-stdio:
+  type: stdio
+  description: "Stdio server description"
+  command: "path/to/executable"
+  args: ["arg1", "arg2"]  # Optional
+  env:  # Optional
+    VAR1: "value1"
+```
+
+#### Test Server
+```yaml
+my-test:
+  type: test
+  description: "Test server with samples"
+  includeDefaultPrompts: true   # Optional, default: true
+  includeDefaultTools: true     # Optional, default: true
+  includeDefaultResources: true # Optional, default: true
+```
+
+### Example: Using Multiple Servers
+
+```kotlin
+val registry = McpProviderRegistry.loadFromFile("mcp-servers.yaml")
+
+// Work with multiple servers
+val embeddedServer = registry.getProvider("embedded")
+val httpServer = registry.getProvider("remote-http")
+val stdioServer = registry.getProvider("remote-stdio")
+
+// List prompts from embedded server
+val embeddedPrompts = embeddedServer?.listPrompts()
+
+// List tools from HTTP server
+val httpTools = httpServer?.listTools()
+
+// Call tool on stdio server
+val result = stdioServer?.callTool("tool-name", mapOf("arg" to "value"))
+
+// Clean up
+embeddedServer?.close()
+httpServer?.close()
+stdioServer?.close()
+```
