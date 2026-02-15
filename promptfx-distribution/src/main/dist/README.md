@@ -73,19 +73,28 @@ Once launched, the PromptFX interface provides multiple tabs for different types
 When running PromptFX, your application folder should be structured like this:
 ```
 promptfx/
+│
 ├── run-[platform].*               # Launcher script (e.g. .bat, .sh, .command)
 ├── promptfx-[version].jar         # Main application JAR (includes all dependencies)
 ├── apikey.txt                     # (optional) OpenAI API key
 ├── apikey-gemini.txt              # (optional) Gemini API key
+│
 ├── config/                        # YAML configuration files
-│   ├── openai-models.yaml
-│   ├── openai-api-config.yaml
+│   │
+│   ├── openai-api-config.yaml     # API and Model Configurations
 │   ├── gemini-models.yaml
 │   ├── ollama-models.yaml
-│   ├── views.yaml
-│   ├── modes.yaml
+│   ├── openai-models.yaml
+│   │
+│   ├── mcp-servers.yaml          # MCP server configurations
+│   │
+│   ├── modes.yaml                # View customization
 │   ├── starship.yaml
+│   ├── views.yaml
+│   ├── views-links.yaml
+│   │
 │   └── plugins/                   # Plugin configuration
+│
 └── prompts/                       # Custom prompt templates
     └── custom-prompts.yaml
 ```
@@ -114,21 +123,50 @@ PromptFX supports optional runtime flags that modify behavior or enable experime
 ### 🛠️ Runtime Configuration Files
 
 PromptFX uses YAML files to configure models, views, prompts, and runtime behavior. You can customize these to suit your needs.
+These files are located in the `config/` folder and loaded at runtime.
+Many of these files have default versions included in the JAR, but you can create your own in the `config/` folder to override or extend functionality without modifying the JAR.
+
+Many of these settings and customizations can be viewed when PromptFx is launched in the `Settings` view.
+
+Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
+
+#### API Configuration and Models
+
+| File | Purpose                                       |
+|------|-----------------------------------------------|
+| `openai-api-config.yaml` | OpenAI-compatiable API settings              |
+| `gemini-models.yaml` | Available Google Gemini models                |
+| `ollama-models.yaml` | Available Ollama models (local model support) |
+| `openai-models.yaml` | Available OpenAI models                       |
+
+The `-models.yaml` files are used to restrict which models are available in the UI for a given API endpoint.
+
+The `openai-api-config.yaml` file is used to configure alternate (non-standard) API endpoints compatible with the OpenAI API specification, such as *Ollama*.
+You may customize the base API URL and some basic API parameters, and reference a separate model file (e.g. `ollama-models.yaml`) to limit the models available in the UI.
+
+#### MCP Server Configuration
 
 | File | Purpose                                                    |
 |------|------------------------------------------------------------|
-| `openai-models.yaml` | Available OpenAI models                                    |
-| `openai-api-config.yaml` | OpenAI API configuration settings                         |
-| `gemini-models.yaml` | Available Google Gemini models                             |
-| `ollama-models.yaml` | Available Ollama models (local model support)              |
+| `mcp-servers.yaml` | Configurations for Model Context Protocol (MCP) servers |
+
+(describe how this works)
+
+#### View Customization
+
+| File | Purpose                                                    |
+|------|------------------------------------------------------------|
 | `modes.yaml` | Lists of options (used in prompt templates and some views) |
+| `starship.yaml` | Configuration of the "starship" demo mode                  |
 | `views.yaml` | Configurations of custom views                             |
 | `views-links.yaml` | Documentation links displayed in navigation panes          |
-| `starship.yaml` | Configuration of the "starship" demo mode                  |
 
-These files are located in the `config/` folder and loaded at runtime.
+The `modes.yaml` file is used to configure certain drop-down lists of options in the UI.
 
-#### Configuring Documentation Links
+The `starship.yaml` file is used to configure the "Starship demo" mode, which can be enabled with the `starship` runtime flag. This allows you to create a custom demo experience that can be accessed via a button in the UI. This feature is under development and may not be fully functional.
+
+The `views.yaml` file is especially powerful and can be used to create custom views built around prompt templates.
+Prompt templates may be defined directly, or may be defined in a custom prompts file under `prompts/`.
 
 The `views-links.yaml` file allows you to customize documentation links that appear at the bottom of navigation panes in the UI. Links are organized by category (e.g., API, MCP) and grouped by topic.
 
@@ -159,8 +197,15 @@ Custom prompt templates can be added or modified in the `prompts/` folder:
 | `custom-prompts.yaml` | Custom prompt templates that override or extend defaults   |
 
 The `prompts/` folder is scanned recursively, so you can organize your prompts into subdirectories if desired.
+Prompts are accessibly within the `Prompt Library` view in the UI, and can be used in custom views.
 
-Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
+(provide an example yaml template)
+
+---
+
+### 🧩 Plugins
+
+(write section on two types of plugins -- API plugins and view plugins)
 
 ---
 
