@@ -36,6 +36,7 @@ import tri.ai.openai.OpenAiPlugin
 import tri.ai.pips.PrintMonitor
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.trace.AiPromptTrace
+import java.util.Locale.getDefault
 
 class PPlanExecutorTest {
 
@@ -134,7 +135,7 @@ class PPlanExecutorTest {
             assertTrue("prompt1" in context.vars.keys)
             assertTrue("chat1" in context.vars.keys)
             assertTrue("red" in (context.vars["prompt1"]?.asText() ?: ""))
-            assertEquals("#ff0000", context.vars["chat1"]?.get("message")?.asText()?.toLowerCase())
+            assertEquals("#ff0000", context.vars["chat1"]?.get("message")?.asText()?.lowercase(getDefault()))
         }
     }
 

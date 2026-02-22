@@ -20,8 +20,12 @@
 package tri.ai.geminisdk
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChatMessage

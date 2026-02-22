@@ -50,7 +50,7 @@ class McpProviderHttpTest {
     companion object {
         private const val TEST_PORT = 9876
         private const val BASE_URL = "http://localhost:$TEST_PORT"
-        private lateinit var server: NettyApplicationEngine
+        private lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
         private val lastReceivedSessionId = AtomicReference<String?>()
 
         @JvmStatic
