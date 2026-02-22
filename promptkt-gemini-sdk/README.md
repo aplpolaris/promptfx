@@ -113,23 +113,6 @@ val result = model.complete(
 println(result.outputInfo.textContent())
 ```
 
-## Differences from promptkt-gemini
-
-The `promptkt-gemini` plugin uses direct HTTP/REST API calls via Ktor, while this plugin uses Google's official SDK.
-
-**Advantages of promptkt-gemini (REST API)**:
-- Supports embedding models (text-embedding-004, etc.)
-- Simpler dependencies
-- More direct control over API calls
-
-**Advantages of promptkt-gemini-sdk (Official SDK)**:
-- Better integration with Google Cloud authentication
-- More consistent API updates from Google
-- Additional enterprise features
-- Potentially better performance through optimized client implementations
-
-**Recommendation**: Use `promptkt-gemini` (REST API) for embedding functionality. Use this SDK-based plugin when you need better Google Cloud integration or enterprise features.
-
 ## Testing
 
 The module includes unit tests that verify model index functionality. To run tests with actual API calls:
@@ -145,11 +128,7 @@ Note: By default, tests tagged with `gemini-sdk` are excluded to avoid requiring
 
 ## Dependencies
 
-- **google-genai**: 1.2.0 - Google's official java-genai library for Gemini API
+- **google-genai**: Google's official java-genai library for Gemini API
 - **promptkt-core**: Core PromptKt interfaces and utilities
 - **kotlin-stdlib**: Kotlin standard library
 - **kotlinx-coroutines**: For async/await support
-
-## License
-
-This module is licensed under the Apache License 2.0, same as the parent PromptFx project.

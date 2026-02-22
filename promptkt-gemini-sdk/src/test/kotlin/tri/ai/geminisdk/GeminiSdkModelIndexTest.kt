@@ -28,7 +28,7 @@ class GeminiSdkModelIndexTest {
     fun testEmbeddingModels() {
         val models = GeminiSdkModelIndex.embeddingModels()
         assertTrue(models.isNotEmpty()) // Models are defined in YAML
-        assertTrue(models.contains(GeminiSdkModelIndex.EMBED4))
+        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_EMBEDDING))
         println("Embedding models in index: $models")
     }
 

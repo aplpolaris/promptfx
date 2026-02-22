@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
-import tri.ai.gemini.GeminiModelIndex.EMBED4
+import tri.ai.gemini.GeminiModelIndex.GEMINI_EMBEDDING
 import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 import tri.util.BASE64_AUDIO_SAMPLE
 
@@ -63,7 +63,7 @@ class GeminiClientTest {
     @Test
     fun testEmbedContent() {
         runBlocking {
-            val response = client.embedContent("This is a test", EMBED4, outputDimensionality = 10)
+            val response = client.embedContent("This is a test", GEMINI_EMBEDDING, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }
@@ -72,7 +72,7 @@ class GeminiClientTest {
     @Test
     fun testBatchEmbedContents() {
         runBlocking {
-            val response = client.batchEmbedContents(listOf("This is", "a test"), EMBED4, outputDimensionality = 10)
+            val response = client.batchEmbedContents(listOf("This is", "a test"), GEMINI_EMBEDDING, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }
