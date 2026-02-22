@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.googlecode.blaisemath</groupId>
         <artifactId>promptfx-meta</artifactId>
-        <version>0.14.1-SNAPSHOT</version>
+        <version>0.15.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>promptfx-sample-api-plugin</artifactId>
@@ -13,56 +13,8 @@
 
     <name>${project.artifactId}-${project.version}</name>
     <description>Sample plugin demonstrating TextPlugin implementation.</description>
-    <url>https://github.com/aplpolaris/promptfx</url>
-    <inceptionYear>2025</inceptionYear>
-
-    <!-- configuration of the default license to use -->
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-
-    <organization>
-        <name>Johns Hopkins University Applied Physics Laboratory</name>
-    </organization>
-
-    <developers>
-        <developer>
-            <name>Elisha Peterson</name>
-            <email>triathematician+blaise@gmail.com</email>
-            <url>https://github.com/triathematician</url>
-            <organization>JHU-APL</organization>
-            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
-        </developer>
-    </developers>
-
-    <scm>
-        <url>https://github.com/aplpolaris/promptfx</url>
-        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
-        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>promptfx-meta-0.13.0</tag>
-    </scm>
-
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>https://github.com/aplpolaris/promptfx/issues</url>
-    </issueManagement>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
-        <license.licenseName>apache_v2</license.licenseName>
-    </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-
         <!-- PromptKt core dependency for TextPlugin -->
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>

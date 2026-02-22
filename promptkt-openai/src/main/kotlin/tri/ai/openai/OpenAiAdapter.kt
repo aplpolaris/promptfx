@@ -31,8 +31,9 @@ import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import okio.FileSystem
-import okio.Path.Companion.toOkioPath
 import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
@@ -105,7 +106,8 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val t0 = System.currentTimeMillis()
         val resp = client.transcription(TranscriptionRequest(
             model = ModelId(modelId),
-            audio = FileSource(audioFile.toOkioPath(), FileSystem.SYSTEM)
+            // convert audiofile toa  kotlin path object
+            audio = FileSource(Path(audioFile.absolutePath), SystemFileSystem)
         ))
         resp.duration?.let {
             usage.increment(it.toInt(), UsageUnit.AUDIO_SECONDS)

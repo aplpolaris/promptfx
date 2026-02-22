@@ -53,7 +53,7 @@ class McpProviderHttp(_baseUrl: String, private val enableSse: Boolean = true) :
             requestTimeout = 0 // No timeout for SSE connections
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
+            requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
         }
     }
     private var mcpSessionId: String? = null

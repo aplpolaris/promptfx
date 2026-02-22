@@ -22,6 +22,8 @@ package tri.ai.cli
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
@@ -45,17 +47,19 @@ import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    McpCli().main(args)
-
 /**
  * Command-line interface for interacting with MCP (Model Context Protocol) servers.
  * Supports both embedded and remote MCP providers.
  */
-class McpCli : CliktCommand(
-    name = "mcp-fx",
-    help = "Interface to MCP servers - list, fill, and execute prompts, tools, and resources, or start an embedded server"
-) {
+class McpCli : CliktCommand(name = "mcp-fx") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            McpCli().main(args)
+        }
+    }
+
     private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'embedded' for embedded server)")
         .default("embedded")
     private val registryConfig by option("--registry", "-r", help = "Path to MCP server registry configuration file (JSON or YAML)")
@@ -71,6 +75,9 @@ class McpCli : CliktCommand(
             McpProviderRegistry.default()
         }
     }
+
+    override fun help(context: Context) =
+        "Interface to MCP servers - list, fill, and execute prompts, tools, and resources, or start an embedded server"
 
     override fun run() {
         // Parent command - show help if no subcommand provided
@@ -131,10 +138,10 @@ class McpCli : CliktCommand(
     //region PROMPTS
 
     /** List all available prompts. */
-    inner class PromptListCommand : CliktCommand(
-        name = "prompts-list",
-        help = "List all available prompts in the MCP server"
-    ) {
+    inner class PromptListCommand : CliktCommand(name = "prompts-list") {
+        override fun help(context: Context) =
+            "List all available prompts in the MCP server, with details on arguments and descriptions"
+
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
             try {
@@ -175,12 +182,12 @@ class McpCli : CliktCommand(
     }
 
     /** Get a filled prompt with arguments. */
-    inner class PromptGetCommand : CliktCommand(
-        name = "prompts-get",
-        help = "Get a prompt filled with arguments"
-    ) {
+    inner class PromptGetCommand : CliktCommand(name = "prompts-get") {
         private val promptName by argument(help = "Name or ID of the prompt to get")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Get a prompt filled with arguments. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
 
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
@@ -220,14 +227,14 @@ class McpCli : CliktCommand(
     }
 
     /** Execute a prompt (fill and then potentially run with LLM). */
-    inner class PromptExecuteCommand : CliktCommand(
-        name = "prompts-execute",
-        help = "Execute a prompt - fill it with arguments and display the result after calling an LLM"
-    ) {
+    inner class PromptExecuteCommand : CliktCommand(name = "prompts-execute") {
         private val model by option("--model", "-m", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
             .default(GPT35_TURBO_ID)
         private val promptName by argument(help = "Name or ID of the prompt to execute")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Execute a prompt - fill it with arguments and display the result after calling an LLM. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
 
         override fun run() {
             runBlocking {
@@ -320,10 +327,10 @@ class McpCli : CliktCommand(
     //region TOOLS
 
     /** List all available tools. */
-    inner class ToolListCommand : CliktCommand(
-        name = "tools-list",
-        help = "List all available tools from in the MCP server"
-    ) {
+    inner class ToolListCommand : CliktCommand(name = "tools-list") {
+        override fun help(context: Context) =
+            "List all available tools in the MCP server, with details on input/output schemas and descriptions"
+
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
             try {
@@ -370,12 +377,12 @@ class McpCli : CliktCommand(
     }
 
     /** Execute a tool with input. */
-    inner class ToolExecuteCommand : CliktCommand(
-        name = "tools-execute",
-        help = "Execute a tool with input and display the result"
-    ) {
+    inner class ToolExecuteCommand : CliktCommand(name = "tools-execute") {
         private val toolName by argument(help = "Name or ID of the tool to execute")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Execute a tool with input and display the result. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
 
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
@@ -446,10 +453,10 @@ class McpCli : CliktCommand(
     //region RESOURCES
 
     /** List all available resources. */
-    inner class ResourceListCommand : CliktCommand(
-        name = "resources-list",
-        help = "List all available resources from the MCP server"
-    ) {
+    inner class ResourceListCommand : CliktCommand(name = "resources-list") {
+        override fun help(context: Context) =
+            "List all available resources in the MCP server, with details on URI, name, description, and MIME type"
+
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
             try {
@@ -485,10 +492,10 @@ class McpCli : CliktCommand(
     }
 
     /** List all available resource templates. */
-    inner class ResourceTemplatesListCommand : CliktCommand(
-        name = "resources-templates-list",
-        help = "List all available resource templates from the MCP server"
-    ) {
+    inner class ResourceTemplatesListCommand : CliktCommand(name = "resources-templates-list") {
+        override fun help(context: Context) =
+            "List all available resource templates in the MCP server, with details on URI template, name, description, and MIME type"
+
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
             try {
@@ -524,11 +531,11 @@ class McpCli : CliktCommand(
     }
 
     /** Read a resource by URI. */
-    inner class ResourceReadCommand : CliktCommand(
-        name = "resources-read",
-        help = "Read a resource by URI"
-    ) {
+    inner class ResourceReadCommand : CliktCommand(name = "resources-read") {
         private val uri by argument(help = "URI of the resource to read")
+
+        override fun help(context: Context) =
+            "Read a resource by URI and display its contents. The output will include the resource URI, MIME type (if available), and the content (text or binary as base64)."
 
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
@@ -572,10 +579,10 @@ class McpCli : CliktCommand(
     //endregion
 
     /** Starts an MCP server on stdio. */
-    inner class ServeCommand : CliktCommand(
-        name = "start",
-        help = "Start an MCP server on stdio, with embedded prompts and tools"
-    ) {
+    inner class ServeCommand : CliktCommand(name = "start") {
+        override fun help(context: Context) =
+            "Start an MCP server on stdio. This will create an embedded MCP provider with the default prompt library and tool library, and listen for requests on standard input/output. This is useful for testing or as a local adapter for other tools."
+
         override fun run() {
             runBlocking {
                 val prompts = this@McpCli.loadPromptLibrary()

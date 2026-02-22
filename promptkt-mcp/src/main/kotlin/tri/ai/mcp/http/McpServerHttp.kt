@@ -22,7 +22,7 @@ package tri.ai.mcp.http
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
@@ -71,7 +71,7 @@ class McpServerHttp(private val server: McpProvider, private val port: Int = 808
  */
 class McpServerHttpRouter(private val handler: JsonRpcHandler) {
 
-    private var server: NettyApplicationEngine? = null
+    private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
 
     /** Start the HTTP server on the given port. */
     fun startServer(port: Int = 8080) {
@@ -81,7 +81,7 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
                     handleJsonRpcRequest(call)
                 }
                 get("/health") {
-                    call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.Companion.OK)
+                    call.respondText("OK", ContentType.Text.Plain, HttpStatusCode.OK)
                 }
             }
         }.start(wait = false)
@@ -137,7 +137,7 @@ class McpServerHttpRouter(private val handler: JsonRpcHandler) {
             put("result", result)
         }
         println("Responding with JSON-RPC result: id=$id")
-        respondText(JsonSerializers.serialize(resp), ContentType.Application.Json, HttpStatusCode.Companion.OK)
+        respondText(JsonSerializers.serialize(resp), ContentType.Application.Json, HttpStatusCode.OK)
     }
 
     private suspend fun ApplicationCall.respondJsonRpcError(id: JsonElement?, code: Int, message: String) {
