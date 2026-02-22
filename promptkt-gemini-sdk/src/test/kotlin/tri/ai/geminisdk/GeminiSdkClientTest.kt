@@ -20,12 +20,16 @@
 package tri.ai.geminisdk
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.geminisdk.GeminiSdkModelIndex.EMBED4
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_EMBEDDING
 import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_LITE
 
 @Tag("gemini-sdk")
@@ -65,7 +69,7 @@ class GeminiSdkClientTest {
     @Test
     fun testEmbedContent() {
         runBlocking {
-            val response = client.embedContent("This is a test", EMBED4, outputDimensionality = 10)
+            val response = client.embedContent("This is a test", GEMINI_EMBEDDING, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }
@@ -74,7 +78,7 @@ class GeminiSdkClientTest {
     @Test
     fun testBatchEmbedContents() {
         runBlocking {
-            val response = client.batchEmbedContents(listOf("This is", "a test"), EMBED4, outputDimensionality = 10)
+            val response = client.batchEmbedContents(listOf("This is", "a test"), GEMINI_EMBEDDING, outputDimensionality = 10)
             assertNotNull(response)
             println(response)
         }

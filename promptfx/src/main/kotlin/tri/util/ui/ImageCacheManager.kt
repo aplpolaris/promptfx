@@ -22,7 +22,6 @@ package tri.util.ui
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.Weigher
-import javafx.scene.image.Image
 import tri.util.info
 import tri.util.io.pdf.PdfUtils
 import java.awt.image.BufferedImage

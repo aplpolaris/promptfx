@@ -26,7 +26,7 @@ module tri.promptkt.gemini.sdk {
     requires transitive kotlinx.coroutines.core;
 
     // Google Gen AI Java SDK
-    requires google.genai;
+    requires com.google.genai;
 
     exports tri.ai.geminisdk;
 

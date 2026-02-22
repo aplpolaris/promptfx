@@ -95,7 +95,7 @@ class OpenAiTest {
     fun testChatImage() = runTest {
         val res = client.chatCompletion(
             chatCompletionRequest {
-                model = ModelId("gpt-4-turbo")
+                model = ModelId("gpt-4.1-nano")
                 maxTokens = 2000
                 messages {
                     user {

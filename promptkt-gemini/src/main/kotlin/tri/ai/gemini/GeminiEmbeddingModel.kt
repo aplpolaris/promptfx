@@ -20,10 +20,10 @@
 package tri.ai.gemini
 
 import tri.ai.core.EmbeddingModel
-import tri.ai.gemini.GeminiModelIndex.EMBED4
+import tri.ai.gemini.GeminiModelIndex.GEMINI_EMBEDDING
 
 /** An embedding service that uses the Gemini API. */
-class GeminiEmbeddingModel(override val modelId: String = EMBED4, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiEmbeddingModel(override val modelId: String = GEMINI_EMBEDDING, val client: GeminiClient = GeminiClient.INSTANCE) :
     EmbeddingModel {
 
     override fun toString() = "$modelId (Gemini)"

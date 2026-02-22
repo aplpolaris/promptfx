@@ -29,7 +29,6 @@ module tri.promptkt.mcp {
     requires io.ktor.io;
     requires io.ktor.server.core;
     requires io.ktor.server.netty;
-    requires io.ktor.server.host.common;
     requires io.ktor.utils;
 
     requires kotlinx.serialization.core;

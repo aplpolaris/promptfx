@@ -21,6 +21,9 @@ package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.core.obj
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -47,16 +50,18 @@ import java.nio.file.Path
 import java.util.logging.Level
 import kotlin.io.path.Path
 
-object DocumentCliRunner {
-    @JvmStatic
-    fun main(args: Array<out String>) =
-        DocumentCli()
-            .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
-            .main(args)
-}
-
 /** Base command for document QA. */
 class DocumentCli : CliktCommand(name = "document") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            DocumentCli()
+                .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
+                .main(args)
+        }
+    }
+
     private val root by option(help = "Root path containing folders or documents")
         .path(mustExist = true)
         .default(Path("."))
@@ -89,7 +94,7 @@ class DocumentCli : CliktCommand(name = "document") {
 }
 
 /** Command-line app for asking questions of documents. */
-class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switch between folders until done") {
+class DocumentChat : CliktCommand(name = "chat") {
     private val config by requireObject<DocumentQaConfig>()
     private val chatHistory by option(help = "Number of chat history messages to include (default 0)")
         .int()
@@ -97,6 +102,9 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
         .validate {
             require(it >= 0) { "Chat history must be greater than or equal to 0." }
         }
+
+    override fun help(context: Context) =
+        "Ask questions and switch between folders until done"
 
     override fun run() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
@@ -140,7 +148,7 @@ class DocumentChat : CliktCommand(name = "chat", help = "Ask questions and switc
 }
 
 /** Command-line app for generating a response using a folder of documents. */
-class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
+class DocumentQa: CliktCommand(name = "qa") {
     private val config by requireObject<DocumentQaConfig>()
     private val numResponses by option(help = "Number of responses to generate per question (default 1)")
         .int()
@@ -152,6 +160,9 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
         .validate {
             require(it.isNotBlank()) { "Question must not be blank." }
         }
+
+    override fun help(context: Context) =
+        "Ask a single question"
 
     override fun run() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
@@ -171,7 +182,7 @@ class DocumentQa: CliktCommand(name = "qa", help = "Ask a single question") {
 }
 
 /** Command-line app for working with embedding files for a folder of documents. */
-class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/update local embeddings file for a given folder") {
+class DocumentEmbeddings: CliktCommand(name = "embeddings") {
     private val config by requireObject<DocumentQaConfig>()
     private val reindexAll by option(help = "Reindex all documents in the folder")
         .flag(default = false)
@@ -180,6 +191,9 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
     private val maxChunkSize by option(help = "Maximum chunk size (# of characters) for embeddings (default 1000)")
         .int()
         .default(1000)
+
+    override fun help(context: Context) =
+        "Generate/update local embeddings file for a given folder"
 
     override fun run() {
         val docsFolder = config.docsFolder
@@ -201,7 +215,7 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings", help = "Generate/upd
 }
 
 /** Command-line app for chunking documents into text, without generating embeddings. */
-class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into smaller pieces") {
+class DocumentChunker: CliktCommand(name = "chunk") {
     private val config by requireObject<DocumentQaConfig>()
     private val reindexAll by option(help = "Reindex all documents in the folder")
         .flag(default = false)
@@ -212,6 +226,9 @@ class DocumentChunker: CliktCommand(name = "chunk", help = "Chunk documents into
         .default(1000)
     private val indexFile by option(help = "Index file name for the documents (default docs.json)")
         .default("docs.json")
+
+    override fun help(context: Context) =
+        "Chunk documents into smaller pieces"
 
     override fun run() {
         val docsFolder = config.docsFolder

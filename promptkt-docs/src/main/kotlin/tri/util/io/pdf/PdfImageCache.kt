@@ -115,6 +115,6 @@ object PdfImageCache {
     fun getCacheSize() = imageCache.size()
     /** Get estimated memory usage of cached images in bytes. */
     fun getEstimatedMemoryUsage(): Long = imageCache.asMap().values.sumOf { image ->
-        imageWeigher.weigh(null, image).toLong()
+        imageWeigher.weigh(ImageCacheKey("", 0, 0), image).toLong()
     }
 }

@@ -19,6 +19,7 @@
  */
 package tri.ai.cli
 
+import com.github.ajalt.clikt.core.main
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import kotlin.io.path.deleteIfExists

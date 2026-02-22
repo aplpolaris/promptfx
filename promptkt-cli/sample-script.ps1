@@ -42,7 +42,7 @@ $questions = Get-Content $questionsFile
 foreach ($question in $questions) {
     # Construct the command
     Write-Host $question
-    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa --num-responses=$numResponses `"$question`""
+    $command = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCli --root=$rootPath --embedding=$embeddingModel --model=$model --temp=0.5 --max-tokens=2000 qa --num-responses=$numResponses `"$question`""
     Write-Host $command
 
     # Execute the command and capture the output

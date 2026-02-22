@@ -26,7 +26,7 @@ object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
 
     //region MODEL ID's
 
-    const val EMBED4 = "text-embedding-004"
+    const val GEMINI_EMBEDDING = "gemini-embedding-001"
 
     const val GEMINI_25_FLASH = "gemini-2.5-flash"
     const val GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"

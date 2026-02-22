@@ -19,6 +19,7 @@
  */
 package tri.ai.cli
 
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
