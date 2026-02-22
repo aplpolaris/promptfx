@@ -33,7 +33,6 @@ import javafx.scene.image.WritableImage
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.stage.Screen
-import okhttp3.internal.closeQuietly
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
@@ -144,7 +143,11 @@ class PdfViewModel : ViewModel() {
 
     init {
         documentInputStream.onChange { input ->
-            document?.closeQuietly()
+            try {
+                document?.close()
+            } catch (rethrown: RuntimeException) {
+                throw rethrown
+            } catch (_: Exception) { }
             if (input is InputStream) {
                 val bytes = IOUtils.toByteArray(input)
                 document = Loader.loadPDF(bytes)
