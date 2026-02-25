@@ -230,7 +230,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
         return AiPromptTrace(
             promptInfo,
-            AiModelInfo(chatEngine.modelId, common.toModelParams()),
+            AiModelInfo(chatEngine.modelId, modelParams = common.toModelParams()),
             AiExecInfo(),
             AiOutputInfo.text(output)
         )

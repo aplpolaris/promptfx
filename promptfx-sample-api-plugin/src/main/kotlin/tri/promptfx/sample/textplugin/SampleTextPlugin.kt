@@ -70,8 +70,9 @@ class SampleTextPlugin : TextPlugin {
 /** Sample text completion model that echoes input with a prefix. */
 class SampleTextCompletionModel : TextCompletion {
     override val modelId = "sample-echo-v1"
+    override val modelSource = "SampleText"
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun complete(
         text: String,
@@ -93,8 +94,9 @@ class SampleTextCompletionModel : TextCompletion {
 /** Sample chat model that echoes the last message. */
 class SampleChatModel : TextChat {
     override val modelId = "sample-chat-v1"
+    override val modelSource = "SampleText"
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

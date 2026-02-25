@@ -28,10 +28,10 @@ import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_INSTRUCT
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with OpenAI models. */
-class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
+class OpenAiCompletion(override val modelId: String = GPT35_TURBO_INSTRUCT, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
     TextCompletion {
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun complete(
         text: String,

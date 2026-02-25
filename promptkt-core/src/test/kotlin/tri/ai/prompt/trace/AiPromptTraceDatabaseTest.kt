@@ -31,7 +31,7 @@ class AiPromptTraceDatabaseTest {
     )
     private val modelInfo = AiModelInfo(
         "not a model",
-        mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
+        modelParams = mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
     private val execInfo1 = AiExecInfo()
     private val execInfo2 = AiExecInfo.error("test error")

@@ -31,7 +31,8 @@ import tri.ai.prompt.trace.AiPromptTrace
 class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextCompletion {
 
-    override fun toString() = "$modelId (Gemini)"
+    override val modelSource = "Gemini"
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun complete(
         text: String,

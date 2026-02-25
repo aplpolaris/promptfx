@@ -99,22 +99,58 @@ interface TextPlugin {
 
         /** Get an embedding model by id. Throws an exception if not found. */
         fun embeddingModel(modelId: String) =
-            embeddingModels().first { it.modelId == modelId }
+            embeddingModels().first { it.matchesModelId(modelId) }
         /** Get a text completion model by id. Throws an exception if not found. */
         fun textCompletionModel(modelId: String) =
-            textCompletionModels().first { it.modelId == modelId }
+            textCompletionModels().first { it.matchesModelId(modelId) }
         /** Get a chat model by id. Throws an exception if not found. */
         fun chatModel(modelId: String) =
-            chatModels().first { it.modelId == modelId }
+            chatModels().first { it.matchesModelId(modelId) }
         /** Get a multimodal model by id. Throws an exception if not found. */
         fun multimodalModel(modelId: String) =
-            multimodalModels().first { it.modelId == modelId }
+            multimodalModels().first { it.matchesModelId(modelId) }
         /** Get a vision language model by id. Throws an exception if not found. */
         fun visionLanguageModel(modelId: String) =
-            visionLanguageModels().first { it.modelId == modelId }
+            visionLanguageModels().first { it.matchesModelId(modelId) }
         /** Get an image model by id. Throws an exception if not found. */
         fun imageGeneratorModel(modelId: String) =
-            imageGeneratorModels().first { it.modelId == modelId }
+            imageGeneratorModels().first { it.matchesModelId(modelId) }
+
+        /**
+         * Parse a model identifier string, which may be in the form "modelId [source]" or just "modelId".
+         * Returns a pair of (modelId, modelSource), where modelSource may be empty.
+         */
+        fun parseModelId(id: String): Pair<String, String> {
+            val sourceMatch = Regex("""^(.*)\s+\[(.+)]$""").matchEntire(id)
+            return if (sourceMatch != null) {
+                sourceMatch.groupValues[1] to sourceMatch.groupValues[2]
+            } else {
+                id to ""
+            }
+        }
+
+        private fun <T> T.matchesModelId(id: String): Boolean where T : Any {
+            val (parsedId, parsedSource) = parseModelId(id)
+            val modelIdField = when (this) {
+                is EmbeddingModel -> modelId
+                is TextCompletion -> modelId
+                is TextChat -> modelId
+                is MultimodalChat -> modelId
+                is VisionLanguageChat -> modelId
+                is ImageGenerator -> modelId
+                else -> return false
+            }
+            val modelSourceField = when (this) {
+                is EmbeddingModel -> modelSource
+                is TextCompletion -> modelSource
+                is TextChat -> modelSource
+                is MultimodalChat -> modelSource
+                is VisionLanguageChat -> modelSource
+                is ImageGenerator -> modelSource
+                else -> ""
+            }
+            return modelIdField == parsedId && (parsedSource.isEmpty() || modelSourceField == parsedSource)
+        }
 
         /**
          * Return a [ClassLoader] that looks for files in the "config/plugins"

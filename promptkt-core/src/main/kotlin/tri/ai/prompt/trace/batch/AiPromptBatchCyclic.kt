@@ -60,7 +60,7 @@ class AiPromptBatchCyclic(id: String) : AiPromptBatch(id) {
                 promptParams.entries.associate { it.key to it.value.configIndex(i) }
             ), AiModelInfo(
                 model.configIndex(i) as String,
-                modelParams.entries.associate { it.key to it.value.configIndex(i) }
+                modelParams = modelParams.entries.associate { it.key to it.value.configIndex(i) }
             ), modelLookup
         )
     }

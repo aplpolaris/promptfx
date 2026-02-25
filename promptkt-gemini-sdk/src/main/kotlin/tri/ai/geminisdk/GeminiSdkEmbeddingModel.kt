@@ -27,10 +27,12 @@ class GeminiSdkEmbeddingModel(
     private val client: GeminiSdkClient
 ) : EmbeddingModel {
 
+    override val modelSource = "Gemini-SDK"
+
     override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
         client.batchEmbedContents(text, modelId, outputDimensionality).map { embedding ->
             embedding.map { it.toDouble() }
         }
 
-    override fun toString() = "$modelId (Gemini SDK)"
+    override fun toString() = "$modelId [$modelSource]"
 }

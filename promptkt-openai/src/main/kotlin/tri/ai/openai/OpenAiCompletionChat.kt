@@ -27,10 +27,10 @@ import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Text completion with OpenAI chat models. */
-class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
+class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
     TextCompletion {
 
-    override fun toString() = modelId
+    override fun toString() = "$modelId [$modelSource]"
 
     override suspend fun complete(
         text: String,
@@ -38,7 +38,7 @@ class OpenAiCompletionChat(override val modelId: String = GPT35_TURBO, val clien
         tokens: Int?,
         stop: List<String>?,
         numResponses: Int?
-    ): AiPromptTrace = OpenAiChat(modelId, client).chat(
+    ): AiPromptTrace = OpenAiChat(modelId, client, modelSource).chat(
         listOf(TextChatMessage(MChatRole.User, text)),
         variation = variation,
         tokens = tokens ?: 1000,

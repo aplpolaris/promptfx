@@ -47,23 +47,23 @@ class OpenAiAzurePlugin : TextPlugin {
     else emptyList()
 
     override fun embeddingModels() =
-        models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, client) }
+        models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, client, modelSource()) }
 
     override fun textCompletionModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, client) } +
-        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, client, modelSource()) } +
+        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, client, modelSource()) }
 
     override fun chatModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client, modelSource()) }
 
     override fun multimodalModels() =
-        models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client) }
+        models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client, modelSource()) }
 
     override fun visionLanguageModels() =
-        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client) }
+        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client, modelSource()) }
 
     override fun imageGeneratorModels() =
-        models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, client) }
+        models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, client, modelSource()) }
 
     override fun close() {
         client.client.close()

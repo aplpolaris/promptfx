@@ -230,7 +230,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
         val modelInfo = AiModelInfo(
-            model.value, mapOfNotNull(
+            model.value, modelParams = mapOfNotNull(
                 "n" to imageCount.value,
                 "size" to imageSize.value,
                 "quality" to imageQuality.value,
