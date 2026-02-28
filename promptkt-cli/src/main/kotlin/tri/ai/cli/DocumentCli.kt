@@ -193,18 +193,29 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings") {
 
     override fun run() {
         val docsFolder = config.docsFolder
-        val embeddingModel = TextPlugin.embeddingModel(config.embeddingModel!!)
+        val embeddingModel = try {
+            TextPlugin.embeddingModel(config.embeddingModel!!)
+        } catch (x: NoSuchElementException) {
+            val available = TextPlugin.embeddingModels().map { it.modelId }
+            System.err.println("Embedding model '${config.embeddingModel}' not found. Available models: $available")
+            exitProcess(1)
+        }
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModel, SmartTextChunker()))
         index.maxChunkSize = maxChunkSize
-        runBlocking {
-            if (reindexAll) {
-                println("Reindexing all documents in $docsFolder...")
-                index.reindexAll() // this triggers the reindex, and saves the library
-            } else {
-                println("Reindexing new documents in $docsFolder...")
-                index.reindexNew() // this triggers the reindex, and saves the library
+        try {
+            runBlocking {
+                if (reindexAll) {
+                    println("Reindexing all documents in $docsFolder...")
+                    index.reindexAll() // this triggers the reindex, and saves the library
+                } else {
+                    println("Reindexing new documents in $docsFolder...")
+                    index.reindexNew() // this triggers the reindex, and saves the library
+                }
+                println("Reindexing complete.")
             }
-            println("Reindexing complete.")
+        } catch (x: Exception) {
+            System.err.println("Reindexing failed: ${x}")
+            exitProcess(1)
         }
         TextPlugin.orderedPlugins.forEach { it.close() }
     }
