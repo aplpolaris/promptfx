@@ -23,6 +23,7 @@ import java.net.URL
 
 /** Interface for image generation. */
 interface ImageGenerator : AiModel {
+    /** Generate an image, return URL to access image. */
     suspend fun generateImage(
         text: String,
         size: ImageSize,

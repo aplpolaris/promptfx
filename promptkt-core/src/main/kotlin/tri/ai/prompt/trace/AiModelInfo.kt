@@ -56,12 +56,12 @@ data class AiModelInfo(
         const val CHUNKER_MAX_CHUNK_SIZE = "chunker_max_chunk_size"
 
         /** Create model info. */
-        fun info(modelId: String, vararg pairs: Pair<String, Any?>) =
-            AiModelInfo(modelId, modelParams = mapOfNotNull(*pairs))
+        fun info(modelId: String, vararg pairs: Pair<String, Any?>, modelSource: String = "") =
+            AiModelInfo(modelId, modelSource, modelParams = mapOfNotNull(*pairs))
 
         /** Create model info. */
-        fun info(modelId: String, tokens: Int? = null, stop: List<String>? = null, requestJson: Boolean? = null, numResponses: Int? = null) =
-            AiModelInfo(modelId, modelParams =
+        fun info(modelId: String, modelSource: String = "", tokens: Int? = null, stop: List<String>? = null, requestJson: Boolean? = null, numResponses: Int? = null) =
+            AiModelInfo(modelId, modelSource, modelParams =
                 mapOfNotNull(MAX_TOKENS to tokens, STOP to stop, NUM_RESPONSES to numResponses, "request_json" to requestJson)
             )
 
