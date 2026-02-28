@@ -26,7 +26,11 @@ import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.core.Usage
 import com.aallam.openai.api.edits.EditsRequest
 import com.aallam.openai.api.embedding.EmbeddingRequest
+import com.aallam.openai.api.file.File as OpenAiFile
+import com.aallam.openai.api.file.FileId
+import com.aallam.openai.api.file.Purpose
 import com.aallam.openai.api.file.FileSource
+import com.aallam.openai.api.file.fileUpload
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
@@ -238,6 +242,43 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             AiExecInfo.durationSince(t0),
             AiOutputInfo.other(resp)
         )
+    }
+
+    //endregion
+
+    //region FILES API
+
+    /** Uploads a file to the OpenAI Files API. */
+    suspend fun uploadFile(source: FileSource, purpose: String): OpenAiFile {
+        settings.checkApiKey()
+        return client.file(fileUpload {
+            file = source
+            this.purpose = Purpose(purpose)
+        })
+    }
+
+    /** Lists all files uploaded to the OpenAI Files API. */
+    suspend fun listFiles(): List<OpenAiFile> {
+        settings.checkApiKey()
+        return client.files()
+    }
+
+    /** Retrieves metadata for a specific file by its ID. */
+    suspend fun getFile(fileId: String): OpenAiFile? {
+        settings.checkApiKey()
+        return client.file(FileId(fileId))
+    }
+
+    /** Deletes a file from the OpenAI Files API. Returns true if deleted successfully. */
+    suspend fun deleteFile(fileId: String): Boolean {
+        settings.checkApiKey()
+        return client.delete(FileId(fileId))
+    }
+
+    /** Downloads the content of a file from the OpenAI Files API. */
+    suspend fun downloadFile(fileId: String): ByteArray {
+        settings.checkApiKey()
+        return client.download(FileId(fileId))
     }
 
     //endregion
