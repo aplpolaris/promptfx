@@ -34,9 +34,12 @@ import com.aallam.openai.api.file.fileUpload
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseInput
+import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.serialization.json.JsonPrimitive
 import okio.FileSystem
 import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
@@ -146,6 +149,25 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
 
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
         chat(completionRequest, multimodal = false).mapOutput { AiOutput(text = it.textContent(ifNone = "(no response)")) }
+
+    /** Runs a response request using the OpenAI Responses API. */
+    suspend fun responseCompletion(request: ResponseRequest): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.response(request)
+
+        return AiPromptTrace(
+            request.input.extractPromptInfo(),
+            AiModelInfo.info(request.model.id,
+                AiModelInfo.MAX_TOKENS to request.maxOutputTokens,
+                AiModelInfo.TEMPERATURE to request.temperature,
+                AiModelInfo.TOP_P to request.topP
+            ),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.inputTokens, responseTokens = resp.usage?.outputTokens),
+            AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, resp.outputText)))
+        )
+    }
 
     /**
      * Runs a chat response.
@@ -377,6 +399,10 @@ enum class UsageUnit {
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
+
+/** Extracts a [PromptInfo] from a [ResponseInput] if it contains a simple text string. */
+private fun ResponseInput?.extractPromptInfo() =
+    this?.value?.let { if (it is JsonPrimitive && it.isString) PromptInfo(it.content) else null }
 
 //endregion
 

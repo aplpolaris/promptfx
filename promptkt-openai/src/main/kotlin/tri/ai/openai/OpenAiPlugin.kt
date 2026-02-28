@@ -56,7 +56,8 @@ class OpenAiPlugin : TextPlugin {
         models(OpenAiModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client) }
 
     override fun multimodalModels() =
-        models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client) }
+        models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client) } +
+        models(OpenAiModelIndex.responsesModels()) { OpenAiResponsesChat(it, client) }
 
     override fun visionLanguageModels() =
         models(OpenAiModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client) }

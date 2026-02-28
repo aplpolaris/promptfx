@@ -29,6 +29,7 @@ class ModelLibrary {
     var embeddings = listOf<String>()
     var image_generator = listOf<String>()
     var moderation = listOf<String>()
+    var responses = listOf<String>()
     var tts = listOf<String>()
     var vision_language = listOf<String>()
 
@@ -36,5 +37,5 @@ class ModelLibrary {
     fun modelInfoIndex() = models.values.flatten().flatMap { listOf(it) + it.createSnapshots() }.associateBy { it.id }
 
     /** Get list of all model ids in the library. */
-    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + tts + vision_language
+    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + responses + tts + vision_language
 }

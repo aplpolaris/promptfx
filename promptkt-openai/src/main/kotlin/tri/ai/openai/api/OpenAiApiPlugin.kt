@@ -81,7 +81,8 @@ class OpenAiApiPlugin : TextPlugin {
 
     override fun multimodalModels() =
         config.endpoints.flatMap { e ->
-            e.index.multimodalModels().map { OpenAiMultimodalChat(it, client(e)) }
+            e.index.multimodalModels().map { OpenAiMultimodalChat(it, client(e)) } +
+            e.index.responsesModels().map { OpenAiResponsesChat(it, client(e)) }
         }
 
     override fun visionLanguageModels() =
