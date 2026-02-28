@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.googlecode.blaisemath</groupId>
         <artifactId>promptfx-meta</artifactId>
-        <version>0.12.1-SNAPSHOT</version>
+        <version>0.15.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>promptfx</artifactId>
@@ -42,7 +42,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>promptfx-meta-0.13.0</tag>
     </scm>
 
     <issueManagement>
@@ -58,8 +58,8 @@
         <license.licenseName>apache_v2</license.licenseName>
 
         <javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.0.3</tornadofx.version>
-        <controlsfx.version>11.2.1</controlsfx.version>
+        <tornadofx.version>2.2.0</tornadofx.version>
+        <controlsfx.version>11.2.3</controlsfx.version>
         <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
     </properties>
 
@@ -88,9 +88,27 @@
         </dependency>
 
         <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-gemini-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-mcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.36</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.googlecode.blaisemath.com.clust4j</groupId>
@@ -101,12 +119,16 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.blaisemath.tornado</groupId>
-            <artifactId>tornadofx-fx21k18</artifactId>
+            <artifactId>tornadofx-fx21k2</artifactId>
             <version>${tornadofx.version}</version>
         </dependency>
         <dependency>

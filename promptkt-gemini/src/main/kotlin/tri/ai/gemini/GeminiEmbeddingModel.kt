@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@
 package tri.ai.gemini
 
 import tri.ai.core.EmbeddingModel
-import tri.ai.gemini.GeminiModelIndex.EMBED1
+import tri.ai.gemini.GeminiModelIndex.GEMINI_EMBEDDING
 
 /** An embedding service that uses the Gemini API. */
-class GeminiEmbeddingModel(override val modelId: String = EMBED1, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiEmbeddingModel(override val modelId: String = GEMINI_EMBEDDING, val client: GeminiClient = GeminiClient.INSTANCE) :
     EmbeddingModel {
 
     override fun toString() = "$modelId (Gemini)"

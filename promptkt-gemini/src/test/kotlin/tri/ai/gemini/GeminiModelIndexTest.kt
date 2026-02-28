@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,18 @@
  */
 package tri.ai.gemini
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import tri.ai.gemini.GeminiClientTest.Companion.client
 
 class GeminiModelIndexTest {
 
     @Test
     fun testModels() {
+        assertTrue(GeminiModelIndex.javaClass.getResourceAsStream("resources/gemini-models.yaml") != null)
+
         println(GeminiModelIndex.audioModels())
         println(GeminiModelIndex.chatModels())
         println(GeminiModelIndex.completionModels())
@@ -36,11 +41,31 @@ class GeminiModelIndexTest {
         println(GeminiModelIndex.imageGeneratorModels())
         println(GeminiModelIndex.visionLanguageModels())
 
-        assertTrue(GeminiModelIndex.javaClass.getResourceAsStream("resources/gemini-models.yaml") != null)
         assertTrue(GeminiModelIndex.multimodalModels().isNotEmpty())
 
         // no additional model info has been configured
         assertTrue(GeminiModelIndex.modelInfoIndex.isEmpty())
+    }
+
+    @Test
+    @Tag("gemini")
+    fun testIndexModels() {
+        runBlocking {
+            val res = GeminiClient().listModels().models
+            val apiModelIds = res.map { it.name.substringAfter("/") }.toSet()
+            val indexIds = GeminiModelIndex.modelIds
+            println(res)
+            println("-".repeat(50))
+            println("Gemini API models not in local index:")
+            val ids = apiModelIds - indexIds
+            ids.sorted().forEach {
+                // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##" or "-##-##"
+                if (!it.matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?")))
+                    println("  $it")
+            }
+            println("-".repeat(50))
+            println("Local index models not in Gemini API: " + (indexIds - apiModelIds))
+        }
     }
 
 }

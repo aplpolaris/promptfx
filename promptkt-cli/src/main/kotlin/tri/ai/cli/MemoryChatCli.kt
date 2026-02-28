@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -36,11 +37,16 @@ import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    MemoryChatCli().main(args)
-
 /** Example of a chat that has a memory of previous conversations. */
 class MemoryChatCli : CliktCommand(name = "chat-memory") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            MemoryChatCli().main(args)
+        }
+    }
+
     private val model by option("--model", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
         .default(GPT35_TURBO_ID)
     private val embedding by option("--embedding", help = "Embedding model to use (default $EMBEDDING_ADA)")

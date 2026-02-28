@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
  */
 package tri.ai.core
 
-import tri.ai.openai.OpenAiPlugin
 import tri.util.info
 import java.io.File
 import java.net.MalformedURLException
@@ -29,6 +28,9 @@ import java.util.*
 
 /** Provides a set of plugins at runtime. */
 interface TextPlugin {
+
+    /** Check if the plugin API has been configured, e.g. with proper API key. */
+    fun isApiConfigured(): Boolean
 
     /** Model source for this plugin. */
     fun modelSource(): String
@@ -47,8 +49,10 @@ interface TextPlugin {
     /** Provide a list of text completion engines. */
     fun textCompletionModels(): List<TextCompletion>
 
-    /** Provide a list of vision language models. */
-    fun visionLanguageModels(): List<VisionLanguageChat>
+    /** Provide a list of vision language models.
+     * @deprecated Use [multimodalModels] instead. */
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
+    fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
 
     /** Provide a list of image generators. */
     fun imageGeneratorModels(): List<ImageGenerator>
@@ -67,8 +71,15 @@ interface TextPlugin {
             ServiceLoader.load(TextPlugin::class.java, pluginLoader)
         }
 
-        val defaultPlugin by lazy { plugins.first { it is OpenAiPlugin } as OpenAiPlugin }
-        val orderedPlugins by lazy { listOf(defaultPlugin) + (plugins - defaultPlugin) }
+        val defaultPlugin by lazy { 
+            plugins.firstOrNull { it.modelSource() == "OpenAI" } 
+                ?: plugins.firstOrNull() 
+                ?: throw IllegalStateException("No text plugins found")
+        }
+        val orderedPlugins by lazy { 
+            val default = defaultPlugin
+            listOf(default) + (plugins.toList() - default)
+        }
 
         /** Get all model sources. */
         fun sources() = orderedPlugins.map { it.modelSource() }
@@ -83,7 +94,9 @@ interface TextPlugin {
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
         /** Get registered multimodal models. */
         fun multimodalModels() = orderedPlugins.flatMap { it.multimodalModels() }
-        /** Get registered vision language models. */
+        /** Get registered vision language models.
+         * @deprecated Use [multimodalModels] instead. */
+        @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
         fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
         /** Get registered image models. */
         fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
@@ -100,7 +113,9 @@ interface TextPlugin {
         /** Get a multimodal model by id. Throws an exception if not found. */
         fun multimodalModel(modelId: String) =
             multimodalModels().first { it.modelId == modelId }
-        /** Get a vision language model by id. Throws an exception if not found. */
+        /** Get a vision language model by id. Throws an exception if not found.
+         * @deprecated Use [multimodalModel] instead. */
+        @Deprecated("Use multimodalModel() instead", ReplaceWith("multimodalModel(modelId)"))
         fun visionLanguageModel(modelId: String) =
             visionLanguageModels().first { it.modelId == modelId }
         /** Get an image model by id. Throws an exception if not found. */
@@ -108,16 +123,14 @@ interface TextPlugin {
             imageGeneratorModels().first { it.modelId == modelId }
 
         /**
-         * Return a [ClassLoader] that looks for files in the "config/modules"
+         * Return a [ClassLoader] that looks for files in the "config/plugins"
          * directory, in addition to the normal system class loader.
          * @return singleton instance of plugins class loader
          */
         private fun pluginsDirClassLoader(): ClassLoader? {
-            // look for jar plugins
-            val jars = File("config/modules/")
+            val jars = File("config/plugins/")
                 .listFiles { _: File?, name: String -> name.endsWith(".jar") }
             return if (jars != null) {
-                info<TextPlugin>("Discovered module jars: \n - ${jars.joinToString("\n - ")}")
                 // create urls for jars
                 val urls = mutableListOf<URL>()
                 for (f in jars) {

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,59 +19,40 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import tri.ai.core.tool.ExecContext
+import tri.ai.core.tool.Executable
+import tri.util.json.tryJson
+
 /** Advances workflow towards a solution. */
 abstract class WorkflowSolver(
-    val name: String,
-    val description: String,
-    val inputs: List<WParam>,
-    val outputs: List<WParam>
-) {
-    constructor(name: String, description: String, inputs: Map<String, String>, outputs: Map<String, String>):
-            this(name, description, inputs.entries.map { WParam(it.key, it.value) }, outputs.entries.map { WParam(it.key, it.value) })
+    override val name: String,
+    override val description: String,
+    override val version: String,
+    override val inputSchema: JsonNode,
+    override val outputSchema: JsonNode
+): Executable {
+    constructor(name: String, description: String, version: String, inputSchema: String, outputSchema: String):
+            this(name, description, version, inputSchema.tryJson()!!, outputSchema.tryJson()!!)
+
+    /** Provide a plaintext description of this solver for use in prompts. */
+    fun descriptionForPrompts() = "$name: $description"
 
     /** Perform a solve step on the given execution state object. */
     abstract suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep
 
-    fun toPlaintext() = "$name: $description"
-
-    /** Compile results of a solve task into a [WorkflowSolveStep]. */
-    fun solveStep(task: WorkflowTask, inputs: List<WVar>, outputs: List<WVar>, executionTimeMillis: Long, isSuccess: Boolean) =
-        WorkflowSolveStep(task, this, inputs, outputs, executionTimeMillis, isSuccess)
-
-    fun inputs(vararg value: Any) = inputs.mapIndexed { i, param ->
-        WVar(param.name, param.description, value[i])
+    override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
+        TODO("Not implemented and TBD whether this is used - considering deprecating solve and the broader [WorkflowState] in favor of the [ExecContext]")
     }
-
-    fun outputs(vararg value: Any) = outputs.mapIndexed { i, param ->
-        WVar(param.name, param.description, value[i])
-    }
-
-    fun input(i: Int, value: Any) = WVar(inputs[i].name, inputs[i].description, value)
-    fun output(i: Int, value: Any) = WVar(outputs[i].name, outputs[i].description, value)
-
-}
-
-/** Information about a variable. */
-class WParam(
-    val name: String,
-    val description: String
-) {
-    fun withValue(value: Any) = WVar(name, description, value)
 }
 
 /** Logs a step taken during workflow execution. */
 data class WorkflowSolveStep(
     val task: WorkflowTask,
     val solver: WorkflowSolver,
-    val inputs: List<WVar>,
-    val outputs: List<WVar>,
+    val inputs: ObjectNode,
+    val outputs: ObjectNode,
     val executionTimeMillis: Long,
     val isSuccess: Boolean
-)
-
-/** An intermediate value during workflow execution. */
-data class WVar(
-    val name: String,
-    val description: String,
-    val value: Any
 )

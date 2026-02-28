@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ sealed class StarshipWidget(protected val context: StarshipWidgetLayoutContext) 
 
 /** Container widget for grouping other widgets. */
 class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<StarshipConfigWidget>) : StarshipWidget(context) {
-    // TODO - there is some weirdness about vertical layout boundaries within the dynamic setting
     fun addTo(target: EventTarget) {
         target.vbox(54.0) {
+            isMouseTransparent = true
             val w = widgets.first()
             resizeRelocate(w.px(), w.py(), w.pw(), 0.0)
             bindChildren(widgets.asObservable()) { w ->
@@ -59,13 +59,15 @@ class ContainerWidget(context: StarshipWidgetLayoutContext, val widgets: List<St
 /** View element for large display text. */
 class AnimatingTextWidget(context: StarshipWidgetLayoutContext,
                           widget: StarshipConfigWidget, value: ObservableValue<String>,
-                          isDynamic: Boolean,
+                          isDynamicHeight: Boolean,
                           buttonText: ObservableValue<String>? = null, buttonAction: (() -> Unit)? = null): StarshipWidget(context) {
-    val textFlow = AnimatingTextFlow()
+    val textFlow = AnimatingTextFlow(isDynamicHeight)
 
     init {
         textFlow.root.isMouseTransparent = true
-        textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), if (isDynamic) 0.0 else widget.ph())
+        if (!isDynamicHeight) {
+            textFlow.root.resizeRelocate(widget.px(), widget.py(), widget.pw(), widget.ph())
+        }
         textFlow.updatePrefWidth(widget.pw())
         val iconSize = widget.overlay.iconSize?.toDouble() ?: 12.0
         textFlow.updateFontSize(iconSize)

@@ -72,7 +72,7 @@ foreach ($question in $questions) {
     for ($i = 1; $i -le $numResponses; $i++) {
         # Construct the command
         Write-Host $question
-        $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCliRunner --root=$rootPath --embedding=$embeddingModel --model=$model --temp=$temp --max-tokens=$maxResponseTokens qa --num-responses=1 `"$question`""
+        $command2 = "java -cp `"$jarFilePath`" tri.ai.cli.DocumentCli --root=$rootPath --embedding=$embeddingModel --model=$model --temp=$temp --max-tokens=$maxResponseTokens qa --num-responses=1 `"$question`""
         Write-Host $command2
 
         # Execute the command and capture the output

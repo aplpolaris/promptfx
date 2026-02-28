@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ package tri.promptfx.multimodal
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import tornadofx.*
-import tri.ai.core.MChatRole
-import tri.ai.core.VisionLanguageChatMessage
+import tri.ai.core.MChatParameters
+import tri.ai.core.MChatVariation
+import tri.ai.core.MultimodalChat
+import tri.ai.core.chatMessage
 import tri.ai.pips.tasktext
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
@@ -32,7 +34,6 @@ import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.imageUri
-import java.net.URI
 
 /** Plugin for the [ImageDescribeView]. */
 class ImageDescribePlugin : NavigableWorkspaceViewImpl<ImageDescribeView>("Multimodal", "Image Description", type = ImageDescribeView::class)
@@ -45,7 +46,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
     }
 
     private val image = SimpleObjectProperty<Image>(null)
-    private val model = SimpleObjectProperty(PromptFxModels.visionLanguageModelDefault())
+    private val model = SimpleObjectProperty<MultimodalChat>(PromptFxModels.multimodalModelDefault())
 
     private val prompt = PromptSelectionModel("$PROMPT_PREFIX/basic")
 
@@ -53,7 +54,7 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
         addInputImageArea(image)
         parameters("Vision Language Model") {
             field("Model") {
-                combobox(model, PromptFxModels.visionLanguageModels())
+                combobox(model, PromptFxModels.multimodalModels())
             }
         }
         parameters("Prompt") {
@@ -77,14 +78,16 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
     }
 
     private suspend fun describeImage(prompt: String): String {
-        val res = model.value.chat(
-            listOf(
-                VisionLanguageChatMessage(MChatRole.User, prompt, URI.create(image.value.imageUri()))
-            ),
-            common.temp.value,
-            common.maxTokens.value,
-            null,
-            false
+        val model = model.value ?: return "No multimodal model available"
+        val res = model.chat(
+            chatMessage {
+                text(prompt)
+                image(image.value.imageUri())
+            },
+            MChatParameters(
+                tokens = common.maxTokens.value,
+                variation = MChatVariation(temperature = common.temp.value)
+            )
         )
         return res.firstValue.textContent()
     }

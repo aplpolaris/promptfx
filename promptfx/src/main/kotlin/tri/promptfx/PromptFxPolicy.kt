@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,19 +32,23 @@ abstract class PromptFxPolicy {
     abstract fun modelInfo(): List<ModelInfo>
 
     abstract fun embeddingModels(): List<EmbeddingModel>
-    open fun embeddingModelDefault() = embeddingModels().first()
+    open fun embeddingModelDefault() = embeddingModels().firstOrNull() ?: EmbeddingModel.UNAVAILABLE
 
     abstract fun textCompletionModels(): List<TextCompletion>
-    open fun textCompletionModelDefault() = textCompletionModels().first()
+    open fun textCompletionModelDefault() = textCompletionModels().firstOrNull() ?: TextCompletion.UNAVAILABLE
 
     abstract fun chatModels(): List<TextChat>
-    open fun chatModelDefault() = chatModels().firstOrNull()
+    open fun chatModelDefault() = chatModels().firstOrNull() ?: TextChat.UNAVAILABLE
 
     abstract fun multimodalModels(): List<MultimodalChat>
     open fun multimodalModelDefault() = multimodalModels().firstOrNull()
 
-    abstract fun visionLanguageModels(): List<VisionLanguageChat>
-    open fun visionLanguageModelDefault() = visionLanguageModels().first()
+    /** @deprecated Use [multimodalModels] instead. */
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
+    open fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
+    /** @deprecated Use [multimodalModelDefault] instead. */
+    @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
+    open fun visionLanguageModelDefault() = visionLanguageModels().firstOrNull()
 
     abstract fun imageModels(): List<ImageGenerator>
     open fun imageModelDefault() = imageModels().firstOrNull()
@@ -78,6 +82,8 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     override fun textCompletionModels() = plugin.textCompletionModels()
     override fun chatModels() = plugin.chatModels()
     override fun multimodalModels() = plugin.multimodalModels()
+    @Suppress("DEPRECATION")
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
 }
@@ -103,6 +109,8 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun textCompletionModels() = TextPlugin.textCompletionModels()
     override fun chatModels() = TextPlugin.chatModels()
     override fun multimodalModels() = TextPlugin.multimodalModels()
+    @Suppress("DEPRECATION")
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
     override fun supportsView(simpleName: String) = true

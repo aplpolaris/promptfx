@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextChat
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.template
 import tri.ai.text.chunks.TextDocMetadata

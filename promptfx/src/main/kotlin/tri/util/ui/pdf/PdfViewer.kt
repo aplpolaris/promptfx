@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import javafx.scene.image.WritableImage
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.stage.Screen
-import okhttp3.internal.closeQuietly
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
@@ -144,7 +143,11 @@ class PdfViewModel : ViewModel() {
 
     init {
         documentInputStream.onChange { input ->
-            document?.closeQuietly()
+            try {
+                document?.close()
+            } catch (rethrown: RuntimeException) {
+                throw rethrown
+            } catch (_: Exception) { }
             if (input is InputStream) {
                 val bytes = IOUtils.toByteArray(input)
                 document = Loader.loadPDF(bytes)

@@ -2,14 +2,14 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
  */
 package tri.ai.gemini
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -32,6 +33,7 @@ import java.net.URI
 // https://ai.google.dev/api/generate-content#method:-models.generatecontent
 
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class GenerateContentRequest(
     val contents: List<Content>,
     val tools: List<Tool>? = null,
@@ -54,7 +56,7 @@ data class Content(
 ) {
     companion object {
         /** Content with a single text part. */
-        fun text(text: String) = Content(listOf(Part(text)), ContentRole.user)
+        fun text(text: String) = Content(listOf(Part(text = text)), ContentRole.user)
         /** Content with a system message. */
         fun systemMessage(text: String) = text(text) // TODO - support for system messages if Gemini supports it
     }
@@ -62,11 +64,15 @@ data class Content(
 
 @Serializable
 enum class ContentRole {
-    user, model
+    user, model, function
 }
 
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Part(
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null,
+    val partMetadata: Map<String, String>? = null,
     // [Part] is a union type that can contain only one of the following accepted types
     val text: String? = null,
     val inlineData: Blob? = null,
@@ -75,7 +81,14 @@ data class Part(
     val fileData: FileData? = null,
     val executableCode: ExecutableCode? = null,
     val codeExecutionResult: CodeExecutionResult? = null
-)
+) {
+    companion object {
+        /** Create text part. */
+        fun text(text: String?) = Part(text = text)
+        /** Create inline data part. */
+        fun inlineData(mimeType: String, data: String) = Part(inlineData = Blob(mimeType, data))
+    }
+}
 
 // https://ai.google.dev/gemini-api/docs/document-processing
 const val MIME_TYPE_TEXT = "text/plain"
@@ -128,16 +141,35 @@ data class Blob(
 // TODO - [args] is a "Struct" which is essentially a map of key-value pairs, unsure how to serialize properly with kotlin
 @Serializable
 data class FunctionCall(
+    val id: String? = null,
     val name: String,
     val args: Map<String, String>
 )
 
 // TODO - [response] is a "Struct" which is essentially a map of key-value pairs, unsure how to serialize properly with kotlin
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class FunctionResponse(
+    val id: String? = null,
     val name: String,
-    val response: Map<String, String>
+    val response: Map<String, String>,
+    val parts: FunctionResponsePart? = null,
+    val willContinue: Boolean? = null,
+    val scheduling: Scheduling? = null
 )
+
+@Serializable
+data class FunctionResponsePart(
+    val inlineData: Blob
+)
+
+@Serializable
+enum class Scheduling {
+    SCHEDULING_UNSPECIFIED,
+    SILENT,
+    WHEN_IDLE,
+    INTERRUPT
+}
 
 @Serializable
 data class FileData(
@@ -176,6 +208,7 @@ enum class CodeExecutionOutcome {
 //region [Tool] and [ToolConfig]
 
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Tool(
     val functionDeclarations: List<FunctionDeclaration>? = null,
     val googleSearchRetrieval: GoogleSearchRetrieval? = null,
@@ -190,6 +223,7 @@ data class FunctionDeclaration(
 )
 
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Schema(
     val type: Type,
     val format: String? = null,
@@ -308,6 +342,7 @@ enum class HarmBlockThreshold {
 private val ALLOWED_MIMES = setOf(null, MIME_TYPE_TEXT, MIME_TYPE_JPEG, MIME_TYPE_JSON)
 
 @Serializable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class GenerationConfig(
     val stopSequences: List<String>? = null,
     val responseMimeType: String? = null,
@@ -335,7 +370,9 @@ data class GenerationConfig(
 data class GenerateContentResponse(
     var candidates: List<Candidate>?,
     var promptFeedback: PromptFeedback? = null,
-    var usageMetadata: UsageMetadata? = null
+    var usageMetadata: UsageMetadata? = null,
+    var modelVersion: String? = null,
+    var responseId: String? = null
 )
 
 @Serializable
@@ -508,7 +545,7 @@ data class Error(
 data class UsageMetadata(
     val promptTokenCount: Int,
     val cachedContentTokenCount: Int? = null,
-    val candidatesTokenCount: Int,
+    val candidatesTokenCount: Int? = null,
     val totalTokenCount: Int
 )
 

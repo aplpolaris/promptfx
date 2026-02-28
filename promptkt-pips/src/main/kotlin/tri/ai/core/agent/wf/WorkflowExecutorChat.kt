@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
+import tri.util.json.yamlMapper
 import tri.util.warning
 import java.io.IOException
 
@@ -44,7 +45,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
 
         // build the prompt using current state
         val rootTask = state.request
-        val toolsPlaintext = solvers.joinToString("\n") { " - ${it.toPlaintext()}" }
+        val toolsPlaintext = solvers.joinToString("\n") { " - ${it.descriptionForPrompts()}" }
         val prompt = PROMPTS.get(PLANNER_PROMPT_ID)!!.fill(
             "problem" to rootTask.request,
             "tools_details" to toolsPlaintext
@@ -105,7 +106,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
         val quotedResponse = response.findCode()
         // parse into yaml and return
         return try {
-            MAPPER.readValue<TaskDecomp>(quotedResponse)
+            yamlMapper.readValue<TaskDecomp>(quotedResponse)
         } catch (e: IOException) {
             throw IllegalStateException("Failed to parse task decomposition from response:\n$quotedResponse", e)
         }

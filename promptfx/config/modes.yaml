@@ -1,4 +1,8 @@
-# Library of modes for use in other views
+#
+# modes.yaml
+#
+# This file provides multiple choice menu options for prompt templates.
+# It overwrites default options included in the PromptFx distribution.
 ---
 translation:
   - Spanish

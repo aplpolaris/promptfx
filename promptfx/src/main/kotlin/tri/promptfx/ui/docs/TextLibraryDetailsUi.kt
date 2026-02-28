@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
 package tri.promptfx.ui.docs
 
 import tornadofx.*
+import tri.ai.text.chunks.TextDocEmbeddings.chunkCount
+import tri.ai.text.chunks.TextDocEmbeddings.embeddingModels
 
 /** View for collection details. */
 class TextLibraryDetailsUi : Fragment() {
@@ -32,14 +34,21 @@ class TextLibraryDetailsUi : Fragment() {
         val changeProperty = model.libraryContentChange
         val libraryId = librarySelection.stringBinding(changeProperty) { it?.library?.metadata?.id }
         val file = librarySelection.stringBinding(changeProperty) { it?.file?.name ?: "No file" }
-        val libraryInfo = librarySelection.stringBinding(changeProperty) { "${it?.library?.docs?.size ?: 0} documents" }
+        val docCount = librarySelection.stringBinding(changeProperty) { "${it?.library?.docs?.size ?: 0} document(s)" }
+        val chunkCount = librarySelection.stringBinding(changeProperty) { "${it?.library?.chunkCount() ?: 0} chunk(s)" }
+        val embeddingModels = librarySelection.stringBinding(changeProperty) {
+            val models = it?.library?.embeddingModels() ?: emptySet()
+            if (models.isEmpty()) "None" else models.joinToString(", ")
+        }
 
         fieldset("") {
             visibleWhen { librarySelection.isNotNull }
             managedWhen { librarySelection.isNotNull }
             field("Id") { text(libraryId) }
             field("File") { text(file) }
-            field("Info") { text(libraryInfo) }
+            field("Documents") { text(docCount) }
+            field("Chunks") { text(chunkCount) }
+            field("Embeddings") { text(embeddingModels) }
         }
     }
 

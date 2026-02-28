@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,8 +173,8 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
                 val fileBytes = file.value!!.audioUri("wav")
                 val request = GenerateContentRequest(Content(
                     listOf(
-                        Part(GEMINI_PROMPT),
-                        Part(null, Blob.fromDataUrl(fileBytes))
+                        Part.text(GEMINI_PROMPT),
+                        Part(inlineData = Blob.fromDataUrl(fileBytes))
                     ), ContentRole.user
                 ))
                 val response = GeminiClient().use {

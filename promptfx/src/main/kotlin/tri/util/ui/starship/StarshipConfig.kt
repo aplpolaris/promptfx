@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import tri.ai.core.agent.YAML_MAPPER
 import tri.ai.pips.api.PPlan
+import tri.util.json.yamlMapper
 
 /** Global Starship configuration, including the pipeline and the view config. */
 class StarshipConfig() {
@@ -37,7 +37,7 @@ class StarshipConfig() {
 
         /** Reads a Starship config from YAML. */
         fun readYaml(yaml: String): StarshipConfig =
-            YAML_MAPPER.readValue(yaml)
+            yamlMapper.readValue(yaml)
 
         /** Reads default Starship config. */
         fun readDefaultYaml(): StarshipConfig =

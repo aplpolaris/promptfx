@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,4 +34,7 @@ class ModelLibrary {
 
     /** Create model index with unique identifiers, including any registered snapshots. */
     fun modelInfoIndex() = models.values.flatten().flatMap { listOf(it) + it.createSnapshots() }.associateBy { it.id }
+
+    /** Get list of all model ids in the library. */
+    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + tts + vision_language
 }

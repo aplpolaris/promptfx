@@ -1,0 +1,35 @@
+# MCP Server Registry Configuration
+# This file defines available MCP servers that can be used by the CLI
+servers:
+  # Embedded server with default libraries
+  embedded:
+    type: embedded
+    description: "Embedded MCP server with default prompt and tool libraries"
+  
+  # Embedded server with custom prompt library
+  custom-embedded:
+    type: embedded
+    description: "Embedded MCP server with custom prompts"
+    promptLibraryPath: "/path/to/custom/prompts.yaml"
+  
+  # Test server with built-in samples
+  test:
+    type: test
+    description: "Test server with sample prompts and tools for testing"
+    includeDefaultPrompts: true
+    includeDefaultTools: true
+  
+  # Remote MCP server via HTTP
+  remote-example:
+    type: http
+    description: "Remote MCP server via HTTP"
+    url: "http://localhost:8080/mcp"
+  
+  # Remote MCP server via stdio (example - not yet implemented)
+  # stdio-example:
+  #   type: stdio
+  #   description: "Remote MCP server via stdio"
+  #   command: "npx"
+  #   args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  #   env:
+  #     NODE_ENV: "production"

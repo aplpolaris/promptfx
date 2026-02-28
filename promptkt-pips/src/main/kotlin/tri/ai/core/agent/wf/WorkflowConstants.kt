@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
  */
 package tri.ai.core.agent.wf
 
-const val REQUEST = "request"
-const val INPUT = "input"
+const val REQUEST = tri.util.json.PARAM_REQUEST
+const val INPUT = tri.util.json.PARAM_INPUT
 const val INTERMEDIATE_RESULTS = "intermediate_results"
-const val RESULT = "result"
+const val RESULT = tri.util.json.PARAM_RESULT
 
 const val ANSWERED = "answered"
 const val RATIONALE = "rationale"

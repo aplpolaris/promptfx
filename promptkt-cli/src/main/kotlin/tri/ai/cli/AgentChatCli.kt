@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ package tri.ai.cli
 
 import com.aallam.openai.api.logging.LogLevel
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parsers.CommandLineParser
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
@@ -40,14 +42,19 @@ import java.time.LocalDateTime
 import java.util.logging.Level
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    AgentChatCli().main(args)
-
 /**
  * Command-line interface for agent-based chat with contextual reasoning capabilities.
  * Uses the AgentChat API for streaming responses and progress monitoring.
  */
 class AgentChatCli : CliktCommand(name = "chat-agent") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            AgentChatCli().main(args)
+        }
+    }
+
     private val model by option("--model", help = "Multimodal model to use (default gpt-4o-mini)")
         .default("gpt-4o-mini")
     private val maxContext by option("--maxContext", help = "Maximum context messages (default 20)")

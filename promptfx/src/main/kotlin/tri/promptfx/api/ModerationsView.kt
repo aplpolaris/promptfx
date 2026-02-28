@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiExecInfo

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocEmbeddings.addEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.embeddingModels
 import tri.ai.text.chunks.TextDocEmbeddings.getEmbeddingInfo
+import tri.ai.text.chunks.TextDocEmbeddings.summaryInfo
 import tri.ai.text.chunks.TextDocMetadata
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.PromptFxController
@@ -129,9 +131,32 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
             val lib = TextLibrary.loadFrom(file)
             if (lib.metadata.id.isBlank())
                 lib.metadata.id = file.name
+            // Print basic information when loading chunk file
+            info<TextLibraryViewModel>("Loaded library '${lib.metadata.id}': ${lib.summaryInfo()}")
             TextLibraryInfo(lib, file)
-        } ui {
-            loadTextLibrary(it, replace, selectAllDocs)
+        } ui { libInfo ->
+            loadTextLibrary(libInfo, replace, selectAllDocs)
+            // Check for embedding models and offer to select one
+            val embeddingModels = libInfo.library.embeddingModels()
+            if (embeddingModels.isNotEmpty()) {
+                promptEmbeddingModelSelection(embeddingModels)
+            }
+        }
+    }
+
+    /** Prompts user to select an embedding model from the available models in the loaded library. */
+    private fun promptEmbeddingModelSelection(availableModels: Set<String>) {
+        val currentModel = embeddingStrategy.value.modelId
+        if (currentModel in availableModels) {
+            // Current model is already available in the library, no prompt needed
+            return
+        }
+        // Only prompt if there's exactly one model to choose from
+        if (availableModels.size == 1) {
+            val model = availableModels.first()
+            info<TextLibraryViewModel>("Library contains embeddings for model '$model'. Consider switching embedding model to match.")
+        } else {
+            info<TextLibraryViewModel>("Library contains embeddings for models: ${availableModels.joinToString(", ")}. Consider switching embedding model to match one of these.")
         }
     }
 

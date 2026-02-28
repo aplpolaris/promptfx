@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import tri.ai.prompt.PromptGroup
 import tri.ai.prompt.PromptGroupIO
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.generateArgs
-import java.io.File
 
 /** Dialog for creating a new prompt definition. */
 class CreatePromptDialog : Fragment("Create New Prompt") {

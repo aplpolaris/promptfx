@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,6 +178,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
 fun graphic(type: ModelType) = when (type) {
     ModelType.TEXT_COMPLETION -> FontAwesomeIcon.KEYBOARD_ALT.graphic
     ModelType.TEXT_CHAT -> FontAwesomeIcon.COMMENT.graphic
+    ModelType.RESPONSES -> FontAwesomeIcon.REPLY.graphic
     ModelType.TEXT_VISION_CHAT -> FontAwesomeIcon.IMAGE.graphic
     ModelType.TEXT_EMBEDDING -> FontAwesomeIcon.CUBE.graphic
     ModelType.IMAGE_GENERATOR -> FontAwesomeIcon.CAMERA.graphic

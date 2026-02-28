@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 
 class PromptFxWorkspaceModelTest {
 
-    private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "Fun", "Multimodal", "Prompts", "Settings", "Text")
+    private val BUILT_IN_CATEGORIES = setOf("API", "Agents", "Documents", "MCP", "Multimodal", "Prompts", "Settings", "Text")
 
     @Test
     fun testCustomCategoryHandling() {

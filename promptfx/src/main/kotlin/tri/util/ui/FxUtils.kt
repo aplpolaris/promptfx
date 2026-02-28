@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,8 @@ val FontAwesomeIconView.forestGreen
     get() = apply { fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0) }
 val FontAwesomeIconView.fireOrange
     get() = apply { fill = Color(1.0, 69.0/255, 0.0, 1.0) }
+val FontAwesomeIconView.steelBlue
+    get() = apply { fill = Color(70.0/255, 130.0/255, 180.0/255, 1.0) }
 
 //endregion
 
@@ -185,16 +187,10 @@ fun EventTarget.nestedlistmenubutton(items: () -> Map<String, List<String>>, act
         setOnShowing {
             this.items.clear()
             items().forEach { (category, keys) ->
-                if (keys.size == 1) {
-                    item("$category/${keys.first()}") {
-                        action { action(keys.first()) }
-                    }
-                } else {
-                    menu(category) {
-                        keys.forEach { key ->
-                            item(key) {
-                                action { action(key) }
-                            }
+                menu(category) {
+                    keys.forEach { key ->
+                        item(key) {
+                            action { action(key) }
                         }
                     }
                 }

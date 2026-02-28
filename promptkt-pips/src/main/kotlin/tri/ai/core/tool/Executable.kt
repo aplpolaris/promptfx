@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,4 +38,11 @@ interface Executable {
 
     /** Execute the tool with given input and context. */
     suspend fun execute(input: JsonNode, context: ExecContext): JsonNode
+
+    /** Returns a string representation of the input schema. */
+    fun inputSchemaAsString() = inputSchema?.toPrettyString()
+
+    /** Returns a string representation of the output schema. */
+    fun outputSchemaAsString() = outputSchema?.toPrettyString()
+
 }

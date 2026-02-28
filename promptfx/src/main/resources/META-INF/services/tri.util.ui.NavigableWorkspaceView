@@ -4,6 +4,10 @@ tri.promptfx.prompts.PromptTemplatePlugin
 tri.promptfx.prompts.PromptValidatorPlugin
 tri.promptfx.prompts.PromptTraceHistoryPlugin
 tri.promptfx.text.ListGeneratorPlugin
+tri.promptfx.mcp.McpServerPlugin
+tri.promptfx.mcp.McpPromptPlugin
+tri.promptfx.mcp.McpToolPlugin
+tri.promptfx.mcp.McpResourcePlugin
 tri.promptfx.multimodal.AudioApiPlugin
 tri.promptfx.multimodal.AudioSpeechApiPlugin
 tri.promptfx.multimodal.ImagesApiPlugin

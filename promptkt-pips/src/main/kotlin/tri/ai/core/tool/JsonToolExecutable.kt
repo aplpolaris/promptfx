@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createResult
+import tri.util.json.OUTPUT_SCHEMA
+import tri.util.json.createResult
+import tri.util.json.readJsonSchema
 
 /**
  * Base class for JSON schema-based executables.
@@ -34,8 +35,8 @@ abstract class JsonToolExecutable(
     override val version: String = "1.0.0"
 ) : Executable {
 
-    override val inputSchema: JsonNode by lazy { MAPPER.readTree(jsonSchema) }
-    override val outputSchema: JsonNode by lazy { MAPPER.readTree(OUTPUT_SCHEMA) }
+    override val inputSchema: JsonNode by lazy { readJsonSchema(jsonSchema) }
+    override val outputSchema: JsonNode by lazy { readJsonSchema(OUTPUT_SCHEMA) }
 
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
         val result = run(input, context)
@@ -47,10 +48,4 @@ abstract class JsonToolExecutable(
      * Returns a string result.
      */
     abstract suspend fun run(input: JsonNode, context: ExecContext): String
-
-    companion object {
-        const val STRING_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"string"}}}"""
-        const val INTEGER_INPUT_SCHEMA = """{"type":"object","properties":{"input":{"type":"integer"}}}"""
-        const val OUTPUT_SCHEMA = """{"type":"object","properties":{"result":{"type":"string"}}}"""
-    }
 }

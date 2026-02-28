@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ class ModalityFilter(val attribute: (ModelInfo) -> List<DataModality>) {
         if (selectedFlags.isEmpty()) return { true } // If no modalities selected, show all
         return { model -> 
             val modelModalities = attribute(model)
-            modelModalities.any { it in selectedFlags }
+            modelModalities.isEmpty() || modelModalities.any { it in selectedFlags }
         }
     }
 

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,27 +31,21 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import tri.util.info
+import tri.ai.core.ApiSettings
 import tri.util.warning
 import java.io.File
 
 /** Manages Gemini API key and client. */
 @OptIn(ExperimentalSerializationApi::class)
-class GeminiSettings {
+class GeminiSettings : ApiSettings {
 
-    companion object {
-        const val API_KEY_FILE = "apikey-gemini.txt"
-        const val API_KEY_ENV = "GEMINI_API_KEY"
-        const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
-    }
-
-    var baseUrl = BASE_URL
+    override var baseUrl = BASE_URL
         set(value) {
             field = value
             buildClient()
         }
 
-    var apiKey = readApiKey()
+    override var apiKey = readApiKey()
         set(value) {
             field = value
             buildClient()
@@ -66,20 +60,15 @@ class GeminiSettings {
     /** The HTTP client used to make requests. */
     var client: HttpClient = buildClient()
 
-    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
-    private fun readApiKey(): String {
-        val file = File(API_KEY_FILE)
+    override fun isConfigured(): Boolean {
+        val isGemini = baseUrl.contains("generativelanguage.googleapis.com")
+        val isValidGeminiKey = apiKey.isNotBlank() && !apiKey.trim().contains(" ")
+        return isValidGeminiKey || !isGemini
+    }
 
-        val key = if (file.exists()) {
-            file.readText()
-        } else
-            System.getenv(API_KEY_ENV)
-
-        return if (key.isNullOrBlank()) {
-            warning<GeminiSettings>("Gemini API key found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
-            ""
-        } else
-            key
+    override fun checkApiKey() {
+        if (!isConfigured())
+            throw UnsupportedOperationException("Gemini API key is not configured properly.")
     }
 
     @Throws(IllegalStateException::class)
@@ -107,4 +96,25 @@ class GeminiSettings {
         }
     }.also { client = it }
 
+    /** Read API key by first checking for [API_KEY_FILE], and then checking user environment variable [API_KEY_ENV]. */
+    private fun readApiKey(): String {
+        val file = File(API_KEY_FILE)
+
+        val key = if (file.exists()) {
+            file.readText()
+        } else
+            System.getenv(API_KEY_ENV)
+
+        return if (key.isNullOrBlank()) {
+            warning<GeminiSettings>("Gemini API key not found. Please create a file named $API_KEY_FILE in the root directory, or set an environment variable named $API_KEY_ENV.")
+            ""
+        } else
+            key
+    }
+
+    companion object {
+        const val API_KEY_FILE = "apikey-gemini.txt"
+        const val API_KEY_ENV = "GEMINI_API_KEY"
+        const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
+    }
 }

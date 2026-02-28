@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,20 @@ import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.TextPlugin
 import tri.ai.gemini.GeminiAiPlugin
+import tri.ai.gemini.GeminiSettings
+import tri.ai.geminisdk.GeminiSdkPlugin
+import tri.ai.geminisdk.GeminiSdkSettings
+import tri.ai.mcp.EmbeddedProviderConfig
+import tri.ai.mcp.HttpProviderConfig
+import tri.ai.mcp.StdioProviderConfig
+import tri.ai.mcp.TestProviderConfig
+import tri.ai.openai.OpenAiApiSettingsBasic
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.api.OpenAiApiPlugin
+import tri.ai.openai.api.OpenAiApiSettings
+import tri.ai.openai.api.OpenAiApiSettingsGeneric
+import tri.ai.openai.azure.OpenAiAzurePlugin
+import tri.ai.openai.azure.OpenAiAzureSettings
 import tri.promptfx.*
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEYS
 import tri.promptfx.api.ModelsView
@@ -133,6 +145,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
         when (category.value) {
             ConfigCategory.APIS -> showApis()
             ConfigCategory.RUNTIME -> showRuntimeDetails()
+            ConfigCategory.MCP_SERVERS -> showMcpServersDetails()
             ConfigCategory.STARSHIP -> showStarshipConfigDetails()
             ConfigCategory.CONFIG_FILES -> showConfigFilesDetails()
             ConfigCategory.VIEWS -> showViewsDetails()
@@ -152,7 +165,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label("Policy Type: ${PromptFxModels.policy.javaClass.simpleName}")
                 label("Show Banner: ${PromptFxModels.policy.isShowBanner}")
                 label("Default Completion Model: ${PromptFxModels.policy.textCompletionModelDefault().modelId}")
-                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault()!!.modelId}")
+                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault().modelId}")
                 label("Default Embedding Model: ${PromptFxModels.policy.embeddingModelDefault().modelId}")
             }
 
@@ -194,40 +207,55 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
             separator()
 
             // API client configurations
-            allPlugins.forEach {
-                label("${it.javaClass.simpleName} API Client:") {
+            allPlugins.flatMap {
+                when (it) {
+                    is OpenAiPlugin -> listOf(it to it.client.settings)
+                    is OpenAiApiPlugin -> it.apiSettingsList.map { settings -> it to settings }
+                    is OpenAiAzurePlugin -> listOf(it to it.client.settings)
+                    is GeminiAiPlugin -> listOf(it to it.client.settings)
+                    is GeminiSdkPlugin -> listOf(it to it.client.settings)
+                    else -> listOf()
+                }
+            }.forEach { (plugin, settings) ->
+                label("${plugin.javaClass.simpleName} API Client:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
                 vbox(5) {
-                    label("Model Source: ${it.modelSource()}")
-                    when (it) {
-                        is OpenAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                            label("Base URL: ${it.client.settings.baseUrl}")
-                            label("Log Level: ${it.client.settings.logLevel}")
+                    if (plugin is OpenAiApiPlugin)
+                        label("Model Source: ${plugin.modelSource(settings)}")
+                    else
+                        label("Model Source: ${plugin.modelSource()}")
+                    label("Base URL: ${settings.baseUrl}")
+                    label("API Key: ${if (settings.isConfigured()) "Configured" else "Not Configured"}")
+                    when (settings) {
+                        is OpenAiAzureSettings -> {
+                            label("Resource Name: ${settings.resourceName}")
+                            label("Deployment Id: ${settings.deploymentId}")
+                            label("API Version: ${settings.apiVersion}")
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
-                        is GeminiAiPlugin -> {
-                            label("API Key: ${it.client.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                            label("Base URL: ${it.client.settings.baseUrl}")
-                            label("Timeout: ${it.client.settings.timeoutSeconds}sec")
-
+                        is OpenAiApiSettingsBasic -> {
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
-                        is OpenAiApiPlugin -> {
-                            it.config.endpoints.forEach {
-                                label("• ${it.source}") {
-                                    style { fontWeight = FontWeight.NORMAL }
-                                }
-                                label("  API Key: ${it.settings.apiKey?.let { "Configured" } ?: "Not Configured"}")
-                                label("  Base URL: ${it.settings.baseUrl}")
-                                label("  Log Level: ${it.settings.logLevel}")
-                                label("  Timeout: ${it.settings.timeoutSeconds}sec")
-                            }
+                        is OpenAiApiSettingsGeneric -> {
+                            label("Log Level: ${settings.logLevel}")
+                            label("Timeout: ${settings.timeoutSeconds}sec")
                         }
-
+                        is OpenAiApiSettings -> {
+                            label("Log Level: ${settings.logLevel}")
+                        }
+                        is GeminiSettings -> {
+                            label("Timeout: ${settings.timeoutSeconds}sec")
+                        }
+                        is GeminiSdkSettings -> {
+                            label("Project Id: ${settings.projectId}")
+                            label("Location: ${settings.location}")
+                            label("Use Vertex AI: ${settings.useVertexAI}")
+                        }
                         else -> {
-                            label("No specific API client configuration available for ${it.javaClass.simpleName}.")
+                            label("No specific API client configuration available for ${plugin.javaClass.simpleName}.")
                         }
                     }
                 }
@@ -312,6 +340,93 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 label(controller.tokensUsed.stringBinding { "Tokens Used: $it" })
                 label(controller.audioUsed.stringBinding { "Audio Usage: $it" })
                 label(controller.imagesUsed.stringBinding { "Images Used: $it" })
+            }
+        }
+    }
+
+    private fun showMcpServersDetails() {
+        with(detailPane) {
+            val mcpController = find<PromptFxMcpController>()
+            val registry = mcpController.mcpProviderRegistry
+            
+            // Registry Information
+            vbox(5) {
+                label("MCP Server Registry:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                label("Total Configured Servers: ${registry.listProviderNames().size}")
+            }
+            
+            separator()
+            
+            // Configuration Files
+            vbox(5) {
+                label("Configuration Files:") {
+                    style { fontWeight = FontWeight.BOLD }
+                }
+                val configFiles = listOf(
+                    File("mcp-servers.yaml"),
+                    File("config/mcp-servers.yaml")
+                )
+                configFiles.forEach { file ->
+                    label("• ${file.path}: ${if (file.exists()) "Found (${file.length()} bytes)" else "Not found"}")
+                }
+            }
+            
+            separator()
+            
+            // List all configured servers
+            val configs = registry.getConfigs()
+            if (configs.isEmpty()) {
+                vbox(5) {
+                    label("No MCP servers configured.") {
+                        style { fontStyle = FontPosture.ITALIC }
+                    }
+                }
+            } else {
+                vbox(5) {
+                    label("Configured Servers (${configs.size}):") {
+                        style { fontWeight = FontWeight.BOLD }
+                    }
+                    
+                    configs.forEach { (name, config) ->
+                        vbox(5) {
+                            label("• $name") {
+                                style { fontWeight = FontWeight.BOLD }
+                            }
+                            label("  Type: ${config.javaClass.simpleName.replace("ServerConfig", "")}")
+                            config.description?.let { desc ->
+                                label("  Description: $desc")
+                            }
+                            
+                            // Show config-specific details
+                            when (config) {
+                                is StdioProviderConfig -> {
+                                    label("  Command: ${config.command}")
+                                    if (config.args.isNotEmpty()) {
+                                        label("  Arguments: ${config.args.joinToString(" ")}")
+                                    }
+                                    if (config.env.isNotEmpty()) {
+                                        label("  Environment Variables: ${config.env.size}")
+                                    }
+                                }
+                                is HttpProviderConfig -> {
+                                    label("  URL: ${config.url}")
+                                }
+                                is EmbeddedProviderConfig -> {
+                                    config.promptLibraryPath?.let { path ->
+                                        label("  Prompt Library: $path")
+                                    }
+                                }
+                                is TestProviderConfig -> {
+                                    label("  Include Default Prompts: ${config.includeDefaultPrompts}")
+                                    label("  Include Default Tools: ${config.includeDefaultTools}")
+                                    label("  Include Default Resources: ${config.includeDefaultResources}")
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -518,6 +633,7 @@ enum class ConfigCategory(val displayName: String, val title: String, val descri
     ROOT("Configuration", "PromptFx Settings", "Select a specific category to view details.", FontAwesomeIcon.COG),
     APIS("APIs", "APIs", "External APIs (model providers, etc.).", FontAwesomeIcon.CLOUD),
     RUNTIME("Model Runtime", "Model Runtime", "Current policy, models, and usage statistics.", FontAwesomeIcon.GEARS),
+    MCP_SERVERS("MCP Servers", "MCP Servers", "Model Context Protocol server configurations.", FontAwesomeIcon.SERVER),
     CONFIG_FILES("Config Files", "Configuration Files", "Configuration files discovered by PromptFx.", FontAwesomeIcon.FILE_CODE_ALT),
     VIEWS("Views", "View Configuration", "Current and discovered view configurations.", FontAwesomeIcon.SITEMAP),
     STARSHIP("Starship Mode", "Starship Demo Mode Config", "View configuration for \"Starship\" demo mode.", FontAwesomeIcon.ROCKET),

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
+import tri.util.json.jsonMapper
 
 class WebSearchExecutableTest {
 
@@ -63,7 +63,7 @@ class WebSearchExecutableTest {
             val searchTool = WebSearchExecutable()
             val context = ExecContext()
 
-            val inputJson = MAPPER.createObjectNode()
+            val inputJson = jsonMapper.createObjectNode()
                 .put("query", "what's the best hike in the US?")
                 .put("max_results", 3)
             val result = searchTool.execute(inputJson, context)

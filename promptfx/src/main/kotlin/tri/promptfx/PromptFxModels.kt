@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,11 @@ object PromptFxModels {
     fun imageModels() = policy.imageModels()
     fun imageModelDefault() = policy.imageModelDefault()
 
+    /** @deprecated Use [multimodalModels] instead. */
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     fun visionLanguageModels() = policy.visionLanguageModels()
+    /** @deprecated Use [multimodalModelDefault] instead. */
+    @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
     fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
 
     fun modelIds() = (
@@ -50,8 +54,7 @@ object PromptFxModels {
             embeddingModels().map { it.modelId } +
             chatModels().map { it.modelId } +
             multimodalModels().map { it.modelId } +
-            imageModels().map { it.modelId } +
-            visionLanguageModels().map { it.modelId }
+            imageModels().map { it.modelId }
         ).toSet()
 
 }

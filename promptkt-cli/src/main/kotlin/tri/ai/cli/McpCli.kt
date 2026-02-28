@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@
  */
 package tri.ai.cli
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
@@ -28,11 +32,14 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextPlugin
-import tri.ai.mcp.LocalMcpServer
-import tri.ai.mcp.McpServerAdapter
-import tri.ai.mcp.McpServerException
-import tri.ai.mcp.RemoteMcpServer
-import tri.ai.mcp.StdioMcpServer
+import tri.ai.mcp.McpProvider
+import tri.ai.mcp.McpProviderEmbedded
+import tri.ai.mcp.McpException
+import tri.ai.mcp.McpProviderHttp
+import tri.ai.mcp.McpProviderRegistry
+import tri.ai.mcp.stdio.McpServerStdio
+import tri.ai.mcp.tool.McpContent
+import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.prompt.PromptLibrary
 import tri.util.ANSI_BOLD
@@ -40,21 +47,37 @@ import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    McpCli().main(args)
-
 /**
- * Command-line interface for interacting with MCP (Model Context Protocol) prompt servers.
- * Supports both local and remote MCP servers.
+ * Command-line interface for interacting with MCP (Model Context Protocol) servers.
+ * Supports both embedded and remote MCP providers.
  */
-class McpCli : CliktCommand(
-    name = "mcp-prompt",
-    help = "Interface to MCP prompt servers - list, fill, and execute prompts, or start a local server"
-) {
-    private val serverUrl by option("--server", "-s", help = "MCP server URL (use 'local' for local server)")
-        .default("local")
-    private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for local server only)")
-    private val verbose by option("--verbose", "-v", help = "Verbose output").flag()
+class McpCli : CliktCommand(name = "mcp-fx") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            McpCli().main(args)
+        }
+    }
+
+    private val serverUrl by option("--server", "-s", help = "MCP server URL or name from registry (use 'embedded' for embedded server)")
+        .default("embedded")
+    private val registryConfig by option("--registry", "-r", help = "Path to MCP server registry configuration file (JSON or YAML)")
+    private val promptLibrary by option("--prompt-library", "-p", help = "Custom prompt library file or directory path (for embedded server only)")
+    private val toolLibrary by option("--tool-library", "-t", help = "FUTURE TBD -- Custom tool library file or directory path (for embedded server only)")
+    private val verbose by option("--verbose", "-v", help = "Verbose output").flag("--no-verbose", default = false)
+    
+    private val registry: McpProviderRegistry by lazy {
+        if (registryConfig != null) {
+            if (verbose) echo("Loading MCP server registry from: $registryConfig")
+            McpProviderRegistry.loadFromFile(registryConfig!!)
+        } else {
+            McpProviderRegistry.default()
+        }
+    }
+
+    override fun help(context: Context) =
+        "Interface to MCP servers - list, fill, and execute prompts, tools, and resources, or start an embedded server"
 
     override fun run() {
         // Parent command - show help if no subcommand provided
@@ -64,16 +87,33 @@ class McpCli : CliktCommand(
     }
 
     init {
-        subcommands(ListCommand(), GetCommand(), ExecuteCommand(), ServeCommand())
+        subcommands(
+            PromptListCommand(), PromptGetCommand(), PromptExecuteCommand(),
+            ToolListCommand(), ToolExecuteCommand(),
+            ResourceListCommand(), ResourceTemplatesListCommand(), ResourceReadCommand(),
+            ServeCommand()
+        )
     }
 
-    private fun createAdapter(): McpServerAdapter {
-        return if (serverUrl == "local") {
+    //region INIT
+
+    private fun createAdapter(): McpProvider {
+        // First try to get from registry
+        val fromRegistry = registry.getProvider(serverUrl)
+        if (fromRegistry != null) {
+            if (verbose) echo("Using MCP server from registry: $serverUrl")
+            return fromRegistry
+        }
+        
+        // Fallback to backward compatibility: treat as direct server specification
+        return if (serverUrl == "embedded" || serverUrl == "local") {
+            if (verbose) echo("Using in-memory MCP server: $serverUrl")
             val library = loadPromptLibrary()
-            LocalMcpServer(library)
+            val toolLibrary = loadToolLibrary()
+            McpProviderEmbedded(library, toolLibrary)
         } else {
             if (verbose) echo("Connecting to remote MCP server: $serverUrl")
-            RemoteMcpServer(serverUrl)
+            McpProviderHttp(serverUrl)
         }
     }
 
@@ -82,16 +122,26 @@ class McpCli : CliktCommand(
             if (verbose) echo("Loading custom prompt library from: $promptLibrary")
             PromptLibrary.loadFromPath(promptLibrary!!)
         } else {
-            if (verbose) echo("Using default local MCP server with PromptLibrary")
-            PromptLibrary.INSTANCE
+            if (verbose) echo("Using default embedded MCP server with PromptLibrary")
+            PromptLibrary().apply {
+                PromptLibrary.INSTANCE
+                    .list { it.category?.startsWith("research") == true }
+                    .forEach { addPrompt(it) }
+            }
         }
     }
 
+    private fun loadToolLibrary() = McpToolLibraryStarter()
+
+    //endregion
+
+    //region PROMPTS
+
     /** List all available prompts. */
-    inner class ListCommand : CliktCommand(
-        name = "list",
-        help = "List all available prompts from the MCP server"
-    ) {
+    inner class PromptListCommand : CliktCommand(name = "prompts-list") {
+        override fun help(context: Context) =
+            "List all available prompts in the MCP server, with details on arguments and descriptions"
+
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
             try {
@@ -122,7 +172,7 @@ class McpCli : CliktCommand(
                     }
                     echo("-".repeat(30))
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -132,12 +182,12 @@ class McpCli : CliktCommand(
     }
 
     /** Get a filled prompt with arguments. */
-    inner class GetCommand : CliktCommand(
-        name = "get",
-        help = "Get a prompt filled with arguments"
-    ) {
+    inner class PromptGetCommand : CliktCommand(name = "prompts-get") {
         private val promptName by argument(help = "Name or ID of the prompt to get")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Get a prompt filled with arguments. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
 
         override fun run() = runBlocking {
             val adapter = this@McpCli.createAdapter()
@@ -167,7 +217,7 @@ class McpCli : CliktCommand(
                         }
                     }
                 }
-            } catch (e: McpServerException) {
+            } catch (e: McpException) {
                 echo("Error: ${e.message}", err = true)
                 exitProcess(1)
             } finally {
@@ -177,14 +227,14 @@ class McpCli : CliktCommand(
     }
 
     /** Execute a prompt (fill and then potentially run with LLM). */
-    inner class ExecuteCommand : CliktCommand(
-        name = "execute", 
-        help = "Execute a prompt - fill it with arguments and display the result after calling an LLM"
-    ) {
+    inner class PromptExecuteCommand : CliktCommand(name = "prompts-execute") {
         private val model by option("--model", "-m", help = "Chat model or LLM to use (default $GPT35_TURBO_ID)")
             .default(GPT35_TURBO_ID)
         private val promptName by argument(help = "Name or ID of the prompt to execute")
         private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Execute a prompt - fill it with arguments and display the result after calling an LLM. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
 
         override fun run() {
             runBlocking {
@@ -228,7 +278,7 @@ class McpCli : CliktCommand(
                     val model = try {
                         TextPlugin.multimodalModel(model)
                     } catch (x: NoSuchElementException) {
-                        throw McpServerException(
+                        throw McpException(
                             "Model '$model' not found. Available models: ${
                                 TextPlugin.chatModels().joinToString { it.modelId }
                             }", x
@@ -236,7 +286,6 @@ class McpCli : CliktCommand(
                     }
 
                     val completed = model.chat(filledPrompt.messages)
-
                     if (this@McpCli.verbose) {
                         echo("=".repeat(50))
                         echo("Response from model '${model.modelId}':")
@@ -263,7 +312,7 @@ class McpCli : CliktCommand(
                     }
 
                     model.close()
-                } catch (e: McpServerException) {
+                } catch (e: McpException) {
                     echo("Error: ${e.message}", err = true)
                     exitProcess(1)
                 } finally {
@@ -273,15 +322,273 @@ class McpCli : CliktCommand(
         }
     }
 
+    //endregion
+
+    //region TOOLS
+
+    /** List all available tools. */
+    inner class ToolListCommand : CliktCommand(name = "tools-list") {
+        override fun help(context: Context) =
+            "List all available tools in the MCP server, with details on input/output schemas and descriptions"
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val tools = adapter.listTools()
+
+                if (tools.isEmpty()) {
+                    echo("No tools found.")
+                    return@runBlocking
+                }
+
+                echo()
+                echo("Available tools on $adapter:")
+                echo("=".repeat(50))
+
+                tools.forEach { tool ->
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${tool.name}")
+                    echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${tool.description}$ANSI_RESET")
+                    this@McpCli.printSchema(tool.inputSchema, "Input parameters")
+                    this@McpCli.printSchema(tool.outputSchema, "Output properties")
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    private fun printSchema(schema: JsonNode?, label: String) {
+        if (schema != null && schema is ObjectNode) {
+            val properties = schema.get("properties") as? ObjectNode
+            val required = schema.get("required")?.mapNotNull { it.asText() }?.toSet() ?: emptySet()
+            if (properties != null) {
+                echo("${ANSI_BOLD}$label$ANSI_RESET:")
+                properties.fields().forEach { (propName, propSchema) ->
+                    val propDesc = propSchema.get("description")?.asText() ?: "No description"
+                    val isRequired = if (required.contains(propName)) " (required)" else " (optional)"
+                    echo("  - ${propName}$isRequired: $ANSI_GRAY${propDesc}$ANSI_RESET")
+                }
+            }
+        }
+    }
+
+    /** Execute a tool with input. */
+    inner class ToolExecuteCommand : CliktCommand(name = "tools-execute") {
+        private val toolName by argument(help = "Name or ID of the tool to execute")
+        private val arguments by argument(help = "Arguments in key=value format").multiple()
+
+        override fun help(context: Context) =
+            "Execute a tool with input and display the result. Arguments should be provided in key=value format, e.g. 'arg1=value1 arg2=value2'"
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val args = this@McpCli.parseArguments(arguments)
+                if (this@McpCli.verbose) {
+                    echo("Executing tool: $toolName")
+                    if (args.isNotEmpty()) {
+                        echo("With arguments: ${args.entries.joinToString { "${it.key}=${it.value}" }}")
+                    }
+                }
+                val tool = adapter.getTool(toolName)
+                if (tool == null) {
+                    throw McpException("Tool with name '$toolName' not found.")
+                }
+
+                val result = adapter.callTool(toolName, args)
+                if (this@McpCli.verbose) {
+                    echo("=".repeat(50))
+                    echo("Response from tool ${toolName}:")
+                }
+                if (result.isError == true) {
+                    throw McpException("Tool execution error: ${result.errorMessage()}")
+                }
+                if (this@McpCli.verbose && result.metadata != null) {
+                    echo("Response Metadata: ${result.metadata}")
+                }
+
+                if (result.content.isEmpty()) {
+                    echo("No output received from the tool.")
+                } else {
+                    if (this@McpCli.verbose)
+                        echo("Tool Output:")
+                    val output = result.content
+                    output.forEach { content ->
+                        when (content) {
+                            is McpContent.Text -> echo(content.text)
+                            is McpContent.Image -> echo("Image (MIME: ${content.mimeType}, base64 length: ${content.data.length})")
+                            is McpContent.Audio -> echo("Audio (MIME: ${content.mimeType}, base64 length: ${content.data.length})")
+                            is McpContent.ResourceLink -> {
+                                echo("Resource Link:")
+                                echo("  URI: ${content.uri}")
+                                echo("  Name: ${content.name}")
+                                if (content.title != null) echo("  Title: ${content.title}")
+                                if (content.description != null) echo("  Description: ${content.description}")
+                                if (content.mimeType != null) echo("  MIME Type: ${content.mimeType}")
+                            }
+                            is McpContent.Resource -> {
+                                echo("Embedded Resource:")
+                                echo("  URI: ${content.uri}")
+                                echo("  Text: ${content.text}")
+                                if (content.mimeType != null) echo("  MIME Type: ${content.mimeType}")
+                            }
+                        }
+                    }
+                }
+            } catch (e: McpException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    //endregion
+
+    //region RESOURCES
+
+    /** List all available resources. */
+    inner class ResourceListCommand : CliktCommand(name = "resources-list") {
+        override fun help(context: Context) =
+            "List all available resources in the MCP server, with details on URI, name, description, and MIME type"
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val resources = adapter.listResources()
+
+                if (resources.isEmpty()) {
+                    echo("No resources found.")
+                    return@runBlocking
+                }
+
+                echo()
+                echo("Available resources on $adapter:")
+                echo("=".repeat(50))
+
+                resources.forEach { resource ->
+                    echo("${ANSI_BOLD}URI$ANSI_RESET: ${resource.uri}")
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${resource.name}")
+                    if (resource.description != null) {
+                        echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${resource.description}$ANSI_RESET")
+                    }
+                    if (resource.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${resource.mimeType}")
+                    }
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    /** List all available resource templates. */
+    inner class ResourceTemplatesListCommand : CliktCommand(name = "resources-templates-list") {
+        override fun help(context: Context) =
+            "List all available resource templates in the MCP server, with details on URI template, name, description, and MIME type"
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                val templates = adapter.listResourceTemplates()
+
+                if (templates.isEmpty()) {
+                    echo("No resource templates found.")
+                    return@runBlocking
+                }
+
+                echo()
+                echo("Available resource templates on $adapter:")
+                echo("=".repeat(50))
+
+                templates.forEach { template ->
+                    echo("${ANSI_BOLD}URI Template$ANSI_RESET: ${template.uriTemplate}")
+                    echo("${ANSI_BOLD}Name$ANSI_RESET: ${template.name}")
+                    if (template.description != null) {
+                        echo("${ANSI_BOLD}Description$ANSI_RESET: $ANSI_GRAY${template.description}$ANSI_RESET")
+                    }
+                    if (template.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${template.mimeType}")
+                    }
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    /** Read a resource by URI. */
+    inner class ResourceReadCommand : CliktCommand(name = "resources-read") {
+        private val uri by argument(help = "URI of the resource to read")
+
+        override fun help(context: Context) =
+            "Read a resource by URI and display its contents. The output will include the resource URI, MIME type (if available), and the content (text or binary as base64)."
+
+        override fun run() = runBlocking {
+            val adapter = this@McpCli.createAdapter()
+            try {
+                if (this@McpCli.verbose) {
+                    echo("Reading resource: $uri")
+                }
+
+                val response = adapter.readResource(uri)
+
+                echo()
+                echo("Resource contents:")
+                echo("=".repeat(50))
+
+                response.contents.forEach { content ->
+                    echo("${ANSI_BOLD}URI$ANSI_RESET: ${content.uri}")
+                    if (content.mimeType != null) {
+                        echo("${ANSI_BOLD}MIME Type$ANSI_RESET: ${content.mimeType}")
+                    }
+                    if (content.text != null) {
+                        echo("${ANSI_BOLD}Text Content$ANSI_RESET:")
+                        echo(content.text)
+                    }
+                    content.blob?.let { blob ->
+                        echo("${ANSI_BOLD}Binary Content$ANSI_RESET: (base64 encoded, ${blob.length} characters)")
+                        if (this@McpCli.verbose) {
+                            echo(blob)
+                        }
+                    }
+                    echo("-".repeat(30))
+                }
+            } catch (e: McpException) {
+                echo("Error: ${e.message}", err = true)
+                exitProcess(1)
+            } finally {
+                adapter.close()
+            }
+        }
+    }
+
+    //endregion
+
     /** Starts an MCP server on stdio. */
-    inner class ServeCommand : CliktCommand(
-        name = "start",
-        help = "Start an MCP server on stdio, with locally provided prompts"
-    ) {
+    inner class ServeCommand : CliktCommand(name = "start") {
+        override fun help(context: Context) =
+            "Start an MCP server on stdio. This will create an embedded MCP provider with the default prompt library and tool library, and listen for requests on standard input/output. This is useful for testing or as a local adapter for other tools."
+
         override fun run() {
             runBlocking {
-                val library = this@McpCli.loadPromptLibrary()
-                StdioMcpServer(library).startServer(System.`in`, System.out)
+                val prompts = this@McpCli.loadPromptLibrary()
+                val tools = this@McpCli.loadToolLibrary()
+                val locServer = McpProviderEmbedded(prompts, tools)
+                McpServerStdio(locServer).startServer(System.`in`, System.out)
             }
         }
     }

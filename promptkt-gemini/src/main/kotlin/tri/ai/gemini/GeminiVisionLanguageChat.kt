@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,15 @@
  */
 package tri.ai.gemini
 
-import tri.ai.core.TextChatMessage
 import tri.ai.core.VisionLanguageChat
 import tri.ai.core.VisionLanguageChatMessage
-import tri.ai.gemini.GeminiModelIndex.GEMINI_PRO_VISION
+import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 import tri.ai.gemini.GeminiTextChat.Companion.trace
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with Gemini models. */
-class GeminiVisionLanguageChat(override val modelId: String = GEMINI_PRO_VISION, val client: GeminiClient = GeminiClient.INSTANCE) :
+class GeminiVisionLanguageChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     VisionLanguageChat {
 
     override fun toString() = "$modelId (Gemini)"

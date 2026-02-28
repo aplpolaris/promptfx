@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ fun MultimodalChat.testChat_Simple() = runTest {
     val response = chat(request)
     val responseText = response.firstValue.textContent()
     println(responseText)
+    assertTrue(responseText.contains("5") || responseText.contains("five"), "Response should mention '5' or 'five'")
 }
 
 fun MultimodalChat.testChat_Multiple(responseCheck: (List<String>) -> Unit) = runTest {
@@ -67,6 +68,7 @@ fun MultimodalChat.testChat_Image() = runTest {
     val response = chat(request)
     val responseText = response.firstValue.textContent()
     println(responseText)
+    assertTrue(responseText.contains("3") || responseText.contains("three"), "Response should mention '3' or 'three'")
 }
 
 fun MultimodalChat.testChat_Tools() = runTest {
@@ -81,7 +83,7 @@ fun MultimodalChat.testChat_Tools() = runTest {
     // in the first call, the AI will provide a response indicating what tool to use
     val toolCallMessage = chat(query, params).firstValue.multimodalMessage!!
     assertEquals(MChatRole.Assistant, toolCallMessage.role)
-    assertTrue(toolCallMessage.content.isNullOrEmpty())
+    assertTrue(toolCallMessage.content.isNullOrEmpty() || toolCallMessage.content!!.first().partType == MPartType.TOOL_CALL)
 
     val calls = toolCallMessage.toolCalls!!
     assertEquals(1, calls.size)

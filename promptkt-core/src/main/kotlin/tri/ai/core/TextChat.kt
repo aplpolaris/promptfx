@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,15 @@ interface TextChat {
         numResponses: Int? = null,
         requestJson: Boolean? = null
     ): AiPromptTrace
+
+    companion object {
+        val UNAVAILABLE = object : TextChat {
+            override val modelId = "Unavailable"
+            override fun toString() = modelId
+            override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
+                AiPromptTrace.error(modelInfo = null, message = "Text chat model is unavailable.")
+        }
+    }
 
 }
 

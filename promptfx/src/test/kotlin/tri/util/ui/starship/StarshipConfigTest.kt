@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package tri.util.ui.starship
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
@@ -39,6 +40,7 @@ class StarshipConfigTest {
     }
 
     @Test
+    @Tag("openai")
     fun testRandomQuestion() {
         val config = StarshipConfig.readDefaultYaml()
         val questioner = StarshipExecutableQuestionGenerator(config.question, OpenAiPlugin().chatModels().first())
@@ -51,9 +53,9 @@ class StarshipConfigTest {
     fun testExecute() {
         val config = StarshipConfig.readDefaultYaml()
         val chat = OpenAiPlugin().chatModels().first()
-        val registry = ExecutableRegistry.Companion.create(
+        val registry = ExecutableRegistry.create(
             listOf(StarshipExecutableQuestionGenerator(config.question, chat)) +
-                    PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
+                    PromptChatRegistry(PromptLibrary.INSTANCE, chat).list()
         )
 
         runBlocking {

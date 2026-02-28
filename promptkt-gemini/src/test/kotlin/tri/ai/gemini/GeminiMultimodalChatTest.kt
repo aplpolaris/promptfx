@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,19 @@
  */
 package tri.ai.gemini
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.*
+import tri.util.json.jsonMapper
 
 @Tag("gemini")
 class GeminiMultimodalChatTest {
 
     val client = GeminiClient.INSTANCE
-    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_15_FLASH, client)
+    val chat = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH_LITE, client)
+    val chat2 = GeminiMultimodalChat(GeminiModelIndex.GEMINI_25_FLASH, client)
 
     @Test
     @Tag("gemini")
@@ -59,8 +62,9 @@ class GeminiMultimodalChatTest {
     @Test
     @Tag("gemini")
     fun testChat_Tools() {
-        // note - Gemini does not always get this test right (sometimes refuses to use the tool)
-        chat.testChat_Tools()
+        // note - Gemini does not always get this test right (sometimes refuses to use the tool, or final response is empty)
+        // seem to be inconsistencies in behavior between GEMINI_25_FLASH_LITE and GEMINI_25_FLASH
+        chat2.testChat_Tools()
     }
 
 }

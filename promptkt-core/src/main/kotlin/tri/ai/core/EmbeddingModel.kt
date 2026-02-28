@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,14 @@ interface EmbeddingModel {
     suspend fun calculateEmbedding(vararg text: String, outputDimensionality: Int? = null): List<List<Double>> =
         calculateEmbedding(listOf(*text), outputDimensionality)
 
+    companion object {
+        val UNAVAILABLE = object : EmbeddingModel {
+            override val modelId = "Unavailable"
+            override fun toString() = modelId
+            override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
+                text.map { listOf<Double>(0.0) }
+        }
+    }
 }
 
 /** Precision to use when storing embeddings. */

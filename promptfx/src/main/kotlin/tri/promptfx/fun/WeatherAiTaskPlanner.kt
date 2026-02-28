@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.openai.jsonMapper
+import tri.util.json.jsonMapper
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo

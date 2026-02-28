@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@
  * #L%
  */
 import tri.ai.core.TextPlugin;
-import tri.ai.openai.OpenAiPlugin;
-import tri.ai.openai.api.OpenAiApiPlugin;
 
 module tri.promptkt.core {
     requires transitive kotlin.stdlib;
@@ -36,38 +34,23 @@ module tri.promptkt.core {
     requires transitive com.fasterxml.jackson.dataformat.yaml;
     requires transitive com.fasterxml.jackson.dataformat.csv;
 
-    requires openai.core.jvm;
-    requires openai.client.jvm;
-
-    requires okhttp3;
-    requires okio;
     requires com.github.mustachejava;
-
-    requires io.ktor.client.core;
-    requires io.ktor.client.content.negotiation;
-    requires io.ktor.http;
-    requires io.ktor.serialization;
-    requires io.ktor.serialization.kotlinx.json;
-    requires io.ktor.utils;
-    requires io.ktor.client.logging;
+    requires com.github.victools.jsonschema.generator;
+    requires com.github.victools.jsonschema.module.jackson;
 
     opens tri.ai.core to com.fasterxml.jackson.databind;
-    opens tri.ai.openai to com.fasterxml.jackson.databind;
-    opens tri.ai.openai.api to com.fasterxml.jackson.databind;
     opens tri.ai.prompt to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
+    opens tri.util.json to com.fasterxml.jackson.databind;
 
     exports tri.ai.core;
-    exports tri.ai.openai;
-    exports tri.ai.openai.api;
     exports tri.ai.prompt;
     exports tri.ai.prompt.trace;
     exports tri.ai.prompt.trace.batch;
     exports tri.util;
+    exports tri.util.json;
 
     // services (service loader API)
     uses TextPlugin;
-
-    provides TextPlugin with OpenAiPlugin, OpenAiApiPlugin;
 }

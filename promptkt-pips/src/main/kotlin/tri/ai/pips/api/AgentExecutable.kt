@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.createObject
 import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
@@ -34,6 +33,10 @@ import tri.ai.core.agent.wf.WorkflowSolveStep
 import tri.ai.core.agent.wf.WorkflowSolver
 import tri.ai.core.agent.wf.WorkflowState
 import tri.ai.core.agent.wf.WorkflowTask
+import tri.util.json.PARAM_INPUT
+import tri.util.json.PARAM_RESULT
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
 
 /**
  * An agent-based executable unit in a Pips pipeline, built using plan-and-act logic with a set of tools.
@@ -75,25 +78,25 @@ class AgentExecutable(
 
 /** Converts an [Executable] to a [WorkflowSolver]. */
 private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
-    name, 
-    description, 
-    mapOf("input" to "Input for $name"), 
-    mapOf("result" to "Result from $name")
+    name,
+    description,
+    version,
+    createJsonSchema(PARAM_INPUT to "Input for $name"),
+    createJsonSchema(PARAM_RESULT to "Result from $name")
 ) {
     override suspend fun solve(
         state: WorkflowState,
         task: WorkflowTask
     ): WorkflowSolveStep {
         val t0 = System.currentTimeMillis()
-        val input = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
-            listOf(task.name)
-        }.joinToString("\n")
-        
-        val inputJson = createObject("input", input)
+        val input = state.aggregateInputsAsStringFor(name, task.name)
+
+        val inputJson = createObject(PARAM_INPUT, input)
         val resultJson = this@toSolver.execute(inputJson, context)
-        val result = resultJson.get("result")?.asText() ?: resultJson.toString()
+        val result = resultJson.get(PARAM_RESULT)?.asText() ?: resultJson.toString()
+        val resultJsonFinal = createObject(PARAM_RESULT, result)
         
         val tt = System.currentTimeMillis() - t0
-        return solveStep(task, inputs(input), outputs(result), tt, true)
+        return WorkflowSolveStep(task, this, inputJson, resultJsonFinal, tt, true)
     }
 }

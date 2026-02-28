@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,23 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.prompt.fill
+import tri.util.json.createJsonSchema
+import tri.util.json.createObject
 
 /** A solver used to aggregate/finalize a response for an original user question. */
 class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
     "Aggregator",
     "Combines results from multiple tasks to produce a final answer.",
-    mapOf(REQUEST to "User's initial request", INTERMEDIATE_RESULTS to "Workflow's intermediate results"),
-    mapOf(RESULT to "Final aggregated result")
+    "",
+    createJsonSchema(REQUEST to "User's initial request", INTERMEDIATE_RESULTS to "Workflow's intermediate results"),
+    createJsonSchema(RESULT to "Final aggregated result")
 ) {
     override suspend fun solve(
         state: WorkflowState,
         task: WorkflowTask
     ): WorkflowSolveStep {
         val userRequest = state.request.request
-        val inputs = state.aggregateInputsFor(name).values.mapNotNull { it?.value }.ifEmpty {
-            listOf(task.name)
-        }
-        val inputData = inputs.joinToString("\n")
+        val inputData = state.aggregateInputsAsStringFor(name, task.name)
         val prompt = PROMPTS.get(AGGREGATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
             INPUTS_PARAM to inputData
@@ -56,10 +56,11 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
         // find answer between <<< and >>> if they exist
         val quotedResult = response.firstValue.textContent().findCode()
 
-        return solveStep(
+        return WorkflowSolveStep(
             task,
-            inputs(userRequest, inputData),
-            outputs(quotedResult),
+            this,
+            createObject(REQUEST to userRequest, INTERMEDIATE_RESULTS to inputData),
+            createObject(RESULT to quotedResult),
             response.exec.responseTimeMillisTotal ?: 0L,
             true
         )

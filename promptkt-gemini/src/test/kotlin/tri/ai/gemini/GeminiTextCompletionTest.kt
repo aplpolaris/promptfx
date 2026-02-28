@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MChatVariation.Companion.temp
-import tri.ai.gemini.GeminiModelIndex.GEMINI_15_FLASH
+import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
 
 class GeminiTextCompletionTest {
 
-    val client = GeminiTextCompletion(GEMINI_15_FLASH)
+    val client = GeminiTextCompletion(GEMINI_25_FLASH_LITE)
 
     @Test
     @Tag("gemini")
@@ -51,10 +51,10 @@ class GeminiTextCompletionTest {
             val res = client.complete("Translate Hello, world! into French.",
                 variation = temp(0.5),
                 tokens = 100,
-                numResponses = 2
+                numResponses = 3
             )
-            assertEquals(2, res.output!!.outputs.size)
             println(res)
+            assertEquals(3, res.output!!.outputs.size)
         }
     }
 

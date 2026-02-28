@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ import java.net.URI
 
 /**
  * An interface for completing vision-language chats.
+ * @deprecated Use [MultimodalChat] instead, which provides equivalent functionality with better error handling and broader modality support.
  */
+@Deprecated("Use MultimodalChat instead", ReplaceWith("MultimodalChat"))
 interface VisionLanguageChat {
 
     val modelId: String
@@ -40,5 +42,9 @@ interface VisionLanguageChat {
 
 }
 
-/** A single message in a vision-language chat. */
+/**
+ * A single message in a vision-language chat.
+ * @deprecated Use [MultimodalChatMessage] instead.
+ */
+@Deprecated("Use MultimodalChatMessage instead", ReplaceWith("MultimodalChatMessage"))
 data class VisionLanguageChatMessage(val role: MChatRole, val content: String, val image: URI)

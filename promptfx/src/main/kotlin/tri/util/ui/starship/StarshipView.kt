@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,11 +296,6 @@ internal fun createWidget(widget: StarshipConfigWidget, context: StarshipWidgetL
     } else {
         val (buttonText, buttonAction) = context.results.actionFor(buttonEntry.key, buttonEntry.value)
         AnimatingTextWidget(context, widget, observable, isDynamic, buttonText, buttonAction).textFlow
-    }
-    if (isDynamic) {
-        val nonEmptyBinding = observable.booleanBinding { !it.isNullOrBlank() }
-        widget.root.managedWhen(nonEmptyBinding)
-        widget.root.visibleWhen(nonEmptyBinding)
     }
     return widget
 }

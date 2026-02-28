@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import tri.ai.core.TextChat
 import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingStrategy
+import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiPipelineResult
 import tri.ai.text.chunks.SmartTextChunker
@@ -34,7 +35,7 @@ import tri.promptfx.prompts.PromptTraceHistoryModel
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiPlugin = TextPlugin.defaultPlugin
+    val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
 
     val completionEngine: SimpleObjectProperty<TextCompletion> =
         SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
@@ -44,6 +45,7 @@ class PromptFxController : Controller() {
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
     val promptHistory = find<PromptTraceHistoryModel>()
+    val mcpController = find<PromptFxMcpController>()
 
     val tokensUsed = SimpleIntegerProperty(0)
     val audioUsed = SimpleIntegerProperty(0)

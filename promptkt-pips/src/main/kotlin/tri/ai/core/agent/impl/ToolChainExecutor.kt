@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ import tri.ai.core.agent.AgentChatEvent
 import tri.ai.core.agent.AgentChatResponse
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentToolChatSupport
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.prompt.fill
+import tri.util.json.createObject
+import tri.util.json.jsonMapper
 
 /**
  * Executes a user prompt using a set of tools using a planning operation.
@@ -51,7 +51,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val iterationLimit = 5
     val completionTokens = 2000
 
-    private fun createScratchpad() = ExecContext().apply { put("steps", MAPPER.createArrayNode()) }
+    private fun createScratchpad() = ExecContext().apply { put("steps", jsonMapper.createArrayNode()) }
     private fun ExecContext.steps() = vars["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 

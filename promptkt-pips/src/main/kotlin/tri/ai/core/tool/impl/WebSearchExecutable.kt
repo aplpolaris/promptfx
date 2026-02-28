@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.inputText
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.JsonToolExecutable
+import tri.util.json.inputText
+import tri.util.json.jsonMapper
 import java.net.URLDecoder
 
 /**
@@ -75,17 +75,17 @@ class WebSearchExecutable : JsonToolExecutable(
             else -> input.inputText
         } ?: throw IllegalArgumentException("Query parameter missing or malformed.")
 
-        val maxResults = input.get("max_results").asInt(5)
+        val maxResults = input.get("max_results")?.asInt(5) ?: 5
         val clampedMaxResults = maxResults.coerceIn(1, 10)
 
         return try {
             val searchResults = performDuckDuckGoSearch(query, clampedMaxResults)
-            MAPPER.writeValueAsString(mapOf(
+            jsonMapper.writeValueAsString(mapOf(
                 "query" to query,
                 "results" to searchResults
             ))
         } catch (e: Exception) {
-            MAPPER.writeValueAsString(mapOf(
+            jsonMapper.writeValueAsString(mapOf(
                 "query" to query,
                 "error" to "Search failed: ${e.message}",
                 "results" to emptyList<SearchResult>()

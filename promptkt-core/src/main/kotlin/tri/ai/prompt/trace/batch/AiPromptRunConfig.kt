@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package tri.ai.prompt.trace.batch
 
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.PromptInfo.Companion.filled

@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import tri.ai.core.agent.MAPPER
-import tri.ai.core.agent.createObject
-import tri.ai.core.agent.inputText
+import tri.util.json.INTEGER_INPUT_SCHEMA
+import tri.util.json.STRING_INPUT_SCHEMA
+import tri.util.json.createObject
+import tri.util.json.inputText
 
 class JsonToolExecutableTest {
 

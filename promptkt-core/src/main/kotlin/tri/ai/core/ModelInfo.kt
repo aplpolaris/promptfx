@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,6 +91,7 @@ enum class ModelType {
     SPEECH_TO_TEXT,
     AUDIO_CHAT,
     REALTIME_CHAT,
+    RESPONSES,
     MODERATION,
     QUESTION_ANSWER,
     UNKNOWN

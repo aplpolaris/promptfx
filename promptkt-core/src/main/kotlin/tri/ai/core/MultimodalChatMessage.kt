@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,11 @@ data class MultimodalChatMessage(
         /** Chat with just a user message. */
         fun user(text: String) = text(MChatRole.User, text)
         /** Chat message with just text. */
-        fun text(role: MChatRole, text: String) = MultimodalChatMessage(
-            role,
-            listOf(MChatMessagePart(text = text))
-        )
+        fun text(role: MChatRole, text: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(text = text)))
+        /** Chat message with just an image. */
+        fun imageUrl(role: MChatRole = MChatRole.Assistant, imageUrl: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(MPartType.IMAGE, inlineData = imageUrl)))
+        /** Chat message with just an image (base 64). */
+        fun imageBase64(role: MChatRole = MChatRole.Assistant, imageBase64: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(MPartType.IMAGE, inlineData = imageBase64)))
         /** Chat message with a tool result. */
         fun tool(result: String, toolId: String) = MultimodalChatMessage(
             MChatRole.Tool,

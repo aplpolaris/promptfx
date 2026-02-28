@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@ class GeminiAiPlugin : TextPlugin {
 
     val client = GeminiClient()
 
+    override fun isApiConfigured() = client.settings.isConfigured()
+
     override fun modelSource() = "Gemini"
 
-    override fun modelInfo() = if (client.isConfigured())
+    override fun modelInfo() = if (client.settings.isConfigured())
         runBlocking {
             try {
                 client.listModels().models.map { it.toCoreModelInfo() }
@@ -41,7 +43,7 @@ class GeminiAiPlugin : TextPlugin {
                 emptyList()
             }
         }
-    else listOf()
+    else emptyList()
 
     override fun embeddingModels() = models(GeminiModelIndex.embeddingModels()) { GeminiEmbeddingModel(it, client) }
 
@@ -66,7 +68,7 @@ class GeminiAiPlugin : TextPlugin {
     }
 
     private fun <T> models(ids: List<String>, factory: (String) -> T): List<T> =
-        if (!client.isConfigured()) listOf() else ids.map(factory)
+        if (!client.settings.isConfigured()) listOf() else ids.map(factory)
 
     //region GETTING MODEL INFO (WITH HEURISTICS)
 

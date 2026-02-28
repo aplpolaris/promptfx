@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package tri.ai.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.validate
 import com.github.ajalt.clikt.parameters.options.flag
@@ -34,11 +35,16 @@ import tri.util.*
 import java.io.File
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) =
-    PromptBatchRunner().main(args)
-
 /** Command-line runner for executing a batch of prompt runs. */
 class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            PromptBatchRunner().main(args)
+        }
+    }
+
     private val inputFile by argument(help = "input file")
         .file(mustExist = true, canBeDir = false)
         .validate { checkExtension(it, "json", "yaml", "yml") }

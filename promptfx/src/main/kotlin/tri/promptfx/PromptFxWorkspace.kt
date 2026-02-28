@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptfx
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import tri.promptfx.api.*
 import tri.promptfx.docs.DocumentQaView
 import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.docs.TextManagerView
+import tri.promptfx.mcp.*
 import tri.promptfx.multimodal.AudioSpeechView
 import tri.promptfx.multimodal.AudioView
 import tri.promptfx.prompts.PromptTemplateView
@@ -109,16 +110,14 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.fireOrange, listOf())) {
+            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.steelBlue, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
-                separator { }
-                label("Text Completion API")
-                hyperlinkview<CompletionsView>("API", "Completions")
                 separator { }
                 label("Chat APIs")
                 hyperlinkview<ChatViewBasic>("API", "Chat")
                 hyperlinkview<ChatViewAdvanced>("API", "Chat (Advanced)")
+                hyperlinkview<CompletionsView>("API", "Completions")
                 separator { }
                 label("Multimodal APIs")
                 hyperlinkview<AudioView>("API", "Audio")
@@ -130,21 +129,12 @@ class PromptFxWorkspace : Workspace() {
 //                hyperlinkview<FineTuningApiView>("API", "Fine-tuning")
 //                hyperlinkview<FilesView>("API", "Files")
                 hyperlinkview<ModerationsView>("API", "Moderations")
-                separator { }
-                label("Documentation/Links")
-                browsehyperlink("PromptFx Wiki", "https://github.com/aplpolaris/promptfx/wiki")
-                separator { }
-                browsehyperlink("OpenAI API Reference", "https://platform.openai.com/docs/api-reference")
-                browsehyperlink("OpenAI API Playground", "https://platform.openai.com/playground")
-                browsehyperlink("OpenAI API Pricing", "https://openai.com/pricing")
-                browsehyperlink("OpenAI Blog", "https://openai.com/blog")
-                separator { }
-                browsehyperlink("Gemini API Reference", "https://ai.google.dev/api/generate-content")
-                separator { }
-                browsehyperlink("Mustache Template Docs", "https://mustache.github.io/mustache.5.html")
             }
             PromptFxWorkspaceModel.instance.viewGroups.forEach {
-                group(it)
+                // Skip API category as it's manually configured above
+                if (it.category != "API") {
+                    group(it)
+                }
             }
         }
     }
@@ -345,6 +335,8 @@ class PromptFxWorkspace : Workspace() {
                     hyperlinkview(it.category, it)
                 }
             }
+            // Automatically load view links for this category
+            loadViewLinks(model.category)
         }.apply {
             if (children.isEmpty()) {
                 removeFromParent()
@@ -390,6 +382,26 @@ class PromptFxWorkspace : Workspace() {
     private fun EventTarget.browsehyperlink(label: String, url: String) {
         hyperlink(label, graphic = FontAwesomeIcon.EXTERNAL_LINK.graphic) {
             action { hostServices.showDocument(url) }
+        }
+    }
+
+    private fun EventTarget.loadViewLinks(category: String) {
+        val categoryLinks = ViewLinksConfig.links[category] ?: return
+        if (categoryLinks.isEmpty()) return
+        
+        separator { }
+        label("Documentation/Links")
+        
+        categoryLinks.forEachIndexed { index, linkGroup ->
+            if (linkGroup.links.isNotEmpty()) {
+                // Add separator between link groups (but not before the very first group)
+                if (index > 0) {
+                    separator { }
+                }
+                linkGroup.links.forEach { link ->
+                    browsehyperlink(link.label, link.url)
+                }
+            }
         }
     }
 

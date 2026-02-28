@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,15 @@ interface TextCompletion {
         stop: List<String>? = null,
         numResponses: Int? = 1
     ): AiPromptTrace
+
+    companion object {
+        val UNAVAILABLE = object : TextCompletion {
+            override val modelId = "Unavailable"
+            override fun toString() = modelId
+            override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
+                AiPromptTrace.error(modelInfo = null, message = "Text completion model is unavailable.")
+        }
+    }
 
 }
 

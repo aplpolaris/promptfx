@@ -2,7 +2,7 @@
  * #%L
  * tri.promptfx:promptkt
  * %%
- * Copyright (C) 2023 - 2025 Johns Hopkins University Applied Physics Laboratory
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.convertValue
-import tri.ai.core.agent.MAPPER
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
@@ -39,6 +38,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
+import tri.util.json.jsonMapper
 
 /**
  * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor].
@@ -99,7 +99,7 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
         if (node.isTextual)
             info<PPlanExecutor>("$ANSI_GRAY  $label: ${node.asText()}$ANSI_RESET")
         else
-            log(label, MAPPER.convertValue<Map<String, Any?>>(node))
+            log(label, jsonMapper.convertValue<Map<String, Any?>>(node))
     }
 
     private fun log(label: String, node: Map<String, Any?>) {

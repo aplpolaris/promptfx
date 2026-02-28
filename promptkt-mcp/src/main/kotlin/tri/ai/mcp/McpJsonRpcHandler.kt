@@ -1,0 +1,230 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.mcp
+
+import kotlinx.serialization.json.*
+import tri.ai.core.MChatMessagePart
+import tri.ai.core.MChatRole
+import tri.ai.mcp.JsonSerializers.toJsonElement
+import tri.ai.mcp.tool.McpToolResponse
+import java.util.concurrent.atomic.AtomicInteger
+
+/**
+ * Handles MCP-specific business logic for JSON-RPC requests.
+ * Focuses on MCP protocol implementation without JSON-RPC concerns.
+ */
+class McpJsonRpcHandler(private val provider: McpProvider) : JsonRpcHandler {
+
+    override suspend fun handleRequest(method: String?, params: JsonObject?): JsonElement? {
+        return when (method) {
+            // --- Required handshake (advertise prompts capability only) ---
+            METHOD_INITIALIZE -> handleInitialize()
+
+            // --- Prompts surfaces ---
+            METHOD_PROMPTS_LIST -> handlePromptsList()
+            METHOD_PROMPTS_GET -> handlePromptsGet(params)
+
+            // --- Optional surfaces with empty responses ---
+            METHOD_TOOLS_LIST -> handleToolsList()
+            METHOD_TOOLS_CALL -> handleToolsCall(params).toJsonElement()
+            METHOD_RESOURCES_LIST -> handleResourcesList()
+            METHOD_RESOURCES_TEMPLATES_LIST -> handleResourceTemplatesList()
+            METHOD_RESOURCES_READ -> handleResourcesRead(params)
+
+            // --- Notifications with no responses ---
+            METHOD_NOTIFICATIONS_INITIALIZED -> handleNotificationsInitialized()
+
+            // --- Graceful shutdown notification ---
+            METHOD_NOTIFICATIONS_CLOSE -> handleNotificationsClose()
+
+            // Unknown/unsupported method
+            else -> null
+        }
+    }
+
+    //region METHOD HANDLERS
+
+    private suspend fun handleInitialize(): JsonElement {
+        val capabilities = provider.getCapabilities()
+        return buildJsonObject {
+            put("protocolVersion", "2025-06-18")
+            put("capabilities", capabilities?.toJsonElement() ?: buildJsonObject { })
+            put("serverInfo", buildJsonObject {
+                put("name", "promptfx-prompts")
+                put("version", "0.1.0")
+            })
+        }
+    }
+
+    private suspend fun handlePromptsList() = buildJsonObject {
+        put("prompts", provider.listPrompts().toJsonElement())
+    }
+    private suspend fun handlePromptsGet(params: JsonObject?): JsonElement {
+        val name = params?.get("name")?.jsonPrimitive?.content
+        require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
+        val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
+        return convertPromptResponse(provider.getPrompt(name, argsMap))
+    }
+
+    private suspend fun handleToolsList() = buildJsonObject {
+        put("tools", provider.listTools().toJsonElement())
+    }
+
+    private suspend fun handleToolsCall(params: JsonObject?): McpToolResponse {
+        val name = params?.get("name")?.jsonPrimitive?.content
+        require(!name.isNullOrBlank()) { "Invalid params: 'name' is required" }
+        val argsMap = params["arguments"]?.jsonObject?.let { JsonSerializers.toStringMap(it) } ?: emptyMap()
+        return provider.callTool(name, argsMap)
+    }
+
+    private suspend fun handleResourcesList() = buildJsonObject {
+        put("resources", provider.listResources().toJsonElement())
+    }
+    private suspend fun handleResourceTemplatesList() = buildJsonObject {
+        put("resourceTemplates", provider.listResourceTemplates().toJsonElement())
+    }
+    private suspend fun handleResourcesRead(params: JsonObject?): JsonElement {
+        val uri = params?.get("uri")?.jsonPrimitive?.content
+        require(!uri.isNullOrBlank()) { "Invalid params: 'uri' is required" }
+        return provider.readResource(uri).toJsonElement()
+    }
+    private suspend fun handleNotificationsInitialized() = null
+    private suspend fun handleNotificationsClose(): JsonElement? {
+        // No response for notifications, caller should exit
+        runCatching { provider.close() }
+        return null
+    }
+
+    private fun objwithemptylist(id: String) = buildJsonObject { put(id, buildJsonArray { }) }
+
+    //endregion
+
+    companion object {
+        // RPC method name constants
+        const val METHOD_INITIALIZE = "initialize"
+        const val METHOD_PROMPTS_LIST = "prompts/list"
+        const val METHOD_PROMPTS_GET = "prompts/get"
+        const val METHOD_TOOLS_LIST = "tools/list"
+        const val METHOD_TOOLS_CALL = "tools/call"
+        const val METHOD_RESOURCES_LIST = "resources/list"
+        const val METHOD_RESOURCES_TEMPLATES_LIST = "resources/templates/list"
+        const val METHOD_RESOURCES_READ = "resources/read"
+        const val METHOD_NOTIFICATIONS_INITIALIZED = "notifications/initialized"
+        const val METHOD_NOTIFICATIONS_CLOSE = "notifications/close"
+        const val METHOD_NOTIFICATIONS_PREFIX = "notifications/"
+
+        /** Standard client parameters for MCP initialization */
+        val PROMPTFX_CLIENT_PARAMS = buildJsonObject {
+            put("protocolVersion", JsonPrimitive("2025-06-18"))
+            put("capabilities", buildJsonObject {})
+            put("clientInfo", buildJsonObject {
+                put("name", JsonPrimitive("promptfx-http-client"))
+                put("version", JsonPrimitive("0.1.0"))
+            })
+        }
+
+        fun buildJsonRpc(method: String, requestId: AtomicInteger, params: JsonElement?) = buildJsonObject {
+            put("jsonrpc", JsonPrimitive("2.0"))
+            if (!method.startsWith(METHOD_NOTIFICATIONS_PREFIX))
+                put("id", JsonPrimitive(requestId.getAndIncrement()))
+            put("method", JsonPrimitive(method))
+            if (params != null) {
+                put("params", params)
+            }
+        }
+
+        //region Response Conversion Logic
+
+        /** Convert McpPrompt to JsonElement */
+        fun convertPromptResponse(response: McpPromptResponse): JsonElement = buildJsonObject {
+            response.description?.let { put("description", it) }
+            put("messages", buildJsonArray {
+                for (msg in response.messages) {
+                    val parts = msg.content.orEmpty()
+                    when (parts.size) {
+                        0 -> addJsonObject {
+                            put("role", JsonPrimitive(msg.role.asMcpRole()))
+                            put("content", textContent(""))
+                        }
+                        1 -> addJsonObject {
+                            put("role", msg.role.asMcpRole())
+                            put("content", parts.first().toMcpContent())
+                        }
+                        else -> {
+                            parts.forEach {
+                                addJsonObject {
+                                    put("role", msg.role.asMcpRole())
+                                    put("content", it.toMcpContent())
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        }
+
+        /** Map your chat role enum to MCP's lowercase roles. Adjust as needed for your enum. */
+        private fun MChatRole.asMcpRole(): String = when (name.lowercase()) {
+            "user" -> "user"
+            "assistant" -> "assistant"
+            // If you have "system" or others, default to "user" for prompts.
+            else -> "user"
+        }
+
+        /** Convert one of your message parts to a single MCP content object. */
+        private fun MChatMessagePart.toMcpContent(): JsonObject {
+            val kind = partType.name.uppercase()
+
+            return when (kind) {
+                "TEXT" -> textContent(text.orEmpty())
+                "IMAGE" -> buildJsonObject {
+                    put("type", "image")
+                    put("data", inlineData.orEmpty())
+                    put("mimeType", "image/png")
+                }
+                "AUDIO" -> buildJsonObject {
+                    put("type", "audio")
+                    put("data", inlineData.orEmpty())
+                    put("mimeType", "audio/wav")
+                }
+
+                // You don't have a resource URI field, degrade to text so clients don't reject it.
+                "RESOURCE" -> textContent(text ?: "[resource omitted: no URI/mimeType in part]")
+
+                // If your part encodes a function/tool call, flatten it into text for prompts.
+                "FUNCTION", "TOOL", "FUNCTION_CALL" -> {
+                    val argsStr = functionArgs?.entries
+                        ?.joinToString(", ") { (k, v) -> "$k=$v" }
+                        ?.let { "($it)" } ?: ""
+                    textContent("function:${functionName ?: "unknown"}$argsStr")
+                }
+
+                else -> textContent(text ?: "[unsupported part: $kind]")
+            }
+        }
+
+        private fun textContent(s: String) = buildJsonObject {
+            put("type", "text")
+            put("text", s)
+        }
+        //endregion
+    }
+
+}
