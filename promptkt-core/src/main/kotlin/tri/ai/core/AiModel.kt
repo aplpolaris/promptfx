@@ -21,7 +21,6 @@ package tri.ai.core
 
 /**
  * Common interface for all AI model implementations, providing a model identifier and source.
- * Use [modelDisplayName] to get a human-readable display string in the format "$modelId [$modelSource]".
  */
 interface AiModel {
     /** Identifier for the model. */
@@ -29,6 +28,6 @@ interface AiModel {
     /** Source or provider of the model (e.g. "OpenAI", "Gemini"). */
     val modelSource: String
 
-    /** Returns a display string in the format "$modelId [$modelSource]", or just "$modelId" if source is empty. */
+    /** Returns a display string like "modelId [modelSource]". */
     fun modelDisplayName() = if (modelSource.isEmpty()) modelId else "$modelId [$modelSource]"
 }
