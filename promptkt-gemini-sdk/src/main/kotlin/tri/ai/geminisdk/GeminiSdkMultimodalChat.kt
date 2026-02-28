@@ -36,6 +36,8 @@ class GeminiSdkMultimodalChat(
 
     override val modelSource = "Gemini-SDK"
 
+    override fun toString() = modelDisplayName()
+
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,
         parameters: MChatParameters
@@ -81,8 +83,6 @@ class GeminiSdkMultimodalChat(
     override fun close() {
         client.close()
     }
-
-    override fun toString() = "$modelId [$modelSource]"
 
     companion object {
         fun Candidate.fromGeminiCandidate(): MultimodalChatMessage {

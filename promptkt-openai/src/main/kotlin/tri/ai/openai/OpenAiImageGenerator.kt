@@ -29,7 +29,7 @@ import java.net.URL
 class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE_DALLE2, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
     ImageGenerator {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     override suspend fun generateImage(text: String, size: ImageSize, prompt: String?, numResponses: Int?): List<URL> {
         val images = client.imageJSON(

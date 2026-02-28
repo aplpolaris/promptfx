@@ -33,7 +33,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 /** Chat completion with OpenAI models. */
 class OpenAiChat(override val modelId: String = GPT35_TURBO, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") : TextChat {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

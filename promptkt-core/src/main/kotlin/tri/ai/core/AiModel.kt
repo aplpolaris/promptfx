@@ -17,23 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.geminisdk
+package tri.ai.core
 
-import tri.ai.core.EmbeddingModel
+/**
+ * Common interface for all AI model implementations, providing a model identifier and source.
+ * Use [modelDisplayName] to get a human-readable display string in the format "$modelId [$modelSource]".
+ */
+interface AiModel {
+    /** Identifier for the model. */
+    val modelId: String
+    /** Source or provider of the model (e.g. "OpenAI", "Gemini"). */
+    val modelSource: String
 
-/** Gemini embedding model using the official SDK. */
-class GeminiSdkEmbeddingModel(
-    override val modelId: String,
-    private val client: GeminiSdkClient
-) : EmbeddingModel {
-
-    override val modelSource = "Gemini-SDK"
-
-    override fun toString() = modelDisplayName()
-
-    override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
-        client.batchEmbedContents(text, modelId, outputDimensionality).map { embedding ->
-            embedding.map { it.toDouble() }
-        }
-
+    /** Returns a display string in the format "$modelId [$modelSource]", or just "$modelId" if source is empty. */
+    fun modelDisplayName() = if (modelSource.isEmpty()) modelId else "$modelId [$modelSource]"
 }

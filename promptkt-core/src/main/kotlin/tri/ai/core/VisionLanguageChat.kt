@@ -25,10 +25,7 @@ import java.net.URI
 /**
  * An interface for completing vision-language chats.
  */
-interface VisionLanguageChat {
-
-    val modelId: String
-    val modelSource: String get() = ""
+interface VisionLanguageChat : AiModel {
 
     /** Completes user text. */
     suspend fun chat(

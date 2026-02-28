@@ -30,7 +30,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
     VisionLanguageChat {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<VisionLanguageChatMessage>,

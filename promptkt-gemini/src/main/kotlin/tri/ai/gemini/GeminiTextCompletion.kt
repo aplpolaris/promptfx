@@ -32,7 +32,8 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, 
     TextCompletion {
 
     override val modelSource = "Gemini"
-    override fun toString() = "$modelId [$modelSource]"
+
+    override fun toString() = modelDisplayName()
 
     override suspend fun complete(
         text: String,

@@ -26,7 +26,7 @@ import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 class OpenAiEmbeddingModel(override val modelId: String = EMBEDDING_ADA, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
     EmbeddingModel {
 
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Double>>()
 

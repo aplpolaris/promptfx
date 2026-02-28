@@ -27,7 +27,8 @@ class GeminiEmbeddingModel(override val modelId: String = GEMINI_EMBEDDING, val 
     EmbeddingModel {
 
     override val modelSource = "Gemini"
-    override fun toString() = "$modelId [$modelSource]"
+
+    override fun toString() = modelDisplayName()
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 

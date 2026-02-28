@@ -30,6 +30,8 @@ class GeminiSdkVisionLanguageChat(
 
     override val modelSource = "Gemini-SDK"
 
+    override fun toString() = modelDisplayName()
+
     override suspend fun chat(
         messages: List<VisionLanguageChatMessage>,
         temp: Double?,
@@ -57,5 +59,4 @@ class GeminiSdkVisionLanguageChat(
         }
     }
 
-    override fun toString() = "$modelId [$modelSource]"
 }

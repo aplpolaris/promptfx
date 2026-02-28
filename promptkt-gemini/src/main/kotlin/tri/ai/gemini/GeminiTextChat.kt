@@ -34,7 +34,8 @@ class GeminiTextChat(override val modelId: String = GEMINI_25_FLASH_LITE, val cl
     TextChat {
 
     override val modelSource = "Gemini"
-    override fun toString() = "$modelId [$modelSource]"
+
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

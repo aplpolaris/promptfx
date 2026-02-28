@@ -71,8 +71,7 @@ class SampleTextPlugin : TextPlugin {
 class SampleTextCompletionModel : TextCompletion {
     override val modelId = "sample-echo-v1"
     override val modelSource = "SampleText"
-
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     override suspend fun complete(
         text: String,
@@ -95,8 +94,7 @@ class SampleTextCompletionModel : TextCompletion {
 class SampleChatModel : TextChat {
     override val modelId = "sample-chat-v1"
     override val modelSource = "SampleText"
-
-    override fun toString() = "$modelId [$modelSource]"
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

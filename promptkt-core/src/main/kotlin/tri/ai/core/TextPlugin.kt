@@ -129,27 +129,9 @@ interface TextPlugin {
             }
         }
 
-        private fun <T> T.matchesModelId(id: String): Boolean where T : Any {
+        private fun AiModel.matchesModelId(id: String): Boolean {
             val (parsedId, parsedSource) = parseModelId(id)
-            val modelIdField = when (this) {
-                is EmbeddingModel -> modelId
-                is TextCompletion -> modelId
-                is TextChat -> modelId
-                is MultimodalChat -> modelId
-                is VisionLanguageChat -> modelId
-                is ImageGenerator -> modelId
-                else -> return false
-            }
-            val modelSourceField = when (this) {
-                is EmbeddingModel -> modelSource
-                is TextCompletion -> modelSource
-                is TextChat -> modelSource
-                is MultimodalChat -> modelSource
-                is VisionLanguageChat -> modelSource
-                is ImageGenerator -> modelSource
-                else -> ""
-            }
-            return modelIdField == parsedId && (parsedSource.isEmpty() || modelSourceField == parsedSource)
+            return modelId == parsedId && (parsedSource.isEmpty() || modelSource == parsedSource)
         }
 
         /**

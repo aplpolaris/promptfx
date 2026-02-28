@@ -31,7 +31,8 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
     MultimodalChat {
 
     override val modelSource = "Gemini"
-    override fun toString() = "$modelId [$modelSource]"
+
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<MultimodalChatMessage>,
