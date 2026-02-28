@@ -19,6 +19,9 @@
  */
 package tri.ai.text.docs
 
+import com.aallam.openai.api.embedding.Embedding
+import tri.ai.core.EmbeddingModel
+import tri.ai.core.TextChat
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
@@ -55,8 +58,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     val docsFolder
         get() = if (folder == "") root else File(root, folder)
 
-    private var chatModelInst = TextPlugin.chatModels().first()
-    private var embeddingModelInst = TextPlugin.embeddingModels().first()
+    private lateinit var chatModelInst: TextChat
+    private lateinit var embeddingModelInst: EmbeddingModel
 
     override var chatModel
         get() = chatModelInst.modelId

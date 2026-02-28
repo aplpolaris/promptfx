@@ -67,7 +67,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
     suspend fun reindexNew() {
         val allPaths = chunkableFiles().map { it.toURI() }
         val docsWithEmbeddings = library.docs.filter {
-            it.chunks.any { it.getEmbeddingInfo(embeddingStrategy.modelId) != null }
+            it.chunks.all { it.getEmbeddingInfo(embeddingStrategy.modelId) != null }
         }.toSet()
 
         // add to existing chunks that just need embedding calculations
@@ -139,7 +139,8 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
         val semanticTextQuery = SemanticTextQuery(query, queryEmbedding, modelId)
         reindexNew()
         val matches = library.docChunks().map { (doc, chunk) ->
-            val chunkEmbedding = chunk.getEmbeddingInfo(modelId)!!
+            val chunkEmbedding = chunk.getEmbeddingInfo(modelId)
+                ?: throw IllegalStateException("Chunk is missing embedding for model $modelId: ${chunk.text(doc.all)}")
             EmbeddingMatch(semanticTextQuery, doc, chunk,
                 modelId, chunkEmbedding,
                 cosineSimilarity(semanticTextQuery.embedding, chunkEmbedding).toFloat()

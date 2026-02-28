@@ -163,7 +163,21 @@ class DocumentQa: CliktCommand(name = "qa") {
     override fun run() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
-        val driver = createQaDriver(config)
+        val driver = try {
+            createQaDriver(config)
+        } catch (x: NoSuchElementException) {
+            System.err.println("Error initializing driver, likely due to invalid model selection: ${x.message}")
+            // print the model ids that were attempted to be set, and the available models for reference
+            if (config.chatModel != null) {
+                System.err.println("Chat model attempted: ${config.chatModel}")
+            }
+            System.err.println("Available chat models: ${TextPlugin.chatModels().map { it.modelId }}")
+            if (config.embeddingModel != null) {
+                System.err.println("Embedding model attempted: ${config.embeddingModel}")
+            }
+            System.err.println("Available embedding models: ${TextPlugin.embeddingModels().map { it.modelId }}")
+            exitProcess(1)
+        }
 
         info<DocumentQa>("  question: $question")
         val response = runBlocking {
