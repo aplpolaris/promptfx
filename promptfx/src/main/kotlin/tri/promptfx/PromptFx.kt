@@ -64,6 +64,11 @@ fun main(args: Array<String>) {
         logger.level = Level.SEVERE
     }
 
+    // Suppress JavaFX "Unsupported JavaFX configuration" warning that appears when
+    // JavaFX classes are loaded from the classpath (unnamed module) rather than the
+    // module path. This is expected when running from a shaded/fat JAR.
+    java.util.logging.Logger.getLogger("javafx").level = Level.SEVERE
+
     launch<PromptFx>(args)
 }
 
