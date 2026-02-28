@@ -26,12 +26,10 @@ import kotlin.math.roundToLong
  * An interface for chunking text and calculating embeddings.
  * Clients are responsible for API limitations, e.g. that limit the number of embeddings that can be calculated in a single API call.
  */
-interface EmbeddingModel {
+interface EmbeddingModel : AiModel {
 
     val precision
         get() = EmbeddingPrecision.FIRST_EIGHT
-
-    val modelId: String
 
     /** Calculate embedding for multiple texts. */
     suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int? = null): List<List<Double>>
@@ -47,7 +45,8 @@ interface EmbeddingModel {
     companion object {
         val UNAVAILABLE = object : EmbeddingModel {
             override val modelId = "Unavailable"
-            override fun toString() = modelId
+            override val modelSource = ""
+            override fun toString() = modelDisplayName()
             override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?) =
                 text.map { listOf<Double>(0.0) }
         }

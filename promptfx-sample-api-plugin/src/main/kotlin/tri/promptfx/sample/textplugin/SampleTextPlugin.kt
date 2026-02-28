@@ -33,7 +33,7 @@ class SampleTextPlugin : TextPlugin {
 
     override fun isApiConfigured() = true
 
-    override fun modelSource() = "SampleText"
+    override fun modelSource() = MODEL_SOURCE
 
     override fun modelInfo() = listOf(
         ModelInfo("sample-echo-v1", ModelType.TEXT_COMPLETION, modelSource()).apply {
@@ -65,13 +65,18 @@ class SampleTextPlugin : TextPlugin {
     override fun close() {
         // No resources to close
     }
+
+    companion object {
+        /** Model source identifier for the SampleText plugin. */
+        const val MODEL_SOURCE = "SampleText"
+    }
 }
 
 /** Sample text completion model that echoes input with a prefix. */
 class SampleTextCompletionModel : TextCompletion {
     override val modelId = "sample-echo-v1"
-
-    override fun toString() = modelId
+    override val modelSource = SampleTextPlugin.MODEL_SOURCE
+    override fun toString() = modelDisplayName()
 
     override suspend fun complete(
         text: String,
@@ -93,8 +98,8 @@ class SampleTextCompletionModel : TextCompletion {
 /** Sample chat model that echoes the last message. */
 class SampleChatModel : TextChat {
     override val modelId = "sample-chat-v1"
-
-    override fun toString() = modelId
+    override val modelSource = SampleTextPlugin.MODEL_SOURCE
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

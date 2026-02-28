@@ -24,6 +24,9 @@ import tri.ai.core.ModelIndex
 /** Models available in the Gemini API. */
 object GeminiModelIndex : ModelIndex("gemini-models.yaml") {
 
+    /** Model source identifier for the Gemini API. */
+    const val MODEL_SOURCE = "Gemini"
+
     //region MODEL ID's
 
     const val GEMINI_EMBEDDING = "gemini-embedding-001"

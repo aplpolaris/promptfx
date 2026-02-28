@@ -17,23 +17,17 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.geminisdk
+package tri.ai.core
 
-import tri.ai.core.ModelIndex
+/**
+ * Common interface for all AI model implementations, providing a model identifier and source.
+ */
+interface AiModel {
+    /** Identifier for the model. */
+    val modelId: String
+    /** Source or provider of the model (e.g. "OpenAI", "Gemini"). */
+    val modelSource: String
 
-/** Models available in the Gemini SDK. */
-object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
-
-    /** Model source identifier for the Gemini SDK. */
-    const val MODEL_SOURCE = "Gemini-SDK"
-
-    //region MODEL ID's
-
-    const val GEMINI_EMBEDDING = "gemini-embedding-001"
-
-    const val GEMINI_25_FLASH = "gemini-2.5-flash"
-    const val GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"
-
-    //endregion
-
+    /** Returns a display string like "modelId [modelSource]". */
+    fun modelDisplayName() = if (modelSource.isEmpty()) modelId else "$modelId [$modelSource]"
 }

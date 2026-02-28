@@ -28,9 +28,7 @@ import tri.ai.prompt.trace.PromptInfo
 import tri.ai.prompt.trace.PromptInfo.Companion.filled
 
 /** Interface for text completion. */
-interface TextCompletion {
-
-    val modelId: String
+interface TextCompletion : AiModel {
 
     /** Completes user text. */
     suspend fun complete(
@@ -44,7 +42,8 @@ interface TextCompletion {
     companion object {
         val UNAVAILABLE = object : TextCompletion {
             override val modelId = "Unavailable"
-            override fun toString() = modelId
+            override val modelSource = ""
+            override fun toString() = modelDisplayName()
             override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
                 AiPromptTrace.error(modelInfo = null, message = "Text completion model is unavailable.")
         }

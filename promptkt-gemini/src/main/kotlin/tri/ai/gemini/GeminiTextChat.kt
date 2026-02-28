@@ -33,7 +33,9 @@ import tri.ai.prompt.trace.AiPromptTrace
 class GeminiTextChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     TextChat {
 
-    override fun toString() = "$modelId (Gemini)"
+    override val modelSource = GeminiModelIndex.MODEL_SOURCE
+
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<TextChatMessage>,

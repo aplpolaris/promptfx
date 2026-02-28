@@ -29,6 +29,10 @@ class GeminiSdkTextChat(
     private val client: GeminiSdkClient
 ) : TextChat {
 
+    override val modelSource = GeminiSdkModelIndex.MODEL_SOURCE
+
+    override fun toString() = modelDisplayName()
+
     override suspend fun chat(
         messages: List<TextChatMessage>,
         variation: MChatVariation,
@@ -61,5 +65,4 @@ class GeminiSdkTextChat(
         }
     }
 
-    override fun toString() = "$modelId (Gemini SDK)"
 }

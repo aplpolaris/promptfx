@@ -27,9 +27,7 @@ import java.net.URI
  * @deprecated Use [MultimodalChat] instead, which provides equivalent functionality with better error handling and broader modality support.
  */
 @Deprecated("Use MultimodalChat instead", ReplaceWith("MultimodalChat"))
-interface VisionLanguageChat {
-
-    val modelId: String
+interface VisionLanguageChat : AiModel {
 
     /** Completes user text. */
     suspend fun chat(

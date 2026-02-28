@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class AiModelInfo(
     var modelId: String,
+    var modelSource: String = "",
     var modelParams: Map<String, Any> = mapOf()
 ) {
     companion object {
@@ -55,17 +56,17 @@ data class AiModelInfo(
         const val CHUNKER_MAX_CHUNK_SIZE = "chunker_max_chunk_size"
 
         /** Create model info. */
-        fun info(modelId: String, vararg pairs: Pair<String, Any?>) =
-            AiModelInfo(modelId, mapOfNotNull(*pairs))
+        fun info(modelId: String, vararg pairs: Pair<String, Any?>, modelSource: String = "") =
+            AiModelInfo(modelId, modelSource, modelParams = mapOfNotNull(*pairs))
 
         /** Create model info. */
-        fun info(modelId: String, tokens: Int? = null, stop: List<String>? = null, requestJson: Boolean? = null, numResponses: Int? = null) =
-            AiModelInfo(modelId,
+        fun info(modelId: String, modelSource: String = "", tokens: Int? = null, stop: List<String>? = null, requestJson: Boolean? = null, numResponses: Int? = null) =
+            AiModelInfo(modelId, modelSource, modelParams =
                 mapOfNotNull(MAX_TOKENS to tokens, STOP to stop, NUM_RESPONSES to numResponses, "request_json" to requestJson)
             )
 
         /** Create embedding model info. */
-        fun embedding(modelId: String, outputDims: Int? = null) = AiModelInfo(modelId, mapOfNotNull(OUTPUT_DIMENSIONS to outputDims))
+        fun embedding(modelId: String, outputDims: Int? = null) = AiModelInfo(modelId, modelParams = mapOfNotNull(OUTPUT_DIMENSIONS to outputDims))
 
         private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
             mapOf(*pairs).filterValues { it != null } as Map<String, Any>

@@ -164,9 +164,9 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                 }
                 label("Policy Type: ${PromptFxModels.policy.javaClass.simpleName}")
                 label("Show Banner: ${PromptFxModels.policy.isShowBanner}")
-                label("Default Completion Model: ${PromptFxModels.policy.textCompletionModelDefault().modelId}")
-                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault().modelId}")
-                label("Default Embedding Model: ${PromptFxModels.policy.embeddingModelDefault().modelId}")
+                label("Default Completion Model: ${PromptFxModels.policy.textCompletionModelDefault()}")
+                label("Default Chat Model: ${PromptFxModels.policy.chatModelDefault()}")
+                label("Default Embedding Model: ${PromptFxModels.policy.embeddingModelDefault()}")
             }
 
             separator()
@@ -304,7 +304,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     style { fontWeight = FontWeight.BOLD }
                 }
                 label(controller.completionEngine.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
-                label(controller.completionEngine.stringBinding { "Provider: ${it?.javaClass?.simpleName ?: "Unknown"}" })
+                label(controller.completionEngine.stringBinding { "Provider: ${it?.modelSource?.ifEmpty { it.javaClass.simpleName } ?: "Unknown"}" })
             }
             
             separator()
@@ -315,7 +315,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     style { fontWeight = FontWeight.BOLD }
                 }
                 label(controller.chatService.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
-                label(controller.chatService.stringBinding { "Provider: ${it?.javaClass?.simpleName ?: "Unknown"}" })
+                label(controller.chatService.stringBinding { "Provider: ${it?.modelSource?.ifEmpty { it.javaClass.simpleName } ?: "Unknown"}" })
             }
             
             separator()
@@ -326,7 +326,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     style { fontWeight = FontWeight.BOLD }
                 }
                 label(controller.embeddingStrategy.stringBinding { "Model: ${it?.model?.modelId ?: "Not set"}" })
-                label(controller.embeddingStrategy.stringBinding { "Provider: ${it?.model?.javaClass?.simpleName ?: "Unknown"}" })
+                label(controller.embeddingStrategy.stringBinding { "Provider: ${it?.model?.modelSource?.ifEmpty { it.model.javaClass.simpleName } ?: "Unknown"}" })
                 label(controller.embeddingStrategy.stringBinding { "Chunker: ${it?.chunker?.javaClass?.simpleName ?: "Unknown"}" })
             }
             

@@ -32,7 +32,7 @@ class GeminiAiPlugin : TextPlugin {
 
     override fun isApiConfigured() = client.settings.isConfigured()
 
-    override fun modelSource() = "Gemini"
+    override fun modelSource() = GeminiModelIndex.MODEL_SOURCE
 
     override fun modelInfo() = if (client.settings.isConfigured())
         runBlocking {

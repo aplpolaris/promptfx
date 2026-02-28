@@ -27,10 +27,7 @@ import tri.ai.prompt.trace.AiPromptTrace
  * for constrained outputs such as grammars, etc. Provides capacity for exceptions when models do not support a given
  * capability.
  */
-interface MultimodalChat {
-
-    /** Identifier for underlying model. */
-    val modelId: String
+interface MultimodalChat : AiModel {
 
     /** Provided a response to a sequence of chat messages. */
     suspend fun chat(

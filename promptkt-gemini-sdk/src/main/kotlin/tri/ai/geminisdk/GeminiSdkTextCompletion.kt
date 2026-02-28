@@ -29,6 +29,10 @@ class GeminiSdkTextCompletion(
     private val client: GeminiSdkClient
 ) : TextCompletion {
 
+    override val modelSource = GeminiSdkModelIndex.MODEL_SOURCE
+
+    override fun toString() = modelDisplayName()
+
     override suspend fun complete(
         text: String,
         variation: MChatVariation,
@@ -55,5 +59,4 @@ class GeminiSdkTextCompletion(
         }
     }
 
-    override fun toString() = "$modelId (Gemini SDK)"
 }

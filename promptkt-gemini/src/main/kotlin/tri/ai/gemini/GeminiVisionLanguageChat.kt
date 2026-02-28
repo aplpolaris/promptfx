@@ -30,7 +30,9 @@ import tri.ai.prompt.trace.AiPromptTrace
 class GeminiVisionLanguageChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     VisionLanguageChat {
 
-    override fun toString() = "$modelId (Gemini)"
+    override val modelSource = GeminiModelIndex.MODEL_SOURCE
+
+    override fun toString() = modelDisplayName()
 
     override suspend fun chat(
         messages: List<VisionLanguageChatMessage>,

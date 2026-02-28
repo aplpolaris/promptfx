@@ -50,11 +50,11 @@ class AiPromptBatchExecutorTest {
     )
     private val modelInfo = AiModelInfo(
         "not a model",
-        mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
+        modelParams = mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
     private val modelInfo2 = AiModelInfo(
         defaultTextCompletion?.modelId ?: "not a model",
-        mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
+        modelParams = mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
 
     @Test

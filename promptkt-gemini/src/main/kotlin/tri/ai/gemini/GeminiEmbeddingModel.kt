@@ -26,7 +26,9 @@ import tri.ai.gemini.GeminiModelIndex.GEMINI_EMBEDDING
 class GeminiEmbeddingModel(override val modelId: String = GEMINI_EMBEDDING, val client: GeminiClient = GeminiClient.INSTANCE) :
     EmbeddingModel {
 
-    override fun toString() = "$modelId (Gemini)"
+    override val modelSource = GeminiModelIndex.MODEL_SOURCE
+
+    override fun toString() = modelDisplayName()
 
     private val embeddingCache = mutableMapOf<Pair<String, Int?>, List<Float>>()
 

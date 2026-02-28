@@ -38,7 +38,7 @@ class GeminiSdkPlugin : TextPlugin {
 
     override fun isApiConfigured() = client.isConfigured()
 
-    override fun modelSource() = "Gemini-SDK"
+    override fun modelSource() = GeminiSdkModelIndex.MODEL_SOURCE
 
     override fun modelInfo() = if (client.isConfigured())
         runBlocking {

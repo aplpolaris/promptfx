@@ -22,10 +22,7 @@ package tri.ai.core
 import java.net.URL
 
 /** Interface for image generation. */
-interface ImageGenerator {
-
-    val modelId: String
-
+interface ImageGenerator : AiModel {
     /** Generate an image, return URL to access image. */
     suspend fun generateImage(
         text: String,

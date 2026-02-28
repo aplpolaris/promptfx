@@ -22,9 +22,7 @@ package tri.ai.core
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Interface for chat completion. */
-interface TextChat {
-
-    val modelId: String
+interface TextChat : AiModel {
 
     /** Completes user text. */
     suspend fun chat(
@@ -39,7 +37,8 @@ interface TextChat {
     companion object {
         val UNAVAILABLE = object : TextChat {
             override val modelId = "Unavailable"
-            override fun toString() = modelId
+            override val modelSource = ""
+            override fun toString() = modelDisplayName()
             override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
                 AiPromptTrace.error(modelInfo = null, message = "Text chat model is unavailable.")
         }

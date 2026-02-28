@@ -30,7 +30,7 @@ class AiPromptTraceTest {
     )
     private val modelInfo = AiModelInfo(
         "not a model",
-        mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
+        modelParams = mapOf("maxTokens" to 100, "temperature" to 0.5, "stop" to "}")
     )
 
     @Test
