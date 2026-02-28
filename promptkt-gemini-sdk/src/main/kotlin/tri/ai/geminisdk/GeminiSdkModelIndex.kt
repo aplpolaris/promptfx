@@ -24,6 +24,9 @@ import tri.ai.core.ModelIndex
 /** Models available in the Gemini SDK. */
 object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
 
+    /** Model source identifier for the Gemini SDK. */
+    const val MODEL_SOURCE = "Gemini-SDK"
+
     //region MODEL ID's
 
     const val GEMINI_EMBEDDING = "gemini-embedding-001"

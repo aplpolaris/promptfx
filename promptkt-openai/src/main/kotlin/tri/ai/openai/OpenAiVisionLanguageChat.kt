@@ -27,7 +27,7 @@ import tri.ai.core.VisionLanguageChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 
 /** Vision chat completion with OpenAI models. */
-class OpenAiVisionLanguageChat(override val modelId: String, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
+class OpenAiVisionLanguageChat(override val modelId: String, override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
     VisionLanguageChat {
 
     override fun toString() = modelDisplayName()

@@ -28,7 +28,7 @@ class GeminiSdkVisionLanguageChat(
     private val client: GeminiSdkClient
 ) : VisionLanguageChat {
 
-    override val modelSource = "Gemini-SDK"
+    override val modelSource = GeminiSdkModelIndex.MODEL_SOURCE
 
     override fun toString() = modelDisplayName()
 

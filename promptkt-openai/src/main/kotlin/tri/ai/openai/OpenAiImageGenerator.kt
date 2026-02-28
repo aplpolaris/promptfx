@@ -26,7 +26,7 @@ import tri.ai.core.ImageSize
 import java.net.URL
 
 /** Image generation with OpenAI models. */
-class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE_DALLE2, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE, override val modelSource: String = "OpenAI") :
+class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE_DALLE2, override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
     ImageGenerator {
 
     override fun toString() = modelDisplayName()

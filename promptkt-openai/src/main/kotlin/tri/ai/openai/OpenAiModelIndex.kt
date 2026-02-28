@@ -24,6 +24,9 @@ import tri.ai.core.ModelIndex
 /** Index of OpenAI models. */
 object OpenAiModelIndex : ModelIndex("openai-models.yaml") {
 
+    /** Model source identifier for OpenAI. */
+    const val MODEL_SOURCE = "OpenAI"
+
     //region MODEL ID'S
 
     private const val WHISPER_ID = "whisper-1"

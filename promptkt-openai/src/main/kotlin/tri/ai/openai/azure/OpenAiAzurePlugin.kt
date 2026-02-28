@@ -33,7 +33,7 @@ class OpenAiAzurePlugin : TextPlugin {
 
     override fun isApiConfigured() = client.settings.isConfigured()
 
-    override fun modelSource() = "OpenAI"
+    override fun modelSource() = OpenAiModelIndex.MODEL_SOURCE
 
     override fun modelInfo() = if (isApiConfigured())
         try {
@@ -47,23 +47,23 @@ class OpenAiAzurePlugin : TextPlugin {
     else emptyList()
 
     override fun embeddingModels() =
-        models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, modelSource(), client) }
 
     override fun textCompletionModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, client, modelSource()) } +
-        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
+        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
-        models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) }
 
     override fun visionLanguageModels() =
-        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, modelSource(), client) }
 
     override fun imageGeneratorModels() =
-        models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, client, modelSource()) }
+        models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, modelSource(), client) }
 
     override fun close() {
         client.client.close()

@@ -65,33 +65,33 @@ class OpenAiApiPlugin : TextPlugin {
 
     override fun embeddingModels() =
         config.endpoints.flatMap { e ->
-            e.index.embeddingModels().map { OpenAiEmbeddingModel(it, client(e), e.source) }
+            e.index.embeddingModels().map { OpenAiEmbeddingModel(it, e.source, client(e)) }
         }
 
     override fun textCompletionModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiCompletionChat(it, client(e), e.source) } +
-            e.index.completionModels().map { OpenAiCompletion(it, client(e), e.source) }
+            e.index.chatModelsInclusive().map { OpenAiCompletionChat(it, e.source, client(e)) } +
+            e.index.completionModels().map { OpenAiCompletion(it, e.source, client(e)) }
         }
 
     override fun chatModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiChat(it, client(e), e.source) }
+            e.index.chatModelsInclusive().map { OpenAiChat(it, e.source, client(e)) }
         }
 
     override fun multimodalModels() =
         config.endpoints.flatMap { e ->
-            e.index.multimodalModels().map { OpenAiMultimodalChat(it, client(e), e.source) }
+            e.index.multimodalModels().map { OpenAiMultimodalChat(it, e.source, client(e)) }
         }
 
     override fun visionLanguageModels() =
         config.endpoints.flatMap { e ->
-            e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, client(e), e.source) }
+            e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, e.source, client(e)) }
         }
 
     override fun imageGeneratorModels() =
         config.endpoints.flatMap { e ->
-            e.index.imageGeneratorModels().map { OpenAiImageGenerator(it, client(e), e.source) }
+            e.index.imageGeneratorModels().map { OpenAiImageGenerator(it, e.source, client(e)) }
         }
 
     override fun close() {

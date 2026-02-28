@@ -30,7 +30,7 @@ import tri.util.info
 class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
     MultimodalChat {
 
-    override val modelSource = "Gemini"
+    override val modelSource = GeminiModelIndex.MODEL_SOURCE
 
     override fun toString() = modelDisplayName()
 

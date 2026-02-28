@@ -27,7 +27,7 @@ class GeminiSdkEmbeddingModel(
     private val client: GeminiSdkClient
 ) : EmbeddingModel {
 
-    override val modelSource = "Gemini-SDK"
+    override val modelSource = GeminiSdkModelIndex.MODEL_SOURCE
 
     override fun toString() = modelDisplayName()
 
