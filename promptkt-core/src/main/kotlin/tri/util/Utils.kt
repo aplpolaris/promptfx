@@ -72,6 +72,8 @@ const val USE_STDOUT_LOGGER = true
 var MIN_LEVEL_TO_LOG = Level.INFO
 
 inline fun <reified T : Any> log(level: Level, msg: String, x: Exception? = null) {
+    if (level.intValue() < MIN_LEVEL_TO_LOG.intValue())
+        return
     if (USE_STDOUT_LOGGER) {
         println("$level: $msg")
     } else

@@ -41,10 +41,11 @@ class DocumentCliTest {
     fun testChunk() {
         main(arrayOf(
             "--root=$path",
+            "--folder=$folder",
             "chunk",
             "--reindex-all"
         ))
-        println(path.resolve("docs.json").readText())
+        println(path.resolve("$folder/docs.json").readText())
     }
 
     @Test
@@ -52,6 +53,8 @@ class DocumentCliTest {
     fun testEmbeddings() {
         main(arrayOf(
             "--root=$path",
+            "--folder=$folder",
+//            "--embedding-model=gemini-embedding-001",
             "embeddings",
             "--reindex-all"
         ))
@@ -63,8 +66,10 @@ class DocumentCliTest {
         main(arrayOf(
             "--root=$path",
             "--folder=$folder",
+//            "--embedding=gemini-embedding-001",
+//            "--model=gemini-2.5-flash",
             "qa",
-            "What is Llama?"
+            "What is MCFM?"
         ))
     }
 }

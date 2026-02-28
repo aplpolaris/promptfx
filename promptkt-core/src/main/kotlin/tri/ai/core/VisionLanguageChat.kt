@@ -24,7 +24,9 @@ import java.net.URI
 
 /**
  * An interface for completing vision-language chats.
+ * @deprecated Use [MultimodalChat] instead, which provides equivalent functionality with better error handling and broader modality support.
  */
+@Deprecated("Use MultimodalChat instead", ReplaceWith("MultimodalChat"))
 interface VisionLanguageChat : AiModel {
 
     /** Completes user text. */
@@ -38,5 +40,9 @@ interface VisionLanguageChat : AiModel {
 
 }
 
-/** A single message in a vision-language chat. */
+/**
+ * A single message in a vision-language chat.
+ * @deprecated Use [MultimodalChatMessage] instead.
+ */
+@Deprecated("Use MultimodalChatMessage instead", ReplaceWith("MultimodalChatMessage"))
 data class VisionLanguageChatMessage(val role: MChatRole, val content: String, val image: URI)

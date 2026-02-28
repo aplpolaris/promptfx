@@ -49,6 +49,7 @@ import java.io.File
 import java.nio.file.Path
 import java.util.logging.Level
 import kotlin.io.path.Path
+import kotlin.system.exitProcess
 
 /** Base command for document QA. */
 class DocumentCli : CliktCommand(name = "document") {
@@ -56,6 +57,7 @@ class DocumentCli : CliktCommand(name = "document") {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
+            MIN_LEVEL_TO_LOG = Level.WARNING
             DocumentCli()
                 .subcommands(DocumentChat(), DocumentChunker(), DocumentEmbeddings(), DocumentQa())
                 .main(args)
@@ -72,14 +74,8 @@ class DocumentCli : CliktCommand(name = "document") {
         .default("")
     private val model by option(help = "Chat model to use (default ${OpenAiModelIndex.GPT35_TURBO_ID})")
         .default(OpenAiModelIndex.GPT35_TURBO_ID)
-        .validate {
-            require(it in TextPlugin.chatModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val embedding by option(help = "Embedding model to use (default ${OpenAiModelIndex.EMBEDDING_ADA})")
         .default(OpenAiModelIndex.EMBEDDING_ADA)
-        .validate {
-            require(it in TextPlugin.embeddingModels().map { it.modelId }) { "Invalid model $it" }
-        }
     private val temp by option(help = "Temperature for chat completion (default 0.5)")
         .double()
         .default(0.5)
@@ -167,7 +163,21 @@ class DocumentQa: CliktCommand(name = "qa") {
     override fun run() {
         OpenAiAdapter.INSTANCE.settings.logLevel = LogLevel.None
         MIN_LEVEL_TO_LOG = Level.WARNING
-        val driver = createQaDriver(config)
+        val driver = try {
+            createQaDriver(config)
+        } catch (x: NoSuchElementException) {
+            System.err.println("Error initializing driver, likely due to invalid model selection: ${x.message}")
+            // print the model ids that were attempted to be set, and the available models for reference
+            if (config.chatModel != null) {
+                System.err.println("Chat model attempted: ${config.chatModel}")
+            }
+            System.err.println("Available chat models: ${TextPlugin.chatModels().map { it.modelId }}")
+            if (config.embeddingModel != null) {
+                System.err.println("Embedding model attempted: ${config.embeddingModel}")
+            }
+            System.err.println("Available embedding models: ${TextPlugin.embeddingModels().map { it.modelId }}")
+            exitProcess(1)
+        }
 
         info<DocumentQa>("  question: $question")
         val response = runBlocking {
@@ -197,18 +207,29 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings") {
 
     override fun run() {
         val docsFolder = config.docsFolder
-        val embeddingModel = TextPlugin.embeddingModel(config.embeddingModel!!)
+        val embeddingModel = try {
+            TextPlugin.embeddingModel(config.embeddingModel!!)
+        } catch (x: NoSuchElementException) {
+            val available = TextPlugin.embeddingModels().map { it.modelId }
+            System.err.println("Embedding model '${config.embeddingModel}' not found. Available models: $available")
+            exitProcess(1)
+        }
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModel, SmartTextChunker()))
         index.maxChunkSize = maxChunkSize
-        runBlocking {
-            if (reindexAll) {
-                println("Reindexing all documents in $docsFolder...")
-                index.reindexAll() // this triggers the reindex, and saves the library
-            } else {
-                println("Reindexing new documents in $docsFolder...")
-                index.reindexNew() // this triggers the reindex, and saves the library
+        try {
+            runBlocking {
+                if (reindexAll) {
+                    println("Reindexing all documents in $docsFolder...")
+                    index.reindexAll() // this triggers the reindex, and saves the library
+                } else {
+                    println("Reindexing new documents in $docsFolder...")
+                    index.reindexNew() // this triggers the reindex, and saves the library
+                }
+                println("Reindexing complete.")
             }
-            println("Reindexing complete.")
+        } catch (x: Exception) {
+            System.err.println("Reindexing failed: ${x}")
+            exitProcess(1)
         }
         TextPlugin.orderedPlugins.forEach { it.close() }
     }
@@ -269,19 +290,13 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
 
     info<DocumentQa>("Asking question about documents in $folder")
     if (config.chatModel != null) {
-        try {
-            chatModel = config.chatModel
-        } catch (x: NoSuchElementException) {
-            error("Chat model ${config.chatModel} not found.")
-        }
+        validateModelOrExit(config.chatModel, TextPlugin.chatModels().map { it.modelId }, "Chat")
+        chatModel = config.chatModel
     }
     info<DocumentQa>("  using chat engine $chatModel")
     if (config.embeddingModel != null) {
-        try {
-            embeddingModel = config.embeddingModel
-        } catch (x: NoSuchElementException) {
-            error("Embedding model ${config.embeddingModel} not found.")
-        }
+        validateModelOrExit(config.embeddingModel, TextPlugin.embeddingModels().map { it.modelId }, "Embedding")
+        embeddingModel = config.embeddingModel
     }
     info<DocumentQa>("  using embedding model $embeddingModel")
     if (config.temp != null) {
@@ -297,4 +312,12 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
         info<DocumentQa>("  using template $templateId")
     }
     initialize()
+}
+
+/** Prints an error and exits if [modelId] is not in [available] models. */
+private fun validateModelOrExit(modelId: String, available: List<String>, modelType: String) {
+    if (modelId !in available) {
+        System.err.println("$modelType model '$modelId' not found. Available models: $available")
+        exitProcess(1)
+    }
 }

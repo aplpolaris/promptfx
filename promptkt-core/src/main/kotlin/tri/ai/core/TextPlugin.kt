@@ -49,8 +49,10 @@ interface TextPlugin {
     /** Provide a list of text completion engines. */
     fun textCompletionModels(): List<TextCompletion>
 
-    /** Provide a list of vision language models. */
-    fun visionLanguageModels(): List<VisionLanguageChat>
+    /** Provide a list of vision language models.
+     * @deprecated Use [multimodalModels] instead. */
+    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
+    fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
 
     /** Provide a list of image generators. */
     fun imageGeneratorModels(): List<ImageGenerator>
@@ -92,7 +94,9 @@ interface TextPlugin {
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
         /** Get registered multimodal models. */
         fun multimodalModels() = orderedPlugins.flatMap { it.multimodalModels() }
-        /** Get registered vision language models. */
+        /** Get registered vision language models.
+         * @deprecated Use [multimodalModels] instead. */
+        @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
         fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
         /** Get registered image models. */
         fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
@@ -109,7 +113,9 @@ interface TextPlugin {
         /** Get a multimodal model by id. Throws an exception if not found. */
         fun multimodalModel(modelId: String) =
             multimodalModels().first { it.matchesModelId(modelId) }
-        /** Get a vision language model by id. Throws an exception if not found. */
+        /** Get a vision language model by id. Throws an exception if not found.
+         * @deprecated Use [multimodalModel] instead. */
+        @Deprecated("Use multimodalModel() instead", ReplaceWith("multimodalModel(modelId)"))
         fun visionLanguageModel(modelId: String) =
             visionLanguageModels().first { it.matchesModelId(modelId) }
         /** Get an image model by id. Throws an exception if not found. */
