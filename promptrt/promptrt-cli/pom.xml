@@ -29,13 +29,13 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-gemini</artifactId>
+            <artifactId>promptkt-provider-gemini</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>promptkt-openai</artifactId>
+            <artifactId>promptkt-provider-openai</artifactId>
             <version>${project.version}</version>
         </dependency>
 

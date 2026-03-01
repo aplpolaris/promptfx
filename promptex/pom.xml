@@ -186,7 +186,7 @@
                     </roots>
                     <canUpdateCopyright>true</canUpdateCopyright>
                     <canUpdateDescription>false</canUpdateDescription>
-                    <projectName>tri.promptfx:promptkt</projectName>
+                    <projectName>tri.promptfx:promptex</projectName>
                 </configuration>
                 <executions>
                     <execution>
