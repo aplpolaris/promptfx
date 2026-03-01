@@ -48,7 +48,7 @@ Plugins must:
 
 The PromptFx repository includes two sample plugins as references:
 
-- **promptfx-sample-api-plugin**: Demonstrates how to create a custom `TextPlugin` to provide AI models
+- **promptkt-provider-sample**: Demonstrates how to create a custom `TextPlugin` to provide AI models
 - **promptfx-sample-view-plugin**: Demonstrates how to create a custom `NavigableWorkspaceView` for the UI
 
 See the README files in those modules for detailed implementation guides.
