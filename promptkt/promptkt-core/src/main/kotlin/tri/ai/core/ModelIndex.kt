@@ -76,6 +76,8 @@ open class ModelIndex(val modelFileName: String) {
     fun ttsModels(includeSnapshots: Boolean = false) = models(ModelLibrary::tts, includeSnapshots)
     /** Get image generator models. */
     fun imageGeneratorModels(includeSnapshots: Boolean = false) = models(ModelLibrary::image_generator, includeSnapshots)
+    /** Get Responses API models. */
+    fun responsesModels(includeSnapshots: Boolean = false) = models(ModelLibrary::responses, includeSnapshots)
     /** Get vision-language models. */
     fun visionLanguageModels(includeSnapshots: Boolean = false) = models(ModelLibrary::vision_language, includeSnapshots)
 
