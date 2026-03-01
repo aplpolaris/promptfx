@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.googlecode.blaisemath</groupId>
-    <artifactId>promptfx-meta</artifactId>
+    <artifactId>promptkt</artifactId>
     <version>0.15.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptFx parent pom.</description>
+    <description>PromptKt Parent POM, including the core PromptKt API and TextPlugin provider implementations.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 
@@ -16,19 +16,11 @@
         <!-- Core API -->
         <module>promptkt-core</module>
         <!-- API client modules -->
-        <module>promptkt-openai</module>
-        <module>promptkt-gemini</module>
-        <module>promptkt-gemini-sdk</module>
-        <!-- AI processing and utilities -->
-        <module>promptkt-pips</module>
-        <module>promptkt-docs</module>
-        <module>promptkt-mcp</module>
-        <module>promptkt-cli</module>
-        <!-- UI -->
-        <module>promptfx</module>
-        <!-- plugin samples -->
-        <module>promptfx-sample-view-plugin</module>
-        <module>promptfx-sample-api-plugin</module>
+        <module>promptkt-provider-openai</module>
+        <module>promptkt-provider-gemini</module>
+        <module>promptkt-provider-gemini-sdk</module>
+		<!-- Template project -->
+        <module>promptkt-provider-sample</module>
     </modules>
 
     <!-- configuration of the default license to use -->
@@ -69,12 +61,10 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
 
-        <clikt.version>5.1.0</clikt.version>
         <guava.version>33.5.0-jre</guava.version>
         <jackson.version>2.21.0</jackson.version>
         <jackson-annotations.version>2.21</jackson-annotations.version>
         <jsonschema.version>4.38.0</jsonschema.version>
-        <jsoup.version>1.22.1</jsoup.version>
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
@@ -84,10 +74,7 @@
         <mustache.version>0.9.14</mustache.version>
         <okhttp.version>5.3.2</okhttp.version>
         <openai-kotlin.version>4.1.0</openai-kotlin.version>
-        <pdfbox.version>3.0.6</pdfbox.version>
-        <poi.version>5.5.1</poi.version>
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
-        <log4j.version>2.25.3</log4j.version> <!-- match version in poi -->
     </properties>
 
     <dependencyManagement>

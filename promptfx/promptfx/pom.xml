@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.googlecode.blaisemath</groupId>
+        <artifactId>promptfx-meta</artifactId>
+        <version>0.15.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>promptfx</artifactId>
+    <packaging>jar</packaging>
+
+    <name>${project.artifactId}-${project.version}</name>
+    <description>LLM demo application.</description>
+    <url>https://github.com/aplpolaris/promptfx</url>
+    <inceptionYear>2023</inceptionYear>
+
+    <!-- configuration of the default license to use -->
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Johns Hopkins University Applied Physics Laboratory</name>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Elisha Peterson</name>
+            <email>triathematician+blaise@gmail.com</email>
+            <url>https://github.com/triathematician</url>
+            <organization>JHU-APL</organization>
+            <organizationUrl>http://www.jhuapl.edu</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aplpolaris/promptfx</url>
+        <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
+        <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
+        <tag>promptfx-meta-0.13.0</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/aplpolaris/promptfx/issues</url>
+    </issueManagement>
+
+    <properties>
+        <module.name>tri.promptfx</module.name>
+        <main.class>tri.promptfx.PromptFxKt</main.class>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
+        <license.licenseName>apache_v2</license.licenseName>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptex-docs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-provider-gemini</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-provider-gemini-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptkt-provider-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath</groupId>
+            <artifactId>promptex-mcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.blaisemath.com.clust4j</groupId>
+            <artifactId>clust4j</artifactId>
+            <version>1.2.4.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.blaisemath.tornado</groupId>
+            <artifactId>tornadofx-fx21k2</artifactId>
+            <version>${tornadofx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.jensd</groupId>
+            <artifactId>fontawesomefx-fontawesome</artifactId>
+            <version>${fontawesome.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-media</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-swing</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+        <dependency><groupId>org.openjfx</groupId><artifactId>javafx-web</artifactId><version>${javafx.version}</version><classifier>${javafx.platform}</classifier></dependency>
+
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>${controlsfx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-test</artifactId>
+            <version>${kotlinx-coroutines-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+        <plugins>
+            <!-- create executable jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>${platform.name}</shadedClassifierName> <!-- e.g. 'windows' -->
+
+                            <transformers>
+                                <!-- Set the main class -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                    <manifestEntries>
+                                        <Built-For>${platform.name}</Built-For>
+                                    </manifestEntries>
+                                </transformer>
+                                <!-- Merge service files like META-INF/services/TextPlugin -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- set up javafx run configuration from CLI -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <executions>
+                    <execution>
+                        <!-- Default configuration for running with: mvn clean javafx:run -->
+                        <id>default-cli</id>
+                        <configuration>
+                            <mainClass>${module.name}/${main.class}</mainClass>
+                            <options>
+                                <option>--add-opens</option>
+                                <option>javafx.controls/javafx.scene.control.skin=tornadofx</option>
+                                <option>--add-opens</option>
+                                <option>javafx.graphics/javafx.scene=tornadofx</option>
+                                <option>--add-reads</option>
+                                <option>kotlin.stdlib=kotlinx.coroutines.core</option>
+                            </options>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>win</javafx.platform>
+                <platform.name>windows</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>macos</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>mac</javafx.platform>
+                <platform.name>macos</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>mac64</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>mac-aarch64</javafx.platform>
+                <platform.name>mac64</platform.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>linux</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <javafx.platform>linux</javafx.platform>
+                <platform.name>linux</platform.name>
+            </properties>
+        </profile>
+    </profiles>
+</project>

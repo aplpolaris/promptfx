@@ -4,15 +4,15 @@
 
     <parent>
         <groupId>com.googlecode.blaisemath</groupId>
-        <artifactId>promptfx-meta</artifactId>
+        <artifactId>promptkt</artifactId>
         <version>0.15.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>promptkt-gemini</artifactId>
+    <artifactId>promptkt-provider-gemini-sdk</artifactId>
     <packaging>jar</packaging>
 	
     <name>${project.artifactId}-${project.version}</name>
-    <description>Gemini AI plugin for prompt engineering and LLM interactions.</description>
+    <description>Gemini AI plugin using Google's official Java SDK for prompt engineering and LLM interactions.</description>
 
     <dependencies>
         <!-- Core promptkt dependency -->
@@ -43,36 +43,27 @@
             <version>${kotlinx-coroutines-core.version}</version>
         </dependency>
 
-        <!-- Ktor HTTP client dependencies -->
+        <!-- Google Gemini official Java SDK (java-genai) -->
         <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-core-jvm</artifactId>
-            <version>${ktor.version}</version>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>1.40.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-logging-jvm</artifactId>
-            <version>${ktor.version}</version>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-auth-jvm</artifactId>
-            <version>${ktor.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-content-negotiation-jvm</artifactId>
-            <version>${ktor.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-serialization-kotlinx-json-jvm</artifactId>
-            <version>${ktor.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-okhttp-jvm</artifactId>
-            <version>${ktor.version}</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -104,7 +95,8 @@
                 <version>3.5.4</version>
                 <configuration>
                     <!-- TODO - set up profiles so we can run different test sets from command line -->
-                    <excludedGroups>gemini</excludedGroups>
+                    <!--                    <excludedGroups>gemini</excludedGroups>-->
+                    <excludedGroups>gemini-sdk</excludedGroups>
                     <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>

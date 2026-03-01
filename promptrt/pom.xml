@@ -3,18 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.googlecode.blaisemath</groupId>
-    <artifactId>promptfx-meta</artifactId>
+    <artifactId>promptrt</artifactId>
     <version>0.15.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptFx: UI for AI APIs and Workflows.</description>
+    <description>PromptRt: command-line utilities for AI workflows.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 
     <modules>
-        <module>promptfx</module>
-        <module>promptfx-sample-view-plugin</module>
+        <module>promptrt-cli</module>
     </modules>
 
     <!-- configuration of the default license to use -->
@@ -55,19 +54,13 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
 
-        <jackson.version>2.21.0</jackson.version>
-        <jackson-annotations.version>2.21</jackson-annotations.version>
+        <clikt.version>5.1.0</clikt.version>
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
         <kotlinx-serialization.version>1.10.0</kotlinx-serialization.version>
         <kotlin-dokka.version>2.1.0</kotlin-dokka.version>
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
-        
-		<javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.2.0</tornadofx.version>
-        <controlsfx.version>11.2.3</controlsfx.version>
-        <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
     </properties>
 
     <dependencyManagement>
