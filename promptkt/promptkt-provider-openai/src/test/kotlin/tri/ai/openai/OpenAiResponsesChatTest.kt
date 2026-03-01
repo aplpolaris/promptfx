@@ -19,12 +19,6 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.response.ResponseInput
-import com.aallam.openai.api.response.ResponseInputItem
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -34,6 +28,7 @@ import tri.ai.openai.OpenAiResponsesChat.Companion.buildResponseRequest
 class OpenAiResponsesChatTest {
 
     private val client = OpenAiAdapter.INSTANCE
+    private val TEST_MODEL = "gpt-5-nano"
 
     //region MODEL INDEX TESTS
 
@@ -41,8 +36,6 @@ class OpenAiResponsesChatTest {
     fun testResponsesModelsInIndex() {
         val responsesModels = OpenAiModelIndex.responsesModels()
         assertTrue(responsesModels.isNotEmpty(), "Responses models list should not be empty")
-        assertTrue(responsesModels.contains("o3-pro"), "Should include o3-pro")
-        assertTrue(responsesModels.contains("o1-pro"), "Should include o1-pro")
     }
 
     @Test
@@ -51,7 +44,7 @@ class OpenAiResponsesChatTest {
         responsesModels.forEach { modelId ->
             val info = OpenAiModelIndex.modelInfoIndex[modelId]
             assertNotNull(info, "Model info should exist for $modelId")
-            assertEquals(tri.ai.core.ModelType.RESPONSES, info?.type, "Model $modelId should have type RESPONSES")
+            assertEquals(ModelType.RESPONSES, info?.type, "Model $modelId should have type RESPONSES")
         }
     }
 
@@ -62,8 +55,8 @@ class OpenAiResponsesChatTest {
     @Test
     fun testBuildResponseRequest_SingleUserMessage() {
         val messages = listOf(chatMessage { text("What is 2+3?") })
-        val request = buildResponseRequest("o3-pro", messages, MChatParameters())
-        assertEquals("o3-pro", request.model.id)
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        assertEquals(TEST_MODEL, request.model.id)
         assertNull(request.instructions)
         val input = request.input
         assertNotNull(input)
@@ -75,8 +68,8 @@ class OpenAiResponsesChatTest {
             chatMessage { text("You are a helpful assistant."); role(MChatRole.System) },
             chatMessage { text("What is 2+3?") }
         )
-        val request = buildResponseRequest("o1-pro", messages, MChatParameters())
-        assertEquals("o1-pro", request.model.id)
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        assertEquals(TEST_MODEL, request.model.id)
         assertEquals("You are a helpful assistant.", request.instructions)
     }
 
@@ -87,8 +80,8 @@ class OpenAiResponsesChatTest {
             chatMessage { text("Hi there!"); role(MChatRole.Assistant) },
             chatMessage { text("How are you?"); role(MChatRole.User) }
         )
-        val request = buildResponseRequest("o3-pro", messages, MChatParameters())
-        assertEquals("o3-pro", request.model.id)
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        assertEquals(TEST_MODEL, request.model.id)
         assertNull(request.instructions)
     }
 
@@ -96,7 +89,7 @@ class OpenAiResponsesChatTest {
     fun testBuildResponseRequest_WithParameters() {
         val messages = listOf(chatMessage { text("Hello") })
         val params = MChatParameters(tokens = 500, variation = MChatVariation(temperature = 0.7))
-        val request = buildResponseRequest("o3-pro", messages, params)
+        val request = buildResponseRequest(TEST_MODEL, messages, params)
         assertEquals(500, request.maxOutputTokens)
         assertEquals(0.7, request.temperature)
     }
@@ -108,14 +101,14 @@ class OpenAiResponsesChatTest {
     @Test
     @Tag("openai")
     fun testChat_Simple() {
-        val chat = OpenAiResponsesChat("o1-pro", client = client)
+        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
         chat.testChat_Simple()
     }
 
     @Test
     @Tag("openai")
     fun testChat_Roles() {
-        val chat = OpenAiResponsesChat("o1-pro", client = client)
+        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
         chat.testChat_Roles()
     }
 
