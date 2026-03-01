@@ -277,8 +277,8 @@ PromptFX supports two types of plugins that extend its functionality:
 Plugins are installed by copying JAR files to the `config/plugins/` directory and restarting PromptFX. They are automatically discovered using Java's ServiceLoader mechanism.
 
 See `config/plugins/README.md` for detailed information on plugin types, installation, and development. Sample plugins are available in the repository:
-- `promptfx-sample-api-plugin/` - API plugin example
-- `promptfx-sample-view-plugin/` - View plugin example
+- `promptkt-provider-sample/` - API plugin example (in `promptkt/` module)
+- `promptfx-sample-view-plugin/` - View plugin example (in `promptfx/` module)
 
 ---
 
