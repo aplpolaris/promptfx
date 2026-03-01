@@ -1,5 +1,6 @@
 #!/bin/bash
 # Build and deploy sample plugins script
+# NOTE: This script must be run from the repository root directory.
 
 echo "Building PromptFx Sample Plugins..."
 
