@@ -3,18 +3,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.googlecode.blaisemath</groupId>
-    <artifactId>promptfx-meta</artifactId>
+    <artifactId>promptex</artifactId>
     <version>0.15.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptFx: UI for AI APIs and Workflows.</description>
+    <description>PromptEx: Execution/service layer for AI workflows, RAG pipelines, and MCP integration.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 
     <modules>
-        <module>promptfx</module>
-        <module>promptfx-sample-view-plugin</module>
+        <!-- AI processing and utilities -->
+        <module>promptex-pips</module>
+        <module>promptex-docs</module>
+        <module>promptex-mcp</module>
     </modules>
 
     <!-- configuration of the default license to use -->
@@ -55,19 +57,21 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
 
+        <guava.version>33.5.0-jre</guava.version>
         <jackson.version>2.21.0</jackson.version>
         <jackson-annotations.version>2.21</jackson-annotations.version>
+        <jsoup.version>1.22.1</jsoup.version>
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
         <kotlinx-serialization.version>1.10.0</kotlinx-serialization.version>
         <kotlin-dokka.version>2.1.0</kotlin-dokka.version>
+        <ktor.version>3.4.0</ktor.version> <!-- match version in openai-client -->
+        <okhttp.version>5.3.2</okhttp.version>
+        <pdfbox.version>3.0.6</pdfbox.version>
+        <poi.version>5.5.1</poi.version>
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
-        
-		<javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.2.0</tornadofx.version>
-        <controlsfx.version>11.2.3</controlsfx.version>
-        <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
+        <log4j.version>2.25.3</log4j.version> <!-- match version in poi -->
     </properties>
 
     <dependencyManagement>
@@ -182,7 +186,7 @@
                     </roots>
                     <canUpdateCopyright>true</canUpdateCopyright>
                     <canUpdateDescription>false</canUpdateDescription>
-                    <projectName>tri.promptfx:promptfx</projectName>
+                    <projectName>tri.promptfx:promptex</projectName>
                 </configuration>
                 <executions>
                     <execution>

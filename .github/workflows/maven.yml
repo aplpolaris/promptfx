@@ -35,12 +35,27 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/*.xml') }}
         restore-keys: |
           ${{ runner.os }}-m2-
-          
-    - name: Compile with Maven (PromptFx meta-project)
-      run: mvn -B compile --file pom.xml
-      
-    - name: Test with Maven (PromptFx meta-project)
-      run: mvn -B compile --file pom.xml
-      
-    - name: Package with Maven (PromptFx meta-project)
-      run: mvn -B install --file pom.xml
+
+    - name: Build promptkt
+      run: mvn -B install -DskipTests --file promptkt/pom.xml
+
+    - name: Build promptex
+      run: mvn -B install -DskipTests --file promptex/pom.xml
+
+    - name: Build promptrt
+      run: mvn -B install -DskipTests --file promptrt/pom.xml
+
+    - name: Build promptfx
+      run: mvn -B install -DskipTests --file promptfx/pom.xml
+
+    - name: Test promptkt
+      run: mvn -B test --file promptkt/pom.xml
+
+    - name: Test promptex
+      run: mvn -B test --file promptex/pom.xml
+
+    - name: Test promptrt
+      run: mvn -B test --file promptrt/pom.xml
+
+    - name: Test promptfx
+      run: mvn -B test --file promptfx/pom.xml

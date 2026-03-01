@@ -3,18 +3,24 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.googlecode.blaisemath</groupId>
-    <artifactId>promptfx-meta</artifactId>
+    <artifactId>promptkt</artifactId>
     <version>0.15.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptFx: UI for AI APIs and Workflows.</description>
+    <description>PromptKt Parent POM, including the core PromptKt API and TextPlugin provider implementations.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 
     <modules>
-        <module>promptfx</module>
-        <module>promptfx-sample-view-plugin</module>
+        <!-- Core API -->
+        <module>promptkt-core</module>
+        <!-- API client modules -->
+        <module>promptkt-provider-openai</module>
+        <module>promptkt-provider-gemini</module>
+        <module>promptkt-provider-gemini-sdk</module>
+		<!-- Template project -->
+        <module>promptkt-provider-sample</module>
     </modules>
 
     <!-- configuration of the default license to use -->
@@ -55,19 +61,20 @@
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
 
+        <guava.version>33.5.0-jre</guava.version>
         <jackson.version>2.21.0</jackson.version>
         <jackson-annotations.version>2.21</jackson-annotations.version>
+        <jsonschema.version>4.38.0</jsonschema.version>
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
         <kotlinx-serialization.version>1.10.0</kotlinx-serialization.version>
         <kotlin-dokka.version>2.1.0</kotlin-dokka.version>
+        <ktor.version>3.4.0</ktor.version> <!-- match version in openai-client -->
+        <mustache.version>0.9.14</mustache.version>
+        <okhttp.version>5.3.2</okhttp.version>
+        <openai-kotlin.version>4.1.0</openai-kotlin.version>
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
-        
-		<javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.2.0</tornadofx.version>
-        <controlsfx.version>11.2.3</controlsfx.version>
-        <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
     </properties>
 
     <dependencyManagement>
@@ -182,7 +189,7 @@
                     </roots>
                     <canUpdateCopyright>true</canUpdateCopyright>
                     <canUpdateDescription>false</canUpdateDescription>
-                    <projectName>tri.promptfx:promptfx</projectName>
+                    <projectName>tri.promptfx:promptkt</projectName>
                 </configuration>
                 <executions>
                     <execution>
