@@ -69,6 +69,7 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkTextCompletion(it, client)
     }
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() = models(GeminiSdkModelIndex.visionLanguageModels()) { 
         GeminiSdkVisionLanguageChat(it, client) 
     }

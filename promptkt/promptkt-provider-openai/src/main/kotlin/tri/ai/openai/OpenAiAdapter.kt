@@ -34,6 +34,7 @@ import com.aallam.openai.api.file.fileUpload
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -177,6 +178,35 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             completionRequest.toModelInfo(),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
             outputInfo
+        )
+    }
+
+    /** Runs a request using the OpenAI Responses API. */
+    suspend fun responseCompletion(request: ResponseRequest): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.response(request)
+        resp.usage?.let { usage[UsageUnit.TOKENS] = (usage[UsageUnit.TOKENS] ?: 0) + (it.totalTokens ?: 0) }
+
+        val outputMessages = resp.output.filter { it.type == "message" }.map {
+            MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                content = it.content?.mapNotNull { contentPart ->
+                    contentPart.text?.let { text -> MChatMessagePart(text = text) }
+                } ?: emptyList()
+            )
+        }
+
+        return AiPromptTrace(
+            null,
+            AiModelInfo.info(request.model.id,
+                AiModelInfo.MAX_TOKENS to request.maxOutputTokens,
+                AiModelInfo.TEMPERATURE to request.temperature,
+                AiModelInfo.TOP_P to request.topP
+            ),
+            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.inputTokens, responseTokens = resp.usage?.outputTokens),
+            AiOutputInfo.multimodalMessages(outputMessages)
         )
     }
 

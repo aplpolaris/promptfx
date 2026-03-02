@@ -22,19 +22,22 @@ package tri.ai.core
 /** Library of models, including model information and list of enabled models. */
 class ModelLibrary {
     var models = mapOf<String, List<ModelInfo>>()
+
     var audio = listOf<String>()
     var chat = listOf<String>()
-    var multimodal = listOf<String>()
     var completion = listOf<String>()
     var embeddings = listOf<String>()
     var image_generator = listOf<String>()
     var moderation = listOf<String>()
+    var multimodal = listOf<String>()
+    var responses = listOf<String>()
     var tts = listOf<String>()
+    @Deprecated("Use multimodal instead")
     var vision_language = listOf<String>()
 
     /** Create model index with unique identifiers, including any registered snapshots. */
     fun modelInfoIndex() = models.values.flatten().flatMap { listOf(it) + it.createSnapshots() }.associateBy { it.id }
 
     /** Get list of all model ids in the library. */
-    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + tts + vision_language
+    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + responses + tts + vision_language
 }

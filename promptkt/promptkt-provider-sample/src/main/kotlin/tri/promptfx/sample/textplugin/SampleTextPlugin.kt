@@ -58,6 +58,7 @@ class SampleTextPlugin : TextPlugin {
 
     override fun textCompletionModels() = listOf(SampleTextCompletionModel())
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() = emptyList<VisionLanguageChat>()
 
     override fun imageGeneratorModels() = emptyList<ImageGenerator>()

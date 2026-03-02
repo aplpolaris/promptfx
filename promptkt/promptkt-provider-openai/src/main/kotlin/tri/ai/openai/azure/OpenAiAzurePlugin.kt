@@ -59,6 +59,7 @@ class OpenAiAzurePlugin : TextPlugin {
     override fun multimodalModels() =
         models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) }
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() =
         models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, modelSource(), client) }
 
