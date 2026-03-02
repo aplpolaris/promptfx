@@ -36,11 +36,6 @@ class OpenAiTest {
     val client = OpenAiAdapter.INSTANCE.client
 
     @Test
-    fun testModelLibrary() {
-        println(OpenAiModelIndex.modelInfoIndex)
-    }
-
-    @Test
     @Tag("openai")
     fun testModels() {
         runTest {

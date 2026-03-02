@@ -24,14 +24,22 @@ import org.junit.jupiter.api.Test
 class OpenAiModelIndexTest {
 
     @Test
+    fun testModelLibrary() {
+        println(OpenAiModelIndex.modelInfoIndex)
+    }
+
+    @Test
     fun testModels() {
+        println(OpenAiModelIndex.audioModels())
         println(OpenAiModelIndex.chatModels())
+        println(OpenAiModelIndex.chatModelsInclusive())
         println(OpenAiModelIndex.completionModels())
         println(OpenAiModelIndex.embeddingModels())
-        println(OpenAiModelIndex.moderationModels())
-        println(OpenAiModelIndex.audioModels())
-        println(OpenAiModelIndex.ttsModels())
         println(OpenAiModelIndex.imageGeneratorModels())
+        println(OpenAiModelIndex.moderationModels())
+        println(OpenAiModelIndex.multimodalModels())
+        println(OpenAiModelIndex.responsesModels())
+        println(OpenAiModelIndex.ttsModels())
         println(OpenAiModelIndex.visionLanguageModels())
     }
 
