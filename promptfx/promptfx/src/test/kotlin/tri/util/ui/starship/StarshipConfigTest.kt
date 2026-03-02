@@ -40,6 +40,25 @@ class StarshipConfigTest {
     }
 
     @Test
+    fun testLoadFromYaml() {
+        val resource = requireNotNull(StarshipConfig::class.java.getResource("resources/default-starship-config.yaml")) {
+            "Could not find default-starship-config.yaml resource"
+        }
+        val config = StarshipConfig.readYaml(resource.readText())
+        assert(config.pipeline.steps.isNotEmpty()) { "Pipeline should have steps" }
+        assert(config.layout.widgets.isNotEmpty()) { "Layout should have widgets" }
+        assert(config.question.template.isNotBlank()) { "Question template should not be blank" }
+    }
+
+    @Test
+    fun testReadRuntimeYamlFallsBackToDefault() {
+        // When no runtime files exist in the working directory, should fall back to default
+        val config = StarshipConfig.readRuntimeYaml()
+        assert(config.pipeline.steps.isNotEmpty()) { "Pipeline should have steps" }
+        assert(config.layout.widgets.isNotEmpty()) { "Layout should have widgets" }
+    }
+
+    @Test
     @Tag("openai")
     fun testRandomQuestion() {
         val config = StarshipConfig.readDefaultYaml()

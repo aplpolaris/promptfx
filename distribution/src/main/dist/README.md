@@ -206,7 +206,7 @@ For more information on MCP servers and available implementations, see the [Mode
 
 The `modes.yaml` file is used to configure certain drop-down lists of options in the UI.
 
-The `starship.yaml` file is used to configure the "Starship demo" mode, which can be enabled with the `starship` runtime flag. This allows you to create a custom demo experience that can be accessed via a button in the UI. This feature is under development and may not be fully functional.
+The `starship.yaml` file is used to configure the "Starship demo" mode, which can be enabled with the `starship` runtime flag. This allows you to create a custom demo experience that can be accessed via a button in the UI. For detailed instructions on customizing the Starship demo, see [`config/README-STARSHIP.md`](config/README-STARSHIP.md).
 
 The `views.yaml` file is especially powerful and can be used to create custom views built around prompt templates.
 Prompt templates may be defined directly, or may be defined in a custom prompts file under `prompts/`.
