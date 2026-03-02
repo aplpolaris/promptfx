@@ -21,7 +21,10 @@ package tri.util.ui.starship
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.pips.api.PPlan
+import tri.util.info
+import tri.util.warning
 import tri.util.json.yamlMapper
+import java.io.File
 
 /** Global Starship configuration, including the pipeline and the view config. */
 class StarshipConfig() {
@@ -30,10 +33,10 @@ class StarshipConfig() {
     var layout = StarshipConfigLayout()
 
     companion object {
-        // TODO - update yaml formats to allow loading a runtime config
-//        private val configFile = setOf(File("starship.yaml"), File("config/starship.yaml")).firstOrNull { it.exists() }
-//        private val configFileAlt = setOf(File("starship-custom.yaml"), File("config/starship-custom.yaml")).firstOrNull { it.exists() }
-//        private val config: Map<String, Any> = (configFileAlt ?: configFile)?.let { YAMLMapper().readValue(it) } ?: mapOf()
+        private val RUNTIME_CONFIG_FILES = listOf(
+            File("starship-custom.yaml"), File("config/starship-custom.yaml"),
+            File("starship.yaml"), File("config/starship.yaml")
+        )
 
         /** Reads a Starship config from YAML. */
         fun readYaml(yaml: String): StarshipConfig =
@@ -42,5 +45,34 @@ class StarshipConfig() {
         /** Reads default Starship config. */
         fun readDefaultYaml(): StarshipConfig =
             readYaml(StarshipConfig::class.java.getResource("resources/default-starship-config.yaml")!!.readText())
+
+        /**
+         * Reads a Starship config from a runtime file if one exists, otherwise falls back to the default config.
+         * Checks for `starship-custom.yaml` first, then `starship.yaml`, in the current directory and `config/` subdirectory.
+         */
+        fun readRuntimeYaml(): StarshipConfig {
+            val configFile = RUNTIME_CONFIG_FILES.firstOrNull { it.exists() }
+            if (configFile != null) {
+                info<StarshipConfig>("Loading Starship config from runtime file: ${configFile.path}")
+                try {
+                    val config = readYaml(configFile.readText())
+                    config.validate()
+                    return config
+                } catch (e: Exception) {
+                    warning<StarshipConfig>("Failed to load runtime Starship config from ${configFile.path}: ${e.message}. Falling back to default.")
+                }
+            }
+            return readDefaultYaml()
+        }
+
+        /** Validates that a [StarshipConfig] has the required configuration pieces, logging warnings for any missing pieces. */
+        private fun StarshipConfig.validate() {
+            if (pipeline.steps.isEmpty())
+                warning<StarshipConfig>("Starship pipeline has no steps configured. The demo will not function correctly.")
+            if (layout.widgets.isEmpty())
+                warning<StarshipConfig>("Starship layout has no widgets configured. The demo display will be empty.")
+            if (question.template.isBlank())
+                warning<StarshipConfig>("Starship question template is blank. Random question generation may fail.")
+        }
     }
 }
