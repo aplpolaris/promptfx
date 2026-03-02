@@ -37,27 +37,6 @@ class OpenAiTest {
 
     @Test
     @Tag("openai")
-    fun testModels() {
-        runTest {
-            val res = client.models()
-            val apiModelIds = res.map { it.id.id }.toSet()
-            val indexIds = OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()
-            println(res)
-            println("-".repeat(50))
-            println("OpenAI API models not in local index:")
-            val ids = apiModelIds - indexIds
-            ids.sorted().forEach {
-                // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
-                if (!it.matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$")))
-                    println("  $it")
-            }
-            println("-".repeat(50))
-            println("Local index models not in OpenAI API: " + (indexIds - apiModelIds))
-        }
-    }
-
-    @Test
-    @Tag("openai")
     fun testChat() = runTest {
         val res = client.chatCompletion(
             ChatCompletionRequest(
