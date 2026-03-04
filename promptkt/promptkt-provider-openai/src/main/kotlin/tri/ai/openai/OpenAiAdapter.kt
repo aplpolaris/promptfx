@@ -189,13 +189,29 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.response(request)
         resp.usage?.let { usage[UsageUnit.TOKENS] = (usage[UsageUnit.TOKENS] ?: 0) + (it.totalTokens ?: 0) }
 
-        val outputMessages = resp.output.filter { it.type == "message" }.map {
+        val messageItems = resp.output.filter { it.type == "message" }
+        val functionCallItems = resp.output.filter { it.type == "function_call" }
+
+        val outputMessages = messageItems.map { item ->
             MultimodalChatMessage(
                 role = MChatRole.Assistant,
-                content = it.content?.mapNotNull { contentPart ->
+                content = item.content?.mapNotNull { contentPart ->
                     contentPart.text?.let { text -> MChatMessagePart(text = text) }
                 } ?: emptyList()
             )
+        } + if (functionCallItems.isNotEmpty()) {
+            listOf(MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                toolCalls = functionCallItems.map { item ->
+                    MToolCall(
+                        id = item.callId ?: item.id ?: "",
+                        name = item.name ?: "",
+                        argumentsAsJson = item.arguments ?: ""
+                    )
+                }
+            ))
+        } else {
+            emptyList()
         }
 
         return AiPromptTrace(

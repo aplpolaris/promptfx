@@ -94,6 +94,40 @@ class OpenAiResponsesChatTest {
         assertEquals(0.7, request.temperature)
     }
 
+    @Test
+    fun testBuildResponseRequest_WithTools() {
+        val messages = listOf(chatMessage { text("Convert 5 to Roman numeral.") })
+        val params = MChatParameters(tools = MChatTools(tools = listOf(
+            MTool("RomanNumeral", "Converts numbers to Roman numerals",
+                """{"type":"object","properties":{"input":{"type":"integer"}}}""")
+        )))
+        val request = buildResponseRequest(TEST_MODEL, messages, params)
+        assertNotNull(request.tools)
+        assertEquals(1, request.tools!!.size)
+        assertEquals("RomanNumeral", request.tools!![0].name)
+        assertNotNull(request.toolChoice)
+    }
+
+    @Test
+    fun testBuildResponseRequest_WithJsonResponseFormat() {
+        val messages = listOf(chatMessage { text("Hello") })
+        val params = MChatParameters(responseFormat = MResponseFormat.JSON)
+        val request = buildResponseRequest(TEST_MODEL, messages, params)
+        assertNotNull(request.text)
+    }
+
+    @Test
+    fun testBuildResponseRequest_WithToolResultMessages() {
+        val toolCall = MToolCall(id = "call_123", name = "MyTool", argumentsAsJson = """{"input":5}""")
+        val messages = listOf(
+            chatMessage { text("Use the tool.") },
+            MultimodalChatMessage(MChatRole.Assistant, toolCalls = listOf(toolCall)),
+            MultimodalChatMessage.tool("result_value", "call_123")
+        )
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        assertNotNull(request.input)
+    }
+
     //endregion
 
     //region LIVE API TESTS (require openai tag)
@@ -110,6 +144,20 @@ class OpenAiResponsesChatTest {
     fun testChat_Roles() {
         val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
         chat.testChat_Roles()
+    }
+
+    @Test
+    @Tag("openai")
+    fun testChat_Image() {
+        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
+        chat.testChat_Image()
+    }
+
+    @Test
+    @Tag("openai")
+    fun testChat_Tools() {
+        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
+        chat.testChat_Tools()
     }
 
     //endregion
