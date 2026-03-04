@@ -31,6 +31,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
+import tri.ai.core.TextPlugin
 import tri.ai.gemini.*
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
@@ -164,11 +165,11 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
     private val GEMINI_PROMPT = "Transcribe this audio"
 
     private suspend fun processAudio(modelId: String, f: File): AiPromptTrace {
+        val sttModel = TextPlugin.speechToTextModels().firstOrNull { it.modelId == modelId }
+        if (sttModel != null) {
+            return sttModel.transcribe(f).also { controller.updateUsage() }
+        }
         return when (modelId) {
-            in OpenAiModelIndex.audioModels() -> {
-                controller.openAiPlugin.client.quickTranscribe(modelId, f)
-                    .also { controller.updateUsage() }
-            }
             in GeminiModelIndex.audioModels() -> {
                 val fileBytes = file.value!!.audioUri("wav")
                 val request = GenerateContentRequest(Content(
@@ -187,7 +188,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
                     AiOutputInfo.text(response.candidates!![0].content.parts[0].text!!)
                 )
             }
-            else -> return AiPromptTrace.invalidRequest(modelId, "Unknown audio model")
+            else -> AiPromptTrace.invalidRequest(modelId, "Unknown audio model")
         }
     }
 

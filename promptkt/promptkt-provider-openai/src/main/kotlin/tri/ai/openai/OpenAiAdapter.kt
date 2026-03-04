@@ -103,7 +103,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     }
 
     /** Runs a quick audio transcription for a given file. */
-    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace {
+    suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File, prompt: String? = null, language: String? = null): AiPromptTrace {
         settings.checkApiKey()
         if (!audioFile.isAudioFile())
             return AiPromptTrace.invalidRequest(modelId, "Audio file not provided.")
@@ -112,7 +112,9 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.transcription(TranscriptionRequest(
             model = ModelId(modelId),
             // convert audiofile toa  kotlin path object
-            audio = FileSource(Path(audioFile.absolutePath), SystemFileSystem)
+            audio = FileSource(Path(audioFile.absolutePath), SystemFileSystem),
+            prompt = prompt,
+            language = language
         ))
         resp.duration?.let {
             usage.increment(it.toInt(), UsageUnit.AUDIO_SECONDS)

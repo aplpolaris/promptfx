@@ -115,4 +115,10 @@ class SampleTextPluginTest {
         val plugin = SampleTextPlugin()
         assertTrue(plugin.imageGeneratorModels().isEmpty())
     }
+
+    @Test
+    fun `plugin should have empty speech-to-text models`() {
+        val plugin = SampleTextPlugin()
+        assertTrue(plugin.speechToTextModels().isEmpty())
+    }
 }
