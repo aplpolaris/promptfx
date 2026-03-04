@@ -19,7 +19,6 @@
  */
 package tri.promptfx.multimodal
 
-import com.aallam.openai.api.audio.SpeechRequest
 import com.aallam.openai.api.audio.SpeechResponseFormat.Companion.Aac
 import com.aallam.openai.api.audio.SpeechResponseFormat.Companion.Flac
 import com.aallam.openai.api.audio.SpeechResponseFormat.Companion.Mp3
@@ -30,7 +29,6 @@ import com.aallam.openai.api.audio.Voice.Companion.Fable
 import com.aallam.openai.api.audio.Voice.Companion.Nova
 import com.aallam.openai.api.audio.Voice.Companion.Onyx
 import com.aallam.openai.api.audio.Voice.Companion.Shimmer
-import com.aallam.openai.api.model.ModelId
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleDoubleProperty
@@ -41,11 +39,11 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
+import tri.ai.core.TextPlugin
 import tri.ai.openai.OpenAiModelIndex
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
 import tri.util.ui.loadAudio
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -109,24 +107,18 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
-        val trace: AiPromptTraceSupport = when {
-            input.value.isNullOrBlank() ->
-                AiPromptTrace.invalidRequest(model.value, "No input provided")
-            else -> {
-                val request = SpeechRequest(
-                    model = ModelId(model.value),
-                    input = input.value,
-                    voice = voice.value,
-                    responseFormat = format.value,
-                    speed = audioSpeed.value
-                )
-                controller.openAiPlugin.client.speech(request)
-                    .also {
-                        controller.updateUsage()
-                        file.set(it.firstValue.content() as ByteArray)
-                    }
-            }
-        }
+        if (input.value.isNullOrBlank())
+            return AiPromptTrace.invalidRequest(model.value, "No input provided").asPipelineResult()
+        val ttsModel = TextPlugin.textToSpeechModels().firstOrNull { it.modelId == model.value }
+            ?: return AiPromptTrace.invalidRequest(model.value, "Text-to-speech model not found: ${model.value}").asPipelineResult()
+        val trace = ttsModel.speech(
+            text = input.value,
+            voice = voice.value.value,
+            speed = audioSpeed.value
+        )
+        controller.updateUsage()
+        if (trace.errorMessage == null)
+            file.set(trace.firstValue.content() as ByteArray)
         return trace.asPipelineResult()
     }
 
