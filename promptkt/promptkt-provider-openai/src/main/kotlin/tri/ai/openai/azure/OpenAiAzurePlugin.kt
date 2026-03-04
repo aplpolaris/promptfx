@@ -50,11 +50,11 @@ class OpenAiAzurePlugin : TextPlugin {
         models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, modelSource(), client) }
 
     override fun textCompletionModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
-        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, modelSource(), client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive()) { OpenAiCompletionChat(it, modelSource(), client) } +
+        models(OpenAiAzureModelIndex.completionModels()) { OpenAiCompletion(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, modelSource(), client) }
+        models(OpenAiAzureModelIndex.chatModelsInclusive()) { OpenAiChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
         models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) }
