@@ -58,37 +58,37 @@ open class ModelIndex(val modelFileName: String) {
     val modelIds by lazy { models.modelIds() + runtimeModels.modelIds() }
 
     /** Get audio models. */
-    fun audioModels(includeSnapshots: Boolean = false) = models(ModelLibrary::audio, includeSnapshots)
+    fun audioModels() = models(ModelLibrary::audio)
     /** Get chat models without vision-language models. */
-    fun chatModels(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots)
+    fun chatModels() = models(ModelLibrary::chat)
     /** Get chat models, including vision-language models which have the same API. */
-    fun chatModelsInclusive(includeSnapshots: Boolean = false) =
-            models(ModelLibrary::chat, includeSnapshots) +
-            models(ModelLibrary::vision_language, includeSnapshots)
+    fun chatModelsInclusive() =
+            models(ModelLibrary::chat) +
+            models(ModelLibrary::vision_language)
     /** Get text completion models. */
-    fun completionModels(includeSnapshots: Boolean = false) = models(ModelLibrary::completion, includeSnapshots)
+    fun completionModels() = models(ModelLibrary::completion)
     /** Get embedding models. */
-    fun embeddingModels(includeSnapshots: Boolean = false) = models(ModelLibrary::embeddings, includeSnapshots)
+    fun embeddingModels() = models(ModelLibrary::embeddings)
     /** Get image generator models. */
-    fun imageGeneratorModels(includeSnapshots: Boolean = false) = models(ModelLibrary::image_generator, includeSnapshots)
+    fun imageGeneratorModels() = models(ModelLibrary::image_generator)
     /** Get moderation models. */
-    fun moderationModels(includeSnapshots: Boolean = false) = models(ModelLibrary::moderation, includeSnapshots)
+    fun moderationModels() = models(ModelLibrary::moderation)
     /** Get multimodal models. */
-    fun multimodalModels(includeSnapshots: Boolean = false) = models(ModelLibrary::multimodal, includeSnapshots)
+    fun multimodalModels() = models(ModelLibrary::multimodal)
     /** Get Responses API models. */
-    fun responsesModels(includeSnapshots: Boolean = false) = models(ModelLibrary::responses, includeSnapshots)
+    fun responsesModels() = models(ModelLibrary::responses)
     /** Get text-to-speech models. */
-    fun ttsModels(includeSnapshots: Boolean = false) = models(ModelLibrary::tts, includeSnapshots)
+    fun ttsModels() = models(ModelLibrary::tts)
     /** Get vision-language models. */
     @Deprecated("Use multimodalModels() instead")
-    fun visionLanguageModels(includeSnapshots: Boolean = false) = models(ModelLibrary::vision_language, includeSnapshots)
+    fun visionLanguageModels() = models(ModelLibrary::vision_language)
 
     //region HELPERS
 
     /** Get list of available models. */
-    private fun models(op: ModelLibrary.() -> List<String>, includeSnapshots: Boolean = false) =
+    private fun models(op: ModelLibrary.() -> List<String>) =
         lookupModels(op(models), op(runtimeModels))
-            .flatMap { it.ids(includeSnapshots) }
+            .map { it.id }
 
     /**
      * Get list of models from two lists.
