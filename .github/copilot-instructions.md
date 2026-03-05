@@ -14,10 +14,6 @@ promptkt/          # Kotlin library for AI API interactions
   promptkt-provider-gemini-sdk/ # Google Gemini provider (SDK-based)
   promptkt-provider-sample/    # Template for creating new providers
 
-promptfx/          # JavaFX GUI application
-  promptfx/        # Main UI module
-  promptfx-sample-view-plugin/ # Sample plugin for custom UI views
-
 promptex/          # Extended prompt execution modules
   promptex-docs/   # Document processing
   promptex-mcp/    # MCP (Model Context Protocol) integration
@@ -25,6 +21,10 @@ promptex/          # Extended prompt execution modules
 
 promptrt/          # Prompt runtime modules
   promptrt-cli/    # CLI interfaces
+
+promptfx/          # JavaFX GUI application
+  promptfx/        # Main UI module
+  promptfx-sample-view-plugin/ # Sample plugin for custom UI views
 
 distribution/      # Distribution artifacts
 ```
