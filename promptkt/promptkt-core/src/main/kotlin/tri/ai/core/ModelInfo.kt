@@ -63,6 +63,7 @@ enum class DataModality {
 enum class ModelType {
     TEXT_COMPLETION,
     TEXT_CHAT,
+    @Deprecated("Use TEXT_CHAT or RESPONSES instead")
     TEXT_VISION_CHAT,
     TEXT_EMBEDDING,
     IMAGE_GENERATOR,
