@@ -56,6 +56,9 @@ abstract class PromptFxPolicy {
     abstract fun textToSpeechModels(): List<TextToSpeechModel>
     open fun textToSpeechModelDefault() = textToSpeechModels().firstOrNull() ?: TextToSpeechModel.UNAVAILABLE
 
+    abstract fun speechToTextModels(): List<SpeechToTextModel>
+    open fun speechToTextModelDefault() = speechToTextModels().firstOrNull() ?: SpeechToTextModel.UNAVAILABLE
+
     /** Returns true if the given view is supported by this policy. */
     abstract fun supportsView(simpleName: String): Boolean
 
@@ -90,6 +93,7 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
     override fun textToSpeechModels() = plugin.textToSpeechModels()
+    override fun speechToTextModels() = plugin.speechToTextModels()
 }
 
 /** OpenAI-only policy, as managed by [OpenAiPlugin]. */
@@ -118,5 +122,6 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
     override fun textToSpeechModels() = TextPlugin.textToSpeechModels()
+    override fun speechToTextModels() = TextPlugin.speechToTextModels()
     override fun supportsView(simpleName: String) = true
 }

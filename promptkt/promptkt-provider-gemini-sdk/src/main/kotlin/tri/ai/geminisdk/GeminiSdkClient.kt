@@ -185,6 +185,29 @@ class GeminiSdkClient : Closeable {
             .map { it.values().get() }
     }
 
+    /**
+     * Generate content from audio bytes and a text prompt.
+     */
+    fun generateContentAudio(
+        modelId: String,
+        audioBytes: ByteArray,
+        mimeType: String,
+        prompt: String
+    ): GenerateContentResponse {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val contents = listOf(
+            Content.builder()
+                .parts(listOf(
+                    Part.fromText(prompt),
+                    Part.fromBytes(audioBytes, mimeType)
+                ))
+                .role("user")
+                .build()
+        )
+        val config = GenerateContentConfig.builder().build()
+        return genClient.models.generateContent(modelId, contents, config)
+    }
+
     override fun close() {
         // The java-genai Client handles connection pooling internally
     }
