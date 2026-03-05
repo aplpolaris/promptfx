@@ -20,6 +20,7 @@
 package tri.ai.core.agent.impl
 
 import com.aallam.openai.api.logging.LogLevel
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -27,6 +28,7 @@ import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.agent.WorkflowLogger
 import tri.ai.core.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
@@ -49,10 +51,15 @@ class JsonToolExecutorTest {
             "What year was Jurassic Park?"
         ).forEach {
             val flow = exec.sendMessage(AgentChatSession(config = CHAT_CONFIG), MultimodalChatMessage.user(it))
+            val agentLogger = AgentFlowLogger(verbose = true)
+            val workflowLogger = WorkflowLogger()
             runBlocking {
-                flow.events.collect(AgentFlowLogger(verbose = true))
+                flow.events
+                    .onEach { agentLogger.emit(it) }
+                    .collect(workflowLogger)
                 println()
             }
+            workflowLogger.printSummary()
         }
     }
 
