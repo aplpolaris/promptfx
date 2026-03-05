@@ -6,7 +6,7 @@ This repository is organized into four top-level Maven modules:
 
 - **`promptkt`** – Kotlin library for AI API interactions
 - **`promptex`** – Extended prompt execution modules
-- **`promptrt`** – Prompt runtime modules
+- **`promptrt`** – Prompt command-line modules
 - **`promptfx`** – JavaFX GUI application
 
 It is primarily used with the OpenAI API or compatible LLM APIs.
