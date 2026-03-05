@@ -77,6 +77,10 @@ class GeminiSdkPlugin : TextPlugin {
     override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> = 
         emptyList() // Image generation not supported by Vertex AI SDK
 
+    override fun speechToTextModels() = models(GeminiSdkModelIndex.audioModels()) {
+        GeminiSdkSpeechToText(it, client)
+    }
+
     override fun close() {
         client.close()
     }

@@ -69,6 +69,9 @@ class OpenAiPlugin : TextPlugin {
     override fun textToSpeechModels() =
         models(OpenAiModelIndex.ttsModels()) { OpenAiTextToSpeech(it, modelSource(), client) }
 
+    override fun speechToTextModels() =
+        models(OpenAiModelIndex.audioModels()) { OpenAiSpeechToText(it, modelSource(), client) }
+
     override fun close() {
         client.client.close()
     }

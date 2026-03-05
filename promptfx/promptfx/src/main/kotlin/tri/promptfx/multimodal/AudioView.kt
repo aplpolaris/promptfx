@@ -31,16 +31,15 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.gemini.*
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.core.SpeechToTextModel
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
+import tri.promptfx.PromptFxModels
 import tri.util.ui.AudioRecorder
 import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.audioUri
 import java.io.File
 
 /** Plugin for the [AudioView]. */
@@ -49,11 +48,11 @@ class AudioApiPlugin : NavigableWorkspaceViewImpl<AudioView>("Multimodal", "Spee
 /** View for audio transcription. */
 class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transcribe (mp3, mp4, mpeg, mpga, m4a, wav, or webm)") {
 
-    private val AUDIO_MODELS = OpenAiModelIndex.audioModels() + GeminiModelIndex.audioModels()
+    private val AUDIO_MODELS: List<SpeechToTextModel> get() = PromptFxModels.speechToTextModels()
 
     private val input = SimpleStringProperty("")
     private val file = SimpleObjectProperty<File?>(null)
-    private val model = SimpleStringProperty(AUDIO_MODELS.first())
+    private val model = SimpleObjectProperty<SpeechToTextModel>()
     private val common = ModelParameters()
 
     private var recorder: AudioRecorder? = null
@@ -63,6 +62,7 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
     lateinit var playButton: Button
 
     init {
+        model.set(AUDIO_MODELS.firstOrNull())
         input {
             audioPanel()
             addInputTextArea(input) {
@@ -81,7 +81,9 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
     init {
         parameters("Audio Model") {
             field("Model") {
-                combobox(model, AUDIO_MODELS)
+                combobox(model, AUDIO_MODELS) {
+                    cellFormat { text = it.modelDisplayName() }
+                }
             }
         }
         parameters("Parameters") {
@@ -155,40 +157,9 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
     }
 
     override suspend fun processUserInput(): AiPipelineResult {
-        return when (val f = file.value) {
-            null -> AiPromptTrace.invalidRequest(model.value, "No audio file dropped")
-            else -> processAudio(model.value, f)
-        }.asPipelineResult()
-    }
-
-    private val GEMINI_PROMPT = "Transcribe this audio"
-
-    private suspend fun processAudio(modelId: String, f: File): AiPromptTrace {
-        return when (modelId) {
-            in OpenAiModelIndex.audioModels() -> {
-                controller.openAiPlugin.client.quickTranscribe(modelId, f)
-                    .also { controller.updateUsage() }
-            }
-            in GeminiModelIndex.audioModels() -> {
-                val fileBytes = file.value!!.audioUri("wav")
-                val request = GenerateContentRequest(Content(
-                    listOf(
-                        Part.text(GEMINI_PROMPT),
-                        Part(inlineData = Blob.fromDataUrl(fileBytes))
-                    ), ContentRole.user
-                ))
-                val response = GeminiClient().use {
-                    it.generateContent(modelId, request)
-                }
-                AiPromptTrace(
-                    PromptInfo(GEMINI_PROMPT),
-                    AiModelInfo(modelId),
-                    AiExecInfo(),
-                    AiOutputInfo.text(response.candidates!![0].content.parts[0].text!!)
-                )
-            }
-            else -> return AiPromptTrace.invalidRequest(modelId, "Unknown audio model")
-        }
+        val f = file.value ?: return AiPromptTrace.invalidRequest(model.value?.modelId ?: "", "No audio file dropped").asPipelineResult()
+        val sttModel = model.value ?: return AiPromptTrace.invalidRequest("", "No speech-to-text model selected").asPipelineResult()
+        return sttModel.transcribe(f).also { controller.updateUsage() }.asPipelineResult()
     }
 
 }
