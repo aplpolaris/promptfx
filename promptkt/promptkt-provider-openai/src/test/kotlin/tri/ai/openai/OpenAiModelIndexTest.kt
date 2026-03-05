@@ -91,6 +91,7 @@ class OpenAiModelIndexTest {
         runTest {
             val indexModels = OpenAiModelIndex.modelInfoIndex.values
                 .filter { it.lifecycle !in setOf(ModelLifecycle.DEPRECATED, ModelLifecycle.DISCONTINUED) }
+                .filter { it.type !in setOf(ModelType.MODERATION, ModelType.TEXT_EMBEDDING) }
                 .sortedBy { it.id }
 
             println("=".repeat(80))

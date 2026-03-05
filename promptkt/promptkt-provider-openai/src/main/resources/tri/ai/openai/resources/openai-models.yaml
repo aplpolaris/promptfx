@@ -27,7 +27,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 400000
       outputTokenLimit: 128000
-      snapshots: [ ]
 
     - id: gpt-5
       name: GPT-5
@@ -40,7 +39,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 400000
       outputTokenLimit: 128000
-      snapshots: [ ]
 
     - id: gpt-5-mini
       name: GPT-5 mini
@@ -53,7 +51,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 400000
       outputTokenLimit: 128000
-      snapshots: [ ]
 
     - id: gpt-5-nano
       name: GPT-5 nano
@@ -66,7 +63,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 400000
       outputTokenLimit: 128000
-      snapshots: [ ]
 
     - id: gpt-5-pro
       name: GPT-5 pro ($$$$, Responses API only)
@@ -80,7 +76,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 400000
       outputTokenLimit: 272000
-      snapshots: [ ]
 
   GPT-4:
 
@@ -95,7 +90,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 1047576
       outputTokenLimit: 32768
-      snapshots: []
 
     - id: gpt-4.1-mini
       name: GPT-4.1 mini
@@ -108,7 +102,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 1047576
       outputTokenLimit: 32768
-      snapshots: []
 
     - id: gpt-4.1-nano
       name: GPT-4.1 nano
@@ -121,7 +114,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 1047576
       outputTokenLimit: 32768
-      snapshots: []
 
     - id: gpt-4o
       name: GPT-4o
@@ -135,7 +127,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 128000
       outputTokenLimit: 16384
-      snapshots: [ ]
 
     - id: gpt-4o-mini
       name: GPT-4o Mini
@@ -163,7 +154,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 128000
       outputTokenLimit: 4096
-      snapshots: [ '2024-04-09', 'preview' ]
 
     - id: gpt-4
       name: GPT-4
@@ -177,7 +167,6 @@ models:
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 8192
       outputTokenLimit: 8192
-      snapshots: [ '0613', '1106-preview' ]
 
   GPT-3.5:
 
@@ -205,7 +194,6 @@ models:
       lifecycle: PRODUCTION
       totalTokenLimit: 131072
       outputTokenLimit: 131072
-      snapshots: [ ]
 
     - id: gpt-oss-20b
       name: gpt-oss-20b (Responses API only)
@@ -217,7 +205,6 @@ models:
       lifecycle: PRODUCTION
       totalTokenLimit: 131072
       outputTokenLimit: 131072
-      snapshots: [ ]
 
   GPT completions:
 
@@ -413,7 +400,6 @@ models:
       lifecycle: PRODUCTION
       inputs: [ text, image ]
       outputs: [ moderation ]
-      snapshots: [ ]
 
   Speech:
 
