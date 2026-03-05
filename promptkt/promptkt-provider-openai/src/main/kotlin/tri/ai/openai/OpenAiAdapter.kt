@@ -111,7 +111,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val t0 = System.currentTimeMillis()
         val resp = client.transcription(TranscriptionRequest(
             model = ModelId(modelId),
-            // convert audiofile toa  kotlin path object
+            // convert audio file to a Kotlin Path object
             audio = FileSource(Path(audioFile.absolutePath), SystemFileSystem),
             prompt = prompt,
             language = language
