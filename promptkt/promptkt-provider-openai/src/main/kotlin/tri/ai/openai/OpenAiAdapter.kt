@@ -192,7 +192,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val messageItems = resp.output.filter { it.type == "message" }
         val functionCallItems = resp.output.filter { it.type == "function_call" }
 
-        val outputMessages = messageItems.map { item ->
+        var outputMessages = messageItems.map { item ->
             MultimodalChatMessage(
                 role = MChatRole.Assistant,
                 content = item.content?.mapNotNull { contentPart ->
@@ -214,16 +214,29 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             emptyList()
         }
 
-        return AiPromptTrace(
-            null,
-            AiModelInfo.info(request.model.id,
-                AiModelInfo.MAX_TOKENS to request.maxOutputTokens,
-                AiModelInfo.TEMPERATURE to request.temperature,
-                AiModelInfo.TOP_P to request.topP
-            ),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.inputTokens, responseTokens = resp.usage?.outputTokens),
-            AiOutputInfo.multimodalMessages(outputMessages)
+        // Fallback to outputText if no structured output items were returned (some models/configs omit `output`)
+        val fallbackText = resp.outputText
+        if (outputMessages.isEmpty() && fallbackText != null) {
+            outputMessages = listOf(MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                content = listOf(MChatMessagePart(text = fallbackText))
+            ))
+        }
+
+        val modelInfo = AiModelInfo.info(request.model.id,
+            AiModelInfo.MAX_TOKENS to request.maxOutputTokens,
+            AiModelInfo.TEMPERATURE to request.temperature,
+            AiModelInfo.TOP_P to request.topP
         )
+        val execInfo = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.inputTokens, responseTokens = resp.usage?.outputTokens)
+
+        // Propagate API-level errors (status:"failed") as a failed trace rather than returning empty output
+        if (resp.status == "failed") {
+            val errorMsg = resp.error?.message ?: "Responses API returned status: failed for model ${request.model.id}"
+            return AiPromptTrace(null, modelInfo, execInfo.also { it.error = errorMsg }, null)
+        }
+
+        return AiPromptTrace(null, modelInfo, execInfo, AiOutputInfo.multimodalMessages(outputMessages))
     }
 
     /** Runs an edit request (deprecated API). */
