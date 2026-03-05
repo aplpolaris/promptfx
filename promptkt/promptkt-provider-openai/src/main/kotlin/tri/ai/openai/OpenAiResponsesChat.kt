@@ -134,9 +134,7 @@ class OpenAiResponsesChat(
                             })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
-                                put("image_url", buildJsonObject {
-                                    put("url", part.inlineData)
-                                })
+                                put("image_url", part.inlineData)
                             })
                         }
                     }
@@ -167,9 +165,7 @@ class OpenAiResponsesChat(
                             })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
-                                put("image_url", buildJsonObject {
-                                    put("url", part.inlineData)
-                                })
+                                put("image_url", part.inlineData)
                             })
                         }
                     }
