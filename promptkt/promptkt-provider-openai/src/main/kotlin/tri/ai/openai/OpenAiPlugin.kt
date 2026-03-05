@@ -66,6 +66,9 @@ class OpenAiPlugin : TextPlugin {
     override fun imageGeneratorModels() =
         models(OpenAiModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, modelSource(), client) }
 
+    override fun textToSpeechModels() =
+        models(OpenAiModelIndex.ttsModels()) { OpenAiTextToSpeech(it, modelSource(), client) }
+
     override fun close() {
         client.client.close()
     }
