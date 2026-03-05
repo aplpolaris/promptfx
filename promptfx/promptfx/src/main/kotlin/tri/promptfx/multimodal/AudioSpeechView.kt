@@ -39,8 +39,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.core.TextPlugin
-import tri.ai.openai.OpenAiModelIndex
+import tri.promptfx.PromptFxModels
 import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.asPipelineResult
 import tri.ai.prompt.trace.AiPromptTrace
@@ -55,7 +54,7 @@ class AudioSpeechApiPlugin : NavigableWorkspaceViewImpl<AudioSpeechView>("Multim
 /** View for OpenAI API's [TTS](https://platform.openai.com/docs/api-reference/audio/createSpeech) endpoint. */
 class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate speech.") {
 
-    private val TTS_MODELS = OpenAiModelIndex.ttsModels()
+    private val TTS_MODELS = PromptFxModels.textToSpeechModels().map { it.modelId }
     private val TTS_VOICES = listOf(Alloy, Echo, Fable, Nova, Onyx, Shimmer)
     private val AUDIO_FORMATS = listOf(Mp3, Aac, Flac, Opus)
 
@@ -109,7 +108,7 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
     override suspend fun processUserInput(): AiPipelineResult {
         if (input.value.isNullOrBlank())
             return AiPromptTrace.invalidRequest(model.value, "No input provided").asPipelineResult()
-        val ttsModel = TextPlugin.textToSpeechModels().firstOrNull { it.modelId == model.value }
+        val ttsModel = PromptFxModels.textToSpeechModels().firstOrNull { it.modelId == model.value }
             ?: return AiPromptTrace.invalidRequest(model.value, "Text-to-speech model not found: ${model.value}").asPipelineResult()
         val trace = ttsModel.speech(
             text = input.value,
