@@ -19,12 +19,14 @@
  */
 package tri.ai.core.agent.wf
 
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.AgentFlowLogger
 import tri.ai.core.agent.WorkflowLogger
 import tri.ai.openai.OpenAiPlugin
 
@@ -71,11 +73,14 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_calc() {
         val exec = WorkflowExecutor(EXEC, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
         val problem = MultimodalChatMessage.user("I need a Roman numeral that represents the product 21 times 2.")
-        val logger = WorkflowLogger()
+        val agentLogger = AgentFlowLogger(verbose = true)
+        val workflowLogger = WorkflowLogger()
         runBlocking {
-            exec.sendMessage(AgentChatSession(), problem).events.collect(logger)
+            exec.sendMessage(AgentChatSession(), problem).events
+                .onEach { agentLogger.emit(it) }
+                .collect(workflowLogger)
         }
-        logger.printSummary()
+        workflowLogger.printSummary()
     }
 
     //region QUERY/TIMELINE SOLVERS
@@ -104,18 +109,28 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_timeline() {
         val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = MultimodalChatMessage.user("What is the timeline of the life of Albert Einstein?")
-        val logger = WorkflowLogger()
-        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(logger) }
-        logger.printSummary()
+        val agentLogger = AgentFlowLogger(verbose = true)
+        val workflowLogger = WorkflowLogger()
+        runBlocking {
+            exec.sendMessage(AgentChatSession(), problem).events
+                .onEach { agentLogger.emit(it) }
+                .collect(workflowLogger)
+        }
+        workflowLogger.printSummary()
     }
 
     @Test
     fun testWorkflowExecutor_timeline2() {
         val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = MultimodalChatMessage.user("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
-        val logger = WorkflowLogger()
-        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(logger) }
-        logger.printSummary()
+        val agentLogger = AgentFlowLogger(verbose = true)
+        val workflowLogger = WorkflowLogger()
+        runBlocking {
+            exec.sendMessage(AgentChatSession(), problem).events
+                .onEach { agentLogger.emit(it) }
+                .collect(workflowLogger)
+        }
+        workflowLogger.printSummary()
     }
 
     //region SUMMARIZATION SOLVERS
@@ -161,9 +176,14 @@ class WorkflowExecutorTest {
             \"\"\"
         """.trimIndent()
         )
-        val logger = WorkflowLogger()
-        runBlocking { exec.sendMessage(AgentChatSession(), problem).events.collect(logger) }
-        logger.printSummary()
+        val agentLogger = AgentFlowLogger(verbose = true)
+        val workflowLogger = WorkflowLogger()
+        runBlocking {
+            exec.sendMessage(AgentChatSession(), problem).events
+                .onEach { agentLogger.emit(it) }
+                .collect(workflowLogger)
+        }
+        workflowLogger.printSummary()
     }
 
 }
