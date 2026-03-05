@@ -2,7 +2,14 @@
 
 ## Project Overview
 
-This repository contains a Kotlin-based AI prompt chaining library (`promptkt`) and a JavaFX demonstration UI (`promptfx`). It is primarily used with the OpenAI API or compatible LLM APIs.
+This repository is organized into four top-level Maven modules:
+
+- **`promptkt`** – Kotlin library for AI API interactions
+- **`promptex`** – Extended prompt execution modules
+- **`promptrt`** – Prompt runtime modules
+- **`promptfx`** – JavaFX GUI application
+
+It is primarily used with the OpenAI API or compatible LLM APIs.
 
 ## Repository Structure
 
@@ -22,7 +29,7 @@ promptex/          # Extended prompt execution modules
 promptrt/          # Prompt runtime modules
   promptrt-cli/    # CLI interfaces
 
-promptfx/          # JavaFX GUI application
+promptfx/          # promptfx-meta: JavaFX GUI application
   promptfx/        # Main UI module
   promptfx-sample-view-plugin/ # Sample plugin for custom UI views
 
