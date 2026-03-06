@@ -32,11 +32,12 @@ import tri.ai.core.agent.AgentFlowRecorder
 import tri.ai.core.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.openai.OpenAiModelIndex.GPT4_TURBO_ID
 
 @Tag("openai")
 class JsonToolExecutorTest {
 
-    private val MODEL_ID = GPT35_TURBO
+    private val MODEL_ID = GPT4_TURBO_ID
     private val CHAT_CONFIG = AgentChatConfig(modelId = MODEL_ID)
 
     @Test
