@@ -29,7 +29,7 @@ import tri.util.ANSI_RESET
 import tri.util.ANSI_SUN_YELLOW
 
 /** A basic collector that prints all events to standard out. */
-class AgentFlowLogger(var verbose: Boolean = false) : FlowCollector<AgentChatEvent> {
+class AgentEventPrinter(var verbose: Boolean = false) : FlowCollector<AgentChatEvent> {
 
     override suspend fun emit(event: AgentChatEvent) {
 

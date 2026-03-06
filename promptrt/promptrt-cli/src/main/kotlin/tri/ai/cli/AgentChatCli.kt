@@ -33,7 +33,7 @@ import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.AgentFlowLogger
+import tri.ai.core.agent.AgentEventPrinter
 import tri.ai.core.agent.api.AgentChatAPI
 import tri.ai.core.agent.api.DefaultAgentChatAPI
 import tri.ai.openai.OpenAiAdapter
@@ -141,7 +141,7 @@ class AgentChatCli : CliktCommand(name = "chat-agent") {
     private suspend fun sendMessage(userInput: String) {
         val message = MultimodalChatMessage.text(MChatRole.User, userInput)
         val operation = api.sendMessage(currentSession, message)
-        operation.events.collect(AgentFlowLogger(verbose))
+        operation.events.collect(AgentEventPrinter(verbose))
     }
 
     private fun listSessions() {
