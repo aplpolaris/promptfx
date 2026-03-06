@@ -101,12 +101,20 @@ class OpenAiModelInfoComparisonTest {
             for (indexCard in indexCards) {
                 val detected = detectModelCard(indexCard.id)
                 val recommended = recommendType(detected, indexCard)
-                if (recommended != null && recommended != indexCard.type) {
+                if (recommended != null) { // && recommended != indexCard.type) {
                     recommendations += ModelRecommendation(indexCard.id, indexCard, detected, recommended)
                 }
             }
 
             printReport(indexCards.size, recommendations)
+        }
+    }
+
+    @Test
+    @Tag("openai")
+    fun `test identify new models not in index`() {
+        runTest {
+
         }
     }
 
@@ -199,7 +207,7 @@ class OpenAiModelInfoComparisonTest {
 
     private fun printReport(modelCount: Int, recommendations: List<ModelRecommendation>) {
         println("=".repeat(80))
-        println("Model Card Comparison — ${modelCount} models probed")
+        println("Model Card Comparison — $modelCount models probed")
         println("=".repeat(80))
 
         if (recommendations.isEmpty()) {

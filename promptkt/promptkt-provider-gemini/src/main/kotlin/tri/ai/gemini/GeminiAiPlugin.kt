@@ -48,13 +48,13 @@ class GeminiAiPlugin : TextPlugin {
     override fun embeddingModels() = models(GeminiModelIndex.embeddingModels()) { GeminiEmbeddingModel(it, client) }
 
     override fun chatModels() =
-        models(GeminiModelIndex.chatModelsInclusive()) { GeminiTextChat(it, client) }
+        models(GeminiModelIndex.chatModels()) { GeminiTextChat(it, client) }
 
     override fun multimodalModels() =
         models(GeminiModelIndex.multimodalModels()) { GeminiMultimodalChat(it, client) }
 
     override fun textCompletionModels() =
-        models(GeminiModelIndex.completionModels() + GeminiModelIndex.chatModelsInclusive()) {
+        models(GeminiModelIndex.completionModels() + GeminiModelIndex.chatModels()) {
             GeminiTextCompletion(it, client)
         }
 
