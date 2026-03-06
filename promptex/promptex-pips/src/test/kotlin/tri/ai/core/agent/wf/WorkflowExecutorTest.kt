@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.AgentFlowLogger
-import tri.ai.core.agent.WorkflowLogger
+import tri.ai.core.agent.AgentEventPrinter
+import tri.ai.core.agent.AgentFlowRecorder
 import tri.ai.openai.OpenAiPlugin
 
 @Tag("openai")
@@ -73,8 +73,8 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_calc() {
         val exec = WorkflowExecutor(EXEC, listOf(CALC_SOLVER, ROMANIZER_SOLVER))
         val problem = MultimodalChatMessage.user("I need a Roman numeral that represents the product 21 times 2.")
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             exec.sendMessage(AgentChatSession(), problem).events
                 .onEach { agentLogger.emit(it) }
@@ -109,8 +109,8 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_timeline() {
         val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = MultimodalChatMessage.user("What is the timeline of the life of Albert Einstein?")
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             exec.sendMessage(AgentChatSession(), problem).events
                 .onEach { agentLogger.emit(it) }
@@ -123,8 +123,8 @@ class WorkflowExecutorTest {
     fun testWorkflowExecutor_timeline2() {
         val exec = WorkflowExecutor(EXEC, listOf(SOLVER_QUERY, SOLVER_TIMELINE))
         val problem = MultimodalChatMessage.user("Give me a timeline visualization of the lifetimes and terms of the first 10 US presidents.")
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             exec.sendMessage(AgentChatSession(), problem).events
                 .onEach { agentLogger.emit(it) }
@@ -176,8 +176,8 @@ class WorkflowExecutorTest {
             \"\"\"
         """.trimIndent()
         )
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             exec.sendMessage(AgentChatSession(), problem).events
                 .onEach { agentLogger.emit(it) }

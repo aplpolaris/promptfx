@@ -22,10 +22,10 @@ package tri.ai.core.agent
 import kotlinx.coroutines.flow.FlowCollector
 
 /**
- * A workflow logger that captures all events from an [AgentChatFlow] and can print
+ * A recorder that captures all events from an [AgentChatFlow] and can print
  * a summary of the tool calls and reasoning steps after the workflow completes.
  */
-class WorkflowLogger : FlowCollector<AgentChatEvent> {
+class AgentFlowRecorder : FlowCollector<AgentChatEvent> {
 
     /** All collected events, in the order they were emitted. */
     val events = mutableListOf<AgentChatEvent>()

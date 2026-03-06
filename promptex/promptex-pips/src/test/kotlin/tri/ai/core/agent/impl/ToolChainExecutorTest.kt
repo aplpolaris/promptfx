@@ -29,8 +29,8 @@ import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.AgentFlowLogger
-import tri.ai.core.agent.WorkflowLogger
+import tri.ai.core.agent.AgentEventPrinter
+import tri.ai.core.agent.AgentFlowRecorder
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ToolExecutable
 import tri.ai.core.tool.ToolExecutableResult
@@ -75,8 +75,8 @@ class ToolChainExecutorTest {
             AgentChatSession(config = CHAT_CONFIG),
             MultimodalChatMessage.user("Multiply 21 times 2 and then convert it to Roman numerals.")
         )
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             flow.events
                 .onEach { agentLogger.emit(it) }
@@ -114,8 +114,8 @@ class ToolChainExecutorTest {
             AgentChatSession(config = CHAT_CONFIG),
             MultimodalChatMessage.user("Look up data with the birth years of the first 10 US presidents along with the order of their presidency, and then visualize the results.")
         )
-        val agentLogger = AgentFlowLogger(verbose = true)
-        val workflowLogger = WorkflowLogger()
+        val agentLogger = AgentEventPrinter(verbose = true)
+        val workflowLogger = AgentFlowRecorder()
         runBlocking {
             flow.events
                 .onEach { agentLogger.emit(it) }
@@ -195,8 +195,8 @@ class ToolChainExecutorTest {
 
         fun sendMessage(text: String) {
             val flow = exec.sendMessage(session, MultimodalChatMessage.user(text))
-            val agentLogger = AgentFlowLogger(verbose = true)
-            val workflowLogger = WorkflowLogger()
+            val agentLogger = AgentEventPrinter(verbose = true)
+            val workflowLogger = AgentFlowRecorder()
             runBlocking {
                 flow.events
                     .onEach { agentLogger.emit(it) }

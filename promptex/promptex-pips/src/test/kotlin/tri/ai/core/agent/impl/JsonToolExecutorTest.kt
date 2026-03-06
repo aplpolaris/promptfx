@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
-import tri.ai.core.agent.AgentFlowLogger
-import tri.ai.core.agent.WorkflowLogger
+import tri.ai.core.agent.AgentEventPrinter
+import tri.ai.core.agent.AgentFlowRecorder
 import tri.ai.core.tool.JsonToolExecutableTest.Companion.SAMPLE_EXECUTABLES
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
@@ -51,8 +51,8 @@ class JsonToolExecutorTest {
             "What year was Jurassic Park?"
         ).forEach {
             val flow = exec.sendMessage(AgentChatSession(config = CHAT_CONFIG), MultimodalChatMessage.user(it))
-            val agentLogger = AgentFlowLogger(verbose = true)
-            val workflowLogger = WorkflowLogger()
+            val agentLogger = AgentEventPrinter(verbose = true)
+            val workflowLogger = AgentFlowRecorder()
             runBlocking {
                 flow.events
                     .onEach { agentLogger.emit(it) }

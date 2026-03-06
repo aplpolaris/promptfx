@@ -38,7 +38,7 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
      */
     suspend fun awaitResponseWithLogging() =
         events
-        .onEach { event -> AgentFlowLogger().emit(event) }
+        .onEach { event -> AgentEventPrinter().emit(event) }
         .filterIsInstance<AgentChatEvent.Response>().first()
         .response
 }
