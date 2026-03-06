@@ -19,19 +19,9 @@
  */
 package tri.ai.openai
 
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.completion.CompletionRequest
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.api.response.ResponseInput
-import com.aallam.openai.api.response.ResponseRequest
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.DataModality
-import tri.ai.core.ModelLifecycle
-import tri.ai.core.ModelType
 
 class OpenAiModelIndexTest {
 
@@ -39,7 +29,29 @@ class OpenAiModelIndexTest {
 
     @Test
     fun testModelLibrary() {
-        println(OpenAiModelIndex.modelInfoIndex)
+        OpenAiModelIndex.modelInfoIndex.forEach { (key, info) ->
+            println("${info.id} >>>")
+            println("  Type: ${info.type}")
+            println("  Source: ${info.source}")
+
+            println("  Name: ${info.name}")
+            println("  Description: ${info.description?.trim()}")
+
+            println("  Created: ${info.created}")
+            println("  Version: ${info.version}")
+            println("  Deprecation: ${info.deprecation}")
+            println("  Lifecycle: ${info.lifecycle}")
+
+            println("  Inputs: ${info.inputs}")
+            println("  Outputs: ${info.outputs}")
+            println("  Input Token Limit: ${info.inputTokenLimit}")
+            println("  Output Token Limit: ${info.outputTokenLimit}")
+            println("  Total Token Limit: ${info.totalTokenLimit}")
+
+            println("  Output Dimension: ${info.outputDimension}")
+
+            println("  Params: ${info.params}")
+        }
     }
 
     @Test
@@ -86,89 +98,18 @@ class OpenAiModelIndexTest {
     }
 
     @Test
-    @Tag("openai")
-    fun `test model config recommendations`() {
-        runTest {
-            val indexModels = OpenAiModelIndex.modelInfoIndex.values
-                .filter { it.lifecycle !in setOf(ModelLifecycle.DEPRECATED, ModelLifecycle.DISCONTINUED) }
-                .filter { it.type !in setOf(ModelType.MODERATION, ModelType.TEXT_EMBEDDING) }
-                .sortedBy { it.id }
-
-            println("=".repeat(80))
-            println("Model Configuration Recommendations")
-            println("=".repeat(80))
-
-            var typeChangesNeeded = 0
-
-            indexModels.forEach { modelInfo ->
-                val supportsResponses = runCatching {
-                    client.response(ResponseRequest(
-                        model = ModelId(modelInfo.id),
-                        input = ResponseInput("1+1="),
-                        maxOutputTokens = 5
-                    ))
-                }.isSuccess
-
-                val supportsChat = runCatching {
-                    client.chatCompletion(ChatCompletionRequest(
-                        model = ModelId(modelInfo.id),
-                        messages = listOf(ChatMessage(ChatRole.User, "1+1=")),
-                        maxTokens = 5
-                    ))
-                }.isSuccess
-
-                val supportsCompletions = runCatching {
-                    client.completion(CompletionRequest(
-                        model = ModelId(modelInfo.id),
-                        prompt = "1+1=",
-                        maxTokens = 5
-                    ))
-                }.isSuccess
-
-                val hasNonTextInput = modelInfo.inputs?.any { it != DataModality.text } == true
-                val hasNonTextOutput = modelInfo.outputs?.any { it != DataModality.text } == true
-
-                val recommendedType = when {
-                    supportsCompletions && !supportsChat && !supportsResponses -> ModelType.TEXT_COMPLETION
-                    (supportsChat || supportsResponses) && !hasNonTextInput -> ModelType.TEXT_CHAT
-                    supportsChat && !supportsResponses -> ModelType.TEXT_VISION_CHAT
-                    supportsResponses -> ModelType.RESPONSES
-                    else -> null
-                }
-
-                if (recommendedType != null && recommendedType != modelInfo.type) {
-                    println("\nModel: ${modelInfo.id}")
-                    println("  Current type:     ${modelInfo.type}")
-                    println("  Recommended type: $recommendedType")
-                    println("  API support: completions=$supportsCompletions, chat=$supportsChat, responses=$supportsResponses")
-                    println("  Inputs: ${modelInfo.inputs}, Outputs: ${modelInfo.outputs}")
-                    typeChangesNeeded++
-                }
-            }
-
-            println()
-            if (typeChangesNeeded == 0) {
-                println("No type changes needed.")
-            } else {
-                println("$typeChangesNeeded model(s) may need a type update.")
-            }
-            println("=".repeat(80))
-        }
-    }
-
-    @Test
     fun testModels() {
-        println(OpenAiModelIndex.audioModels())
-        println(OpenAiModelIndex.chatModels())
-        println(OpenAiModelIndex.chatModelsInclusive())
-        println(OpenAiModelIndex.completionModels())
-        println(OpenAiModelIndex.embeddingModels())
-        println(OpenAiModelIndex.imageGeneratorModels())
-        println(OpenAiModelIndex.moderationModels())
-        println(OpenAiModelIndex.multimodalModels())
-        println(OpenAiModelIndex.responsesModels())
-        println(OpenAiModelIndex.ttsModels())
-        println(OpenAiModelIndex.visionLanguageModels())
+
+        println("Audio: " + OpenAiModelIndex.audioModels())
+        println("Chat: " + OpenAiModelIndex.chatModels())
+        println("Completion: " + OpenAiModelIndex.completionModels())
+        println("Embedding: " + OpenAiModelIndex.embeddingModels())
+        println("Image Generator: " + OpenAiModelIndex.imageGeneratorModels())
+        println("Moderation: " + OpenAiModelIndex.moderationModels())
+        println("Multimodal: " + OpenAiModelIndex.multimodalModels())
+        println("Responses: " + OpenAiModelIndex.responsesModels())
+        println("TTS: " + OpenAiModelIndex.ttsModels())
+        println("Vision-Language: " + OpenAiModelIndex.visionLanguageModels())
     }
 
 }

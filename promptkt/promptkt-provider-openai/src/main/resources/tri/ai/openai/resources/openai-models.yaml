@@ -8,7 +8,7 @@ embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-s
 image_generator: [ gpt-image-1, gpt-image-1-mini, dall-e-3, dall-e-2 ]
 moderation: [ omni-moderation-latest ]
 multimodal: [ gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, gpt-4-turbo, o4-mini, o3, o1 ]
-responses: [ o3-pro, o1-pro, gpt-5-pro, gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano, gpt-oss-120b, gpt-oss-20b ]
+responses: [ o1-pro, gpt-5-pro, gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano ]
 tts: [ gpt-4o-mini-tts, tts-1, tts-1-hd ]
 vision_language: [ ]
 
@@ -182,30 +182,6 @@ models:
       totalTokenLimit: 16385
       outputTokenLimit: 4096
 
-  GPT-OSS:
-
-    - id: gpt-oss-120b
-      name: gpt-oss-120b (Responses API only)
-      type: RESPONSES
-      inputs: [ text ]
-      outputs: [ text ]
-      source: OpenAI
-      description: Most powerful open-weight model, fits into an H100 GPU
-      lifecycle: PRODUCTION
-      totalTokenLimit: 131072
-      outputTokenLimit: 131072
-
-    - id: gpt-oss-20b
-      name: gpt-oss-20b (Responses API only)
-      type: RESPONSES
-      inputs: [ text ]
-      outputs: [ text ]
-      source: OpenAI
-      description: Medium-sized open-weight model for low latency, local, or specialized use-cases
-      lifecycle: PRODUCTION
-      totalTokenLimit: 131072
-      outputTokenLimit: 131072
-
   GPT completions:
 
     - id: gpt-3.5-turbo-instruct
@@ -250,19 +226,6 @@ models:
       source: OpenAI
       description: >
         o4-mini is our latest small o-series model. It's optimized for fast, effective reasoning with exceptionally efficient performance in coding and visual tasks. It's succeeded by GPT-5 mini.
-      lifecycle: PRODUCTION_ALIAS
-      totalTokenLimit: 200000
-      outputTokenLimit: 100000
-
-    - id: o3-pro
-      name: o3-pro ($$$, Responses API only)
-      type: RESPONSES
-      inputs: [ text, image ]
-      outputs: [ text ]
-      source: OpenAI
-      description: >
-        The o-series of models are trained with reinforcement learning to think before they answer and perform complex reasoning. The o3-pro model uses more compute to think harder and provide consistently better answers.
-        o3-pro is available in the Responses API only to enable support for multi-turn model interactions before responding to API requests, and other advanced API features in the future. Since o3-pro is designed to tackle tough problems, some requests may take several minutes to finish. To avoid timeouts, try using background mode.
       lifecycle: PRODUCTION_ALIAS
       totalTokenLimit: 200000
       outputTokenLimit: 100000

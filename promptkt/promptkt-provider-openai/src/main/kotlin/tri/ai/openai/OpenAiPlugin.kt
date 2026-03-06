@@ -49,11 +49,11 @@ class OpenAiPlugin : TextPlugin {
         models(OpenAiModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, modelSource(), client) }
 
     override fun textCompletionModels() =
-        models(OpenAiModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
+        models(OpenAiModelIndex.chatModels(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
         models(OpenAiModelIndex.completionModels(false)) { OpenAiCompletion(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(OpenAiModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, modelSource(), client) }
+        models(OpenAiModelIndex.chatModels(false)) { OpenAiChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
         models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) } +

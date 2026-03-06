@@ -30,7 +30,6 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
     var version: String? = null
     var deprecation: String? = null
     var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
-    var snapshots: List<String> = listOf()
 
     var inputs: List<DataModality>? = null
     var outputs: List<DataModality>? = null
@@ -53,26 +52,6 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
         }
     }
 
-    /** Get id's of models, including snapshots. */
-    fun ids(includeSnapshots: Boolean) =
-        if (includeSnapshots)
-            listOf(id) + snapshots.map { "$id-$it" }
-        else
-            listOf(id)
-
-    /** Generate list of snapshot models. */
-    fun createSnapshots() = snapshots.map {
-        ModelInfo("$id-$it", type, source).also {
-            it.name = "$name ($it)"
-            it.description = description
-            it.version = version
-            it.deprecation = deprecation
-            it.inputTokenLimit = inputTokenLimit
-            it.outputTokenLimit = outputTokenLimit
-            it.totalTokenLimit = totalTokenLimit
-            it.outputDimension = outputDimension
-        }
-    }
 }
 
 /** Data modality for inputs and outputs. */

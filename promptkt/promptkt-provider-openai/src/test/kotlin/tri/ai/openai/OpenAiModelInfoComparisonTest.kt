@@ -40,12 +40,12 @@ import tri.ai.core.ModelType
  *
  * The comparison is structured around two model "cards":
  *  - [DetectedModelCard]: populated by testing each model against the completions, chat, and responses APIs
- *  - [IndexModelCard]: populated from the local model index ([OpenAiModelIndex])
+ *  - [LocalIndexModelCard]: populated from the local model index ([OpenAiModelIndex])
  *
  * From the delta between these cards, [ModelRecommendation] objects are generated for any model whose
  * index type diverges from the type that best fits its actual API capabilities.
  */
-class ModelInfoComparisonTest {
+class OpenAiModelInfoComparisonTest {
 
     private val client = OpenAiAdapter.INSTANCE.client
 
@@ -62,14 +62,6 @@ class ModelInfoComparisonTest {
 
     //region DATA CLASSES
 
-    /**
-     * Model card populated by probing the model against each OpenAI API.
-     *
-     * @param id              Model identifier
-     * @param supportsCompletions whether the model responds to the `/v1/completions` API
-     * @param supportsChat    whether the model responds to the `/v1/chat/completions` API
-     * @param supportsResponses whether the model responds to the `/v1/responses` API
-     */
     data class DetectedModelCard(
         val id: String,
         val supportsCompletions: Boolean,
@@ -80,16 +72,7 @@ class ModelInfoComparisonTest {
             "$id [completions=$supportsCompletions, chat=$supportsChat, responses=$supportsResponses]"
     }
 
-    /**
-     * Model card populated from the local model index.
-     *
-     * @param id       Model identifier
-     * @param type     Currently configured [ModelType]
-     * @param inputs   Configured input modalities (or null if unspecified)
-     * @param outputs  Configured output modalities (or null if unspecified)
-     * @param lifecycle Model lifecycle stage
-     */
-    data class IndexModelCard(
+    data class LocalIndexModelCard(
         val id: String,
         val type: ModelType,
         val inputs: List<DataModality>?,
@@ -97,18 +80,9 @@ class ModelInfoComparisonTest {
         val lifecycle: ModelLifecycle
     )
 
-    /**
-     * Recommendation produced when a model's detected capabilities suggest a different [ModelType]
-     * than what is currently configured in the index.
-     *
-     * @param id              Model identifier
-     * @param indexCard       The index-configured card
-     * @param detectedCard    The API-detected card
-     * @param recommendedType The type recommended based on detected capabilities
-     */
     data class ModelRecommendation(
         val id: String,
-        val indexCard: IndexModelCard,
+        val indexCard: LocalIndexModelCard,
         val detectedCard: DetectedModelCard,
         val recommendedType: ModelType
     )
@@ -141,16 +115,16 @@ class ModelInfoComparisonTest {
     //region CARD POPULATION
 
     /** Returns index cards for all non-deprecated, non-utility models, sorted by id. */
-    private fun getIndexCards(): List<IndexModelCard> =
+    private fun getIndexCards(): List<LocalIndexModelCard> =
         OpenAiModelIndex.modelInfoIndex.values
             .filter { it.lifecycle !in setOf(ModelLifecycle.DEPRECATED, ModelLifecycle.DISCONTINUED) }
             .filter { it.type !in UTILITY_MODEL_TYPES }
             .sortedBy { it.id }
             .map { it.toIndexCard() }
 
-    /** Converts a [ModelInfo] to an [IndexModelCard]. */
+    /** Converts a [ModelInfo] to an [LocalIndexModelCard]. */
     private fun ModelInfo.toIndexCard() =
-        IndexModelCard(id = id, type = type, inputs = inputs, outputs = outputs, lifecycle = lifecycle)
+        LocalIndexModelCard(id = id, type = type, inputs = inputs, outputs = outputs, lifecycle = lifecycle)
 
     /**
      * Probes the model against the three OpenAI APIs and returns a [DetectedModelCard].
@@ -204,7 +178,7 @@ class ModelInfoComparisonTest {
      *
      * Returns null if no determination can be made (e.g., no API responded).
      */
-    private fun recommendType(detected: DetectedModelCard, indexCard: IndexModelCard): ModelType? {
+    private fun recommendType(detected: DetectedModelCard, indexCard: LocalIndexModelCard): ModelType? {
         val hasNonTextInput = indexCard.inputs?.any { it != DataModality.text } == true
         return when {
             detected.supportsCompletions && !detected.supportsChat && !detected.supportsResponses ->

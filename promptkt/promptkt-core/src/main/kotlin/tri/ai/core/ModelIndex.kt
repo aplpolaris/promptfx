@@ -61,10 +61,6 @@ open class ModelIndex(val modelFileName: String) {
     fun audioModels(includeSnapshots: Boolean = false) = models(ModelLibrary::audio, includeSnapshots)
     /** Get chat models without vision-language models. */
     fun chatModels(includeSnapshots: Boolean = false) = models(ModelLibrary::chat, includeSnapshots)
-    /** Get chat models, including vision-language models which have the same API. */
-    fun chatModelsInclusive(includeSnapshots: Boolean = false) =
-            models(ModelLibrary::chat, includeSnapshots) +
-            models(ModelLibrary::vision_language, includeSnapshots)
     /** Get text completion models. */
     fun completionModels(includeSnapshots: Boolean = false) = models(ModelLibrary::completion, includeSnapshots)
     /** Get embedding models. */
@@ -87,8 +83,7 @@ open class ModelIndex(val modelFileName: String) {
 
     /** Get list of available models. */
     private fun models(op: ModelLibrary.() -> List<String>, includeSnapshots: Boolean = false) =
-        lookupModels(op(models), op(runtimeModels))
-            .flatMap { it.ids(includeSnapshots) }
+        lookupModels(op(models), op(runtimeModels)).map { it.id }
 
     /**
      * Get list of models from two lists.
