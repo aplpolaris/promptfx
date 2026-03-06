@@ -58,6 +58,9 @@ class OpenAiModelInfoComparisonTest {
             ModelType.SPEECH_TO_TEXT,
             ModelType.IMAGE_GENERATOR
         )
+
+        /** Regex matching dated snapshot model IDs, e.g. `gpt-4o-2024-11-20` or `gpt-4-0613`. */
+        private val SNAPSHOT_MODEL_REGEX = Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$")
     }
 
     //region DATA CLASSES
@@ -114,7 +117,34 @@ class OpenAiModelInfoComparisonTest {
     @Tag("openai")
     fun `test identify new models not in index`() {
         runTest {
+            val res = client.models()
+            val apiModelIds = res.map { it.id.id }.toSet()
+            val indexIds = OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()
 
+            // Models from the API not in the local index, excluding snapshot/dated variants
+            val newModelIds = (apiModelIds - indexIds)
+                .filter { !it.isSnapshotModel() }
+                .sorted()
+
+            println("=".repeat(80))
+            println("New Models Not in Local Index — ${newModelIds.size} found")
+            println("=".repeat(80))
+
+            if (newModelIds.isEmpty()) {
+                println("No new models found.")
+            } else {
+                newModelIds.forEach { modelId ->
+                    val detected = detectModelCard(modelId)
+                    val recommended = recommendTypeFromDetected(detected)
+                    println()
+                    println("Model: $modelId")
+                    println("  Detected:         $detected")
+                    println("  Suggested type:   ${recommended ?: "(unknown — no API responded)"}")
+                }
+                println()
+                println("Recommendation: add these ${newModelIds.size} model(s) to openai-models.yaml.")
+            }
+            println("=".repeat(80))
         }
     }
 
@@ -200,6 +230,29 @@ class OpenAiModelInfoComparisonTest {
             else -> null
         }
     }
+
+    /**
+     * Computes the recommended [ModelType] for a newly discovered model based solely on detected API capabilities.
+     * Since there is no index entry, text-only I/O is assumed (conservative default).
+     * Precedence: completions-only → TEXT_COMPLETION; responses → RESPONSES; chat → TEXT_CHAT.
+     *
+     * Returns null if no determination can be made (e.g., no API responded).
+     */
+    private fun recommendTypeFromDetected(detected: DetectedModelCard): ModelType? = when {
+        detected.supportsCompletions && !detected.supportsChat && !detected.supportsResponses ->
+            ModelType.TEXT_COMPLETION
+        detected.supportsResponses ->
+            ModelType.RESPONSES
+        detected.supportsChat ->
+            ModelType.TEXT_CHAT
+        else -> null
+    }
+
+    /**
+     * Returns true if this model id looks like a dated snapshot (e.g. `gpt-4o-2024-11-20`
+     * or `gpt-4-0613`), i.e. ends with a suffix matching `-YYYY`, `-YYYY-MM`, or `-YYYY-MM-DD`.
+     */
+    private fun String.isSnapshotModel() = matches(SNAPSHOT_MODEL_REGEX)
 
     //endregion
 
