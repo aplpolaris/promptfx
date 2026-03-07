@@ -21,26 +21,27 @@ package tri.promptfx
 
 /**
  * Global manager for models available within PromptFx.
- * Model availability is determined by the current [PromptFxPolicy].
+ * Model availability is determined by the current [PromptFxPolicy], further restricted by
+ * include/exclude patterns from [PromptFxRuntimeConfig].
  */
 object PromptFxModels {
 
     var policy: PromptFxPolicy = PromptFxPolicyUnrestricted
 
-    fun textCompletionModels() = policy.textCompletionModels()
-    fun textCompletionModelDefault() = policy.textCompletionModelDefault()
+    fun textCompletionModels() = policy.textCompletionModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun textCompletionModelDefault() = textCompletionModels().firstOrNull() ?: policy.textCompletionModelDefault()
 
-    fun embeddingModels() = policy.embeddingModels()
-    fun embeddingModelDefault() = policy.embeddingModelDefault()
+    fun embeddingModels() = policy.embeddingModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun embeddingModelDefault() = embeddingModels().firstOrNull() ?: policy.embeddingModelDefault()
 
-    fun chatModels() = policy.chatModels()
-    fun chatModelDefault() = policy.chatModelDefault()
+    fun chatModels() = policy.chatModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun chatModelDefault() = chatModels().firstOrNull() ?: policy.chatModelDefault()
 
-    fun multimodalModels() = policy.multimodalModels()
-    fun multimodalModelDefault() = policy.multimodalModelDefault()
+    fun multimodalModels() = policy.multimodalModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun multimodalModelDefault() = multimodalModels().firstOrNull() ?: policy.multimodalModelDefault()
 
-    fun imageModels() = policy.imageModels()
-    fun imageModelDefault() = policy.imageModelDefault()
+    fun imageModels() = policy.imageModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun imageModelDefault() = imageModels().firstOrNull() ?: policy.imageModelDefault()
 
     /** @deprecated Use [multimodalModels] instead. */
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
