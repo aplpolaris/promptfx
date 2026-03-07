@@ -117,7 +117,7 @@ class OpenAiModelInfoComparisonTest {
     @Test
     @Tag("openai")
     fun `test identify new models not in index`() {
-        runTest {
+        runTest(timeout = 300.seconds) {
             val res = client.models()
             val apiModelIds = res.map { it.id.id }.toSet()
             val indexIds = OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()
@@ -285,7 +285,7 @@ class OpenAiModelInfoComparisonTest {
         println("=".repeat(80))
     }
 
-    fun printModel(rec: ModelRecommendation) {
+    private fun printModel(rec: ModelRecommendation) {
         println()
         println("${ANSI_BLUE}Model: ${rec.id}${ANSI_RESET}")
         println("  Index type: ${rec.indexCard.type}")
