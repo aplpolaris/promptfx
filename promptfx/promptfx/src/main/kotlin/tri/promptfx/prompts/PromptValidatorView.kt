@@ -27,6 +27,7 @@ import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.execute
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError

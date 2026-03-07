@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.EmbeddingPrecision
 import tri.ai.openai.OpenAiChat
+import tri.promptfx.AiChatEngine
 import tri.ai.openai.OpenAiEmbeddingModel
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDocEmbeddings.putEmbeddingInfo
@@ -38,7 +39,7 @@ import tri.util.ml.AffinityClusterService
 class TextClusteringTest {
 
     private val clusterService = AffinityClusterService()
-    private val textChat = OpenAiChat()
+    private val textChat = AiChatEngine.Text(OpenAiChat())
     private val embeddingService = OpenAiEmbeddingModel()
 
     @Disabled("Requires API key")

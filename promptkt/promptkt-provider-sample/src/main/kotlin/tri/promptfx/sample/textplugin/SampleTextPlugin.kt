@@ -37,16 +37,16 @@ class SampleTextPlugin : TextPlugin {
 
     override fun modelInfo() = listOf(
         ModelInfo("sample-echo-v1", ModelType.TEXT_COMPLETION, modelSource()).apply {
-            name = "Sample Echo Model"
-            description = "A simple echo model that returns the input text with a prefix"
-            inputTokenLimit = 1000
-            outputTokenLimit = 1000
+            metadata.name = "Sample Echo Model"
+            metadata.description = "A simple echo model that returns the input text with a prefix"
+            params["inputTokenLimit"] = 1000
+            params["outputTokenLimit"] = 1000
         },
         ModelInfo("sample-chat-v1", ModelType.TEXT_CHAT, modelSource()).apply {
-            name = "Sample Chat Model"
-            description = "A simple chat model that echoes messages"
-            inputTokenLimit = 1000
-            outputTokenLimit = 1000
+            metadata.name = "Sample Chat Model"
+            metadata.description = "A simple chat model that echoes messages"
+            params["inputTokenLimit"] = 1000
+            params["outputTokenLimit"] = 1000
         }
     )
 
@@ -58,6 +58,7 @@ class SampleTextPlugin : TextPlugin {
 
     override fun textCompletionModels() = listOf(SampleTextCompletionModel())
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() = emptyList<VisionLanguageChat>()
 
     override fun imageGeneratorModels() = emptyList<ImageGenerator>()

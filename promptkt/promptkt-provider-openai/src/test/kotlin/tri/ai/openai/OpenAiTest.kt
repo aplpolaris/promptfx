@@ -23,6 +23,8 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.embedding.EmbeddingResponse
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseInput
+import com.aallam.openai.api.response.ResponseRequest
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -34,32 +36,6 @@ import kotlin.math.pow
 class OpenAiTest {
 
     val client = OpenAiAdapter.INSTANCE.client
-
-    @Test
-    fun testModelLibrary() {
-        println(OpenAiModelIndex.modelInfoIndex)
-    }
-
-    @Test
-    @Tag("openai")
-    fun testModels() {
-        runTest {
-            val res = client.models()
-            val apiModelIds = res.map { it.id.id }.toSet()
-            val indexIds = OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()
-            println(res)
-            println("-".repeat(50))
-            println("OpenAI API models not in local index:")
-            val ids = apiModelIds - indexIds
-            ids.sorted().forEach {
-                // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
-                if (!it.matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$")))
-                    println("  $it")
-            }
-            println("-".repeat(50))
-            println("Local index models not in OpenAI API: " + (indexIds - apiModelIds))
-        }
-    }
 
     @Test
     @Tag("openai")
@@ -108,6 +84,21 @@ class OpenAiTest {
             }
         )
         println(res.choices[0].message.content!!.trim())
+    }
+
+    @Test
+    @Tag("openai")
+    fun testResponseApi() {
+        runTest {
+            val res = client.response(
+                ResponseRequest(
+                    model = ModelId(GPT35_TURBO_ID),
+                    input = ResponseInput("1+1="),
+                    maxOutputTokens = 16
+                )
+            )
+            println(res)
+        }
     }
 
     @Test

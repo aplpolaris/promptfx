@@ -22,6 +22,7 @@ package tri.promptfx.mcp
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
@@ -140,7 +141,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     serverListView = this
                     selectedProviderName.bind(this.selectionModel.selectedItemProperty())
                     cellFormat { serverName ->
-                        graphic = hbox(spacing = 5.0) {
+                        graphic = HBox(5.0).apply {
                             label(serverName) {
                                 minWidth = 100.0
                             }

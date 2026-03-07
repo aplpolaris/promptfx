@@ -22,8 +22,6 @@ package tri.promptfx
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
@@ -37,11 +35,9 @@ class PromptFxController : Controller() {
 
     val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
 
-    val completionEngine: SimpleObjectProperty<TextCompletion> =
-        SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
-    val chatService: SimpleObjectProperty<TextChat> =
-        SimpleObjectProperty(PromptFxModels.chatModelDefault())
-    val embeddingStrategy: SimpleObjectProperty<EmbeddingStrategy> =
+    val chatEngine: SimpleObjectProperty<AiChatEngine> =
+        SimpleObjectProperty(PromptFxModels.chatEngineDefault())
+    val embeddingEngine: SimpleObjectProperty<EmbeddingStrategy> =
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
     val promptHistory = find<PromptTraceHistoryModel>()
