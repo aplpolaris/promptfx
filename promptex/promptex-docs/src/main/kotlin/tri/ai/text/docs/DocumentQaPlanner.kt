@@ -24,7 +24,7 @@ import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskList
-import tri.ai.pips.task
+import tri.ai.pips.taskwithmonitor
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -61,9 +61,14 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         temp: Double,
         numResponses: Int,
         snippetCallback: (List<EmbeddingMatch>) -> Unit
-    ): AiTaskList = task("load-embeddings-file-and-calculate") {
-        // trigger loading of embeddings file using a similarity query, the result is ignored
-        AiOutput(other = index.findMostSimilar("a", 1))
+    ): AiTaskList = taskwithmonitor("load-embeddings-file-and-calculate") { monitor ->
+        // trigger loading of embeddings file (with progress), the result is ignored
+        index.onProgress = { msg, pct -> monitor.progressUpdate(msg, pct) }
+        try {
+            AiOutput(other = index.findMostSimilar("a", 1))
+        } finally {
+            index.onProgress = null
+        }
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {

@@ -124,6 +124,20 @@ fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTr
         override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
     })
 
+/** Initializes [AiTaskList] with a single task that returns an [AiOutput] and has access to the [AiTaskMonitor] for reporting sub-progress. */
+fun taskwithmonitor(id: String, description: String? = null, op: suspend (AiTaskMonitor) -> AiOutput): AiTaskList =
+    aitaskwithmonitor(id, description) { monitor ->
+        val t0 = System.currentTimeMillis()
+        val res = op(monitor)
+        AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.output(res))
+    }
+
+/** Creates a sequential task list with a single task that has access to the [AiTaskMonitor] for reporting sub-progress. */
+fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTaskMonitor) -> AiPromptTraceSupport) = AiTaskList(listOf(),
+    object : AiTask(id, description) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op(monitor)
+    })
+
 /**
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
  * @throws IllegalArgumentException if there are duplicate task IDs

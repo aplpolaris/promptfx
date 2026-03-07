@@ -99,7 +99,7 @@ class AiProgressView: View(), AiTaskMonitor {
         progressUpdate(task.id, progress)
     }
 
-    fun progressUpdate(message: String, progress: Double) {
+    override fun progressUpdate(message: String, progress: Double) {
         Platform.runLater {
             indicator.progress = progress
             label.text = message

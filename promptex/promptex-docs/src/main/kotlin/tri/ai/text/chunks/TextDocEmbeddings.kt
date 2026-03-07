@@ -67,26 +67,35 @@ object TextDocEmbeddings {
         (attributes["embeddings"] as? EmbeddingInfo)?.get(modelId)
 
     /** Chunks a text into sections and calculates the embedding for each section. */
-    suspend fun EmbeddingStrategy.chunkedEmbedding(path: URI, text: String, maxChunkSize: Int): TextDoc {
+    suspend fun EmbeddingStrategy.chunkedEmbedding(path: URI, text: String, maxChunkSize: Int,
+                                                   onProgress: ((String, Double) -> Unit)? = null): TextDoc {
         info<TextDocEmbeddings>("Calculating embeddings for $path...")
         val doc = TextDoc(path.toString(), text).apply {
             metadata.path = path
         }
         doc.chunks.addAll(chunker.chunkText(text, maxChunkSize))
-        doc.calculateMissingEmbeddings(model)
+        doc.calculateMissingEmbeddings(model, onProgress)
         return doc
     }
 
     /** Calculates embedding info for all chunks in a document where it is missing. */
-    suspend fun TextDoc.calculateMissingEmbeddings(embeddingModel: EmbeddingModel) {
+    suspend fun TextDoc.calculateMissingEmbeddings(embeddingModel: EmbeddingModel,
+                                                   onProgress: ((String, Double) -> Unit)? = null) {
         val id = embeddingModel.modelId
         val chunksToCalculate = chunks.filter { it.getEmbeddingInfo(id) == null }
         if (chunksToCalculate.isNotEmpty()) {
-            chunksToCalculate.chunked(MAX_EMBEDDING_BATCH_SIZE).forEach { batch ->
+            val batches = chunksToCalculate.chunked(MAX_EMBEDDING_BATCH_SIZE)
+            var processedCount = 0
+            batches.forEachIndexed { i, batch ->
                 val inputs = batch.map { it.text(all) }
-                embeddingModel.calculateEmbedding(inputs).forEachIndexed { i, embedding ->
-                    batch[i].putEmbeddingInfo(id, embedding, embeddingModel.precision)
+                embeddingModel.calculateEmbedding(inputs).forEachIndexed { j, embedding ->
+                    batch[j].putEmbeddingInfo(id, embedding, embeddingModel.precision)
                 }
+                processedCount += batch.size
+                onProgress?.invoke(
+                    "Embedding chunks: $processedCount / ${chunksToCalculate.size}",
+                    (i + 1.0) / batches.size
+                )
             }
         }
     }
