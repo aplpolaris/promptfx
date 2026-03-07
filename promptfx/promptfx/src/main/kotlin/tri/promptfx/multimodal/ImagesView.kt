@@ -19,12 +19,9 @@
  */
 package tri.promptfx.multimodal
 
-import com.aallam.openai.api.exception.OpenAIAPIException
-import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.image.ImageSize
 import com.aallam.openai.api.image.Quality
 import com.aallam.openai.api.image.Style
-import com.aallam.openai.api.model.ModelId
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
@@ -59,16 +56,18 @@ import tornadofx.toolbar
 import tornadofx.tooltip
 import tornadofx.vbox
 import tornadofx.vgrow
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.pips.aitask
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiImageTrace
 import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.PromptInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -77,12 +76,11 @@ import tri.util.ui.copyToClipboard
 import tri.util.ui.saveToFile
 import tri.util.ui.showImageDialog
 import tri.util.ui.writeImageToFile
-import kotlin.collections.get
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Multimodal", "Text-to-Image", WorkspaceViewAffordance.Companion.INPUT_ONLY, ImagesView::class)
 
-/** View for the OpenAI API's image endpoint (https://platform.openai.com/docs/api-reference/images). */
+/** View for image generation, supporting multiple providers (e.g. OpenAI DALL-E, Gemini). */
 class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     /** User input */
@@ -90,8 +88,13 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Image results */
     private val images = observableListOf<AiImageTrace>()
 
+    /** Available image model IDs from the active policy. */
+    private val imageModelIds = observableListOf(
+        PromptFxModels.imageModels().map { it.modelId }.ifEmpty { listOf(DALLE2_ID) }
+    )
+
     /** Model */
-    private val model = SimpleStringProperty(DALLE2_ID).apply {
+    private val model = SimpleStringProperty(PromptFxModels.imageModelDefault()?.modelId ?: DALLE2_ID).apply {
         onChange {
             imageSizes.setAll(MODEL_INFO[it]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
             if (imageSize.value !in imageSizes)
@@ -177,7 +180,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     init {
         parameters("Options") {
             field("Model") {
-                combobox(model, IMAGE_MODELS)
+                combobox(model, imageModelIds)
             }
             field("# Images") {
                 countSlider = slider(1..10) {
@@ -238,22 +241,20 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             )
         )
         val result = try {
-            val images = controller.openAiPlugin.client.imageJSON(
-                ImageCreation(
-                    model = ModelId(model.value),
-                    prompt = input.value,
-                    n = imageCount.value,
-                    size = imageSize.value,
-                    quality = imageQuality.value,
-                    style = imageStyle.value
-                )
-            )
+            val generator = PromptFxModels.imageModels().find { it.modelId == model.value }
+                ?: throw IllegalStateException("No image generator found for model: ${model.value}")
+            val coreSize = imageSize.value.toCoreSize()
+            val uris = generator.generateImage(input.value, coreSize, null, imageCount.value)
+            val outputs = uris.map { uri ->
+                val base64 = uri.toString().substringAfter(";base64,")
+                AiOutput(multimodalMessage = MultimodalChatMessage.imageBase64(imageBase64 = base64))
+            }
             AiImageTrace(
                 promptInfo, modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiOutputInfo(images.values ?: listOf())
+                AiOutputInfo(outputs)
             )
-        } catch (x: OpenAIAPIException) {
+        } catch (x: Exception) {
             AiImageTrace(promptInfo, modelInfo, AiExecInfo.Companion.error(x.message))
         }
         result
@@ -274,7 +275,8 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             var success = 0
             images.forEach { trace ->
                 (trace.values ?: listOf()).forEach {
-                    val image = Image(it.textContent())
+                    val image = it.imageContent()?.base64ToImage()
+                        ?: Image(it.textContent())
                     var file = folder.resolve("image-$i.png")
                     while (file.exists()) {
                         file = folder.resolve("image-${++i}.png")
@@ -329,8 +331,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private const val DALLE3_ID = "dall-e-3"
         private const val GPT_IMAGE1 = "gpt-image-1"
         private const val GPT_IMAGE1_MINI = "gpt-image-1-mini"
-
-        private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
+        private const val GEMINI_IMAGE_ID = "gemini-2.5-flash-image"
 
         private val SIZE256 = ImageSize.Companion.is256x256
         private val SIZE512 = ImageSize.Companion.is512x512
@@ -371,8 +372,24 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 qualities = listOf(QUAL_LOW, QUAL_MEDIUM, QUAL_HIGH, QUAL_AUTO),
                 styles = listOf(),
                 counts = 1..10
+            ),
+            GEMINI_IMAGE_ID to ImageModelCapabilities(GEMINI_IMAGE_ID,
+                sizes = listOf(SIZE1024),
+                qualities = listOf(),
+                styles = listOf(),
+                counts = 1..1
             )
         )
+
+        /** Convert an OpenAI [ImageSize] to a [tri.ai.core.ImageSize] for use with the [tri.ai.core.ImageGenerator] interface. */
+        internal fun ImageSize.toCoreSize(): tri.ai.core.ImageSize {
+            return try {
+                val parts = size.split("x")
+                tri.ai.core.ImageSize(parts[0].toInt(), parts[1].toInt())
+            } catch (e: Exception) {
+                tri.ai.core.ImageSize(1024, 1024)
+            }
+        }
 
         private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
             mapOf(*pairs).filterValues { it != null } as Map<String, Any>

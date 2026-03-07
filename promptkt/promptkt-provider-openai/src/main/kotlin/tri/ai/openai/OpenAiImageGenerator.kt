@@ -23,7 +23,7 @@ import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.ModelId
 import tri.ai.core.ImageGenerator
 import tri.ai.core.ImageSize
-import java.net.URL
+import java.net.URI
 
 /** Image generation with OpenAI models. */
 class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE_DALLE2, override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
@@ -31,7 +31,7 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
 
     override fun toString() = modelDisplayName()
 
-    override suspend fun generateImage(text: String, size: ImageSize, prompt: String?, numResponses: Int?): List<URL> {
+    override suspend fun generateImage(text: String, size: ImageSize, prompt: String?, numResponses: Int?): List<URI> {
         val images = client.imageJSON(
             ImageCreation(
                 model = ModelId(modelId),
@@ -42,7 +42,11 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
                 style = null
             )
         )
-        return images.output!!.outputs.map { URL(it.text!!) }
+        return images.output!!.outputs.map { output ->
+            val base64 = output.imageContent()
+                ?: throw IllegalStateException("No image content in response for model $modelId")
+            URI("data:image/png;base64,$base64")
+        }
     }
 
     private fun ImageSize.openAiSize() = when {

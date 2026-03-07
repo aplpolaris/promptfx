@@ -347,6 +347,7 @@ data class GenerationConfig(
     val stopSequences: List<String>? = null,
     val responseMimeType: String? = null,
     val responseSchema: Schema? = null,
+    val responseModalities: List<String>? = null,
     val candidateCount: Int? = null, // only 1 allowed for now
     val maxOutputTokens: Int? = null,
     val temperature: Double? = null,

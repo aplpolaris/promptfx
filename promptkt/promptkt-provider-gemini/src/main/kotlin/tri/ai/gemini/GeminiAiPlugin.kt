@@ -61,7 +61,7 @@ class GeminiAiPlugin : TextPlugin {
     override fun visionLanguageModels() =
         models(GeminiModelIndex.visionLanguageModels()) { GeminiVisionLanguageChat(it, client) }
 
-    override fun imageGeneratorModels() = models(GeminiModelIndex.imageGeneratorModels()) { TODO() }
+    override fun imageGeneratorModels() = models(GeminiModelIndex.imageGeneratorModels()) { GeminiImageGenerator(it, modelSource(), client) }
 
     override fun close() {
         client.close()
