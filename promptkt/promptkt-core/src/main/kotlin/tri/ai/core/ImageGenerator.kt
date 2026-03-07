@@ -19,17 +19,17 @@
  */
 package tri.ai.core
 
-import java.net.URL
+import java.net.URI
 
 /** Interface for image generation. */
 interface ImageGenerator : AiModel {
-    /** Generate an image, return URL to access image. */
+    /** Generate images, returning a URI for each (may be an HTTP URL or a data: URI for base64-encoded images). */
     suspend fun generateImage(
         text: String,
         size: ImageSize,
         prompt: String? = null,
         numResponses: Int? = null
-    ): List<URL>
+    ): List<URI>
 
 }
 
