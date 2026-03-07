@@ -49,11 +49,11 @@ class OpenAiPlugin : TextPlugin {
         models(OpenAiModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, modelSource(), client) }
 
     override fun textCompletionModels() =
-        models(OpenAiModelIndex.chatModels(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
-        models(OpenAiModelIndex.completionModels(false)) { OpenAiCompletion(it, modelSource(), client) }
+        models(OpenAiModelIndex.chatModels()) { OpenAiCompletionChat(it, modelSource(), client) } +
+        models(OpenAiModelIndex.completionModels()) { OpenAiCompletion(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(OpenAiModelIndex.chatModels(false)) { OpenAiChat(it, modelSource(), client) }
+        models(OpenAiModelIndex.chatModels()) { OpenAiChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
         models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) } +
@@ -65,6 +65,12 @@ class OpenAiPlugin : TextPlugin {
 
     override fun imageGeneratorModels() =
         models(OpenAiModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, modelSource(), client) }
+
+    override fun textToSpeechModels() =
+        models(OpenAiModelIndex.ttsModels()) { OpenAiTextToSpeech(it, modelSource(), client) }
+
+    override fun speechToTextModels() =
+        models(OpenAiModelIndex.audioModels()) { OpenAiSpeechToText(it, modelSource(), client) }
 
     override fun close() {
         client.client.close()

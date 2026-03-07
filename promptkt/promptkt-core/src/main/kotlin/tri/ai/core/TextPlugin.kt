@@ -56,6 +56,12 @@ interface TextPlugin {
     /** Provide a list of image generators. */
     fun imageGeneratorModels(): List<ImageGenerator>
 
+    /** Provide a list of text-to-speech models. */
+    fun textToSpeechModels(): List<TextToSpeechModel> = emptyList()
+
+    /** Provide a list of speech-to-text models. */
+    fun speechToTextModels(): List<SpeechToTextModel> = emptyList()
+
     /** Closes resources associated with the plugin. */
     fun close()
 
@@ -99,6 +105,10 @@ interface TextPlugin {
         fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
         /** Get registered image models. */
         fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
+        /** Get registered text-to-speech models. */
+        fun textToSpeechModels() = orderedPlugins.flatMap { it.textToSpeechModels() }
+        /** Get registered speech-to-text models. */
+        fun speechToTextModels() = orderedPlugins.flatMap { it.speechToTextModels() }
 
         /** Get an embedding model by id. Throws an exception if not found. */
         fun embeddingModel(modelId: String) =
@@ -120,6 +130,12 @@ interface TextPlugin {
         /** Get an image model by id. Throws an exception if not found. */
         fun imageGeneratorModel(modelId: String) =
             imageGeneratorModels().first { it.matchesModelId(modelId) }
+        /** Get a text-to-speech model by id. Throws an exception if not found. */
+        fun textToSpeechModel(modelId: String) =
+            textToSpeechModels().first { it.matchesModelId(modelId) }
+        /** Get a speech-to-text model by id. Throws an exception if not found. */
+        fun speechToTextModel(modelId: String) =
+            speechToTextModels().first { it.matchesModelId(modelId) }
 
         /**
          * Parse a model identifier string, which may be in the form "modelId [source]" or just "modelId".

@@ -35,7 +35,7 @@ class ModelLibrary {
     @Deprecated("Use multimodal instead")
     var vision_language = listOf<String>()
 
-    /** Create model index with unique identifiers, including any registered snapshots. */
+    /** Create model index with unique identifiers. */
     fun modelInfoIndex() = models.values.flatten().associateBy { it.id }
 
     /** Get list of all model ids in the library. */

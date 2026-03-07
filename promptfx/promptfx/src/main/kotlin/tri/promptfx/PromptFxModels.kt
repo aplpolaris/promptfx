@@ -42,6 +42,12 @@ object PromptFxModels {
     fun imageModels() = policy.imageModels()
     fun imageModelDefault() = policy.imageModelDefault()
 
+    fun textToSpeechModels() = policy.textToSpeechModels()
+    fun textToSpeechModelDefault() = policy.textToSpeechModelDefault()
+
+    fun speechToTextModels() = policy.speechToTextModels()
+    fun speechToTextModelDefault() = policy.speechToTextModelDefault()
+
     /** @deprecated Use [multimodalModels] instead. */
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     fun visionLanguageModels() = policy.visionLanguageModels()
@@ -54,7 +60,9 @@ object PromptFxModels {
             embeddingModels().map { it.modelId } +
             chatModels().map { it.modelId } +
             multimodalModels().map { it.modelId } +
-            imageModels().map { it.modelId }
+            imageModels().map { it.modelId } +
+            textToSpeechModels().map { it.modelId } +
+            speechToTextModels().map { it.modelId }
         ).toSet()
 
 }

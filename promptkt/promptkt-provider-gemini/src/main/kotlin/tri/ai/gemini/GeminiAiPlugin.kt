@@ -64,6 +64,9 @@ class GeminiAiPlugin : TextPlugin {
 
     override fun imageGeneratorModels() = models(GeminiModelIndex.imageGeneratorModels()) { TODO() }
 
+    override fun speechToTextModels() =
+        models(GeminiModelIndex.audioModels()) { GeminiSpeechToText(it, client) }
+
     override fun close() {
         client.close()
     }

@@ -54,6 +54,9 @@ class OpenAiModelIndexTest {
         }
     }
 
+    // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
+    private fun String.snapshotModel() = matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$"))
+
     @Test
     @Tag("openai")
     fun `test what we see about models in the API`() {
@@ -83,10 +86,8 @@ class OpenAiModelIndexTest {
             println("-".repeat(50))
             println("OpenAI API models not in local index:")
             val ids = apiModelIds - indexIds
-            ids.sorted().forEach {
-                // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
-                if (!it.matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$")))
-                    println("  $it")
+            ids.sorted().filter { !it.snapshotModel() }.forEach {
+                println("  $it")
             }
             println("-".repeat(50))
             println("Local index models not in OpenAI API:")

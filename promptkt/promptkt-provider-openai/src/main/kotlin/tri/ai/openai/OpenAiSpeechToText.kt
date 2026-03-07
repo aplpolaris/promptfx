@@ -17,14 +17,22 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core
+package tri.ai.openai
 
-/** The role of a chat message. */
-enum class MChatRole {
-    System,
-    User,
-    Assistant,
-    Tool,
-    /** Message with no role - useful for text completions. */
-    None
+import tri.ai.core.SpeechToTextModel
+import tri.ai.prompt.trace.AiPromptTrace
+import java.io.File
+
+/** Speech-to-text with OpenAI models. */
+class OpenAiSpeechToText(
+    override val modelId: String = OpenAiModelIndex.AUDIO_WHISPER,
+    override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE,
+    val client: OpenAiAdapter = OpenAiAdapter.INSTANCE
+) : SpeechToTextModel {
+
+    override fun toString() = modelDisplayName()
+
+    override suspend fun transcribe(audioFile: File, prompt: String?): AiPromptTrace =
+        client.quickTranscribe(modelId, audioFile)
+
 }
