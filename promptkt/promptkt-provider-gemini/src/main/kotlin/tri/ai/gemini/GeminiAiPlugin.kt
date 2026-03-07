@@ -211,7 +211,7 @@ class GeminiAiPlugin : TextPlugin {
             else -> ModelType.UNKNOWN
         }
 
-        if (type == ModelType.TEXT_CHAT && ("vision" in id || "gemini-1.5" in id || "gemini-2.0" in id)) {
+        if (type == ModelType.TEXT_CHAT && ("vision" in id || "gemini-1.5" in id || "gemini-2.0" in id || "gemini-2.5" in id)) {
             type = ModelType.TEXT_VISION_CHAT
         }
         return type
