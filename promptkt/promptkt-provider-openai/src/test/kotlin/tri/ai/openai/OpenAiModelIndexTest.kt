@@ -29,7 +29,29 @@ class OpenAiModelIndexTest {
 
     @Test
     fun testModelLibrary() {
-        println(OpenAiModelIndex.modelInfoIndex)
+        OpenAiModelIndex.modelInfoIndex.forEach { (key, info) ->
+            println("${info.id} >>>")
+            println("  Type: ${info.type}")
+            println("  Source: ${info.source}")
+
+            println("  Name: ${info.name}")
+            println("  Description: ${info.description?.trim()}")
+
+            println("  Created: ${info.created}")
+            println("  Version: ${info.version}")
+            println("  Deprecation: ${info.deprecation}")
+            println("  Lifecycle: ${info.lifecycle}")
+
+            println("  Inputs: ${info.inputs}")
+            println("  Outputs: ${info.outputs}")
+            println("  Input Token Limit: ${info.inputTokenLimit}")
+            println("  Output Token Limit: ${info.outputTokenLimit}")
+            println("  Total Token Limit: ${info.totalTokenLimit}")
+
+            println("  Output Dimension: ${info.outputDimension}")
+
+            println("  Params: ${info.params}")
+        }
     }
 
     // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
@@ -78,17 +100,17 @@ class OpenAiModelIndexTest {
 
     @Test
     fun testModels() {
-        println(OpenAiModelIndex.audioModels())
-        println(OpenAiModelIndex.chatModels())
-        println(OpenAiModelIndex.chatModelsInclusive())
-        println(OpenAiModelIndex.completionModels())
-        println(OpenAiModelIndex.embeddingModels())
-        println(OpenAiModelIndex.imageGeneratorModels())
-        println(OpenAiModelIndex.moderationModels())
-        println(OpenAiModelIndex.multimodalModels())
-        println(OpenAiModelIndex.responsesModels())
-        println(OpenAiModelIndex.ttsModels())
-        println(OpenAiModelIndex.visionLanguageModels())
+
+        println("Audio: " + OpenAiModelIndex.audioModels())
+        println("Chat: " + OpenAiModelIndex.chatModels())
+        println("Completion: " + OpenAiModelIndex.completionModels())
+        println("Embedding: " + OpenAiModelIndex.embeddingModels())
+        println("Image Generator: " + OpenAiModelIndex.imageGeneratorModels())
+        println("Moderation: " + OpenAiModelIndex.moderationModels())
+        println("Multimodal: " + OpenAiModelIndex.multimodalModels())
+        println("Responses: " + OpenAiModelIndex.responsesModels())
+        println("TTS: " + OpenAiModelIndex.ttsModels())
+        println("Vision-Language: " + OpenAiModelIndex.visionLanguageModels())
     }
 
 }

@@ -55,7 +55,7 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkEmbeddingModel(it, client)
     }
 
-    override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModelsInclusive()) {
+    override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModels()) {
         GeminiSdkTextChat(it, client) 
     }
 
@@ -64,7 +64,7 @@ class GeminiSdkPlugin : TextPlugin {
     }
 
     override fun textCompletionModels() = models(
-        GeminiSdkModelIndex.completionModels() + GeminiSdkModelIndex.chatModelsInclusive()
+        GeminiSdkModelIndex.completionModels() + GeminiSdkModelIndex.chatModels()
     ) {
         GeminiSdkTextCompletion(it, client)
     }

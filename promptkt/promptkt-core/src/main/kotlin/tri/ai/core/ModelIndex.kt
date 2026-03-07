@@ -61,10 +61,6 @@ open class ModelIndex(val modelFileName: String) {
     fun audioModels() = models(ModelLibrary::audio)
     /** Get chat models without vision-language models. */
     fun chatModels() = models(ModelLibrary::chat)
-    /** Get chat models, including vision-language models which have the same API. */
-    fun chatModelsInclusive() =
-            models(ModelLibrary::chat) +
-            models(ModelLibrary::vision_language)
     /** Get text completion models. */
     fun completionModels() = models(ModelLibrary::completion)
     /** Get embedding models. */

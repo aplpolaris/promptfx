@@ -23,6 +23,8 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.embedding.EmbeddingRequest
 import com.aallam.openai.api.embedding.EmbeddingResponse
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseInput
+import com.aallam.openai.api.response.ResponseRequest
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -82,6 +84,21 @@ class OpenAiTest {
             }
         )
         println(res.choices[0].message.content!!.trim())
+    }
+
+    @Test
+    @Tag("openai")
+    fun testResponseApi() {
+        runTest {
+            val res = client.response(
+                ResponseRequest(
+                    model = ModelId(GPT35_TURBO_ID),
+                    input = ResponseInput("1+1="),
+                    maxOutputTokens = 16
+                )
+            )
+            println(res)
+        }
     }
 
     @Test
