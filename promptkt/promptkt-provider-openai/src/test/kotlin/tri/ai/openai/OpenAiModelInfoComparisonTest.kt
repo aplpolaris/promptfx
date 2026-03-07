@@ -156,14 +156,14 @@ class OpenAiModelInfoComparisonTest {
     /** Returns index cards for all non-deprecated, non-utility models, sorted by id. */
     private fun getIndexCards(): List<LocalIndexModelCard> =
         OpenAiModelIndex.modelInfoIndex.values
-            .filter { it.lifecycle !in setOf(ModelLifecycle.DEPRECATED, ModelLifecycle.DISCONTINUED) }
+            .filter { it.metadata.lifecycle !in setOf(ModelLifecycle.DEPRECATED, ModelLifecycle.DISCONTINUED) }
             .filter { it.type !in UTILITY_MODEL_TYPES }
             .sortedBy { it.id }
             .map { it.toIndexCard() }
 
     /** Converts a [ModelInfo] to an [LocalIndexModelCard]. */
     private fun ModelInfo.toIndexCard() =
-        LocalIndexModelCard(id = id, type = type, inputs = inputs, outputs = outputs, lifecycle = lifecycle)
+        LocalIndexModelCard(id = id, type = type, inputs = capabilities.inputs, outputs = capabilities.outputs, lifecycle = metadata.lifecycle)
 
     /**
      * Probes the model against the three OpenAI APIs and returns a [DetectedModelCard].

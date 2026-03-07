@@ -82,24 +82,22 @@ class GeminiAiPlugin : TextPlugin {
             type = ModelType.UNKNOWN,
             source = modelSource()
         ).also {
-            it.name = displayName
-            it.version = version
-            it.description = description
-            it.inputTokenLimit = inputTokenLimit
-            it.outputTokenLimit = outputTokenLimit
+            it.metadata.name = displayName
+            it.metadata.version = version
+            it.metadata.description = description
+            it.metadata.created = findReleaseDate(description)
+            it.metadata.deprecation = findDeprecation(description)
+            it.metadata.lifecycle = findLifecycle(it.id, description)
 
-            it.created = findReleaseDate(description)
-            it.deprecation = findDeprecation(description)
-            it.lifecycle = findLifecycle(it.id, description)
             it.type = findType(it.id, supportedGenerationMethods.toSet())
-            it.inputs = when (it.type) {
+            it.capabilities.inputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.text)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
                 ModelType.TEXT_VISION_CHAT -> listOf(DataModality.text, DataModality.image, DataModality.audio, DataModality.video)
                 else -> null
             }
-            it.outputs = when (it.type) {
+            it.capabilities.outputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.embedding)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
@@ -108,6 +106,8 @@ class GeminiAiPlugin : TextPlugin {
             }
 
             it.params(
+                "inputTokenLimit" to inputTokenLimit,
+                "outputTokenLimit" to outputTokenLimit,
                 "supportedGenerationMethods" to supportedGenerationMethods,
                 "baseModelId" to baseModelId,
                 "temperature" to temperature,
