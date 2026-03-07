@@ -158,7 +158,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 }
             }
             field("Model") {
-                combobox(controller.chatEngine, PromptFxModels.allChatEngines())
+                combobox(controller.chatEngine, PromptFxModels.chatEngines())
             }
         }
         

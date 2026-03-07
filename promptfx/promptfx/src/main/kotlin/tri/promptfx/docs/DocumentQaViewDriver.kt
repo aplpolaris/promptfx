@@ -47,9 +47,7 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
     override var chatModel: String
         get() = view.controller.chatEngine.value.modelId
         set(value) {
-            view.controller.chatEngine.set(
-                PromptFxModels.policy.allChatEngines().find { it.modelId == value }!!
-            )
+            view.controller.chatEngine.set(PromptFxModels.chatEngines().find { it.modelId == value }!!)
         }
     override var embeddingModel: String
         get() = view.controller.embeddingEngine.value.modelId

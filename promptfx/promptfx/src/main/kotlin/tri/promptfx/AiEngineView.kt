@@ -46,7 +46,7 @@ class AiEngineView: View() {
             menubutton("Chat", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
                 tooltip(chatEngine.value?.toString() ?: "Select the chat model to use.")
                 chatEngine.onChange { tooltip.text = it.toString() }
-                PromptFxModels.allChatEngines().forEach { model ->
+                PromptFxModels.chatEngines().forEach { model ->
                     item(model.toString()) {
                         style = menustyle(model.modelId, chatEngine.value?.modelId)
                         styleProperty().bind(chatEngine.stringBinding { menustyle(model.modelId, it?.modelId) })

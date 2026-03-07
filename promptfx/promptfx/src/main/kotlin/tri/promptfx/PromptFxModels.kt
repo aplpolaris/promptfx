@@ -27,6 +27,12 @@ object PromptFxModels {
 
     var policy: PromptFxPolicy = PromptFxPolicyUnrestricted
 
+    /** Returns all available chat engines, including both text and multimodal. */
+    fun chatEngines() = (chatModels().map { AiChatEngine.Text(it) } +
+            multimodalModels().map { AiChatEngine.Multimodal(it) })
+        .sortedBy { it.modelId }
+    fun chatEngineDefault() = chatEngines().find { it.modelId == chatModelDefault().modelId }
+
     fun textCompletionModels() = policy.textCompletionModels()
     fun textCompletionModelDefault() = policy.textCompletionModelDefault()
 
@@ -39,9 +45,6 @@ object PromptFxModels {
     fun multimodalModels() = policy.multimodalModels()
     fun multimodalModelDefault() = policy.multimodalModelDefault()
 
-    /** Returns all chat engines: [chatModels] as [AiChatEngine.Text] plus [multimodalModels] as [AiChatEngine.Multimodal]. */
-    fun allChatEngines() = policy.allChatEngines()
-
     fun imageModels() = policy.imageModels()
     fun imageModelDefault() = policy.imageModelDefault()
 
@@ -51,10 +54,8 @@ object PromptFxModels {
     fun speechToTextModels() = policy.speechToTextModels()
     fun speechToTextModelDefault() = policy.speechToTextModelDefault()
 
-    /** @deprecated Use [multimodalModels] instead. */
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     fun visionLanguageModels() = policy.visionLanguageModels()
-    /** @deprecated Use [multimodalModelDefault] instead. */
     @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
     fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
 
@@ -65,7 +66,8 @@ object PromptFxModels {
             multimodalModels().map { it.modelId } +
             imageModels().map { it.modelId } +
             textToSpeechModels().map { it.modelId } +
-            speechToTextModels().map { it.modelId }
+            speechToTextModels().map { it.modelId } +
+            visionLanguageModels().map { it.modelId }
         ).toSet()
 
 }

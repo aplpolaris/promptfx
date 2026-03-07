@@ -36,7 +36,7 @@ class PromptFxController : Controller() {
     val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
 
     val chatEngine: SimpleObjectProperty<AiChatEngine> =
-        SimpleObjectProperty(PromptFxModels.allChatEngines().firstOrNull())
+        SimpleObjectProperty(PromptFxModels.chatEngineDefault())
     val embeddingEngine: SimpleObjectProperty<EmbeddingStrategy> =
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 

@@ -43,14 +43,8 @@ abstract class PromptFxPolicy {
     abstract fun multimodalModels(): List<MultimodalChat>
     open fun multimodalModelDefault() = multimodalModels().firstOrNull()
 
-    /** Returns all chat engines: [chatModels] as [AiChatEngine.Text] plus [multimodalModels] as [AiChatEngine.Multimodal]. */
-    open fun allChatEngines(): List<AiChatEngine> =
-        chatModels().map { AiChatEngine.Text(it) } + multimodalModels().map { AiChatEngine.Multimodal(it) }
-
-    /** @deprecated Use [multimodalModels] instead. */
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     open fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
-    /** @deprecated Use [multimodalModelDefault] instead. */
     @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
     open fun visionLanguageModelDefault() = visionLanguageModels().firstOrNull()
 
