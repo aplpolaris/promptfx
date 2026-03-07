@@ -28,6 +28,7 @@ import javafx.geometry.Pos
 import javafx.scene.control.ToggleGroup
 import javafx.scene.control.TreeItem
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.util.json.jsonMapper
@@ -131,7 +132,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                             visibleWhen(viewList)
                             managedWhen(viewList)
                             cellFormat {
-                                graphic = vbox {
+                                graphic = VBox().apply {
                                     hbox(5.0, Pos.CENTER_LEFT) {
                                         text(it.name) {
                                             style = CLUSTER_NAME_STYLE
@@ -160,7 +161,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                             visibleWhen(viewTree)
                             managedWhen(viewTree)
                             cellFormat {
-                                graphic = vbox {
+                                graphic = VBox().apply {
                                     hbox(5.0, Pos.CENTER_LEFT) {
                                         text(it.name) {
                                             style = CLUSTER_NAME_STYLE

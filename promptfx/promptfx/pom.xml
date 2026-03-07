@@ -241,12 +241,9 @@
                         <configuration>
                             <mainClass>${module.name}/${main.class}</mainClass>
                             <options>
-                                <option>--add-opens</option>
-                                <option>javafx.controls/javafx.scene.control.skin=tornadofx</option>
-                                <option>--add-opens</option>
-                                <option>javafx.graphics/javafx.scene=tornadofx</option>
-                                <option>--add-reads</option>
-                                <option>kotlin.stdlib=kotlinx.coroutines.core</option>
+                                <option>--add-opens=javafx.controls/javafx.scene.control.skin=ALL-UNNAMED</option>
+                                <option>--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED</option>
+                                <option>--add-reads=kotlin.stdlib=kotlinx.coroutines.core</option>
                             </options>
                         </configuration>
                     </execution>

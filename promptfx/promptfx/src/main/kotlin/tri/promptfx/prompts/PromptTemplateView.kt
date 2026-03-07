@@ -23,6 +23,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.taskPlan
@@ -70,7 +71,8 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
             listview(fields) {
                 vgrow = Priority.ALWAYS
                 cellFormat { field ->
-                    graphic = hbox(10, Pos.TOP_CENTER) {
+                    graphic = HBox(10.0).apply {
+                        alignment = Pos.TOP_CENTER
                         text(field.first)
                         val useText = field.second.ifBlank {
                             if (field.first == "today") LocalDate.now().toString() else ""

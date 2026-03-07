@@ -65,7 +65,7 @@
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
         
 		<javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.2.0</tornadofx.version>
+        <tornadofx.version>2.2.2</tornadofx.version>
         <controlsfx.version>11.2.3</controlsfx.version>
         <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
     </properties>

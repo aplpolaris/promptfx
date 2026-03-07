@@ -24,6 +24,7 @@ import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.text.chunks.TextChunkRaw
@@ -101,7 +102,8 @@ class TextLibraryListUi : Fragment() {
             prefHeight = 100.0
             bindSelectionBidirectional(librarySelection)
             cellFormat {
-                graphic = hbox(5, Pos.CENTER_LEFT) {
+                graphic = HBox(5.0).apply {
+                    alignment = Pos.CENTER_LEFT
                     label(it.library.toString(), FontAwesomeIcon.BOOK.graphic)
                     text(libraryModel.savedStatusProperty(it)) {
                         style = "-fx-font-style: italic; -fx-text-fill: light-gray"

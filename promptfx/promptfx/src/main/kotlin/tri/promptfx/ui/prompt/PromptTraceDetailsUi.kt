@@ -26,6 +26,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
@@ -147,7 +148,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                                     fitWidthProperty().bind(thumbnailSize)
                                     fitHeightProperty().bind(thumbnailSize)
                                     isPreserveRatio = true
-                                    tooltip { graphic = vbox {
+                                    tooltip { graphic = VBox().apply {
                                         val text = text(prompt) {
                                             style = "-fx-fill: white;"
                                         }
