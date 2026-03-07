@@ -42,9 +42,9 @@ class GeminiSdkModelIndexTest {
 
     @Test
     fun testVisionLanguageModels() {
+        // vision_language is intentionally empty; models have been moved to multimodal
         val models = GeminiSdkModelIndex.visionLanguageModels()
-        assertTrue(models.isNotEmpty())
-        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
+        assertTrue(models.isEmpty())
         println("Vision language models: $models")
     }
 

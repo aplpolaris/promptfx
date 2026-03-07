@@ -204,7 +204,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     fun addDefaultChatParameters(common: ModelParameters) {
         parameters("Chat Model") {
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.chatModels())
+                combobox(controller.chatService, PromptFxModels.allChatModels())
             }
             with (common) {
                 temperature()

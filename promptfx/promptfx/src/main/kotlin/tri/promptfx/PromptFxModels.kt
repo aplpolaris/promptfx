@@ -39,6 +39,9 @@ object PromptFxModels {
     fun multimodalModels() = policy.multimodalModels()
     fun multimodalModelDefault() = policy.multimodalModelDefault()
 
+    /** Returns all chat models: [chatModels] plus [multimodalModels] wrapped as [TextChat]. */
+    fun allChatModels() = policy.allChatModels()
+
     fun imageModels() = policy.imageModels()
     fun imageModelDefault() = policy.imageModelDefault()
 
