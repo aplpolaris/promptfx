@@ -5,10 +5,10 @@ audio: [ gpt-4o-transcribe, gpt-4o-mini-transcribe, whisper-1 ]
 chat: [ gpt-3.5-turbo, gpt-4-turbo, gpt-4, o3-mini ]
 completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]
-image_generator: [ gpt-image-1, gpt-image-1-mini, dall-e-3, dall-e-2 ]
+image_generator: [ gpt-image-1.5, gpt-image-1, gpt-image-1-mini, dall-e-3, dall-e-2 ]
 moderation: [ omni-moderation-latest ]
 multimodal: [ gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, gpt-4-turbo, o4-mini, o3, o1 ]
-responses: [ o1-pro, gpt-5-pro, gpt-5.1, gpt-5, gpt-5-mini, gpt-5-nano ]
+responses: [ o1-pro, gpt-5.4, gpt-5.3-chat-latest, gpt-5.3-codex, gpt-5.2, gpt-5.2-codex, gpt-5.1, gpt-5.1-codex, gpt-5, gpt-5-codex, gpt-5-pro, gpt-5-mini, gpt-5-nano ]
 tts: [ gpt-4o-mini-tts, tts-1, tts-1-hd ]
 vision_language: [ ]
 
@@ -16,11 +16,47 @@ models:
 
   GPT-5:
 
+    - id: gpt-5.4
+      name: GPT-5.4
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        Our most capable model for professional work
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 1050000
+      outputTokenLimit: 128000
+
+    - id: gpt-5.3-chat-latest
+      name: GPT-5.3 Chat
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        GPT-5.3 Instant model used in ChatGPT
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 128000
+      outputTokenLimit: 16384
+
+    - id: gpt-5.2
+      name: GPT-5.2
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        Previous frontier model for professional work with configurable reasoning effort
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+
     - id: gpt-5.1
       name: GPT-5.1
       type: RESPONSES
       inputs: [ text, image ]
-      outputs: [ text, image ]
+      outputs: [ text ]
       source: OpenAI
       description: >
         GPT-5.1 is our flagship model for coding and agentic tasks with configurable reasoning and non-reasoning effort.
@@ -32,7 +68,7 @@ models:
       name: GPT-5
       type: RESPONSES
       inputs: [ text, image ]
-      outputs: [ text, image ]
+      outputs: [ text ]
       source: OpenAI
       description: >
         GPT-5 is our previous model for coding, reasoning, and agentic tasks across domains. We recommend using the latest GPT-5.1. Learn more in our latest model guide.
@@ -77,11 +113,61 @@ models:
       totalTokenLimit: 400000
       outputTokenLimit: 272000
 
+  GPT-5 Codex:
+
+    - id: gpt-5.3-codex
+      name: GPT-5.3 Codex
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        The most capable agentic coding model to date.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+
+    - id: gpt-5.2-codex
+      name: GPT-5.2 Codex
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        Our most intelligent coding model optimized for long-horizon, agentic coding tasks.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+
+    - id: gpt-5.1-codex
+      name: GPT-5.1 Codex
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        A version of GPT-5.1 optimized for agentic coding in Codex.
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+
+    - id: gpt-5-codex
+      name: GPT-5 Codex
+      type: RESPONSES
+      inputs: [ text, image ]
+      outputs: [ text ]
+      source: OpenAI
+      description: >
+        A version of GPT-5 optimized for agentic coding in Codex
+      lifecycle: PRODUCTION_ALIAS
+      totalTokenLimit: 400000
+      outputTokenLimit: 128000
+
   GPT-4:
 
     - id: gpt-4.1
       name: GPT-4.1
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -93,7 +179,7 @@ models:
 
     - id: gpt-4.1-mini
       name: GPT-4.1 mini
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -105,7 +191,7 @@ models:
 
     - id: gpt-4.1-nano
       name: GPT-4.1 nano
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -117,7 +203,7 @@ models:
 
     - id: gpt-4o
       name: GPT-4o
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -130,7 +216,7 @@ models:
 
     - id: gpt-4o-mini
       name: GPT-4o Mini
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -144,7 +230,7 @@ models:
 
     - id: gpt-4-turbo
       name: GPT-4-turbo
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -220,7 +306,7 @@ models:
 
     - id: o4-mini
       name: o4-mini
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -232,7 +318,7 @@ models:
 
     - id: o3
       name: o3
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -257,7 +343,7 @@ models:
 
     - id: o1
       name: GPT o1 Reasoning
-      type: TEXT_VISION_CHAT
+      type: RESPONSES
       inputs: [ text, image ]
       outputs: [ text ]
       source: OpenAI
@@ -315,6 +401,16 @@ models:
       outputDimension: 1536
 
   Image Generation:
+
+    - id: gpt-image-1.5
+      name: GPT Image 1.5
+      type: IMAGE_GENERATOR
+      source: OpenAI
+      description: >
+        State-of-the-art image generation model.
+      lifecycle: PRODUCTION
+      inputs: [ text, image ]
+      outputs: [ text, image ]
 
     - id: gpt-image-1
       name: GPT Image 1

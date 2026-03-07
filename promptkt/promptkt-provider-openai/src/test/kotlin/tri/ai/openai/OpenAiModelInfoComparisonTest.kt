@@ -33,6 +33,9 @@ import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelLifecycle
 import tri.ai.core.ModelType
+import tri.util.ANSI_BLUE
+import tri.util.ANSI_RESET
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Compares model capabilities detected via minimal API probing against the model index configuration,
@@ -59,8 +62,8 @@ class OpenAiModelInfoComparisonTest {
             ModelType.IMAGE_GENERATOR
         )
 
-        /** Regex matching dated snapshot model IDs, e.g. `gpt-4o-2024-11-20` or `gpt-4-0613`. */
-        private val SNAPSHOT_MODEL_REGEX = Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$")
+        /** Regex matching dated snapshot model IDs, e.g. `gpt4o-1120` or `gpt4-06-13` or `gpt5-preview` or `gpt5-latest`. */
+        private val SNAPSHOT_MODEL_REGEX = Regex(".*-(\\d{4}|\\d{2}-\\d{2}|preview)$")
     }
 
     //region DATA CLASSES
@@ -87,7 +90,7 @@ class OpenAiModelInfoComparisonTest {
         val id: String,
         val indexCard: LocalIndexModelCard,
         val detectedCard: DetectedModelCard,
-        val recommendedType: ModelType
+        val recommendedType: ModelType?
     )
 
     //endregion
@@ -97,16 +100,14 @@ class OpenAiModelInfoComparisonTest {
     @Test
     @Tag("openai")
     fun `test model card comparison and recommendations`() {
-        runTest {
+        runTest(timeout = 300.seconds) {
             val indexCards = getIndexCards()
 
             val recommendations = mutableListOf<ModelRecommendation>()
             for (indexCard in indexCards) {
                 val detected = detectModelCard(indexCard.id)
                 val recommended = recommendType(detected, indexCard)
-                if (recommended != null) { // && recommended != indexCard.type) {
-                    recommendations += ModelRecommendation(indexCard.id, indexCard, detected, recommended)
-                }
+                recommendations += ModelRecommendation(indexCard.id, indexCard, detected, recommended)
             }
 
             printReport(indexCards.size, recommendations)
@@ -189,7 +190,7 @@ class OpenAiModelInfoComparisonTest {
             client.response(ResponseRequest(
                 model = ModelId(modelId),
                 input = ResponseInput("1+1="),
-                maxOutputTokens = 5
+                maxOutputTokens = 16
             ))
         }.isSuccess
 
@@ -263,22 +264,35 @@ class OpenAiModelInfoComparisonTest {
         println("Model Card Comparison — $modelCount models probed")
         println("=".repeat(80))
 
-        if (recommendations.isEmpty()) {
+        val typeNull = recommendations.filter { it.recommendedType == null }
+        val typeMisMatch = (recommendations - typeNull).filter { it.recommendedType != it.indexCard.type }
+        val rest = recommendations - typeNull - typeMisMatch
+
+        if (typeNull.isEmpty() && typeMisMatch.isEmpty()) {
+            println("=".repeat(80))
             println("All model types are consistent with detected API capabilities.")
         } else {
-            recommendations.forEach { rec ->
-                println()
-                println("Model:  ${rec.id}")
-                println("  Index type:       ${rec.indexCard.type}")
-                println("  Recommended type: ${rec.recommendedType}")
-                println("  Detected:         ${rec.detectedCard}")
-                println("  Inputs:  ${rec.indexCard.inputs ?: "(unspecified)"}")
-                println("  Outputs: ${rec.indexCard.outputs ?: "(unspecified)"}")
-            }
-            println()
-            println("${recommendations.size} model(s) may need a type update.")
+            println("=".repeat(80))
+            println("The following models match API tests:")
+            rest.forEach { rec -> printModel(rec) }
+            println("=".repeat(80))
+            println("The following models had no API responses, so no recommendation can be made:")
+            typeNull.forEach { rec -> printModel(rec) }
+            println("=".repeat(80))
+            println("The following models had API responses that suggest a different type than the index:")
+            typeMisMatch.forEach { rec -> printModel(rec) }
         }
         println("=".repeat(80))
+    }
+
+    fun printModel(rec: ModelRecommendation) {
+        println()
+        println("${ANSI_BLUE}Model: ${rec.id}${ANSI_RESET}")
+        println("  Index type: ${rec.indexCard.type}")
+        println("    Inputs:  ${rec.indexCard.inputs ?: "(unspecified)"}")
+        println("    Outputs: ${rec.indexCard.outputs ?: "(unspecified)"}")
+        println("  Detected: ${rec.detectedCard}")
+        println("    Recommended type: ${rec.recommendedType}")
     }
 
     //endregion
