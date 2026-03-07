@@ -89,9 +89,9 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     private val images = observableListOf<AiImageTrace>()
 
     /** Available image model IDs from the active policy. */
-    private val imageModelIds = observableListOf(
-        PromptFxModels.imageModels().map { it.modelId }.ifEmpty { listOf(DALLE2_ID) }
-    )
+    private val imageModelIds = observableListOf<String>().apply {
+        setAll(PromptFxModels.imageModels().map { it.modelId }.ifEmpty { listOf(DALLE2_ID) })
+    }
 
     /** Model */
     private val model = SimpleStringProperty(PromptFxModels.imageModelDefault()?.modelId ?: DALLE2_ID).apply {
@@ -276,7 +276,10 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             images.forEach { trace ->
                 (trace.values ?: listOf()).forEach {
                     val image = it.imageContent()?.base64ToImage()
-                        ?: Image(it.textContent())
+                        ?: run {
+                            // skip outputs with no renderable image content
+                            return@forEach
+                        }
                     var file = folder.resolve("image-$i.png")
                     while (file.exists()) {
                         file = folder.resolve("image-${++i}.png")
@@ -383,10 +386,13 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
         /** Convert an OpenAI [ImageSize] to a [tri.ai.core.ImageSize] for use with the [tri.ai.core.ImageGenerator] interface. */
         internal fun ImageSize.toCoreSize(): tri.ai.core.ImageSize {
-            return try {
-                val parts = size.split("x")
-                tri.ai.core.ImageSize(parts[0].toInt(), parts[1].toInt())
-            } catch (e: Exception) {
+            val parts = size.split("x")
+            return if (parts.size == 2) {
+                val w = parts[0].toIntOrNull()
+                val h = parts[1].toIntOrNull()
+                if (w != null && h != null) tri.ai.core.ImageSize(w, h)
+                else tri.ai.core.ImageSize(1024, 1024)
+            } else {
                 tri.ai.core.ImageSize(1024, 1024)
             }
         }
