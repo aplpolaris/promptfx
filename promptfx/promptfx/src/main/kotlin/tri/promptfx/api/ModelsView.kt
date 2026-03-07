@@ -188,6 +188,7 @@ fun graphic(type: ModelType) = when (type) {
     ModelType.REALTIME_CHAT -> FontAwesomeIcon.COMMENTS.graphic
     ModelType.MODERATION -> FontAwesomeIcon.EYE_SLASH.graphic
     ModelType.QUESTION_ANSWER -> FontAwesomeIcon.QUESTION_CIRCLE.graphic
+    ModelType.VIDEO_GENERATOR -> FontAwesomeIcon.FILM.graphic
     ModelType.UNKNOWN -> FontAwesomeIcon.QQ.graphic
 }
 

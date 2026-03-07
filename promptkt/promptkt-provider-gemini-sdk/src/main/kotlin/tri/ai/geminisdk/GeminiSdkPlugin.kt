@@ -135,10 +135,9 @@ class GeminiSdkPlugin : TextPlugin {
         "gemini" in id -> ModelType.TEXT_CHAT
         "gemma" in id -> ModelType.TEXT_CHAT
         "aqa" in id -> ModelType.QUESTION_ANSWER
-//        "veo" in id -> ModelType.VIDEO_GENERATOR
+        "veo" in id -> ModelType.VIDEO_GENERATOR
+        "sora" in id -> ModelType.VIDEO_GENERATOR
         else -> ModelType.UNKNOWN
-    }.also {
-        println("Guessed model type for $id: $it")
     }
 
     private fun findDeprecation(description: String?): String? {

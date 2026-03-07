@@ -58,7 +58,7 @@ class OpenAiResponsesChat(
     }
 
     companion object {
-        private const val DEFAULT_MAX_TOKENS = 1000
+        private const val DEFAULT_MAX_TOKENS = 2000
 
         /** Build a [ResponseRequest] from a model id, chat messages, and parameters. */
         fun buildResponseRequest(

@@ -76,6 +76,7 @@ enum class ModelType {
     RESPONSES,
     MODERATION,
     QUESTION_ANSWER,
+    VIDEO_GENERATOR,
     UNKNOWN
 }
 
