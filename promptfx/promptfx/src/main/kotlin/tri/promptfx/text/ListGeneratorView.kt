@@ -21,13 +21,16 @@ package tri.promptfx.text
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.TextChatMessage
 import tri.ai.pips.AiPlanner
+import tri.ai.pips.aitask
 import tri.ai.pips.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
+import tri.ai.prompt.trace.JsonListMergeStrategy
+import tri.ai.prompt.trace.executeMultiAttemptJsonList
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.ui.PromptSelectionModel
@@ -35,6 +38,7 @@ import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.sliderwitheditablelabel
 
 /** Plugin for the [ListGeneratorView]. */
 class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "Convert to List", WorkspaceViewAffordance.INPUT_ONLY, ListGeneratorView::class)
@@ -53,6 +57,9 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
 
     private val prompt = PromptSelectionModel(promptsWithPrefix(PROMPT_PREFIX).first())
 
+    private val numAttempts = SimpleIntegerProperty(1)
+    private val mergeStrategy = SimpleObjectProperty(JsonListMergeStrategy.TOP_REPEATED)
+
     private val output = SimpleObjectProperty<ListPromptResult>()
     private val outputItems = observableListOf<String>()
 
@@ -68,6 +75,14 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
                 textfield(sampleItems)
             }
             promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
+            field("Attempts") {
+                tooltip("Number of independent model queries to run and merge into a final result.")
+                sliderwitheditablelabel(1..10, numAttempts)
+            }
+            field("Merge Strategy") {
+                tooltip("Strategy for combining items across multiple attempts.")
+                combobox(mergeStrategy, JsonListMergeStrategy.values().toList())
+            }.enableWhen(numAttempts.greaterThan(1))
         }
         addDefaultChatParameters(common)
     }
@@ -106,7 +121,16 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
 
         onCompleted {
-            val rawText = it.finalResult.firstValue.textContent()
+            val firstValue = it.finalResult.firstValue
+            // Multi-attempt result: `other` holds the merged List<String>
+            val mergedList = firstValue.other as? List<*>
+            if (mergedList != null) {
+                output.set(null)
+                outputItems.setAll(mergedList.filterIsInstance<String>())
+                return@onCompleted
+            }
+            // Single attempt: parse the full JSON result
+            val rawText = firstValue.textContent()
             val codeText = if ("```json" in rawText)
                 rawText.substringAfter("```json").substringBefore("```").trim()
             else
@@ -127,11 +151,18 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             output.set(null)
             outputItems.clear()
         }
-        return common.completionBuilder()
+        val builder = common.completionBuilder()
             .prompt(prompt.prompt.value)
             .params(INPUT to sourceText.get(), "item_category" to itemCategory.get(), "known_items" to sampleItems.get().parseSampleItems())
             .requestJson(true)
-            .taskPlan(chatEngine)
+        return if (numAttempts.value > 1) {
+            val localAttempts = numAttempts.value
+            val localStrategy = mergeStrategy.value
+            val localChat = chatEngine
+            aitask("list-generator-multi-attempt") { builder.executeMultiAttemptJsonList(localChat, localAttempts, localStrategy) }.planner
+        } else {
+            builder.taskPlan(chatEngine)
+        }
     }
 
     private fun String.parseSampleItems() =
