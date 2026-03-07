@@ -34,21 +34,21 @@ class OpenAiModelIndexTest {
             println("  Type: ${info.type}")
             println("  Source: ${info.source}")
 
-            println("  Name: ${info.name}")
-            println("  Description: ${info.description?.trim()}")
+            println("  Name: ${info.metadata.name}")
+            println("  Description: ${info.metadata.description?.trim()}")
 
-            println("  Created: ${info.created}")
-            println("  Version: ${info.version}")
-            println("  Deprecation: ${info.deprecation}")
-            println("  Lifecycle: ${info.lifecycle}")
+            println("  Created: ${info.metadata.created}")
+            println("  Version: ${info.metadata.version}")
+            println("  Deprecation: ${info.metadata.deprecation}")
+            println("  Lifecycle: ${info.metadata.lifecycle}")
 
-            println("  Inputs: ${info.inputs}")
-            println("  Outputs: ${info.outputs}")
-            println("  Input Token Limit: ${info.inputTokenLimit}")
-            println("  Output Token Limit: ${info.outputTokenLimit}")
-            println("  Total Token Limit: ${info.totalTokenLimit}")
+            println("  Inputs: ${info.capabilities.inputs}")
+            println("  Outputs: ${info.capabilities.outputs}")
+            println("  Input Token Limit: ${info.params["inputTokenLimit"]}")
+            println("  Output Token Limit: ${info.params["outputTokenLimit"]}")
+            println("  Total Token Limit: ${info.params["totalTokenLimit"]}")
 
-            println("  Output Dimension: ${info.outputDimension}")
+            println("  Output Dimension: ${info.params["outputDimension"]}")
 
             println("  Params: ${info.params}")
         }

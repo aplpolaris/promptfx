@@ -10,4 +10,4 @@ multimodal: [ gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-flash-image, g
 moderation: [ ]
 tts: [ ]
 image_generator: [ ]
-vision_language: [ gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-flash-image, gemini-2.5-pro, gemini-2.0-flash, gemini-2.0-flash-lite ]
+vision_language: [ ]

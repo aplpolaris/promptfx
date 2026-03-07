@@ -23,22 +23,8 @@ import java.time.LocalDate
 
 /** Information about a model. */
 class ModelInfo(var id: String, var type: ModelType, var source: String) {
-    var name: String? = null
-    var description: String? = null
-
-    var created: LocalDate? = null
-    var version: String? = null
-    var deprecation: String? = null
-    var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
-
-    var inputs: List<DataModality>? = null
-    var outputs: List<DataModality>? = null
-    var inputTokenLimit: Int? = null
-    var outputTokenLimit: Int? = null
-    var totalTokenLimit: Int? = null
-
-    var outputDimension: Int? = null
-
+    var metadata: ModelMetadata = ModelMetadata()
+    var capabilities: ModelCapabilities = ModelCapabilities()
     var params: MutableMap<String, Any> = mutableMapOf()
 
     override fun toString() =
@@ -52,6 +38,22 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
         }
     }
 
+}
+
+/** Descriptive metadata for a model (name, description, version, lifecycle, etc.). */
+class ModelMetadata {
+    var name: String? = null
+    var description: String? = null
+    var version: String? = null
+    var created: LocalDate? = null
+    var deprecation: String? = null
+    var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
+}
+
+/** Input/output capabilities for a model. */
+class ModelCapabilities {
+    var inputs: List<DataModality>? = null
+    var outputs: List<DataModality>? = null
 }
 
 /** Data modality for inputs and outputs. */

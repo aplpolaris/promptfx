@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiChat
+import tri.promptfx.AiChatEngine
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.PrintMonitor
 import tri.ai.openai.OpenAiCompletion
@@ -32,7 +33,7 @@ import tri.promptfx.ModelParameters
 
 class WikipediaAiTaskPlannerTest {
 
-    val engine = OpenAiChat(OpenAiModelIndex.GPT35_TURBO)
+    val engine = AiChatEngine.Text(OpenAiChat(OpenAiModelIndex.GPT35_TURBO))
 
     @Test
     @Disabled("Disabled to prevent excessive API calls")

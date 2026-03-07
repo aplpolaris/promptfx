@@ -40,24 +40,24 @@ class ModelInfoCard(val selectedModel: SimpleObjectProperty<ModelInfo>) : View()
 
                 fieldset("Model Info") {
                     modelfield("Id") { it.id }
-                    modelfield("Name") { it.name }
+                    modelfield("Name") { it.metadata.name }
                     modelfield("Type", { listOf(graphic(it.type)) }) { it.type }
-                    modelfield("Description") { it.description }
-                    modelfield("Inputs", { graphics(it.inputs) }) { it.inputs }
-                    modelfield("Outputs", { graphics(it.outputs) }) { it.outputs }
+                    modelfield("Description") { it.metadata.description }
+                    modelfield("Inputs", { graphics(it.capabilities.inputs) }) { it.capabilities.inputs }
+                    modelfield("Outputs", { graphics(it.capabilities.outputs) }) { it.capabilities.outputs }
                 }
                 fieldset("Model Version") {
                     modelfield("Source") { it.source }
-                    modelfield("Version") { it.version }
-                    modelfield("Lifecycle") { it.lifecycle }
-                    modelfield("Created") { it.created }
-                    modelfield("Deprecation") { it.deprecation }
+                    modelfield("Version") { it.metadata.version }
+                    modelfield("Lifecycle") { it.metadata.lifecycle }
+                    modelfield("Created") { it.metadata.created }
+                    modelfield("Deprecation") { it.metadata.deprecation }
                 }
                 fieldset("Model Limits") {
-                    modelfield("Input Token Limit") { it.inputTokenLimit }
-                    modelfield("Output Token Limit") { it.outputTokenLimit }
-                    modelfield("Total Token Limit") { it.totalTokenLimit }
-                    modelfield("Output Dimension") { it.outputDimension }
+                    modelfield("Input Token Limit") { it.params["inputTokenLimit"] }
+                    modelfield("Output Token Limit") { it.params["outputTokenLimit"] }
+                    modelfield("Total Token Limit") { it.params["totalTokenLimit"] }
+                    modelfield("Output Dimension") { it.params["outputDimension"] }
                 }
                 fieldset("Other Properties") {
                     field("Params") {

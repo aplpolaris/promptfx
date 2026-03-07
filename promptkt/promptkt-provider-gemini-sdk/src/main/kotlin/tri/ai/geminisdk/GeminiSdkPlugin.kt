@@ -96,25 +96,23 @@ class GeminiSdkPlugin : TextPlugin {
             type = ModelType.UNKNOWN,
             source = modelSource()
         ).also {
-            it.name = displayName().get()
-            it.version = version().get()
-            it.description = description().getOrNull() ?: ""
-            it.inputTokenLimit = inputTokenLimit().get()
-            it.outputTokenLimit = outputTokenLimit().get()
+            it.metadata.name = displayName().get()
+            it.metadata.version = version().get()
+            it.metadata.description = description().getOrNull() ?: ""
+            it.metadata.created = findReleaseDate(it.metadata.description)
+            it.metadata.deprecation = findDeprecation(it.metadata.description)
+            it.metadata.lifecycle = findLifecycle(it.id, it.metadata.description)
 
-            it.created = findReleaseDate(it.description)
-            it.deprecation = findDeprecation(it.description)
-            it.lifecycle = findLifecycle(it.id, it.description)
             val actions = this.supportedActions().get()
             it.type = findType(it.id, actions.toSet())
-            it.inputs = when (it.type) {
+            it.capabilities.inputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.text)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
                 ModelType.TEXT_VISION_CHAT -> listOf(DataModality.text, DataModality.image, DataModality.audio, DataModality.video)
                 else -> null
             }
-            it.outputs = when (it.type) {
+            it.capabilities.outputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.embedding)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
@@ -123,6 +121,8 @@ class GeminiSdkPlugin : TextPlugin {
             }
 
             it.params(
+                "inputTokenLimit" to inputTokenLimit().get(),
+                "outputTokenLimit" to outputTokenLimit().get(),
                 "endpoints" to endpoints().getOrNull()?.map { it.name() },
                 "supportedActions" to supportedActions().get()
             )

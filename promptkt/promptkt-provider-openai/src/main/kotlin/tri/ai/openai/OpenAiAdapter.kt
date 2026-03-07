@@ -502,7 +502,7 @@ fun Model.toModelInfo(source: String): ModelInfo {
     val existing = OpenAiModelIndex.modelInfoIndex[id.id]
     val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, source)
     created?.let {
-        info.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        info.metadata.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
     if (info.type == ModelType.UNKNOWN) {
@@ -510,13 +510,13 @@ fun Model.toModelInfo(source: String): ModelInfo {
             "moderation" in id.id -> info.type = ModelType.MODERATION
             "-realtime-" in id.id -> {
                 info.type = ModelType.REALTIME_CHAT
-                info.inputs = listOf(DataModality.text, DataModality.audio)
-                info.outputs = listOf(DataModality.text, DataModality.audio)
+                info.capabilities.inputs = listOf(DataModality.text, DataModality.audio)
+                info.capabilities.outputs = listOf(DataModality.text, DataModality.audio)
             }
             "-audio-" in id.id -> {
                 info.type = ModelType.AUDIO_CHAT
-                info.inputs = listOf(DataModality.audio)
-                info.outputs = listOf(DataModality.audio)
+                info.capabilities.inputs = listOf(DataModality.audio)
+                info.capabilities.outputs = listOf(DataModality.audio)
             }
             else -> {
                 // attempt to assign type for tagged models based on a "parent type"
