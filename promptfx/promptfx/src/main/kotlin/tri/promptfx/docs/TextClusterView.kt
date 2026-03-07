@@ -266,8 +266,8 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                 itemType = inputType.value,
                 categories = categoryList.value.split(",").map { it.trim() },
                 sampleTheme = summarizeSample.value.ifBlank { "This content all appears to discuss animals or pets." },
-                chatEngine = controller.chatService.value,
-                embeddingModel = controller.embeddingStrategy.value.model,
+                chatEngine = controller.chatEngine.value,
+                embeddingModel = controller.embeddingEngine.value.model,
                 minForRegroup = minForRegroup.value,
                 attempts = attempts.value,
                 progress = { msg, pct ->

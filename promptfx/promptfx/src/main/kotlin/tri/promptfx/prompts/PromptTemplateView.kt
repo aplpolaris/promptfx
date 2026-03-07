@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.taskPlan
+import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
@@ -115,9 +115,9 @@ class PromptTemplateView : AiPlanTaskView("Prompt Template",
         val modelInfo = prompt.model ?: AiModelInfo("N/A")
         template.set(promptInfo.template)
         fields.setAll(promptInfo.params.entries.map { it.key to it.value.toString() })
-        val model = PromptFxModels.chatModels().find { it.modelId == modelInfo.modelId }
+        val model = PromptFxModels.allChatEngines().find { it.modelId == modelInfo.modelId }
         if (model != null) {
-            controller.chatService.set(model)
+            controller.chatEngine.set(model)
         } else {
             warning<PromptTemplateView>("Model ${modelInfo.modelId} not found.")
         }

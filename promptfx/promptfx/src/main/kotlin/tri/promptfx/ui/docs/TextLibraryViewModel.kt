@@ -57,8 +57,8 @@ import java.time.LocalDateTime
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
-    private val embeddingStrategy
-        get() = controller.embeddingStrategy
+    private val embeddingEngine
+        get() = controller.embeddingEngine
 
     val libraryList = observableListOf<TextLibraryInfo>()
     val librarySelection = SimpleObjectProperty<TextLibraryInfo>()
@@ -146,7 +146,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Prompts user to select an embedding model from the available models in the loaded library. */
     private fun promptEmbeddingModelSelection(availableModels: Set<String>) {
-        val currentModel = embeddingStrategy.value.modelId
+        val currentModel = embeddingEngine.value.modelId
         if (currentModel in availableModels) {
             // Current model is already available in the library, no prompt needed
             return
@@ -279,7 +279,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
     fun calculateEmbeddings(): AiTaskList {
-        val service = embeddingStrategy.value
+        val service = embeddingEngine.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {

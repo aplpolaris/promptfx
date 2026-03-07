@@ -24,8 +24,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.core.EmbeddingModel
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
 import tri.util.json.jsonMapper
 import tri.ai.pips.AiPlanner
@@ -34,13 +32,15 @@ import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.AiChatEngine
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.execute
 import tri.util.fine
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
-class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
+class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
 
     override fun plan() =
         aitask("weather-similarity-check") {
@@ -65,8 +65,8 @@ class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters
      * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.
      * Fails silently, returning null without throwing an exception if parsing fails.
      */
-    private suspend inline fun <reified T> CompletionBuilder.executeJson(completion: TextChat) =
-        requestJson(true).execute(completion).mapOutput {
+    private suspend inline fun <reified T> CompletionBuilder.executeJson(engine: AiChatEngine) =
+        requestJson(true).execute(engine).mapOutput {
             try {
                 AiOutput(other = JSON_MAPPER.readValue<T>(it.textContent().trim()))
             } catch (x: JsonMappingException) {

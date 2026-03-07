@@ -20,19 +20,20 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
-import tri.ai.core.TextChat
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
+import tri.promptfx.AiChatEngine
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.execute
 import java.io.IOException
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class WikipediaAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
+class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
 
     override fun plan() =
         aitask("wikipedia-page-guess") {
