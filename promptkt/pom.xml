@@ -68,6 +68,7 @@
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
+        <kotlinx-io-core.version>0.5.4</kotlinx-io-core.version>
         <kotlinx-serialization.version>1.10.0</kotlinx-serialization.version>
         <kotlin-dokka.version>2.1.0</kotlin-dokka.version>
         <ktor.version>3.4.0</ktor.version> <!-- match version in openai-client -->

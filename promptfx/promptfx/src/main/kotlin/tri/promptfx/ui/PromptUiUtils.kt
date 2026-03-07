@@ -28,6 +28,7 @@ import javafx.scene.Node
 import javafx.scene.control.ContentDisplay
 import javafx.scene.control.Hyperlink
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.text.Text
 import tornadofx.*
 import tri.ai.text.docs.FormattedText
@@ -100,7 +101,7 @@ fun FormattedTextNode.toFxNode(hyperlinkOp: (String) -> Unit): Node =
     }
 
 private fun Node.fancytooltip(tip: String) = tooltip(
-    graphic = vbox(10.0) {
+    graphic = VBox(10.0).apply {
         if ("\n\n" in tip) {
             this.text(tip.substringBefore("\n\n")) {
                 style = "-fx-font-weight: normal; -fx-font-size: 14; -fx-fill: #eee"

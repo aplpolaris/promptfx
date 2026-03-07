@@ -33,7 +33,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.scene.control.Slider
 import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import tornadofx.action
 import tornadofx.button
 import tornadofx.clear
@@ -148,12 +150,12 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 cellWidthProperty.bind(thumbnailSize)
                 cellHeightProperty.bind(thumbnailSize)
                 cellCache {
-                    imageview(it.firstValue.imageContent()!!.base64ToImage()) {
+                    ImageView(it.firstValue.imageContent()!!.base64ToImage()).apply {
                         fitWidthProperty().bind(thumbnailSize)
                         fitHeightProperty().bind(thumbnailSize)
                         isPreserveRatio = true
                         isPickOnBounds = true // so you can click anywhere on transparent images
-                        tooltip { graphic = vbox {
+                        tooltip { graphic = VBox().apply {
                             val text = text(it.prompt!!.template) {
                                 style = "-fx-fill: white;"
                             }

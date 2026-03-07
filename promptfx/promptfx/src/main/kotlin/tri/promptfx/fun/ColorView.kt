@@ -23,9 +23,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
 import tornadofx.*
-import tri.ai.pips.taskPlan
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.taskPlan
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -80,7 +80,7 @@ class ColorView : AiPlanTaskView("Colors", "Enter a description of a color or ob
         .paramsInput(input = input.get())
         .tokens(6)
         .stop(";")
-        .taskPlan(completionEngine)
+        .taskPlan(chatEngine)
 
     private fun Color.hex() = "#${this.toString().substring(2, 8)}"
 

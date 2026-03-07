@@ -55,7 +55,7 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkEmbeddingModel(it, client)
     }
 
-    override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModelsInclusive()) {
+    override fun chatModels(): List<tri.ai.core.TextChat> = models(GeminiSdkModelIndex.chatModels()) {
         GeminiSdkTextChat(it, client) 
     }
 
@@ -64,17 +64,22 @@ class GeminiSdkPlugin : TextPlugin {
     }
 
     override fun textCompletionModels() = models(
-        GeminiSdkModelIndex.completionModels() + GeminiSdkModelIndex.chatModelsInclusive()
+        GeminiSdkModelIndex.completionModels() + GeminiSdkModelIndex.chatModels()
     ) {
         GeminiSdkTextCompletion(it, client)
     }
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() = models(GeminiSdkModelIndex.visionLanguageModels()) { 
         GeminiSdkVisionLanguageChat(it, client) 
     }
 
     override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> = 
         emptyList() // Image generation not supported by Vertex AI SDK
+
+    override fun speechToTextModels() = models(GeminiSdkModelIndex.audioModels()) {
+        GeminiSdkSpeechToText(it, client)
+    }
 
     override fun close() {
         client.close()
@@ -88,28 +93,24 @@ class GeminiSdkPlugin : TextPlugin {
     private fun Model.toCoreModelInfo() =
         ModelInfo(
             id = name().get().substringAfter("models/"),
-            type = ModelType.UNKNOWN,
+            type = guessModelType(name().get().lowercase()),
             source = modelSource()
         ).also {
-            it.name = displayName().get()
-            it.version = version().get()
-            it.description = description().getOrNull() ?: ""
-            it.inputTokenLimit = inputTokenLimit().get()
-            it.outputTokenLimit = outputTokenLimit().get()
+            it.metadata.name = displayName().get()
+            it.metadata.version = version().get()
+            it.metadata.description = description().getOrNull() ?: ""
+            it.metadata.created = findReleaseDate(it.metadata.description)
+            it.metadata.deprecation = findDeprecation(it.metadata.description)
+            it.metadata.lifecycle = findLifecycle(it.id, it.metadata.description)
 
-            it.created = findReleaseDate(it.description)
-            it.deprecation = findDeprecation(it.description)
-            it.lifecycle = findLifecycle(it.id, it.description)
-            val actions = this.supportedActions().get()
-            it.type = findType(it.id, actions.toSet())
-            it.inputs = when (it.type) {
+            it.capabilities.inputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.text)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
                 ModelType.TEXT_VISION_CHAT -> listOf(DataModality.text, DataModality.image, DataModality.audio, DataModality.video)
                 else -> null
             }
-            it.outputs = when (it.type) {
+            it.capabilities.outputs = when (it.type) {
                 ModelType.QUESTION_ANSWER -> listOf(DataModality.text)
                 ModelType.TEXT_EMBEDDING -> listOf(DataModality.embedding)
                 ModelType.TEXT_CHAT -> listOf(DataModality.text)
@@ -118,10 +119,26 @@ class GeminiSdkPlugin : TextPlugin {
             }
 
             it.params(
+                "inputTokenLimit" to inputTokenLimit().get(),
+                "outputTokenLimit" to outputTokenLimit().get(),
                 "endpoints" to endpoints().getOrNull()?.map { it.name() },
                 "supportedActions" to supportedActions().get()
             )
         }
+
+    private fun guessModelType(id: String) = when {
+        "embedding" in id -> ModelType.TEXT_EMBEDDING
+        "image" in id -> ModelType.IMAGE_GENERATOR
+        "nano-banana" in id -> ModelType.IMAGE_GENERATOR
+        "tts" in id -> ModelType.TEXT_TO_SPEECH
+        "audio" in id -> ModelType.SPEECH_TO_TEXT
+        "gemini" in id -> ModelType.TEXT_CHAT
+        "gemma" in id -> ModelType.TEXT_CHAT
+        "aqa" in id -> ModelType.QUESTION_ANSWER
+        "veo" in id -> ModelType.VIDEO_GENERATOR
+        "sora" in id -> ModelType.VIDEO_GENERATOR
+        else -> ModelType.UNKNOWN
+    }
 
     private fun findDeprecation(description: String?): String? {
         return when {
@@ -179,48 +196,6 @@ class GeminiSdkPlugin : TextPlugin {
             "was deprecated" in description -> ModelLifecycle.DEPRECATED
             else -> ModelLifecycle.PRODUCTION
         }
-    }
-
-    /**
-     * This is mostly done through trial and error.
-     * See https://ai.google.dev/gemini-api/docs/models/gemini#model-variations for inputs supported.
-     */
-    private fun findType(id: String, methods: Set<String>): ModelType {
-        val ANSWER = "generateAnswer"
-        val BIDI_GENERATE = "bidiGenerateContent"
-        val CACHED = "createCachedContent"
-        val COUNT = "countTokens"
-        val EMBED = "embedContent"
-        val GENERATE = "generateContent"
-        val TUNED = "createTunedModel"
-
-        val GENERATE2 = "generateMessage"
-        val COUNT2 = "countMessageTokens"
-
-        val COUNT3 = "countTextTokens"
-        val EMBED3 = "embedText"
-        val GENERATE3 = "generateText"
-        val TUNED3 = "createTunedTextModel"
-
-        var type = when (methods) {
-            setOf(EMBED) -> ModelType.TEXT_EMBEDDING
-            setOf(EMBED3, COUNT3) -> ModelType.TEXT_EMBEDDING
-            setOf(GENERATE) -> ModelType.TEXT_CHAT
-            setOf(GENERATE, COUNT) -> ModelType.TEXT_CHAT
-            setOf(GENERATE, COUNT, TUNED) -> ModelType.TEXT_CHAT
-            setOf(GENERATE2, COUNT2) -> ModelType.TEXT_CHAT
-            setOf(GENERATE, COUNT2, TUNED) -> ModelType.TEXT_CHAT
-            setOf(GENERATE3, COUNT3, TUNED3) -> ModelType.TEXT_CHAT
-            setOf(ANSWER) -> ModelType.QUESTION_ANSWER
-            setOf(GENERATE, COUNT, CACHED) -> ModelType.TEXT_CHAT
-            setOf(GENERATE, COUNT, BIDI_GENERATE) -> ModelType.TEXT_CHAT
-            else -> ModelType.UNKNOWN
-        }
-
-        if (type == ModelType.TEXT_CHAT && ("vision" in id || "gemini-1.5" in id || "gemini-2.0" in id)) {
-            type = ModelType.TEXT_VISION_CHAT
-        }
-        return type
     }
 
     //endregion

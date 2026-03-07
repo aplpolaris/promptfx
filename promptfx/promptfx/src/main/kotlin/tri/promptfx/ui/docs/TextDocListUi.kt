@@ -24,6 +24,7 @@ import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.image.ImageView
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.stage.Modality
 import tornadofx.*
@@ -55,7 +56,8 @@ class TextDocListUi : Fragment() {
             bindSelectionBidirectional(docSelection)
             cellFormat { doc ->
                 val browsable = doc.browsable()
-                graphic = hbox(5, Pos.CENTER_LEFT) {
+                graphic = HBox(5.0).apply {
+                    alignment = Pos.CENTER_LEFT
                     if (browsable != null) {
                         hyperlink(browsable.shortNameWithoutExtension, graphic = browsable.icon()) {
                             val thumb = DocumentUtils.documentThumbnail(browsable, DOC_THUMBNAIL_SIZE)

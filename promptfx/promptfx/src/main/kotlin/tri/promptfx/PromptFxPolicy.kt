@@ -43,15 +43,19 @@ abstract class PromptFxPolicy {
     abstract fun multimodalModels(): List<MultimodalChat>
     open fun multimodalModelDefault() = multimodalModels().firstOrNull()
 
-    /** @deprecated Use [multimodalModels] instead. */
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     open fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
-    /** @deprecated Use [multimodalModelDefault] instead. */
     @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
     open fun visionLanguageModelDefault() = visionLanguageModels().firstOrNull()
 
     abstract fun imageModels(): List<ImageGenerator>
     open fun imageModelDefault() = imageModels().firstOrNull()
+
+    abstract fun textToSpeechModels(): List<TextToSpeechModel>
+    open fun textToSpeechModelDefault() = textToSpeechModels().firstOrNull() ?: TextToSpeechModel.UNAVAILABLE
+
+    abstract fun speechToTextModels(): List<SpeechToTextModel>
+    open fun speechToTextModelDefault() = speechToTextModels().firstOrNull() ?: SpeechToTextModel.UNAVAILABLE
 
     /** Returns true if the given view is supported by this policy. */
     abstract fun supportsView(simpleName: String): Boolean
@@ -86,6 +90,8 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
+    override fun textToSpeechModels() = plugin.textToSpeechModels()
+    override fun speechToTextModels() = plugin.speechToTextModels()
 }
 
 /** OpenAI-only policy, as managed by [OpenAiPlugin]. */
@@ -113,5 +119,7 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
+    override fun textToSpeechModels() = TextPlugin.textToSpeechModels()
+    override fun speechToTextModels() = TextPlugin.speechToTextModels()
     override fun supportsView(simpleName: String) = true
 }

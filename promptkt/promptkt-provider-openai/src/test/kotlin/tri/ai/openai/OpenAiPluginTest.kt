@@ -17,14 +17,19 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.core
+package tri.ai.openai
 
-/** The role of a chat message. */
-enum class MChatRole {
-    System,
-    User,
-    Assistant,
-    Tool,
-    /** Message with no role - useful for text completions. */
-    None
+import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
+
+class OpenAiPluginTest {
+
+    val plugin = OpenAiPlugin()
+
+    @Test
+    @Tag("openai")
+    fun testModels() {
+        println(plugin.modelInfo())
+    }
+
 }
