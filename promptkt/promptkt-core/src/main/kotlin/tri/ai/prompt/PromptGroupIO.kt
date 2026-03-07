@@ -85,6 +85,7 @@ object PromptGroupIO {
     /**
      * Load all [PromptGroup]s from a directory.
      * Scans for *.yaml and *.yml (optionally recursive).
+     * Files that cannot be parsed as a [PromptGroup] are skipped with a warning.
      */
     fun readFromDirectory(dir: Path, recursive: Boolean = true): List<PromptGroup> {
         require(Files.isDirectory(dir)) { "Not a directory: $dir" }
@@ -93,7 +94,14 @@ object PromptGroupIO {
             val files = s.filter { Files.isRegularFile(it) }
                 .filter { it.fileName.toString().yaml() }
                 .toList()
-            return files.map { readFromFile(it) }
+            return files.mapNotNull {
+                try {
+                    readFromFile(it)
+                } catch (e: Exception) {
+                    fine<PromptGroupIO>("Skipping $it (not a prompt group): ${e.message}")
+                    null
+                }
+            }
         }
     }
 
@@ -142,7 +150,14 @@ object PromptGroupIO {
             }
         }
 
-        return groups + jarResourcePaths.map { readFromResource(it, cl) }
+        return groups + jarResourcePaths.mapNotNull {
+            try {
+                readFromResource(it, cl)
+            } catch (e: Exception) {
+                fine<PromptGroupIO>("Skipping JAR resource $it (not a prompt group): ${e.message}")
+                null
+            }
+        }
     }
 
     //endregion

@@ -1,0 +1,3 @@
+# NOTE: This file is intentionally not a prompt group definition.
+# The prompt library filter configuration has moved to tri/ai/prompt/prompt-library.yaml.
+# See that file to configure which prompts are loaded.

@@ -1,0 +1,31 @@
+# Prompt library filter configuration.
+#
+# Controls which prompts are loaded from the built-in and runtime prompt libraries.
+# Copy this file to `config/prompt-library.yaml` (or the working directory) and edit
+# the lists to customize which prompts are available in the application.
+#
+# includeIds:
+#   Glob patterns matched against prompt bare IDs (e.g. "text-summarize/summarize").
+#   If both includeIds and includeCategories are empty, all prompts pass the include check.
+#
+# includeCategories:
+#   Glob patterns matched against prompt categories (e.g. "text").
+#   Prompts with no category are not matched by category patterns.
+#
+# excludeIds:
+#   Glob patterns matched against prompt bare IDs. Applied after includes.
+#
+# excludeCategories:
+#   Glob patterns matched against prompt categories. Applied after includes.
+#
+# Glob patterns: * matches any sequence of characters, ? matches a single character.
+# Matching is case-insensitive.
+#
+# Examples:
+#   includeCategories: [ text, docs ]      # only load prompts in 'text' and 'docs' categories
+#   excludeIds: [ "examples/*" ]           # exclude all example prompts
+---
+includeIds: []
+includeCategories: []
+excludeIds: []
+excludeCategories: []

@@ -105,13 +105,21 @@ class PromptLibrary {
             RUNTIME_INSTANCE.reindex(loadRuntimePromptLibrary().list())
         }
 
-        private fun loadDefaultPromptLibrary() = PromptLibrary().apply {
-            readFromResourceDirectory()
-            readFromRuntimeDirectory()
+        private fun loadDefaultPromptLibrary(): PromptLibrary {
+            val filter = PromptLibraryFilter.load()
+            return PromptLibrary().apply {
+                readFromResourceDirectory()
+                readFromRuntimeDirectory()
+                if (!filter.isAcceptAll) reindex(list().filter { filter.accepts(it) })
+            }
         }
 
-        private fun loadRuntimePromptLibrary() = PromptLibrary().apply {
-            readFromRuntimeDirectory()
+        private fun loadRuntimePromptLibrary(): PromptLibrary {
+            val filter = PromptLibraryFilter.load()
+            return PromptLibrary().apply {
+                readFromRuntimeDirectory()
+                if (!filter.isAcceptAll) reindex(list().filter { filter.accepts(it) })
+            }
         }
 
         // load from resource directory
