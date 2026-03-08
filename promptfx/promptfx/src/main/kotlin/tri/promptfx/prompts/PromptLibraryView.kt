@@ -31,6 +31,7 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
+import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.ui.prompt.PromptDetailsUi
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -93,9 +94,14 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
                 cellFormat {
                     graphic = Text(it.bareId).apply {
                         tooltip(it.template)
+                        val isActive = PromptFxGlobals.isPromptActive(it)
                         if (runtimeLib.get(it.id) != null) {
                             style = "-fx-font-weight: bold"
                             text = it.id + " (customized)"
+                        }
+                        if (!isActive) {
+                            opacity = 0.4
+                            tooltip("${it.id} (filtered out by runtime configuration)")
                         }
                     }
                 }

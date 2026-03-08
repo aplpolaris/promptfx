@@ -34,6 +34,7 @@ import tri.ai.prompt.template
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.execute
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
@@ -167,7 +168,7 @@ class DocumentInsightView: AiPlanTaskView(
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }
             val inputs = chunks.map { it.text }
-            model = completionEngine.modelId
+            model = chatEngine.modelId
             modelParams = common.toModelParams()
             prompt = mapPrompt.prompt.value.template()
             promptParams = mapOf(PromptTemplate.INPUT to inputs, "name" to names)

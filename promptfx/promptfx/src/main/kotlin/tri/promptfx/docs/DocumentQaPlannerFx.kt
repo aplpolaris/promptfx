@@ -25,7 +25,6 @@ import javafx.beans.value.ObservableValue
 import tornadofx.observableListOf
 import tornadofx.runLater
 import tri.ai.core.MChatRole
-import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.embedding.EmbeddingIndex
 import tri.ai.embedding.EmbeddingMatch
@@ -38,6 +37,7 @@ import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.GroupingTemplateJoiner
+import tri.promptfx.AiChatEngine
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -70,12 +70,12 @@ class DocumentQaPlannerFx {
         minChunkSize: Int?,
         contextStrategy: GroupingTemplateJoiner,
         contextChunks: Int?,
-        chatEngine: TextChat?,
+        chatEngine: AiChatEngine?,
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
     ): AiTaskList {
-        val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!, chatHistory, historySize.value).plan(
+        val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!.asTextChat(), chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
             chunksToRetrieve = chunksToRetrieve!!,

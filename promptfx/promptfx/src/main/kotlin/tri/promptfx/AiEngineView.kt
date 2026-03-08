@@ -44,24 +44,24 @@ class AiEngineView: View() {
 
         with (controller) {
             menubutton("Chat", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                tooltip(chatService.value?.toString() ?: "Select the chat model to use.")
-                chatService.onChange { tooltip.text = it.toString() }
-                PromptFxModels.chatModels().forEach { model ->
+                tooltip(chatEngine.value?.toString() ?: "Select the chat model to use.")
+                chatEngine.onChange { tooltip.text = it.toString() }
+                PromptFxModels.chatEngines().forEach { model ->
                     item(model.toString()) {
-                        style = menustyle(model.modelId, chatService.value?.modelId)
-                        styleProperty().bind(chatService.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { chatService.set(model) }
+                        style = menustyle(model.modelId, chatEngine.value?.modelId)
+                        styleProperty().bind(chatEngine.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { chatEngine.set(model) }
                     }
                 }
             }
             menubutton("Embeddings", FontAwesomeIconView(FontAwesomeIcon.LIST)) {
-                tooltip(embeddingStrategy.value?.model?.toString() ?: "Select the embedding engine to use.")
-                embeddingStrategy.onChange { tooltip.text = it?.model.toString() }
+                tooltip(embeddingEngine.value?.model?.toString() ?: "Select the embedding engine to use.")
+                embeddingEngine.onChange { tooltip.text = it?.model.toString() }
                 PromptFxModels.embeddingModels().forEach { model ->
                     item(model.toString()) {
-                        style = menustyle(model.modelId, embeddingStrategy.value?.modelId)
-                        styleProperty().bind(embeddingStrategy.stringBinding { menustyle(model.modelId, it?.modelId) })
-                        action { embeddingStrategy.set(EmbeddingStrategy(model, SmartTextChunker())) }
+                        style = menustyle(model.modelId, embeddingEngine.value?.modelId)
+                        styleProperty().bind(embeddingEngine.stringBinding { menustyle(model.modelId, it?.modelId) })
+                        action { embeddingEngine.set(EmbeddingStrategy(model, SmartTextChunker())) }
                     }
                 }
             }

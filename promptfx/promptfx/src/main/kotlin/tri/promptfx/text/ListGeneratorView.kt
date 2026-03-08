@@ -27,10 +27,11 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.CompletionBuilder
-import tri.ai.core.TextChat
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
-import tri.ai.pips.taskPlan
+import tri.promptfx.AiChatEngine
+import tri.promptfx.execute
+import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
@@ -100,7 +101,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
         parameters("Chat Model") {
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.chatModels())
+                combobox(controller.chatEngine, PromptFxModels.chatEngines())
             }
             with(common) {
                 temperature()
@@ -200,14 +201,14 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
     /** Runs [attempts] independent LLM calls, parses each as a [ListPromptResult], and merges them. */
     private suspend fun mergeAttempts(
         builder: CompletionBuilder,
-        chat: TextChat,
+        engine: AiChatEngine,
         attempts: Int,
         strategy: JsonListMergeStrategy,
         minConsensus: Double
     ): AiPromptTrace {
         builder.requestJson(true)
         val startTime = System.currentTimeMillis()
-        val traces = (1..attempts).map { builder.execute(chat) }
+        val traces = (1..attempts).map { builder.execute(engine) }
         val totalTime = System.currentTimeMillis() - startTime
 
         val totalQueryTokens = traces.sumOf { it.exec.queryTokens ?: 0 }.takeIf { it > 0 }

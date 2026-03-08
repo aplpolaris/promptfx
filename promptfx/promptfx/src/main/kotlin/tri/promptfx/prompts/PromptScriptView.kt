@@ -34,6 +34,7 @@ import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.execute
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
 import tri.promptfx.TextLibraryReceiver

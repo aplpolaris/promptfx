@@ -1,0 +1,236 @@
+/*-
+ * #%L
+ * tri.promptfx:promptkt
+ * %%
+ * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+package tri.ai.openai
+
+import com.aallam.openai.api.chat.ChatResponseFormat
+import com.aallam.openai.api.core.Parameters
+import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseInput
+import com.aallam.openai.api.response.ResponseInputItem
+import com.aallam.openai.api.response.ResponseRequest
+import com.aallam.openai.api.response.ResponseText
+import com.aallam.openai.api.response.ResponseTool
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import tri.ai.core.*
+import tri.ai.prompt.trace.AiPromptTrace
+
+/** Chat completion using OpenAI Responses API. */
+class OpenAiResponsesChat(
+    override val modelId: String,
+    override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE,
+    val client: OpenAiAdapter = OpenAiAdapter.INSTANCE
+) : MultimodalChat {
+
+    override fun toString() = modelDisplayName()
+
+    override suspend fun chat(
+        messages: List<MultimodalChatMessage>,
+        parameters: MChatParameters
+    ): AiPromptTrace {
+        val request = buildResponseRequest(modelId, messages, parameters)
+        return client.responseCompletion(request)
+    }
+
+    override fun close() {
+        client.client.close()
+    }
+
+    companion object {
+        private const val DEFAULT_MAX_TOKENS = 2000
+
+        /** Build a [ResponseRequest] from a model id, chat messages, and parameters. */
+        fun buildResponseRequest(
+            modelId: String,
+            messages: List<MultimodalChatMessage>,
+            parameters: MChatParameters
+        ): ResponseRequest {
+            // Extract system messages for the instructions parameter
+            val systemMessages = messages.filter { it.role == MChatRole.System }
+            val otherMessages = messages.filter { it.role != MChatRole.System }
+
+            val instructions = systemMessages
+                .mapNotNull { it.content?.mapNotNull { p -> p.text }?.joinToString("\n") }
+                .joinToString("\n")
+                .ifEmpty { null }
+
+            val hasToolMessages = otherMessages.any { it.toolCalls?.isNotEmpty() == true || it.role == MChatRole.Tool }
+
+            val input = when {
+                otherMessages.isEmpty() -> ResponseInput("")
+                !hasToolMessages && otherMessages.size == 1 && otherMessages[0].role == MChatRole.User && otherMessages[0].hasTextOnly() ->
+                    ResponseInput(otherMessages[0].textContent())
+                !hasToolMessages -> ResponseInput(otherMessages.map { it.toResponseInputItem() })
+                else -> ResponseInput(buildJsonArray {
+                    otherMessages.forEach { msg ->
+                        val toolCalls = msg.toolCalls
+                        when {
+                            toolCalls?.isNotEmpty() == true ->
+                                toolCalls.forEach { call -> add(call.toFunctionCallJson()) }
+                            msg.role == MChatRole.Tool ->
+                                add(msg.toFunctionCallOutputJson())
+                            else -> add(msg.toResponseInputItemJson())
+                        }
+                    }
+                })
+            }
+
+            return ResponseRequest(
+                model = ModelId(modelId),
+                input = input,
+                instructions = instructions,
+                maxOutputTokens = parameters.tokens ?: DEFAULT_MAX_TOKENS,
+                temperature = parameters.variation.temperature,
+                topP = parameters.variation.topP,
+                tools = parameters.tools?.tools?.map { it.toResponseTool() },
+                toolChoice = parameters.tools?.toolChoice?.toJsonElement(),
+                text = parameters.responseFormat.toResponseText()
+            )
+        }
+
+        /** Returns true if the message has text content only (no images or other modalities). */
+        private fun MultimodalChatMessage.hasTextOnly() =
+            content?.all { it.partType == MPartType.TEXT } != false
+
+        /** Returns the concatenated text content of this message. */
+        private fun MultimodalChatMessage.textContent() =
+            content?.mapNotNull { it.text }?.joinToString("\n") ?: ""
+
+        /** Convert a [MultimodalChatMessage] to a [ResponseInputItem] for the Responses API. */
+        private fun MultimodalChatMessage.toResponseInputItem(): ResponseInputItem {
+            val roleStr = roleString()
+            val contentParts = content
+            val contentJson = when {
+                contentParts.isNullOrEmpty() -> JsonPrimitive("")
+                contentParts.size == 1 && contentParts[0].partType == MPartType.TEXT ->
+                    JsonPrimitive(contentParts[0].text ?: "")
+                else -> buildJsonArray {
+                    contentParts.forEach { part ->
+                        when {
+                            part.text != null -> add(buildJsonObject {
+                                put("type", "input_text")
+                                put("text", part.text)
+                            })
+                            part.inlineData != null -> add(buildJsonObject {
+                                put("type", "input_image")
+                                put("image_url", imageUrlJsonElement(part.inlineData!!))
+                            })
+                        }
+                    }
+                }
+            }
+            return ResponseInputItem(
+                type = "message",
+                role = roleStr,
+                content = contentJson
+            )
+        }
+
+        /** Convert a [MultimodalChatMessage] to a JSON object for use in a JSON input array. */
+        private fun MultimodalChatMessage.toResponseInputItemJson() = buildJsonObject {
+            put("type", "message")
+            put("role", roleString())
+            val contentParts = content
+            when {
+                contentParts.isNullOrEmpty() -> put("content", "")
+                contentParts.size == 1 && contentParts[0].partType == MPartType.TEXT ->
+                    put("content", contentParts[0].text ?: "")
+                else -> putJsonArray("content") {
+                    contentParts.forEach { part ->
+                        when {
+                            part.text != null -> add(buildJsonObject {
+                                put("type", "input_text")
+                                put("text", part.text)
+                            })
+                            part.inlineData != null -> add(buildJsonObject {
+                                put("type", "input_image")
+                                put("image_url", imageUrlJsonElement(part.inlineData!!))
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Returns the correct JSON value for the `image_url` field of an `input_image` content item.
+         * Plain URLs are returned as a [JsonPrimitive]; data URIs (starting with `data:`) are wrapped
+         * in a [JsonObject] `{ "url": "..." }` as required by the Responses API.
+         */
+        internal fun imageUrlJsonElement(inlineData: String): JsonElement =
+            if (inlineData.startsWith("data:"))
+                buildJsonObject { put("url", inlineData) }
+            else
+                JsonPrimitive(inlineData)
+
+        /** Get role string for this message. */
+        private fun MultimodalChatMessage.roleString() = when (role) {
+            MChatRole.User -> "user"
+            MChatRole.Assistant -> "assistant"
+            MChatRole.System -> "developer"
+            MChatRole.Tool -> "tool"
+            MChatRole.None -> "user"
+        }
+
+        /** Convert a [MToolCall] to a function_call JSON input item. */
+        private fun MToolCall.toFunctionCallJson() = buildJsonObject {
+            put("type", "function_call")
+            put("call_id", id)
+            put("name", name)
+            put("arguments", argumentsAsJson)
+        }
+
+        /** Convert a tool result [MultimodalChatMessage] to a function_call_output JSON input item. */
+        private fun MultimodalChatMessage.toFunctionCallOutputJson() = buildJsonObject {
+            put("type", "function_call_output")
+            put("call_id", toolCallId ?: "")
+            put("output", content?.mapNotNull { it.text }?.joinToString("\n") ?: "")
+        }
+
+        /** Convert a [MTool] to a [ResponseTool] for the Responses API. */
+        private fun MTool.toResponseTool() = ResponseTool(
+            type = "function",
+            name = name,
+            description = description,
+            parameters = Parameters.fromJsonString(jsonSchema)
+        )
+
+        /** Convert a [MToolChoice] to a [JsonElement] for the Responses API. */
+        private fun MToolChoice.toJsonElement(): JsonElement = when (this) {
+            is MToolChoice.Mode -> JsonPrimitive(value.lowercase())
+            is MToolChoice.Named -> buildJsonObject {
+                put("type", "function")
+                put("name", function.name)
+            }
+        }
+
+        /** Convert a [MResponseFormat] to a [ResponseText] for the Responses API. */
+        private fun MResponseFormat.toResponseText(): ResponseText? = when (this) {
+            MResponseFormat.JSON -> ResponseText(ChatResponseFormat.JsonObject)
+            else -> null
+        }
+    }
+
+}
