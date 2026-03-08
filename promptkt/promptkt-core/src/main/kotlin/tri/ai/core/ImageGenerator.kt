@@ -32,8 +32,10 @@ interface ImageGenerator : AiModel {
 
 /** Parameters for image generation. Each generator uses the fields relevant to its API. */
 data class ImageGenerationParams(
-    /** Size or aspect ratio string. Pixel dimensions (e.g. "1024x1024") for OpenAI; aspect ratio (e.g. "1:1") for Gemini. */
+    /** Size string: pixel dimensions (e.g. "1024x1024") for OpenAI, image size code (e.g. "1K") for Gemini. */
     val size: String? = null,
+    /** Aspect ratio string (e.g. "1:1", "16:9"). Used by Gemini; ignored by OpenAI which uses [size] for dimensions. */
+    val aspectRatio: String? = null,
     /** Number of images to generate. */
     val numResponses: Int? = null,
     /** Quality setting (model-specific, e.g. "standard", "hd", "high", "auto"). */

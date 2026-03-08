@@ -34,8 +34,8 @@ class GeminiImageGenerator(
     override fun toString() = modelDisplayName()
 
     override suspend fun generateImage(text: String, params: ImageGenerationParams): List<URI> {
-        val aspectRatio = params.size?.takeIf { ':' in it } ?: "1:1"
-        val imageSizeCode = params.size?.takeIf { it.matches(Regex("\\d+K")) } ?: "1K"
+        val aspectRatio = params.aspectRatio ?: "1:1"
+        val imageSizeCode = params.size ?: "1K"
         val request = GenerateContentRequest(
             contents = listOf(Content.text(text)),
             generationConfig = GenerationConfig(

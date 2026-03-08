@@ -377,9 +377,6 @@ data class GeminiImageConfig(
     val imageSize: String? = "1K"
 )
 
-val ASPECT_RATIOS = listOf("1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9")
-val IMAGE_SIZES = listOf("1K", "2K", "4K")
-
 //endregion
 
 //region [GenerateContentResponse]

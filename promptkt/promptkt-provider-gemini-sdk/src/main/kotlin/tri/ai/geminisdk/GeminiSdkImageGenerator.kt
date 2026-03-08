@@ -47,19 +47,13 @@ class GeminiSdkImageGenerator(
         }
     }
 
-    /** Extracts the aspect ratio from a params size string (e.g. "1:1", "16:9"). */
-    private fun ImageGenerationParams.aspectRatio() = size?.takeIf { ':' in it }
-
-    /** Extracts the resolution code from a params size string (e.g. "1K", "2K"). */
-    private fun ImageGenerationParams.imageSizeCode() = size?.takeIf { it.matches(Regex("\\d+K")) }
-
     /** Generate using the Imagen API (for imagen-* models). */
     private fun generateViaImagenApi(text: String, params: ImageGenerationParams): List<URI> {
         val response = client.generateImagesViaImagenApi(
             modelId = modelId,
             prompt = text,
             numberOfImages = params.numResponses ?: 1,
-            aspectRatio = params.aspectRatio()
+            aspectRatio = params.aspectRatio
         )
         return response.generatedImages().getOrNull()?.mapNotNull { generatedImage ->
             val img = generatedImage.image().getOrNull() ?: return@mapNotNull null
@@ -75,8 +69,8 @@ class GeminiSdkImageGenerator(
         val response = client.generateContentImages(
             modelId = modelId,
             prompt = text,
-            aspectRatio = params.aspectRatio(),
-            imageSize = params.imageSizeCode()
+            aspectRatio = params.aspectRatio,
+            imageSize = params.size
         )
         val candidates = response.candidates().getOrNull() ?: return emptyList()
         return candidates.flatMap { candidate ->
