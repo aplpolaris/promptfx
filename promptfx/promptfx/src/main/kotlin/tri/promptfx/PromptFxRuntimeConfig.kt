@@ -22,6 +22,8 @@ package tri.promptfx
 import tri.ai.prompt.PromptDef
 import tri.util.info
 import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.util.Properties
 
 /**
@@ -114,23 +116,8 @@ object PromptFxRuntimeConfig {
     private fun matchesAny(value: String, patterns: List<String>): Boolean =
         patterns.any { matchesGlob(value, it) }
 
-    internal fun matchesGlob(value: String, pattern: String): Boolean {        // Convert glob pattern to regex: ** -> .*, * -> [^/]*, ? -> [^/], others are regex-escaped
-        val regex = buildString {
-            var i = 0
-            while (i < pattern.length) {
-                when {
-                    pattern[i] == '*' && i + 1 < pattern.length && pattern[i + 1] == '*' -> {
-                        append(".*")
-                        i += 2
-                    }
-                    pattern[i] == '*' -> { append("[^/]*"); i++ }
-                    pattern[i] == '?' -> { append("[^/]"); i++ }
-                    else -> { append(Regex.escape(pattern[i].toString())); i++ }
-                }
-            }
-        }
-        return Regex(regex).matches(value)
-    }
+    internal fun matchesGlob(value: String, pattern: String): Boolean =
+        FileSystems.getDefault().getPathMatcher("glob:$pattern").matches(Path.of(value))
 
     private fun hasActiveFilters() =
         promptIncludePatterns.isNotEmpty() || promptExcludePatterns.isNotEmpty() ||
