@@ -27,7 +27,6 @@ interface ImageGenerator : AiModel {
     suspend fun generateImage(
         text: String,
         size: ImageSize,
-        prompt: String? = null,
         numResponses: Int? = null
     ): List<URI>
 

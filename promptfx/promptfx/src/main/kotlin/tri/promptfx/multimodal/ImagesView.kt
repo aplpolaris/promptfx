@@ -244,7 +244,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             val generator = PromptFxModels.imageModels().find { it.modelId == model.value }
                 ?: throw IllegalStateException("No image generator found for model: ${model.value}")
             val coreSize = imageSize.value.toCoreSize()
-            val uris = generator.generateImage(input.value, coreSize, null, imageCount.value)
+            val uris = generator.generateImage(input.value, coreSize, imageCount.value)
             val outputs = uris.map { uri ->
                 val base64 = uri.toString().substringAfter(";base64,")
                 AiOutput(multimodalMessage = MultimodalChatMessage.imageBase64(imageBase64 = base64))
@@ -255,7 +255,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 AiOutputInfo(outputs)
             )
         } catch (x: Exception) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.Companion.error(x.message))
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
         }
         result
     }.planner
