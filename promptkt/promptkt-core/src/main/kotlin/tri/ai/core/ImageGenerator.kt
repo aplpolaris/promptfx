@@ -26,10 +26,20 @@ interface ImageGenerator : AiModel {
     /** Generate images, returning a URI for each (may be an HTTP URL or a data: URI for base64-encoded images). */
     suspend fun generateImage(
         text: String,
-        size: ImageSize,
-        numResponses: Int? = null
+        params: ImageGenerationParams = ImageGenerationParams()
     ): List<URI>
-
 }
+
+/** Parameters for image generation. Each generator uses the fields relevant to its API. */
+data class ImageGenerationParams(
+    /** Size or aspect ratio string. Pixel dimensions (e.g. "1024x1024") for OpenAI; aspect ratio (e.g. "1:1") for Gemini. */
+    val size: String? = null,
+    /** Number of images to generate. */
+    val numResponses: Int? = null,
+    /** Quality setting (model-specific, e.g. "standard", "hd", "high", "auto"). */
+    val quality: String? = null,
+    /** Style setting (model-specific, e.g. "vivid", "natural"). */
+    val style: String? = null
+)
 
 data class ImageSize(val width: Int, val height: Int)

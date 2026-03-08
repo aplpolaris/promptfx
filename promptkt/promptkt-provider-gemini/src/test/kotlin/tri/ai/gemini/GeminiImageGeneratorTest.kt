@@ -23,7 +23,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.ImageSize
+import tri.ai.core.ImageGenerationParams
 import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_IMAGE
 
 @Tag("gemini")
@@ -36,7 +36,7 @@ class GeminiImageGeneratorTest {
     fun testGenerateImage_Simple() = runTest {
         val uris = generator.generateImage(
             text = "A simple red circle on a white background",
-            size = ImageSize(1024, 1024)
+            params = ImageGenerationParams(size = "1:1")
         )
         println("Generated ${uris.size} image(s)")
         uris.forEach { println("  URI scheme: ${it.scheme}, length: ${it.toString().length}") }
@@ -52,7 +52,7 @@ class GeminiImageGeneratorTest {
     fun testGenerateImage_ReturnsDataUri() = runTest {
         val uris = generator.generateImage(
             text = "A blue triangle",
-            size = ImageSize(1024, 1024)
+            params = ImageGenerationParams(size = "1:1")
         )
 
         assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
@@ -70,7 +70,7 @@ class GeminiImageGeneratorTest {
     fun testGenerateImage_MimeType() = runTest {
         val uris = generator.generateImage(
             text = "A green star",
-            size = ImageSize(1024, 1024)
+            params = ImageGenerationParams(size = "1:1")
         )
 
         assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
@@ -81,6 +81,18 @@ class GeminiImageGeneratorTest {
             uriStr.startsWith("data:image/"),
             "URI should have an image MIME type, got: ${uriStr.take(30)}"
         )
+    }
+
+    @Test
+    @Tag("gemini")
+    fun testGenerateImage_WideAspectRatio() = runTest {
+        val uris = generator.generateImage(
+            text = "A wide panoramic mountain landscape",
+            params = ImageGenerationParams(size = "16:9")
+        )
+
+        assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
+        println("16:9 image URI length: ${uris.first().toString().length}")
     }
 
     @Test

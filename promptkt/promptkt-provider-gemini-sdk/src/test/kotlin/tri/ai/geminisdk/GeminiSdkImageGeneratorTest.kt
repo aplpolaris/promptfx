@@ -17,25 +17,26 @@
  * limitations under the License.
  * #L%
  */
-package tri.ai.openai
+package tri.ai.geminisdk
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.ImageGenerationParams
+import tri.ai.geminisdk.GeminiSdkModelIndex.GEMINI_25_FLASH_IMAGE
 
-@Tag("openai")
-class OpenAiImageGeneratorTest {
+@Tag("gemini-sdk")
+class GeminiSdkImageGeneratorTest {
 
-    private val dalleGenerator = OpenAiImageGenerator(OpenAiModelIndex.IMAGE_DALLE2)
+    private val generator = GeminiSdkImageGenerator(GEMINI_25_FLASH_IMAGE)
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testGenerateImage_Simple() = runTest {
-        val uris = dalleGenerator.generateImage(
+        val uris = generator.generateImage(
             text = "A simple red circle on a white background",
-            params = ImageGenerationParams(size = "1024x1024")
+            params = ImageGenerationParams(size = "1:1")
         )
         println("Generated ${uris.size} image(s)")
         uris.forEach { println("  URI scheme: ${it.scheme}, length: ${it.toString().length}") }
@@ -47,55 +48,57 @@ class OpenAiImageGeneratorTest {
     }
 
     @Test
-    @Tag("openai")
+    @Tag("gemini-sdk")
     fun testGenerateImage_ReturnsDataUri() = runTest {
-        val uris = dalleGenerator.generateImage(
+        val uris = generator.generateImage(
             text = "A blue triangle",
-            params = ImageGenerationParams(size = "1024x1024")
+            params = ImageGenerationParams(size = "1:1")
         )
 
         assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
         for (uri in uris) {
             val uriStr = uri.toString()
-            assertTrue(uriStr.startsWith("data:image/"), "URI should be an image data URI: ${uriStr.take(30)}")
-            assertTrue(uriStr.contains(";base64,"), "URI should contain base64 data")
+            assertTrue(uriStr.startsWith("data:"), "URI should start with 'data:': $uriStr")
+            assertTrue(uriStr.contains(";base64,"), "URI should contain base64 data: $uriStr")
             val base64Part = uriStr.substringAfter(";base64,")
             assertTrue(base64Part.isNotEmpty(), "Base64 data should not be empty")
         }
     }
 
     @Test
-    @Tag("openai")
-    fun testGenerateMultipleImages() = runTest {
-        val uris = dalleGenerator.generateImage(
-            text = "A small green square",
-            params = ImageGenerationParams(size = "256x256", numResponses = 2)
-        )
-        println("Generated ${uris.size} image(s)")
-        assertEquals(2, uris.size, "Expected 2 images")
-        uris.forEach { uri ->
-            assertTrue(uri.toString().startsWith("data:"), "Each URI should be a data: URI")
-        }
-    }
-
-    @Test
-    @Tag("openai")
-    fun testModelId() {
-        assertEquals(OpenAiModelIndex.IMAGE_DALLE2, dalleGenerator.modelId)
-        assertEquals(OpenAiModelIndex.MODEL_SOURCE, dalleGenerator.modelSource)
-    }
-
-    @Test
-    @Tag("openai")
-    fun testGenerateImage_DallE3() = runTest {
-        val generator = OpenAiImageGenerator("dall-e-3")
+    @Tag("gemini-sdk")
+    fun testGenerateImage_MimeType() = runTest {
         val uris = generator.generateImage(
-            text = "A photorealistic golden sunset over the ocean",
-            params = ImageGenerationParams(size = "1024x1024", quality = "standard", style = "vivid")
+            text = "A green star",
+            params = ImageGenerationParams(size = "1:1")
         )
-        println("DALL-E 3 generated ${uris.size} image(s)")
-        assertTrue(uris.isNotEmpty(), "Expected at least one image from DALL-E 3")
-        assertTrue(uris.first().toString().startsWith("data:"), "Expected data: URI")
+
+        assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
+        val uri = uris.first()
+        val uriStr = uri.toString()
+        assertTrue(
+            uriStr.startsWith("data:image/"),
+            "URI should have an image MIME type, got: ${uriStr.take(30)}"
+        )
+    }
+
+    @Test
+    @Tag("gemini-sdk")
+    fun testGenerateImage_WideAspectRatio() = runTest {
+        val uris = generator.generateImage(
+            text = "A wide panoramic mountain landscape",
+            params = ImageGenerationParams(size = "16:9")
+        )
+
+        assertTrue(uris.isNotEmpty(), "Expected at least one image URI")
+        println("16:9 image URI length: ${uris.first().toString().length}")
+    }
+
+    @Test
+    @Tag("gemini-sdk")
+    fun testModelId() {
+        assertEquals(GEMINI_25_FLASH_IMAGE, generator.modelId)
+        assertEquals(GeminiSdkModelIndex.MODEL_SOURCE, generator.modelSource)
     }
 
 }

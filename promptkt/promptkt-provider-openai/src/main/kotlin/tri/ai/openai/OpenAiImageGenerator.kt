@@ -21,8 +21,8 @@ package tri.ai.openai
 
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.ModelId
+import tri.ai.core.ImageGenerationParams
 import tri.ai.core.ImageGenerator
-import tri.ai.core.ImageSize
 import java.net.URI
 
 /** Image generation with OpenAI models. */
@@ -31,15 +31,15 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
 
     override fun toString() = modelDisplayName()
 
-    override suspend fun generateImage(text: String, size: ImageSize, numResponses: Int?): List<URI> {
+    override suspend fun generateImage(text: String, params: ImageGenerationParams): List<URI> {
         val images = client.imageJSON(
             ImageCreation(
                 model = ModelId(modelId),
                 prompt = text,
-                n = numResponses ?: 1,
-                size = size.openAiSize(),
-                quality = null,
-                style = null
+                n = params.numResponses ?: 1,
+                size = params.size?.toOpenAiSize() ?: com.aallam.openai.api.image.ImageSize.is1024x1024,
+                quality = params.quality?.let { com.aallam.openai.api.image.Quality(it) },
+                style = params.style?.let { com.aallam.openai.api.image.Style(it) }
             )
         )
         return images.output!!.outputs.map { output ->
@@ -49,11 +49,11 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
         }
     }
 
-    private fun ImageSize.openAiSize() = when {
-        width == 256 && height == 256 -> com.aallam.openai.api.image.ImageSize.is256x256
-        width == 512 && height == 512 -> com.aallam.openai.api.image.ImageSize.is512x512
-        width == 1024 && height == 1024 -> com.aallam.openai.api.image.ImageSize.is1024x1024
-        else -> throw UnsupportedOperationException()
+    private fun String.toOpenAiSize() = when (this) {
+        "256x256" -> com.aallam.openai.api.image.ImageSize.is256x256
+        "512x512" -> com.aallam.openai.api.image.ImageSize.is512x512
+        "1024x1024" -> com.aallam.openai.api.image.ImageSize.is1024x1024
+        else -> com.aallam.openai.api.image.ImageSize(this)
     }
 
 }

@@ -19,11 +19,8 @@
  */
 package tri.ai.gemini
 
-import io.ktor.client.call.body
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import tri.ai.core.ImageGenerationParams
 import tri.ai.core.ImageGenerator
-import tri.ai.core.ImageSize
 import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_IMAGE
 import java.net.URI
 
@@ -36,12 +33,17 @@ class GeminiImageGenerator(
 
     override fun toString() = modelDisplayName()
 
-    override suspend fun generateImage(text: String, size: ImageSize, numResponses: Int?): List<URI> {
+    override suspend fun generateImage(text: String, params: ImageGenerationParams): List<URI> {
+        val aspectRatio = params.size?.takeIf { ':' in it } ?: "1:1"
+        val imageSizeCode = params.size?.takeIf { it.matches(Regex("\\d+K")) } ?: "1K"
         val request = GenerateContentRequest(
             contents = listOf(Content.text(text)),
             generationConfig = GenerationConfig(
                 responseModalities = listOf(ResponseModality.IMAGE, ResponseModality.TEXT),
-                imageConfig = GeminiImageConfig()
+                imageConfig = GeminiImageConfig(
+                    aspectRatio = aspectRatio,
+                    imageSize = imageSizeCode
+                )
             )
         )
         val response = client.generateContent(modelId, request)
