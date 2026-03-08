@@ -19,12 +19,6 @@
  */
 package tri.promptfx.multimodal
 
-import com.aallam.openai.api.exception.OpenAIAPIException
-import com.aallam.openai.api.image.ImageCreation
-import com.aallam.openai.api.image.ImageSize
-import com.aallam.openai.api.image.Quality
-import com.aallam.openai.api.image.Style
-import com.aallam.openai.api.model.ModelId
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
@@ -61,16 +55,23 @@ import tornadofx.toolbar
 import tornadofx.tooltip
 import tornadofx.vbox
 import tornadofx.vgrow
-import tri.ai.openai.OpenAiModelIndex
+import tri.ai.core.AiModel
+import tri.ai.core.ImageGenerationParams
+import tri.ai.core.ImageGenerator
+import tri.ai.gemini.GEMINI_ASPECT_RATIOS
+import tri.ai.gemini.GEMINI_IMAGE_SIZES
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.pips.aitask
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiImageTrace
 import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.PromptInfo
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
+import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
@@ -79,12 +80,11 @@ import tri.util.ui.copyToClipboard
 import tri.util.ui.saveToFile
 import tri.util.ui.showImageDialog
 import tri.util.ui.writeImageToFile
-import kotlin.collections.get
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Multimodal", "Text-to-Image", WorkspaceViewAffordance.Companion.INPUT_ONLY, ImagesView::class)
 
-/** View for the OpenAI API's image endpoint (https://platform.openai.com/docs/api-reference/images). */
+/** View for image generation, supporting multiple providers (e.g. OpenAI DALL-E, Gemini). */
 class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     /** User input */
@@ -92,32 +92,44 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** Image results */
     private val images = observableListOf<AiImageTrace>()
 
+    private val imageModels = observableListOf<ImageGenerator>().apply {
+        setAll(PromptFxModels.imageModels())
+    }
+
     /** Model */
-    private val model = SimpleStringProperty(DALLE2_ID).apply {
+    private val model = SimpleObjectProperty(PromptFxModels.imageModelDefault()).apply {
         onChange {
-            imageSizes.setAll(MODEL_INFO[it]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
+            if (it == null) return@onChange
+            imageSizes.setAll(modelCapabilities(it)?.sizes ?: listOf("1024x1024"))
             if (imageSize.value !in imageSizes)
                 imageSize.set(imageSizes.first())
-            imageQualities.setAll(MODEL_INFO[it]?.qualities ?: listOf())
+            imageAspectRatios.setAll(modelCapabilities(it)?.aspectRatios ?: listOf())
+            if (imageAspectRatio.value !in imageAspectRatios)
+                imageAspectRatio.set(imageAspectRatios.firstOrNull())
+            imageQualities.setAll(modelCapabilities(it)?.qualities ?: listOf())
             if (imageQuality.value !in imageQualities)
                 imageQuality.set(imageQualities.firstOrNull())
-            imageStyles.setAll(MODEL_INFO[it]?.styles ?: listOf())
+            imageStyles.setAll(modelCapabilities(it)?.styles ?: listOf())
             if (imageStyle.value !in imageStyles)
                 imageStyle.set(imageStyles.firstOrNull())
-            countSlider.min = MODEL_INFO[it]?.counts?.first?.toDouble() ?: 1.0
-            countSlider.max = MODEL_INFO[it]?.counts?.last?.toDouble() ?: 1.0
+            countSlider.min = modelCapabilities(it)?.counts?.first?.toDouble() ?: 1.0
+            countSlider.max = modelCapabilities(it)?.counts?.last?.toDouble() ?: 1.0
             countSlider.isDisable = countSlider.min == countSlider.max
         }
     }
     /** Available sizes based on model */
-    private val imageSizes: ObservableList<ImageSize> = observableListOf(MODEL_INFO[model.value]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
+    private val imageSizes: ObservableList<String> = observableListOf(modelCapabilities(model.value)?.sizes ?: listOf("1024x1024"))
+    /** Available aspect ratios based on model (empty if not applicable) */
+    private val imageAspectRatios: ObservableList<String> = observableListOf(modelCapabilities(model.value)?.aspectRatios ?: listOf())
     /** Available quality values based on model */
-    private val imageQualities: ObservableList<Quality> = observableListOf(MODEL_INFO[model.value]?.qualities ?: listOf(QUAL_AUTO))
+    private val imageQualities: ObservableList<String> = observableListOf(modelCapabilities(model.value)?.qualities ?: listOf())
     /** Available styles based on model */
-    private val imageStyles: ObservableList<Style> = observableListOf(MODEL_INFO[model.value]?.styles ?: listOf())
+    private val imageStyles: ObservableList<String> = observableListOf(modelCapabilities(model.value)?.styles ?: listOf())
 
     /** Image size */
     private val imageSize = SimpleObjectProperty(imageSizes.first())
+    /** Image aspect ratio (null if not applicable for model) */
+    private val imageAspectRatio = SimpleObjectProperty(imageAspectRatios.firstOrNull())
     /** Image quality */
     private val imageQuality = SimpleObjectProperty(imageQualities.firstOrNull())
     /** Image style */
@@ -179,7 +191,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     init {
         parameters("Options") {
             field("Model") {
-                combobox(model, IMAGE_MODELS)
+                combobox(model, imageModels)
             }
             field("# Images") {
                 countSlider = slider(1..10) {
@@ -188,20 +200,22 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 label(imageCount)
             }
             field ("Size") {
-                combobox(imageSize, imageSizes) {
-                    cellFormat { text = it.size }
-                }
+                combobox(imageSize, imageSizes)
+            }
+            field("Aspect Ratio") {
+                enableWhen(imageAspectRatio.isNotNull)
+                combobox(imageAspectRatio, imageAspectRatios)
             }
             field("Quality") {
                 enableWhen(imageQuality.isNotNull)
                 combobox(imageQuality, imageQualities) {
-                    cellFormat { text = it?.value ?: "N/A" }
+                    cellFormat { text = it ?: "N/A" }
                 }
             }
             field("Style") {
                 enableWhen(imageStyle.isNotNull)
                 combobox(imageStyle, imageStyles) {
-                    cellFormat { text = it?.value ?: "N/A" }
+                    cellFormat { text = it ?: "N/A" }
                 }
             }
         }
@@ -231,32 +245,36 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     override fun plan() = aitask("generate-image") {
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
+        val generator = model.value!!
         val modelInfo = AiModelInfo(
-            model.value, modelParams = mapOfNotNull(
-                "n" to imageCount.value,
+            generator.modelId, generator.modelSource, modelParams = mapOfNotNull(
                 "size" to imageSize.value,
+                "aspect_ratio" to imageAspectRatio.value,
                 "quality" to imageQuality.value,
-                "style" to imageStyle.value
+                "style" to imageStyle.value,
+                "n" to imageCount.value
             )
         )
         val result = try {
-            val images = controller.openAiPlugin.client.imageJSON(
-                ImageCreation(
-                    model = ModelId(model.value),
-                    prompt = input.value,
-                    n = imageCount.value,
-                    size = imageSize.value,
-                    quality = imageQuality.value,
-                    style = imageStyle.value
-                )
+            val params = ImageGenerationParams(
+                size = imageSize.value,
+                aspectRatio = imageAspectRatio.value,
+                numResponses = imageCount.value,
+                quality = imageQuality.value,
+                style = imageStyle.value
             )
+            val uris = generator.generateImage(input.value, params)
+            val outputs = uris.map { uri ->
+                val base64 = uri.toString().substringAfter(";base64,")
+                AiOutput(multimodalMessage = MultimodalChatMessage.imageBase64(imageBase64 = base64))
+            }
             AiImageTrace(
                 promptInfo, modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
-                AiOutputInfo(images.values ?: listOf())
+                AiOutputInfo(outputs)
             )
-        } catch (x: OpenAIAPIException) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.Companion.error(x.message))
+        } catch (x: Exception) {
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
         }
         result
     }.planner
@@ -276,7 +294,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             var success = 0
             images.forEach { trace ->
                 (trace.values ?: listOf()).forEach {
-                    val image = Image(it.textContent())
+                    val image = it.imageContent()?.base64ToImage()
+                        ?: run {
+                            // skip outputs with no renderable image content
+                            return@forEach
+                        }
                     var file = folder.resolve("image-$i.png")
                     while (file.exists()) {
                         file = folder.resolve("image-${++i}.png")
@@ -331,50 +353,54 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private const val DALLE3_ID = "dall-e-3"
         private const val GPT_IMAGE1 = "gpt-image-1"
         private const val GPT_IMAGE1_MINI = "gpt-image-1-mini"
+        private const val GEMINI_SOURCE = "Gemini"
+        private const val GEMINI_SDK_SOURCE = "Gemini-SDK"
 
-        private val IMAGE_MODELS = OpenAiModelIndex.imageGeneratorModels()
-
-        private val SIZE256 = ImageSize.Companion.is256x256
-        private val SIZE512 = ImageSize.Companion.is512x512
-        private val SIZE1024 = ImageSize.Companion.is1024x1024
-        private val SIZE1536 = ImageSize("1536x1024")
-        private val SIZE1536PORTRAIT = ImageSize("1024x1536")
-        private val SIZE1792 = ImageSize("1792x1024")
-        private val SIZE1792PORTRAIT = ImageSize("1024x1792")
-        private val SIZE_AUTO = ImageSize("auto")
-
-        private val QUAL_STANDARD = Quality("standard")
-        private val QUAL_HIGH = Quality("high")
-        private val QUAL_MEDIUM = Quality("medium")
-        private val QUAL_LOW = Quality("low")
-        private val QUAL_AUTO = Quality("auto")
-
-        val MODEL_INFO = mapOf(
+        private val MODEL_CAPABILITY_INFO = mapOf(
             DALLE2_ID to ImageModelCapabilities(DALLE2_ID,
-                sizes = listOf(SIZE256, SIZE512, SIZE1024),
+                sizes = listOf("256x256", "512x512", "1024x1024"),
                 qualities = listOf(),
                 styles = listOf(),
                 counts = 1..10
             ),
             DALLE3_ID to ImageModelCapabilities(DALLE3_ID,
-                sizes = listOf(SIZE1024, SIZE1792, SIZE1792PORTRAIT),
-                qualities = listOf(QUAL_STANDARD, Quality.Companion.HD, QUAL_AUTO),
-                styles = listOf(Style.Companion.Vivid, Style.Companion.Natural),
+                sizes = listOf("1024x1024", "1792x1024", "1024x1792"),
+                qualities = listOf("standard", "hd", "auto"),
+                styles = listOf("vivid", "natural"),
                 counts = 1..1
             ),
             GPT_IMAGE1 to ImageModelCapabilities(GPT_IMAGE1,
-                sizes = listOf(SIZE1024, SIZE1536, SIZE1536PORTRAIT, SIZE_AUTO),
-                qualities = listOf(QUAL_LOW, QUAL_MEDIUM, QUAL_HIGH, QUAL_AUTO),
+                sizes = listOf("1024x1024", "1536x1024", "1024x1536", "auto"),
+                qualities = listOf("low", "medium", "high", "auto"),
                 styles = listOf(),
                 counts = 1..10
             ),
             GPT_IMAGE1_MINI to ImageModelCapabilities(GPT_IMAGE1_MINI,
-                sizes = listOf(SIZE1024, SIZE1536, SIZE1536PORTRAIT, SIZE_AUTO),
-                qualities = listOf(QUAL_LOW, QUAL_MEDIUM, QUAL_HIGH, QUAL_AUTO),
+                sizes = listOf("1024x1024", "1536x1024", "1024x1536", "auto"),
+                qualities = listOf("low", "medium", "high", "auto"),
+                styles = listOf(),
+                counts = 1..10
+            ),
+            GEMINI_SOURCE to ImageModelCapabilities(GEMINI_SOURCE,
+                sizes = GEMINI_IMAGE_SIZES,
+                aspectRatios = GEMINI_ASPECT_RATIOS,
+                qualities = listOf(),
+                styles = listOf(),
+                counts = 1..10
+            ),
+            GEMINI_SDK_SOURCE to ImageModelCapabilities(GEMINI_SDK_SOURCE,
+                sizes = GEMINI_IMAGE_SIZES,
+                aspectRatios = GEMINI_ASPECT_RATIOS,
+                qualities = listOf(),
                 styles = listOf(),
                 counts = 1..10
             )
         )
+
+        /** Looks up capabilities by model ID first, then falls back to model source. */
+        private fun modelCapabilities(model: AiModel?) =
+            if (model == null) null
+            else MODEL_CAPABILITY_INFO[model.modelId] ?: MODEL_CAPABILITY_INFO[model.modelSource]
 
         private fun mapOfNotNull(vararg pairs: Pair<String, Any?>): Map<String, Any> =
             mapOf(*pairs).filterValues { it != null } as Map<String, Any>
@@ -382,11 +408,16 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
 }
 
-/** Image model capabilities for specific models. */
+/** Image model capabilities for specific models. All options use plain strings for provider-agnostic use. */
 class ImageModelCapabilities(
     val modelId: String,
-    val sizes: List<ImageSize>,
-    val qualities: List<Quality>,
-    val styles: List<Style>,
+    /** Size options: pixel dimensions (e.g. "1024x1024") for OpenAI, image size codes (e.g. "1K") for Gemini. */
+    val sizes: List<String>,
+    /** Aspect ratio options (e.g. "1:1", "16:9"). Used by Gemini; empty for OpenAI which uses [sizes] for dimensions. */
+    val aspectRatios: List<String> = listOf(),
+    /** Quality options (model-specific, e.g. "standard", "hd", "auto"). Empty if not supported. */
+    val qualities: List<String>,
+    /** Style options (model-specific, e.g. "vivid", "natural"). Empty if not supported. */
+    val styles: List<String>,
     val counts: IntRange
 )

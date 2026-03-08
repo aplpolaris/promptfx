@@ -208,6 +208,47 @@ class GeminiSdkClient : Closeable {
         return genClient.models.generateContent(modelId, contents, config)
     }
 
+    /**
+     * Generate images using generateContent with IMAGE response modality (for gemini-*-image models).
+     * Extracts inline image data from the response candidates.
+     */
+    fun generateContentImages(
+        modelId: String,
+        prompt: String,
+        aspectRatio: String? = null,
+        imageSize: String? = null
+    ): GenerateContentResponse {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val content = Content.builder()
+            .parts(listOf(Part.fromText(prompt)))
+            .role("user")
+            .build()
+        val imageConfigBuilder = ImageConfig.builder()
+        if (aspectRatio != null) imageConfigBuilder.aspectRatio(aspectRatio)
+        if (imageSize != null) imageConfigBuilder.imageSize(imageSize)
+        val config = GenerateContentConfig.builder()
+            .responseModalities("IMAGE", "TEXT")
+            .imageConfig(imageConfigBuilder.build())
+            .build()
+        return genClient.models.generateContent(modelId, content, config)
+    }
+
+    /**
+     * Generate images using the Imagen API (for imagen-* models).
+     */
+    fun generateImagesViaImagenApi(
+        modelId: String,
+        prompt: String,
+        numberOfImages: Int = 1,
+        aspectRatio: String? = null
+    ): GenerateImagesResponse {
+        val genClient = client ?: throw IllegalStateException("Client not initialized")
+        val configBuilder = GenerateImagesConfig.builder()
+            .numberOfImages(numberOfImages)
+        if (aspectRatio != null) configBuilder.aspectRatio(aspectRatio)
+        return genClient.models.generateImages(modelId, prompt, configBuilder.build())
+    }
+
     override fun close() {
         // The java-genai Client handles connection pooling internally
     }

@@ -74,8 +74,12 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkVisionLanguageChat(it, client) 
     }
 
-    override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> = 
-        emptyList() // Image generation not supported by Vertex AI SDK
+    override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> =
+        models(GeminiSdkModelIndex.imageGeneratorModels()) { GeminiSdkImageGenerator(it, modelSource(), client) }
+
+    override fun speechToTextModels() = models(GeminiSdkModelIndex.audioModels()) {
+        GeminiSdkSpeechToText(it, client)
+    }
 
     override fun speechToTextModels() = models(GeminiSdkModelIndex.audioModels()) {
         GeminiSdkSpeechToText(it, client)
