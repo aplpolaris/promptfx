@@ -21,7 +21,8 @@ package tri.promptfx
 
 /**
  * Global manager for models available within PromptFx.
- * Model availability is determined by the current [PromptFxPolicy].
+ * Model availability is determined by the current [PromptFxPolicy], further restricted by
+ * include/exclude patterns from [PromptFxRuntimeConfig].
  */
 object PromptFxModels {
 
@@ -33,20 +34,20 @@ object PromptFxModels {
         .sortedBy { it.modelId }
     fun chatEngineDefault() = chatEngines().find { it.modelId == chatModelDefault().modelId }
 
-    fun textCompletionModels() = policy.textCompletionModels()
-    fun textCompletionModelDefault() = policy.textCompletionModelDefault()
+    fun textCompletionModels() = policy.textCompletionModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun textCompletionModelDefault() = textCompletionModels().firstOrNull() ?: policy.textCompletionModelDefault()
 
-    fun embeddingModels() = policy.embeddingModels()
-    fun embeddingModelDefault() = policy.embeddingModelDefault()
+    fun embeddingModels() = policy.embeddingModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun embeddingModelDefault() = embeddingModels().firstOrNull() ?: policy.embeddingModelDefault()
 
-    fun chatModels() = policy.chatModels()
-    fun chatModelDefault() = policy.chatModelDefault()
+    fun chatModels() = policy.chatModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun chatModelDefault() = chatModels().firstOrNull() ?: policy.chatModelDefault()
 
-    fun multimodalModels() = policy.multimodalModels()
-    fun multimodalModelDefault() = policy.multimodalModelDefault()
+    fun multimodalModels() = policy.multimodalModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun multimodalModelDefault() = multimodalModels().firstOrNull() ?: policy.multimodalModelDefault()
 
-    fun imageModels() = policy.imageModels()
-    fun imageModelDefault() = policy.imageModelDefault()
+    fun imageModels() = policy.imageModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
+    fun imageModelDefault() = imageModels().firstOrNull() ?: policy.imageModelDefault()
 
     fun textToSpeechModels() = policy.textToSpeechModels()
     fun textToSpeechModelDefault() = policy.textToSpeechModelDefault()
@@ -68,6 +69,18 @@ object PromptFxModels {
             textToSpeechModels().map { it.modelId } +
             speechToTextModels().map { it.modelId } +
             visionLanguageModels().map { it.modelId }
+        ).toSet()
+
+    /** Returns all model IDs configured in the current policy, regardless of runtime config filters. */
+    fun policyModelIds() = (
+            policy.textCompletionModels().map { it.modelId } +
+            policy.embeddingModels().map { it.modelId } +
+            policy.chatModels().map { it.modelId } +
+            policy.multimodalModels().map { it.modelId } +
+            policy.imageModels().map { it.modelId } +
+            policy.textToSpeechModels().map { it.modelId } +
+            policy.speechToTextModels().map { it.modelId } +
+            policy.visionLanguageModels().map { it.modelId }
         ).toSet()
 
 }

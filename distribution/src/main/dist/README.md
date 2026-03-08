@@ -81,6 +81,8 @@ promptfx/
 │
 ├── config/                        # YAML configuration files
 │   │
+│   ├── PromptFx.properties        # (optional) Runtime prompt/model filters
+│   │
 │   ├── openai-api-config.yaml     # API and Model Configurations
 │   ├── gemini-models.yaml
 │   ├── ollama-models.yaml
@@ -129,6 +131,38 @@ Many of these files have default versions included in the JAR, but you can creat
 Many of these settings and customizations can be viewed when PromptFx is launched in the `Settings` view.
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
+
+#### Runtime Properties (`PromptFx.properties`)
+
+The optional `PromptFx.properties` file provides a simple key-value mechanism for tuning PromptFX behavior at runtime without modifying YAML configuration files.
+PromptFX looks for this file in the working directory first, then in the `config/` subdirectory.
+A template with all supported properties (commented out) is included in `config/PromptFx.properties`.
+
+All properties are optional — omit or leave blank to use the default behavior.
+
+**Prompt and model filters:**
+
+| Property | Description |
+|---|---|
+| `prompt.include` | Comma-separated glob patterns; only prompts whose id or category matches at least one pattern are active. Omit or leave blank to include all. |
+| `prompt.exclude` | Comma-separated glob patterns; prompts whose id or category matches any pattern are deactivated. Overrides `prompt.include`. |
+| `model.include` | Comma-separated glob patterns; only models whose id matches at least one pattern are active. Omit or leave blank to include all. |
+| `model.exclude` | Comma-separated glob patterns; models whose id matches any pattern are deactivated. Overrides `model.include`. |
+
+Glob syntax: `*` matches any characters within a single path segment (no `/`), `**` matches across segments (including `/`), `?` matches exactly one character.
+
+**Example — restrict to Gemini models and text prompts only:**
+```properties
+model.include=*gemini*
+prompt.include=text/**
+```
+
+**Example — hide preview models:**
+```properties
+model.exclude=*preview*
+```
+
+Prompts filtered out by these rules remain visible in the **Prompt Library** view but are shown at reduced opacity to indicate they are inactive.
 
 #### API Configuration and Models
 
@@ -230,6 +264,8 @@ MCP:
 ```
 
 You can add links for any tab category (API, MCP, Prompts, Text, Documents, etc.) by creating groups with labels and URLs. The links will automatically appear at the bottom of the corresponding navigation pane under "Documentation/Links".
+
+---
 
 ### 📝 Custom Prompts
 

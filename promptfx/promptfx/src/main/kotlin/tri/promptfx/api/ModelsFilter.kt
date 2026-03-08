@@ -27,7 +27,29 @@ import tornadofx.onChange
 import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
+import tri.promptfx.PromptFxModels
+import tri.promptfx.PromptFxRuntimeConfig
 import tri.util.ui.FilterSortModel
+
+/** Status of a model in PromptFx, based on policy configuration and runtime filtering. */
+enum class ModelStatus {
+    /** The model is in the current policy and not filtered out by runtime config. */
+    ACTIVE,
+    /** The model is in the current policy but filtered out by runtime config include/exclude patterns. */
+    INACTIVE,
+    /** The model is not in the current policy (not configured for use). */
+    NOT_CONFIGURED
+}
+
+/** Returns the [ModelStatus] of the given model based on current policy and runtime config. */
+fun modelStatusOf(model: ModelInfo): ModelStatus {
+    val policyIds = PromptFxModels.policyModelIds()
+    return when {
+        model.id !in policyIds -> ModelStatus.NOT_CONFIGURED
+        PromptFxRuntimeConfig.isModelActive(model.id) -> ModelStatus.ACTIVE
+        else -> ModelStatus.INACTIVE
+    }
+}
 
 /** Model for filtering models. */
 class ModelsFilter : Component() {
@@ -66,6 +88,7 @@ class ModelsFilter : Component() {
             addFilter("source") { it.source }
             addFilter("type") { it.type }
             addFilter("lifecycle") { it.metadata.lifecycle }
+            addFilter("status") { modelStatusOf(it) }
         }
     }
 
@@ -78,6 +101,9 @@ class ModelsFilter : Component() {
     @Suppress("UNCHECKED_CAST")
     val lifecycleFilters
         get() = model.filters["lifecycle"]!!.values as ObservableList<Pair<String, SimpleBooleanProperty>>
+    @Suppress("UNCHECKED_CAST")
+    val statusFilters
+        get() = model.filters["status"]!!.values as ObservableList<Pair<ModelStatus, SimpleBooleanProperty>>
     
     val inputFilters
         get() = inputModalityFilter.values

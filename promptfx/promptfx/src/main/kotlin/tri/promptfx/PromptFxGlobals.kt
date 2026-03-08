@@ -26,10 +26,18 @@ import tri.ai.prompt.fill
 /** Unified access to global objects within [PromptFx]. */
 object PromptFxGlobals {
 
-    /** Prompt library. */
+    /** Default (built-in) prompt library. */
     val promptLibrary = PromptLibrary.INSTANCE
+    /** Runtime-only prompt library (prompts loaded from the `prompts/` directory at runtime). */
+    val runtimePromptLibrary = PromptLibrary.RUNTIME_INSTANCE
     /** Prompts for current views. */
     fun promptsForCurrentViews() = RuntimePromptViewConfigs.promptLibrary
+
+    /** Runtime configuration with prompt/model include-exclude filters. */
+    val runtimeConfig = PromptFxRuntimeConfig
+
+    /** Returns `true` if the given prompt is active (not filtered out by runtime config). */
+    fun isPromptActive(prompt: PromptDef): Boolean = runtimeConfig.isPromptActive(prompt)
 
     /** Gets prompt ids with a given prefix. */
     fun promptsWithPrefix(prefix: String) =
