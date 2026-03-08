@@ -91,7 +91,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     private val images = observableListOf<AiImageTrace>()
 
     /** Model */
-    private val model = SimpleStringProperty(DALLE2_ID).apply {
+    private val model = SimpleStringProperty(IMAGE_MODELS.firstOrNull() ?: DALLE2_ID).apply {
         onChange {
             imageSizes.setAll(MODEL_INFO[it]?.sizes ?: listOf(ImageSize.Companion.is1024x1024))
             if (imageSize.value !in imageSizes)
@@ -347,7 +347,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         private val QUAL_LOW = Quality("low")
         private val QUAL_AUTO = Quality("auto")
 
-        val MODEL_INFO = mapOf(
+        private val MODEL_INFO = mapOf(
             DALLE2_ID to ImageModelCapabilities(DALLE2_ID,
                 sizes = listOf(SIZE256, SIZE512, SIZE1024),
                 qualities = listOf(),
@@ -356,7 +356,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             ),
             DALLE3_ID to ImageModelCapabilities(DALLE3_ID,
                 sizes = listOf(SIZE1024, SIZE1792, SIZE1792PORTRAIT),
-                qualities = listOf(QUAL_STANDARD, Quality.Companion.HD, QUAL_AUTO),
+                qualities = listOf(QUAL_STANDARD, Quality.Companion.HD),
                 styles = listOf(Style.Companion.Vivid, Style.Companion.Natural),
                 counts = 1..1
             ),
