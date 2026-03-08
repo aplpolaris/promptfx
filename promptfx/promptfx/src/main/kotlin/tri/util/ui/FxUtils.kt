@@ -125,21 +125,24 @@ fun icon(icon: FontAwesomeIcon) = FontAwesomeIconView(icon)
 val FontAwesomeIcon.graphic
     get() = icon(this)
 
+// Preconfigured icon colors — pick one for PromptFxGlobals.iconColor each release
+val colorBurgundy: Color = Color(128.0/255, 0.0, 32.0/255, 1.0)
+val colorForestGreen: Color = Color(34.0/255, 139.0/255, 34.0/255, 1.0)
+val colorFireOrange: Color = Color(1.0, 69.0/255, 0.0, 1.0)
+val colorSteelBlue: Color = Color(70.0/255, 130.0/255, 180.0/255, 1.0)
+
 val FontAwesomeIconView.gray
     get() = apply { fill = Color.GRAY }
 val FontAwesomeIconView.navy
     get() = apply { fill = Color.NAVY }
 val FontAwesomeIconView.burgundy
-    get() = apply { fill = Color(128.0/255, 0.0, 32.0/255, 1.0) }
+    get() = apply { fill = colorBurgundy }
 val FontAwesomeIconView.forestGreen
-    get() = apply { fill = Color(34.0/255, 139.0/255, 34.0/255, 1.0) }
+    get() = apply { fill = colorForestGreen }
 val FontAwesomeIconView.fireOrange
-    get() = apply { fill = Color(1.0, 69.0/255, 0.0, 1.0) }
+    get() = apply { fill = colorFireOrange }
 val FontAwesomeIconView.steelBlue
-    get() = apply { fill = Color(70.0/255, 130.0/255, 180.0/255, 1.0) }
-
-/** Color used for sidebar/navigation icons throughout the app. Change this each minor version for a seasonal theme. */
-val iconColor: Color = Color(34.0/255, 139.0/255, 34.0/255, 1.0) // forest green
+    get() = apply { fill = colorSteelBlue }
 
 //endregion
 
