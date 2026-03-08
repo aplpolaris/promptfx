@@ -19,9 +19,19 @@
  */
 package tri.promptfx
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.scene.paint.Color
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
+import tri.util.ui.colorForestGreen
+
+/** Color used for sidebar/navigation icons throughout the app. Change this each minor version for a seasonal theme. */
+val iconColor: Color = colorForestGreen
+
+/** Applies the app's current theme icon color from [iconColor]. */
+val FontAwesomeIconView.themed
+    get() = apply { fill = iconColor }
 
 /** Unified access to global objects within [PromptFx]. */
 object PromptFxGlobals {
