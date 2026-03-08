@@ -26,6 +26,7 @@ module tri.promptkt.openai {
 
     requires openai.core.jvm;
     requires openai.client.jvm;
+    requires kotlinx.io.core.jvm;
 
     requires okhttp3;
     requires okio;

@@ -42,6 +42,7 @@ class GeminiModelIndexTest {
         println(GeminiModelIndex.visionLanguageModels())
 
         assertTrue(GeminiModelIndex.multimodalModels().isNotEmpty())
+        assertTrue(GeminiModelIndex.imageGeneratorModels().isNotEmpty())
 
         // no additional model info has been configured
         assertTrue(GeminiModelIndex.modelInfoIndex.isEmpty())

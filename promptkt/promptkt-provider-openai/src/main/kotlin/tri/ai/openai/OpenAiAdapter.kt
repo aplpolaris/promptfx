@@ -34,10 +34,10 @@ import com.aallam.openai.api.file.fileUpload
 import com.aallam.openai.api.image.ImageCreation
 import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import okio.FileSystem
 import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
@@ -110,7 +110,6 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val t0 = System.currentTimeMillis()
         val resp = client.transcription(TranscriptionRequest(
             model = ModelId(modelId),
-            // convert audiofile toa  kotlin path object
             audio = FileSource(Path(audioFile.absolutePath), SystemFileSystem)
         ))
         resp.duration?.let {
@@ -178,6 +177,64 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
             outputInfo
         )
+    }
+
+    /** Runs a request using the OpenAI Responses API. */
+    suspend fun responseCompletion(request: ResponseRequest): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val resp = client.response(request)
+        resp.usage?.let { usage[UsageUnit.TOKENS] = (usage[UsageUnit.TOKENS] ?: 0) + (it.totalTokens ?: 0) }
+
+        val messageItems = resp.output.filter { it.type == "message" }
+        val functionCallItems = resp.output.filter { it.type == "function_call" }
+
+        var outputMessages = messageItems.map { item ->
+            MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                content = item.content?.mapNotNull { contentPart ->
+                    contentPart.text?.let { text -> MChatMessagePart(text = text) }
+                } ?: emptyList()
+            )
+        } + if (functionCallItems.isNotEmpty()) {
+            listOf(MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                toolCalls = functionCallItems.map { item ->
+                    MToolCall(
+                        id = item.callId ?: item.id ?: "",
+                        name = item.name ?: "",
+                        argumentsAsJson = item.arguments ?: ""
+                    )
+                }
+            ))
+        } else {
+            emptyList()
+        }
+
+        // Fallback to outputText if no structured output items were returned (some models/configs omit `output`)
+        val fallbackText = resp.outputText
+        if (outputMessages.isEmpty() && fallbackText != null) {
+            outputMessages = listOf(MultimodalChatMessage(
+                role = MChatRole.Assistant,
+                content = listOf(MChatMessagePart(text = fallbackText))
+            ))
+        }
+
+        val modelInfo = AiModelInfo.info(request.model.id,
+            AiModelInfo.MAX_TOKENS to request.maxOutputTokens,
+            AiModelInfo.TEMPERATURE to request.temperature,
+            AiModelInfo.TOP_P to request.topP
+        )
+        val execInfo = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.inputTokens, responseTokens = resp.usage?.outputTokens)
+
+        // Propagate API-level errors (status:"failed") as a failed trace rather than returning empty output
+        if (resp.status == "failed") {
+            val errorMsg = resp.error?.message ?: "Responses API returned status: failed for model ${request.model.id}"
+            return AiPromptTrace(null, modelInfo, execInfo.also { it.error = errorMsg }, null)
+        }
+
+        return AiPromptTrace(null, modelInfo, execInfo, AiOutputInfo.multimodalMessages(outputMessages))
     }
 
     /** Runs an edit request (deprecated API). */
@@ -445,7 +502,7 @@ fun Model.toModelInfo(source: String): ModelInfo {
     val existing = OpenAiModelIndex.modelInfoIndex[id.id]
     val info = existing ?: ModelInfo(id.id, ModelType.UNKNOWN, source)
     created?.let {
-        info.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        info.metadata.created = Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
     if (info.type == ModelType.UNKNOWN) {
@@ -453,13 +510,13 @@ fun Model.toModelInfo(source: String): ModelInfo {
             "moderation" in id.id -> info.type = ModelType.MODERATION
             "-realtime-" in id.id -> {
                 info.type = ModelType.REALTIME_CHAT
-                info.inputs = listOf(DataModality.text, DataModality.audio)
-                info.outputs = listOf(DataModality.text, DataModality.audio)
+                info.capabilities.inputs = listOf(DataModality.text, DataModality.audio)
+                info.capabilities.outputs = listOf(DataModality.text, DataModality.audio)
             }
             "-audio-" in id.id -> {
                 info.type = ModelType.AUDIO_CHAT
-                info.inputs = listOf(DataModality.audio)
-                info.outputs = listOf(DataModality.audio)
+                info.capabilities.inputs = listOf(DataModality.audio)
+                info.capabilities.outputs = listOf(DataModality.audio)
             }
             else -> {
                 // attempt to assign type for tagged models based on a "parent type"

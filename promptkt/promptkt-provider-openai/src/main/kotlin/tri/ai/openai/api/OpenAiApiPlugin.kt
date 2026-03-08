@@ -70,13 +70,13 @@ class OpenAiApiPlugin : TextPlugin {
 
     override fun textCompletionModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiCompletionChat(it, e.source, client(e)) } +
+            e.index.chatModels().map { OpenAiCompletionChat(it, e.source, client(e)) } +
             e.index.completionModels().map { OpenAiCompletion(it, e.source, client(e)) }
         }
 
     override fun chatModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiChat(it, e.source, client(e)) }
+            e.index.chatModels().map { OpenAiChat(it, e.source, client(e)) }
         }
 
     override fun multimodalModels() =
@@ -84,6 +84,7 @@ class OpenAiApiPlugin : TextPlugin {
             e.index.multimodalModels().map { OpenAiMultimodalChat(it, e.source, client(e)) }
         }
 
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() =
         config.endpoints.flatMap { e ->
             e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, e.source, client(e)) }

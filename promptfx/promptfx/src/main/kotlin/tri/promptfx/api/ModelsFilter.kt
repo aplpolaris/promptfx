@@ -55,8 +55,8 @@ fun modelStatusOf(model: ModelInfo): ModelStatus {
 class ModelsFilter : Component() {
 
     // Custom modality filters that work differently from standard filters
-    val inputModalityFilter = ModalityFilter { it.inputs ?: emptyList() }
-    val outputModalityFilter = ModalityFilter { it.outputs ?: emptyList() }
+    val inputModalityFilter = ModalityFilter { it.capabilities.inputs ?: emptyList() }
+    val outputModalityFilter = ModalityFilter { it.capabilities.outputs ?: emptyList() }
 
     val model = object : FilterSortModel<ModelInfo>() {
         override fun updateFilterOptions(list: List<ModelInfo>) {
@@ -87,7 +87,7 @@ class ModelsFilter : Component() {
         init {
             addFilter("source") { it.source }
             addFilter("type") { it.type }
-            addFilter("lifecycle") { it.lifecycle }
+            addFilter("lifecycle") { it.metadata.lifecycle }
             addFilter("status") { modelStatusOf(it) }
         }
     }

@@ -298,36 +298,25 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
 
             separator()
             
-            // Completion Engine
+            // Chat Engine
             vbox(5) {
-                label("Text Completion Engine:") {
+                label("Chat Engine:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
-                label(controller.completionEngine.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
-                label(controller.completionEngine.stringBinding { "Provider: ${it?.modelSource?.ifEmpty { it.javaClass.simpleName } ?: "Unknown"}" })
+                label(controller.chatEngine.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
+                label(controller.chatEngine.stringBinding { engine -> "Provider: ${engine?.modelSource?.ifEmpty { engine.javaClass.simpleName } ?: "Unknown"}" })
             }
             
             separator()
             
-            // Chat Service
+            // Embedding Engine
             vbox(5) {
-                label("Chat Service:") {
+                label("Embedding Engine:") {
                     style { fontWeight = FontWeight.BOLD }
                 }
-                label(controller.chatService.stringBinding { "Model: ${it?.modelId ?: "Not set"}" })
-                label(controller.chatService.stringBinding { "Provider: ${it?.modelSource?.ifEmpty { it.javaClass.simpleName } ?: "Unknown"}" })
-            }
-            
-            separator()
-            
-            // Embedding Strategy
-            vbox(5) {
-                label("Embedding Strategy:") {
-                    style { fontWeight = FontWeight.BOLD }
-                }
-                label(controller.embeddingStrategy.stringBinding { "Model: ${it?.model?.modelId ?: "Not set"}" })
-                label(controller.embeddingStrategy.stringBinding { "Provider: ${it?.model?.modelSource?.ifEmpty { it.model.javaClass.simpleName } ?: "Unknown"}" })
-                label(controller.embeddingStrategy.stringBinding { "Chunker: ${it?.chunker?.javaClass?.simpleName ?: "Unknown"}" })
+                label(controller.embeddingEngine.stringBinding { "Model: ${it?.model?.modelId ?: "Not set"}" })
+                label(controller.embeddingEngine.stringBinding { es -> "Provider: ${es?.model?.modelSource?.ifEmpty { es.model.javaClass.simpleName } ?: "Unknown"}" })
+                label(controller.embeddingEngine.stringBinding { "Chunker: ${it?.chunker?.javaClass?.simpleName ?: "Unknown"}" })
             }
             
             separator()

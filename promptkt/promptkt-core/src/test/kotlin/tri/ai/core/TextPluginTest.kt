@@ -36,6 +36,7 @@ class TextPluginTest : TextPlugin {
     override fun textCompletionModels(): List<TextCompletion> = listOf(TestTextCompletion())
     override fun chatModels(): List<TextChat> = listOf(TestTextChat())
     override fun multimodalModels() = emptyList<MultimodalChat>()
+    @Deprecated("Use multimodalModels() instead")
     override fun visionLanguageModels() = emptyList<VisionLanguageChat>()
     override fun imageGeneratorModels() = emptyList<ImageGenerator>()
     override fun close() {}

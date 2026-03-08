@@ -23,7 +23,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.taskPlan
+import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptArgDef
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template

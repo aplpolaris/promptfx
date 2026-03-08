@@ -23,23 +23,8 @@ import java.time.LocalDate
 
 /** Information about a model. */
 class ModelInfo(var id: String, var type: ModelType, var source: String) {
-    var name: String? = null
-    var description: String? = null
-
-    var created: LocalDate? = null
-    var version: String? = null
-    var deprecation: String? = null
-    var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
-    var snapshots: List<String> = listOf()
-
-    var inputs: List<DataModality>? = null
-    var outputs: List<DataModality>? = null
-    var inputTokenLimit: Int? = null
-    var outputTokenLimit: Int? = null
-    var totalTokenLimit: Int? = null
-
-    var outputDimension: Int? = null
-
+    var metadata: ModelMetadata = ModelMetadata()
+    var capabilities: ModelCapabilities = ModelCapabilities()
     var params: MutableMap<String, Any> = mutableMapOf()
 
     override fun toString() =
@@ -53,26 +38,22 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
         }
     }
 
-    /** Get id's of models, including snapshots. */
-    fun ids(includeSnapshots: Boolean) =
-        if (includeSnapshots)
-            listOf(id) + snapshots.map { "$id-$it" }
-        else
-            listOf(id)
+}
 
-    /** Generate list of snapshot models. */
-    fun createSnapshots() = snapshots.map {
-        ModelInfo("$id-$it", type, source).also {
-            it.name = "$name ($it)"
-            it.description = description
-            it.version = version
-            it.deprecation = deprecation
-            it.inputTokenLimit = inputTokenLimit
-            it.outputTokenLimit = outputTokenLimit
-            it.totalTokenLimit = totalTokenLimit
-            it.outputDimension = outputDimension
-        }
-    }
+/** Descriptive metadata for a model (name, description, version, lifecycle, etc.). */
+class ModelMetadata {
+    var name: String? = null
+    var description: String? = null
+    var version: String? = null
+    var created: LocalDate? = null
+    var deprecation: String? = null
+    var lifecycle: ModelLifecycle = ModelLifecycle.UNKNOWN
+}
+
+/** Input/output capabilities for a model. */
+class ModelCapabilities {
+    var inputs: List<DataModality>? = null
+    var outputs: List<DataModality>? = null
 }
 
 /** Data modality for inputs and outputs. */
@@ -84,6 +65,7 @@ enum class DataModality {
 enum class ModelType {
     TEXT_COMPLETION,
     TEXT_CHAT,
+    @Deprecated("Use TEXT_CHAT or RESPONSES instead")
     TEXT_VISION_CHAT,
     TEXT_EMBEDDING,
     IMAGE_GENERATOR,
@@ -94,6 +76,7 @@ enum class ModelType {
     RESPONSES,
     MODERATION,
     QUESTION_ANSWER,
+    VIDEO_GENERATOR,
     UNKNOWN
 }
 

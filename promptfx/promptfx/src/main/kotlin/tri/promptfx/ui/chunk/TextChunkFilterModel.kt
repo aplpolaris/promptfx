@@ -157,6 +157,7 @@ class TextChunkFilterModel : Component(), ScopedInstance {
      * Attempt to filter an input based on a given prompt.
      * Returns true if the response contains "yes" (case-insensitive) anywhere.
      */
+    @Suppress("unused")
     private fun llmFilter(completionEngine: TextCompletion, prompt: String, input: String, maxTokens: Int, temp: Double): Boolean {
         val result = runBlocking {
             PromptTemplate(prompt).fill(PromptTemplate.INPUT to input)

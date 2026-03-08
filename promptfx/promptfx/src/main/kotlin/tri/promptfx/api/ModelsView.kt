@@ -79,11 +79,11 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         }
                         menubutton("Sort by:", FontAwesomeIcon.SORT.graphic) {
                             sortmenu("Id", filter.model) { it.id }
-                            sortmenu("Name", filter.model) { it.name }
-                            sortmenu("Created Date", filter.model) { it.created }
+                            sortmenu("Name", filter.model) { it.metadata.name }
+                            sortmenu("Created Date", filter.model) { it.metadata.created }
                             sortmenu("Source", filter.model) { it.source }
                             sortmenu("Type", filter.model) { it.type }
-                            sortmenu("Lifecycle", filter.model) { it.lifecycle }
+                            sortmenu("Lifecycle", filter.model) { it.metadata.lifecycle }
                             item("Reset", graphic = FontAwesomeIcon.UNDO.graphic) {
                                 action { filter.model.resetSort() }
                             }
@@ -193,6 +193,7 @@ fun graphic(type: ModelType) = when (type) {
     ModelType.REALTIME_CHAT -> FontAwesomeIcon.COMMENTS.graphic
     ModelType.MODERATION -> FontAwesomeIcon.EYE_SLASH.graphic
     ModelType.QUESTION_ANSWER -> FontAwesomeIcon.QUESTION_CIRCLE.graphic
+    ModelType.VIDEO_GENERATOR -> FontAwesomeIcon.FILM.graphic
     ModelType.UNKNOWN -> FontAwesomeIcon.QQ.graphic
 }
 

@@ -28,6 +28,12 @@ object PromptFxModels {
 
     var policy: PromptFxPolicy = PromptFxPolicyUnrestricted
 
+    /** Returns all available chat engines, including both text and multimodal. */
+    fun chatEngines() = (chatModels().map { AiChatEngine.Text(it) } +
+            multimodalModels().map { AiChatEngine.Multimodal(it) })
+        .sortedBy { it.modelId }
+    fun chatEngineDefault() = chatEngines().find { it.modelId == chatModelDefault().modelId }
+
     fun textCompletionModels() = policy.textCompletionModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
     fun textCompletionModelDefault() = textCompletionModels().firstOrNull() ?: policy.textCompletionModelDefault()
 
@@ -43,10 +49,14 @@ object PromptFxModels {
     fun imageModels() = policy.imageModels().filter { PromptFxRuntimeConfig.isModelActive(it.modelId) }
     fun imageModelDefault() = imageModels().firstOrNull() ?: policy.imageModelDefault()
 
-    /** @deprecated Use [multimodalModels] instead. */
+    fun textToSpeechModels() = policy.textToSpeechModels()
+    fun textToSpeechModelDefault() = policy.textToSpeechModelDefault()
+
+    fun speechToTextModels() = policy.speechToTextModels()
+    fun speechToTextModelDefault() = policy.speechToTextModelDefault()
+
     @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
     fun visionLanguageModels() = policy.visionLanguageModels()
-    /** @deprecated Use [multimodalModelDefault] instead. */
     @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
     fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
 
@@ -55,7 +65,10 @@ object PromptFxModels {
             embeddingModels().map { it.modelId } +
             chatModels().map { it.modelId } +
             multimodalModels().map { it.modelId } +
-            imageModels().map { it.modelId }
+            imageModels().map { it.modelId } +
+            textToSpeechModels().map { it.modelId } +
+            speechToTextModels().map { it.modelId } +
+            visionLanguageModels().map { it.modelId }
         ).toSet()
 
     /** Returns all model IDs configured in the current policy, regardless of runtime config filters. */
@@ -64,7 +77,10 @@ object PromptFxModels {
             policy.embeddingModels().map { it.modelId } +
             policy.chatModels().map { it.modelId } +
             policy.multimodalModels().map { it.modelId } +
-            policy.imageModels().map { it.modelId }
+            policy.imageModels().map { it.modelId } +
+            policy.textToSpeechModels().map { it.modelId } +
+            policy.speechToTextModels().map { it.modelId } +
+            policy.visionLanguageModels().map { it.modelId }
         ).toSet()
 
 }

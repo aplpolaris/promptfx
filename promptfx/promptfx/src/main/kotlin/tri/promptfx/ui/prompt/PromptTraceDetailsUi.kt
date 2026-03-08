@@ -26,10 +26,10 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.openai.OpenAiModelIndex
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.*
@@ -148,7 +148,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                                     fitWidthProperty().bind(thumbnailSize)
                                     fitHeightProperty().bind(thumbnailSize)
                                     isPreserveRatio = true
-                                    tooltip { graphic = vbox {
+                                    tooltip { graphic = VBox().apply {
                                         val text = text(prompt) {
                                             style = "-fx-fill: white;"
                                         }
@@ -156,7 +156,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                                         text.wrappingWidthProperty().bind(image.image.widthProperty())
                                     } }
                                 }
-                            } else if (result.value is ByteArray && model.value in OpenAiModelIndex.ttsModels()) { // TODO general support for audio models
+                            } else if (result.value is ByteArray && model.value in PromptFxModels.textToSpeechModels().map { it.modelId }) {
                                 playButton = box.button("Play", graphic = FontAwesomeIcon.PLAY.graphic) {
                                     action { playButtonPress(result.value as ByteArray) }
                                 }

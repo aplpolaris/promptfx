@@ -39,8 +39,6 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.EmbeddingModel
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiImageTrace
@@ -72,12 +70,10 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val runTooltip = SimpleStringProperty("")
     val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
 
-    val chatEngine: TextChat
-        get() = controller.chatService.value
-    val completionEngine: TextCompletion
-        get() = controller.completionEngine.value
-    val embeddingModel: EmbeddingModel
-        get() = controller.embeddingStrategy.value.model
+    val chatEngine: AiChatEngine
+        get() = controller.chatEngine.value
+    val embeddingEngine: EmbeddingModel
+        get() = controller.embeddingEngine.value.model
 
     init {
         disableCreate()
@@ -186,25 +182,10 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Adds default model parameters (model, temperature, tokens) to the view. */
-    @Deprecated("use chat model instead")
-    fun addDefaultTextCompletionParameters(common: ModelParameters) {
-        parameters("Text Completion Model") {
-            field("Model") {
-                combobox(controller.completionEngine, PromptFxModels.textCompletionModels())
-            }
-            with (common) {
-                temperature()
-                maxTokens()
-                numResponses()
-            }
-        }
-    }
-
-    /** Adds default model parameters (model, temperature, tokens) to the view. */
     fun addDefaultChatParameters(common: ModelParameters) {
         parameters("Chat Model") {
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.chatModels())
+                combobox(controller.chatEngine, PromptFxModels.chatEngines())
             }
             with (common) {
                 temperature()
