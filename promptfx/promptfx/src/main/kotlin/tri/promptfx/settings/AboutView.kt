@@ -26,10 +26,9 @@ import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import tornadofx.*
 import tri.promptfx.AiTaskView
-import tri.promptfx.PromptFxGlobals
+import tri.promptfx.themed
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
-import tri.util.ui.themed
 import java.io.File
 import java.util.Properties
 

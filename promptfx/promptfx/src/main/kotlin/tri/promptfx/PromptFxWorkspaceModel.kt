@@ -25,7 +25,6 @@ import tri.promptfx.ui.NavigableWorkspaceViewRuntime
 import tri.util.*
 import tri.util.ui.NavigableWorkspaceView
 import tri.util.ui.graphic
-import tri.util.ui.themed
 
 /** Model of the view content within [PromptFx] (views, groups, etc.). */
 class PromptFxWorkspaceModel(
