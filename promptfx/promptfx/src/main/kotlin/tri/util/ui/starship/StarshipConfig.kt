@@ -31,6 +31,7 @@ class StarshipConfig() {
     var question = StarshipConfigQuestion()
     var pipeline = PPlan(null, listOf())
     var layout = StarshipConfigLayout()
+    var repeatDelaySeconds: Int = 20
 
     companion object {
         private val RUNTIME_CONFIG_FILES = listOf(
