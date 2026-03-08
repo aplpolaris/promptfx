@@ -110,7 +110,7 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.steelBlue, listOf())) {
+            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.forestGreen, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
                 separator { }
