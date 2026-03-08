@@ -47,6 +47,10 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
     private val sortedModels = filteredModels.sorted(filter.model.sort.value)
     private val selectedModel = SimpleObjectProperty<ModelInfo>()
 
+    companion object {
+        private const val INACTIVE_MODEL_TEXT_COLOR = "#999999"
+    }
+
     init {
         models.onChange {
             filter.model.updateFilterOptions(it.list)
@@ -88,6 +92,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                             checklistmenu("Source", filter.sourceFilters) { refilter() }
                             checklistmenu("Type", filter.typeFilters, ::graphic) { refilter() }
                             checklistmenu("Lifecycle", filter.lifecycleFilters) { refilter() }
+                            checklistmenu("Status", filter.statusFilters) { refilter() }
                             checklistmenu<DataModality>("Inputs", filter.inputFilters, { graphics(listOf(it)).firstOrNull() }) { refilter() }
                             checklistmenu<DataModality>("Outputs", filter.outputFilters, { graphics(listOf(it)).firstOrNull() }) { refilter() }
                             checkmenuitem("Show All") {
@@ -103,10 +108,10 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
                         cellFormat {
                             text = "${it.id} (${it.source})"
                             graphic = graphic(it.type)
-                            val inPolicy = it.id in PromptFxModels.modelIds()
-                            style = when {
-                                inPolicy -> ""
-                                else -> "-fx-font-style: italic"
+                            style = when (modelStatusOf(it)) {
+                                ModelStatus.ACTIVE -> ""
+                                ModelStatus.INACTIVE -> "-fx-text-fill: $INACTIVE_MODEL_TEXT_COLOR;"
+                                ModelStatus.NOT_CONFIGURED -> "-fx-font-style: italic;"
                             }
                         }
                         bindSelected(selectedModel)

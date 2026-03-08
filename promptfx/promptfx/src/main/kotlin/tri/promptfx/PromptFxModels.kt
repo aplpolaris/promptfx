@@ -58,4 +58,13 @@ object PromptFxModels {
             imageModels().map { it.modelId }
         ).toSet()
 
+    /** Returns all model IDs configured in the current policy, regardless of runtime config filters. */
+    fun policyModelIds() = (
+            policy.textCompletionModels().map { it.modelId } +
+            policy.embeddingModels().map { it.modelId } +
+            policy.chatModels().map { it.modelId } +
+            policy.multimodalModels().map { it.modelId } +
+            policy.imageModels().map { it.modelId }
+        ).toSet()
+
 }
