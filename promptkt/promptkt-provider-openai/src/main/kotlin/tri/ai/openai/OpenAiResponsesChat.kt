@@ -28,6 +28,7 @@ import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.api.response.ResponseText
 import com.aallam.openai.api.response.ResponseTool
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -134,7 +135,7 @@ class OpenAiResponsesChat(
                             })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
-                                put("image_url", part.inlineData)
+                                put("image_url", imageUrlJsonElement(part.inlineData!!))
                             })
                         }
                     }
@@ -165,13 +166,24 @@ class OpenAiResponsesChat(
                             })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
-                                put("image_url", part.inlineData)
+                                put("image_url", imageUrlJsonElement(part.inlineData!!))
                             })
                         }
                     }
                 }
             }
         }
+
+        /**
+         * Returns the correct JSON value for the `image_url` field of an `input_image` content item.
+         * Plain URLs are returned as a [JsonPrimitive]; data URIs (starting with `data:`) are wrapped
+         * in a [JsonObject] `{ "url": "..." }` as required by the Responses API.
+         */
+        internal fun imageUrlJsonElement(inlineData: String): JsonElement =
+            if (inlineData.startsWith("data:"))
+                buildJsonObject { put("url", inlineData) }
+            else
+                JsonPrimitive(inlineData)
 
         /** Get role string for this message. */
         private fun MultimodalChatMessage.roleString() = when (role) {

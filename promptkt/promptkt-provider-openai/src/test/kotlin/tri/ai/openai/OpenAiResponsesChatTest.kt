@@ -19,11 +19,16 @@
  */
 package tri.ai.openai
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.*
 import tri.ai.openai.OpenAiResponsesChat.Companion.buildResponseRequest
+import tri.ai.openai.OpenAiResponsesChat.Companion.imageUrlJsonElement
 
 class OpenAiResponsesChatTest {
 
@@ -126,6 +131,76 @@ class OpenAiResponsesChatTest {
         )
         val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
         assertNotNull(request.input)
+    }
+
+    //endregion
+
+    //region IMAGE ENCODING TESTS
+
+    @Test
+    fun testImageUrlJsonElement_PlainUrl() {
+        val url = "https://example.com/image.png"
+        val element = imageUrlJsonElement(url)
+        assertTrue(element is JsonPrimitive, "Plain URL should be serialized as a JsonPrimitive")
+        assertEquals(url, (element as JsonPrimitive).content)
+    }
+
+    @Test
+    fun testImageUrlJsonElement_DataUri() {
+        val dataUri = "data:image/png;base64,iVBORw0KGgo="
+        val element = imageUrlJsonElement(dataUri)
+        assertTrue(element is JsonObject, "Data URI should be serialized as a JsonObject { \"url\": ... }")
+        assertEquals(dataUri, (element as JsonObject)["url"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun testBuildResponseRequest_WithImageUrl() {
+        val imageUrl = "https://example.com/chart.png"
+        val messages = listOf(
+            chatMessage {
+                text("Describe this image.")
+                image(imageUrl)
+            }
+        )
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        val inputArray = request.input?.value as? JsonArray
+        assertNotNull(inputArray, "Input should be a JsonArray")
+        val firstMessage = inputArray!![0] as? JsonObject
+        assertNotNull(firstMessage, "First item should be a JsonObject")
+        val content = firstMessage!!["content"] as? JsonArray
+        assertNotNull(content, "Content should be a JsonArray for multi-part messages")
+        val imagePart = content!!.filterIsInstance<JsonObject>().firstOrNull {
+            it["type"]?.jsonPrimitive?.content == "input_image"
+        }
+        assertNotNull(imagePart, "Should have an input_image content part")
+        val imageUrlValue = imagePart!!["image_url"]
+        assertTrue(imageUrlValue is JsonPrimitive, "Plain URL should serialize image_url as a JsonPrimitive")
+        assertEquals(imageUrl, imageUrlValue!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun testBuildResponseRequest_WithDataUriImage() {
+        val dataUri = "data:image/png;base64,iVBORw0KGgo="
+        val messages = listOf(
+            chatMessage {
+                text("Describe this image.")
+                image(dataUri)
+            }
+        )
+        val request = buildResponseRequest(TEST_MODEL, messages, MChatParameters())
+        val inputArray = request.input?.value as? JsonArray
+        assertNotNull(inputArray, "Input should be a JsonArray")
+        val firstMessage = inputArray!![0] as? JsonObject
+        assertNotNull(firstMessage, "First item should be a JsonObject")
+        val content = firstMessage!!["content"] as? JsonArray
+        assertNotNull(content, "Content should be a JsonArray for multi-part messages")
+        val imagePart = content!!.filterIsInstance<JsonObject>().firstOrNull {
+            it["type"]?.jsonPrimitive?.content == "input_image"
+        }
+        assertNotNull(imagePart, "Should have an input_image content part")
+        val imageUrlValue = imagePart!!["image_url"]
+        assertTrue(imageUrlValue is JsonObject, "Data URI should serialize image_url as a JsonObject { url: ... }")
+        assertEquals(dataUri, (imageUrlValue as JsonObject)["url"]?.jsonPrimitive?.content)
     }
 
     //endregion
