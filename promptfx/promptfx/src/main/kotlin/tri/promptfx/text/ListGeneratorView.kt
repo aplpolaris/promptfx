@@ -21,6 +21,7 @@ package tri.promptfx.text
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
@@ -32,12 +33,14 @@ import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.trace.JsonListMergeStrategy
 import tri.ai.prompt.trace.executeMultiAttemptJsonList
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.slider
 import tri.util.ui.sliderwitheditablelabel
 
 /** Plugin for the [ListGeneratorView]. */
@@ -59,6 +62,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
 
     private val numAttempts = SimpleIntegerProperty(1)
     private val mergeStrategy = SimpleObjectProperty(JsonListMergeStrategy.TOP_REPEATED)
+    private val minConsensus = SimpleDoubleProperty(0.5)
 
     private val output = SimpleObjectProperty<ListPromptResult>()
     private val outputItems = observableListOf<String>()
@@ -83,8 +87,27 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
                 tooltip("Strategy for combining items across multiple attempts.")
                 combobox(mergeStrategy, JsonListMergeStrategy.values().toList())
             }.enableWhen(numAttempts.greaterThan(1))
+            field("Min. Consensus") {
+                tooltip("Minimum fraction of attempts that must agree on an item for it to be included (only applies to TOP_REPEATED strategy).")
+                slider(0.0..1.0, minConsensus)
+                label(minConsensus.asString("%.2f"))
+            }.enableWhen(numAttempts.greaterThan(1).and(mergeStrategy.isEqualTo(JsonListMergeStrategy.TOP_REPEATED)))
         }
-        addDefaultChatParameters(common)
+        parameters("Chat Model") {
+            field("Model") {
+                combobox(controller.chatService, PromptFxModels.chatModels())
+            }
+            with(common) {
+                temperature()
+                maxTokens()
+            }
+            field("Number of Responses") {
+                disableWhen(numAttempts.greaterThan(1))
+                tooltip("Number of responses per request. Disabled when using multiple attempts.")
+                slider(1..10, common.numResponses)
+                label(common.numResponses.asString())
+            }
+        }
     }
 
     init {
@@ -152,14 +175,18 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             outputItems.clear()
         }
         val builder = common.completionBuilder()
+            .numResponses(1)
             .prompt(prompt.prompt.value)
             .params(INPUT to sourceText.get(), "item_category" to itemCategory.get(), "known_items" to sampleItems.get().parseSampleItems())
             .requestJson(true)
         return if (numAttempts.value > 1) {
             val localAttempts = numAttempts.value
             val localStrategy = mergeStrategy.value
+            val localMinConsensus = minConsensus.value
             val localChat = chatEngine
-            aitask("list-generator-multi-attempt") { builder.executeMultiAttemptJsonList(localChat, localAttempts, localStrategy) }.planner
+            aitask("list-generator-multi-attempt") {
+                builder.executeMultiAttemptJsonList(localChat, localAttempts, localStrategy, localMinConsensus, "items_in_input")
+            }.planner
         } else {
             builder.taskPlan(chatEngine)
         }

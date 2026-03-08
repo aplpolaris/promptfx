@@ -38,8 +38,11 @@ enum class JsonListMergeStrategy {
  * Attempts to extract a list of strings from this output's text content.
  * Handles clean JSON arrays, JSON objects whose first array-valued field is used,
  * and markdown code blocks wrapping either of the above.
+ *
+ * @param jsonKey if provided, extract the array field with this exact name from a JSON object
+ *   rather than using the first array-valued field; ignored when the JSON root is an array
  */
-fun AiOutput.tryJsonStringList(): List<String>? {
+fun AiOutput.tryJsonStringList(jsonKey: String? = null): List<String>? {
     // access fields directly to avoid the exception thrown by textContent() when no content exists
     val raw = text
         ?: message?.content
@@ -62,10 +65,15 @@ fun AiOutput.tryJsonStringList(): List<String>? {
         val node = jsonMapper.readTree(text)
         when {
             node.isArray -> (node as ArrayNode).map { it.asText() }
-            node.isObject -> node.fields().asSequence()
-                .map { it.value }
-                .firstOrNull { it.isArray }
-                ?.let { (it as ArrayNode).map { el -> el.asText() } }
+            node.isObject -> if (jsonKey != null) {
+                val field = node.get(jsonKey)
+                if (field != null && field.isArray) (field as ArrayNode).map { it.asText() } else null
+            } else {
+                node.fields().asSequence()
+                    .map { it.value }
+                    .firstOrNull { it.isArray }
+                    ?.let { (it as ArrayNode).map { el -> el.asText() } }
+            }
             else -> null
         }
     } catch (_: Exception) {
@@ -145,6 +153,9 @@ fun mergeJsonLists(
  * @param mergeStrategy strategy used to combine items from all attempts (default [JsonListMergeStrategy.TOP_REPEATED])
  * @param minAttemptFraction for [JsonListMergeStrategy.TOP_REPEATED]: minimum fraction of attempts
  *   an item must appear in (default 0.5); ignored for other strategies
+ * @param jsonKey if provided, extract the JSON object field with this name from each response
+ *   rather than using the first array-valued field; useful when the response is a JSON object
+ *   with multiple array fields (e.g. `"items_in_input"` vs `"known_items"`)
  * @return a merged [AiPromptTrace] whose single output contains the merged `List<String>`,
  *   or an error trace if all attempts fail or no valid JSON lists are found
  */
@@ -152,7 +163,8 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     chat: TextChat,
     attempts: Int = 3,
     mergeStrategy: JsonListMergeStrategy = JsonListMergeStrategy.TOP_REPEATED,
-    minAttemptFraction: Double = 0.5
+    minAttemptFraction: Double = 0.5,
+    jsonKey: String? = null
 ): AiPromptTrace {
     // ensure JSON output is requested
     requestJson(true)
@@ -181,7 +193,7 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     }
 
     val parsedLists = successful.mapNotNull { trace ->
-        trace.values?.firstOrNull()?.tryJsonStringList()
+        trace.values?.firstOrNull()?.tryJsonStringList(jsonKey)
     }
     if (parsedLists.isEmpty()) {
         val last = successful.last()

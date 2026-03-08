@@ -45,6 +45,31 @@ class AiPromptMultiAttemptTest {
     }
 
     @Test
+    fun `tryJsonStringList - jsonKey selects named field in JSON object`() {
+        val output = AiOutput(text = """{"known_items": ["fox", "cat"], "items_in_input": ["fox", "dog"]}""")
+        assertEquals(listOf("fox", "dog"), output.tryJsonStringList(jsonKey = "items_in_input"))
+    }
+
+    @Test
+    fun `tryJsonStringList - jsonKey returns null when key not found`() {
+        val output = AiOutput(text = """{"items": ["a", "b"]}""")
+        assertNull(output.tryJsonStringList(jsonKey = "missing_key"))
+    }
+
+    @Test
+    fun `tryJsonStringList - jsonKey ignored for plain JSON array`() {
+        val output = AiOutput(text = """["apple", "banana"]""")
+        assertEquals(listOf("apple", "banana"), output.tryJsonStringList(jsonKey = "ignored"))
+    }
+
+    @Test
+    fun `tryJsonStringList - without jsonKey picks first array field (known_items before items_in_input)`() {
+        // Demonstrates the bug that jsonKey fixes: without it, "known_items" is returned
+        val output = AiOutput(text = """{"known_items": ["fox"], "items_in_input": ["fox", "dog"]}""")
+        assertEquals(listOf("fox"), output.tryJsonStringList())
+    }
+
+    @Test
     fun `tryJsonStringList - markdown code fence`() {
         val output = AiOutput(text = "```json\n[\"one\", \"two\", \"three\"]\n```")
         assertEquals(listOf("one", "two", "three"), output.tryJsonStringList())
@@ -324,5 +349,24 @@ class AiPromptMultiAttemptTest {
         assertTrue(trace.exec.succeeded())
         val result = trace.values?.firstOrNull()?.other as? List<*>
         assertEquals(listOf("b", "c"), result)
+    }
+
+    @Test
+    fun `executeMultiAttemptJsonList - jsonKey extracts correct field from object responses`() = runTest {
+        // Simulates ListGeneratorView responses where known_items appears before items_in_input
+        val response = """{"item_category":"animals","known_items":["fox"],"items_in_input":["fox","dog"]}"""
+        val chat = fakeChat(response, response)
+        val trace = tri.ai.core.CompletionBuilder()
+            .text("list animals")
+            .executeMultiAttemptJsonList(
+                chat, attempts = 2,
+                mergeStrategy = JsonListMergeStrategy.UNION,
+                jsonKey = "items_in_input"
+            )
+
+        assertTrue(trace.exec.succeeded())
+        val result = trace.values?.firstOrNull()?.other as? List<*>
+        // Should contain fox and dog, NOT just fox (from known_items)
+        assertEquals(listOf("fox", "dog"), result)
     }
 }
