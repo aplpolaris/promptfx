@@ -137,6 +137,9 @@ val FontAwesomeIconView.fireOrange
     get() = apply { fill = Color(1.0, 69.0/255, 0.0, 1.0) }
 val FontAwesomeIconView.steelBlue
     get() = apply { fill = Color(70.0/255, 130.0/255, 180.0/255, 1.0) }
+/** Applies the app's current theme icon color from [PromptFxGlobals.iconColor]. */
+val FontAwesomeIconView.themed
+    get() = apply { fill = PromptFxGlobals.iconColor }
 
 //endregion
 

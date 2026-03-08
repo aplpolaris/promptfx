@@ -19,12 +19,16 @@
  */
 package tri.promptfx
 
+import javafx.scene.paint.Color
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.ai.prompt.fill
 
 /** Unified access to global objects within [PromptFx]. */
 object PromptFxGlobals {
+
+    /** Color used for sidebar/navigation icons throughout the app. Change this each minor version for a seasonal theme. */
+    val iconColor: Color = Color(34.0/255, 139.0/255, 34.0/255, 1.0) // forest green
 
     /** Prompt library. */
     val promptLibrary = PromptLibrary.INSTANCE
