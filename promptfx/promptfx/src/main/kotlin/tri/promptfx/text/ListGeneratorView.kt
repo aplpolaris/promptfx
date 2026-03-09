@@ -21,20 +21,34 @@ package tri.promptfx.text
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.TextChatMessage
+import tri.ai.core.CompletionBuilder
+import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.pips.AiPlanner
+import tri.ai.pips.aitask
+import tri.promptfx.AiChatEngine
+import tri.promptfx.execute
 import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.JsonListMergeStrategy
+import tri.ai.prompt.trace.mergeJsonLists
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.PromptFxModels
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.promptfield
 import tri.util.ui.MAPPER
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import tri.util.ui.slider
+import tri.util.ui.sliderwitheditablelabel
 
 /** Plugin for the [ListGeneratorView]. */
 class ListGeneratorPlugin : NavigableWorkspaceViewImpl<ListGeneratorView>("Text", "Convert to List", WorkspaceViewAffordance.INPUT_ONLY, ListGeneratorView::class)
@@ -53,6 +67,10 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
 
     private val prompt = PromptSelectionModel(promptsWithPrefix(PROMPT_PREFIX).first())
 
+    private val numAttempts = SimpleIntegerProperty(1)
+    private val mergeStrategy = SimpleObjectProperty(JsonListMergeStrategy.TOP_REPEATED)
+    private val minConsensus = SimpleDoubleProperty(0.5)
+
     private val output = SimpleObjectProperty<ListPromptResult>()
     private val outputItems = observableListOf<String>()
 
@@ -68,8 +86,35 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
                 textfield(sampleItems)
             }
             promptfield("Prompt", prompt, promptsWithPrefix(PROMPT_PREFIX), workspace)
+            field("Attempts") {
+                tooltip("Number of independent model queries to run and merge into a final result.")
+                sliderwitheditablelabel(1..10, numAttempts)
+            }
+            field("Merge Strategy") {
+                tooltip("Strategy for combining items across multiple attempts.")
+                combobox(mergeStrategy, JsonListMergeStrategy.values().toList())
+            }.enableWhen(numAttempts.greaterThan(1))
+            field("Min. Consensus") {
+                tooltip("Minimum fraction of attempts that must agree on an item for it to be included (only applies to TOP_REPEATED strategy).")
+                slider(0.0..1.0, minConsensus)
+                label(minConsensus.asString("%.2f"))
+            }.enableWhen(numAttempts.greaterThan(1).and(mergeStrategy.isEqualTo(JsonListMergeStrategy.TOP_REPEATED)))
         }
-        addDefaultChatParameters(common)
+        parameters("Chat Model") {
+            field("Model") {
+                combobox(controller.chatEngine, PromptFxModels.chatEngines())
+            }
+            with(common) {
+                temperature()
+                maxTokens()
+            }
+            field("Number of Responses") {
+                disableWhen(numAttempts.greaterThan(1))
+                tooltip("Number of responses per request. Disabled when using multiple attempts.")
+                slider(1..10, common.numResponses)
+                label(common.numResponses.asString())
+            }
+        }
     }
 
     init {
@@ -106,7 +151,16 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
 
         onCompleted {
-            val rawText = it.finalResult.firstValue.textContent()
+            val firstValue = it.finalResult.firstValue
+            // Multi-attempt result: `other` holds the merged ListPromptResult
+            val mergedResult = firstValue.other as? ListPromptResult
+            if (mergedResult != null) {
+                output.set(mergedResult)
+                outputItems.setAll(mergedResult.items_in_input.distinct())
+                return@onCompleted
+            }
+            // Single attempt: parse the full JSON result
+            val rawText = firstValue.textContent()
             val codeText = if ("```json" in rawText)
                 rawText.substringAfter("```json").substringBefore("```").trim()
             else
@@ -127,15 +181,96 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             output.set(null)
             outputItems.clear()
         }
-        return common.completionBuilder()
+        val builder = common.completionBuilder()
+            .numResponses(1)
             .prompt(prompt.prompt.value)
             .params(INPUT to sourceText.get(), "item_category" to itemCategory.get(), "known_items" to sampleItems.get().parseSampleItems())
             .requestJson(true)
-            .taskPlan(chatEngine)
+        return if (numAttempts.value > 1) {
+            val localAttempts = numAttempts.value
+            val localStrategy = mergeStrategy.value
+            val localMinConsensus = minConsensus.value
+            val localChat = chatEngine
+            aitask("list-generator-multi-attempt") {
+                mergeAttempts(builder, localChat, localAttempts, localStrategy, localMinConsensus)
+            }.planner
+        } else {
+            builder.taskPlan(chatEngine)
+        }
+    }
+
+    /** Runs [attempts] independent LLM calls, parses each as a [ListPromptResult], and merges them. */
+    private suspend fun mergeAttempts(
+        builder: CompletionBuilder,
+        engine: AiChatEngine,
+        attempts: Int,
+        strategy: JsonListMergeStrategy,
+        minConsensus: Double
+    ): AiPromptTrace {
+        builder.requestJson(true)
+        val startTime = System.currentTimeMillis()
+        val traces = (1..attempts).map { builder.execute(engine) }
+        val totalTime = System.currentTimeMillis() - startTime
+
+        val totalQueryTokens = traces.sumOf { it.exec.queryTokens ?: 0 }.takeIf { it > 0 }
+        val totalResponseTokens = traces.sumOf { it.exec.responseTokens ?: 0 }.takeIf { it > 0 }
+        val baseExecInfo = AiExecInfo(
+            attempts = attempts,
+            responseTimeMillisTotal = totalTime,
+            queryTokens = totalQueryTokens,
+            responseTokens = totalResponseTokens
+        )
+
+        val successful = traces.filter { it.exec.succeeded() }
+        if (successful.isEmpty()) {
+            val last = traces.last()
+            return AiPromptTrace(last.prompt, last.model, baseExecInfo.copy(error = last.exec.error, throwable = last.exec.throwable))
+        }
+
+        val parsedResults = successful.mapNotNull { trace ->
+            val rawText = trace.values?.firstOrNull()?.textContent()
+                ?: return@mapNotNull null
+            val codeText = when {
+                "```json" in rawText -> rawText.substringAfter("```json").substringBefore("```").trim()
+                "```" in rawText -> rawText.substringAfter("```").substringBefore("```").trim()
+                else -> rawText
+            }
+            try { MAPPER.readValue<ListPromptResult>(codeText) } catch (_: Exception) {
+                warning("Failed to parse attempt result as ListPromptResult: ${trace.values?.firstOrNull()?.textContent()}")
+                null
+            }
+        }
+        if (parsedResults.isEmpty()) {
+            val last = successful.last()
+            return AiPromptTrace(last.prompt, last.model,
+                baseExecInfo.copy(error = "No valid list result from ${successful.size} of $attempts attempt(s)"))
+        }
+
+        // Merge: metadata from first result; items_in_input with strategy; new_items union filtered to merged items
+        val first = parsedResults.first()
+        val mergedItems = mergeJsonLists(parsedResults.map { it.items_in_input.distinct() }, strategy, minConsensus)
+        val mergedItemsLower = mergedItems.map { it.lowercase() }.toSet()
+        val mergedNewItems = parsedResults
+            .flatMap { it.new_items?.entries ?: emptySet() }
+            .filter { it.key.lowercase() in mergedItemsLower }
+            .distinctBy { it.key.lowercase() }
+            .associate { it.key to it.value }
+
+        val merged = ListPromptResult(
+            item_category = first.item_category,
+            known_items = first.known_items,
+            items_in_input = mergedItems,
+            new_items = mergedNewItems
+        )
+        val last = successful.last()
+        return AiPromptTrace(last.prompt, last.model, baseExecInfo,
+            AiOutputInfo.text(JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(merged))
+        )
     }
 
     private fun String.parseSampleItems() =
-        split(",").joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" }
+        if (isNullOrBlank()) listOf<String>() else
+            split(",").joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" }
 
     /** Object describing result of a list prompt. */
     class ListPromptResult(
