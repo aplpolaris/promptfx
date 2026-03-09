@@ -54,6 +54,7 @@ import tri.promptfx.PromptFxConfig.Companion.DIR_KEYS
 import tri.promptfx.api.ModelsView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
+import tri.util.ui.starship.StarshipConfig
 import java.io.File
 
 /** Plugin for the [PromptFxSettingsView]. */
@@ -422,9 +423,74 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
 
     private fun showStarshipConfigDetails() {
         with(detailPane) {
+            val config = StarshipConfig.readRuntimeYaml()
 
-            // TODO - update this with starship configuration details
+            // Configuration file sources
+            val activeFile = StarshipConfig.runtimeConfigFiles.firstOrNull { it.exists() }
+            vbox(5) {
+                label("Configuration Files:") { style { fontWeight = FontWeight.BOLD } }
+                if (activeFile != null) {
+                    label("Active Config: ${activeFile.path} (${activeFile.length()} bytes)")
+                } else {
+                    label("Active Config: Built-in default (no runtime file found)") {
+                        style { fontStyle = FontPosture.ITALIC }
+                    }
+                }
+                StarshipConfig.runtimeConfigFiles.forEach { file ->
+                    label("• ${file.path}: ${if (file.exists()) "Found (${file.length()} bytes)" else "Not found"}")
+                }
+            }
 
+            separator()
+
+            // Question configuration
+            vbox(5) {
+                label("Question Configuration:") { style { fontWeight = FontWeight.BOLD } }
+                val templateLines = config.question.template.trim().lines()
+                label("Template: ${templateLines.first()}${if (templateLines.size > 1) "..." else ""}")
+                label("Topics (${config.question.topics.size}):")
+                config.question.topics.forEach { topic -> label("  • $topic") }
+                label("Examples (${config.question.examples.size}):")
+                config.question.examples.forEach { example -> label("  • $example") }
+                if (config.question.lists.isNotEmpty()) {
+                    label("Custom Lists (${config.question.lists.size}):")
+                    config.question.lists.forEach { (key, values) ->
+                        label("  • $key: ${values.size} entries")
+                    }
+                }
+            }
+
+            separator()
+
+            // Pipeline configuration
+            vbox(5) {
+                label("Pipeline Configuration:") { style { fontWeight = FontWeight.BOLD } }
+                label("Pipeline ID: ${config.pipeline.id ?: "(none)"}")
+                label("Steps (${config.pipeline.steps.size}):")
+                config.pipeline.steps.forEachIndexed { index, step ->
+                    label("  ${index + 1}. ${step.tool}" + (step.description?.let { ": $it" } ?: ""))
+                }
+                if (config.pipeline.steps.isEmpty()) {
+                    label("  No steps configured.") { style { fontStyle = FontPosture.ITALIC } }
+                }
+            }
+
+            separator()
+
+            // Layout configuration
+            vbox(5) {
+                label("Layout Configuration:") { style { fontWeight = FontWeight.BOLD } }
+                label("Grid: ${config.layout.numCols} columns × ${config.layout.numRows} rows")
+                label("Show Grid: ${config.layout.isShowGrid}")
+                label("Background Icon: ${config.layout.backgroundIcon} (count: ${config.layout.backgroundIconCount})")
+                label("Widgets (${config.layout.widgets.size}):")
+                config.layout.widgets.forEach { widget ->
+                    label("  • ${widget.varRef} (${widget.widgetType})" + (widget.overlay.title?.let { ": $it" } ?: ""))
+                }
+                if (config.layout.widgets.isEmpty()) {
+                    label("  No widgets configured.") { style { fontStyle = FontPosture.ITALIC } }
+                }
+            }
         }
     }
 
