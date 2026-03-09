@@ -33,7 +33,8 @@ class StarshipConfig() {
     var layout = StarshipConfigLayout()
 
     companion object {
-        private val RUNTIME_CONFIG_FILES = listOf(
+        /** Candidate runtime configuration files, checked in order. */
+        val runtimeConfigFiles = listOf(
             File("starship-custom.yaml"), File("config/starship-custom.yaml"),
             File("starship.yaml"), File("config/starship.yaml")
         )
@@ -51,7 +52,7 @@ class StarshipConfig() {
          * Checks for `starship-custom.yaml` first, then `starship.yaml`, in the current directory and `config/` subdirectory.
          */
         fun readRuntimeYaml(): StarshipConfig {
-            val configFile = RUNTIME_CONFIG_FILES.firstOrNull { it.exists() }
+            val configFile = runtimeConfigFiles.firstOrNull { it.exists() }
             if (configFile != null) {
                 info<StarshipConfig>("Loading Starship config from runtime file: ${configFile.path}")
                 try {
