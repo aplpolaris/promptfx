@@ -27,6 +27,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.CompletionBuilder
+import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.promptfx.AiChatEngine
@@ -155,7 +156,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             val mergedResult = firstValue.other as? ListPromptResult
             if (mergedResult != null) {
                 output.set(mergedResult)
-                outputItems.setAll(mergedResult.items_in_input)
+                outputItems.setAll(mergedResult.items_in_input.distinct())
                 return@onCompleted
             }
             // Single attempt: parse the full JSON result
@@ -227,22 +228,27 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
 
         val parsedResults = successful.mapNotNull { trace ->
-            val rawText = trace.values?.firstOrNull()?.let { it.text ?: it.message?.content } ?: return@mapNotNull null
+            val rawText = trace.values?.firstOrNull()?.textContent()
+                ?: return@mapNotNull null
             val codeText = when {
                 "```json" in rawText -> rawText.substringAfter("```json").substringBefore("```").trim()
                 "```" in rawText -> rawText.substringAfter("```").substringBefore("```").trim()
                 else -> rawText
             }
-            try { MAPPER.readValue<ListPromptResult>(codeText) } catch (_: Exception) { null }
+            try { MAPPER.readValue<ListPromptResult>(codeText) } catch (_: Exception) {
+                warning("Failed to parse attempt result as ListPromptResult: ${trace.values?.firstOrNull()?.textContent()}")
+                null
+            }
         }
         if (parsedResults.isEmpty()) {
             val last = successful.last()
-            return AiPromptTrace(last.prompt, last.model, baseExecInfo.copy(error = "No valid list result from ${successful.size} of $attempts attempt(s)"))
+            return AiPromptTrace(last.prompt, last.model,
+                baseExecInfo.copy(error = "No valid list result from ${successful.size} of $attempts attempt(s)"))
         }
 
         // Merge: metadata from first result; items_in_input with strategy; new_items union filtered to merged items
         val first = parsedResults.first()
-        val mergedItems = mergeJsonLists(parsedResults.map { it.items_in_input }, strategy, minConsensus)
+        val mergedItems = mergeJsonLists(parsedResults.map { it.items_in_input.distinct() }, strategy, minConsensus)
         val mergedItemsLower = mergedItems.map { it.lowercase() }.toSet()
         val mergedNewItems = parsedResults
             .flatMap { it.new_items?.entries ?: emptySet() }
@@ -257,11 +263,14 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             new_items = mergedNewItems
         )
         val last = successful.last()
-        return AiPromptTrace(last.prompt, last.model, baseExecInfo, AiOutputInfo.other(merged))
+        return AiPromptTrace(last.prompt, last.model, baseExecInfo,
+            AiOutputInfo.text(JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(merged))
+        )
     }
 
     private fun String.parseSampleItems() =
-        split(",").joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" }
+        if (isNullOrBlank()) listOf<String>() else
+            split(",").joinToString(prefix = "[", separator = ",", postfix = "]") { "\"${it.trim()}\"" }
 
     /** Object describing result of a list prompt. */
     class ListPromptResult(
