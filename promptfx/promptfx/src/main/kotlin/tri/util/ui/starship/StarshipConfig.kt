@@ -31,6 +31,7 @@ class StarshipConfig() {
     var question = StarshipConfigQuestion()
     var pipeline = PPlan(null, listOf())
     var layout = StarshipConfigLayout()
+    var repeatDelaySeconds: Int = 20
 
     companion object {
         /** Candidate runtime configuration files, checked in order. */

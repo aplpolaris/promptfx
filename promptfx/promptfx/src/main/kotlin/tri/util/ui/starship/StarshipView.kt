@@ -30,6 +30,7 @@ import javafx.scene.input.KeyCode
 import javafx.scene.layout.Pane
 import javafx.scene.shape.StrokeLineJoin
 import javafx.scene.transform.Rotate
+import javafx.scene.transform.Scale
 import javafx.stage.Screen
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
@@ -56,8 +57,9 @@ class StarshipView : Fragment("Starship") {
 
     private val curScreen = Screen.getScreensForRectangle(primaryStage.x, primaryStage.y, 1.0, 1.0).firstOrNull()
         ?: Screen.getPrimary()
-    internal val screenWidth = 1920 // curScreen.bounds.width
-    internal val screenHeight = 1080 // curScreen.bounds.height
+    internal val screenWidth = 1920
+    internal val screenHeight = 1080
+    private val scaleFactor = minOf(curScreen.bounds.width / screenWidth.toDouble(), curScreen.bounds.height / screenHeight.toDouble())
 
     private val css1 = ImmersiveChatView::class.java.getResource("resources/chat.css")!!
     private val css2 = StarshipView::class.java.getResource("resources/starship.css")!!
@@ -65,42 +67,62 @@ class StarshipView : Fragment("Starship") {
     private var isExplainerVisible = false
 
     override val root = pane {
-        stylesheets.add(css1.toExternalForm())
-        stylesheets.add(css2.toExternalForm())
-
-        if (layout.isShowGrid) {
-            addGrid()
+        // Design pane: content designed at 1920×1080, scaled and centered to fit the current screen.
+        // The Scale transform propagates uniformly to all child nodes including fonts and text.
+        var explainer: Pane? = null
+        onKeyPressed = EventHandler { event ->
+            if (event.code == KeyCode.X) {
+                explainer?.let {
+                    it.isVisible = !it.isVisible
+                    isExplainerVisible = it.isVisible
+                }
+            }
         }
 
-        chromePane = pane {
-            resizeRelocate(0.0, 0.0, 5.0, 5.0)
-        }
-        widgetLayoutContext = StarshipWidgetLayoutContext(layout, screenWidth.toDouble(), screenHeight.toDouble(), chromePane, results, baseComponent)
+        pane {
+            prefWidth = screenWidth.toDouble()
+            prefHeight = screenHeight.toDouble()
+            transforms.add(Scale(scaleFactor, scaleFactor, 0.0, 0.0))
+            layoutX = (curScreen.bounds.width - screenWidth * scaleFactor) / 2.0
+            layoutY = (curScreen.bounds.height - screenHeight * scaleFactor) / 2.0
 
-        // animating text widgets - positioned by widget config
-        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT }.forEach { widget ->
-            add(createWidget(widget, widgetLayoutContext))
-        }
+            stylesheets.add(css1.toExternalForm())
+            stylesheets.add(css2.toExternalForm())
 
-        // vertical text widgets - grouped by location so they can be stacked
-        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT_VERTICAL }
-            .groupBy { it.pos.x to it.pos.y }
-            .forEach { (loc, widgets) ->
-                ContainerWidget(widgetLayoutContext, widgets).addTo(this)
+            if (layout.isShowGrid) {
+                addGrid()
             }
 
-        // thumbnail widgets - positioned by widget config
-        layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_THUMBNAILS }.forEach { widget ->
-            // TODO - this is essentially hardcoded to the Doc Q&A view, want to be more flexible
-            add(ThumbnailWidget(widgetLayoutContext, widget).thumbnailBox)
-        }
+            chromePane = pane {
+                resizeRelocate(0.0, 0.0, 5.0, 5.0)
+            }
+            widgetLayoutContext = StarshipWidgetLayoutContext(layout, screenWidth.toDouble(), screenHeight.toDouble(), chromePane, results, baseComponent)
 
-        // fill background with random icons
-        addBackgroundIcons()
-        // add rocket indicator in lower-right corner to indicate ongoing processing
-        addProgressIndicator()
-        // add explainer overlay that can be turned on/off with "X" keypress
-        addExplainerOverlay()
+            // animating text widgets - positioned by widget config
+            layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT }.forEach { widget ->
+                add(createWidget(widget, widgetLayoutContext))
+            }
+
+            // vertical text widgets - grouped by location so they can be stacked
+            layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_TEXT_VERTICAL }
+                .groupBy { it.pos.x to it.pos.y }
+                .forEach { (loc, widgets) ->
+                    ContainerWidget(widgetLayoutContext, widgets).addTo(this)
+                }
+
+            // thumbnail widgets - positioned by widget config
+            layout.widgets.filter { it.widgetType == StarshipWidgetType.ANIMATING_THUMBNAILS }.forEach { widget ->
+                // TODO - this is essentially hardcoded to the Doc Q&A view, want to be more flexible
+                add(ThumbnailWidget(widgetLayoutContext, widget).thumbnailBox)
+            }
+
+            // fill background with random icons
+            addBackgroundIcons()
+            // add rocket indicator in lower-right corner to indicate ongoing processing
+            addProgressIndicator()
+            // add explainer overlay that can be turned on/off with "X" keypress
+            explainer = addExplainerOverlay()
+        }
     }
 
     //region RENDER HELPERS
@@ -152,19 +174,14 @@ class StarshipView : Fragment("Starship") {
         })
     }
 
-    /** Adds an explainer overlay that can be toggled with "X" keypress. */
-    private fun Pane.addExplainerOverlay() {
+    /** Adds an explainer overlay that can be toggled with "X" keypress on the root pane. Returns the overlay pane. */
+    private fun Pane.addExplainerOverlay(): Pane {
         val explainer = pane {
             isMouseTransparent = true
             isVisible = false
             layout.widgets.forEach { explainerOverlay(it) }
         }
-        onKeyPressed = EventHandler { event ->
-            if (event.code == KeyCode.X) {
-                explainer.isVisible = !explainer.isVisible
-                isExplainerVisible = explainer.isVisible
-            }
-        }
+        return explainer
     }
 
     /** Add a single explainer overlay for the given widget. */
@@ -249,8 +266,8 @@ class StarshipView : Fragment("Starship") {
             }
         }.also {
             it.setOnSucceeded {
-                info<StarshipView>("Starship pipeline succeeded. Triggering a new run in 20 seconds.")
-                runLater(20.seconds) { runPipeline() }
+                info<StarshipView>("Starship pipeline succeeded. Triggering a new run in ${configs.repeatDelaySeconds} seconds.")
+                runLater(configs.repeatDelaySeconds.seconds) { runPipeline() }
             }
         }
     }
