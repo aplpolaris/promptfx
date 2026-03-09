@@ -25,6 +25,9 @@ import tri.ai.text.chunks.TextChunker
 
 /** An interface for an embedding index. */
 abstract class EmbeddingIndex(val embeddingStrategy: EmbeddingStrategy) {
+    /** Optional progress callback for tracking embedding calculations (message, fractional progress 0.0–1.0). */
+    var onProgress: ((String, Double) -> Unit)? = null
+
     /** Find the most similar section to the query. */
     abstract suspend fun findMostSimilar(query: String, n: Int): List<EmbeddingMatch>
 }

@@ -127,7 +127,14 @@ class DocumentQaView: AiPlanTaskView(
             })
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
-            reindexOp = { planner.reindexAllDocuments() }
+            reindexOp = {
+                progress.taskStarted("Rebuilding embedding index...")
+                try {
+                    planner.reindexAllDocuments { msg, pct -> progress.progressUpdate(msg, pct) }
+                } finally {
+                    progress.taskCompleted()
+                }
+            }
         )
         parameters("Document Snippet Matching and Query") {
             field("# Matches") {
