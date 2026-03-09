@@ -27,7 +27,7 @@ data class StarshipConfigLayout(
     val backgroundIconCount: Int = 1000,
     val numCols: Int = 3,
     val numRows: Int = 3,
-    val isShowGrid: Boolean = true,
+    val isShowGrid: Boolean = false,
     val widgets: List<StarshipConfigWidget> = listOf<StarshipConfigWidget>()
 )
 

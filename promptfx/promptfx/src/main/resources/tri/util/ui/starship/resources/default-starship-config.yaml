@@ -1,5 +1,8 @@
 # default yaml configuration for starship pipeline and associated view config
 ---
+# Delay in seconds before restarting the pipeline after completion.
+repeatDelaySeconds: 20
+
 # Question randomizer configuration
 question:
   template: |
@@ -60,7 +63,7 @@ layout:
 
   numCols: 3
   numRows: 3
-  isShowGrid: true
+  isShowGrid: false
 
   widgets:
     - varRef: question

@@ -75,6 +75,7 @@ class StarshipPipelineExecutor(
     }
 
     suspend fun execute() {
+        results.started.set(true)
         val registry = ExecutableRegistry.Companion.create(
             listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +
                     PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
@@ -86,6 +87,7 @@ class StarshipPipelineExecutor(
             }
         }
         PPlanExecutor(registry).execute(plan, context, monitor)
+        results.completed.set(true)
     }
 }
 

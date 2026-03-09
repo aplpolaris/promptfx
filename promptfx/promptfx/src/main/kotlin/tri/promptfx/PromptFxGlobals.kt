@@ -33,6 +33,9 @@ val iconColor: Color = colorForestGreen
 val FontAwesomeIconView.themed
     get() = apply { fill = iconColor }
 
+/** Gets darker version of themed color. */
+val textThemedDarker = iconColor.darker().darker()
+
 /** Unified access to global objects within [PromptFx]. */
 object PromptFxGlobals {
 
