@@ -4,15 +4,15 @@
 set -e
 
 echo "=== Running openai-tagged tests in promptkt ==="
-(cd promptkt && mvn test -Dgroups=openai)
+(cd promptkt && mvn test -Dgroups=openai -DexcludedGroups=)
 
 echo "=== Running openai-tagged tests in promptex ==="
-(cd promptex && mvn test -Dgroups=openai)
+(cd promptex && mvn test -Dgroups=openai -DexcludedGroups=)
 
 echo "=== Running openai-tagged tests in promptrt ==="
-(cd promptrt && mvn test -Dgroups=openai)
+(cd promptrt && mvn test -Dgroups=openai -DexcludedGroups=)
 
 echo "=== Running openai-tagged tests in promptfx ==="
-(cd promptfx && mvn test -Dgroups=openai)
+(cd promptfx && mvn test -Dgroups=openai -DexcludedGroups=)
 
 echo "=== All openai-tagged tests completed successfully ==="

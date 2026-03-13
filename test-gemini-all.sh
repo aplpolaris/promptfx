@@ -4,15 +4,15 @@
 set -e
 
 echo "=== Running gemini-tagged tests in promptkt ==="
-(cd promptkt && mvn test -Dgroups=gemini)
+(cd promptkt && mvn test -Dgroups=gemini -DexcludedGroups=)
 
 echo "=== Running gemini-tagged tests in promptex ==="
-(cd promptex && mvn test -Dgroups=gemini)
+(cd promptex && mvn test -Dgroups=gemini -DexcludedGroups=)
 
 echo "=== Running gemini-tagged tests in promptrt ==="
-(cd promptrt && mvn test -Dgroups=gemini)
+(cd promptrt && mvn test -Dgroups=gemini -DexcludedGroups=)
 
 echo "=== Running gemini-tagged tests in promptfx ==="
-(cd promptfx && mvn test -Dgroups=gemini)
+(cd promptfx && mvn test -Dgroups=gemini -DexcludedGroups=)
 
 echo "=== All gemini-tagged tests completed successfully ==="
