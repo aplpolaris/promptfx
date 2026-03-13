@@ -60,6 +60,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <license.organizationName>Johns Hopkins University Applied Physics Laboratory</license.organizationName>
         <license.licenseName>apache_v2</license.licenseName>
+        <excludedGroups>gemini | openai | gemini-sdk</excludedGroups>
 
         <guava.version>33.5.0-jre</guava.version>
         <jackson.version>2.21.0</jackson.version>
@@ -171,9 +172,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
-                    <!-- TODO - set up profiles so we can run different test sets from command line -->
-                    <!--                    <excludedGroups>gemini</excludedGroups>-->
-                    <excludedGroups>gemini | openai</excludedGroups>
+                    <excludedGroups>${excludedGroups}</excludedGroups>
                     <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
