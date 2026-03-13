@@ -9,23 +9,19 @@ See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-a
 
 - `promptkt` (maven multi-module project) - PromptKt: core API and TextPlugin provider implementations.
   - `promptkt-core` - LLM and prompt engineering, core API definitions.
-  - **PROVIDER PLUGINS**
-    - `promptkt-provider-openai` - OpenAI plugin for prompt engineering and LLM interactions, also supports alternate APIs compatible with the OpenAI API.
-    - `promptkt-provider-gemini` - Gemini AI plugin for prompt engineering and LLM interactions.
-    - `promptkt-provider-gemini-sdk` - Gemini AI plugin using Google's official Java SDK for prompt engineering and LLM interactions.
-    - `promptkt-provider-sample` - Sample TextPlugin provider implementation.
+  - `promptkt-provider-openai` - OpenAI plugin for prompt engineering and LLM interactions, also supports alternate APIs compatible with the OpenAI API.
+  - `promptkt-provider-gemini` - Gemini AI plugin for prompt engineering and LLM interactions.
+  - `promptkt-provider-gemini-sdk` - Gemini AI plugin using Google's official Java SDK for prompt engineering and LLM interactions.
+  - `promptkt-provider-sample` - Sample TextPlugin provider implementation.
 - `promptex` (maven multi-module project) - Execution/service layer for AI workflows, RAG pipelines, and MCP integration.
-  - **WORKFLOWS**
-    - `promptex-pips` - Agent, tool, and pipeline logic.
-    - `promptex-docs` - Document management and RAG pipelines.
-  - **TOOLING**
-    - `promptex-mcp` - MCP (Model Context Protocol) server and client implementations.
+  - `promptex-pips` - Agent, tool, and pipeline logic.
+  - `promptex-docs` - Document management and RAG pipelines.
+  - `promptex-mcp` - MCP (Model Context Protocol) server and client implementations.
 - `promptrt` (maven multi-module project) - Command-line utilities for AI workflows.
   - `promptrt-cli` - Command-line utilities for AI workflows.
 - `promptfx-meta` (maven multi-module project) - UI for AI APIs and Workflows.
-  - **UI**
-    - `promptfx` - LLM demo application.
-    - `promptfx-sample-view-plugin` - Sample plugin demonstrating NavigableWorkspaceView.
+  - `promptfx` - LLM demo application.
+  - `promptfx-sample-view-plugin` - Sample plugin demonstrating NavigableWorkspaceView.
 
 ## API Key
 
