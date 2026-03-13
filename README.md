@@ -5,12 +5,27 @@ It is intended primarily for demonstration and exploration purposes, and is desi
 
 See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-and-promptfx) and [the wiki](https://github.com/aplpolaris/promptfx/wiki) for instructions to build and run PromptFx and troubleshooting.
 
-## Modules
+## Package Overview
 
-- **promptfx-meta** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx-meta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx-meta) *parent project*
-- **promptfx** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptfx) *JavaFx GUI*
-- **promptkt-core** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt-core) *utilities for working with AI APIs*
-- **promptkt-cli** [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.googlecode.blaisemath/promptkt-core) *CLI interfaces*
+- `promptkt` (maven multi-module project) - PromptKt: core API and TextPlugin provider implementations.
+  - `promptkt-core` - LLM and prompt engineering, core API definitions.
+  - **PROVIDER PLUGINS**
+    - `promptkt-provider-openai` - OpenAI plugin for prompt engineering and LLM interactions, also supports alternate APIs compatible with the OpenAI API.
+    - `promptkt-provider-gemini` - Gemini AI plugin for prompt engineering and LLM interactions.
+    - `promptkt-provider-gemini-sdk` - Gemini AI plugin using Google's official Java SDK for prompt engineering and LLM interactions.
+    - `promptkt-provider-sample` - Sample TextPlugin provider implementation.
+- `promptex` (maven multi-module project) - Execution/service layer for AI workflows, RAG pipelines, and MCP integration.
+  - **WORKFLOWS**
+    - `promptex-pips` - Agent, tool, and pipeline logic.
+    - `promptex-docs` - Document management and RAG pipelines.
+  - **TOOLING**
+    - `promptex-mcp` - MCP (Model Context Protocol) server and client implementations.
+- `promptrt` (maven multi-module project) - Command-line utilities for AI workflows.
+  - `promptrt-cli` - Command-line utilities for AI workflows.
+- `promptfx-meta` (maven multi-module project) - UI for AI APIs and Workflows.
+  - **UI**
+    - `promptfx` - LLM demo application.
+    - `promptfx-sample-view-plugin` - Sample plugin demonstrating NavigableWorkspaceView.
 
 ## API Key
 
