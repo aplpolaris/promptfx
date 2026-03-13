@@ -4,8 +4,8 @@
 using OpenAI and Google Gemini models, or models provided via another endpoint.
 It provides a graphical user interface to ask questions of local documents (Q&A),
 test large language models (LLMs), organize prompts, switch between runtime modes, 
-and interact with results — all in one clean, tabbed UI. It supports chat models, vision language models,
-audio models, and more.
+and interact with results — all in one clean, tabbed UI. It supports chat models, multimodal models,
+audio models, image generation models, and more.
 
 PromptFX is ideal for experimentation, prototyping, and learning about prompt workflows using real APIs.
 
@@ -307,7 +307,7 @@ See the `prompts/README.md` file for more details on prompt structure and usage.
 
 PromptFX supports two types of plugins that extend its functionality:
 
-- **API Plugins (TextPlugin)**: Add support for new AI model providers (chat, completion, embedding, vision, audio models)
+- **API Plugins (TextPlugin)**: Add support for new AI model providers (chat, completion, embedding, multimodal, image generation, audio models)
 - **View Plugins (NavigableWorkspaceView)**: Add custom UI views to the PromptFX workspace
 
 Plugins are installed by copying JAR files to the `config/plugins/` directory and restarting PromptFX. They are automatically discovered using Java's ServiceLoader mechanism.

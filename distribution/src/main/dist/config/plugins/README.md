@@ -10,10 +10,12 @@ PromptFx supports two types of plugins:
 
 API plugins extend PromptFx with support for additional AI model providers. They implement the `TextPlugin` interface and can provide:
 - Chat models
-- Text completion models  
+- Text completion models
+- Multimodal chat models
 - Embedding models
-- Vision models
-- Audio models
+- Image generation models
+- Speech-to-text models
+- Text-to-speech models
 
 **Example:** A plugin that adds support for a custom AI API endpoint would implement `TextPlugin` and register custom model implementations.
 
