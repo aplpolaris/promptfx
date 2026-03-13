@@ -4,9 +4,8 @@
 
 echo "Building PromptFx Sample Plugins..."
 
-# Build both plugins (each has its own Maven reactor, so they are built separately)
-mvn clean package -f promptkt/pom.xml -pl promptkt-provider-sample -q && \
-mvn clean package -f promptfx/pom.xml -pl promptfx-sample-view-plugin -q
+# Build both plugins
+mvn clean package -pl promptkt/promptkt-provider-sample,promptfx/promptfx-sample-view-plugin -q
 
 if [ $? -eq 0 ]; then
     echo "Build successful!"
