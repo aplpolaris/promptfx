@@ -18,7 +18,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-core</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

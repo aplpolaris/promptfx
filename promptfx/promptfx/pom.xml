@@ -73,31 +73,31 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptex-docs</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt-provider-gemini</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt-provider-gemini-sdk</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptkt-provider-openai</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptex-mcp</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
