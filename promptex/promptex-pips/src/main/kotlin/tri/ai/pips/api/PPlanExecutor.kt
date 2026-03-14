@@ -31,7 +31,8 @@ import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskMonitor
+import tri.ai.pips.ExecEvent
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
@@ -46,7 +47,7 @@ import tri.util.json.jsonMapper
  */
 class PPlanExecutor(private val registry: ExecutableRegistry) {
 
-    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: AiTaskMonitor) {
+    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: FlowCollector<ExecEvent>) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
         PPlanValidator.validateHasSteps(plan)
@@ -81,7 +82,7 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
 
     override suspend fun execute(
         inputs: Map<String, AiPromptTraceSupport>,
-        monitor: AiTaskMonitor
+        monitor: FlowCollector<ExecEvent>
     ): AiPromptTraceSupport {
         log("context", context.vars)
 

@@ -21,6 +21,9 @@ package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.*
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitProgress
+import tri.ai.pips.emitResponse
 
 /**
  * Default implementation of [AgentChat] supporting any multimodal model from the plugin system.
@@ -28,12 +31,12 @@ import tri.ai.core.*
  */
 class DefaultAgentChat : AgentChatSupport() {
 
-    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
-        emit(AgentChatEvent.Progress("Processing message..."))
+    override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+        emitProgress("Processing message...")
         updateSession(message, session)
 
         // get messages in context and prepare to execute model
-        emit(AgentChatEvent.Progress("Gathering context..."))
+        emitProgress("Gathering context...")
         val contextMessages = session.messagesInCurrentContext()
         val builder = CompletionBuilder()
             .tokens(session.config.maxTokens)
@@ -43,7 +46,7 @@ class DefaultAgentChat : AgentChatSupport() {
 
         // generate response
         val chat = findMultimodalChat(session, this)
-        emit(AgentChatEvent.Progress("Generating response..."))
+        emitProgress("Generating response...")
         val response = builder.execute(chat, contextMessages)
         val responseMessage = response.output?.outputs?.firstOrNull()?.multimodalMessage
             ?: throw IllegalStateException("No response from chat API")

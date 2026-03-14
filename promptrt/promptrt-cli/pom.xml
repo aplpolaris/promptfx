@@ -18,25 +18,25 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-docs</artifactId>
-            <version>0.15.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-mcp</artifactId>
-            <version>0.15.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-gemini</artifactId>
-            <version>0.15.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-openai</artifactId>
-            <version>0.15.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

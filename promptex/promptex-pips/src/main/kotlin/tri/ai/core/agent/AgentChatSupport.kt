@@ -27,6 +27,11 @@ import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.TextPlugin
 import tri.ai.core.textContent
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitProgress
+import tri.ai.pips.emitResponse
+import tri.ai.pips.emitUser
 import java.time.LocalDateTime
 
 /** Partial implementation of [AgentChat] with unimplemented methods. */
@@ -41,23 +46,23 @@ abstract class AgentChatSupport : AgentChat {
         return AgentChatFlow(
             flow {
                 val agentResponse = sendMessageSafe(session, message)
-                emit(AgentChatEvent.Response(agentResponse))
+                emitResponse(agentResponse)
             }.catch { e ->
                 // Remove the user message if we failed to process it
                 if (session.messages.lastOrNull() == message) {
                     session.messages.removeAt(session.messages.size - 1)
                 }
                 e.printStackTrace()
-                emit(AgentChatEvent.Error(e))
+                emitError(e)
             })
     }
 
     /**
      * Perform send message task while emitting intermediate events.
      * This is called within a try/catch block in [sendMessage] to handle errors.
-     * This should return with a final [AgentChatEvent.Response] or [AgentChatEvent.Error].
+     * This should return with a final [ExecEvent.Response] or [ExecEvent.Error].
      */
-    abstract suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse
+    abstract suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse
 
     override fun getSessionState(session: AgentChatSession) =
         AgentChatSessionState(sessionId = session.sessionId)
@@ -65,10 +70,10 @@ abstract class AgentChatSupport : AgentChat {
     //region CONVENIENCE METHODS FOR IMPLEMENTATIONS
 
     /** Gets text content from message, with logging. */
-    protected suspend fun FlowCollector<AgentChatEvent>.logTextContent(message: MultimodalChatMessage): String {
-        emit(AgentChatEvent.Progress("Processing message..."))
+    protected suspend fun FlowCollector<ExecEvent>.logTextContent(message: MultimodalChatMessage): String {
+        emitProgress("Processing message...")
         val content = message.textContent() ?: throw IllegalArgumentException("Expected a text message as input.")
-        emit(AgentChatEvent.User(content))
+        emitUser(content)
         return content
     }
 
@@ -82,20 +87,20 @@ abstract class AgentChatSupport : AgentChat {
     }
 
     /** Looks up a multimodal model for a given session. */
-    protected suspend fun findMultimodalChat(session: AgentChatSession, collector: FlowCollector<AgentChatEvent>): MultimodalChat {
-        collector.emit(AgentChatEvent.Progress("Finding model..."))
+    protected suspend fun findMultimodalChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): MultimodalChat {
+        collector.emitProgress("Finding model...")
         return try {
             TextPlugin.Companion.multimodalModel(session.config.modelId)
         } catch (e: Exception) {
             val first = TextPlugin.Companion.multimodalModels().first()
-            collector.emit(AgentChatEvent.Error(NullPointerException("Model ${session.config.modelId} not found, defaulting to first available model ${first.modelId}.")))
+            collector.emitError(NullPointerException("Model ${session.config.modelId} not found, defaulting to first available model ${first.modelId}."))
             first
         }
     }
 
     /** Looks up a model for a given session. */
-    protected suspend fun findChat(session: AgentChatSession, collector: FlowCollector<AgentChatEvent>): TextChat {
-        collector.emit(AgentChatEvent.Progress("Finding model..."))
+    protected suspend fun findChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): TextChat {
+        collector.emitProgress("Finding model...")
         return TextPlugin.Companion.chatModel(session.config.modelId)
     }
 
