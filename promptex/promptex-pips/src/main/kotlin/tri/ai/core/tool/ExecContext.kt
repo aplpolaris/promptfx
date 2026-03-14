@@ -20,27 +20,53 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.AiTaskMonitor
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.IgnoreMonitor
+import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.json.jsonMapper
 import java.util.UUID
 
 /** Runtime context available to every executable. */
 class ExecContext(
-    val vars: Map<String, JsonNode> = mutableMapOf(),
-    val resources: Map<String, Any?> = emptyMap(),
-    val traceId: String = UUID.randomUUID().toString()
+    scratchpad: Map<String, JsonNode> = emptyMap(),
+    resources: Map<String, Any?> = emptyMap(),
+    val traceId: String = UUID.randomUUID().toString(),
+    /** Monitor for emitting execution events. */
+    val monitor: AiTaskMonitor = IgnoreMonitor,
+    /** Previous task outputs, keyed by task id, for pipeline-style execution. */
+    val taskInputs: Map<String, AiPromptTraceSupport> = emptyMap()
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
 
-    private val vars_mutable = vars as MutableMap<String, JsonNode>
+    /** Mutable JSON data store used as a scratchpad for intermediate execution state. */
+    val scratchpad: MutableMap<String, JsonNode> = scratchpad.toMutableMap()
 
-    /** Updates a variable in the context. */
+    /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
+    val resources: MutableMap<String, Any?> = resources.toMutableMap()
+
+    /** Updates a scratchpad entry in the context. */
     fun put(key: String, value: JsonNode) {
-        vars_mutable[key] = value
+        scratchpad[key] = value
         variableSet(key, value)
     }
 
-    /** Hook called when a variable is set. */
+    /** Stores a named resource object in the context. */
+    fun putResource(key: String, value: Any?) {
+        resources[key] = value
+    }
+
+    /** Hook called when a scratchpad entry is set. */
     var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
+
+    /** Returns a copy of this context with the given monitor. */
+    fun withMonitor(monitor: FlowCollector<ExecEvent>) =
+        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
+
+    /** Returns a copy of this context with the given task inputs. */
+    fun withTaskInputs(taskInputs: Map<String, AiPromptTraceSupport>) =
+        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
 }

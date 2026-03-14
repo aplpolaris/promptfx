@@ -19,7 +19,7 @@
  */
 package tri.ai.pips
 
-import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.info
@@ -43,9 +43,9 @@ class RetryExecutor(
      * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
      * related to the number of attempts and total duration.
      */
-    suspend fun execute(task: AiTask, inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport {
+    suspend fun execute(task: AiTask, context: ExecContext): AiPromptTraceSupport {
         return retry.execute({
-            task.execute(inputs, monitor)
+            task.execute(context)
         }, onSuccess = { it ->
             val trace = it.value!!
             trace.copy(

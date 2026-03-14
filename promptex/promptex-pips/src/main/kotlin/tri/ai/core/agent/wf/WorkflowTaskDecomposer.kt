@@ -22,7 +22,7 @@ package tri.ai.core.agent.wf
 /** Strategy for decomposing tasks within a workflow. */
 interface WorkflowTaskDecomposer {
     /** Decomposes pending tasks in the workflow. */
-    fun decompose(state: WorkflowState): WorkflowTaskPlan
+    fun decompose(state: WorkflowPlanState): WorkflowTaskPlan
 }
 
 /** Results of a workflow planning step, consisting of a list of decomposed tasks. */

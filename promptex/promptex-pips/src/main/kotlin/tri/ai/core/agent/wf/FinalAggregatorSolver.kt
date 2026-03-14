@@ -19,10 +19,12 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.fill
 import tri.util.json.createJsonSchema
 import tri.util.json.createObject
@@ -35,12 +37,12 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
     createJsonSchema(REQUEST to "User's initial request", INTERMEDIATE_RESULTS to "Workflow's intermediate results"),
     createJsonSchema(RESULT to "Final aggregated result")
 ) {
-    override suspend fun solve(
-        state: WorkflowState,
-        task: WorkflowTask
-    ): WorkflowSolveStep {
+    override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
+        val state = context.workflowPlanState
+        val task = context.currentWorkflowTask
+
         val userRequest = state.request.request
-        val inputData = state.aggregateInputsAsStringFor(name, task.name)
+        val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
         val prompt = PROMPTS.get(AGGREGATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
             INPUTS_PARAM to inputData
@@ -56,13 +58,6 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
         // find answer between <<< and >>> if they exist
         val quotedResult = response.firstValue.textContent().findCode()
 
-        return WorkflowSolveStep(
-            task,
-            this,
-            createObject(REQUEST to userRequest, INTERMEDIATE_RESULTS to inputData),
-            createObject(RESULT to quotedResult),
-            response.exec.responseTimeMillisTotal ?: 0L,
-            true
-        )
+        return createObject(REQUEST to userRequest, INTERMEDIATE_RESULTS to inputData, RESULT to quotedResult)
     }
 }

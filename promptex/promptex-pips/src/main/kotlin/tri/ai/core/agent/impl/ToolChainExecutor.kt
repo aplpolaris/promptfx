@@ -56,7 +56,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val completionTokens = 2000
 
     private fun createScratchpad() = ExecContext().apply { put("steps", jsonMapper.createArrayNode()) }
-    private fun ExecContext.steps() = vars["steps"] as ArrayNode
+    private fun ExecContext.steps() = scratchpad["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 
     override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {

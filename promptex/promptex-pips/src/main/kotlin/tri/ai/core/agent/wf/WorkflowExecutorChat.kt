@@ -37,7 +37,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
     // use the LLM and the known set of solvers to select a sequence of tasks for a task in the workflow
     // for now to simplify things, we'll just limit this to the root "problem" in the workflow
     // we always have a final task to wrap things up, validating that the result matches the user's question
-    override suspend fun decomposeTask(state: WorkflowState, solvers: List<WorkflowSolver>): WorkflowTaskPlan {
+    override suspend fun decomposeTask(state: WorkflowPlanState, solvers: List<WorkflowSolver>): WorkflowTaskPlan {
         if (state.taskTree.findTask { it == state.request }!!.tasks.isNotEmpty()) {
             // println("${ANSI_GRAY}Problem task tree is not empty, skipping task decomposition.$ANSI_RESET")
             return WorkflowTaskPlan(listOf())
@@ -85,7 +85,7 @@ class WorkflowExecutorChat(val config: AgentChatConfig) :  WorkflowExecutorStrat
     }
 
     // since the LLM has already selected a suggested tool at this point, we can just lookup and return that solver
-    override suspend fun nextSolver(state: WorkflowState, solvers: List<WorkflowSolver>): Pair<WorkflowSolver, WorkflowTask> {
+    override suspend fun nextSolver(state: WorkflowPlanState, solvers: List<WorkflowSolver>): Pair<WorkflowSolver, WorkflowTask> {
         val task = state.taskTree.findTask { it is WorkflowTaskTool && !it.isDone }?.root as? WorkflowTaskTool
             ?: state.taskTree.findTask { it is WorkflowValidatorTask }?.root
             ?: throw WorkflowTaskNotFoundException("Unable to find task in workflow state")

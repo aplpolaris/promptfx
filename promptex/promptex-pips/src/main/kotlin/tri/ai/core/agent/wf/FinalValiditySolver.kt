@@ -19,14 +19,15 @@
  */
 package tri.ai.core.agent.wf
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.TextPlugin
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.fill
 import tri.util.json.createJsonSchema
-import tri.util.json.createObject
 import tri.util.json.jsonMapper
 import tri.util.json.yamlMapper
 import java.io.IOException
@@ -39,16 +40,13 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
     createJsonSchema(REQUEST to "User's initial request", RESULT to "Workflow's final result"),
     createJsonSchema(ANSWERED to "Flag indicating whether request has been answered", RATIONALE to "Assessment of result validity/relevance", VALIDATED_RESULT to "Validated final result")
 ) {
-    override suspend fun solve(
-        state: WorkflowState,
-        task: WorkflowTask
-    ): WorkflowSolveStep {
-        val t0 = System.currentTimeMillis()
+    override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
+        val state = context.workflowPlanState
 
-        // get input information from the state
+        // get input information from the context
         val userRequest = state.request.request
         val finalTaskId = state.taskTree.findTask { it is WorkflowUserRequest }!!.tasks.last().root.id
-        val finalResult = state.scratchpad.vars["$finalTaskId.result"]!!
+        val finalResult = context.scratchpad["$finalTaskId.result"]!!
         val finalResultText = finalResult.prettyPrint()
 
         // complete a prompt doing the assessment
@@ -69,19 +67,11 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         val validity = parseValidity(response.firstValue.textContent())
 
         // return a result object
-        val t1 = System.currentTimeMillis()
-        return WorkflowSolveStep(
-            task,
-            this,
-            createObject(REQUEST to userRequest, RESULT to finalResultText),
-            jsonMapper.createObjectNode().apply {
-                put(ANSWERED, validity.isRequestAnswered)
-                put(RATIONALE, validity.rationale)
-                put(VALIDATED_RESULT, finalResultText)
-            },
-            t1 - t0,
-            true
-        )
+        return jsonMapper.createObjectNode().apply {
+            put(ANSWERED, validity.isRequestAnswered)
+            put(RATIONALE, validity.rationale)
+            put(VALIDATED_RESULT, finalResultText)
+        }
     }
 
     private fun parseValidity(value: String): ResultValidity {

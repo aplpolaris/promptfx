@@ -77,22 +77,19 @@ class PPlanPlanner(
 }
 
 /** An executable task for a plan step. */
-class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val context: ExecContext) :
+class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val stepContext: ExecContext) :
     AiTask(step.tool, description = null, dependencies = setOf()) {
 
-    override suspend fun execute(
-        inputs: Map<String, AiPromptTraceSupport>,
-        monitor: FlowCollector<ExecEvent>
-    ): AiPromptTraceSupport {
-        log("context", context.vars)
+    override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
+        log("context", stepContext.scratchpad)
 
-        val inputMap = step.input.resolveRefs(context.vars)
+        val inputMap = step.input.resolveRefs(stepContext.scratchpad)
         log("input", inputMap)
 
-        val result = exec.execute(inputMap, context)
+        val result = exec.execute(inputMap, stepContext)
         log("output", result)
 
-        step.saveAs?.let { context.put(it, result) }
+        step.saveAs?.let { stepContext.put(it, result) }
         return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
     }
 

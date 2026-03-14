@@ -27,9 +27,9 @@ interface WorkflowExecutorStrategy {
      * @throws WorkflowToolNotFoundException
      * @throws WorkflowTaskNotFoundException
      */
-    suspend fun nextSolver(state: WorkflowState, solvers: List<WorkflowSolver>): Pair<WorkflowSolver, WorkflowTask>
+    suspend fun nextSolver(state: WorkflowPlanState, solvers: List<WorkflowSolver>): Pair<WorkflowSolver, WorkflowTask>
     /**
      * Identify a task checker to either break up a task, or determine that the initial workflow tasking has been solved.
      */
-    suspend fun decomposeTask(state: WorkflowState, solvers: List<WorkflowSolver>): WorkflowTaskPlan
+    suspend fun decomposeTask(state: WorkflowPlanState, solvers: List<WorkflowSolver>): WorkflowTaskPlan
 }

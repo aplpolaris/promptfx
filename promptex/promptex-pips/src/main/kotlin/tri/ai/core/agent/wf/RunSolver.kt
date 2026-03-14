@@ -19,6 +19,7 @@
  */
 package tri.ai.core.agent.wf
 
+import tri.ai.core.tool.ExecContext
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.openai.OpenAiCompletionChat
 import tri.ai.prompt.template
@@ -35,18 +36,11 @@ class RunSolver(
     val run: suspend (String) -> String
 ) : WorkflowSolver(name, description, version, createJsonSchema(INPUT to inputDescription), createJsonSchema(RESULT to outputDescription)) {
 
-    override suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep {
-        val t0 = System.currentTimeMillis()
-        val inputData = state.aggregateInputsAsStringFor(name, task.name)
+    override suspend fun execute(input: com.fasterxml.jackson.databind.JsonNode, context: ExecContext): com.fasterxml.jackson.databind.JsonNode {
+        val task = context.currentWorkflowTask
+        val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
         val result = run(inputData)
-        return WorkflowSolveStep(
-            task,
-            this,
-            createObject(INPUT, inputData),
-            createObject(RESULT, result),
-            System.currentTimeMillis() - t0,
-            true
-        )
+        return createObject(RESULT, result)
     }
 
 }

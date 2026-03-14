@@ -337,19 +337,14 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             createJsonSchema(PARAM_INPUT to "Input for $name"),
             createJsonSchema(PARAM_RESULT to "Result from $name")
         ) {
-            override suspend fun solve(
-                state: WorkflowState,
-                task: WorkflowTask
-            ): WorkflowSolveStep {
-                val t0 = System.currentTimeMillis()
-                val input = state.aggregateInputsAsStringFor(name, task.name)
-                val inputJson = createObject(PARAM_INPUT, input)
+            override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
+                val task = context.currentWorkflowTask
+                val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
+                val inputJson = createObject(PARAM_INPUT, inputData)
                 val result = runBlocking {
                     this@toSolver.execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
                 }.get(PARAM_RESULT).asText()
-                val resultJsonFinal = createObject(PARAM_RESULT, result)
-                val tt = System.currentTimeMillis() - t0
-                return WorkflowSolveStep(task, this, inputJson, resultJsonFinal, tt, true)
+                return createObject(PARAM_RESULT, result)
             }
         }
 
