@@ -20,6 +20,7 @@
 package tri.ai.pips
 
 import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -49,8 +50,9 @@ object AiPipelineExecutor {
             tasksToDo.forEach { task ->
                 try {
                     monitor.emitTaskStarted(task)
-                    val input = task.dependencies.associateWith { completedTasks[it]!! }
-                    val result = executor.execute(task, input, monitor)
+                    val taskInputs = task.dependencies.associateWith { completedTasks[it]!! }
+                    val context = ExecContext(monitor = monitor, taskInputs = taskInputs)
+                    val result = executor.execute(task, context)
                     val resultValue = result.output?.outputs
                     val err = result.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {

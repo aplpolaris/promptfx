@@ -20,14 +20,12 @@
 package tri.ai.pips
 
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class ExecEventTest {
 
@@ -35,7 +33,7 @@ class ExecEventTest {
     @Test
     fun testExecEventHierarchy() {
         val task = object : AiTask("test-task") {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+            override suspend fun execute(context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("result"))
         }
 
@@ -80,7 +78,7 @@ class ExecEventTest {
     @Test
     fun testIgnoreMonitor() = runTest {
         val task = object : AiTask("ignore-test") {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+            override suspend fun execute(context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
         // Should not throw
@@ -98,7 +96,7 @@ class ExecEventTest {
         }
 
         val task = object : AiTask("ext-test") {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+            override suspend fun execute(context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
 
@@ -134,7 +132,7 @@ class ExecEventTest {
 
         val tasks = listOf(
             object : AiTask("task-a") {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+                override suspend fun execute(context: ExecContext) =
                     AiPromptTrace(outputInfo = AiOutputInfo.text("a"))
             }
         )

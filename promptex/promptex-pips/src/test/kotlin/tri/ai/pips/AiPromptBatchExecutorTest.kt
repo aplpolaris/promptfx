@@ -94,7 +94,7 @@ class AiPromptBatchExecutorTest {
     fun testExecute_RunConfig() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), tri.ai.core.tool.ExecContext(monitor = PrintMonitor())).values
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
@@ -105,7 +105,7 @@ class AiPromptBatchExecutorTest {
     fun testExecute_RunConfig2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue
+            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), tri.ai.core.tool.ExecContext(monitor = PrintMonitor())).firstValue
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

@@ -80,19 +80,16 @@ class PPlanPlanner(
 class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val context: ExecContext) :
     AiTask(step.tool, description = null, dependencies = setOf()) {
 
-    override suspend fun execute(
-        inputs: Map<String, AiPromptTraceSupport>,
-        monitor: FlowCollector<ExecEvent>
-    ): AiPromptTraceSupport {
-        log("context", context.vars)
+    override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
+        log("context", this.context.vars)
 
-        val inputMap = step.input.resolveRefs(context.vars)
+        val inputMap = step.input.resolveRefs(this.context.vars)
         log("input", inputMap)
 
-        val result = exec.execute(inputMap, context)
+        val result = exec.execute(inputMap, this.context)
         log("output", result)
 
-        step.saveAs?.let { context.put(it, result) }
+        step.saveAs?.let { this.context.put(it, result) }
         return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
     }
 

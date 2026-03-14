@@ -19,13 +19,12 @@
  */
 package tri.ai.pips
 
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 
 class AiPipelineExecutorTest {
 
@@ -68,12 +67,12 @@ class AiPipelineExecutorTest {
     }
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+        override suspend fun execute(context: ExecContext) =
             AiPromptTrace(outputInfo = AiOutputInfo.text("go"))
     }
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask(id, null, deps) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+        override suspend fun execute(context: ExecContext) =
             AiPromptTrace.error(null, "fail", Exception("fail"))
     }
 

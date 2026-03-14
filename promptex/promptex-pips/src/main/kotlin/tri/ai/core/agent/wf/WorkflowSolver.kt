@@ -25,6 +25,19 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.util.json.tryJson
 
+/** Key for storing [WorkflowPlanState] in [ExecContext.resources]. */
+const val RESOURCE_WORKFLOW_PLAN_STATE = "workflowPlanState"
+/** Key for storing the current [WorkflowTask] in [ExecContext.resources]. */
+const val RESOURCE_WORKFLOW_TASK = "currentWorkflowTask"
+
+/** Extension property to get/set [WorkflowPlanState] from the context. */
+val ExecContext.workflowPlanState: WorkflowPlanState
+    get() = resources[RESOURCE_WORKFLOW_PLAN_STATE] as WorkflowPlanState
+
+/** Extension property to get/set the current [WorkflowTask] from the context. */
+val ExecContext.currentWorkflowTask: WorkflowTask
+    get() = resources[RESOURCE_WORKFLOW_TASK] as WorkflowTask
+
 /** Advances workflow towards a solution. */
 abstract class WorkflowSolver(
     override val name: String,
@@ -39,12 +52,13 @@ abstract class WorkflowSolver(
     /** Provide a plaintext description of this solver for use in prompts. */
     fun descriptionForPrompts() = "$name: $description"
 
-    /** Perform a solve step on the given execution state object. */
-    abstract suspend fun solve(state: WorkflowState, task: WorkflowTask): WorkflowSolveStep
-
-    override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-        TODO("Not implemented and TBD whether this is used - considering deprecating solve and the broader [WorkflowState] in favor of the [ExecContext]")
-    }
+    /**
+     * Executes this solver step using the provided context.
+     * The [WorkflowPlanState] and current [WorkflowTask] are available via [ExecContext.workflowPlanState]
+     * and [ExecContext.currentWorkflowTask] respectively.
+     * Returns the output as a [JsonNode] (typically an [ObjectNode]).
+     */
+    abstract override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode
 }
 
 /** Logs a step taken during workflow execution. */

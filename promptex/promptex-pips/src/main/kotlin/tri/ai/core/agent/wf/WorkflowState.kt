@@ -30,33 +30,31 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.ifEmpty
 
-/** Tracks state of workflow execution. */
-class WorkflowState(_request: WorkflowUserRequest) {
+/** Tracks the plan and history of a workflow execution, focused on managing the task plan. */
+class WorkflowPlanState(_request: WorkflowUserRequest) {
 
     /** The user request that needs to be solved. */
     var request = _request
     /** Tree of tasks required for workflow execution. */
     val taskTree = WorkflowTaskTree.createSolveAndValidateTree(request)
-    /** Scratchpad containing intermediate results and other useful information. */
-    val scratchpad = ExecContext()
     /** History of solver steps taken. */
     val solveHistory = mutableListOf<WorkflowSolveStep>()
     /** Flag indicating when the execution is complete. */
     var isDone: Boolean = false
         private set
 
-    init {
+    /** Initializes the context with the user input extracted from the request. */
+    fun initContext(context: ExecContext) {
         // TODO - this is very brittle
         val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
         if (userInput.isNotEmpty())
-            scratchpad.put("user_input", jsonMapper.valueToTree<JsonNode>(userInput))
-        // description ?? scratchpad["user_input"] = WVar("user_input", "User input for the workflow", userInput)
+            context.put("user_input", jsonMapper.valueToTree<JsonNode>(userInput))
     }
 
-    /** Add task results to the scratchpad. */
-    fun addResults(task: WorkflowTask, outputs: ObjectNode) {
+    /** Add task results to the context. */
+    fun addResults(task: WorkflowTask, outputs: ObjectNode, context: ExecContext) {
         outputs.properties().forEach { (key, value) ->
-            scratchpad.put("${task.id}.$key", value)
+            context.put("${task.id}.$key", value)
         }
     }
 
@@ -101,23 +99,22 @@ class WorkflowState(_request: WorkflowUserRequest) {
     }.toString().trim()
 
     /** Using the current plan, look up all the inputs associated with the given tool. */
-    fun aggregateInputsFor(toolName: String): Map<String, JsonNode> =
+    fun aggregateInputsFor(toolName: String, context: ExecContext): Map<String, JsonNode> =
         ((taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
-            ?: listOf()).associateWith { scratchpad.vars["$it.$RESULT"] ?: scratchpad.vars[it]!! }
+            ?: listOf()).associateWith { context.vars["$it.$RESULT"] ?: context.vars[it]!! }
 
     /** Aggregates inputs as a string value. */
-    fun aggregateInputsAsStringFor(toolName: String, taskName: String, separator: String = "\n"): String =
-        aggregateInputsFor(toolName).values.mapNotNull { it.prettyPrint() }.ifEmpty { listOf(taskName) }.joinToString(separator)
+    fun aggregateInputsAsStringFor(toolName: String, taskName: String, context: ExecContext, separator: String = "\n"): String =
+        aggregateInputsFor(toolName, context).values.mapNotNull { it.prettyPrint() }.ifEmpty { listOf(taskName) }.joinToString(separator)
 
     private fun JsonNode.prettyPrint() = when {
         isTextual -> asText()
         else -> toString()
     }
 
-    /** Get the final computed result from the scratchpad. */
-    // TODO - this is brittle since it assumes a specific output exists on the scratchpad, want a general purpose solution
-    fun finalResult() =
-        scratchpad.vars[FINAL_RESULT_ID]!!
+    /** Get the final computed result from the context. */
+    // TODO - this is brittle since it assumes a specific output exists on the context, want a general purpose solution
+    fun finalResult(context: ExecContext) =
+        context.vars[FINAL_RESULT_ID]!!
 
 }
-

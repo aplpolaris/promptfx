@@ -19,11 +19,10 @@
  */
 package tri.ai.pips
 
-import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.TextChat
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.prompt.trace.batch.AiPromptBatch
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
 
@@ -40,10 +39,7 @@ fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
 
 /** Create task for executing a run config. */
 fun AiPromptRunConfig.task(id: String) = object : AiTask(id) {
-    override suspend fun execute(
-        inputs: Map<String, AiPromptTraceSupport>,
-        monitor: FlowCollector<ExecEvent>
-    ): AiPromptTrace = try {
+    override suspend fun execute(context: ExecContext): AiPromptTrace = try {
         execute(modelLookup(modelInfo.modelId))
     } catch (x: NoSuchElementException) {
         AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))

@@ -19,7 +19,7 @@
  */
 package tri.ai.pips
 
-import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.*
 
 /** Stores a list of tasks that can be executed in order. */
@@ -71,8 +71,8 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
      */
     fun aitask(id: String, description: String? = null, op: suspend (AiOutput) -> AiPromptTraceSupport): AiTaskList {
         val newTask = object : AiTask(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport {
-                val result = inputs[lastTask.id] as AiPromptTraceSupport
+            override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
+                val result = context.taskInputs[lastTask.id] as AiPromptTraceSupport
                 return op(result.firstValue)
             }
         }
@@ -85,8 +85,8 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
      */
     fun aitaskonlist(id: String, description: String? = null, op: suspend (List<AiOutput>) -> AiPromptTraceSupport): AiTaskList {
         val newTask = object : AiTask(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport {
-                val result = inputs[lastTask.id] as AiPromptTraceSupport
+            override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
+                val result = context.taskInputs[lastTask.id] as AiPromptTraceSupport
                 return op(result.values ?: listOf())
             }
         }
@@ -122,7 +122,7 @@ fun tasklist(id: String, description: String? = null, op: suspend () -> List<AiO
 /** Creates a sequential task list with a single task. */
 fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport) = AiTaskList(listOf(),
     object: AiTask(id, description) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) = op()
+        override suspend fun execute(context: ExecContext) = op()
     })
 
 /** Initializes [AiTaskList] with a single task that returns an [AiOutput] and has access to the [AiTaskMonitor] for reporting sub-progress. */
@@ -136,7 +136,7 @@ fun taskwithmonitor(id: String, description: String? = null, op: suspend (AiTask
 /** Creates a sequential task list with a single task that has access to the [AiTaskMonitor] for reporting sub-progress. */
 fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTaskMonitor) -> AiPromptTraceSupport) = AiTaskList(listOf(),
     object : AiTask(id, description) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) = op(monitor)
+        override suspend fun execute(context: ExecContext) = op(context.monitor)
     })
 
 /**
@@ -146,8 +146,8 @@ fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTa
 fun List<AiTask>.aggregate(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask("promptBatch", dependencies = map { it.id }.toSet()) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTrace {
-            val aggregateResults = inputs.values.map {
+        override suspend fun execute(context: ExecContext): AiPromptTrace {
+            val aggregateResults = context.taskInputs.values.map {
                 it.output!!.outputs.map { it.content() }
             }
             // TODO - aggregate other parts of the intermediate results, e.g. model ids, prompts, etc.
@@ -164,8 +164,8 @@ fun List<AiTask>.aggregate(): AiTaskList {
 fun List<AiTask>.aggregatetrace(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask("promptBatch", dependencies = map { it.id }.toSet()) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTrace {
-            val aggregateResults = inputs.values.toList()
+        override suspend fun execute(context: ExecContext): AiPromptTrace {
+            val aggregateResults = context.taskInputs.values.toList()
             return AiPromptTrace(outputInfo = AiOutputInfo.output(AiOutput(other = aggregateResults)))
         }
     }
@@ -173,3 +173,4 @@ fun List<AiTask>.aggregatetrace(): AiTaskList {
 }
 
 //endregion
+

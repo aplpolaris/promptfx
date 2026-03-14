@@ -29,10 +29,9 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.agent.wf.WorkflowExecutorChat
 import tri.ai.core.agent.wf.WorkflowExecutor
-import tri.ai.core.agent.wf.WorkflowSolveStep
 import tri.ai.core.agent.wf.WorkflowSolver
-import tri.ai.core.agent.wf.WorkflowState
-import tri.ai.core.agent.wf.WorkflowTask
+import tri.ai.core.agent.wf.currentWorkflowTask
+import tri.ai.core.agent.wf.workflowPlanState
 import tri.util.json.PARAM_INPUT
 import tri.util.json.PARAM_RESULT
 import tri.util.json.createJsonSchema
@@ -84,19 +83,14 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
     createJsonSchema(PARAM_INPUT to "Input for $name"),
     createJsonSchema(PARAM_RESULT to "Result from $name")
 ) {
-    override suspend fun solve(
-        state: WorkflowState,
-        task: WorkflowTask
-    ): WorkflowSolveStep {
-        val t0 = System.currentTimeMillis()
-        val input = state.aggregateInputsAsStringFor(name, task.name)
+    override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
+        val state = context.workflowPlanState
+        val task = context.currentWorkflowTask
+        val inputData = state.aggregateInputsAsStringFor(name, task.name, context)
 
-        val inputJson = createObject(PARAM_INPUT, input)
+        val inputJson = createObject(PARAM_INPUT, inputData)
         val resultJson = this@toSolver.execute(inputJson, context)
         val result = resultJson.get(PARAM_RESULT)?.asText() ?: resultJson.toString()
-        val resultJsonFinal = createObject(PARAM_RESULT, result)
-        
-        val tt = System.currentTimeMillis() - t0
-        return WorkflowSolveStep(task, this, inputJson, resultJsonFinal, tt, true)
+        return createObject(PARAM_RESULT, result)
     }
 }
