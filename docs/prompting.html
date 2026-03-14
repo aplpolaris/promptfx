@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Testing &amp; Pipelines – PromptFx</title>
+  <meta name="description" content="Use PromptFx to experiment with LLM prompts, Mustache templates, multi-step pipelines, and NLP tasks — all in a visual workbench." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────────── -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="#3a7bd5"/>
+        <path d="M7 9h14M7 14h10M7 19h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="21" cy="19" r="3" fill="#00c9a7"/>
+      </svg>
+      PromptFx
+    </a>
+    <ul class="nav-links">
+      <li><a href="user-guide.html">Download &amp; Run</a></li>
+      <li><a href="prompting.html" class="active">Prompt Testing</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── PAGE HERO ─────────────────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="breadcrumb"><a href="index.html">Home</a> › Prompt Testing &amp; Pipelines</p>
+    <h1>🧪 Test Prompts &amp; Pipelines</h1>
+    <p class="page-hero-desc">
+      PromptFx is a visual workbench for LLM experimentation. Craft templates, compare models, chain calls,
+      and automate NLP tasks — all without writing code.
+    </p>
+  </div>
+</div>
+
+<!-- ─── CONTENT ───────────────────────────────────────────────────────── -->
+<section class="content-section">
+  <div class="content-inner">
+
+    <h2>The Tools Tab</h2>
+    <p>
+      The <strong>Tools</strong> tab is the core workbench for prompt engineering. It contains four main views:
+    </p>
+    <ul>
+      <li><strong>Prompt Library</strong> — Browse and search hundreds of built-in and custom prompts organized by category.</li>
+      <li><strong>Prompt Template</strong> — Edit and run templates interactively using <a href="https://mustache.github.io/" target="_blank" rel="noopener">Mustache</a> syntax. Fill in variables and see the completed prompt and response in real time.</li>
+      <li><strong>Prompt Scripting</strong> — Define a batch of prompt scripts and execute them in sequence against one or more models.</li>
+      <li><strong>Prompt Validator</strong> — Automatically validate model responses against expected outputs or custom criteria.</li>
+    </ul>
+
+    <div class="screenshot-wrapper" style="margin: 1.5rem 0;">
+      <div class="screenshot-chrome">
+        <span class="chrome-dot"></span><span class="chrome-dot"></span><span class="chrome-dot"></span>
+        <span class="chrome-title">Prompt Template view</span>
+      </div>
+      <img src="https://github.com/aplpolaris/promptfx/assets/13057929/3a1d64b7-ecb8-49df-933b-458776351c36"
+        alt="PromptFx Prompt Template view showing Mustache template editing with parameter substitution" loading="lazy" />
+    </div>
+
+    <h2>Prompt Templates with Mustache</h2>
+    <p>
+      Prompts are stored as <a href="https://mustache.github.io/" target="_blank" rel="noopener">Mustache</a> templates, making it easy to define reusable prompts with variable placeholders:
+    </p>
+    <pre><code>Translate the following {{language}} text to English:
+{{text}}</code></pre>
+    <p>
+      In the <em>Prompt Template</em> view, fill in the variable fields on the right panel and click
+      <strong>Run</strong> to send the completed prompt to the selected model.
+    </p>
+
+    <h2>Multi-Step Pipelines</h2>
+    <p>
+      The <strong>Prompt Scripting</strong> view lets you define a sequence of prompt steps that
+      feed outputs from one step as inputs to the next. This is useful for:
+    </p>
+    <ul>
+      <li>Summarizing a document, then extracting key entities from the summary</li>
+      <li>Translating text, then assessing translation quality</li>
+      <li>Generating a draft, then requesting a critique and revision</li>
+    </ul>
+    <div class="note-box">
+      Pipelines can also be defined programmatically using the <a href="developer.html">PromptKt library</a>.
+      The UI provides a convenient way to explore and validate pipeline logic before coding it.
+    </div>
+
+    <h2>API Playground</h2>
+    <p>
+      Under the <strong>API</strong> tab, PromptFx exposes raw API endpoints for:
+    </p>
+    <ul>
+      <li><strong>Completions</strong> — Classic text completions</li>
+      <li><strong>Chat</strong> — Multi-turn chat completions with system prompts</li>
+      <li><strong>Embeddings</strong> — Compute and inspect embedding vectors</li>
+      <li><strong>Images</strong> — Generate images with DALL-E or Gemini Imagen</li>
+      <li><strong>Audio</strong> — Speech-to-text (Whisper) and text-to-speech</li>
+      <li><strong>Models</strong> — Browse available models and their capabilities</li>
+    </ul>
+    <p>
+      These views are similar to the <a href="https://platform.openai.com/playground" target="_blank" rel="noopener">OpenAI Playground</a> and are great for exploring model behavior and comparing responses.
+    </p>
+
+    <h2>NLP Task Views</h2>
+    <p>
+      The <strong>Text</strong> tab provides high-level views for common NLP tasks:
+    </p>
+    <div class="screenshot-wrapper" style="margin: 1.5rem 0;">
+      <div class="screenshot-chrome">
+        <span class="chrome-dot"></span><span class="chrome-dot"></span><span class="chrome-dot"></span>
+        <span class="chrome-title">Text tab – NLP Tasks</span>
+      </div>
+      <img src="https://github.com/aplpolaris/promptfx/assets/13057929/8052d13f-7335-46e1-8e14-e3db00162e35"
+        alt="PromptFx Text tab showing NLP task views" loading="lazy" />
+    </div>
+    <ul>
+      <li>Translation (multiple target languages)</li>
+      <li>Summarization (short, medium, and bullet-point formats)</li>
+      <li>Sentiment analysis</li>
+      <li>Named entity extraction</li>
+      <li>Keyword extraction</li>
+      <li>Classification</li>
+    </ul>
+
+    <h2>Configuring Models</h2>
+    <p>
+      Use the toolbar dropdowns at the top of the application to select the default <strong>completion model</strong>
+      and <strong>embedding model</strong>. Most views respect these defaults, though each view's
+      configuration panel (right side) also allows per-view overrides.
+    </p>
+    <p>
+      PromptFx supports OpenAI models (GPT-4, GPT-3.5, etc.) and Google Gemini models out of the box.
+      To connect to a custom or locally hosted API, configure the base URL in the settings panel.
+    </p>
+
+    <div style="margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+      <a href="user-guide.html" class="btn btn-primary">Get the App</a>
+      <a href="https://github.com/aplpolaris/promptfx/wiki/Tools" target="_blank" rel="noopener" class="btn btn-outline">Tools Wiki ↗</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <ul class="footer-links">
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="user-guide.html">User Guide</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+    </ul>
+    <p>PromptFx is open source software licensed under the <a href="https://github.com/aplpolaris/promptfx/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0 License</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>
