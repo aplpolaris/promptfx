@@ -24,6 +24,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.util.warning
 
 /** Pipeline for chaining together collection of tasks to be accomplished by AI or APIs. */
 object AiPipelineExecutor {
@@ -59,8 +60,11 @@ object AiPipelineExecutor {
                     // Resolve trace: prefer context.traces (new-style), then check if result is a trace (legacy)
                     val trace: AiPromptTraceSupport = context.traces[task.id]
                         ?: (output as? AiPromptTraceSupport)
-                        ?: if (output != null) AiPromptTrace(outputInfo = AiOutputInfo.other(output))
-                        else AiPromptTrace(outputInfo = null)
+                        ?: run {
+                            warning<AiPipelineExecutor>("Task '${task.id}' did not log a trace; wrapping raw output. Migrate task to use context.logTrace().")
+                            if (output != null) AiPromptTrace(outputInfo = AiOutputInfo.other(output))
+                            else AiPromptTrace(outputInfo = null)
+                        }
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
