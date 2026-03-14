@@ -42,7 +42,6 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
 ) {
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
         val state = context.workflowPlanState
-        val t0 = System.currentTimeMillis()
 
         // get input information from the context
         val userRequest = state.request.request
