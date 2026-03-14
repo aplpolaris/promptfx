@@ -20,6 +20,7 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
 import tri.util.ANSI_BLUISH_GRAY
 import tri.util.ANSI_LIGHTBLUE
 import tri.util.ANSI_LIGHTGREEN
@@ -28,20 +29,20 @@ import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
 import tri.util.ANSI_SUN_YELLOW
 
-/** A basic collector that prints all events to standard out. */
-class AgentEventPrinter(var verbose: Boolean = false) : FlowCollector<AgentChatEvent> {
+/** A basic collector that prints all agent/chat events to standard out. */
+class AgentEventPrinter(var verbose: Boolean = false) : FlowCollector<ExecEvent> {
 
-    override suspend fun emit(event: AgentChatEvent) {
+    override suspend fun emit(event: ExecEvent) {
 
         when (event) {
-            is AgentChatEvent.User -> log(ANSI_SUN_YELLOW, "User", event.message)
-            is AgentChatEvent.Progress -> log(ANSI_BLUISH_GRAY, "Progress", event.message)
-            is AgentChatEvent.Reasoning -> log(ANSI_LIGHTGREEN, "Thought", event.reasoning)
-            is AgentChatEvent.PlanningTask -> log(ANSI_ORANGE, "Task", event.taskId, event.description)
-            is AgentChatEvent.UsingTool -> log(ANSI_ORANGE, "Tool-In", event.toolName, event.input)
-            is AgentChatEvent.ToolResult -> log(ANSI_ORANGE, "Tool-Out", event.toolName, event.result)
-            is AgentChatEvent.StreamingToken -> print(event.token)
-            is AgentChatEvent.Response -> {
+            is ExecEvent.User -> log(ANSI_SUN_YELLOW, "User", event.message)
+            is ExecEvent.Progress -> log(ANSI_BLUISH_GRAY, "Progress", event.message)
+            is ExecEvent.Reasoning -> log(ANSI_LIGHTGREEN, "Thought", event.reasoning)
+            is ExecEvent.PlanningTask -> log(ANSI_ORANGE, "Task", event.taskId, event.description)
+            is ExecEvent.UsingTool -> log(ANSI_ORANGE, "Tool-In", event.toolName, event.input)
+            is ExecEvent.ToolResult -> log(ANSI_ORANGE, "Tool-Out", event.toolName, event.result)
+            is ExecEvent.StreamingToken -> print(event.token)
+            is ExecEvent.Response -> {
                 val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
                 // TODO - if have been printing intermediate tokens, may not need to print the full response
                 log(ANSI_LIGHTBLUE, "Final", responseText)
@@ -50,12 +51,13 @@ class AgentEventPrinter(var verbose: Boolean = false) : FlowCollector<AgentChatE
                     log(ANSI_BLUISH_GRAY, "Reasoning", event.response.reasoning)
                 }
             }
-            is AgentChatEvent.Error -> {
+            is ExecEvent.Error -> {
                 log(ANSI_RED, "ERROR", event.error.message.toString())
                 if (verbose) {
                     event.error.printStackTrace()
                 }
             }
+            else -> {} // ignore task lifecycle events
         }
     }
 

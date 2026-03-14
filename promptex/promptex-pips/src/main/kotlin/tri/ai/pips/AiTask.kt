@@ -19,6 +19,7 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
@@ -39,11 +40,11 @@ abstract class AiTask(
      * A task that can be executed, using a table of input results indexed by key.
      * Input types are not specified.
      */
-    abstract suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport
+    abstract suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport
 
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
     fun monitor(callback: (List<AiOutput>) -> Unit): AiTask = object : AiTask(id) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport {
             val res = this@AiTask.execute(inputs, monitor)
             res.output?.outputs?.let { callback(it) }
             return res
@@ -51,7 +52,7 @@ abstract class AiTask(
     }
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
     fun monitorTrace(callback: (AiPromptTraceSupport) -> Unit): AiTask = object : AiTask(id) {
-        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>): AiPromptTraceSupport {
             val res = this@AiTask.execute(inputs, monitor)
             callback(res)
             return res
@@ -71,7 +72,7 @@ abstract class AiTask(
         /** Creates a task. */
         fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): AiTask =
             object: AiTask(id, description) {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) = op()
+                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) = op()
             }
 
         /** Creates a task that depends on a provided list of tasks. */
@@ -86,7 +87,7 @@ abstract class AiTask(
         /** Creates a task that depends on a provided list of tasks. */
         fun List<AiTask>.aitask(id: String, description: String? = null, op: suspend (Map<String, AiPromptTraceSupport>) -> AiPromptTraceSupport): AiTask =
             object : AiTask(id, description, map { it.id }.toSet()) {
-                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
+                override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
                     op(inputs)
             }
     }

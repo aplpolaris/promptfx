@@ -20,6 +20,12 @@
 package tri.ai.core.agent.impl
 
 import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitUsingTool
+import tri.ai.pips.emitToolResult
+import tri.ai.pips.emitReasoning
+import tri.ai.pips.emitStreamingToken
 import tri.ai.core.*
 import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
@@ -35,7 +41,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
     val params = MChatParameters(tools = MChatTools(tools = tools.mapNotNull { it.createTool() }))
 
-    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+    override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
         updateSession(message, session)
         logToolUsage()

@@ -19,6 +19,7 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.TextChat
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiPromptTrace
@@ -41,7 +42,7 @@ fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
 fun AiPromptRunConfig.task(id: String) = object : AiTask(id) {
     override suspend fun execute(
         inputs: Map<String, AiPromptTraceSupport>,
-        monitor: AiTaskMonitor
+        monitor: FlowCollector<ExecEvent>
     ): AiPromptTrace = try {
         execute(modelLookup(modelInfo.modelId))
     } catch (x: NoSuchElementException) {

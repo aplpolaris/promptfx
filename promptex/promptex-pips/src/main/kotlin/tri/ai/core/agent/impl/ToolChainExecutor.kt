@@ -25,7 +25,11 @@ import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.agent.AgentChatEvent
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitReasoning
+import tri.ai.pips.emitToolResult
+import tri.ai.pips.emitUsingTool
 import tri.ai.core.agent.AgentChatResponse
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentToolChatSupport
@@ -55,7 +59,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     private fun ExecContext.steps() = vars["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 
-    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+    override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
         updateSession(message, session)
         logToolUsage()
@@ -86,13 +90,13 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     )
 
     /** Runs a single step of an execution chain. */
-    private suspend fun FlowCollector<AgentChatEvent>.runExecChain(chat: TextChat, promptTemplate: String, scratchpad: ExecContext): ToolExecutableResult {
+    private suspend fun FlowCollector<ExecEvent>.runExecChain(chat: TextChat, promptTemplate: String, scratchpad: ExecContext): ToolExecutableResult {
         val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
 
         val completion = chat.chat(listOf(TextChatMessage.user(prompt)), stop = listOf("Observation: "), tokens = completionTokens)
             .firstValue.textContent().trim()
             .replace("\n\n", "\n")
-        emit(AgentChatEvent.Reasoning(completion))
+        emitReasoning(completion)
         scratchpad.steps().add(completion)
 
         if ("Final Answer:" in completion) {
@@ -104,7 +108,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         val tool = tools.find { it.name == responseOp["Action"] }
         if (tool == null) {
             val fallback = "Invalid or missing tool name."
-            emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
+            emitError(IllegalArgumentException(fallback))
             scratchpad.steps().add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
@@ -113,19 +117,19 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             ?.ifBlank { null }
         if (toolInput.isNullOrBlank()) {
             val fallback ="Tool input missing or malformed."
-            emit(AgentChatEvent.Error(IllegalArgumentException(fallback)))
+            emitError(IllegalArgumentException(fallback))
             scratchpad.steps().add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
 
         // execute tool
         val inputJson = createObject("input", toolInput)
-        emit(AgentChatEvent.UsingTool(tool.name, toolInput))
+        emitUsingTool(tool.name, toolInput)
         val executionResult = tool.execute(inputJson, ExecContext())
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
-        emit(AgentChatEvent.ToolResult(tool.name, resultText))
+        emitToolResult(tool.name, resultText)
         scratchpad.steps().add("Observation: $resultText")
 
         return ToolExecutableResult(

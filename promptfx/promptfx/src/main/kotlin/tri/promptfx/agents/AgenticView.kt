@@ -45,6 +45,7 @@ import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
+import tri.ai.pips.ExecEvent
 import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiOutputInfo
@@ -249,7 +250,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
 
         val result = flow.events
             .onEach { event -> uiCollector.emit(event) }
-            .filterIsInstance<AgentChatEvent.Response>()
+            .filterIsInstance<ExecEvent.Response>()
             .first()
             .response
             .message.textContent()!!
@@ -287,28 +288,29 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
     }
 
     /** UI-based agent flow collector that updates the log area. */
-    private inner class AgentFlowUICollector : FlowCollector<AgentChatEvent> {
-        override suspend fun emit(event: AgentChatEvent) {
+    private inner class AgentFlowUICollector : FlowCollector<ExecEvent> {
+        override suspend fun emit(event: ExecEvent) {
             val timestamp = System.currentTimeMillis()
             val logEntry = when (event) {
-                is AgentChatEvent.User -> formatLogEntry("USER", event.message)
-                is AgentChatEvent.Progress -> formatLogEntry("PROGRESS", event.message)
-                is AgentChatEvent.Reasoning -> formatLogEntry("REASONING", event.reasoning)
-                is AgentChatEvent.PlanningTask -> formatLogEntry("TASK", "${event.taskId}: ${event.description}")
-                is AgentChatEvent.UsingTool -> formatLogEntry("TOOL-IN", "${event.toolName}: ${event.input}")
-                is AgentChatEvent.ToolResult -> formatLogEntry("TOOL-OUT", "${event.toolName}: ${event.result}")
-                is AgentChatEvent.StreamingToken -> event.token // Just append the token
-                is AgentChatEvent.Response -> {
+                is ExecEvent.User -> formatLogEntry("USER", event.message)
+                is ExecEvent.Progress -> formatLogEntry("PROGRESS", event.message)
+                is ExecEvent.Reasoning -> formatLogEntry("REASONING", event.reasoning)
+                is ExecEvent.PlanningTask -> formatLogEntry("TASK", "${event.taskId}: ${event.description}")
+                is ExecEvent.UsingTool -> formatLogEntry("TOOL-IN", "${event.toolName}: ${event.input}")
+                is ExecEvent.ToolResult -> formatLogEntry("TOOL-OUT", "${event.toolName}: ${event.result}")
+                is ExecEvent.StreamingToken -> event.token // Just append the token
+                is ExecEvent.Response -> {
                     val responseText = event.response.message.textContent() ?: "[No response]"
                     val reasoning = event.response.reasoning
                     formatLogEntry("FINAL", responseText) +
                             if (reasoning != null) "\n${formatLogEntry("REASONING", reasoning)}" else ""
                 }
-                is AgentChatEvent.Error -> formatLogEntry("ERROR", event.error.message ?: "Unknown error")
+                is ExecEvent.Error -> formatLogEntry("ERROR", event.error.message ?: "Unknown error")
+                else -> return // ignore task lifecycle events
             }
 
             runLater {
-                if (event is AgentChatEvent.StreamingToken) {
+                if (event is ExecEvent.StreamingToken) {
                     agentLog.value = agentLog.value + logEntry
                 } else {
                     agentLog.value = agentLog.value + (if (agentLog.value.isNotEmpty()) "\n" else "") + logEntry

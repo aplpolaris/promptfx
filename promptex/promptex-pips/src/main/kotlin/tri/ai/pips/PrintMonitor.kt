@@ -19,32 +19,34 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.info
 import tri.util.warning
 
-/** Task monitor that prints to console. */
-class PrintMonitor: AiTaskMonitor {
+/** Task monitor that prints task lifecycle events to the console. */
+class PrintMonitor : FlowCollector<ExecEvent> {
 
-    override fun taskStarted(task: AiTask) {
-        printGray("Started: ${task.id}")
-    }
-
-    override fun taskUpdate(task: AiTask, progress: Double) {
-        printGray("Update: ${task.id} $progress")
-    }
-
-    override fun taskCompleted(task: AiTask, result: Any?) {
-        val value = (result as? AiPromptTrace)?.output?.outputs ?: result
-        if (value is Iterable<*> && value.count() > 1) {
-            printGray("  result:")
-            value.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
-        } else if (value is Iterable<*> && value.count() == 1) {
-            printGray("  result: \u001B[1m${value.first().pretty()}")
-        } else {
-            printGray("  result: \u001B[1m${value.pretty()}")
+    override suspend fun emit(value: ExecEvent) {
+        when (value) {
+            is ExecEvent.TaskStarted -> printGray("Started: ${value.task.id}")
+            is ExecEvent.TaskUpdate -> printGray("Update: ${value.task.id} ${value.progress}")
+            is ExecEvent.TaskCompleted -> {
+                val result = value.result
+                val v = (result as? AiPromptTrace)?.output?.outputs ?: result
+                if (v is Iterable<*> && v.count() > 1) {
+                    printGray("  result:")
+                    v.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
+                } else if (v is Iterable<*> && v.count() == 1) {
+                    printGray("  result: \u001B[1m${v.first().pretty()}")
+                } else {
+                    printGray("  result: \u001B[1m${v.pretty()}")
+                }
+                printGray("  completed: ${value.task.id}")
+            }
+            is ExecEvent.TaskFailed -> printRed("  failed: ${value.task.id} with error ${value.error}")
+            else -> {} // ignore agent/chat events
         }
-        printGray("  completed: ${task.id}")
     }
 
     private fun Any?.pretty(): String = when (this) {
@@ -54,13 +56,14 @@ class PrintMonitor: AiTaskMonitor {
         else -> toString()
     }
 
+    /** Hook for printing start of simple tasks. */
+    fun taskStarted(id: String) {
+        printGray("Started: $id")
+    }
+
     /** Hook for printing completion of simple tasks. */
     fun taskCompleted(id: String) {
         printGray("  completed: $id")
-    }
-
-    override fun taskFailed(task: AiTask, error: Throwable) {
-        printRed("  failed: ${task.id} with error $error")
     }
 
     private fun printGray(text: String) {

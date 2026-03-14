@@ -25,8 +25,8 @@ import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.PromptChatRegistry
-import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskMonitor
+import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.AiPlanStepTask
 import tri.ai.pips.api.PPlan
@@ -53,24 +53,21 @@ class StarshipPipelineExecutor(
 ) {
 
     /** Custom monitor for managing delay and tracking completed steps. */
-    val monitor = object : AiTaskMonitor {
+    val monitor = object : FlowCollector<ExecEvent> {
         val print = PrintMonitor()
-        override fun taskStarted(task: AiTask) {
-            print.taskStarted(task)
-        }
-        override fun taskUpdate(task: AiTask, progress: Double) {
-            print.taskUpdate(task, progress)
-        }
-        override fun taskCompleted(task: AiTask, result: Any?) {
-            print.taskCompleted(task, result)
-            if (task is AiPlanStepTask) {
-                results.activeStepVar.set(task.step.saveAs)
+        override suspend fun emit(value: ExecEvent) {
+            print.emit(value)
+            when (value) {
+                is ExecEvent.TaskCompleted -> {
+                    val completedTask = value.task
+                    if (completedTask is AiPlanStepTask) {
+                        results.activeStepVar.set(completedTask.step.saveAs)
+                    }
+                    Thread.sleep(stepDelayMs.toLong())
+                }
+                is ExecEvent.TaskFailed -> Thread.sleep(stepDelayMs.toLong())
+                else -> {}
             }
-            Thread.sleep(stepDelayMs.toLong())
-        }
-        override fun taskFailed(task: AiTask, error: Throwable) {
-            print.taskFailed(task, error)
-            Thread.sleep(stepDelayMs.toLong())
         }
     }
 

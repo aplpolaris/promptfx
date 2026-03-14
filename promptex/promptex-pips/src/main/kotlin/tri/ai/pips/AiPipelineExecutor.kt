@@ -19,6 +19,7 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -32,7 +33,7 @@ object AiPipelineExecutor {
      * Execute tasks in order, chaining results from one to another.
      * Returns the table of execution results.
      */
-    suspend fun execute(tasks: List<AiTask>, monitor: AiTaskMonitor): AiPipelineResult {
+    suspend fun execute(tasks: List<AiTask>, monitor: FlowCollector<ExecEvent>): AiPipelineResult {
         require(tasks.isNotEmpty()) { "No tasks to execute." }
 
         val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
@@ -47,21 +48,21 @@ object AiPipelineExecutor {
             }
             tasksToDo.forEach { task ->
                 try {
-                    monitor.taskStarted(task)
+                    monitor.emitTaskStarted(task)
                     val input = task.dependencies.associateWith { completedTasks[it]!! }
                     val result = executor.execute(task, input, monitor)
                     val resultValue = result.output?.outputs
                     val err = result.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
-                        monitor.taskFailed(task, err)
+                        monitor.emitTaskFailed(task, err)
                         failedTasks[task.id] = result
                     } else {
-                        monitor.taskCompleted(task, resultValue)
+                        monitor.emitTaskCompleted(task, resultValue)
                         completedTasks[task.id] = result
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
-                    monitor.taskFailed(task, x)
+                    monitor.emitTaskFailed(task, x)
                     failedTasks[task.id] = AiPromptTrace.error(null, x.message!!, x)
                 }
             }

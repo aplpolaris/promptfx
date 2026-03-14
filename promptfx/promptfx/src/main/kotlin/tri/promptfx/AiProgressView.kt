@@ -26,6 +26,7 @@ import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Priority
 import javafx.stage.Popup
+import kotlinx.coroutines.flow.FlowCollector
 import tornadofx.*
 import tri.ai.pips.*
 import tri.ai.prompt.trace.AiOutput
@@ -33,7 +34,7 @@ import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /** Global progress bar. */
-class AiProgressView: View(), AiTaskMonitor {
+class AiProgressView : View(), FlowCollector<ExecEvent> {
 
     lateinit var indicator: javafx.scene.control.ProgressBar
     lateinit var label: Label
@@ -74,9 +75,10 @@ class AiProgressView: View(), AiTaskMonitor {
 
     //region MONITOR
 
-    /** Start progress bar for a given task. */
+    /** Start progress bar for a given task id string. */
     fun taskStarted(id: String) {
-        taskStarted(AiTask.task(id) { AiOutput() })
+        PrintMonitor().taskStarted(id)
+        showTaskStarted(id)
     }
 
     /** End all tasks and hide progress bar. */
@@ -84,51 +86,54 @@ class AiProgressView: View(), AiTaskMonitor {
         end()
     }
 
-    override fun taskStarted(task: AiTask) {
-        PrintMonitor().taskStarted(task)
-        Platform.runLater {
-            indicator.progress = -1.0
-            indicator.isVisible = true
-            label.isVisible = true
-            label.text = task.id
+    override suspend fun emit(value: ExecEvent) {
+        when (value) {
+            is ExecEvent.TaskStarted -> {
+                PrintMonitor().emit(value)
+                showTaskStarted(value.task.id)
+            }
+            is ExecEvent.TaskUpdate -> {
+                PrintMonitor().emit(value)
+                progressUpdate(value.task.id, value.progress)
+            }
+            is ExecEvent.TaskCompleted -> {
+                PrintMonitor().emit(value)
+                end()
+            }
+            is ExecEvent.TaskFailed -> {
+                PrintMonitor().emit(value)
+                end()
+            }
+            else -> {} // ignore agent/chat events
         }
     }
 
-    override fun taskUpdate(task: AiTask, progress: Double) {
-        PrintMonitor().taskUpdate(task, progress)
-        progressUpdate(task.id, progress)
-    }
-
-    override fun progressUpdate(message: String, progress: Double) {
+    /** Updates the progress bar with a message and progress fraction. */
+    fun progressUpdate(message: String, progress: Double) {
         Platform.runLater {
             indicator.progress = progress
             label.text = message
         }
     }
 
-    override fun taskCompleted(task: AiTask, result: Any?) {
-        PrintMonitor().taskCompleted(task, result)
-        end()
-    }
-
-    override fun taskFailed(task: AiTask, error: Throwable) {
-        PrintMonitor().taskFailed(task, error)
-        end()
-    }
-
     fun taskStarted(task: Task<AiPipelineResult>, id: String) {
-        taskStarted(object : AiTask(id) {
-            override suspend fun execute(
-                inputs: Map<String, AiPromptTraceSupport>,
-                monitor: AiTaskMonitor
-            ) = task.value as AiPromptTrace
-        })
+        PrintMonitor().taskStarted(id)
+        showTaskStarted(id)
     }
 
     /** Hook for printing completion of simple tasks. */
     fun taskCompleted(id: String) {
         PrintMonitor().taskCompleted(id)
         end()
+    }
+
+    private fun showTaskStarted(id: String) {
+        Platform.runLater {
+            indicator.progress = -1.0
+            indicator.isVisible = true
+            label.isVisible = true
+            label.text = id
+        }
     }
 
     private fun end() {

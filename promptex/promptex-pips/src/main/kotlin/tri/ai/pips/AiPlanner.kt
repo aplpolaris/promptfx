@@ -19,13 +19,15 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
+
 /** Takes user input and generates a series of tasks to be executed. */
 interface AiPlanner {
 
     fun plan(): List<AiTask>
 
     /** Executes the plan with [AiPipelineExecutor]. */
-    suspend fun execute(monitor: AiTaskMonitor) = AiPipelineExecutor.execute(plan(), monitor)
+    suspend fun execute(monitor: FlowCollector<ExecEvent>) = AiPipelineExecutor.execute(plan(), monitor)
 
     companion object {
         /** Consolidates all planners into a single planner. */

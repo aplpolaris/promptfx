@@ -19,11 +19,17 @@
  */
 package tri.ai.text.docs
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskList
+import tri.ai.pips.progressUpdate
 import tri.ai.pips.taskwithmonitor
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
@@ -63,11 +69,13 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         snippetCallback: (List<EmbeddingMatch>) -> Unit
     ): AiTaskList = taskwithmonitor("load-embeddings-file-and-calculate") { monitor ->
         // trigger loading of embeddings file (with progress), the result is ignored
-        index.onProgress = { msg, pct -> monitor.progressUpdate(msg, pct) }
+        val progressScope = CoroutineScope(currentCoroutineContext() + Job())
+        index.onProgress = { msg, pct -> progressScope.launch { monitor.progressUpdate(msg, pct) } }
         try {
             AiOutput(other = index.findMostSimilar("a", 1))
         } finally {
             index.onProgress = null
+            progressScope.cancel()
         }
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks

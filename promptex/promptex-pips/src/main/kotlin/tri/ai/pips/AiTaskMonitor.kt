@@ -19,32 +19,29 @@
  */
 package tri.ai.pips
 
+import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
-/** Tracks status of tasks. */
-interface AiTaskMonitor {
-    fun taskStarted(task: AiTask)
-    fun taskUpdate(task: AiTask, progress: Double)
-    fun taskCompleted(task: AiTask, result: Any?)
-    fun taskFailed(task: AiTask, error: Throwable)
+/**
+ * Monitors execution status of tasks via [ExecEvent] emissions.
+ * This replaces the original callback-based interface with a [FlowCollector]<[ExecEvent]>-based model,
+ * so that task lifecycle and agent chat events share a single unified event stream.
+ */
+typealias AiTaskMonitor = FlowCollector<ExecEvent>
 
-    /**
-     * Reports sub-progress within a task with a descriptive message and a fractional progress value (0.0–1.0).
-     * The default implementation delegates to [taskUpdate] using a temporary task whose id carries the message.
-     */
-    fun progressUpdate(message: String, progress: Double) {
-        taskUpdate(object : AiTask(message) {
-            override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor) =
-                AiPromptTrace(outputInfo = AiOutputInfo.text(message))
-        }, progress)
-    }
+/** Monitor that silently ignores all events. */
+object IgnoreMonitor : FlowCollector<ExecEvent> {
+    override suspend fun emit(value: ExecEvent) {}
 }
 
-object IgnoreMonitor : AiTaskMonitor {
-    override fun taskStarted(task: AiTask) {}
-    override fun taskUpdate(task: AiTask, progress: Double) {}
-    override fun taskCompleted(task: AiTask, result: Any?) {}
-    override fun taskFailed(task: AiTask, error: Throwable) {}
-}
+/**
+ * Reports sub-progress within a task with a descriptive message and a fractional progress value (0.0–1.0).
+ * Emits a [ExecEvent.TaskUpdate] carrying a temporary [AiTask] whose id holds the message.
+ */
+suspend fun FlowCollector<ExecEvent>.progressUpdate(message: String, progress: Double) =
+    emitTaskUpdate(object : AiTask(message) {
+        override suspend fun execute(inputs: Map<String, AiPromptTraceSupport>, monitor: FlowCollector<ExecEvent>) =
+            AiPromptTrace(outputInfo = AiOutputInfo.text(message))
+    }, progress)
