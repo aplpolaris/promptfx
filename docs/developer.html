@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Docs – PromptKt Library</title>
+  <meta name="description" content="Use the PromptKt Kotlin library for document chunking, embeddings, prompt templates, agent pipelines, and MCP tool integration in your own JVM project." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────────── -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="#3a7bd5"/>
+        <path d="M7 9h14M7 14h10M7 19h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="21" cy="19" r="3" fill="#00c9a7"/>
+      </svg>
+      PromptFx
+    </a>
+    <ul class="nav-links">
+      <li><a href="user-guide.html">Download &amp; Run</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+      <li><a href="developer.html" class="active">Developer Docs</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── PAGE HERO ─────────────────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="breadcrumb"><a href="index.html">Home</a> › Developer Docs</p>
+    <h1>⚙️ Build with PromptKt</h1>
+    <p class="page-hero-desc">
+      The PromptKt Kotlin library gives you a programmatic API for document chunking, embeddings,
+      prompt templates, multi-step agent pipelines, and MCP tool integration.
+    </p>
+  </div>
+</div>
+
+<!-- ─── CONTENT ───────────────────────────────────────────────────────── -->
+<section class="content-section">
+  <div class="content-inner">
+
+    <h2>Repository Structure</h2>
+    <p>The repository is organized into four top-level Maven modules:</p>
+    <ul>
+      <li><code>promptkt/</code> — Core Kotlin library for AI API interactions
+        <ul>
+          <li><code>promptkt-core</code> — LLM interfaces, document chunking, embeddings, prompt templates, pipelines</li>
+          <li><code>promptkt-provider-openai</code> — OpenAI API provider (also supports compatible APIs)</li>
+          <li><code>promptkt-provider-gemini</code> — Google Gemini provider (REST)</li>
+          <li><code>promptkt-provider-gemini-sdk</code> — Google Gemini provider (official Java SDK)</li>
+          <li><code>promptkt-provider-sample</code> — Template for adding new providers</li>
+        </ul>
+      </li>
+      <li><code>promptex/</code> — Extended execution and service layer
+        <ul>
+          <li><code>promptex-pips</code> — Agent, tool, and pipeline logic</li>
+          <li><code>promptex-docs</code> — Document management and RAG pipelines</li>
+          <li><code>promptex-mcp</code> — MCP (Model Context Protocol) server and client</li>
+        </ul>
+      </li>
+      <li><code>promptrt/</code> — Command-line utilities (<code>promptrt-cli</code>)</li>
+      <li><code>promptfx/</code> — JavaFX desktop application and sample plugin</li>
+    </ul>
+
+    <h2>Building the Project</h2>
+    <p>Requirements: <strong>Java 17+</strong> and <strong>Maven 3.9.3+</strong>.</p>
+    <pre><code># Build all modules in order
+mvn -B install -DskipTests --file promptkt/pom.xml
+mvn -B install -DskipTests --file promptex/pom.xml
+mvn -B install -DskipTests --file promptrt/pom.xml
+mvn -B install -DskipTests --file promptfx/pom.xml</code></pre>
+    <pre><code># Run tests (excludes tests requiring API keys)
+mvn -B test --file promptkt/pom.xml</code></pre>
+
+    <div class="note-box">
+      Integration tests that require live API keys are tagged <code>@Tag("openai")</code> or
+      <code>@Tag("gemini")</code> and are excluded from the default test run.
+      See the <a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a> for how to run them.
+    </div>
+
+    <h2>Core API Concepts</h2>
+
+    <h3>Text Completion &amp; Chat</h3>
+    <p>
+      The <code>TextPlugin</code> interface (in <code>promptkt-core</code>) defines the core API for
+      text completion and chat. Provider implementations are in the <code>promptkt-provider-*</code> modules.
+    </p>
+    <pre><code>// Get a chat response from any configured TextPlugin
+val response = plugin.chat(listOf(
+    ChatMessage(role = Role.System, content = "You are a helpful assistant."),
+    ChatMessage(role = Role.User, content = "What is RAG?")
+))</code></pre>
+
+    <h3>Prompt Templates</h3>
+    <p>
+      Prompts are defined as <a href="https://mustache.github.io/" target="_blank" rel="noopener">Mustache</a> templates
+      in YAML prompt library files and loaded at runtime via <code>PromptLibrary</code>:
+    </p>
+    <pre><code>val prompt = PromptLibrary.lookupPrompt("my-prompt-id")
+val filled = prompt.fill(mapOf("language" to "French", "text" to "Hello, world!"))</code></pre>
+
+    <h3>Document Chunking &amp; Embeddings</h3>
+    <p>
+      Use the utilities in <code>promptex-docs</code> to load documents, chunk them, and compute embeddings
+      for a local vector store:
+    </p>
+    <pre><code>val chunks = DocumentChunker().chunk(file, chunkSize = 500)
+val embeddings = embeddingPlugin.embedTexts(chunks.map { it.text })
+// Store embeddings in LocalEmbeddingIndex for retrieval</code></pre>
+
+    <h3>RAG Pipelines</h3>
+    <p>
+      The document Q&amp;A pipeline uses embeddings to retrieve relevant chunks and passes them as
+      context to the completion model. You can assemble the same pipeline in code using
+      <code>promptex-pips</code>:
+    </p>
+    <pre><code>val pipeline = DocQaPipeline(
+    embeddingPlugin = embeddingPlugin,
+    completionPlugin = completionPlugin,
+    index = embeddingIndex
+)
+val answer = pipeline.ask("What does the paper say about transformers?")</code></pre>
+
+    <h3>Agent Pipelines &amp; Tool Use</h3>
+    <p>
+      The <code>promptex-pips</code> module provides <code>AiTask</code>, <code>ExecContext</code>, and
+      <code>WorkflowSolver</code> abstractions for multi-step agentic workflows with tool use:
+    </p>
+    <pre><code>val task = MyCustomTask()
+val context = ExecContext(monitor = myMonitor, resources = mapOf(...))
+val result = task.execute(context)</code></pre>
+
+    <h3>MCP Integration</h3>
+    <p>
+      The <code>promptex-mcp</code> module provides MCP (Model Context Protocol) server and client
+      implementations, allowing PromptFx to expose tools to external agents or consume external MCP servers.
+    </p>
+
+    <h2>Adding a Custom AI Provider</h2>
+    <p>
+      To add a new AI provider (e.g. a locally hosted model or a different cloud API), use
+      <code>promptkt-provider-sample</code> as a starting template:
+    </p>
+    <ol class="step-list">
+      <li><div>Copy <code>promptkt-provider-sample/</code> to a new module directory.</div></li>
+      <li><div>Implement the <code>TextPlugin</code> (and optionally <code>EmbeddingPlugin</code> / <code>ImageGenerator</code>) interfaces.</div></li>
+      <li><div>Register your provider via the service-loader mechanism (add it to <code>META-INF/services/</code>).</div></li>
+      <li><div>Add the new module as a dependency in <code>promptfx/pom.xml</code> to enable it in the UI.</div></li>
+    </ol>
+
+    <h2>Extending the UI</h2>
+    <p>
+      PromptFx supports custom view plugins via the <code>NavigableWorkspaceView</code> interface.
+      See <code>promptfx-sample-view-plugin/</code> for a working example. Plugins are discovered at
+      runtime via the standard Java service-loader mechanism.
+    </p>
+
+    <h2>API Key Configuration</h2>
+    <p>API keys are <strong>never</strong> hardcoded. Load them from:</p>
+    <ul>
+      <li>A file named <code>apikey.txt</code> (OpenAI) or <code>apikey-gemini.txt</code> (Gemini) in the working directory.</li>
+      <li>The <code>OPENAI_API_KEY</code> environment variable for OpenAI.</li>
+    </ul>
+
+    <h2>Resources</h2>
+    <ul>
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener">GitHub Repository</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Project Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
+      <li><a href="https://github.com/aallam/openai-kotlin" target="_blank" rel="noopener">openai-kotlin (API client)</a></li>
+    </ul>
+
+    <div style="margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+      <a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener" class="btn btn-primary">View on GitHub ↗</a>
+      <a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener" class="btn btn-outline">Read the Wiki ↗</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <ul class="footer-links">
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="user-guide.html">User Guide</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+    </ul>
+    <p>PromptFx is open source software licensed under the <a href="https://github.com/aplpolaris/promptfx/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0 License</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>
