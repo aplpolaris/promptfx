@@ -20,6 +20,7 @@
 package tri.ai.text.docs
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import tri.ai.core.MChatVariation
@@ -73,6 +74,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             AiOutput(other = index.findMostSimilar("a", 1))
         } finally {
             index.onProgress = null
+            progressScope.cancel()
         }
     }.aitask("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
