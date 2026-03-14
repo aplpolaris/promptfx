@@ -77,6 +77,7 @@ class AiProgressView : View(), FlowCollector<ExecEvent> {
 
     /** Start progress bar for a given task id string. */
     fun taskStarted(id: String) {
+        PrintMonitor().taskStarted(id)
         showTaskStarted(id)
     }
 
@@ -116,6 +117,7 @@ class AiProgressView : View(), FlowCollector<ExecEvent> {
     }
 
     fun taskStarted(task: Task<AiPipelineResult>, id: String) {
+        PrintMonitor().taskStarted(id)
         showTaskStarted(id)
     }
 

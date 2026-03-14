@@ -56,6 +56,11 @@ class PrintMonitor : FlowCollector<ExecEvent> {
         else -> toString()
     }
 
+    /** Hook for printing start of simple tasks. */
+    fun taskStarted(id: String) {
+        printGray("Started: $id")
+    }
+
     /** Hook for printing completion of simple tasks. */
     fun taskCompleted(id: String) {
         printGray("  completed: $id")

@@ -20,6 +20,7 @@
 package tri.ai.text.docs
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
@@ -68,7 +69,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         snippetCallback: (List<EmbeddingMatch>) -> Unit
     ): AiTaskList = taskwithmonitor("load-embeddings-file-and-calculate") { monitor ->
         // trigger loading of embeddings file (with progress), the result is ignored
-        val progressScope = CoroutineScope(currentCoroutineContext())
+        val progressScope = CoroutineScope(currentCoroutineContext() + Job())
         index.onProgress = { msg, pct -> progressScope.launch { monitor.progressUpdate(msg, pct) } }
         try {
             AiOutput(other = index.findMostSimilar("a", 1))
