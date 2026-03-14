@@ -30,7 +30,7 @@ import java.util.UUID
 
 /** Runtime context available to every executable. */
 class ExecContext(
-    vars: Map<String, JsonNode> = emptyMap(),
+    scratchpad: Map<String, JsonNode> = emptyMap(),
     resources: Map<String, Any?> = emptyMap(),
     val traceId: String = UUID.randomUUID().toString(),
     /** Monitor for emitting execution events. */
@@ -41,15 +41,15 @@ class ExecContext(
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
 
-    /** Mutable variable store. */
-    val vars: MutableMap<String, JsonNode> = vars.toMutableMap()
+    /** Mutable JSON data store used as a scratchpad for intermediate execution state. */
+    val scratchpad: MutableMap<String, JsonNode> = scratchpad.toMutableMap()
 
-    /** Mutable resource store for arbitrary named objects. */
+    /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
     val resources: MutableMap<String, Any?> = resources.toMutableMap()
 
-    /** Updates a variable in the context. */
+    /** Updates a scratchpad entry in the context. */
     fun put(key: String, value: JsonNode) {
-        vars[key] = value
+        scratchpad[key] = value
         variableSet(key, value)
     }
 
@@ -58,15 +58,15 @@ class ExecContext(
         resources[key] = value
     }
 
-    /** Hook called when a variable is set. */
+    /** Hook called when a scratchpad entry is set. */
     var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
 
     /** Returns a copy of this context with the given monitor. */
     fun withMonitor(monitor: FlowCollector<ExecEvent>) =
-        ExecContext(vars, resources, traceId, monitor, taskInputs)
+        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
     /** Returns a copy of this context with the given task inputs. */
     fun withTaskInputs(taskInputs: Map<String, AiPromptTraceSupport>) =
-        ExecContext(vars, resources, traceId, monitor, taskInputs)
+        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
 }

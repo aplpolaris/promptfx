@@ -68,12 +68,12 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.vars.keys)
-            assertEquals("hi", (context.vars["out"] as JsonNode).get("msg").asText())
+            assertTrue("out" in context.scratchpad.keys)
+            assertEquals("hi", (context.scratchpad["out"] as JsonNode).get("msg").asText())
         }
     }
 
@@ -95,12 +95,12 @@ class PPlanExecutorTest {
             val plan = PPlan.parseYaml(yaml)
             val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.vars.keys)
-            assertEquals("hi", (context.vars["out"] as JsonNode).get("msg").asText())
+            assertTrue("out" in context.scratchpad.keys)
+            assertEquals("hi", (context.scratchpad["out"] as JsonNode).get("msg").asText())
         }
     }
 
@@ -127,15 +127,15 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
-            println("        Chat response: ${context.vars["chat1"]?.get("message")?.asText()}")
+            println("        Context: ${context.scratchpad}")
+            println("        Chat response: ${context.scratchpad["chat1"]?.get("message")?.asText()}")
 
             // --- Assertions ---
             assertEquals("prompt-llm/demo@0.0.1", plan.id)
-            assertTrue("prompt1" in context.vars.keys)
-            assertTrue("chat1" in context.vars.keys)
-            assertTrue("red" in (context.vars["prompt1"]?.asText() ?: ""))
-            assertEquals("#ff0000", context.vars["chat1"]?.get("message")?.asText()?.lowercase(getDefault()))
+            assertTrue("prompt1" in context.scratchpad.keys)
+            assertTrue("chat1" in context.scratchpad.keys)
+            assertTrue("red" in (context.scratchpad["prompt1"]?.asText() ?: ""))
+            assertEquals("#ff0000", context.scratchpad["chat1"]?.get("message")?.asText()?.lowercase(getDefault()))
         }
     }
 
@@ -205,32 +205,32 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = ExecContext()
             PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---
             assertEquals("multi-step/analysis@0.1.0", plan.id)
             assertEquals(4, plan.steps.size)
 
             // Verify all steps saved their results
-            assertTrue("keywordPrompt" in context.vars.keys)
-            assertTrue("extractedKeywords" in context.vars.keys)
-            assertTrue("summaryPrompt" in context.vars.keys)
-            assertTrue("finalSummary" in context.vars.keys)
+            assertTrue("keywordPrompt" in context.scratchpad.keys)
+            assertTrue("extractedKeywords" in context.scratchpad.keys)
+            assertTrue("summaryPrompt" in context.scratchpad.keys)
+            assertTrue("finalSummary" in context.scratchpad.keys)
 
             // Verify the flow worked - keyword prompt should contain the input text
-            val keywordPrompt = context.vars["keywordPrompt"]?.asText() ?: ""
+            val keywordPrompt = context.scratchpad["keywordPrompt"]?.asText() ?: ""
             assertTrue("Artificial intelligence" in keywordPrompt)
 
             // Verify the mock chat responses are flowing through
-            val extractedKeywords = context.vars["extractedKeywords"]?.get("message")?.asText() ?: ""
+            val extractedKeywords = context.scratchpad["extractedKeywords"]?.get("message")?.asText() ?: ""
             assertEquals("AI, machine learning, natural language processing", extractedKeywords)
 
             // Verify the final summary prompt contains the extracted keywords
-            val summaryPrompt = context.vars["summaryPrompt"]?.asText() ?: ""
+            val summaryPrompt = context.scratchpad["summaryPrompt"]?.asText() ?: ""
             assertTrue("AI, machine learning, natural language processing" in summaryPrompt)
 
             // Verify the final summary contains expected content
-            val finalSummary = context.vars["finalSummary"]?.get("message")?.asText() ?: ""
+            val finalSummary = context.scratchpad["finalSummary"]?.get("message")?.asText() ?: ""
             assertEquals("This analysis covers key concepts in artificial intelligence.", finalSummary)
         }
     }

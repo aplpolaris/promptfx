@@ -37,9 +37,8 @@ class RunSolver(
 ) : WorkflowSolver(name, description, version, createJsonSchema(INPUT to inputDescription), createJsonSchema(RESULT to outputDescription)) {
 
     override suspend fun execute(input: com.fasterxml.jackson.databind.JsonNode, context: ExecContext): com.fasterxml.jackson.databind.JsonNode {
-        val state = context.workflowPlanState
         val task = context.currentWorkflowTask
-        val inputData = state.aggregateInputsAsStringFor(name, task.name, context)
+        val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
         val result = run(inputData)
         return createObject(RESULT, result)
     }

@@ -30,6 +30,7 @@ import tri.ai.core.tool.Executable
 import tri.ai.core.agent.wf.WorkflowExecutorChat
 import tri.ai.core.agent.wf.WorkflowExecutor
 import tri.ai.core.agent.wf.WorkflowSolver
+import tri.ai.core.agent.wf.aggregateWorkflowInputsAsStringFor
 import tri.ai.core.agent.wf.currentWorkflowTask
 import tri.ai.core.agent.wf.workflowPlanState
 import tri.util.json.PARAM_INPUT
@@ -84,9 +85,8 @@ private fun Executable.toSolver(context: ExecContext) = object : WorkflowSolver(
     createJsonSchema(PARAM_RESULT to "Result from $name")
 ) {
     override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-        val state = context.workflowPlanState
         val task = context.currentWorkflowTask
-        val inputData = state.aggregateInputsAsStringFor(name, task.name, context)
+        val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
 
         val inputJson = createObject(PARAM_INPUT, inputData)
         val resultJson = this@toSolver.execute(inputJson, context)

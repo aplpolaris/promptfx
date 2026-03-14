@@ -81,9 +81,9 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
     AiTask(step.tool, description = null, dependencies = setOf()) {
 
     override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
-        log("context", stepContext.vars)
+        log("context", stepContext.scratchpad)
 
-        val inputMap = step.input.resolveRefs(stepContext.vars)
+        val inputMap = step.input.resolveRefs(stepContext.scratchpad)
         log("input", inputMap)
 
         val result = exec.execute(inputMap, stepContext)

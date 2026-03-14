@@ -46,7 +46,7 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         // get input information from the context
         val userRequest = state.request.request
         val finalTaskId = state.taskTree.findTask { it is WorkflowUserRequest }!!.tasks.last().root.id
-        val finalResult = context.vars["$finalTaskId.result"]!!
+        val finalResult = context.scratchpad["$finalTaskId.result"]!!
         val finalResultText = finalResult.prettyPrint()
 
         // complete a prompt doing the assessment

@@ -67,8 +67,8 @@ class WorkflowExecutor(
     private suspend fun FlowCollector<ExecEvent>.solve(problem: WorkflowUserRequest): MultimodalChatMessage {
         val planState = WorkflowPlanState(problem)
         val context = ExecContext(monitor = this)
-        planState.initContext(context)
         context.putResource(RESOURCE_WORKFLOW_PLAN_STATE, planState)
+        context.initWorkflowContext()
         emitProgress("Workflow Planning...")
 
         var i = 1
@@ -104,13 +104,13 @@ class WorkflowExecutor(
             // 3. Use the selected solver to execute part of the task
             context.putResource(RESOURCE_WORKFLOW_TASK, task)
             val t0step = System.currentTimeMillis()
-            val inputJson = createObject(INPUT, planState.aggregateInputsAsStringFor(solver.name, task.name, context))
+            val inputJson = createObject(INPUT, context.aggregateWorkflowInputsAsStringFor(solver.name, task.name))
             emitUsingTool(solver.name, inputJson.prettyPrint())
             val outputJson = solver.execute(inputJson, context)
             val step = WorkflowSolveStep(task, solver, inputJson, outputJson as com.fasterxml.jackson.databind.node.ObjectNode, System.currentTimeMillis() - t0step, true)
 
             planState.taskTree.setTaskDone(task)
-            planState.addResults(task, step.outputs, context)
+            context.addWorkflowResults(task, step.outputs)
             emitToolResult(solver.name, step.outputs.prettyPrint())
             planState.solveHistory.add(step)
 
@@ -123,7 +123,7 @@ class WorkflowExecutor(
         if (i <= maxSteps) {
             val execTime = System.currentTimeMillis() - t0
             emitProgress("Workflow execution complete in ${execTime}ms and ${i-1} steps!")
-            val final = planState.finalResult(context).prettyPrint()
+            val final = context.workflowFinalResult().prettyPrint()
             val message = MultimodalChatMessage.text(MChatRole.Assistant, final)
             return message
         } else {

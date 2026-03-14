@@ -42,7 +42,7 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
         val task = context.currentWorkflowTask
 
         val userRequest = state.request.request
-        val inputData = state.aggregateInputsAsStringFor(name, task.name, context)
+        val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
         val prompt = PROMPTS.get(AGGREGATOR_PROMPT_ID)!!.fill(
             USER_REQUEST_PARAM to userRequest,
             INPUTS_PARAM to inputData

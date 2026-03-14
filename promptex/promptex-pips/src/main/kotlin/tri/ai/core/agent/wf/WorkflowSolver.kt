@@ -23,20 +23,62 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
+import tri.util.json.jsonMapper
 import tri.util.json.tryJson
+import kotlin.collections.ifEmpty
 
 /** Key for storing [WorkflowPlanState] in [ExecContext.resources]. */
 const val RESOURCE_WORKFLOW_PLAN_STATE = "workflowPlanState"
 /** Key for storing the current [WorkflowTask] in [ExecContext.resources]. */
 const val RESOURCE_WORKFLOW_TASK = "currentWorkflowTask"
 
-/** Extension property to get/set [WorkflowPlanState] from the context. */
+/** Extension property to get [WorkflowPlanState] from the context. */
 val ExecContext.workflowPlanState: WorkflowPlanState
     get() = resources[RESOURCE_WORKFLOW_PLAN_STATE] as WorkflowPlanState
 
-/** Extension property to get/set the current [WorkflowTask] from the context. */
+/** Extension property to get the current [WorkflowTask] from the context. */
 val ExecContext.currentWorkflowTask: WorkflowTask
     get() = resources[RESOURCE_WORKFLOW_TASK] as WorkflowTask
+
+/**
+ * Initializes the context scratchpad with the user input extracted from the workflow request.
+ * Must be called after [RESOURCE_WORKFLOW_PLAN_STATE] has been set in [ExecContext.resources].
+ */
+fun ExecContext.initWorkflowContext() {
+    val request = workflowPlanState.request
+    // TODO - this is very brittle
+    val userInput = request.request.substringAfter("\n").trim().substringAfter("\"\"\"").substringBefore("\"\"\"").trim()
+    if (userInput.isNotEmpty())
+        put("user_input", jsonMapper.valueToTree<JsonNode>(userInput))
+}
+
+/** Writes task outputs into the context scratchpad, keyed as "{taskId}.{outputKey}". */
+fun ExecContext.addWorkflowResults(task: WorkflowTask, outputs: ObjectNode) {
+    outputs.properties().forEach { (key, value) ->
+        put("${task.id}.$key", value)
+    }
+}
+
+/** Using the current plan, looks up all scratchpad inputs associated with the given tool. */
+fun ExecContext.aggregateWorkflowInputsFor(toolName: String): Map<String, JsonNode> {
+    val state = workflowPlanState
+    return ((state.taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
+        ?: listOf()).associateWith { scratchpad["$it.$RESULT"] ?: scratchpad[it]!! }
+}
+
+/** Aggregates the scratchpad inputs for the given tool as a single string value. */
+fun ExecContext.aggregateWorkflowInputsAsStringFor(toolName: String, taskName: String, separator: String = "\n"): String =
+    aggregateWorkflowInputsFor(toolName).values.mapNotNull { it.workflowPrettyPrint() }.ifEmpty { listOf(taskName) }.joinToString(separator)
+
+/** Get the final computed result from the context scratchpad. */
+// TODO - this is brittle since it assumes a specific output exists in the scratchpad
+fun ExecContext.workflowFinalResult() =
+    scratchpad[FINAL_RESULT_ID]!!
+
+private fun JsonNode.workflowPrettyPrint() = when {
+    isTextual -> asText()
+    else -> toString()
+}
 
 /** Advances workflow towards a solution. */
 abstract class WorkflowSolver(

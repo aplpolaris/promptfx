@@ -338,9 +338,8 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             createJsonSchema(PARAM_RESULT to "Result from $name")
         ) {
             override suspend fun execute(input: JsonNode, context: ExecContext): JsonNode {
-                val state = context.workflowPlanState
                 val task = context.currentWorkflowTask
-                val inputData = state.aggregateInputsAsStringFor(name, task.name, context)
+                val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
                 val inputJson = createObject(PARAM_INPUT, inputData)
                 val result = runBlocking {
                     this@toSolver.execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
