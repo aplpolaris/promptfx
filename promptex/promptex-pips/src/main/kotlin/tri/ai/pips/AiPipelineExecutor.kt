@@ -21,6 +21,7 @@ package tri.ai.pips
 
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.tool.ExecContext
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
@@ -39,6 +40,7 @@ object AiPipelineExecutor {
 
         val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
         val failedTasks = mutableMapOf<String, AiPromptTraceSupport>()
+        val completedOutputs = mutableMapOf<String, Any?>()
 
         var tasksToDo: List<AiTask>
         do {
@@ -50,17 +52,24 @@ object AiPipelineExecutor {
             tasksToDo.forEach { task ->
                 try {
                     monitor.emitTaskStarted(task)
-                    val taskInputs = task.dependencies.associateWith { completedTasks[it]!! }
+                    val taskInputs = task.dependencies.associateWith { completedOutputs[it] }
+                    val input = if (task.dependencies.size == 1) completedOutputs[task.dependencies.first()] else null
                     val context = ExecContext(monitor = monitor, taskInputs = taskInputs)
-                    val result = executor.execute(task, context)
-                    val resultValue = result.output?.outputs
-                    val err = result.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
+                    val output = executor.execute(task, input, context)
+                    // Resolve trace: prefer context.traces (new-style), then check if result is a trace (legacy)
+                    val trace: AiPromptTraceSupport = context.traces[task.id]
+                        ?: (output as? AiPromptTraceSupport)
+                        ?: if (output != null) AiPromptTrace(outputInfo = AiOutputInfo.other(output))
+                        else AiPromptTrace(outputInfo = null)
+                    val resultValue = trace.output?.outputs
+                    val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         monitor.emitTaskFailed(task, err)
-                        failedTasks[task.id] = result
+                        failedTasks[task.id] = trace
                     } else {
                         monitor.emitTaskCompleted(task, resultValue)
-                        completedTasks[task.id] = result
+                        completedTasks[task.id] = trace
+                        completedOutputs[task.id] = output
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()

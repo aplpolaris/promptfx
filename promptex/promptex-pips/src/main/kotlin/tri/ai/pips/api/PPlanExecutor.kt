@@ -35,7 +35,6 @@ import tri.ai.pips.ExecEvent
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
@@ -80,7 +79,7 @@ class PPlanPlanner(
 class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val stepContext: ExecContext) :
     AiTask(step.tool, description = null, dependencies = setOf()) {
 
-    override suspend fun execute(context: ExecContext): AiPromptTraceSupport {
+    override suspend fun execute(input: Any?, context: ExecContext): Any? {
         log("context", stepContext.scratchpad)
 
         val inputMap = step.input.resolveRefs(stepContext.scratchpad)

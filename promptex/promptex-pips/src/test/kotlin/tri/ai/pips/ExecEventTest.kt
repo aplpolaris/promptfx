@@ -33,7 +33,7 @@ class ExecEventTest {
     @Test
     fun testExecEventHierarchy() {
         val task = object : AiTask("test-task") {
-            override suspend fun execute(context: ExecContext) =
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("result"))
         }
 
@@ -78,7 +78,7 @@ class ExecEventTest {
     @Test
     fun testIgnoreMonitor() = runTest {
         val task = object : AiTask("ignore-test") {
-            override suspend fun execute(context: ExecContext) =
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
         // Should not throw
@@ -96,7 +96,7 @@ class ExecEventTest {
         }
 
         val task = object : AiTask("ext-test") {
-            override suspend fun execute(context: ExecContext) =
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
 
@@ -132,7 +132,7 @@ class ExecEventTest {
 
         val tasks = listOf(
             object : AiTask("task-a") {
-                override suspend fun execute(context: ExecContext) =
+                override suspend fun execute(input: Any?, context: ExecContext) =
                     AiPromptTrace(outputInfo = AiOutputInfo.text("a"))
             }
         )

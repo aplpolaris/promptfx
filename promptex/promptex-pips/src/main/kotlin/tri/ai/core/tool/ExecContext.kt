@@ -35,8 +35,8 @@ class ExecContext(
     val traceId: String = UUID.randomUUID().toString(),
     /** Monitor for emitting execution events. */
     val monitor: AiTaskMonitor = IgnoreMonitor,
-    /** Previous task outputs, keyed by task id, for pipeline-style execution. */
-    val taskInputs: Map<String, AiPromptTraceSupport> = emptyMap()
+    /** Previous task outputs (raw values), keyed by task id, for pipeline-style execution. */
+    val taskInputs: Map<String, Any?> = emptyMap()
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
@@ -46,6 +46,9 @@ class ExecContext(
 
     /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
     val resources: MutableMap<String, Any?> = resources.toMutableMap()
+
+    /** Log of traces emitted by tasks during execution, keyed by task id. */
+    val traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
 
     /** Updates a scratchpad entry in the context. */
     fun put(key: String, value: JsonNode) {
@@ -58,6 +61,11 @@ class ExecContext(
         resources[key] = value
     }
 
+    /** Logs a trace for the given task id. */
+    fun logTrace(id: String, trace: AiPromptTraceSupport) {
+        traces[id] = trace
+    }
+
     /** Hook called when a scratchpad entry is set. */
     var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
 
@@ -66,7 +74,7 @@ class ExecContext(
         ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
     /** Returns a copy of this context with the given task inputs. */
-    fun withTaskInputs(taskInputs: Map<String, AiPromptTraceSupport>) =
+    fun withTaskInputs(taskInputs: Map<String, Any?>) =
         ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
 }

@@ -42,6 +42,6 @@ object IgnoreMonitor : FlowCollector<ExecEvent> {
  */
 suspend fun FlowCollector<ExecEvent>.progressUpdate(message: String, progress: Double) =
     emitTaskUpdate(object : AiTask(message) {
-        override suspend fun execute(context: ExecContext) =
+        override suspend fun execute(input: Any?, context: ExecContext) =
             AiPromptTrace(outputInfo = AiOutputInfo.text(message))
     }, progress)

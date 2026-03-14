@@ -39,7 +39,7 @@ fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
 
 /** Create task for executing a run config. */
 fun AiPromptRunConfig.task(id: String) = object : AiTask(id) {
-    override suspend fun execute(context: ExecContext): AiPromptTrace = try {
+    override suspend fun execute(input: Any?, context: ExecContext): AiPromptTrace = try {
         execute(modelLookup(modelInfo.modelId))
     } catch (x: NoSuchElementException) {
         AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
