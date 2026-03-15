@@ -153,7 +153,7 @@ class DocumentInsightView: AiPlanTaskView(
 
         return promptBatch(model.chunkListModel.chunkSelection)
             .aggregate()
-            .aitask("results-summarize") { _ ->
+            .aitask<Any?>("results-summarize") { _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
                     .prompt(reducePrompt.prompt.value)
@@ -163,7 +163,7 @@ class DocumentInsightView: AiPlanTaskView(
             }.planner
     }
 
-    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask> {
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<*, *>> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }

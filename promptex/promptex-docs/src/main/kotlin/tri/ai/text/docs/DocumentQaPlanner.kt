@@ -72,18 +72,18 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val progressScope = CoroutineScope(currentCoroutineContext() + Job())
         index.onProgress = { msg, pct -> progressScope.launch { monitor.progressUpdate(msg, pct) } }
         try {
-            AiOutput(other = index.findMostSimilar("a", 1))
+            index.findMostSimilar("a", 1)
         } finally {
             index.onProgress = null
             progressScope.cancel()
         }
-    }.aitask("find-relevant-sections") {
+    }.aitask<Any?>("find-relevant-sections") {
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {
             snippetCallback(it.firstValue.content() as List<EmbeddingMatch>)
         }
-    }.aitask("question-answer") { output ->
-        val snippets = output.other as List<EmbeddingMatch>
+    }.aitask<AiOutput?>("question-answer") { output ->
+        val snippets = output?.other as List<EmbeddingMatch>
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)
@@ -116,8 +116,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
                 responseEmbeddings = responseEmbeddings
             ))
         }
-    }.aitask("process-result") {
-        val result = it.content() as QuestionAnswerResult
+    }.aitask<AiOutput?>("process-result") {
+        val result = it?.content() as QuestionAnswerResult
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
         FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
     }

@@ -45,7 +45,7 @@ class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParame
     override fun plan() =
         aitask("weather-similarity-check") {
             checkWeatherSimilarity(input)
-        }.aitask("weather-api-request") {
+        }.aitask<Any?>("weather-api-request") {
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-api-request"))
                 .paramsInput(input)
@@ -53,7 +53,7 @@ class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParame
                 .executeJson<WeatherRequest>(chatEngine)
         }.objtask<WeatherRequest, WeatherResult>("weather-api") {
             weatherService.getWeather(it)
-        }.aitask("weather-response-formatter") {
+        }.aitask<WeatherResult>("weather-response-formatter") {
             val json = jsonMapper.writeValueAsString(it)
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-response-formatter"))

@@ -32,8 +32,8 @@ class ExecEventTest {
     /** Verify [ExecEvent] hierarchy covers expected subtypes. */
     @Test
     fun testExecEventHierarchy() {
-        val task = object : AiTask("test-task") {
-            override suspend fun execute(context: ExecContext) =
+        val task = object : AiTask<Any?, AiPromptTrace>("test-task") {
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("result"))
         }
 
@@ -77,8 +77,8 @@ class ExecEventTest {
     /** Verify [IgnoreMonitor] silently discards all events. */
     @Test
     fun testIgnoreMonitor() = runTest {
-        val task = object : AiTask("ignore-test") {
-            override suspend fun execute(context: ExecContext) =
+        val task = object : AiTask<Any?, AiPromptTrace>("ignore-test") {
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
         // Should not throw
@@ -95,8 +95,8 @@ class ExecEventTest {
             override suspend fun emit(value: ExecEvent) { collected.add(value) }
         }
 
-        val task = object : AiTask("ext-test") {
-            override suspend fun execute(context: ExecContext) =
+        val task = object : AiTask<Any?, AiPromptTrace>("ext-test") {
+            override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
 
@@ -131,9 +131,11 @@ class ExecEventTest {
         }
 
         val tasks = listOf(
-            object : AiTask("task-a") {
-                override suspend fun execute(context: ExecContext) =
-                    AiPromptTrace(outputInfo = AiOutputInfo.text("a"))
+            object : AiTask<Any?, String>("task-a") {
+                override suspend fun execute(input: Any?, context: ExecContext): String {
+                    context.logTrace(id, AiPromptTrace(outputInfo = AiOutputInfo.text("a")))
+                    return "a"
+                }
             }
         )
         AiPipelineExecutor.execute(tasks, collector)
