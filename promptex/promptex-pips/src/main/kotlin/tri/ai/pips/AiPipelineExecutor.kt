@@ -56,12 +56,18 @@ object AiPipelineExecutor {
                     val taskInputs = task.dependencies.associateWith { completedOutputs[it] }
                     val input = if (task.dependencies.size == 1) completedOutputs[task.dependencies.first()] else null
                     val context = ExecContext(monitor = monitor, taskInputs = taskInputs)
+                    // Pre-populate context.traces with completed task traces so aitaskonlist/aggregatetrace can access them
+                    context.traces.putAll(completedTasks)
                     val output = executor.execute(task, input, context)
-                    // Resolve trace: prefer context.traces (new-style), then check if result is a trace (legacy)
+                    // Resolve trace: prefer context.traces (set by task or pre-populated), then synthesize
                     val trace: AiPromptTraceSupport = context.traces[task.id]
-                        ?: (output as? AiPromptTraceSupport)
-                        ?: if (output != null) AiPromptTrace(outputInfo = toOutputInfo(output))
-                           else AiPromptTrace(outputInfo = null)
+                        ?: run {
+                            check(output !is AiPromptTraceSupport) {
+                                "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
+                            }
+                            if (output != null) AiPromptTrace(outputInfo = toOutputInfo(output))
+                            else AiPromptTrace(outputInfo = null)
+                        }
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {

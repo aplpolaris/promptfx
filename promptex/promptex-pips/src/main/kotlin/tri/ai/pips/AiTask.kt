@@ -78,10 +78,20 @@ abstract class AiTask<I, O>(
                 override suspend fun execute(input: Any?, context: ExecContext) = op()
             }
 
-        /** Creates a task returning an [AiPromptTraceSupport]. */
-        fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): AiTask<Any?, AiPromptTraceSupport> =
-            object: AiTask<Any?, AiPromptTraceSupport>(id, description) {
-                override suspend fun execute(input: Any?, context: ExecContext) = op()
+        /**
+         * Creates a task returning an [AiPromptTraceSupport].
+         * Automatically logs the returned trace via [ExecContext.logTrace] and returns the first output value.
+         * @deprecated Use [task] with [ExecContext.logTrace] to record AI trace information.
+         */
+        @Deprecated("Use task() with context.logTrace(id, trace) to record AI trace information.",
+            level = DeprecationLevel.WARNING)
+        fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport): AiTask<Any?, AiOutput?> =
+            object: AiTask<Any?, AiOutput?>(id, description) {
+                override suspend fun execute(input: Any?, context: ExecContext): AiOutput? {
+                    val result = op()
+                    context.logTrace(id, result)
+                    return result.output?.outputs?.firstOrNull()
+                }
             }
 
         /** Creates a task that depends on a provided list of tasks, returning [T] directly. */
@@ -90,11 +100,20 @@ abstract class AiTask<I, O>(
                 override suspend fun execute(input: Any?, context: ExecContext) = op(context.taskInputs)
             }
 
-        /** Creates a task that depends on a provided list of tasks, returning an [AiPromptTraceSupport]. */
-        fun List<AiTask<*, *>>.aitask(id: String, description: String? = null, op: suspend (Map<String, Any?>) -> AiPromptTraceSupport): AiTask<Any?, AiPromptTraceSupport> =
-            object : AiTask<Any?, AiPromptTraceSupport>(id, description, map { it.id }.toSet()) {
-                override suspend fun execute(input: Any?, context: ExecContext) =
-                    op(context.taskInputs)
+        /**
+         * Creates a task that depends on a provided list of tasks, returning an [AiPromptTraceSupport].
+         * Automatically logs the returned trace via [ExecContext.logTrace] and returns the first output value.
+         * @deprecated Use [List.task] with [ExecContext.logTrace] to record AI trace information.
+         */
+        @Deprecated("Use List<>.task() with context.logTrace(id, trace) to record AI trace information.",
+            level = DeprecationLevel.WARNING)
+        fun List<AiTask<*, *>>.aitask(id: String, description: String? = null, op: suspend (Map<String, Any?>) -> AiPromptTraceSupport): AiTask<Any?, AiOutput?> =
+            object : AiTask<Any?, AiOutput?>(id, description, map { it.id }.toSet()) {
+                override suspend fun execute(input: Any?, context: ExecContext): AiOutput? {
+                    val result = op(context.taskInputs)
+                    context.logTrace(id, result)
+                    return result.output?.outputs?.firstOrNull()
+                }
             }
     }
 }

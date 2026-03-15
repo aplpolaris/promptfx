@@ -48,7 +48,8 @@ class RetryExecutor(
             @Suppress("UNCHECKED_CAST")
             (task as AiTask<Any?, Any?>).execute(input, context)
         }, onSuccess = { it ->
-            val output = it.value!!
+            // output may be null when a task logs an error trace and returns null (rather than throwing)
+            val output = it.value
             // Update trace in context if one was logged, enriching it with retry metadata
             val existingTrace = context.traces[task.id]
             if (existingTrace != null) {
@@ -59,21 +60,12 @@ class RetryExecutor(
                         attempts = it.attempts
                     )
                 )
-                output
-            } else if (output is AiPromptTraceSupport) {
-                // Legacy: task returned a trace; update exec info and log to context
-                val updatedTrace = output.copy(
-                    execInfo = output.exec.copy(
-                        responseTimeMillis = it.attemptTime,
-                        responseTimeMillisTotal = it.totalTime,
-                        attempts = it.attempts
-                    )
-                )
-                context.traces[task.id] = updatedTrace
-                updatedTrace
             } else {
-                output
+                check(output !is AiPromptTraceSupport) {
+                    "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
+                }
             }
+            output
         }, onFailure = {
             val errorTrace = AiPromptTrace.error(
                 modelInfo = null,

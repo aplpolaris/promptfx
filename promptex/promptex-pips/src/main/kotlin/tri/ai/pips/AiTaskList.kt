@@ -63,12 +63,19 @@ class AiTaskList(tasks: List<AiTask<*, *>>, val lastTask: AiTask<*, *>) {
     /**
      * Adds an AI task to the end of the list, where invoking the task performs the given operation.
      * The input to the task is the first output from the final task in this [AiTaskList]. (Use [aitaskonlist] to apply to the full output list.)
-     * The result is expected to be a [AiPromptTraceSupport] object with details about model, execution time, etc.
+     * Automatically logs the returned trace via [ExecContext.logTrace] and returns the first output value.
+     * @deprecated Use [task] with [ExecContext.logTrace] to record AI trace information.
      */
+    @Deprecated("Use task() with context.logTrace(id, trace) to record AI trace information.",
+        level = DeprecationLevel.WARNING)
     fun aitask(id: String, description: String? = null, op: suspend (AiOutput) -> AiPromptTraceSupport): AiTaskList {
-        val newTask = object : AiTask<Any?, AiPromptTraceSupport>(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(input: Any?, context: ExecContext): AiPromptTraceSupport =
-                op((input ?: context.taskInputs[lastTask.id]).toAiOutput())
+        val newTask = object : AiTask<Any?, AiOutput?>(id, description, setOf(lastTask.id)) {
+            override suspend fun execute(input: Any?, context: ExecContext): AiOutput? {
+                val aiInput = (input ?: context.taskInputs[lastTask.id]).toAiOutput()
+                val result = op(aiInput)
+                context.logTrace(id, result)
+                return result.output?.outputs?.firstOrNull()
+            }
         }
         return AiTaskList(plan, newTask)
     }
@@ -76,18 +83,33 @@ class AiTaskList(tasks: List<AiTask<*, *>>, val lastTask: AiTask<*, *>) {
     /**
      * Adds a task to the end of the list, where invoking the task performs the given operation.
      * The input to the task is the full list of outputs from the final task in this [AiTaskList].
+     * Automatically logs the returned trace via [ExecContext.logTrace] and returns the output values.
+     * @deprecated Use [task] with [ExecContext.logTrace] to record AI trace information.
      */
+    @Deprecated("Use task() with context.logTrace(id, trace) to record AI trace information.",
+        level = DeprecationLevel.WARNING)
     fun aitaskonlist(id: String, description: String? = null, op: suspend (List<AiOutput>) -> AiPromptTraceSupport): AiTaskList {
-        val newTask = object : AiTask<Any?, AiPromptTraceSupport>(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(input: Any?, context: ExecContext): AiPromptTraceSupport {
+        val newTask = object : AiTask<Any?, List<AiOutput>>(id, description, setOf(lastTask.id)) {
+            override suspend fun execute(input: Any?, context: ExecContext): List<AiOutput> {
                 val raw = input ?: context.taskInputs[lastTask.id]
-                val values: List<AiOutput> = when (raw) {
-                    is AiPromptTraceSupport -> raw.values ?: listOf()
-                    is List<*> -> raw.filterIsInstance<AiOutput>()
-                    is AiOutput -> listOf(raw)
-                    else -> listOf()
+                val values: List<AiOutput> = when {
+                    // Direct List<AiOutput> from tasklist() predecessor
+                    raw is List<*> -> raw.filterIsInstance<AiOutput>()
+                    // Legacy: predecessor returned AiPromptTraceSupport
+                    raw is AiPromptTraceSupport -> raw.values ?: listOf()
+                    else -> {
+                        // Check if predecessor logged a multi-value trace (pre-populated from completedTasks)
+                        val predecessorTrace = context.traces[lastTask.id]
+                        when {
+                            predecessorTrace != null -> predecessorTrace.values ?: listOf()
+                            raw is AiOutput -> listOf(raw)
+                            else -> listOf()
+                        }
+                    }
                 }
-                return op(values)
+                val result = op(values)
+                context.logTrace(id, result)
+                return result.values ?: listOf()
             }
         }
         return AiTaskList(plan, newTask)
@@ -117,10 +139,20 @@ fun tasklist(id: String, description: String? = null, op: suspend () -> List<AiO
         override suspend fun execute(input: Any?, context: ExecContext) = op()
     })
 
-/** Creates a sequential task list with a single task. */
+/**
+ * Creates a sequential task list with a single AI task.
+ * Automatically logs the returned trace via [ExecContext.logTrace] and returns the first output value.
+ * @deprecated Use [tasktext] or [task] with [ExecContext.logTrace] to record AI trace information.
+ */
+@Deprecated("Use tasktext() or task() with context.logTrace(id, trace) to record AI trace information.",
+    level = DeprecationLevel.WARNING)
 fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport) = AiTaskList(listOf(),
-    object: AiTask<Any?, AiPromptTraceSupport>(id, description) {
-        override suspend fun execute(input: Any?, context: ExecContext) = op()
+    object: AiTask<Any?, AiOutput?>(id, description) {
+        override suspend fun execute(input: Any?, context: ExecContext): AiOutput? {
+            val result = op()
+            context.logTrace(id, result)
+            return result.output?.outputs?.firstOrNull()
+        }
     })
 
 /** Initializes [AiTaskList] with a single task that returns an [AiOutput] and has access to the [AiTaskMonitor] for reporting sub-progress. */
@@ -129,10 +161,20 @@ fun taskwithmonitor(id: String, description: String? = null, op: suspend (AiTask
         override suspend fun execute(input: Any?, context: ExecContext) = op(context.monitor)
     })
 
-/** Creates a sequential task list with a single task that has access to the [AiTaskMonitor] for reporting sub-progress. */
+/**
+ * Creates a sequential task list with a single AI task that has access to the [AiTaskMonitor] for reporting sub-progress.
+ * Automatically logs the returned trace via [ExecContext.logTrace] and returns the first output value.
+ * @deprecated Use [taskwithmonitor] with [ExecContext.logTrace] to record AI trace information.
+ */
+@Deprecated("Use taskwithmonitor() with context.logTrace(id, trace) to record AI trace information.",
+    level = DeprecationLevel.WARNING)
 fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTaskMonitor) -> AiPromptTraceSupport) = AiTaskList(listOf(),
-    object : AiTask<Any?, AiPromptTraceSupport>(id, description) {
-        override suspend fun execute(input: Any?, context: ExecContext) = op(context.monitor)
+    object : AiTask<Any?, AiOutput?>(id, description) {
+        override suspend fun execute(input: Any?, context: ExecContext): AiOutput? {
+            val result = op(context.monitor)
+            context.logTrace(id, result)
+            return result.output?.outputs?.firstOrNull()
+        }
     })
 
 /**
@@ -160,13 +202,16 @@ fun List<AiTask<*, *>>.aggregate(): AiTaskList {
 
 /**
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
+ * Collects traces from [ExecContext.traces] (pre-populated from completed tasks) rather than raw task outputs,
+ * preserving full AI execution metadata. Each element in the returned list is either an [AiPromptTraceSupport]
+ * (when the task logged a trace) or the raw task output (when no trace was logged).
  * @throws IllegalArgumentException if there are duplicate task IDs
  */
 fun List<AiTask<*, *>>.aggregatetrace(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask<Any?, List<*>>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(input: Any?, context: ExecContext): List<*> =
-            context.taskInputs.values.toList()
+            map { task -> context.traces[task.id] ?: context.taskInputs[task.id] }
     }
     return AiTaskList(this, finalTask)
 }

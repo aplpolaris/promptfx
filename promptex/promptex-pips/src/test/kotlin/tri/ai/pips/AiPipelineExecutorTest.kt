@@ -66,14 +66,19 @@ class AiPipelineExecutorTest {
         }
     }
 
-    class GoTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, AiPromptTrace>(id, null, deps) {
-        override suspend fun execute(input: Any?, context: ExecContext) =
-            AiPromptTrace(outputInfo = AiOutputInfo.text("go"))
+    class GoTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, String>(id, null, deps) {
+        override suspend fun execute(input: Any?, context: ExecContext): String {
+            val trace = AiPromptTrace(outputInfo = AiOutputInfo.text("go"))
+            context.logTrace(id, trace)
+            return "go"
+        }
     }
 
-    class FailTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, AiPromptTrace>(id, null, deps) {
-        override suspend fun execute(input: Any?, context: ExecContext) =
-            AiPromptTrace.error(null, "fail", Exception("fail"))
+    class FailTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, String?>(id, null, deps) {
+        override suspend fun execute(input: Any?, context: ExecContext): String? {
+            context.logTrace(id, AiPromptTrace.error(null, "fail", Exception("fail")))
+            return null
+        }
     }
 
 }

@@ -131,9 +131,11 @@ class ExecEventTest {
         }
 
         val tasks = listOf(
-            object : AiTask<Any?, AiPromptTrace>("task-a") {
-                override suspend fun execute(input: Any?, context: ExecContext) =
-                    AiPromptTrace(outputInfo = AiOutputInfo.text("a"))
+            object : AiTask<Any?, String>("task-a") {
+                override suspend fun execute(input: Any?, context: ExecContext): String {
+                    context.logTrace(id, AiPromptTrace(outputInfo = AiOutputInfo.text("a")))
+                    return "a"
+                }
             }
         )
         AiPipelineExecutor.execute(tasks, collector)

@@ -22,6 +22,7 @@ package tri.ai.pips
 import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.batch.AiPromptBatch
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
@@ -38,10 +39,14 @@ fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
     tasks(modelLookup).aggregate().planner
 
 /** Create task for executing a run config. */
-fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiPromptTrace>(id) {
-    override suspend fun execute(input: Any?, context: ExecContext): AiPromptTrace = try {
-        execute(modelLookup(modelInfo.modelId))
+fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {
+    override suspend fun execute(input: Any?, context: ExecContext): AiOutput? = try {
+        val trace = execute(modelLookup(modelInfo.modelId))
+        context.logTrace(id, trace)
+        trace.output?.outputs?.firstOrNull()
     } catch (x: NoSuchElementException) {
-        AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
+        val trace = AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
+        context.logTrace(id, trace)
+        null
     }
 }
