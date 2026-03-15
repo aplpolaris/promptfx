@@ -44,6 +44,6 @@ class WikipediaView: AiPlanTaskView("Wikipedia", "Enter a question to ask Wikipe
         addInputTextArea(pageTitle)
     }
 
-    override fun plan() = WikipediaAiTaskPlanner(chatEngine, common, pageTitle, input.get())
+    override fun plan() = WikipediaAiTaskPlanner(chatEngine, common, pageTitle, input.get()).plan()
 
 }

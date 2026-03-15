@@ -73,17 +73,17 @@ class StarshipPipelineExecutor(
 
     suspend fun execute() {
         results.started.set(true)
-        val registry = ExecutableRegistry.Companion.create(
+        val registry = ExecutableRegistry.create(
             listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +
-                    PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
+                    PromptChatRegistry(PromptLibrary.INSTANCE, chat).list()
         )
-        val context = ExecContext().apply {
+        val context = ExecContext(monitor = monitor).apply {
             variableSet = results::updateVariable
             results.getMultiChoiceValues().forEach {
                 put(it.key, TextNode.valueOf(it.value))
             }
         }
-        PPlanExecutor(registry).execute(plan, context, monitor)
+        PPlanExecutor(registry).execute(plan, context)
         results.completed.set(true)
     }
 }

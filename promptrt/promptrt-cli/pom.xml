@@ -20,10 +20,14 @@
             <artifactId>promptex-docs</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-mcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptex-pips</artifactId>
             <version>${project.version}</version>
         </dependency>
 

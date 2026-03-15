@@ -30,6 +30,17 @@ class AiTaskBuilder<T: Any>(tasks: List<AiTask<*, *>>, val lastTask: AiTask<*, T
     /** List of tasks to be executed. */
     val plan = tasks + lastTask
 
+    /**
+     * Adds a task to the end of the list, where the predecessor's output is cast to [T] and the result [U] is returned directly.
+     * The input to the task is the first output from the final task in this [AiTaskBuilder].
+     */
+    inline fun <reified U : Any> task(id: String, description: String? = null, crossinline op: suspend (T, ExecContext) -> U): AiTaskBuilder<U> {
+        val newTask = object : AiTask<T, U>(id, description, setOf(lastTask.id)) {
+            override suspend fun execute(input: T, context: ExecContext) = op(input, context)
+        }
+        return AiTaskBuilder(plan, newTask)
+    }
+
     companion object {
         /** Initializes [AiTaskBuilder] with a single task that returns a value of type [T]. */
         fun <T : Any> task(id: String, description: String? = null, op: suspend (ExecContext) -> T) =
@@ -39,17 +50,6 @@ class AiTaskBuilder<T: Any>(tasks: List<AiTask<*, *>>, val lastTask: AiTask<*, T
 }
 
 //region BUILDER METHODS
-
-/**
- * Adds a task to the end of the list, where the predecessor's output is cast to [S] and the result [T] is returned directly.
- * The input to the task is the first output from the final task in this [AiTaskBuilder].
- */
-inline fun <reified S: Any, reified T : Any> AiTaskBuilder<S>.task(id: String, description: String? = null, crossinline op: suspend (S, ExecContext) -> T): AiTaskBuilder<T> {
-    val newTask = object : AiTask<S, T>(id, description, setOf(lastTask.id)) {
-        override suspend fun execute(input: S, context: ExecContext) = op(input, context)
-    }
-    return AiTaskBuilder(plan, newTask)
-}
 
 /**
  * Adds a task on the end of a list, where the final task returns an iterable, that transforms each item of that iterable

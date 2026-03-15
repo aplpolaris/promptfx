@@ -25,8 +25,8 @@ import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.core.EmbeddingModel
 import tri.ai.embedding.cosineSimilarity
+import tri.ai.pips.AiTaskBuilder
 import tri.util.json.jsonMapper
-import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
@@ -39,26 +39,27 @@ import tri.util.fine
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
-class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
+class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) {
 
-    override fun plan() =
-        aitask("weather-similarity-check") {
+    fun plan() =
+        AiTaskBuilder.task("weather-similarity-check") {
             checkWeatherSimilarity(input)
-        }.aitask<Any?>("weather-api-request") {
+        }.task("weather-api-request") { _, _ ->
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-api-request"))
                 .paramsInput(input)
                 .tokens(500)
                 .executeJson<WeatherRequest>(chatEngine)
-        }.objtask<WeatherRequest, WeatherResult>("weather-api") {
-            weatherService.getWeather(it)
-        }.aitask<WeatherResult>("weather-response-formatter") {
+                .output!!.outputs.first().other as WeatherRequest
+        }.task("weather-api") { it, _ ->
+            weatherService.getWeather(it) as WeatherResult
+        }.task("weather-response-formatter") { it, _ ->
             val json = jsonMapper.writeValueAsString(it)
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-response-formatter"))
                 .paramsInstruct(instruct = input, input = json)
                 .execute(chatEngine)
-        }.plan
+        }
 
     /**
      * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.

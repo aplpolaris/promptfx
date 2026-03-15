@@ -19,8 +19,10 @@
  */
 package tri.promptfx
 
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiTaskBuilder
 
 /**
  * View that gets result from a planned set of tasks from an [AiPlanner] object.
@@ -31,9 +33,9 @@ abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(t
     val common = ModelParameters()
 
     override suspend fun processUserInput(): AiPipelineResult =
-        AiPipelineExecutor.execute(plan().plan(), progress)
+        AiPipelineExecutor.execute(plan().plan, ExecContext(monitor = progress))
 
-    abstract fun plan(): AiPlanner
+    abstract fun plan(): AiTaskBuilder<*>
 
 }
 

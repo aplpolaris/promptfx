@@ -20,7 +20,7 @@
 package tri.promptfx
 
 import tri.ai.core.*
-import tri.ai.pips.aitask
+import tri.ai.pips.AiTaskBuilder
 
 /**
  * A unified chat engine for the PromptFx UI that can dispatch to either a [TextChat] or [MultimodalChat] model.
@@ -84,8 +84,8 @@ suspend fun CompletionBuilder.execute(engine: AiChatEngine): tri.ai.prompt.trace
     is AiChatEngine.Multimodal -> execute(engine.model)
 }
 
-/** Creates a single-task [AiPlanner] from a [CompletionBuilder] dispatching to the appropriate chat interface. */
-fun CompletionBuilder.taskPlan(engine: AiChatEngine): AiPlanner = when (engine) {
-    is AiChatEngine.Text -> aitask(id ?: "text-chat") { execute(engine.model) }.planner
-    is AiChatEngine.Multimodal -> aitask(id ?: "multimodal-chat") { execute(engine.model) }.planner
+/** Creates a single-task [AiTaskBuilder] from a [CompletionBuilder] dispatching to the appropriate chat interface. */
+fun CompletionBuilder.taskPlan(engine: AiChatEngine) = when (engine) {
+    is AiChatEngine.Text -> AiTaskBuilder.task(id ?: "text-chat") { execute(engine.model) }
+    is AiChatEngine.Multimodal -> AiTaskBuilder.task(id ?: "multimodal-chat") { execute(engine.model) }
 }

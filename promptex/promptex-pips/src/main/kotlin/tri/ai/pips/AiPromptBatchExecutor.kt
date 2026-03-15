@@ -31,12 +31,12 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
  * Generate executable list of tasks for a prompt batch.
  * These can be passed to [AiPipelineExecutor] for execution.
  */
-fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat): List<AiTask<*, *>> =
+fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat) =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
 /** Get list of tasks for executing this batch of prompts. */
 fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
-    tasks(modelLookup).aggregate().plan
+    tasks(modelLookup).aggregate()
 
 /** Create task for executing a run config. */
 fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {

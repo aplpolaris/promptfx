@@ -20,10 +20,9 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
-import tri.ai.pips.aitask
+import tri.ai.pips.AiTaskBuilder
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
-import tri.ai.prompt.trace.AiOutput
 import tri.promptfx.AiChatEngine
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
@@ -33,30 +32,31 @@ import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
+class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String) {
 
-    override fun plan() =
-        aitask("wikipedia-page-guess") {
+    fun plan() =
+        AiTaskBuilder.task("wikipedia-page-guess") {
             common.completionBuilder()
                 .prompt(lookupPrompt("examples-api/wikipedia-page-guess"))
                 .tokens(200)
                 .params(PromptTemplate.INPUT to input)
                 .execute(chatEngine)
-        }.task<AiOutput, String>("wikipedia-page-search") {
-            firstMatchingPage(it?.textContent() ?: "").also { page ->
+        }.task("wikipedia-page-search") { it, _ ->
+            val text = it.output!!.outputs.first().textContent()
+            firstMatchingPage(text).also { page ->
                 pageTitle?.value = page
             }
-        }.task<String, String>("retrieve-page-text") {
-            getWikipediaPage(it ?: "").also { page ->
+        }.task("retrieve-page-text") { it, _ ->
+            getWikipediaPage(it).also { page ->
                 pageTitle?.apply { value = "$value\n\n$page" }
             }
-        }.aitask<String>("question-answer") {
+        }.task("question-answer") { it, _ ->
             common.completionBuilder()
                 .prompt(lookupPrompt("text-qa/answer"))
-                .params(PromptTemplate.INPUT to input, PromptTemplate.INSTRUCT to (it ?: ""))
+                .instruct(input = input, instruct = it)
                 .tokens(1000)
                 .execute(chatEngine)
-        }.plan
+        }
 
     internal fun firstMatchingPage(query: String): String {
         val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.toString())

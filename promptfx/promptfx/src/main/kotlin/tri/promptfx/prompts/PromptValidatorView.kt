@@ -23,8 +23,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.clear
 import tornadofx.onChange
-import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiOutput
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
@@ -80,18 +79,19 @@ class PromptValidatorView : AiPlanTaskView(
         }
     }
 
-    override fun plan() = aitask("complete-prompt") {
+    override fun plan() = AiTaskBuilder.task("complete-prompt") {
         common.completionBuilder()
             .numResponses(1)
             .template(prompt.value)
             .execute(chatEngine)
             .also { promptOutput.set(it) }
-    }.aitask<AiOutput?>("validate-result") {
-        val validatorPromptText = validatorPromptUi.fill("result" to (it?.textContent() ?: ""))
+    }.task("validate-result") { it, _ ->
+        val result = it.output!!.outputs.first().textContent()
+        val validatorPromptText = validatorPromptUi.fill("result" to result)
         common.completionBuilder()
             .template(validatorPromptText)
             .execute(chatEngine)
-    }.planner
+    }
 
     companion object {
         private const val PROMPT_VALIDATE_PREFIX = "validate"

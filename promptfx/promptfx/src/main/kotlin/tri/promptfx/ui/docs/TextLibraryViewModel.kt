@@ -31,6 +31,7 @@ import tornadofx.Component
 import tornadofx.ScopedInstance
 import tornadofx.observableListOf
 import tornadofx.onChange
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
@@ -224,7 +225,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     /** Calculates embeddings for all selected collections, returning associated task. */
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
-            AiPipelineExecutor.execute(calculateEmbeddings().plan, progress)
+            AiPipelineExecutor.execute(calculateEmbeddings().plan, ExecContext(monitor = progress))
         }
     }
 
@@ -278,7 +279,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region LONG-RUNNING TASKS
 
     /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
-    fun calculateEmbeddings(): AiTaskBuilder {
+    fun calculateEmbeddings(): AiTaskBuilder<*> {
         val service = embeddingEngine.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
@@ -295,8 +296,8 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
                 "Calculated $count embeddings for ${doc.metadata.id}."
             }
-        }.aggregate().task<Any?, String>("summarize-results") {
-            "Calculated ${result.size} total embeddings."
+        }.aggregate().task("summarize-results") { it, _ ->
+            "Calculated ${it.size} total embeddings."
         }
     }
 
