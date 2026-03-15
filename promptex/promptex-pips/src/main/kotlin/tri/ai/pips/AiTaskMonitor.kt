@@ -21,8 +21,6 @@ package tri.ai.pips
 
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.tool.ExecContext
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
 
 /**
  * Monitors execution status of tasks via [ExecEvent] emissions.
@@ -41,7 +39,6 @@ object IgnoreMonitor : FlowCollector<ExecEvent> {
  * Emits a [ExecEvent.TaskUpdate] carrying a temporary [AiTask] whose id holds the message.
  */
 suspend fun FlowCollector<ExecEvent>.progressUpdate(message: String, progress: Double) =
-    emitTaskUpdate(object : AiTask<Any?, Any?>(message) {
-        override suspend fun execute(input: Any?, context: ExecContext) =
-            AiPromptTrace(outputInfo = AiOutputInfo.text(message))
+    emitTaskUpdate(object : AiTask<Any?, String>(message) {
+        override suspend fun execute(input: Any?, context: ExecContext) = message
     }, progress)

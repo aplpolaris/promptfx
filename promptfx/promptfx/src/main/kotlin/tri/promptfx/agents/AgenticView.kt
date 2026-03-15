@@ -47,9 +47,7 @@ import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.pips.ExecEvent
 import tri.ai.pips.AiPlanner
-import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.pips.tasktext
 import tri.promptfx.*
 import tri.util.json.OUTPUT_SCHEMA
 import tri.util.json.PARAM_INPUT
@@ -230,7 +228,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         .replace(Regex("_+"), "_")
         .lowercase()
 
-    override fun plan(): AiPlanner = aitask("agent") {
+    override fun plan(): AiPlanner = tasktext("agent") {
         runLater { agentLog.value = "" }
         tools.onEach { it.state = ToolState.NONE }
 
@@ -256,7 +254,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             .message.textContent()!!
 
         runLater { pfxWorkspace.dock(this) }
-        AiPromptTrace(outputInfo = AiOutputInfo.text(result))
+        result
     }.planner
 
     /** Executes a view's tool with specified input. Switches to show the view while executing. */

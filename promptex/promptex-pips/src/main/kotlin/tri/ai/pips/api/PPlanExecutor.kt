@@ -33,8 +33,6 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
 import tri.ai.pips.ExecEvent
 import kotlinx.coroutines.flow.FlowCollector
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
@@ -89,7 +87,7 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
         log("output", result)
 
         step.saveAs?.let { stepContext.put(it, result) }
-        return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
+        return result
     }
 
     private fun log(label: String, node: JsonNode) {

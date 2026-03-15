@@ -20,10 +20,7 @@
 package tri.ai.pips
 
 import tri.ai.core.tool.ExecContext
-import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
 /**
@@ -75,13 +72,10 @@ abstract class AiTask<I, O>(
     }
 
     companion object {
-        /** Creates a task. */
-        fun <T : Any> task(id: String, description: String? = null, op: suspend () -> T): AiTask<Any?, AiPromptTraceSupport> =
-            aitask(id, description) {
-                val t0 = System.currentTimeMillis()
-                val res = op()
-                if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
-                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res))
+        /** Creates a task that returns [T] directly. */
+        fun <T : Any> task(id: String, description: String? = null, op: suspend () -> T): AiTask<Any?, T> =
+            object : AiTask<Any?, T>(id, description) {
+                override suspend fun execute(input: Any?, context: ExecContext) = op()
             }
 
         /** Creates a task returning an [AiPromptTraceSupport]. */
@@ -90,13 +84,10 @@ abstract class AiTask<I, O>(
                 override suspend fun execute(input: Any?, context: ExecContext) = op()
             }
 
-        /** Creates a task that depends on a provided list of tasks. */
-        fun <T : Any> List<AiTask<*, *>>.task(id: String, description: String? = null, op: suspend (Map<String, Any?>) -> T): AiTask<Any?, AiPromptTraceSupport> =
-            aitask(id, description) {
-                val t0 = System.currentTimeMillis()
-                val res = op(it)
-                if (res is AiPromptTraceSupport) throw IllegalArgumentException("Use aitask() for AiPromptTraceSupport")
-                AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.other(res))
+        /** Creates a task that depends on a provided list of tasks, returning [T] directly. */
+        fun <T : Any> List<AiTask<*, *>>.task(id: String, description: String? = null, op: suspend (Map<String, Any?>) -> T): AiTask<Any?, T> =
+            object : AiTask<Any?, T>(id, description, map { it.id }.toSet()) {
+                override suspend fun execute(input: Any?, context: ExecContext) = op(context.taskInputs)
             }
 
         /** Creates a task that depends on a provided list of tasks, returning an [AiPromptTraceSupport]. */
