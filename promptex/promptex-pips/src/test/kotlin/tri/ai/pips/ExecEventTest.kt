@@ -126,9 +126,7 @@ class ExecEventTest {
     @Test
     fun testPipelineExecutorEmitsEvents() = runTest {
         val collected = mutableListOf<ExecEvent>()
-        val collector = object : FlowCollector<ExecEvent> {
-            override suspend fun emit(value: ExecEvent) { collected.add(value) }
-        }
+        val collector = FlowCollector<ExecEvent> { value -> collected.add(value) }
 
         val tasks = listOf(
             object : AiTask<Any?, String>("task-a") {
@@ -138,7 +136,7 @@ class ExecEventTest {
                 }
             }
         )
-        AiPipelineExecutor.execute(tasks, collector)
+        AiPipelineExecutor.execute(tasks, ExecContext(monitor = collector))
 
         val started = collected.filterIsInstance<ExecEvent.TaskStarted>()
         val completed = collected.filterIsInstance<ExecEvent.TaskCompleted>()

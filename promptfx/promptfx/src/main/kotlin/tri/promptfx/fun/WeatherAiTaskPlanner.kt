@@ -26,7 +26,6 @@ import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.core.EmbeddingModel
 import tri.ai.embedding.cosineSimilarity
 import tri.util.json.jsonMapper
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput

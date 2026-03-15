@@ -19,7 +19,6 @@
  */
 package tri.ai.pips
 
-import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
@@ -35,14 +34,12 @@ object AiPipelineExecutor {
     /**
      * Execute tasks in order, chaining results from one to another.
      * A single [ExecContext] is created and shared across all task executions; each task's output is
-     * stored in [ExecContext.taskInputs] and its trace in [ExecContext.traces] so subsequent tasks can
+     * stored in [ExecContext.taskOutputs] and its trace in [ExecContext.traces] so subsequent tasks can
      * access both without requiring a new context per task.
      * Returns the table of execution results.
      */
-    suspend fun execute(tasks: List<AiTask<*, *>>, monitor: FlowCollector<ExecEvent>): AiPipelineResult {
+    suspend fun execute(tasks: List<AiTask<*, *>>, context: ExecContext = ExecContext()): AiPipelineResult {
         require(tasks.isNotEmpty()) { "No tasks to execute." }
-
-        val context = ExecContext(monitor = monitor)
 
         var tasksToDo: List<AiTask<*, *>>
         do {
@@ -53,8 +50,8 @@ object AiPipelineExecutor {
             }
             tasksToDo.forEach { task ->
                 try {
-                    monitor.emitTaskStarted(task)
-                    val input = if (task.dependencies.size == 1) context.taskInputs[task.dependencies.first()] else null
+                    context.monitor.emitTaskStarted(task)
+                    val input = if (task.dependencies.size == 1) context.taskOutputs[task.dependencies.first()] else null
                     val output = executor.execute(task, input, context)
                     // Resolve trace: prefer context.traces (set by task or RetryExecutor), then synthesize
                     val trace: AiPromptTraceSupport = context.traces[task.id]
@@ -70,14 +67,14 @@ object AiPipelineExecutor {
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
-                        monitor.emitTaskFailed(task, err)
+                        context.monitor.emitTaskFailed(task, err)
                     } else {
-                        monitor.emitTaskCompleted(task, resultValue)
-                        context.taskInputs[task.id] = output
+                        context.monitor.emitTaskCompleted(task, resultValue)
+                        context.taskOutputs[task.id] = output
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
-                    monitor.emitTaskFailed(task, x)
+                    context.monitor.emitTaskFailed(task, x)
                     context.traces[task.id] = AiPromptTrace.error(null, x.message ?: "Unknown error", x)
                 }
             }

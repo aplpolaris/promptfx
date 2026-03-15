@@ -25,7 +25,6 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.MChatRole
 import tri.ai.core.TextChatMessage
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView

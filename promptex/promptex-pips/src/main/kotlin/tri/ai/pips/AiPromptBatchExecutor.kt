@@ -34,9 +34,9 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
 fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat): List<AiTask<*, *>> =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
-/** Get an [AiPlanner] for executing this batch of prompts. */
+/** Get list of tasks for executing this batch of prompts. */
 fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
-    tasks(modelLookup).aggregate().planner
+    tasks(modelLookup).aggregate().plan
 
 /** Create task for executing a run config. */
 fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {

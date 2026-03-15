@@ -28,9 +28,8 @@ import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.embedding.*
-import tri.ai.pips.AiTaskList
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.progressUpdate
-import tri.ai.pips.taskwithmonitor
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -67,23 +66,23 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         temp: Double,
         numResponses: Int,
         snippetCallback: (List<EmbeddingMatch>) -> Unit
-    ): AiTaskList = taskwithmonitor("load-embeddings-file-and-calculate") { monitor ->
+    ): AiTaskBuilder = AiTaskBuilder.task("load-embeddings-file-and-calculate") { context ->
         // trigger loading of embeddings file (with progress), the result is ignored
         val progressScope = CoroutineScope(currentCoroutineContext() + Job())
-        index.onProgress = { msg, pct -> progressScope.launch { monitor.progressUpdate(msg, pct) } }
+        index.onProgress = { msg, pct -> progressScope.launch { context.monitor.progressUpdate(msg, pct) } }
         try {
             index.findMostSimilar("a", 1)
         } finally {
             index.onProgress = null
             progressScope.cancel()
         }
-    }.aitask<Any?>("find-relevant-sections") {
+    }.task<List<EmbeddingMatch>, AiPromptTrace>("find-relevant-sections") { matches, _ ->
         // for each question, generate a list of relevant chunks
         findRelevantSection(question, chunksToRetrieve).also {
-            snippetCallback(it.firstValue.content() as List<EmbeddingMatch>)
+            snippetCallback(matches)
         }
-    }.aitask<AiOutput?>("question-answer") { output ->
-        val snippets = output?.other as List<EmbeddingMatch>
+    }.task<AiPromptTrace, List<AiPromptTrace>>("question-answer") { trace, _ ->
+        val snippets = trace.output!!.outputs.first().other as List<EmbeddingMatch>
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
         val context = contextStrategy.constructContext(queryChunks)

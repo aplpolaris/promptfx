@@ -46,7 +46,6 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
 import tri.ai.pips.ExecEvent
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.tasktext
 import tri.promptfx.*
 import tri.util.json.OUTPUT_SCHEMA

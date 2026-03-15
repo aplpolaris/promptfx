@@ -47,8 +47,10 @@ class PPlanExecutorTest {
         override val version = "0.0.1"
         override val inputSchema: JsonNode? = null
         override val outputSchema: JsonNode? = null
-        override suspend fun execute(input: JsonNode, ctx: ExecContext) = input
+        override suspend fun execute(input: JsonNode, context: ExecContext) = input
     }
+
+    private fun context() = ExecContext(monitor = PrintMonitor())
 
     @Test
     fun `simple plan executes with dummy tool`() {
@@ -66,8 +68,8 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---
@@ -93,8 +95,8 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parseYaml(yaml)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---
@@ -125,8 +127,8 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.scratchpad}")
             println("        Chat response: ${context.scratchpad["chat1"]?.get("message")?.asText()}")
 
@@ -203,8 +205,8 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
             println("        Context: ${context.scratchpad}")
 
             // --- Assertions ---

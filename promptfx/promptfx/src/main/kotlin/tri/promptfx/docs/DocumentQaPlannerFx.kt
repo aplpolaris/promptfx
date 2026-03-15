@@ -31,7 +31,7 @@ import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskList
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.text.chunks.TextLibrary
@@ -75,7 +75,7 @@ class DocumentQaPlannerFx {
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
-    ): AiTaskList {
+    ): AiTaskBuilder {
         val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!.asTextChat(), chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
@@ -88,7 +88,7 @@ class DocumentQaPlannerFx {
             numResponses = numResponses!!,
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
-        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
+        return AiTaskBuilder(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
             .aitask<AiOutput?>("process-result") {
                 val res = it?.content() as QuestionAnswerResult
                 info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${res.responseScore}$ANSI_RESET")

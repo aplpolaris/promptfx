@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.TextPlugin
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTraceDatabase
 import tri.ai.prompt.trace.PromptInfo
@@ -34,6 +35,8 @@ import tri.util.json.jsonMapper
 import tri.util.json.jsonWriter
 
 class AiPromptBatchExecutorTest {
+
+    private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
 
     private val defaultTextCompletion = TextPlugin.textCompletionModels().firstOrNull()
 
@@ -61,7 +64,7 @@ class AiPromptBatchExecutorTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor()).interimResults.values.onEach {
+            AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, printingExecContext()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -76,7 +79,7 @@ class AiPromptBatchExecutorTest {
                 AiModelInfo(defaultTextCompletion!!.modelId),
                 4
             )
-            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor())
+            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, printingExecContext())
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result.interimResults.values)
             }

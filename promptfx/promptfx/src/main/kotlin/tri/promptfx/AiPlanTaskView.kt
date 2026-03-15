@@ -21,7 +21,6 @@ package tri.promptfx
 
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiPlanner
 
 /**
  * View that gets result from a planned set of tasks from an [AiPlanner] object.

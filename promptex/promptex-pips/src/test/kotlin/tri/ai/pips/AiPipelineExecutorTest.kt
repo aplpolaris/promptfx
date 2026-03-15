@@ -28,12 +28,14 @@ import tri.ai.prompt.trace.AiPromptTrace
 
 class AiPipelineExecutorTest {
 
+    private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
+
     @Test
     fun testExecute() {
         runTest {
             val results = AiPipelineExecutor.execute(
                 listOf(GoTask("pass"), FailTask("fail")),
-                PrintMonitor()).interimResults
+                printingExecContext()).interimResults
             assertEquals(2, results.size)
             assertEquals("go", results["pass"]?.firstValue!!.textContent())
             assertNotNull(results["fail"]?.errorMessage)
@@ -45,7 +47,7 @@ class AiPipelineExecutorTest {
         runTest {
             val results = AiPipelineExecutor.execute(
                 listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
-                PrintMonitor()).interimResults
+                printingExecContext()).interimResults
             assertEquals(3, results.size)
             assertEquals("go", results["a"]?.firstValue!!.textContent())
             assertEquals("go", results["b"]?.firstValue!!.textContent())
@@ -58,7 +60,7 @@ class AiPipelineExecutorTest {
         runTest {
             val results = AiPipelineExecutor.execute(
                 listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
-                PrintMonitor()).interimResults
+                printingExecContext()).interimResults
             assertEquals(2, results.size)
             assertEquals("go", results["a"]?.firstValue!!.textContent())
             assertNotNull(results["b"]?.errorMessage)

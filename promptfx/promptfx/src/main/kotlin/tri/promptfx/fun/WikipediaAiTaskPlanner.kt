@@ -20,7 +20,6 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate

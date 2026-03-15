@@ -28,7 +28,6 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.promptfx.AiChatEngine
 import tri.promptfx.execute

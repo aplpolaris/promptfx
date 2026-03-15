@@ -20,7 +20,6 @@
 package tri.promptfx
 
 import tri.ai.core.*
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 
 /**

@@ -29,10 +29,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
-import tri.ai.pips.ExecEvent
-import kotlinx.coroutines.flow.FlowCollector
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
@@ -44,31 +41,17 @@ import tri.util.json.jsonMapper
  */
 class PPlanExecutor(private val registry: ExecutableRegistry) {
 
-    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: FlowCollector<ExecEvent>) {
+    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext()) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
         PPlanValidator.validateHasSteps(plan)
 
-        val planner = PPlanPlanner(plan, context, registry)
-        val tasks = planner.plan()
-        AiPipelineExecutor.execute(tasks, monitor)
-    }
-
-}
-
-/** Converts a [PPlan] to a series of [AiTask<*,*>] objects. */
-class PPlanPlanner(
-    private val plan: PPlan,
-    private val context: ExecContext = ExecContext(),
-    private val registry: ExecutableRegistry
-) : AiPlanner {
-
-    override fun plan(): List<AiTask<*, *>> {
-        return plan.steps.map { step ->
+        val tasks = plan.steps.map { step ->
             val exec = registry.get(step.tool)
                 ?: throw IllegalArgumentException("No executable found for ${step.tool}")
             AiPlanStepTask(step, exec, context)
         }
+        AiPipelineExecutor.execute(tasks, context)
     }
 
 }
@@ -77,7 +60,7 @@ class PPlanPlanner(
 class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val stepContext: ExecContext) :
     AiTask<Any?, Any?>(step.tool, description = null, dependencies = setOf()) {
 
-    override suspend fun execute(input: Any?, context: ExecContext): Any? {
+    override suspend fun execute(input: Any?, context: ExecContext): Any {
         log("context", stepContext.scratchpad)
 
         val inputMap = step.input.resolveRefs(stepContext.scratchpad)

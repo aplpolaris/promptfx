@@ -23,44 +23,44 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.core.tool.ExecContext
 
-class AiTaskListTest {
+class AiTaskBuilderTest {
+
+    private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
 
     @Test
     fun testExecute() {
         runTest {
-            val plan = tasktext("first") {
+            val plan = AiTaskBuilder.task("first") {
                 "go"
-            }.aitask<String>("second") {
-                val tc = it ?: ""
-                AiPromptTrace.output(tc + tc)
-            }.planner
-            val result = AiPipelineExecutor.execute(plan.plan(), PrintMonitor())
+            }.task("second") { input, _ ->
+                input + input
+            }.plan
+            val result = AiPipelineExecutor.execute(plan, printingExecContext())
             assertEquals("gogo", result.finalResult.firstValue.text)
         }
     }
 
     @Test
     fun testExecuteList() {
-        val plan = tasklist("first") {
+        val plan = AiTaskBuilder.task("first") {
             listOf("go", "stop")
-        }.aitaskonlist<String>("second") {
-            AiPromptTrace.outputListAsSingleResult(it.map { s -> AiOutput(text = s) })
-        }.planner
+        }.taskOnEach("second") { it, _ ->
+            it + it
+        }.plan
         val result = runBlocking {
-            AiPipelineExecutor.execute(plan.plan(), PrintMonitor())
+            AiPipelineExecutor.execute(plan, printingExecContext())
         }
-        assertEquals(listOf("go", "stop"), result.finalResult.firstValue.content())
+        assertEquals(listOf("gogo", "stopstop"), result.finalResult.firstValue.content())
 
-        val plan2 = aitask("first") {
-            AiPromptTrace.output(listOf("go", "stop"))
-        }.aitaskonlist<AiOutput>("second") {
-            AiPromptTrace.output(it.joinToString())
-        }.planner
+        val plan2 = AiTaskBuilder.task("first") {
+            listOf("go", "stop")
+        }.task("second") { it, _ ->
+            it.joinToString()
+        }.plan
         val result2 = runBlocking {
-            AiPipelineExecutor.execute(plan2.plan(), PrintMonitor())
+            AiPipelineExecutor.execute(plan2, printingExecContext())
         }
         assertEquals("go, stop", result2.finalResult.firstValue.text)
     }

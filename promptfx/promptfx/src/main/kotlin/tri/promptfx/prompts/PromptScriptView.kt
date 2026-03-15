@@ -24,7 +24,6 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.aggregatetrace
 import tri.ai.pips.task
 import tri.ai.pips.tasks
