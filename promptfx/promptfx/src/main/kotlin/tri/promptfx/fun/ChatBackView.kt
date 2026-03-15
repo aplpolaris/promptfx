@@ -25,7 +25,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.MChatRole
 import tri.ai.core.TextChatMessage
-import tri.ai.pips.aitask
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.fillPrompt
@@ -164,11 +164,13 @@ class ChatBackView : AiPlanTaskView("AI Chatting with Itself", "Enter a starting
         }
     }
 
-    override fun plan(): AiPlanner {
+    override fun plan(): AiTaskBuilder<*> {
         addUserInputToHistory()
-        return aitask("chat-back") {
-            chatBack()
-        }.planner
+        return AiTaskBuilder.task("chat-back") { context ->
+            val trace = chatBack()
+            context.logTrace("chat-back", trace)
+            trace.firstValue.textContent() ?: ""
+        }
     }
 
     private fun addUserInputToHistory() {

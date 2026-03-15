@@ -30,7 +30,6 @@ import tri.ai.core.TextChatMessage
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.progressUpdate
-import tri.ai.pips.task
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -77,17 +76,20 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             index.onProgress = null
             progressScope.cancel()
         }
-    }.task<List<EmbeddingMatch>, AiPromptTrace>("find-relevant-sections") { matches, _ ->
-        // for each question, generate a list of relevant chunks
-        findRelevantSection(question, chunksToRetrieve).also {
-            snippetCallback(matches)
-        }
-    }.task<AiPromptTrace, AiPromptTrace>("question-answer") { trace, _ ->
-        val snippets = trace.output!!.outputs.first().other as List<EmbeddingMatch>
-        val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
-            .take(contextChunks)
-        val context = contextStrategy.constructContext(queryChunks)
-        val query = prompt.template().fillInstruct(input = context, instruct = question)
+    }.task<List<EmbeddingMatch>>("find-relevant-sections") { loadResult, context ->
+        // pass the load-step matches to the UI callback, then retrieve the real matches for this question
+        snippetCallback(loadResult)
+        val matches = index.findMostSimilar(question, chunksToRetrieve)
+        val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
+        context.logTrace("find-relevant-sections", AiPromptTrace(
+            modelInfo = modelId?.let { AiModelInfo(it) },
+            outputInfo = AiOutputInfo.listSingleOutput(matches)
+        ))
+        matches
+    }.task<QuestionAnswerResult>("question-answer") { snippets, context ->
+        val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }.take(contextChunks)
+        val ctx = contextStrategy.constructContext(queryChunks)
+        val query = prompt.template().fillInstruct(input = ctx, instruct = question)
         val messages = chatHistory.takeLast(historySize) + TextChatMessage.user(query)
         val response = chat.chat(messages, MChatVariation.temp(temp), maxTokens, null, numResponses, null)
         val embeddingModel = index.embeddingStrategy.model
@@ -95,7 +97,6 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val responseEmbeddings = response.values?.map {
             embeddingModel.calculateEmbedding(it.textContent())
         } ?: listOf()
-        // TODO - make this support more than one response embedding
         // add snippet response scores for first response embedding only
         if (responseEmbeddings.isNotEmpty()) {
             snippets.forEach {
@@ -108,35 +109,19 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             CHUNKER_ID to "PromptFx",
             CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
         )
-        response.mapOutput {
-            AiOutput(other = QuestionAnswerResult(
-                query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
-                matches = snippets,
-                trace = response.mapOutput { AiOutput(text = it.textContent()) },
-                responseEmbeddings = responseEmbeddings
-            ))
-        }
-    }.task("process-result") { output, _ ->
-        val result = output.output?.outputs!!.first().other as QuestionAnswerResult
-        info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
-        FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
-    }
-
-    //region SIMILARITY CALCULATIONS
-
-    /**
-     * Finds the most relevant section to the query.
-     * Result is encoded as a list of [EmbeddingMatch] in a single [AiOutput].
-     */
-    private suspend fun findRelevantSection(query: String, maxChunks: Int): AiPromptTrace {
-        val matches = index.findMostSimilar(query, maxChunks)
-        val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
-        return AiPromptTrace(
-            modelInfo = modelId?.let { AiModelInfo(it) },
-            outputInfo = AiOutputInfo.listSingleOutput(matches)
+        val result = QuestionAnswerResult(
+            query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
+            matches = snippets,
+            trace = response.mapOutput { AiOutput(text = it.textContent()) },
+            responseEmbeddings = responseEmbeddings
         )
+        context.logTrace("question-answer", response.mapOutput { AiOutput(other = result) })
+        result
+    }.task<FormattedPromptTraceResult>("process-result") { result, context ->
+        info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
+        val ft = FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
+        context.logTrace("process-result", ft)
+        ft
     }
-
-    //endregion
 
 }

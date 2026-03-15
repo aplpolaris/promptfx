@@ -20,10 +20,11 @@
 package tri.promptfx.docs
 
 import javafx.application.Platform
+import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.IgnoreMonitor
+import tri.ai.pips.PrintMonitor
 import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.docs.DocumentQaDriver
 import tri.promptfx.PromptFxModels
@@ -76,9 +77,9 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
         Platform.exit()
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int, context: ExecContext): AiPipelineResult {
         view.question.set(input)
-        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult
+        return AiPipelineExecutor.execute(view.plan().plan, context)
     }
 
 }

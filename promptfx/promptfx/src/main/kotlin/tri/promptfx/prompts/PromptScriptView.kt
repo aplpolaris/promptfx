@@ -25,6 +25,7 @@ import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.AiTaskBuilder
+import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
@@ -164,10 +165,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
-        }.aggregatetrace().aitask<List<*>>("process-results") {
-            @Suppress("UNCHECKED_CAST")
-            postProcess(it as? List<AiPromptTraceSupport> ?: listOf(), docInputs)
-        }.planner
+        }.aggregate().task<AiPromptTrace>("process-results") { _, context ->
+            // each batch task logs its trace via context.logTrace(id, ...) in AiPromptRunConfig.task()
+            val allTraces = tasks.map { context.traces[it.id] }.filterNotNull()
+            val result = postProcess(allTraces, docInputs)
+            context.logTrace("process-results", result)
+            result
+        }
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {

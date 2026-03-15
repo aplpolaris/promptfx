@@ -28,6 +28,7 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiPipelineResult
 import tri.ai.prompt.trace.AiPromptTraceSupport
@@ -185,7 +186,7 @@ class DocumentQaView: AiPlanTaskView(
         questions.forEach {
             question.set(it)
             super.runTask {
-                AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress).also {
+                AiPipelineExecutor.execute(questionTaskList(it).plan, ExecContext(monitor = progress)).also {
                     runLater {
                         addTrace(it.finalResult)
                     }
@@ -195,7 +196,7 @@ class DocumentQaView: AiPlanTaskView(
         question.set(questionInput)
     }
 
-    override fun plan() = questionTaskList(question.value).planner
+    override fun plan() = questionTaskList(question.value)
 
     private fun questionTaskList(question: String) =
         planner.taskList(
