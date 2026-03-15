@@ -45,7 +45,8 @@ class RetryExecutor(
      */
     suspend fun execute(task: AiTask<*, *>, input: Any?, context: ExecContext): Any? {
         return retry.execute({
-            task.executeUntyped(input, context)
+            @Suppress("UNCHECKED_CAST")
+            (task as AiTask<Any?, Any?>).execute(input, context)
         }, onSuccess = { it ->
             val output = it.value!!
             // Update trace in context if one was logged, enriching it with retry metadata
