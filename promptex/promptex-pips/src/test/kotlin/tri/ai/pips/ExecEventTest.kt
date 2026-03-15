@@ -32,7 +32,7 @@ class ExecEventTest {
     /** Verify [ExecEvent] hierarchy covers expected subtypes. */
     @Test
     fun testExecEventHierarchy() {
-        val task = object : AiTask("test-task") {
+        val task = object : AiTask<Any?, AiPromptTrace>("test-task") {
             override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("result"))
         }
@@ -77,7 +77,7 @@ class ExecEventTest {
     /** Verify [IgnoreMonitor] silently discards all events. */
     @Test
     fun testIgnoreMonitor() = runTest {
-        val task = object : AiTask("ignore-test") {
+        val task = object : AiTask<Any?, AiPromptTrace>("ignore-test") {
             override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
@@ -95,7 +95,7 @@ class ExecEventTest {
             override suspend fun emit(value: ExecEvent) { collected.add(value) }
         }
 
-        val task = object : AiTask("ext-test") {
+        val task = object : AiTask<Any?, AiPromptTrace>("ext-test") {
             override suspend fun execute(input: Any?, context: ExecContext) =
                 AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
         }
@@ -131,7 +131,7 @@ class ExecEventTest {
         }
 
         val tasks = listOf(
-            object : AiTask("task-a") {
+            object : AiTask<Any?, AiPromptTrace>("task-a") {
                 override suspend fun execute(input: Any?, context: ExecContext) =
                     AiPromptTrace(outputInfo = AiOutputInfo.text("a"))
             }

@@ -58,14 +58,14 @@ class PPlanExecutor(private val registry: ExecutableRegistry) {
 
 }
 
-/** Converts a [PPlan] to a series of [AiTask<*>] objects. */
+/** Converts a [PPlan] to a series of [AiTask<*,*>] objects. */
 class PPlanPlanner(
     private val plan: PPlan,
     private val context: ExecContext = ExecContext(),
     private val registry: ExecutableRegistry
 ) : AiPlanner {
 
-    override fun plan(): List<AiTask> {
+    override fun plan(): List<AiTask<*, *>> {
         return plan.steps.map { step ->
             val exec = registry.get(step.tool)
                 ?: throw IllegalArgumentException("No executable found for ${step.tool}")
@@ -77,7 +77,7 @@ class PPlanPlanner(
 
 /** An executable task for a plan step. */
 class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val stepContext: ExecContext) :
-    AiTask(step.tool, description = null, dependencies = setOf()) {
+    AiTask<Any?, Any?>(step.tool, description = null, dependencies = setOf()) {
 
     override suspend fun execute(input: Any?, context: ExecContext): Any? {
         log("context", stepContext.scratchpad)

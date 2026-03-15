@@ -32,13 +32,13 @@ sealed class ExecEvent {
     // Task lifecycle events (replaces AiTaskMonitor callbacks)
 
     /** Emitted when a task begins execution. */
-    data class TaskStarted(val task: AiTask) : ExecEvent()
+    data class TaskStarted(val task: AiTask<*, *>) : ExecEvent()
     /** Emitted to report incremental progress within a task. */
-    data class TaskUpdate(val task: AiTask, val progress: Double) : ExecEvent()
+    data class TaskUpdate(val task: AiTask<*, *>, val progress: Double) : ExecEvent()
     /** Emitted when a task completes successfully. */
-    data class TaskCompleted(val task: AiTask, val result: Any?) : ExecEvent()
+    data class TaskCompleted(val task: AiTask<*, *>, val result: Any?) : ExecEvent()
     /** Emitted when a task fails with an error. */
-    data class TaskFailed(val task: AiTask, val error: Throwable) : ExecEvent()
+    data class TaskFailed(val task: AiTask<*, *>, val error: Throwable) : ExecEvent()
 
     // Agent/chat events (replaces AgentChatEvent variants)
 
@@ -64,10 +64,10 @@ sealed class ExecEvent {
 
 // Extension functions for emitting task lifecycle events
 
-suspend fun FlowCollector<ExecEvent>.emitTaskStarted(task: AiTask) = emit(ExecEvent.TaskStarted(task))
-suspend fun FlowCollector<ExecEvent>.emitTaskUpdate(task: AiTask, progress: Double) = emit(ExecEvent.TaskUpdate(task, progress))
-suspend fun FlowCollector<ExecEvent>.emitTaskCompleted(task: AiTask, result: Any?) = emit(ExecEvent.TaskCompleted(task, result))
-suspend fun FlowCollector<ExecEvent>.emitTaskFailed(task: AiTask, error: Throwable) = emit(ExecEvent.TaskFailed(task, error))
+suspend fun FlowCollector<ExecEvent>.emitTaskStarted(task: AiTask<*, *>) = emit(ExecEvent.TaskStarted(task))
+suspend fun FlowCollector<ExecEvent>.emitTaskUpdate(task: AiTask<*, *>, progress: Double) = emit(ExecEvent.TaskUpdate(task, progress))
+suspend fun FlowCollector<ExecEvent>.emitTaskCompleted(task: AiTask<*, *>, result: Any?) = emit(ExecEvent.TaskCompleted(task, result))
+suspend fun FlowCollector<ExecEvent>.emitTaskFailed(task: AiTask<*, *>, error: Throwable) = emit(ExecEvent.TaskFailed(task, error))
 
 // Extension functions for emitting agent/chat events
 

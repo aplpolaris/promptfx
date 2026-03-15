@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.FlowCollector
 /** Takes user input and generates a series of tasks to be executed. */
 interface AiPlanner {
 
-    fun plan(): List<AiTask>
+    fun plan(): List<AiTask<*, *>>
 
     /** Executes the plan with [AiPipelineExecutor]. */
     suspend fun execute(monitor: FlowCollector<ExecEvent>) = AiPipelineExecutor.execute(plan(), monitor)

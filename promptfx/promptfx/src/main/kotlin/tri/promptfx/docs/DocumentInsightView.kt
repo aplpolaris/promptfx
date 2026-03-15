@@ -163,7 +163,7 @@ class DocumentInsightView: AiPlanTaskView(
             }.planner
     }
 
-    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask> {
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<*, *>> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }

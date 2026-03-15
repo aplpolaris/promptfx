@@ -43,9 +43,9 @@ class RetryExecutor(
      * Executes a task with given policy. Logs trace information to [ExecContext.traces] with additional
      * metadata about the number of attempts and total duration.
      */
-    suspend fun execute(task: AiTask, input: Any?, context: ExecContext): Any? {
+    suspend fun execute(task: AiTask<*, *>, input: Any?, context: ExecContext): Any? {
         return retry.execute({
-            task.execute(input, context)
+            task.executeUntyped(input, context)
         }, onSuccess = { it ->
             val output = it.value!!
             // Update trace in context if one was logged, enriching it with retry metadata

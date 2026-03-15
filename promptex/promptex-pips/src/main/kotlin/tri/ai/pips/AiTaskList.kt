@@ -23,7 +23,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.*
 
 /** Stores a list of tasks that can be executed in order. */
-class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
+class AiTaskList(tasks: List<AiTask<*, *>>, val lastTask: AiTask<*, *>) {
 
     val plan = tasks + lastTask
     val planner
@@ -70,8 +70,8 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
      * The result is expected to be a [AiPromptTraceSupport] object with details about model, execution time, etc.
      */
     fun aitask(id: String, description: String? = null, op: suspend (AiOutput) -> AiPromptTraceSupport): AiTaskList {
-        val newTask = object : AiTask(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(input: Any?, context: ExecContext): Any? {
+        val newTask = object : AiTask<Any?, AiPromptTraceSupport>(id, description, setOf(lastTask.id)) {
+            override suspend fun execute(input: Any?, context: ExecContext): AiPromptTraceSupport {
                 val result = (input ?: context.taskInputs[lastTask.id]) as AiPromptTraceSupport
                 return op(result.firstValue)
             }
@@ -84,8 +84,8 @@ class AiTaskList(tasks: List<AiTask>, val lastTask: AiTask) {
      * The input to the task is the full list of outputs from the final task in this [AiTaskList].
      */
     fun aitaskonlist(id: String, description: String? = null, op: suspend (List<AiOutput>) -> AiPromptTraceSupport): AiTaskList {
-        val newTask = object : AiTask(id, description, setOf(lastTask.id)) {
-            override suspend fun execute(input: Any?, context: ExecContext): Any? {
+        val newTask = object : AiTask<Any?, AiPromptTraceSupport>(id, description, setOf(lastTask.id)) {
+            override suspend fun execute(input: Any?, context: ExecContext): AiPromptTraceSupport {
                 val result = (input ?: context.taskInputs[lastTask.id]) as AiPromptTraceSupport
                 return op(result.values ?: listOf())
             }
@@ -121,7 +121,7 @@ fun tasklist(id: String, description: String? = null, op: suspend () -> List<AiO
 
 /** Creates a sequential task list with a single task. */
 fun aitask(id: String, description: String? = null, op: suspend () -> AiPromptTraceSupport) = AiTaskList(listOf(),
-    object: AiTask(id, description) {
+    object: AiTask<Any?, AiPromptTraceSupport>(id, description) {
         override suspend fun execute(input: Any?, context: ExecContext) = op()
     })
 
@@ -135,7 +135,7 @@ fun taskwithmonitor(id: String, description: String? = null, op: suspend (AiTask
 
 /** Creates a sequential task list with a single task that has access to the [AiTaskMonitor] for reporting sub-progress. */
 fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTaskMonitor) -> AiPromptTraceSupport) = AiTaskList(listOf(),
-    object : AiTask(id, description) {
+    object : AiTask<Any?, AiPromptTraceSupport>(id, description) {
         override suspend fun execute(input: Any?, context: ExecContext) = op(context.monitor)
     })
 
@@ -143,9 +143,9 @@ fun aitaskwithmonitor(id: String, description: String? = null, op: suspend (AiTa
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
  * @throws IllegalArgumentException if there are duplicate task IDs
  */
-fun List<AiTask>.aggregate(): AiTaskList {
+fun List<AiTask<*, *>>.aggregate(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
-    val finalTask = object : AiTask("promptBatch", dependencies = map { it.id }.toSet()) {
+    val finalTask = object : AiTask<Any?, AiPromptTrace>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(input: Any?, context: ExecContext): AiPromptTrace {
             val aggregateResults = context.taskInputs.values.map {
                 (it as AiPromptTraceSupport).output!!.outputs.map { it.content() }
@@ -161,9 +161,9 @@ fun List<AiTask>.aggregate(): AiTaskList {
  * Create a [AiTaskList] for a list of tasks that all return the same type, where the last task returns the list of results from individual tasks.
  * @throws IllegalArgumentException if there are duplicate task IDs
  */
-fun List<AiTask>.aggregatetrace(): AiTaskList {
+fun List<AiTask<*, *>>.aggregatetrace(): AiTaskList {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
-    val finalTask = object : AiTask("promptBatch", dependencies = map { it.id }.toSet()) {
+    val finalTask = object : AiTask<Any?, AiPromptTrace>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(input: Any?, context: ExecContext): AiPromptTrace {
             val aggregateResults = context.taskInputs.values.toList()
             return AiPromptTrace(outputInfo = AiOutputInfo.output(AiOutput(other = aggregateResults)))
