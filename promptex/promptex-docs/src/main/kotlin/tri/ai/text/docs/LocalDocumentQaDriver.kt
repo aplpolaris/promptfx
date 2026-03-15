@@ -23,6 +23,7 @@ import com.aallam.openai.api.embedding.Embedding
 import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
 import tri.ai.core.TextPlugin
+import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.pips.AiPipelineExecutor
@@ -86,7 +87,12 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         TextPlugin.orderedPlugins.forEach { it.close() }
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
+    override suspend fun answerQuestion(
+        input: String,
+        numResponses: Int,
+        historySize: Int,
+        context: ExecContext
+    ): AiPipelineResult {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
         val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
             question = input,
@@ -100,8 +106,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
             numResponses = numResponses,
             snippetCallback = { }
         )
-        val monitor = PrintMonitor()
-        val result = AiPipelineExecutor.execute(planner.plan, monitor).finalResult
+        val result = AiPipelineExecutor.execute(planner.plan, context).finalResult
         return result.asPipelineResult()
     }
 

@@ -30,6 +30,7 @@ import tri.ai.core.TextChatMessage
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.progressUpdate
+import tri.ai.pips.task
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -66,7 +67,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         temp: Double,
         numResponses: Int,
         snippetCallback: (List<EmbeddingMatch>) -> Unit
-    ): AiTaskBuilder = AiTaskBuilder.task("load-embeddings-file-and-calculate") { context ->
+    ) = AiTaskBuilder.task("load-embeddings-file-and-calculate") { context ->
         // trigger loading of embeddings file (with progress), the result is ignored
         val progressScope = CoroutineScope(currentCoroutineContext() + Job())
         index.onProgress = { msg, pct -> progressScope.launch { context.monitor.progressUpdate(msg, pct) } }
@@ -81,7 +82,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         findRelevantSection(question, chunksToRetrieve).also {
             snippetCallback(matches)
         }
-    }.task<AiPromptTrace, List<AiPromptTrace>>("question-answer") { trace, _ ->
+    }.task<AiPromptTrace, AiPromptTrace>("question-answer") { trace, _ ->
         val snippets = trace.output!!.outputs.first().other as List<EmbeddingMatch>
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }
             .take(contextChunks)
@@ -115,8 +116,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
                 responseEmbeddings = responseEmbeddings
             ))
         }
-    }.aitask<AiOutput?>("process-result") {
-        val result = it?.content() as QuestionAnswerResult
+    }.task("process-result") { output, _ ->
+        val result = output.output?.outputs!!.first().other as QuestionAnswerResult
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
         FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
     }
