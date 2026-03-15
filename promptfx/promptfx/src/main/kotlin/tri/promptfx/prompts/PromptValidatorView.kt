@@ -24,6 +24,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.clear
 import tornadofx.onChange
 import tri.ai.pips.aitask
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiPlanTaskView
@@ -85,8 +86,8 @@ class PromptValidatorView : AiPlanTaskView(
             .template(prompt.value)
             .execute(chatEngine)
             .also { promptOutput.set(it) }
-    }.aitask("validate-result") {
-        val validatorPromptText = validatorPromptUi.fill("result" to it.textContent())
+    }.aitask<AiOutput?>("validate-result") {
+        val validatorPromptText = validatorPromptUi.fill("result" to (it?.textContent() ?: ""))
         common.completionBuilder()
             .template(validatorPromptText)
             .execute(chatEngine)

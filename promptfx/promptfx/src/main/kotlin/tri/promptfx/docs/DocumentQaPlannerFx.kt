@@ -33,6 +33,7 @@ import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskList
 import tri.ai.prompt.PromptDef
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.text.docs.FormattedPromptTraceResult
@@ -88,8 +89,8 @@ class DocumentQaPlannerFx {
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
         return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
-            .aitask("process-result") {
-                val res = it.content() as QuestionAnswerResult
+            .aitask<AiOutput?>("process-result") {
+                val res = it?.content() as QuestionAnswerResult
                 info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${res.responseScore}$ANSI_RESET")
                 lastResult = res
                 chatHistory.add(TextChatMessage(MChatRole.User, question))

@@ -167,9 +167,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
-        }.aggregatetrace().aitask("process-results") {
+        }.aggregatetrace().aitask<List<*>>("process-results") {
             @Suppress("UNCHECKED_CAST")
-            postProcess(it.other as List<AiPromptTraceSupport>, docInputs)
+            postProcess(it as? List<AiPromptTraceSupport> ?: listOf(), docInputs)
         }.planner
     }
 

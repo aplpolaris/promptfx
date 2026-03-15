@@ -295,7 +295,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
                 "Calculated $count embeddings for ${doc.metadata.id}."
             }
-        }.aggregate().task("summarize-results") {
+        }.aggregate().task<Any?, String>("summarize-results") {
             "Calculated ${result.size} total embeddings."
         }
     }

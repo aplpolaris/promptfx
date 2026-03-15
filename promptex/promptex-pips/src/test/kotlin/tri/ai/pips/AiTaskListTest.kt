@@ -33,8 +33,8 @@ class AiTaskListTest {
         runTest {
             val plan = tasktext("first") {
                 "go"
-            }.aitask("second") {
-                val tc = it.textContent()
+            }.aitask<String>("second") {
+                val tc = it ?: ""
                 AiPromptTrace.output(tc + tc)
             }.planner
             val result = AiPipelineExecutor.execute(plan.plan(), PrintMonitor())
@@ -45,9 +45,9 @@ class AiTaskListTest {
     @Test
     fun testExecuteList() {
         val plan = tasklist("first") {
-            listOf("go", "stop").map { AiOutput(text = it) }
-        }.aitaskonlist("second") {
-            AiPromptTrace.outputListAsSingleResult(it)
+            listOf("go", "stop")
+        }.aitaskonlist<String>("second") {
+            AiPromptTrace.outputListAsSingleResult(it.map { s -> AiOutput(text = s) })
         }.planner
         val result = runBlocking {
             AiPipelineExecutor.execute(plan.plan(), PrintMonitor())
@@ -56,7 +56,7 @@ class AiTaskListTest {
 
         val plan2 = aitask("first") {
             AiPromptTrace.output(listOf("go", "stop"))
-        }.aitaskonlist("second") {
+        }.aitaskonlist<AiOutput>("second") {
             AiPromptTrace.output(it.joinToString())
         }.planner
         val result2 = runBlocking {

@@ -24,6 +24,7 @@ import tri.ai.pips.AiPlanner
 import tri.ai.pips.aitask
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
+import tri.ai.prompt.trace.AiOutput
 import tri.promptfx.AiChatEngine
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
@@ -42,18 +43,18 @@ class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelPara
                 .tokens(200)
                 .params(PromptTemplate.INPUT to input)
                 .execute(chatEngine)
-        }.task("wikipedia-page-search") {
-            firstMatchingPage(it.textContent()).also {
-                pageTitle?.value = it
+        }.task<AiOutput, String>("wikipedia-page-search") {
+            firstMatchingPage(it?.textContent() ?: "").also { page ->
+                pageTitle?.value = page
             }
-        }.task("retrieve-page-text") {
-            getWikipediaPage(it.textContent()).also {
-                pageTitle?.apply { value = "$value\n\n$it" }
+        }.task<String, String>("retrieve-page-text") {
+            getWikipediaPage(it ?: "").also { page ->
+                pageTitle?.apply { value = "$value\n\n$page" }
             }
-        }.aitask("question-answer") {
+        }.aitask<String>("question-answer") {
             common.completionBuilder()
                 .prompt(lookupPrompt("text-qa/answer"))
-                .params(PromptTemplate.INPUT to input, PromptTemplate.INSTRUCT to it)
+                .params(PromptTemplate.INPUT to input, PromptTemplate.INSTRUCT to (it ?: ""))
                 .tokens(1000)
                 .execute(chatEngine)
         }.plan

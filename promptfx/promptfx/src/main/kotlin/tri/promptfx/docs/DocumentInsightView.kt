@@ -153,7 +153,7 @@ class DocumentInsightView: AiPlanTaskView(
 
         return promptBatch(model.chunkListModel.chunkSelection)
             .aggregate()
-            .aitask("results-summarize") { _ ->
+            .aitask<Any?>("results-summarize") { _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
                     .prompt(reducePrompt.prompt.value)
