@@ -38,11 +38,12 @@ class ExecContext(
     val traceId: String = UUID.randomUUID().toString(),
     /** Monitor for emitting execution events. */
     val monitor: AiTaskMonitor = IgnoreMonitor,
-    /** Previous task outputs (raw values), keyed by task id, for pipeline-style execution. */
-    val taskInputs: Map<String, Any?> = emptyMap()
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
+
+    /** Previous and current task outputs (raw values), keyed by task id, for pipeline-style execution. */
+    val taskInputs: MutableMap<String, Any?> = mutableMapOf()
 
     /** Log of traces emitted by tasks during execution, keyed by task id. */
     val traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
@@ -68,10 +69,9 @@ class ExecContext(
 
     /** Returns a copy of this context with the given monitor. */
     fun withMonitor(monitor: FlowCollector<ExecEvent>) =
-        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
-
-    /** Returns a copy of this context with the given task inputs. */
-    fun withTaskInputs(taskInputs: Map<String, Any?>) =
-        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
+        ExecContext(scratchpad, resources, traceId, monitor).also {
+            it.taskInputs.putAll(taskInputs)
+            it.traces.putAll(traces)
+        }
 
 }

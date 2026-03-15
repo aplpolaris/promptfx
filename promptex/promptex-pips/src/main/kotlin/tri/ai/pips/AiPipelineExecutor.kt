@@ -34,32 +34,29 @@ object AiPipelineExecutor {
 
     /**
      * Execute tasks in order, chaining results from one to another.
+     * A single [ExecContext] is created and shared across all task executions; each task's output is
+     * stored in [ExecContext.taskInputs] and its trace in [ExecContext.traces] so subsequent tasks can
+     * access both without requiring a new context per task.
      * Returns the table of execution results.
      */
     suspend fun execute(tasks: List<AiTask<*, *>>, monitor: FlowCollector<ExecEvent>): AiPipelineResult {
         require(tasks.isNotEmpty()) { "No tasks to execute." }
 
-        val completedTasks = mutableMapOf<String, AiPromptTraceSupport>()
-        val failedTasks = mutableMapOf<String, AiPromptTraceSupport>()
-        val completedOutputs = mutableMapOf<String, Any?>()
+        val context = ExecContext(monitor = monitor)
 
         var tasksToDo: List<AiTask<*, *>>
         do {
             tasksToDo = tasks.filter {
-                it.id !in completedTasks && it.id !in failedTasks
+                it.id !in context.traces
             }.filter {
-                it.dependencies.all { it in completedTasks && completedTasks[it]!!.exec.succeeded() }
+                it.dependencies.all { depId -> depId in context.traces && context.traces[depId]!!.exec.succeeded() }
             }
             tasksToDo.forEach { task ->
                 try {
                     monitor.emitTaskStarted(task)
-                    val taskInputs = task.dependencies.associateWith { completedOutputs[it] }
-                    val input = if (task.dependencies.size == 1) completedOutputs[task.dependencies.first()] else null
-                    val context = ExecContext(monitor = monitor, taskInputs = taskInputs)
-                    // Pre-populate context.traces with completed task traces so aitaskonlist/aggregatetrace can access them
-                    context.traces.putAll(completedTasks)
+                    val input = if (task.dependencies.size == 1) context.taskInputs[task.dependencies.first()] else null
                     val output = executor.execute(task, input, context)
-                    // Resolve trace: prefer context.traces (set by task or pre-populated), then synthesize
+                    // Resolve trace: prefer context.traces (set by task or RetryExecutor), then synthesize
                     val trace: AiPromptTraceSupport = context.traces[task.id]
                         ?: run {
                             check(output !is AiPromptTraceSupport) {
@@ -68,27 +65,26 @@ object AiPipelineExecutor {
                             if (output != null) AiPromptTrace(outputInfo = toOutputInfo(output))
                             else AiPromptTrace(outputInfo = null)
                         }
+                    // Always store the resolved trace in context so dependency checks can use it
+                    context.traces[task.id] = trace
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         monitor.emitTaskFailed(task, err)
-                        failedTasks[task.id] = trace
                     } else {
                         monitor.emitTaskCompleted(task, resultValue)
-                        completedTasks[task.id] = trace
-                        completedOutputs[task.id] = output
+                        context.taskInputs[task.id] = output
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
                     monitor.emitTaskFailed(task, x)
-                    failedTasks[task.id] = AiPromptTrace.error(null, x.message!!, x)
+                    context.traces[task.id] = AiPromptTrace.error(null, x.message ?: "Unknown error", x)
                 }
             }
         } while (tasksToDo.isNotEmpty())
 
-        val allTasks = completedTasks + failedTasks
-        val lastTaskResult = allTasks[tasks.last().id] ?: AiPromptTrace.error(null, "Inputs failed.")
-        return AiPipelineResult(lastTaskResult, completedTasks + failedTasks)
+        val lastTaskResult = context.traces[tasks.last().id] ?: AiPromptTrace.error(null, "Inputs failed.")
+        return AiPipelineResult(lastTaskResult, context.traces.toMap())
     }
 
 }
