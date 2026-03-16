@@ -21,9 +21,8 @@ package tri.promptfx.`fun`
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.core.tool.ExecContext
-import tri.ai.pips.AiPipelineExecutor
 import tri.ai.pips.AiTaskBuilder
+import tri.ai.pips.asWorkflow
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.AudioPanel
@@ -51,10 +50,9 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
     override fun plan() = AiTaskBuilder.task("audio-transcribe") {
         userInput()
     }.task("weather") { it, context ->
-        val tasks = WeatherAiTaskPlanner(chatEngine, common, embeddingEngine, it).plan().plan
-        val result = AiPipelineExecutor.execute(tasks, ExecContext(monitor = context.monitor))
-        context.logTrace("weather", result.finalResult)
-        result.finalResult.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+        WeatherAiTaskPlanner(chatEngine, common, embeddingEngine, it).plan()
+            .asWorkflow("weather-pipeline")
+            .execute(null, context)
     }
 
     private suspend fun userInput(): String {

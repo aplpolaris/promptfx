@@ -32,6 +32,12 @@ object AiPipelineExecutor {
     private val executor = RetryExecutor()
 
     /**
+     * Execute a single task, returning its result. This is a convenience wrapper around [execute] for single tasks.
+     */
+    suspend fun execute(task: AiTask<*, *>, context: ExecContext = ExecContext()): AiPipelineResult =
+        execute(listOf(task), context)
+
+    /**
      * Execute tasks in order, chaining results from one to another.
      * A single [ExecContext] is created and shared across all task executions; each task's output is
      * stored in [ExecContext.taskOutputs] and its trace in [ExecContext.traces] so subsequent tasks can
