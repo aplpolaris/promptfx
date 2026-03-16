@@ -55,23 +55,22 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val iterationLimit = 5
     val completionTokens = 2000
 
-    private fun ExecContext.steps() = scratchpad["steps"] as ArrayNode
-    private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
-
     override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
         updateSession(message, session)
         logToolUsage()
 
-        // prepare chat and scratchpad; wire the monitor so tool calls emit into the same event stream
+        // prepare chat and execution context; wire the monitor so tool calls emit into the same event stream.
+        // the ReAct step log is a local variable so tools cannot overwrite it via the shared scratchpad.
         val chat = findChat(session, this)
-        val scratchpad = ExecContext(monitor = this).apply { put("steps", jsonMapper.createArrayNode()) }
+        val execContext = ExecContext(monitor = this)
+        val steps = jsonMapper.createArrayNode()
 
         // run execution chain until we get a final answer or hit the iteration limit
         var result: ToolExecutableResult? = null
         var iterations = 0
         while (result?.isTerminal != true && iterations++ < iterationLimit) {
-            result = runExecChain(chat, templateForQuestion(question), scratchpad)
+            result = runExecChain(chat, templateForQuestion(question), execContext, steps)
         }
         val final = result?.result ?: "I was unable to determine a final answer."
         val response = MultimodalChatMessage.text(MChatRole.Assistant, final)
@@ -89,14 +88,15 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     )
 
     /** Runs a single step of an execution chain. */
-    private suspend fun FlowCollector<ExecEvent>.runExecChain(chat: TextChat, promptTemplate: String, scratchpad: ExecContext): ToolExecutableResult {
-        val prompt = promptTemplate.replace("{{agent_scratchpad}}", scratchpad.summary())
+    private suspend fun FlowCollector<ExecEvent>.runExecChain(chat: TextChat, promptTemplate: String, execContext: ExecContext, steps: ArrayNode): ToolExecutableResult {
+        val stepSummary = steps.elements().asSequence().joinToString("\n") { it.asText() }
+        val prompt = promptTemplate.replace("{{agent_scratchpad}}", stepSummary)
 
         val completion = chat.chat(listOf(TextChatMessage.user(prompt)), stop = listOf("Observation: "), tokens = completionTokens)
             .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         emitReasoning(completion)
-        scratchpad.steps().add(completion)
+        steps.add(completion)
 
         if ("Final Answer:" in completion) {
             val answer = completion.substringAfter("Final Answer:").trim()
@@ -108,7 +108,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         if (tool == null) {
             val fallback = "Invalid or missing tool name."
             emitError(IllegalArgumentException(fallback))
-            scratchpad.steps().add("Observation: $fallback")
+            steps.add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
         val toolInput = responseOp["Action Input"]
@@ -117,19 +117,19 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         if (toolInput.isNullOrBlank()) {
             val fallback ="Tool input missing or malformed."
             emitError(IllegalArgumentException(fallback))
-            scratchpad.steps().add("Observation: $fallback")
+            steps.add("Observation: $fallback")
             return ToolExecutableResult(fallback, false)
         }
 
-        // execute tool, sharing the run's scratchpad context so tools can access accumulated state
+        // execute tool, sharing the run's execution context so tools can access accumulated state
         val inputJson = createObject("input", toolInput)
         emitUsingTool(tool.name, toolInput)
-        val executionResult = tool.execute(inputJson, scratchpad)
+        val executionResult = tool.execute(inputJson, execContext)
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
         emitToolResult(tool.name, resultText)
-        scratchpad.steps().add("Observation: $resultText")
+        steps.add("Observation: $resultText")
 
         return ToolExecutableResult(
             resultText,
