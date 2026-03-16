@@ -76,10 +76,10 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             index.onProgress = null
             progressScope.cancel()
         }
-    }.task<List<EmbeddingMatch>>("find-relevant-sections") { loadResult, context ->
-        // pass the load-step matches to the UI callback, then retrieve the real matches for this question
-        snippetCallback(loadResult)
+    }.task<List<EmbeddingMatch>>("find-relevant-sections") { _, context ->
+        // retrieve the real matches for this question, then notify via the callback
         val matches = index.findMostSimilar(question, chunksToRetrieve)
+        snippetCallback(matches)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
         context.logTrace("find-relevant-sections", AiPromptTrace(
             modelInfo = modelId?.let { AiModelInfo(it) },
