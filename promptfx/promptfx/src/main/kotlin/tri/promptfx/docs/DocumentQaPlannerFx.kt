@@ -63,6 +63,18 @@ class DocumentQaPlannerFx {
         (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.reindexAll(onProgress)
     }
 
+    /** Returns an [AiTaskBuilder] that reindexes all documents, with task lifecycle reported via the [ExecContext] monitor. */
+    fun reindexTaskBuilder(): AiTaskBuilder<String> =
+        AiTaskBuilder.task("reindex-documents") { _ ->
+            val index = embeddingIndex.value as? LocalFolderEmbeddingIndex
+            if (index != null) {
+                index.reindexAll()
+                "Reindex complete"
+            } else {
+                "No reindexable index configured"
+            }
+        }
+
     fun taskList(
         question: String,
         prompt: PromptDef?,
