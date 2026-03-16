@@ -45,7 +45,8 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         updateSession(message, session)
         logToolUsage()
 
-        // prepare chat and message history
+        // prepare chat and message history; share one ExecContext across all tool calls in this run
+        val execContext = ExecContext()
         val chat = findMultimodalChat(session, this)
         val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template!!
         val messages = mutableListOf(
@@ -70,8 +71,10 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
                     emitError(IllegalArgumentException("Invalid or missing json: $json"))
                 }
                 if (tool != null && json != null) {
-                    val result = tool.execute(json, ExecContext())
+                    val t0 = System.currentTimeMillis()
+                    val result = tool.execute(json, execContext)
                     val resultText = result.get("result")?.asText() ?: result.toString()
+                    execContext.logToolCall(call.name, call.argumentsAsJson, resultText, System.currentTimeMillis() - t0)
                     emitToolResult(call.name, resultText)
 
                     // add result to message history and call again

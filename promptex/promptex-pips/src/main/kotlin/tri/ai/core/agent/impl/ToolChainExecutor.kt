@@ -97,6 +97,7 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         emitReasoning(completion)
+        scratchpad.logReasoning(completion)
         scratchpad.steps().add(completion)
 
         if ("Final Answer:" in completion) {
@@ -122,13 +123,15 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             return ToolExecutableResult(fallback, false)
         }
 
-        // execute tool
+        // execute tool, sharing the run's scratchpad context so tools can access accumulated state
         val inputJson = createObject("input", toolInput)
         emitUsingTool(tool.name, toolInput)
-        val executionResult = tool.execute(inputJson, ExecContext())
+        val t0 = System.currentTimeMillis()
+        val executionResult = tool.execute(inputJson, scratchpad)
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
+        scratchpad.logToolCall(tool.name, toolInput, resultText, System.currentTimeMillis() - t0)
         emitToolResult(tool.name, resultText)
         scratchpad.steps().add("Observation: $resultText")
 
