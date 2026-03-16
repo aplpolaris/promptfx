@@ -55,7 +55,6 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
     val iterationLimit = 5
     val completionTokens = 2000
 
-    private fun createScratchpad() = ExecContext().apply { put("steps", jsonMapper.createArrayNode()) }
     private fun ExecContext.steps() = scratchpad["steps"] as ArrayNode
     private fun ExecContext.summary() = steps().values().asSequence().joinToString("\n") { it.asText() }
 
@@ -64,9 +63,9 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         updateSession(message, session)
         logToolUsage()
 
-        // prepare chat and scratchpad
+        // prepare chat and scratchpad; wire the monitor so tool calls emit into the same event stream
         val chat = findChat(session, this)
-        val scratchpad = createScratchpad()
+        val scratchpad = ExecContext(monitor = this).apply { put("steps", jsonMapper.createArrayNode()) }
 
         // run execution chain until we get a final answer or hit the iteration limit
         var result: ToolExecutableResult? = null
@@ -97,7 +96,6 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             .firstValue.textContent().trim()
             .replace("\n\n", "\n")
         emitReasoning(completion)
-        scratchpad.logReasoning(completion)
         scratchpad.steps().add(completion)
 
         if ("Final Answer:" in completion) {
@@ -126,12 +124,10 @@ class ToolChainExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
         // execute tool, sharing the run's scratchpad context so tools can access accumulated state
         val inputJson = createObject("input", toolInput)
         emitUsingTool(tool.name, toolInput)
-        val t0 = System.currentTimeMillis()
         val executionResult = tool.execute(inputJson, scratchpad)
 
         // log and return result
         val resultText = executionResult.get("result")?.asText() ?: ""
-        scratchpad.logToolCall(tool.name, toolInput, resultText, System.currentTimeMillis() - t0)
         emitToolResult(tool.name, resultText)
         scratchpad.steps().add("Observation: $resultText")
 

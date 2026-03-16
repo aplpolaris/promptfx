@@ -93,9 +93,7 @@ class WorkflowExecutor(
             assert(execResult is WorkflowTaskPlan)
             if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty()) {
                 planState.updateTasking(execResult)
-                val plan = planState.printTaskPlan(listOf(planState.taskTree))
-                emitProgress(plan)
-                context.logPlanUpdate(plan)
+                emitProgress(planState.printTaskPlan(listOf(planState.taskTree)))
             }
 
             // 2. Select a solver and task to work on
@@ -113,7 +111,6 @@ class WorkflowExecutor(
 
             planState.taskTree.setTaskDone(task)
             context.addWorkflowResults(task, step.outputs)
-            context.logToolCall(solver.name, inputJson.prettyPrint(), step.outputs.prettyPrint(), step.executionTimeMillis)
             emitToolResult(solver.name, step.outputs.prettyPrint())
             planState.solveHistory.add(step)
 

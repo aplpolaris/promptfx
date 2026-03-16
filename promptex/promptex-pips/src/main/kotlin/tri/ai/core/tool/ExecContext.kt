@@ -61,26 +61,6 @@ class ExecContext(
         traces[id] = trace
     }
 
-    /** Chronological log of execution steps taken during this run, written by all executor types. */
-    val steps: MutableList<ExecStep> = mutableListOf()
-
-    /** Appends a step to the execution log. */
-    fun logStep(step: ExecStep) { steps.add(step) }
-
-    /** Records a tool or solver invocation in the execution log. */
-    fun logToolCall(toolName: String, input: String, output: String, durationMs: Long) =
-        logStep(ExecStep.ToolCall(toolName, input, output, durationMs))
-
-    /** Records a reasoning or thought step in the execution log. */
-    fun logReasoning(content: String) = logStep(ExecStep.Reasoning(content))
-
-    /** Records a planning or decomposition update in the execution log. */
-    fun logPlanUpdate(description: String) = logStep(ExecStep.PlanUpdate(description))
-
-    /** Records the completion or failure of a named task in the execution log. */
-    fun logTaskResult(taskId: String, succeeded: Boolean, durationMs: Long) =
-        logStep(ExecStep.TaskResult(taskId, succeeded, durationMs))
-
     /** Hook called when a scratchpad entry is set. */
     var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
 

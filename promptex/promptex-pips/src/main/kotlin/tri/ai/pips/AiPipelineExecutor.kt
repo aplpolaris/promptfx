@@ -49,7 +49,6 @@ object AiPipelineExecutor {
                 it.dependencies.all { depId -> depId in context.traces && context.traces[depId]!!.exec.succeeded() }
             }
             tasksToDo.forEach { task ->
-                val t0 = System.currentTimeMillis()
                 try {
                     context.monitor.emitTaskStarted(task)
                     val input = if (task.dependencies.size == 1) context.taskOutputs[task.dependencies.first()] else null
@@ -68,16 +67,13 @@ object AiPipelineExecutor {
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
-                        context.logTaskResult(task.id, false, System.currentTimeMillis() - t0)
                         context.monitor.emitTaskFailed(task, err)
                     } else {
-                        context.logTaskResult(task.id, true, System.currentTimeMillis() - t0)
                         context.monitor.emitTaskCompleted(task, resultValue)
                         context.taskOutputs[task.id] = output
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
-                    context.logTaskResult(task.id, false, System.currentTimeMillis() - t0)
                     context.monitor.emitTaskFailed(task, x)
                     context.traces[task.id] = AiPromptTrace.error(null, x.message ?: "Unknown error", x)
                 }
