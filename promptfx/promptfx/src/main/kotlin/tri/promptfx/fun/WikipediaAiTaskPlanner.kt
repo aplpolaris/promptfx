@@ -35,27 +35,30 @@ import java.nio.charset.StandardCharsets
 class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String) {
 
     fun plan() =
-        AiTaskBuilder.task("wikipedia-page-guess") {
-            common.completionBuilder()
+        AiTaskBuilder.task("wikipedia-page-guess") { context ->
+            val result = common.completionBuilder()
                 .prompt(lookupPrompt("examples-api/wikipedia-page-guess"))
                 .tokens(200)
                 .params(PromptTemplate.INPUT to input)
                 .execute(chatEngine)
+            context.logTrace("wikipedia-page-guess", result)
+            result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
         }.task("wikipedia-page-search") { it, _ ->
-            val text = it.output!!.outputs.first().textContent()
-            firstMatchingPage(text).also { page ->
+            firstMatchingPage(it).also { page ->
                 pageTitle?.value = page
             }
         }.task("retrieve-page-text") { it, _ ->
             getWikipediaPage(it).also { page ->
                 pageTitle?.apply { value = "$value\n\n$page" }
             }
-        }.task("question-answer") { it, _ ->
-            common.completionBuilder()
+        }.task("question-answer") { it, context ->
+            val result = common.completionBuilder()
                 .prompt(lookupPrompt("text-qa/answer"))
                 .instruct(input = input, instruct = it)
                 .tokens(1000)
                 .execute(chatEngine)
+            context.logTrace("question-answer", result)
+            result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
         }
 
     internal fun firstMatchingPage(query: String): String {

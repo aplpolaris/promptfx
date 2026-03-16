@@ -20,6 +20,7 @@
 package tri.promptfx
 
 import tri.ai.core.*
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.AiTaskBuilder
 
 /**
@@ -85,7 +86,14 @@ suspend fun CompletionBuilder.execute(engine: AiChatEngine): tri.ai.prompt.trace
 }
 
 /** Creates a single-task [AiTaskBuilder] from a [CompletionBuilder] dispatching to the appropriate chat interface. */
-fun CompletionBuilder.taskPlan(engine: AiChatEngine) = when (engine) {
-    is AiChatEngine.Text -> AiTaskBuilder.task(id ?: "text-chat") { execute(engine.model) }
-    is AiChatEngine.Multimodal -> AiTaskBuilder.task(id ?: "multimodal-chat") { execute(engine.model) }
+fun CompletionBuilder.taskPlan(engine: AiChatEngine): AiTaskBuilder<*> {
+    val taskId = id ?: when (engine) {
+        is AiChatEngine.Text -> "text-chat"
+        is AiChatEngine.Multimodal -> "multimodal-chat"
+    }
+    return AiTaskBuilder.task(taskId) { context ->
+        val result = execute(engine)
+        context.logTrace(taskId, result)
+        result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+    }
 }

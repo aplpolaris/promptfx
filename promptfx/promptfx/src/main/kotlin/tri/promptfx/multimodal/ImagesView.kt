@@ -205,7 +205,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         }
     }
 
-    override fun plan() = AiTaskBuilder.task("generate-image") {
+    override fun plan() = AiTaskBuilder.task("generate-image") { context ->
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
         val generator = model.value!!
@@ -237,9 +237,10 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 AiOutputInfo(outputs)
             )
         } catch (x: Exception) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message, x))
         }
-        result
+        context.logTrace("generate-image", result)
+        result.values ?: emptyList()
     }
 
     //region CONTEXT MENU ACTIONS
