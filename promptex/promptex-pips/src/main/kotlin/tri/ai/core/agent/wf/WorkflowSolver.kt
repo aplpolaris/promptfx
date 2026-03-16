@@ -27,22 +27,22 @@ import tri.util.json.jsonMapper
 import tri.util.json.tryJson
 import kotlin.collections.ifEmpty
 
-/** Key for storing [WorkflowPlanState] in [ExecContext.resources]. */
+/** Key for storing [WorkflowPlanState] in the context via [ExecContext.putResource]. */
 const val RESOURCE_WORKFLOW_PLAN_STATE = "workflowPlanState"
-/** Key for storing the current [WorkflowTask] in [ExecContext.resources]. */
+/** Key for storing the current [WorkflowTask] in the context via [ExecContext.putResource]. */
 const val RESOURCE_WORKFLOW_TASK = "currentWorkflowTask"
 
 /** Extension property to get [WorkflowPlanState] from the context. */
 val ExecContext.workflowPlanState: WorkflowPlanState
-    get() = resources[RESOURCE_WORKFLOW_PLAN_STATE] as WorkflowPlanState
+    get() = getResource(RESOURCE_WORKFLOW_PLAN_STATE) as WorkflowPlanState
 
 /** Extension property to get the current [WorkflowTask] from the context. */
 val ExecContext.currentWorkflowTask: WorkflowTask
-    get() = resources[RESOURCE_WORKFLOW_TASK] as WorkflowTask
+    get() = getResource(RESOURCE_WORKFLOW_TASK) as WorkflowTask
 
 /**
  * Initializes the context scratchpad with the user input extracted from the workflow request.
- * Must be called after [RESOURCE_WORKFLOW_PLAN_STATE] has been set in [ExecContext.resources].
+ * Must be called after [RESOURCE_WORKFLOW_PLAN_STATE] has been stored via [ExecContext.putResource].
  */
 fun ExecContext.initWorkflowContext() {
     val request = workflowPlanState.request

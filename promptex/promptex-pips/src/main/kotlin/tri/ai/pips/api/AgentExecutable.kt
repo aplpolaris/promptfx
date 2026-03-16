@@ -61,7 +61,7 @@ class AgentExecutable(
         val request = MultimodalChatMessage.user(input.get("request")?.asText() ?: input.toString())
         
         // Get completion service from context resources
-        val textChatResource = context.resources["textChat"]
+        val textChatResource = context.getResource("textChat")
         val textChatId = (textChatResource as? TextChat)?.modelId ?: textChatResource as? String
             ?: throw IllegalArgumentException("Text completion service not found in context resources or invalid: $textChatResource")
             

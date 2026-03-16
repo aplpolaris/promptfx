@@ -167,7 +167,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             it.monitorTrace { runLater { promptTraces.add(it) } }
         }.aggregate().task<AiPromptTrace>("process-results") { _, context ->
             // each batch task logs its trace via context.logTrace(id, ...) in AiPromptRunConfig.task()
-            val allTraces = tasks.map { context.traces[it.id] }.filterNotNull()
+            val allTraces = tasks.map { context.getTrace(it.id) }.filterNotNull()
             val result = postProcess(allTraces, docInputs)
             context.logTrace("process-results", result)
             result

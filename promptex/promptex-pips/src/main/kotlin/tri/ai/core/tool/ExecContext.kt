@@ -49,18 +49,15 @@ class ExecContext(
 
     // --- Resources ---
 
-    /** Read-only view of runtime service objects (e.g. LLM clients, tool registries). */
-    val resources: Map<String, Any?> get() = _resources
-
     /** Stores a named resource object in the context. */
     fun putResource(key: String, value: Any?) {
         _resources[key] = value
     }
 
-    // --- Scratchpad (unified task outputs + JSON data store) ---
+    /** Returns the resource for [key], or null if absent. */
+    fun getResource(key: String): Any? = _resources[key]
 
-    /** Read-only view of the unified scratchpad (task outputs and intermediate JSON data). */
-    val scratchpad: Map<String, Any?> get() = _scratchpad
+    // --- Scratchpad (unified task outputs + JSON data store) ---
 
     /** Stores an entry in the scratchpad and fires the [variableSet] hook. */
     fun put(key: String, value: Any?) {
@@ -68,19 +65,24 @@ class ExecContext(
         variableSet(key, value)
     }
 
-    /** Stores a [JsonNode] entry in the scratchpad and fires the [variableSet] hook. */
-    fun put(key: String, value: JsonNode) {
-        _scratchpad[key] = value
-        variableSet(key, value)
-    }
+    /** Returns the scratchpad entry for [key], or null if absent. */
+    fun get(key: String): Any? = _scratchpad[key]
 
     /** Returns the scratchpad entry for [key] as a [JsonNode], or null if absent or not a [JsonNode]. */
     fun getJson(key: String): JsonNode? = _scratchpad[key] as? JsonNode
+
+    /** Returns a read-only view of all [JsonNode] entries in the scratchpad, filtering out non-JSON values. */
+    fun jsonScratchpad(): Map<String, JsonNode> = _scratchpad.entries
+        .mapNotNull { (k, v) -> (v as? JsonNode)?.let { k to it } }
+        .toMap()
 
     // --- Traces ---
 
     /** Read-only view of traces emitted by tasks during execution, keyed by task id. */
     val traces: Map<String, AiPromptTraceSupport> get() = _traces
+
+    /** Returns the trace for [id], or null if absent. */
+    fun getTrace(id: String): AiPromptTraceSupport? = _traces[id]
 
     /** Logs a trace for the given task id. */
     fun logTrace(id: String, trace: AiPromptTraceSupport) {
@@ -89,7 +91,7 @@ class ExecContext(
 
     // --- Factory ---
 
-    /** Creates a child context that inherits [resources] and [monitor] from this context. */
+    /** Creates a child context that inherits [_resources] and [monitor] from this context. */
     fun childContext(): ExecContext = ExecContext(monitor = monitor).also { child ->
         _resources.forEach { (k, v) -> child.putResource(k, v) }
     }

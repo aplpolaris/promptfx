@@ -53,8 +53,8 @@ class AiWorkflowTest {
         val ctx = printingExecContext()
         workflow.execute(null, ctx)
 
-        assertNotNull(ctx.traces["wf/step1"])
-        assertNotNull(ctx.traces["wf/step2"])
+        assertNotNull(ctx.getTrace("wf/step1"))
+        assertNotNull(ctx.getTrace("wf/step2"))
     }
 
     // --- Composition: workflow used as a task step inside another pipeline ---
@@ -85,7 +85,7 @@ class AiWorkflowTest {
 
         val outerPlan = AiTaskBuilder(listOf(), wf1)
             .task("combine") { s1, ctx ->
-                val s2 = ctx.scratchpad["wf2"] as? String ?: ""
+                val s2 = ctx.get("wf2") as? String ?: ""
                 "$s1+$s2"
             }.plan
 

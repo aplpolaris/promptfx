@@ -51,7 +51,7 @@ class RetryExecutor(
             // output may be null when a task logs an error trace and returns null (rather than throwing)
             val output = it.value
             // Update trace in context if one was logged, enriching it with retry metadata
-            val existingTrace = context.traces[task.id]
+            val existingTrace = context.getTrace(task.id)
             if (existingTrace != null) {
                 context.logTrace(task.id, existingTrace.copy(
                     execInfo = existingTrace.exec.copy(

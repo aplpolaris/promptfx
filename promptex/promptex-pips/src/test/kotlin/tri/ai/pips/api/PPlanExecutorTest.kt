@@ -70,11 +70,11 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = context()
             PPlanExecutor(registry).execute(plan, context)
-            println("        Context: ${context.scratchpad}")
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.scratchpad.keys)
+            assertTrue(context.getJson("out") != null)
             assertEquals("hi", context.getJson("out")!!.get("msg").asText())
         }
     }
@@ -97,11 +97,11 @@ class PPlanExecutorTest {
             val plan = PPlan.parseYaml(yaml)
             val context = context()
             PPlanExecutor(registry).execute(plan, context)
-            println("        Context: ${context.scratchpad}")
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.scratchpad.keys)
+            assertTrue(context.getJson("out") != null)
             assertEquals("hi", context.getJson("out")!!.get("msg").asText())
         }
     }
@@ -129,13 +129,13 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = context()
             PPlanExecutor(registry).execute(plan, context)
-            println("        Context: ${context.scratchpad}")
+            println("        Context: ${context.jsonScratchpad()}")
             println("        Chat response: ${context.getJson("chat1")?.get("message")?.asText()}")
 
             // --- Assertions ---
             assertEquals("prompt-llm/demo@0.0.1", plan.id)
-            assertTrue("prompt1" in context.scratchpad.keys)
-            assertTrue("chat1" in context.scratchpad.keys)
+            assertTrue(context.getJson("prompt1") != null)
+            assertTrue(context.getJson("chat1") != null)
             assertTrue("red" in (context.getJson("prompt1")?.asText() ?: ""))
             assertEquals("#ff0000", context.getJson("chat1")?.get("message")?.asText()?.lowercase(getDefault()))
         }
@@ -207,17 +207,17 @@ class PPlanExecutorTest {
             val plan = PPlan.parse(json)
             val context = context()
             PPlanExecutor(registry).execute(plan, context)
-            println("        Context: ${context.scratchpad}")
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("multi-step/analysis@0.1.0", plan.id)
             assertEquals(4, plan.steps.size)
 
             // Verify all steps saved their results
-            assertTrue("keywordPrompt" in context.scratchpad.keys)
-            assertTrue("extractedKeywords" in context.scratchpad.keys)
-            assertTrue("summaryPrompt" in context.scratchpad.keys)
-            assertTrue("finalSummary" in context.scratchpad.keys)
+            assertTrue(context.getJson("keywordPrompt") != null)
+            assertTrue(context.getJson("extractedKeywords") != null)
+            assertTrue(context.getJson("summaryPrompt") != null)
+            assertTrue(context.getJson("finalSummary") != null)
 
             // Verify the flow worked - keyword prompt should contain the input text
             val keywordPrompt = context.getJson("keywordPrompt")?.asText() ?: ""

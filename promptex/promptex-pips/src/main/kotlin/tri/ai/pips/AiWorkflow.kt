@@ -25,9 +25,9 @@ import tri.ai.prompt.trace.AiPromptTrace
 /**
  * A workflow that encapsulates a list of tasks as a single composable [AiTask].
  * When executed, all internal [tasks] are run via [AiPipelineExecutor] within a child [ExecContext]
- * that inherits [ExecContext.resources] and [ExecContext.monitor] from the parent context.
- * The parent [input] (if non-null) is stored under this workflow's [id] in the child context's
- * [ExecContext.scratchpad], allowing inner tasks to reference it by declaring this workflow's [id]
+ * that inherits resources and [ExecContext.monitor] from the parent context.
+ * The parent [input] (if non-null) is stored under this workflow's [id] in the child context via
+ * [ExecContext.put], allowing inner tasks to reference it by declaring this workflow's [id]
  * as a dependency.
  * After execution, each inner task trace is merged into the parent [ExecContext.traces] under the
  * key `"<workflowId>/<taskId>"`.
@@ -74,7 +74,7 @@ class AiWorkflow<in I, out O>(
         }
 
         @Suppress("UNCHECKED_CAST")
-        return innerContext.scratchpad[tasks.last().id] as O
+        return innerContext.get(tasks.last().id) as O
     }
 }
 
