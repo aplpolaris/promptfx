@@ -25,7 +25,7 @@ import tri.ai.pips.AiPipelineResult
 import tri.ai.pips.AiTaskBuilder
 
 /**
- * View that gets result from a planned set of tasks from an [AiPlanner] object.
+ * View that gets result from a planned set of tasks from an [AiTaskBuilder] object.
  * These tasks can be monitored while executing.
  */
 abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
