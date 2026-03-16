@@ -24,8 +24,6 @@ import tri.ai.pips.ExecEvent
 import tri.ai.pips.emitError
 import tri.ai.pips.emitUsingTool
 import tri.ai.pips.emitToolResult
-import tri.ai.pips.emitReasoning
-import tri.ai.pips.emitStreamingToken
 import tri.ai.core.*
 import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
@@ -35,7 +33,8 @@ import tri.util.json.tryJson
 
 /**
  * Executes a prompt using tools and a [MultimodalChat]. This will attempt to use tools in sequence as needed until a response
- * is achieved, at which point the system will return the final response.
+ * is achieved, at which point the system will return the final response. All intermediate tool calls and responses are
+ * maintained as part of the message history, so the system can call multiple tools in sequence if needed.
  */
 class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
@@ -71,8 +70,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
                     emitError(IllegalArgumentException("Invalid or missing json: $json"))
                 }
                 if (tool != null && json != null) {
-                    val context = ExecContext()
-                    val result = tool.execute(json, context)
+                    val result = tool.execute(json, ExecContext())
                     val resultText = result.get("result")?.asText() ?: result.toString()
                     emitToolResult(call.name, resultText)
 
