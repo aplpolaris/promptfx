@@ -60,7 +60,7 @@ class WorkflowExecutor(
     }
 
     /** Logs tool usage. */
-    suspend fun FlowCollector<ExecEvent>.logToolUsage() {
+    private suspend fun FlowCollector<ExecEvent>.logToolUsage() {
         emitProgress("Using solvers: [${solvers.joinToString(", ") { it.name }}]")
     }
 
@@ -90,8 +90,8 @@ class WorkflowExecutor(
                 emitError(execResult)
                 break
             }
-            assert(execResult is WorkflowTaskPlan)
-            if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty()) {
+            check(execResult is WorkflowTaskPlan) { "Expected WorkflowTaskPlan from decomposeTask, got ${execResult::class}" }
+            if (execResult.decomp.isNotEmpty()) {
                 planState.updateTasking(execResult)
                 emitProgress(planState.printTaskPlan(listOf(planState.taskTree)))
             }

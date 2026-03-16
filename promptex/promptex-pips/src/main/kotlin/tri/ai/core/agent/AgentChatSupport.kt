@@ -90,7 +90,7 @@ abstract class AgentChatSupport : AgentChat {
     protected suspend fun findMultimodalChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): MultimodalChat {
         collector.emitProgress("Finding model...")
         return try {
-            TextPlugin.Companion.multimodalModel(session.config.modelId)
+            TextPlugin.multimodalModel(session.config.modelId)
         } catch (e: Exception) {
             val first = TextPlugin.Companion.multimodalModels().first()
             collector.emitError(NullPointerException("Model ${session.config.modelId} not found, defaulting to first available model ${first.modelId}."))
@@ -101,7 +101,7 @@ abstract class AgentChatSupport : AgentChat {
     /** Looks up a model for a given session. */
     protected suspend fun findChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): TextChat {
         collector.emitProgress("Finding model...")
-        return TextPlugin.Companion.chatModel(session.config.modelId)
+        return TextPlugin.chatModel(session.config.modelId)
     }
 
     /** Generate a session name from the first user message. */

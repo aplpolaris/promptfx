@@ -58,11 +58,6 @@ class DocumentQaPlannerFx {
     /** The size of the chat history. */
     var historySize = SimpleIntegerProperty(4)
 
-    /** Reindexes all documents in the current [EmbeddingIndex] (if applicable). */
-    suspend fun reindexAllDocuments(onProgress: ((String, Double) -> Unit)? = null) {
-        (embeddingIndex.value as? LocalFolderEmbeddingIndex)?.reindexAll(onProgress)
-    }
-
     /** Returns an [AiTaskBuilder] that reindexes all documents, with task lifecycle reported via the [ExecContext] monitor.
      *  An optional [onProgress] callback receives per-document progress updates (message, fraction 0–1). */
     fun reindexTaskBuilder(onProgress: ((String, Double) -> Unit)? = null): AiTaskBuilder<String> =

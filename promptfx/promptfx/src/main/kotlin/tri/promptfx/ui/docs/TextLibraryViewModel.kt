@@ -226,7 +226,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
             AiPipelineExecutor.execute(
-                listOf(calculateEmbeddings().asWorkflow("calculate-embeddings")),
+                calculateEmbeddings().asWorkflow("calculate-embeddings"),
                 ExecContext(monitor = progress)
             )
         }
