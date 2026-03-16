@@ -85,13 +85,13 @@ class AiWorkflowTest {
 
         val outerPlan = AiTaskBuilder(listOf(), wf1)
             .task("combine") { s1, ctx ->
-                val s2 = ctx.taskOutputs["wf2"] as? String ?: ""
+                val s2 = ctx.scratchpad["wf2"] as? String ?: ""
                 "$s1+$s2"
             }.plan
 
         // Run wf2 as a standalone first to put its output in context
         val ctx = printingExecContext()
-        ctx.taskOutputs["wf2"] = "xy"
+        ctx.put("wf2", "xy")
 
         val result = AiPipelineExecutor.execute(outerPlan, ctx)
         assertEquals("foobar+xy", result.finalResult.firstValue.textContent())

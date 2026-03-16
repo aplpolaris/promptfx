@@ -27,7 +27,7 @@ import tri.ai.prompt.trace.AiPromptTrace
  * When executed, all internal [tasks] are run via [AiPipelineExecutor] within a child [ExecContext]
  * that inherits [ExecContext.resources] and [ExecContext.monitor] from the parent context.
  * The parent [input] (if non-null) is stored under this workflow's [id] in the child context's
- * [ExecContext.taskOutputs], allowing inner tasks to reference it by declaring this workflow's [id]
+ * [ExecContext.scratchpad], allowing inner tasks to reference it by declaring this workflow's [id]
  * as a dependency.
  * After execution, each inner task trace is merged into the parent [ExecContext.traces] under the
  * key `"<workflowId>/<taskId>"`.
@@ -50,13 +50,10 @@ class AiWorkflow<in I, out O>(
 
     override suspend fun execute(input: I, context: ExecContext): O {
         // Create a child context that inherits resources and monitoring but has isolated task state.
-        val innerContext = ExecContext(
-            resources = context.resources,
-            monitor = context.monitor
-        )
+        val innerContext = context.childContext()
         // Make the outer input available so inner tasks may depend on this workflow's id.
         if (input != null) {
-            innerContext.taskOutputs[id] = input
+            innerContext.put(id, input)
             // Add a synthetic successful trace so inner tasks declaring this workflow's id as a
             // dependency can be scheduled (AiPipelineExecutor checks traces for dependency readiness).
             innerContext.logTrace(id, AiPromptTrace())
@@ -77,7 +74,7 @@ class AiWorkflow<in I, out O>(
         }
 
         @Suppress("UNCHECKED_CAST")
-        return innerContext.taskOutputs[tasks.last().id] as O
+        return innerContext.scratchpad[tasks.last().id] as O
     }
 }
 

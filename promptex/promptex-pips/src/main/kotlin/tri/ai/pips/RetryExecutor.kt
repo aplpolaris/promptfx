@@ -53,13 +53,13 @@ class RetryExecutor(
             // Update trace in context if one was logged, enriching it with retry metadata
             val existingTrace = context.traces[task.id]
             if (existingTrace != null) {
-                context.traces[task.id] = existingTrace.copy(
+                context.logTrace(task.id, existingTrace.copy(
                     execInfo = existingTrace.exec.copy(
                         responseTimeMillis = it.attemptTime,
                         responseTimeMillisTotal = it.totalTime,
                         attempts = it.attempts
                     )
-                )
+                ))
             } else {
                 check(output !is AiPromptTraceSupport) {
                     "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
@@ -75,7 +75,7 @@ class RetryExecutor(
                 durationTotal = it.totalTime,
                 attempts = it.attempts
             )
-            context.traces[task.id] = errorTrace
+            context.logTrace(task.id, errorTrace)
             errorTrace
         })
     }

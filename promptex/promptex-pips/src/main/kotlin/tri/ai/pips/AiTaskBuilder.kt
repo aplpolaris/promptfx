@@ -71,7 +71,7 @@ inline fun <reified T> List<AiTask<*, T>>.aggregate(): AiTaskBuilder<List<T>> {
     require(map { it.id }.toSet().size == size) { "Duplicate task IDs" }
     val finalTask = object : AiTask<Any?, List<T>>("promptBatch", dependencies = map { it.id }.toSet()) {
         override suspend fun execute(input: Any?, context: ExecContext): List<T> {
-            val priorOutputs = context.taskOutputs.filterKeys { it in dependencies }
+            val priorOutputs = context.scratchpad.filterKeys { it in dependencies }
             return priorOutputs.map { it.value as T }.toList()
         }
     }

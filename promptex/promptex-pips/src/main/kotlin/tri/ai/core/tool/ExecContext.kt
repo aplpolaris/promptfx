@@ -30,38 +30,68 @@ import java.util.*
 class ExecContext(
     /** A unique identifier for this execution, used for tracing and logging. */
     val traceId: String = UUID.randomUUID().toString(),
-    /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
-    val resources: MutableMap<String, Any?> = mutableMapOf(),
-    /** Previous task outputs (raw values), keyed by task id, for pipeline-style execution. */
-    val taskOutputs: MutableMap<String, Any?> = mutableMapOf(),
-    /** Mutable JSON data store used as a scratchpad for intermediate execution state. */
-    val scratchpad: MutableMap<String, JsonNode> = mutableMapOf(),
     /** Monitor for emitting execution events. */
     val monitor: AiTaskMonitor = IgnoreMonitor
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
 
-    /** Log of traces emitted by tasks during execution, keyed by task id. */
-    val traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
+    // --- Private backing stores ---
 
-    /** Updates a scratchpad entry in the context. */
-    fun put(key: String, value: JsonNode) {
-        scratchpad[key] = value
-        variableSet(key, value)
-    }
+    private val _resources: MutableMap<String, Any?> = mutableMapOf()
+    private val _scratchpad: MutableMap<String, Any?> = mutableMapOf()
+    private val _traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
+
+    // --- Hook ---
+
+    /** Hook called whenever a scratchpad entry is set via [put]. */
+    var variableSet: (String, Any?) -> Unit = { _, _ -> }
+
+    // --- Resources ---
+
+    /** Read-only view of runtime service objects (e.g. LLM clients, tool registries). */
+    val resources: Map<String, Any?> get() = _resources
 
     /** Stores a named resource object in the context. */
     fun putResource(key: String, value: Any?) {
-        resources[key] = value
+        _resources[key] = value
     }
+
+    // --- Scratchpad (unified task outputs + JSON data store) ---
+
+    /** Read-only view of the unified scratchpad (task outputs and intermediate JSON data). */
+    val scratchpad: Map<String, Any?> get() = _scratchpad
+
+    /** Stores an entry in the scratchpad and fires the [variableSet] hook. */
+    fun put(key: String, value: Any?) {
+        _scratchpad[key] = value
+        variableSet(key, value)
+    }
+
+    /** Stores a [JsonNode] entry in the scratchpad and fires the [variableSet] hook. */
+    fun put(key: String, value: JsonNode) {
+        _scratchpad[key] = value
+        variableSet(key, value)
+    }
+
+    /** Returns the scratchpad entry for [key] as a [JsonNode], or null if absent or not a [JsonNode]. */
+    fun getJson(key: String): JsonNode? = _scratchpad[key] as? JsonNode
+
+    // --- Traces ---
+
+    /** Read-only view of traces emitted by tasks during execution, keyed by task id. */
+    val traces: Map<String, AiPromptTraceSupport> get() = _traces
 
     /** Logs a trace for the given task id. */
     fun logTrace(id: String, trace: AiPromptTraceSupport) {
-        traces[id] = trace
+        _traces[id] = trace
     }
 
-    /** Hook called when a scratchpad entry is set. */
-    var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
+    // --- Factory ---
+
+    /** Creates a child context that inherits [resources] and [monitor] from this context. */
+    fun childContext(): ExecContext = ExecContext(monitor = monitor).also { child ->
+        _resources.forEach { (k, v) -> child.putResource(k, v) }
+    }
 
 }

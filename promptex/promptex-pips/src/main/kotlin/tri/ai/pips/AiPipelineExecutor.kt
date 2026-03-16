@@ -40,7 +40,7 @@ object AiPipelineExecutor {
     /**
      * Execute tasks in order, chaining results from one to another.
      * A single [ExecContext] is created and shared across all task executions; each task's output is
-     * stored in [ExecContext.taskOutputs] and its trace in [ExecContext.traces] so subsequent tasks can
+     * stored in [ExecContext.scratchpad] and its trace in [ExecContext.traces] so subsequent tasks can
      * access both without requiring a new context per task.
      * Returns the table of execution results.
      */
@@ -57,7 +57,7 @@ object AiPipelineExecutor {
             tasksToDo.forEach { task ->
                 try {
                     context.monitor.emitTaskStarted(task)
-                    val input = if (task.dependencies.size == 1) context.taskOutputs[task.dependencies.first()] else null
+                    val input = if (task.dependencies.size == 1) context.scratchpad[task.dependencies.first()] else null
                     val output = executor.execute(task, input, context)
                     // Resolve trace: prefer context.traces (set by task or RetryExecutor), then synthesize
                     val trace: AiPromptTraceSupport = context.traces[task.id]
@@ -69,19 +69,19 @@ object AiPipelineExecutor {
                             else AiPromptTrace(outputInfo = null)
                         }
                     // Always store the resolved trace in context so dependency checks can use it
-                    context.traces[task.id] = trace
+                    context.logTrace(task.id, trace)
                     val resultValue = trace.output?.outputs
                     val err = trace.exec.throwable ?: (if (resultValue == null) IllegalArgumentException("No value") else null)
                     if (err != null) {
                         context.monitor.emitTaskFailed(task, err)
                     } else {
                         context.monitor.emitTaskCompleted(task, resultValue)
-                        context.taskOutputs[task.id] = output
+                        context.put(task.id, output)
                     }
                 } catch (x: Exception) {
                     x.printStackTrace()
                     context.monitor.emitTaskFailed(task, x)
-                    context.traces[task.id] = AiPromptTrace.error(null, x.message ?: "Unknown error", x)
+                    context.logTrace(task.id, AiPromptTrace.error(null, x.message ?: "Unknown error", x))
                 }
             }
         } while (tasksToDo.isNotEmpty())
