@@ -129,7 +129,10 @@ class DocumentQaView: AiPlanTaskView(
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = {
-                AiPipelineExecutor.execute(planner.reindexTaskBuilder().plan, ExecContext(monitor = progress))
+                AiPipelineExecutor.execute(
+                    planner.reindexTaskBuilder { msg, pct -> progress.progressUpdate(msg, pct) }.plan,
+                    ExecContext(monitor = progress)
+                )
             }
         )
         parameters("Document Snippet Matching and Query") {
