@@ -20,8 +20,7 @@
 package tri.promptfx.`fun`
 
 import javafx.beans.property.Property
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aitask
+import tri.ai.pips.AiTaskBuilder
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
 import tri.promptfx.AiChatEngine
@@ -33,30 +32,34 @@ import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String): AiPlanner {
+class WikipediaAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val pageTitle: Property<String>? = null, val input: String) {
 
-    override fun plan() =
-        aitask("wikipedia-page-guess") {
-            common.completionBuilder()
+    fun plan() =
+        AiTaskBuilder.task("wikipedia-page-guess") { context ->
+            val result = common.completionBuilder()
                 .prompt(lookupPrompt("examples-api/wikipedia-page-guess"))
                 .tokens(200)
                 .params(PromptTemplate.INPUT to input)
                 .execute(chatEngine)
-        }.task("wikipedia-page-search") {
-            firstMatchingPage(it.textContent()).also {
-                pageTitle?.value = it
+            context.logTrace("wikipedia-page-guess", result)
+            result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+        }.task("wikipedia-page-search") { it, _ ->
+            firstMatchingPage(it).also { page ->
+                pageTitle?.value = page
             }
-        }.task("retrieve-page-text") {
-            getWikipediaPage(it.textContent()).also {
-                pageTitle?.apply { value = "$value\n\n$it" }
+        }.task("retrieve-page-text") { it, _ ->
+            getWikipediaPage(it).also { page ->
+                pageTitle?.apply { value = "$value\n\n$page" }
             }
-        }.aitask("question-answer") {
-            common.completionBuilder()
+        }.task("question-answer") { it, context ->
+            val result = common.completionBuilder()
                 .prompt(lookupPrompt("text-qa/answer"))
-                .params(PromptTemplate.INPUT to input, PromptTemplate.INSTRUCT to it)
+                .instruct(input = input, instruct = it)
                 .tokens(1000)
                 .execute(chatEngine)
-        }.plan
+            context.logTrace("question-answer", result)
+            result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+        }
 
     internal fun firstMatchingPage(query: String): String {
         val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.toString())

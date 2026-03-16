@@ -35,6 +35,7 @@ import tri.util.json.jsonMapper
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -252,7 +253,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
 
     override fun plan() = model
         .calculateEmbeddings()
-        .aitask("clustering") {
+        .task<List<EmbeddingCluster>>("clustering") { _, context ->
             val t0 = System.currentTimeMillis()
             val chunks = model.chunkListModel.filteredChunkList.toList().take(maxChunksToCluster.value)
             val summaryType = when {
@@ -276,14 +277,16 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                     info<TextClusterView>("  $msg: %.2f%%".format(pct * 100))
                 }
             )
-            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.listSingleOutput(hierarchy))
+            context.logTrace("clustering", AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.listSingleOutput(hierarchy)))
+            hierarchy
         }
-        .aitask("formatting-results") {
-            val list = it.content() as List<EmbeddingCluster>
+        .task<FormattedPromptTraceResult>("formatting-results") { list, context ->
             runLater { resultClusters.setAll(list) }
             val ft = FormattedText(list.map { printCluster(it, "\n") }.flatten())
-            FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.text("")), listOf(ft))
-        }.planner
+            val result = FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.text("")), listOf(ft))
+            context.logTrace("formatting-results", result)
+            result
+        }
 
     //region PRETTY PRINT
 

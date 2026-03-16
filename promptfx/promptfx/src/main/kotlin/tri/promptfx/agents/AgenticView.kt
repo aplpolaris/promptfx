@@ -45,11 +45,8 @@ import tri.ai.core.textContent
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ToolExecutableResult
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.ExecEvent
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.*
 import tri.util.json.OUTPUT_SCHEMA
 import tri.util.json.PARAM_INPUT
@@ -230,7 +227,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
         .replace(Regex("_+"), "_")
         .lowercase()
 
-    override fun plan(): AiPlanner = aitask("agent") {
+    override fun plan(): AiTaskBuilder<*> = AiTaskBuilder.task("agent") {
         runLater { agentLog.value = "" }
         tools.onEach { it.state = ToolState.NONE }
 
@@ -256,8 +253,8 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
             .message.textContent()!!
 
         runLater { pfxWorkspace.dock(this) }
-        AiPromptTrace(outputInfo = AiOutputInfo.text(result))
-    }.planner
+        result
+    }
 
     /** Executes a view's tool with specified input. Switches to show the view while executing. */
     private fun executeTask(view: AiTaskView, input: Map<String, String>): ToolExecutableResult {
@@ -342,7 +339,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
                 val inputJson = createObject(PARAM_INPUT, inputData)
                 val result = runBlocking {
-                    this@toSolver.execute(inputJson, ExecContext(resources = mapOf("textChat" to textChat)))
+                    this@toSolver.execute(inputJson, ExecContext(resources = mutableMapOf("textChat" to textChat)))
                 }.get(PARAM_RESULT).asText()
                 return createObject(PARAM_RESULT, result)
             }

@@ -26,60 +26,23 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.ObservableList
 import javafx.scene.control.Slider
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import tornadofx.action
-import tornadofx.button
-import tornadofx.clear
-import tornadofx.combobox
-import tornadofx.contextmenu
-import tornadofx.datagrid
-import tornadofx.enableWhen
-import tornadofx.error
-import tornadofx.field
-import tornadofx.imageview
-import tornadofx.information
-import tornadofx.integerBinding
-import tornadofx.item
-import tornadofx.label
-import tornadofx.observableListOf
-import tornadofx.onChange
-import tornadofx.putString
-import tornadofx.runLater
-import tornadofx.separator
-import tornadofx.slider
-import tornadofx.text
-import tornadofx.toolbar
-import tornadofx.tooltip
-import tornadofx.vbox
-import tornadofx.vgrow
+import tornadofx.*
 import tri.ai.core.AiModel
 import tri.ai.core.ImageGenerationParams
 import tri.ai.core.ImageGenerator
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.gemini.GEMINI_ASPECT_RATIOS
 import tri.ai.gemini.GEMINI_IMAGE_SIZES
-import tri.ai.core.MultimodalChatMessage
-import tri.ai.pips.aitask
-import tri.ai.prompt.PromptTemplate
-import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiImageTrace
-import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.PromptInfo
+import tri.ai.pips.AiTaskBuilder
+import tri.ai.prompt.trace.*
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxModels
 import tri.promptfx.promptFxDirectoryChooser
-import tri.util.ui.NavigableWorkspaceViewImpl
-import tri.util.ui.WorkspaceViewAffordance
-import tri.util.ui.base64ToImage
-import tri.util.ui.copyToClipboard
-import tri.util.ui.saveToFile
-import tri.util.ui.showImageDialog
-import tri.util.ui.writeImageToFile
+import tri.util.ui.*
 
 /** Plugin for the [ImagesView]. */
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Multimodal", "Text-to-Image", WorkspaceViewAffordance.Companion.INPUT_ONLY, ImagesView::class)
@@ -242,7 +205,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
         }
     }
 
-    override fun plan() = aitask("generate-image") {
+    override fun plan() = AiTaskBuilder.task("generate-image") { context ->
         val t0 = System.currentTimeMillis()
         val promptInfo = PromptInfo(input.value)
         val generator = model.value!!
@@ -274,10 +237,11 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 AiOutputInfo(outputs)
             )
         } catch (x: Exception) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message))
+            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message, x))
         }
-        result
-    }.planner
+        context.logTrace("generate-image", result)
+        result.values ?: emptyList()
+    }
 
     //region CONTEXT MENU ACTIONS
 
@@ -287,7 +251,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     private fun saveAllToFile() {
         promptFxDirectoryChooser(
-            dirKey = PromptFxConfig.Companion.DIR_KEY_IMAGE,
+            dirKey = PromptFxConfig.DIR_KEY_IMAGE,
             title = "Save Images to Folder"
         ) { folder ->
             var i = 1

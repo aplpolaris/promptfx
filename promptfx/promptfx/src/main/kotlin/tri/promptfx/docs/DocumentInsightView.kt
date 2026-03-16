@@ -25,8 +25,8 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiPlanner
 import tri.ai.pips.AiTask
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
 import tri.ai.prompt.PromptTemplate
@@ -147,23 +147,23 @@ class DocumentInsightView: AiPlanTaskView(
         return super.processUserInput()
     }
 
-    override fun plan(): AiPlanner {
+    override fun plan(): AiTaskBuilder<*> {
         mapResult.set("")
         reduceResult.set("")
 
         return promptBatch(model.chunkListModel.chunkSelection)
             .aggregate()
-            .aitask("results-summarize") { _ ->
+            .task("results-summarize") { it, _ ->
                 val concat = mapResult.value
                 common.completionBuilder()
                     .prompt(reducePrompt.prompt.value)
                     .paramsInput(concat)
                     .execute(chatEngine)
                     .mapOutput { AiOutput(other = concat to it.message!!.content) }
-            }.planner
+            }
     }
 
-    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask> {
+    private fun promptBatch(chunks: List<TextChunkViewModel>): List<AiTask<*, *>> {
         return AiPromptBatchCyclic("processing-snippets").apply {
             var i = 1
             val names = chunks.map { "${it.browsable!!.shortName} ${i++}" }

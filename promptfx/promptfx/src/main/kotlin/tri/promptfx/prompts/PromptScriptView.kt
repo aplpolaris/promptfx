@@ -24,11 +24,9 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.geometry.Orientation
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aggregatetrace
-import tri.ai.pips.task
+import tri.ai.pips.AiTaskBuilder
+import tri.ai.pips.aggregate
 import tri.ai.pips.tasks
-import tri.ai.pips.tasktext
 import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
@@ -151,10 +149,10 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         }
     }
 
-    override fun plan(): AiPlanner {
+    override fun plan(): AiTaskBuilder<*> {
         val inputs = listModel.filteredChunkList.take(chunkLimit.value)
         if (inputs.isEmpty())
-            return tasktext("") { "(no input provided)" }.planner
+            return AiTaskBuilder.task("") { "(no input provided)" }
         val docInputs = libraryModel.docSelection.map { doc ->
             val docChunks = doc.chunks.map { it.text(doc.all) }.toSet()
             ChunksWithHeader(doc.metadata.title, doc.dataHeader, inputs.filter { it.text in docChunks })
@@ -167,10 +165,13 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
-        }.aggregatetrace().aitask("process-results") {
-            @Suppress("UNCHECKED_CAST")
-            postProcess(it.other as List<AiPromptTraceSupport>, docInputs)
-        }.planner
+        }.aggregate().task<AiPromptTrace>("process-results") { _, context ->
+            // each batch task logs its trace via context.logTrace(id, ...) in AiPromptRunConfig.task()
+            val allTraces = tasks.map { context.traces[it.id] }.filterNotNull()
+            val result = postProcess(allTraces, docInputs)
+            context.logTrace("process-results", result)
+            result
+        }
     }
 
     override fun loadTextLibrary(library: TextLibraryInfo) {

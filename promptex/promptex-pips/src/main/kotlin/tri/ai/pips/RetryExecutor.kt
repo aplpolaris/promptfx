@@ -40,23 +40,34 @@ class RetryExecutor(
     val retry = SimpleRetryExecutor(maxRetries, initialRetryDelay, retryBackoff)
 
     /**
-     * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
-     * related to the number of attempts and total duration.
+     * Executes a task with given policy. Logs trace information to [ExecContext.traces] with additional
+     * metadata about the number of attempts and total duration.
      */
-    suspend fun execute(task: AiTask, context: ExecContext): AiPromptTraceSupport {
+    suspend fun execute(task: AiTask<*, *>, input: Any?, context: ExecContext): Any? {
         return retry.execute({
-            task.execute(context)
+            @Suppress("UNCHECKED_CAST")
+            (task as AiTask<Any?, Any?>).execute(input, context)
         }, onSuccess = { it ->
-            val trace = it.value!!
-            trace.copy(
-                execInfo = trace.exec.copy(
-                    responseTimeMillis = it.attemptTime,
-                    responseTimeMillisTotal = it.totalTime,
-                    attempts = it.attempts
+            // output may be null when a task logs an error trace and returns null (rather than throwing)
+            val output = it.value
+            // Update trace in context if one was logged, enriching it with retry metadata
+            val existingTrace = context.traces[task.id]
+            if (existingTrace != null) {
+                context.traces[task.id] = existingTrace.copy(
+                    execInfo = existingTrace.exec.copy(
+                        responseTimeMillis = it.attemptTime,
+                        responseTimeMillisTotal = it.totalTime,
+                        attempts = it.attempts
+                    )
                 )
-            )
+            } else {
+                check(output !is AiPromptTraceSupport) {
+                    "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
+                }
+            }
+            output
         }, onFailure = {
-            AiPromptTrace.error(
+            val errorTrace = AiPromptTrace.error(
                 modelInfo = null,
                 message = it.error!!.message,
                 throwable = it.error,
@@ -64,6 +75,8 @@ class RetryExecutor(
                 durationTotal = it.totalTime,
                 attempts = it.attempts
             )
+            context.traces[task.id] = errorTrace
+            errorTrace
         })
     }
 

@@ -21,7 +21,9 @@ package tri.promptfx.`fun`
 
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.tasktext
+import tri.ai.core.tool.ExecContext
+import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiPlanTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.AudioPanel
@@ -46,11 +48,14 @@ class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query fo
         addInputTextArea(input)
     }
 
-    override fun plan() = tasktext("audio-transcribe") {
+    override fun plan() = AiTaskBuilder.task("audio-transcribe") {
         userInput()
-    }.aitask("weather") {
-        WeatherAiTaskPlanner(chatEngine, common, embeddingEngine, it.textContent()).execute(progress).finalResult
-    }.planner
+    }.task("weather") { it, context ->
+        val tasks = WeatherAiTaskPlanner(chatEngine, common, embeddingEngine, it).plan().plan
+        val result = AiPipelineExecutor.execute(tasks, ExecContext(monitor = context.monitor))
+        context.logTrace("weather", result.finalResult)
+        result.finalResult.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+    }
 
     private suspend fun userInput(): String {
         var text = input.get()

@@ -20,32 +20,30 @@
 package tri.ai.core.tool
 
 import com.fasterxml.jackson.databind.JsonNode
-import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.pips.AiTaskMonitor
-import tri.ai.pips.ExecEvent
 import tri.ai.pips.IgnoreMonitor
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.json.jsonMapper
-import java.util.UUID
+import java.util.*
 
 /** Runtime context available to every executable. */
 class ExecContext(
-    scratchpad: Map<String, JsonNode> = emptyMap(),
-    resources: Map<String, Any?> = emptyMap(),
+    /** A unique identifier for this execution, used for tracing and logging. */
     val traceId: String = UUID.randomUUID().toString(),
+    /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
+    val resources: MutableMap<String, Any?> = mutableMapOf(),
+    /** Previous task outputs (raw values), keyed by task id, for pipeline-style execution. */
+    val taskOutputs: MutableMap<String, Any?> = mutableMapOf(),
+    /** Mutable JSON data store used as a scratchpad for intermediate execution state. */
+    val scratchpad: MutableMap<String, JsonNode> = mutableMapOf(),
     /** Monitor for emitting execution events. */
-    val monitor: AiTaskMonitor = IgnoreMonitor,
-    /** Previous task outputs, keyed by task id, for pipeline-style execution. */
-    val taskInputs: Map<String, AiPromptTraceSupport> = emptyMap()
+    val monitor: AiTaskMonitor = IgnoreMonitor
 ) {
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
 
-    /** Mutable JSON data store used as a scratchpad for intermediate execution state. */
-    val scratchpad: MutableMap<String, JsonNode> = scratchpad.toMutableMap()
-
-    /** Mutable store for runtime service objects (e.g. LLM clients, tool registries) needed during execution. */
-    val resources: MutableMap<String, Any?> = resources.toMutableMap()
+    /** Log of traces emitted by tasks during execution, keyed by task id. */
+    val traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
 
     /** Updates a scratchpad entry in the context. */
     fun put(key: String, value: JsonNode) {
@@ -58,15 +56,12 @@ class ExecContext(
         resources[key] = value
     }
 
+    /** Logs a trace for the given task id. */
+    fun logTrace(id: String, trace: AiPromptTraceSupport) {
+        traces[id] = trace
+    }
+
     /** Hook called when a scratchpad entry is set. */
     var variableSet: (String, JsonNode) -> Unit = { _, _ -> }
-
-    /** Returns a copy of this context with the given monitor. */
-    fun withMonitor(monitor: FlowCollector<ExecEvent>) =
-        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
-
-    /** Returns a copy of this context with the given task inputs. */
-    fun withTaskInputs(taskInputs: Map<String, AiPromptTraceSupport>) =
-        ExecContext(scratchpad, resources, traceId, monitor, taskInputs)
 
 }

@@ -27,7 +27,6 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.PromptChatRegistry
 import tri.ai.openai.OpenAiPlugin
-import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.PPlanExecutor
 import tri.ai.prompt.PromptLibrary
 
@@ -78,7 +77,7 @@ class StarshipConfigTest {
         )
 
         runBlocking {
-            PPlanExecutor(registry).execute(config.pipeline, ExecContext(), PrintMonitor())
+            PPlanExecutor(registry).execute(config.pipeline, ExecContext())
         }
     }
 }

@@ -28,8 +28,7 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aitask
+import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiChatEngine
 import tri.promptfx.execute
 import tri.promptfx.taskPlan
@@ -92,7 +91,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             }
             field("Merge Strategy") {
                 tooltip("Strategy for combining items across multiple attempts.")
-                combobox(mergeStrategy, JsonListMergeStrategy.values().toList())
+                combobox(mergeStrategy, JsonListMergeStrategy.entries)
             }.enableWhen(numAttempts.greaterThan(1))
             field("Min. Consensus") {
                 tooltip("Minimum fraction of attempts that must agree on an item for it to be included (only applies to TOP_REPEATED strategy).")
@@ -176,7 +175,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
     }
 
-    override fun plan(): AiPlanner {
+    override fun plan(): AiTaskBuilder<*> {
         runLater {
             output.set(null)
             outputItems.clear()
@@ -191,9 +190,9 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             val localStrategy = mergeStrategy.value
             val localMinConsensus = minConsensus.value
             val localChat = chatEngine
-            aitask("list-generator-multi-attempt") {
+            AiTaskBuilder.task("list-generator-multi-attempt") {
                 mergeAttempts(builder, localChat, localAttempts, localStrategy, localMinConsensus)
-            }.planner
+            }
         } else {
             builder.taskPlan(chatEngine)
         }

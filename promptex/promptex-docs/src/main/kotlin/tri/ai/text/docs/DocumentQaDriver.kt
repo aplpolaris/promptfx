@@ -19,7 +19,9 @@
  */
 package tri.ai.text.docs
 
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.PrintMonitor
 
 /** Provides access to necessary components for document Q&A. */
 interface DocumentQaDriver {
@@ -44,7 +46,12 @@ interface DocumentQaDriver {
     fun close()
 
     /** Answer a question using documents in the current folder. */
-    suspend fun answerQuestion(input: String, numResponses: Int = 1, historySize: Int = 1): AiPipelineResult
+    suspend fun answerQuestion(
+        input: String,
+        numResponses: Int = 1,
+        historySize: Int = 1,
+        context: ExecContext = ExecContext(monitor = PrintMonitor())
+    ): AiPipelineResult
 
 }
 

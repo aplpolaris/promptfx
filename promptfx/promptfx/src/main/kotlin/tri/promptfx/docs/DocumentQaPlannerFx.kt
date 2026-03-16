@@ -31,7 +31,7 @@ import tri.ai.embedding.EmbeddingMatch
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskList
+import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.PromptDef
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
@@ -74,7 +74,7 @@ class DocumentQaPlannerFx {
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
-    ): AiTaskList {
+    ): AiTaskBuilder<FormattedPromptTraceResult> {
         val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!.asTextChat(), chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
@@ -87,14 +87,16 @@ class DocumentQaPlannerFx {
             numResponses = numResponses!!,
             snippetCallback = { runLater { snippets.setAll(it) } }
         )
-        return AiTaskList(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask)
-            .aitask("process-result") {
-                val res = it.content() as QuestionAnswerResult
-                info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${res.responseScore}$ANSI_RESET")
-                lastResult = res
-                chatHistory.add(TextChatMessage(MChatRole.User, question))
-                chatHistory.add(TextChatMessage(MChatRole.Assistant, res.trace.firstValue.textContent()))
-                FormattedPromptTraceResult(res.trace, res.splitOutputs().map { it.formatResult() })
-            }
+        @Suppress("UNCHECKED_CAST")
+        val questionAnswerBuilder = AiTaskBuilder(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask<*, QuestionAnswerResult>)
+        return questionAnswerBuilder.task<FormattedPromptTraceResult>("process-result") { result, context ->
+            info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
+            lastResult = result
+            chatHistory.add(TextChatMessage(MChatRole.User, question))
+            chatHistory.add(TextChatMessage(MChatRole.Assistant, result.trace.firstValue.textContent()))
+            val ft = FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
+            context.logTrace("process-result", ft)
+            ft
+        }
     }
 }
