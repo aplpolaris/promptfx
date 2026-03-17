@@ -42,7 +42,7 @@ class ExecContext(
 
     /** Hook called whenever a scratchpad entry is set via [put]. */
     var variableSet: (String, Any?) -> Unit = { _, _ -> }
-    
+
     /** Read-only view of traces emitted by tasks during execution, keyed by task id. */
     val traces: Map<String, AiPromptTraceSupport>
         get() = _traces
@@ -94,7 +94,7 @@ class ExecContext(
 
     //region FACTORY
 
-    /** Creates a child context that inherits [_resources] and [monitor] from this context. */
+    /** Creates a child context that inherits resources and monitor  from this context. */
     fun childContext(): ExecContext = ExecContext(monitor = monitor).also { child ->
         _resources.forEach { (k, v) -> child.putResource(k, v) }
     }
