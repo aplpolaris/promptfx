@@ -40,8 +40,8 @@ import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.promptfx.PromptFxModels
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.ui.loadAudio
@@ -105,11 +105,11 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         if (input.value.isNullOrBlank())
-            return AiPromptTrace.invalidRequest(model.value, "No input provided").asPipelineResult()
+            return AiPromptTrace.invalidRequest(model.value, "No input provided").asWorkflowResult()
         val ttsModel = PromptFxModels.textToSpeechModels().firstOrNull { it.modelId == model.value }
-            ?: return AiPromptTrace.invalidRequest(model.value, "Text-to-speech model not found: ${model.value}").asPipelineResult()
+            ?: return AiPromptTrace.invalidRequest(model.value, "Text-to-speech model not found: ${model.value}").asWorkflowResult()
         val trace = ttsModel.speech(
             text = input.value,
             voice = voice.value.value,
@@ -118,7 +118,7 @@ class AudioSpeechView : AiTaskView("Text-to-Speech", "Provide text to generate s
         controller.updateUsage()
         if (trace.errorMessage == null)
             file.set(trace.firstValue.content() as ByteArray)
-        return trace.asPipelineResult()
+        return trace.asWorkflowResult()
     }
 
     fun playButtonPress() {

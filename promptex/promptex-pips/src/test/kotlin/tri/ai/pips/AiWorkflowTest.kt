@@ -56,10 +56,10 @@ class AiWorkflowTest {
         assertNotNull(ctx.trace("wf/step2"))
     }
 
-    // --- Composition: workflow used as a task step inside another pipeline ---
+    // --- Composition: workflow used as a task step inside another workflow ---
 
     @Test
-    fun `workflow can be composed as a step in an outer pipeline`() = runTest {
+    fun `workflow can be composed as a step in an outer workflow`() = runTest {
         val inner = AiTaskBuilder.task("inner1") { 42 }
             .task("inner2") { n, _ -> n * 2 }
             .asWorkflow("sub")
@@ -68,12 +68,12 @@ class AiWorkflowTest {
             .task("outer1") { n, _ -> "result=$n" }
             .plan
 
-        val result = AiPipelineExecutor.execute(outerPlan, printingExecContext())
+        val result = AiWorkflowExecutor.execute(outerPlan, printingExecContext())
         assertEquals("result=84", result.finalResult.firstValue.textContent())
     }
 
     @Test
-    fun `outer pipeline can chain multiple workflows`() = runTest {
+    fun `outer workflow can chain multiple workflows`() = runTest {
         val wf1 = AiTaskBuilder.task("a1") { "foo" }
             .task("a2") { s, _ -> s + "bar" }
             .asWorkflow("wf1")
@@ -92,7 +92,7 @@ class AiWorkflowTest {
         val ctx = printingExecContext()
         ctx.put("wf2", "xy")
 
-        val result = AiPipelineExecutor.execute(outerPlan, ctx)
+        val result = AiWorkflowExecutor.execute(outerPlan, ctx)
         assertEquals("foobar+xy", result.finalResult.firstValue.textContent())
     }
 
@@ -134,7 +134,7 @@ class AiWorkflowTest {
     }
 
     @Test
-    fun `outer pipeline marks workflow task as failed when inner pipeline fails`() = runTest {
+    fun `outer workflow marks workflow task as failed when inner workflow fails`() = runTest {
         val failingTask = object : AiTask<Any?, String>("failStep") {
             override suspend fun execute(input: Any?, context: ExecContext): String {
                 context.logTrace(id, AiPromptTrace.error(null, "fail", Exception("fail")))
@@ -150,7 +150,7 @@ class AiWorkflowTest {
             }
         }
 
-        val result = AiPipelineExecutor.execute(listOf(workflow, outerTask), printingExecContext())
+        val result = AiWorkflowExecutor.execute(listOf(workflow, outerTask), printingExecContext())
         assertNotNull(result.interimResults["wfFail"]?.errorMessage)
         assertNull(result.interimResults["afterFail"])
     }

@@ -122,7 +122,7 @@ class ExecEventTest {
         assertInstanceOf(ExecEvent.Error::class.java, collected[7])
     }
 
-    /** Verify [AiPipelineExecutor] emits the correct events. */
+    /** Verify [AiWorkflowExecutor] emits the correct events. */
     @Test
     fun testPipelineExecutorEmitsEvents() = runTest {
         val collected = mutableListOf<ExecEvent>()
@@ -136,7 +136,7 @@ class ExecEventTest {
                 }
             }
         )
-        AiPipelineExecutor.execute(tasks, ExecContext(monitor = collector))
+        AiWorkflowExecutor.execute(tasks, ExecContext(monitor = collector))
 
         val started = collected.filterIsInstance<ExecEvent.TaskStarted>()
         val completed = collected.filterIsInstance<ExecEvent.TaskCompleted>()

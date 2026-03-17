@@ -71,7 +71,7 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
             val tasks = batch.plan { TextPlugin.chatModel(it) }
-            AiPipelineExecutor.execute(tasks.plan).finalResult
+            AiWorkflowExecutor.execute(tasks.plan).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 

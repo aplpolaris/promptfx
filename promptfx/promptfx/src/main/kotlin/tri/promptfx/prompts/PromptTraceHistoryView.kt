@@ -21,7 +21,7 @@ package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleBooleanProperty
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.promptfx.AiTaskView
@@ -101,6 +101,6 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
         promptListUi.selectPromptTrace(foundPrompt ?: prompt)
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }
 

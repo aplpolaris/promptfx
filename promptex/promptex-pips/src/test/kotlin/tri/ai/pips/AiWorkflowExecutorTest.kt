@@ -26,14 +26,14 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 
-class AiPipelineExecutorTest {
+class AiWorkflowExecutorTest {
 
     private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
 
     @Test
     fun testExecute() {
         runTest {
-            val results = AiPipelineExecutor.execute(
+            val results = AiWorkflowExecutor.execute(
                 listOf(GoTask("pass"), FailTask("fail")),
                 printingExecContext()).interimResults
             assertEquals(2, results.size)
@@ -45,7 +45,7 @@ class AiPipelineExecutorTest {
     @Test
     fun testExecuteChain() {
         runTest {
-            val results = AiPipelineExecutor.execute(
+            val results = AiWorkflowExecutor.execute(
                 listOf(GoTask("a"), GoTask("b", setOf("a")), GoTask("c", setOf("b"))),
                 printingExecContext()).interimResults
             assertEquals(3, results.size)
@@ -58,7 +58,7 @@ class AiPipelineExecutorTest {
     @Test
     fun testExecuteChainWithFailure() {
         runTest {
-            val results = AiPipelineExecutor.execute(
+            val results = AiWorkflowExecutor.execute(
                 listOf(GoTask("a"), FailTask("b", setOf("a")), GoTask("c", setOf("b"))),
                 printingExecContext()).interimResults
             assertEquals(2, results.size)

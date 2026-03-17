@@ -32,8 +32,8 @@ import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.core.SpeechToTextModel
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.trace.*
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
@@ -156,10 +156,10 @@ class AudioView : AiTaskView("Speech-to-Text ", "Drop audio file below to transc
         input.value = "Audio file: ${f.name}"
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
-        val f = file.value ?: return AiPromptTrace.invalidRequest(model.value?.modelId ?: "", "No audio file dropped").asPipelineResult()
-        val sttModel = model.value ?: return AiPromptTrace.invalidRequest("", "No speech-to-text model selected").asPipelineResult()
-        return sttModel.transcribe(f).also { controller.updateUsage() }.asPipelineResult()
+    override suspend fun processUserInput(): AiWorkflowResult {
+        val f = file.value ?: return AiPromptTrace.invalidRequest(model.value?.modelId ?: "", "No audio file dropped").asWorkflowResult()
+        val sttModel = model.value ?: return AiPromptTrace.invalidRequest("", "No speech-to-text model selected").asWorkflowResult()
+        return sttModel.transcribe(f).also { controller.updateUsage() }.asWorkflowResult()
     }
 
 }

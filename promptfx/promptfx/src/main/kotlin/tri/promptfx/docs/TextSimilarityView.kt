@@ -22,8 +22,8 @@ package tri.promptfx.docs
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
@@ -50,7 +50,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         addInputTextArea(secondText)
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val chunks = secondText.get().splitIntoChunks()
         val mod = controller.embeddingEngine.get().model
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
@@ -76,7 +76,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
                 modelInfo = AiModelInfo(mod.modelId),
                 outputInfo = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
             )
-        }.asPipelineResult()
+        }.asWorkflowResult()
     }
 
 }

@@ -28,7 +28,7 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
-import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiWorkflowExecutor
 import tri.ai.pips.AiTask
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -36,7 +36,7 @@ import tri.util.info
 import tri.util.json.jsonMapper
 
 /**
- * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor].
+ * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiWorkflowExecutor].
  * Supports monitoring intermediate status.
  */
 class PPlanExecutor(private val registry: ExecutableRegistry) {
@@ -51,7 +51,7 @@ class PPlanExecutor(private val registry: ExecutableRegistry) {
                 ?: throw IllegalArgumentException("No executable found for ${step.tool}")
             AiPlanStepTask(step, exec, context)
         }
-        AiPipelineExecutor.execute(tasks, context)
+        AiWorkflowExecutor.execute(tasks, context)
     }
 
 }

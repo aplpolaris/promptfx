@@ -68,7 +68,7 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val formattedResultArea = PromptResultAreaFormatted()
 
     val runTooltip = SimpleStringProperty("")
-    val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
+    val onCompleted: MutableList<(AiWorkflowResult) -> Unit> = mutableListOf()
 
     val chatEngine: AiChatEngine
         get() = controller.chatEngine.value
@@ -365,18 +365,18 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Processes whatever input user has provided. */
-    abstract suspend fun processUserInput(): AiPipelineResult
+    abstract suspend fun processUserInput(): AiWorkflowResult
 
     /** Adds a hook to be called when the task has completed. */
-    fun onCompleted(op: (AiPipelineResult) -> Unit) {
+    fun onCompleted(op: (AiWorkflowResult) -> Unit) {
         onCompleted.add(op)
     }
 
     /** Called when the task has completed. */
-    internal fun taskCompleted(message: AiPipelineResult) = onCompleted.forEach { it(message) }
+    internal fun taskCompleted(message: AiWorkflowResult) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
-    internal open fun runTask(op: suspend () -> AiPipelineResult = ::processUserInput) {
+    internal open fun runTask(op: suspend () -> AiWorkflowResult = ::processUserInput) {
         val task = executeTask {
             op()
         }
@@ -399,13 +399,13 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Run task on a background thread. */
-    private fun executeTask(block: suspend () -> AiPipelineResult) = runAsync {
+    private fun executeTask(block: suspend () -> AiWorkflowResult) = runAsync {
         runBlocking {
             try {
                 block()
             } catch (x: Exception) {
                 x.printStackTrace()
-                AiPipelineResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
+                AiWorkflowResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
             }
         }
     }
