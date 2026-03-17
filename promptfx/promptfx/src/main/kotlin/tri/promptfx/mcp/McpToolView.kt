@@ -31,7 +31,7 @@ import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.mcp.tool.McpToolMetadata
 import tri.ai.mcp.tool.version
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.promptfx.AiTaskView
 import tri.util.json.jsonMapper
@@ -214,8 +214,8 @@ class McpToolView : AiTaskView("MCP Tools", "View and call tools for configured 
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
-        return AiPipelineResult(
+    override suspend fun processUserInput(): AiWorkflowResult {
+        return AiWorkflowResult(
             AiPromptTrace.error(null, "Not implemented", null),
             mapOf()
         )

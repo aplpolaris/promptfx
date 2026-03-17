@@ -27,7 +27,7 @@ import javafx.scene.control.ListView
 import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.AiTaskView
@@ -178,5 +178,5 @@ class PromptLibraryView : AiTaskView("Prompt Library", "View and customize promp
         }
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }

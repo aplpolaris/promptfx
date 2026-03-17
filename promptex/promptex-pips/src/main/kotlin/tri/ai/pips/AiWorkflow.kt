@@ -24,14 +24,14 @@ import tri.ai.prompt.trace.AiPromptTrace
 
 /**
  * A workflow that encapsulates a list of tasks as a single composable [AiTask].
- * When executed, all internal [tasks] are run via [AiPipelineExecutor] within a child [ExecContext]
+ * When executed, all internal [tasks] are run via [AiWorkflowExecutor] within a child [ExecContext]
  * that inherits resources and [ExecContext.monitor] from the parent context.
  * The parent [input] (if non-null) is stored under this workflow's [id] in the child context via
  * [ExecContext.put], allowing inner tasks to reference it by declaring this workflow's [id]
  * as a dependency.
  * After execution, each inner task trace is merged into the parent [ExecContext.traces] under the
  * key `"<workflowId>/<taskId>"`.
- * If the inner pipeline fails, an [IllegalStateException] is thrown so the outer pipeline marks
+ * If the inner workflow fails, an [IllegalStateException] is thrown so the outer workflow marks
  * this workflow task as failed.
  *
  * Use [AiTaskBuilder.asWorkflow] to create an [AiWorkflow] from an [AiTaskBuilder].
@@ -55,18 +55,18 @@ class AiWorkflow<in I, out O>(
         if (input != null) {
             innerContext.put(id, input)
             // Add a synthetic successful trace so inner tasks declaring this workflow's id as a
-            // dependency can be scheduled (AiPipelineExecutor checks traces for dependency readiness).
+            // dependency can be scheduled (AiWorkflowExecutor checks traces for dependency readiness).
             innerContext.logTrace(id, AiPromptTrace())
         }
 
-        val result = AiPipelineExecutor.execute(tasks, innerContext)
+        val result = AiWorkflowExecutor.execute(tasks, innerContext)
 
         // Merge inner task traces into the outer context, prefixed with this workflow's id.
         innerContext.traces.forEach { (taskId, trace) ->
             context.logTrace("$id/$taskId", trace)
         }
 
-        // Propagate inner pipeline failure as an exception so the outer pipeline marks this task failed.
+        // Propagate inner workflow failure as an exception so the outer workflow marks this task failed.
         if (!result.finalResult.exec.succeeded()) {
             throw IllegalStateException(
                 "Workflow '$id' failed: ${result.finalResult.errorMessage ?: "unknown error"}"

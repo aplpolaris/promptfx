@@ -25,8 +25,8 @@ import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
-/** Pipeline for chaining together collection of tasks to be accomplished by AI or APIs. */
-object AiPipelineExecutor {
+/** Executor for chaining together a collection of tasks to be accomplished by AI or APIs. */
+object AiWorkflowExecutor {
 
     /** More robust execution, allowing for retry of failed attempts. */
     private val executor = RetryExecutor()
@@ -34,7 +34,7 @@ object AiPipelineExecutor {
     /**
      * Execute a single task, returning its result. This is a convenience wrapper around [execute] for single tasks.
      */
-    suspend fun execute(task: AiTask<*, *>, context: ExecContext = ExecContext()): AiPipelineResult =
+    suspend fun execute(task: AiTask<*, *>, context: ExecContext = ExecContext()): AiWorkflowResult =
         execute(listOf(task), context)
 
     /**
@@ -44,7 +44,7 @@ object AiPipelineExecutor {
      * access both without requiring a new context per task.
      * Returns the table of execution results.
      */
-    suspend fun execute(tasks: List<AiTask<*, *>>, context: ExecContext = ExecContext()): AiPipelineResult {
+    suspend fun execute(tasks: List<AiTask<*, *>>, context: ExecContext = ExecContext()): AiWorkflowResult {
         require(tasks.isNotEmpty()) { "No tasks to execute." }
 
         var tasksToDo: List<AiTask<*, *>>
@@ -87,7 +87,7 @@ object AiPipelineExecutor {
         } while (tasksToDo.isNotEmpty())
 
         val lastTaskResult = context.trace(tasks.last().id) ?: AiPromptTrace.error(null, "Inputs failed.")
-        return AiPipelineResult(lastTaskResult, context.traces.toMap())
+        return AiWorkflowResult(lastTaskResult, context.traces.toMap())
     }
 
 }
@@ -97,4 +97,3 @@ private fun toOutputInfo(output: Any): AiOutputInfo = when (output) {
     is List<*> -> AiOutputInfo.output(AiOutput(other = output))
     else -> AiOutputInfo.other(output)
 }
-

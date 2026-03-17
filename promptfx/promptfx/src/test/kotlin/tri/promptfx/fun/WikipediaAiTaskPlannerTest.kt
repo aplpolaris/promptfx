@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiChat
 import tri.promptfx.AiChatEngine
-import tri.ai.pips.AiPipelineExecutor
+import tri.ai.pips.AiWorkflowExecutor
 import tri.ai.core.tool.ExecContext
 import tri.ai.openai.OpenAiModelIndex
 import tri.promptfx.ModelParameters
@@ -62,7 +62,7 @@ class WikipediaAiTaskPlannerTest {
     fun testExecute() {
         runTest {
             val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
-            val result = AiPipelineExecutor.execute(tasks.plan, ExecContext())
+            val result = AiWorkflowExecutor.execute(tasks.plan, ExecContext())
             println(result.interimResults)
             assertEquals(4, result.interimResults.size)
             println(result.finalResult)

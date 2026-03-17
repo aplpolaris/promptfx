@@ -29,8 +29,8 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.core.tool.ExecContext
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
@@ -129,7 +129,7 @@ class DocumentQaView: AiPlanTaskView(
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
             reindexOp = {
-                AiPipelineExecutor.execute(
+                AiWorkflowExecutor.execute(
                     planner.reindexTaskBuilder { msg, pct -> progress.progressUpdate(msg, pct) }.plan,
                     ExecContext(monitor = progress)
                 )
@@ -172,7 +172,7 @@ class DocumentQaView: AiPlanTaskView(
      * Executes task on a background thread and updates progress info.
      * Overwrites parent method to allow for batch execution.
      */
-    override fun runTask(op: suspend () -> AiPipelineResult) {
+    override fun runTask(op: suspend () -> AiWorkflowResult) {
         formattedResultArea.model.clearTraces()
         val questionInput = question.value
         val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
@@ -184,7 +184,7 @@ class DocumentQaView: AiPlanTaskView(
         questions.forEach {
             question.set(it)
             super.runTask {
-                AiPipelineExecutor.execute(questionTaskList(it).plan, ExecContext(monitor = progress)).also {
+                AiWorkflowExecutor.execute(questionTaskList(it).plan, ExecContext(monitor = progress)).also {
                     runLater {
                         addTrace(it.finalResult)
                     }

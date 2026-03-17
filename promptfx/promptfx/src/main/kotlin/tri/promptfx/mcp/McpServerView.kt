@@ -33,7 +33,7 @@ import tri.ai.mcp.HttpProviderConfig
 import tri.ai.mcp.McpProviderConfig
 import tri.ai.mcp.StdioProviderConfig
 import tri.ai.mcp.TestProviderConfig
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -462,5 +462,5 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
         }
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }

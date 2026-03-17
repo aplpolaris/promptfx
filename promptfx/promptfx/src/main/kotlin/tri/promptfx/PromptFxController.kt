@@ -26,7 +26,7 @@ import tri.ai.core.TextPlugin
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.text.chunks.SmartTextChunker
 import tri.promptfx.prompts.PromptTraceHistoryModel
 
@@ -49,8 +49,8 @@ class PromptFxController : Controller() {
 
     //region UPDATERS
 
-    /** Adds a pipeline execution result to history. */
-    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult) {
+    /** Adds a workflow execution result to history. */
+    fun addPromptTraces(viewTitle: String, traces: AiWorkflowResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
             it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
         }

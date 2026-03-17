@@ -26,8 +26,8 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
 import tri.util.json.jsonMapper
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
@@ -51,7 +51,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val request = ModerationRequest(
             input = listOf(input.value),
             model = model.value
@@ -63,7 +63,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
             AiModelInfo(model.value.model),
             AiExecInfo(),
             AiOutputInfo.text(responseText)
-        ).asPipelineResult()
+        ).asWorkflowResult()
     }
 
 }

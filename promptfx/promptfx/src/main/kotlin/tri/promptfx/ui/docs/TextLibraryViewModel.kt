@@ -225,7 +225,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     /** Calculates embeddings for all selected collections, returning associated task. */
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
-            AiPipelineExecutor.execute(
+            AiWorkflowExecutor.execute(
                 calculateEmbeddings().asWorkflow("calculate-embeddings"),
                 ExecContext(monitor = progress)
             )

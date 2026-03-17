@@ -116,7 +116,7 @@ class AiProgressView : View(), FlowCollector<ExecEvent> {
         }
     }
 
-    fun taskStarted(task: Task<AiPipelineResult>, id: String) {
+    fun taskStarted(task: Task<AiWorkflowResult>, id: String) {
         PrintMonitor().taskStarted(id)
         showTaskStarted(id)
     }

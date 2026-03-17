@@ -29,7 +29,7 @@ import tri.ai.prompt.trace.batch.AiPromptRunConfig
 
 /**
  * Generate executable list of tasks for a prompt batch.
- * These can be passed to [AiPipelineExecutor] for execution.
+ * These can be passed to [AiWorkflowExecutor] for execution.
  */
 fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat) =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }

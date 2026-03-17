@@ -37,7 +37,7 @@ class AiTaskBuilderTest {
             }.task("second") { input, _ ->
                 input + input
             }.plan
-            val result = AiPipelineExecutor.execute(plan, printingExecContext())
+            val result = AiWorkflowExecutor.execute(plan, printingExecContext())
             assertEquals("gogo", result.finalResult.firstValue.text)
         }
     }
@@ -50,7 +50,7 @@ class AiTaskBuilderTest {
             it + it
         }.plan
         val result = runBlocking {
-            AiPipelineExecutor.execute(plan, printingExecContext())
+            AiWorkflowExecutor.execute(plan, printingExecContext())
         }
         assertEquals(listOf("gogo", "stopstop"), result.finalResult.firstValue.content())
 
@@ -60,7 +60,7 @@ class AiTaskBuilderTest {
             it.joinToString()
         }.plan
         val result2 = runBlocking {
-            AiPipelineExecutor.execute(plan2, printingExecContext())
+            AiWorkflowExecutor.execute(plan2, printingExecContext())
         }
         assertEquals("go, stop", result2.finalResult.firstValue.text)
     }

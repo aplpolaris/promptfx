@@ -22,24 +22,23 @@ package tri.ai.pips
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
 
-/** Result of a pipeline execution. */
-class AiPipelineResult(val finalResult: AiPromptTraceSupport, val interimResults: Map<String, AiPromptTraceSupport>) {
+/** Result of a workflow execution. */
+class AiWorkflowResult(val finalResult: AiPromptTraceSupport, val interimResults: Map<String, AiPromptTraceSupport>) {
 
     companion object {
         /** Return a result object indicating an error was thrown during execution. */
-        fun error(message: String?, error: Throwable?) : AiPipelineResult {
+        fun error(message: String?, error: Throwable?) : AiWorkflowResult {
             val trace = AiPromptTrace.error(null, message, error)
-            return AiPipelineResult(trace, mapOf("result" to trace))
+            return AiWorkflowResult(trace, mapOf("result" to trace))
         }
 
-        /** Return a result object indicating the pipeline has not been implemented. */
-        fun todo() = "This pipeline is not yet implemented.".let {
+        /** Return a result object indicating the workflow has not been implemented. */
+        fun todo() = "This workflow is not yet implemented.".let {
             error(it, UnsupportedOperationException(it))
         }
     }
 
 }
 
-/** Wraps this as a pipeline result. */
-fun AiPromptTraceSupport.asPipelineResult() = AiPipelineResult(this, mapOf("result" to this))
-
+/** Wraps this as a workflow result. */
+fun AiPromptTraceSupport.asWorkflowResult() = AiWorkflowResult(this, mapOf("result" to this))

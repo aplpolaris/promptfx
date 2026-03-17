@@ -23,8 +23,8 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxModels
@@ -55,14 +55,14 @@ class CompletionsView : AiTaskView("Completion", "Enter text to complete") {
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val id = model.value!!.modelId
         val completionModel = PromptFxModels.textCompletionModels().firstOrNull { it.modelId == id }
             ?: throw UnsupportedOperationException("Model not found: $id")
         return common.completionBuilder()
             .text(input.get())
             .execute(completionModel)
-            .asPipelineResult()
+            .asWorkflowResult()
     }
 
 }

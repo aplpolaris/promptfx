@@ -20,8 +20,8 @@
 package tri.promptfx.api
 
 import tri.ai.core.*
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 
 /**
  * Basic version of chat through API.
@@ -30,7 +30,7 @@ import tri.ai.pips.asPipelineResult
 class ChatViewBasic :
     ChatView("Chat", "Testing AI Assistant chat.", listOf(MChatRole.User, MChatRole.Assistant), showInput = false) {
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
@@ -49,7 +49,7 @@ class ChatViewBasic :
         )
 
         val result = model.value!!.chat(messages, params)
-        return result.asPipelineResult()
+        return result.asWorkflowResult()
     }
 
 }

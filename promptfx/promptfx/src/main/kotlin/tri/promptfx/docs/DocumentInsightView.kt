@@ -24,7 +24,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.aggregate
@@ -142,7 +142,7 @@ class DocumentInsightView: AiPlanTaskView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         updateChunkSelection()
         return super.processUserInput()
     }

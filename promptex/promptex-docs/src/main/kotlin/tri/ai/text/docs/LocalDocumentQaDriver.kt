@@ -26,10 +26,10 @@ import tri.ai.core.TextPlugin
 import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.PrintMonitor
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.PromptLibrary
 import tri.ai.text.chunks.SmartTextChunker
 import java.io.File
@@ -92,7 +92,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         numResponses: Int,
         historySize: Int,
         context: ExecContext
-    ): AiPipelineResult {
+    ): AiWorkflowResult {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
         val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
             question = input,
@@ -106,8 +106,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
             numResponses = numResponses,
             snippetCallback = { }
         )
-        val result = AiPipelineExecutor.execute(planner.plan, context).finalResult
-        return result.asPipelineResult()
+        val result = AiWorkflowExecutor.execute(planner.plan, context).finalResult
+        return result.asWorkflowResult()
     }
 
     companion object {
