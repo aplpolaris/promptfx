@@ -36,64 +36,68 @@ class ExecContext(
     /** Jackson ObjectMapper for JSON operations. */
     val mapper = jsonMapper
 
-    // --- Private backing stores ---
-
-    private val _resources: MutableMap<String, Any?> = mutableMapOf()
-    private val _scratchpad: MutableMap<String, Any?> = mutableMapOf()
+    private val resources: MutableMap<String, Any?> = mutableMapOf()
+    private val scratchpad: MutableMap<String, Any?> = mutableMapOf()
     private val _traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
-
-    // --- Hook ---
 
     /** Hook called whenever a scratchpad entry is set via [put]. */
     var variableSet: (String, Any?) -> Unit = { _, _ -> }
 
-    // --- Resources ---
+    //region RESOURCES
 
     /** Stores a named resource object in the context. */
     fun putResource(key: String, value: Any?) {
-        _resources[key] = value
+        resources[key] = value
     }
 
     /** Returns the resource for [key], or null if absent. */
-    fun getResource(key: String): Any? = _resources[key]
+    fun resource(key: String): Any? = resources[key]
 
-    // --- Scratchpad (unified task outputs + JSON data store) ---
+    //endregion
+
+    //region SCRATCHPAD
 
     /** Stores an entry in the scratchpad and fires the [variableSet] hook. */
     fun put(key: String, value: Any?) {
-        _scratchpad[key] = value
+        scratchpad[key] = value
         variableSet(key, value)
     }
 
     /** Returns the scratchpad entry for [key], or null if absent. */
-    fun get(key: String): Any? = _scratchpad[key]
+    fun get(key: String): Any? = scratchpad[key]
 
     /** Returns the scratchpad entry for [key] as a [JsonNode], or null if absent or not a [JsonNode]. */
-    fun getJson(key: String): JsonNode? = _scratchpad[key] as? JsonNode
+    fun getJson(key: String): JsonNode? = scratchpad[key] as? JsonNode
 
     /** Returns a read-only view of all [JsonNode] entries in the scratchpad, filtering out non-JSON values. */
-    fun jsonScratchpad(): Map<String, JsonNode> = _scratchpad.entries
+    fun jsonScratchpad(): Map<String, JsonNode> = scratchpad.entries
         .mapNotNull { (k, v) -> (v as? JsonNode)?.let { k to it } }
         .toMap()
 
-    // --- Traces ---
+    //endregion
+
+    //region TRACES
 
     /** Read-only view of traces emitted by tasks during execution, keyed by task id. */
     val traces: Map<String, AiPromptTraceSupport> get() = _traces
-
-    /** Returns the trace for [id], or null if absent. */
-    fun getTrace(id: String): AiPromptTraceSupport? = _traces[id]
 
     /** Logs a trace for the given task id. */
     fun logTrace(id: String, trace: AiPromptTraceSupport) {
         _traces[id] = trace
     }
 
-    // --- Factory ---
+    /** Returns the trace for [id], or null if absent. */
+    fun trace(id: String): AiPromptTraceSupport? = _traces[id]
 
-    /** Creates a child context that inherits [_resources] and [monitor] from this context. */
+    //endregion
+
+    //region FACTORY
+
+    /** Creates a child context that inherits [resources] and [monitor] from this context. */
     fun childContext(): ExecContext = ExecContext(monitor = monitor).also { child ->
-        _resources.forEach { (k, v) -> child.putResource(k, v) }
+        resources.forEach { (k, v) -> child.putResource(k, v) }
     }
+
+    //endregion
 
 }

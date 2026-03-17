@@ -34,11 +34,11 @@ const val RESOURCE_WORKFLOW_TASK = "currentWorkflowTask"
 
 /** Extension property to get [WorkflowPlanState] from the context. */
 val ExecContext.workflowPlanState: WorkflowPlanState
-    get() = getResource(RESOURCE_WORKFLOW_PLAN_STATE) as WorkflowPlanState
+    get() = resource(RESOURCE_WORKFLOW_PLAN_STATE) as WorkflowPlanState
 
 /** Extension property to get the current [WorkflowTask] from the context. */
 val ExecContext.currentWorkflowTask: WorkflowTask
-    get() = getResource(RESOURCE_WORKFLOW_TASK) as WorkflowTask
+    get() = resource(RESOURCE_WORKFLOW_TASK) as WorkflowTask
 
 /**
  * Initializes the context scratchpad with the user input extracted from the workflow request.

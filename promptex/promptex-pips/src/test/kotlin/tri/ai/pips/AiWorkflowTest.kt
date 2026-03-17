@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.pips.AiPipelineExecutorTest.GoTask
 
 class AiWorkflowTest {
 
@@ -53,8 +52,8 @@ class AiWorkflowTest {
         val ctx = printingExecContext()
         workflow.execute(null, ctx)
 
-        assertNotNull(ctx.getTrace("wf/step1"))
-        assertNotNull(ctx.getTrace("wf/step2"))
+        assertNotNull(ctx.trace("wf/step1"))
+        assertNotNull(ctx.trace("wf/step2"))
     }
 
     // --- Composition: workflow used as a task step inside another pipeline ---

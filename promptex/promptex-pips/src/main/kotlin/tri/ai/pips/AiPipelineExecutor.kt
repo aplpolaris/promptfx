@@ -52,7 +52,7 @@ object AiPipelineExecutor {
             tasksToDo = tasks.filter {
                 it.id !in context.traces
             }.filter {
-                it.dependencies.all { depId -> context.getTrace(depId)?.exec?.succeeded() == true }
+                it.dependencies.all { depId -> context.trace(depId)?.exec?.succeeded() == true }
             }
             tasksToDo.forEach { task ->
                 try {
@@ -60,7 +60,7 @@ object AiPipelineExecutor {
                     val input = if (task.dependencies.size == 1) context.get(task.dependencies.first()) else null
                     val output = executor.execute(task, input, context)
                     // Resolve trace: prefer context.getTrace (set by task or RetryExecutor), then synthesize
-                    val trace: AiPromptTraceSupport = context.getTrace(task.id)
+                    val trace: AiPromptTraceSupport = context.trace(task.id)
                         ?: run {
                             check(output !is AiPromptTraceSupport) {
                                 "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
@@ -86,7 +86,7 @@ object AiPipelineExecutor {
             }
         } while (tasksToDo.isNotEmpty())
 
-        val lastTaskResult = context.getTrace(tasks.last().id) ?: AiPromptTrace.error(null, "Inputs failed.")
+        val lastTaskResult = context.trace(tasks.last().id) ?: AiPromptTrace.error(null, "Inputs failed.")
         return AiPipelineResult(lastTaskResult, context.traces.toMap())
     }
 

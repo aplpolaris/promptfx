@@ -47,7 +47,7 @@ abstract class AiTask<in I, out O>(
     fun monitor(callback: (List<AiOutput>) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.getTrace(id) ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
             trace?.output?.outputs?.let { callback(it) }
             return res
         }
@@ -57,7 +57,7 @@ abstract class AiTask<in I, out O>(
     fun monitorTrace(callback: (AiPromptTraceSupport) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.getTrace(id) ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
             if (trace != null) callback(trace)
             return res
         }
