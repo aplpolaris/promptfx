@@ -26,7 +26,7 @@ import tri.ai.prompt.trace.AiPromptTraceSupport
 /**
  * Task that can be executed by AI or API, typed by its input type [I] and output type [O].
  * A task may have an arbitrary number of inputs that must be calculated prior to the task being executable.
- * The previous task output is passed as [input], previous task outputs are accessible via [ExecContext.taskOutputs],
+ * The previous task output is passed as [input], previous task outputs are accessible via [ExecContext.get],
  * and the execution monitor is accessible via [ExecContext.monitor].
  * Traces produced during execution should be logged via [ExecContext.logTrace] rather than being returned.
  */
@@ -38,7 +38,7 @@ abstract class AiTask<in I, out O>(
     /**
      * Executes the task with the provided input and [ExecContext], returning a typed result.
      * For linear pipelines [input] is the output of the single predecessor task (or null if there is none).
-     * For multi-dependency tasks, all predecessor outputs are available via [ExecContext.taskOutputs].
+     * For multi-dependency tasks, all predecessor outputs are available via [ExecContext.get].
      * Trace information should be recorded via [ExecContext.logTrace] instead of being embedded in the return value.
      */
     abstract suspend fun execute(input: I, context: ExecContext): O
@@ -47,7 +47,7 @@ abstract class AiTask<in I, out O>(
     fun monitor(callback: (List<AiOutput>) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.traces[id] ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
             trace?.output?.outputs?.let { callback(it) }
             return res
         }
@@ -57,7 +57,7 @@ abstract class AiTask<in I, out O>(
     fun monitorTrace(callback: (AiPromptTraceSupport) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.traces[id] ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
             if (trace != null) callback(trace)
             return res
         }

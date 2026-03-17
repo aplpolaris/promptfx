@@ -57,9 +57,18 @@ class StarshipPipelineResults {
         mcOptions.mapValues { it.value.value.value }
 
     /** Updates the value of a variable. */
-    fun updateVariable(key: String, value: JsonNode) {
+    fun updateVariable(key: String, value: Any?) {
         val prop = vars.getOrPut(key) { SimpleStringProperty(null) }
-        prop.set(value.unwrappedTextValue())
+        prop.set(valueToDisplayString(value))
+    }
+
+    companion object {
+        /** Converts a scratchpad value to a displayable string for UI presentation. */
+        internal fun valueToDisplayString(value: Any?): String? = when (value) {
+            null -> null
+            is JsonNode -> value.unwrappedTextValue()
+            else -> value.toString()
+        }
     }
 
     /** Clear results, while keeping current values of multichoice options. */

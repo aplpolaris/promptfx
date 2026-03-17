@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.pips.AiPipelineExecutorTest.GoTask
 
 class AiWorkflowTest {
 
@@ -53,8 +52,8 @@ class AiWorkflowTest {
         val ctx = printingExecContext()
         workflow.execute(null, ctx)
 
-        assertNotNull(ctx.traces["wf/step1"])
-        assertNotNull(ctx.traces["wf/step2"])
+        assertNotNull(ctx.trace("wf/step1"))
+        assertNotNull(ctx.trace("wf/step2"))
     }
 
     // --- Composition: workflow used as a task step inside another pipeline ---
@@ -85,13 +84,13 @@ class AiWorkflowTest {
 
         val outerPlan = AiTaskBuilder(listOf(), wf1)
             .task("combine") { s1, ctx ->
-                val s2 = ctx.taskOutputs["wf2"] as? String ?: ""
+                val s2 = ctx.get("wf2") as? String ?: ""
                 "$s1+$s2"
             }.plan
 
         // Run wf2 as a standalone first to put its output in context
         val ctx = printingExecContext()
-        ctx.taskOutputs["wf2"] = "xy"
+        ctx.put("wf2", "xy")
 
         val result = AiPipelineExecutor.execute(outerPlan, ctx)
         assertEquals("foobar+xy", result.finalResult.firstValue.textContent())

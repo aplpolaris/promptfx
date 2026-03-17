@@ -339,7 +339,7 @@ class AgenticView : AiPlanTaskView("Agentic Workflow", "Describe a task and any 
                 val inputData = context.aggregateWorkflowInputsAsStringFor(name, task.name)
                 val inputJson = createObject(PARAM_INPUT, inputData)
                 val result = runBlocking {
-                    this@toSolver.execute(inputJson, ExecContext(resources = mutableMapOf("textChat" to textChat)))
+                    this@toSolver.execute(inputJson, ExecContext().also { it.putResource("textChat", textChat) })
                 }.get(PARAM_RESULT).asText()
                 return createObject(PARAM_RESULT, result)
             }

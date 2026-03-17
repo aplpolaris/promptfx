@@ -27,22 +27,22 @@ import tri.util.json.jsonMapper
 import tri.util.json.tryJson
 import kotlin.collections.ifEmpty
 
-/** Key for storing [WorkflowPlanState] in [ExecContext.resources]. */
+/** Key for storing [WorkflowPlanState] in the context via [ExecContext.putResource]. */
 const val RESOURCE_WORKFLOW_PLAN_STATE = "workflowPlanState"
-/** Key for storing the current [WorkflowTask] in [ExecContext.resources]. */
+/** Key for storing the current [WorkflowTask] in the context via [ExecContext.putResource]. */
 const val RESOURCE_WORKFLOW_TASK = "currentWorkflowTask"
 
 /** Extension property to get [WorkflowPlanState] from the context. */
 val ExecContext.workflowPlanState: WorkflowPlanState
-    get() = resources[RESOURCE_WORKFLOW_PLAN_STATE] as WorkflowPlanState
+    get() = resource(RESOURCE_WORKFLOW_PLAN_STATE) as WorkflowPlanState
 
 /** Extension property to get the current [WorkflowTask] from the context. */
 val ExecContext.currentWorkflowTask: WorkflowTask
-    get() = resources[RESOURCE_WORKFLOW_TASK] as WorkflowTask
+    get() = resource(RESOURCE_WORKFLOW_TASK) as WorkflowTask
 
 /**
  * Initializes the context scratchpad with the user input extracted from the workflow request.
- * Must be called after [RESOURCE_WORKFLOW_PLAN_STATE] has been set in [ExecContext.resources].
+ * Must be called after [RESOURCE_WORKFLOW_PLAN_STATE] has been stored via [ExecContext.putResource].
  */
 fun ExecContext.initWorkflowContext() {
     val request = workflowPlanState.request
@@ -63,7 +63,7 @@ fun ExecContext.addWorkflowResults(task: WorkflowTask, outputs: ObjectNode) {
 fun ExecContext.aggregateWorkflowInputsFor(toolName: String): Map<String, JsonNode> {
     val state = workflowPlanState
     return ((state.taskTree.findTask { it is WorkflowTaskTool && it.tool == toolName }?.root as? WorkflowTaskTool)?.inputs
-        ?: listOf()).associateWith { scratchpad["$it.$RESULT"] ?: scratchpad[it]!! }
+        ?: listOf()).associateWith { getJson("$it.$RESULT") ?: getJson(it)!! }
 }
 
 /** Aggregates the scratchpad inputs for the given tool as a single string value. */
@@ -72,8 +72,8 @@ fun ExecContext.aggregateWorkflowInputsAsStringFor(toolName: String, taskName: S
 
 /** Get the final computed result from the context scratchpad. */
 // TODO - this is brittle since it assumes a specific output exists in the scratchpad
-fun ExecContext.workflowFinalResult() =
-    scratchpad[FINAL_RESULT_ID]!!
+fun ExecContext.workflowFinalResult(): JsonNode =
+    getJson(FINAL_RESULT_ID)!!
 
 private fun JsonNode.workflowPrettyPrint() = when {
     isTextual -> asText()

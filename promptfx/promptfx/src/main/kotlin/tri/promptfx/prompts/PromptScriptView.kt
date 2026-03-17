@@ -167,7 +167,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             it.monitorTrace { runLater { promptTraces.add(it) } }
         }.aggregate().task<AiPromptTrace>("process-results") { _, context ->
             // each batch task logs its trace via context.logTrace(id, ...) in AiPromptRunConfig.task()
-            val allTraces = tasks.map { context.traces[it.id] }.filterNotNull()
+            val allTraces = tasks.mapNotNull { context.trace(it.id) }
             val result = postProcess(allTraces, docInputs)
             context.logTrace("process-results", result)
             result
@@ -194,7 +194,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
 
         if (showUniqueResults.value) {
             val countEach = values
-                .groupingBy { it.cleanedup() }
+                .groupingBy { it.cleanedUp() }
                 .eachCount()
             val key = "Unique Results: ${countEach.size}"
             resultSets[key] = countEach.entries.joinToString("\n") { "${it.key}: ${it.value}" }
@@ -249,7 +249,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         private const val TEXT_SUMMARIZER_PREFIX = "docs-reduce"
         private const val TEXT_JOINER_PREFIX = "joiners"
 
-        private fun String.cleanedup() = lowercase().removeSuffix(".")
+        private fun String.cleanedUp() = lowercase().removeSuffix(".")
     }
 }
 

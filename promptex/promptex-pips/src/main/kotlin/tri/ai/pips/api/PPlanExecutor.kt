@@ -61,9 +61,10 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
     AiTask<Any?, Any?>(step.tool, description = null, dependencies = setOf()) {
 
     override suspend fun execute(input: Any?, context: ExecContext): Any {
-        log("context", stepContext.scratchpad)
+        val jsonScratchpad = stepContext.jsonScratchpad()
+        log("context", jsonScratchpad)
 
-        val inputMap = step.input.resolveRefs(stepContext.scratchpad)
+        val inputMap = step.input.resolveRefs(jsonScratchpad)
         log("input", inputMap)
 
         val result = exec.execute(inputMap, stepContext)
@@ -100,7 +101,10 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
                     val varField = node.get("\$var")
                     if (varField != null && varField.isTextual) {
                         val name = varField.asText()
-                        val target = vars[name] ?: throw IllegalArgumentException("Unknown \$var: $name")
+                        val target = when {
+                            name !in vars -> throw IllegalArgumentException("Unknown \$var: $name (variable not found in context)")
+                            else -> vars[name]!!
+                        }
                         if (!stack.add(name)) error("Cyclic \$var detected at: $name")
                         val selected = select(target, node.get("\$ptr")?.takeIf { it.isTextual }?.asText())
                         val resolved = resolve(selected, stack) // allow nested refs inside target

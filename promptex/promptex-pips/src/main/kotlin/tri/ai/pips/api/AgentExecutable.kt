@@ -32,7 +32,6 @@ import tri.ai.core.agent.wf.WorkflowExecutor
 import tri.ai.core.agent.wf.WorkflowSolver
 import tri.ai.core.agent.wf.aggregateWorkflowInputsAsStringFor
 import tri.ai.core.agent.wf.currentWorkflowTask
-import tri.ai.core.agent.wf.workflowPlanState
 import tri.util.json.PARAM_INPUT
 import tri.util.json.PARAM_RESULT
 import tri.util.json.createJsonSchema
@@ -61,7 +60,7 @@ class AgentExecutable(
         val request = MultimodalChatMessage.user(input.get("request")?.asText() ?: input.toString())
         
         // Get completion service from context resources
-        val textChatResource = context.resources["textChat"]
+        val textChatResource = context.resource(RESOURCE_TEXT_CHAT)
         val textChatId = (textChatResource as? TextChat)?.modelId ?: textChatResource as? String
             ?: throw IllegalArgumentException("Text completion service not found in context resources or invalid: $textChatResource")
             
@@ -72,6 +71,10 @@ class AgentExecutable(
         val finalState = executor.sendMessage(AgentChatSession(), request).awaitResponse()
 
         return createObject("result", finalState.message.textContent())
+    }
+
+    companion object {
+        const val RESOURCE_TEXT_CHAT = "textChat"
     }
 
 }
