@@ -28,7 +28,7 @@ import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiWorkflowResult
 import tri.ai.text.chunks.SmartTextChunker
-import tri.promptfx.prompts.PromptTraceHistoryModel
+import tri.promptfx.prompts.AiTaskTraceHistoryModel
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
@@ -40,7 +40,7 @@ class PromptFxController : Controller() {
     val embeddingEngine: SimpleObjectProperty<EmbeddingStrategy> =
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
-    val promptHistory = find<PromptTraceHistoryModel>()
+    val traceHistory = find<AiTaskTraceHistoryModel>()
     val mcpController = find<PromptFxMcpController>()
 
     val tokensUsed = SimpleIntegerProperty(0)
@@ -54,9 +54,9 @@ class PromptFxController : Controller() {
         val interim = (traces.interimResults.values - traces.finalResult).map {
             it.copy(exec = it.exec.copy(intermediateResult = true), callerId = viewTitle)
         }
-        promptHistory.prompts.addAll(interim)
+        traceHistory.prompts.addAll(interim)
         val final = traces.finalResult.let { it.copy(exec = it.exec.copy(intermediateResult = false), callerId = viewTitle) }
-        promptHistory.prompts.add(final)
+        traceHistory.prompts.add(final)
     }
 
     /** Update usage stats for the OpenAI endpoint. */

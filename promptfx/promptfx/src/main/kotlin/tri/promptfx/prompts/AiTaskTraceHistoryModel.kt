@@ -21,11 +21,11 @@ package tri.promptfx.prompts
 
 import javafx.beans.property.SimpleIntegerProperty
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Model for history of prompts throughout the application. */
-class PromptTraceHistoryModel : Component() {
-    val prompts = observableListOf<AiPromptTraceSupport>()
+class AiTaskTraceHistoryModel : Component() {
+    val prompts = observableListOf<AiTaskTrace>()
     val maxHistorySize = SimpleIntegerProperty(1000)
 
     init {

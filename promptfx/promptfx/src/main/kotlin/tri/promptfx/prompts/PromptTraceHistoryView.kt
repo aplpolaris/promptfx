@@ -37,7 +37,7 @@ class PromptTraceHistoryPlugin : NavigableWorkspaceViewImpl<PromptTraceHistoryVi
 class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and export history of prompt executions.") {
 
     private val promptListUi = find<PromptTraceCardList>(
-        "prompts" to controller.promptHistory.prompts,
+        "prompts" to controller.traceHistory.prompts,
         "isShowFilter" to true,
         "isRemovable" to true,
         "toolbarLabel" to "Prompt Traces:"
@@ -95,10 +95,10 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
 
     fun selectPromptTrace(prompt: AiPromptTraceSupport) {
         // TODO - objects are edited when they reach history, this could be done better
-        val foundPrompt = promptListUi.prompts.firstOrNull {
+        val foundPrompt = promptListUi.traces.firstOrNull {
             it.prompt == prompt.prompt && it.model == prompt.model && it.output == prompt.output
         }
-        promptListUi.selectPromptTrace(foundPrompt ?: prompt)
+        promptListUi.selectTrace(foundPrompt ?: prompt)
     }
 
     override suspend fun processUserInput() = AiWorkflowResult.todo()
