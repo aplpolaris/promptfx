@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -28,9 +28,9 @@ class AiImageTrace(
     modelInfo: AiModelInfo?,
     execInfo: AiExecInfo = AiExecInfo(),
     outputInfo: AiOutputInfo? = AiOutputInfo(listOf())
-) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo, outputInfo) {
+) : AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo) {
 
-    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
+    override fun toString() = "AiImageTrace(taskId='$taskId', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
 
     /** Splits this image trace into individual images. */
     fun splitImages(): List<AiImageTrace> =
@@ -38,7 +38,13 @@ class AiImageTrace(
             AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
         }
 
-    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
-        AiImageTrace(promptInfo, modelInfo, execInfo, output)
+    override fun copy(
+        promptInfo: PromptInfo?,
+        modelInfo: AiModelInfo?,
+        execInfo: AiExecInfo,
+        outputInfo: AiOutputInfo?,
+        viewId: String?,
+        parentTaskId: String?
+    ) = AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo)
 
 }

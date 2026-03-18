@@ -23,7 +23,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Model for filtering prompt trace objects. */
 class PromptTraceFilter : Component() {
@@ -39,7 +39,7 @@ class PromptTraceFilter : Component() {
         FINAL_RESULT to SimpleBooleanProperty(true),
         UNKNOWN to SimpleBooleanProperty(false)
     )
-    val filter = SimpleObjectProperty<(AiPromptTraceSupport) -> Boolean> { true }
+    val filter = SimpleObjectProperty<(AiTaskTrace) -> Boolean> { true }
 
     init {
         statusFilters.forEach { it.second.onChange { updateFilter() } }
@@ -47,14 +47,14 @@ class PromptTraceFilter : Component() {
     }
 
     /** Update filter options based on given list of traces. */
-    fun updateFilterOptions(list: List<AiPromptTraceSupport>) {
+    fun updateFilterOptions(list: List<AiTaskTrace>) {
         updateFilterFlags(modelFilters, list.map { it.modelId }.distinct().sorted())
-        updateFilterFlags(viewFilters, list.map { it.viewId }.distinct().sorted())
+        updateFilterFlags(viewFilters, list.map { it.traceViewId }.distinct().sorted())
         updateFilter()
     }
 
     /** Update and return the current filter. */
-    fun filter(): (AiPromptTraceSupport) -> Boolean {
+    fun filter(): (AiTaskTrace) -> Boolean {
         updateFilter()
         return filter.value!!
     }
@@ -74,24 +74,24 @@ class PromptTraceFilter : Component() {
 
     private fun updateFilter() {
         val filterModel = createFilter(modelFilters) { it.modelId }
-        val filterView = createFilter(viewFilters) { it.viewId }
+        val filterView = createFilter(viewFilters) { it.traceViewId }
         val filterStatus = createFilter(statusFilters) { it.statusId }
         val filterType = createFilter(typeFilters) { it.typeId }
         filter.set { filterModel(it) && filterView(it) && filterStatus(it) && filterType(it) }
     }
 
-    private fun createFilter(flags: ObservableList<Pair<String, SimpleBooleanProperty>>, keyExtractor: (AiPromptTraceSupport) -> String): (AiPromptTraceSupport) -> Boolean {
+    private fun createFilter(flags: ObservableList<Pair<String, SimpleBooleanProperty>>, keyExtractor: (AiTaskTrace) -> String): (AiTaskTrace) -> Boolean {
         val selectedKeys = flags.filter { it.second.value }.map { it.first }.toSet()
         return { selectedKeys.contains(keyExtractor(it)) }
     }
 
-    private val AiPromptTraceSupport.modelId
+    private val AiTaskTrace.modelId
         get() = model?.modelId ?: UNKNOWN
-    private val AiPromptTraceSupport.viewId
-        get() = exec.viewId ?: UNKNOWN
-    private val AiPromptTraceSupport.statusId
+    private val AiTaskTrace.traceViewId
+        get() = viewId ?: UNKNOWN
+    private val AiTaskTrace.statusId
         get() = if (exec.error != null) ERROR_STATUS else if (output == null || firstValue == null) MISSING_VALUE_STATUS else SUCCESS_STATUS
-    private val AiPromptTraceSupport.typeId
+    private val AiTaskTrace.typeId
         get() = if (exec.intermediateResult == true) INTERMEDIATE_RESULT else if (exec.intermediateResult == false) FINAL_RESULT else UNKNOWN
 
     //endregion

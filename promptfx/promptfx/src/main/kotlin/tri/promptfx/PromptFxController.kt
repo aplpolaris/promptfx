@@ -52,10 +52,10 @@ class PromptFxController : Controller() {
     /** Adds a workflow execution result to history. */
     fun addPromptTraces(viewTitle: String, traces: AiWorkflowResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
-            it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
+            it.copy(execInfo = it.exec.copy(intermediateResult = true), viewId = viewTitle)
         }
         promptHistory.prompts.addAll(interim)
-        val final = traces.finalResult.let { it.copy(execInfo = it.exec.copy(intermediateResult = false, viewId = viewTitle)) }
+        val final = traces.finalResult.let { it.copy(execInfo = it.exec.copy(intermediateResult = false), viewId = viewTitle) }
         promptHistory.prompts.add(final)
     }
 

@@ -34,7 +34,7 @@ import tornadofx.*
 import tri.util.json.jsonMapper
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
@@ -277,13 +277,13 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                     info<TextClusterView>("  $msg: %.2f%%".format(pct * 100))
                 }
             )
-            context.logTrace("clustering", AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.listSingleOutput(hierarchy)))
+            context.logTrace("clustering", AiTaskTrace(exec = AiExecInfo.durationSince(t0), output = AiOutputInfo.listSingleOutput(hierarchy)))
             hierarchy
         }
         .task<FormattedPromptTraceResult>("formatting-results") { list, context ->
             runLater { resultClusters.setAll(list) }
             val ft = FormattedText(list.map { printCluster(it, "\n") }.flatten())
-            val result = FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.text("")), listOf(ft))
+            val result = FormattedPromptTraceResult(AiTaskTrace(output = AiOutputInfo.text("")), listOf(ft))
             context.logTrace("formatting-results", result)
             result
         }

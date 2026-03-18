@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 class AiWorkflowTest {
 
@@ -103,7 +103,7 @@ class AiWorkflowTest {
         // Inner task depends on the workflow id to consume the outer input
         val innerTask = object : AiTask<String, String>("innerTask", dependencies = setOf("inputWf")) {
             override suspend fun execute(input: String, context: ExecContext): String {
-                context.logTrace(id, AiPromptTrace(outputInfo = AiOutputInfo.text(input + "!")))
+                context.logTrace(id, AiTaskTrace(output = AiOutputInfo.text(input + "!")))
                 return input + "!"
             }
         }
@@ -120,7 +120,7 @@ class AiWorkflowTest {
     fun `workflow propagates inner failure as exception`() = runTest {
         val failingTask = object : AiTask<Any?, String>("failStep") {
             override suspend fun execute(input: Any?, context: ExecContext): String {
-                context.logTrace(id, AiPromptTrace.error(null, "fail", Exception("fail")))
+                context.logTrace(id, AiTaskTrace.error(null, "fail", Exception("fail")))
                 throw IllegalStateException("fail")
             }
         }
@@ -137,7 +137,7 @@ class AiWorkflowTest {
     fun `outer workflow marks workflow task as failed when inner workflow fails`() = runTest {
         val failingTask = object : AiTask<Any?, String>("failStep") {
             override suspend fun execute(input: Any?, context: ExecContext): String {
-                context.logTrace(id, AiPromptTrace.error(null, "fail", Exception("fail")))
+                context.logTrace(id, AiTaskTrace.error(null, "fail", Exception("fail")))
                 throw IllegalStateException("fail")
             }
         }
@@ -145,7 +145,7 @@ class AiWorkflowTest {
 
         val outerTask = object : AiTask<Any?, String>("afterFail", dependencies = setOf("wfFail")) {
             override suspend fun execute(input: Any?, context: ExecContext): String {
-                context.logTrace(id, AiPromptTrace(outputInfo = AiOutputInfo.text("should not run")))
+                context.logTrace(id, AiTaskTrace(output = AiOutputInfo.text("should not run")))
                 return "should not run"
             }
         }

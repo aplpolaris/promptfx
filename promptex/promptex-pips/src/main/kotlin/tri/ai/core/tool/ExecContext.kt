@@ -22,7 +22,7 @@ package tri.ai.core.tool
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.pips.AiTaskMonitor
 import tri.ai.pips.IgnoreMonitor
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.util.json.jsonMapper
 import java.util.*
 
@@ -38,13 +38,13 @@ class ExecContext(
 
     private val _resources: MutableMap<String, Any?> = mutableMapOf()
     private val _scratchpad: MutableMap<String, Any?> = mutableMapOf()
-    private val _traces: MutableMap<String, AiPromptTraceSupport> = mutableMapOf()
+    private val _traces: MutableMap<String, AiTaskTrace> = mutableMapOf()
 
     /** Hook called whenever a scratchpad entry is set via [put]. */
     var variableSet: (String, Any?) -> Unit = { _, _ -> }
 
     /** Read-only view of traces emitted by tasks during execution, keyed by task id. */
-    val traces: Map<String, AiPromptTraceSupport>
+    val traces: Map<String, AiTaskTrace>
         get() = _traces
 
     //region RESOURCES
@@ -83,12 +83,12 @@ class ExecContext(
     //region TRACES
 
     /** Logs a trace for the given task id. */
-    fun logTrace(id: String, trace: AiPromptTraceSupport) {
+    fun logTrace(id: String, trace: AiTaskTrace) {
         _traces[id] = trace
     }
 
     /** Returns the trace for [id], or null if absent. */
-    fun trace(id: String): AiPromptTraceSupport? = _traces[id]
+    fun trace(id: String): AiTaskTrace? = _traces[id]
 
     //endregion
 

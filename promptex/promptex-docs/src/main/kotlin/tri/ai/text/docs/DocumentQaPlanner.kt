@@ -81,9 +81,9 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val matches = index.findMostSimilar(question, chunksToRetrieve)
         snippetCallback(matches)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
-        context.logTrace("find-relevant-sections", AiPromptTrace(
-            modelInfo = modelId?.let { AiModelInfo(it) },
-            outputInfo = AiOutputInfo.listSingleOutput(matches)
+        context.logTrace("find-relevant-sections", AiTaskTrace(
+            model = modelId?.let { AiModelInfo(it) },
+            output = AiOutputInfo.listSingleOutput(matches)
         ))
         matches
     }.task<QuestionAnswerResult>("question-answer") { snippets, context ->

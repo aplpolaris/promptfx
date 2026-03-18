@@ -23,7 +23,7 @@ import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.batch.AiPromptBatch
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
 
@@ -45,7 +45,7 @@ fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {
         context.logTrace(id, trace)
         trace.output?.outputs?.firstOrNull()
     } catch (x: NoSuchElementException) {
-        val trace = AiPromptTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
+        val trace = AiTaskTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
         context.logTrace(id, trace)
         null
     }

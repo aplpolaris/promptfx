@@ -23,12 +23,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.prompt.trace.*
 
 /** Result including the trace and formatted text. */
-class FormattedPromptTraceResult(trace: AiPromptTrace, @get:JsonIgnore val formattedOutputs: List<FormattedText>)
-    : AiPromptTraceSupport(trace.prompt, trace.model, trace.exec, trace.output) {
+class FormattedPromptTraceResult(trace: AiTaskTrace, @get:JsonIgnore val formattedOutputs: List<FormattedText>)
+    : AiTaskTrace(trace.prompt, trace.model, trace.exec, trace.output) {
 
     override fun toString() = output?.outputs?.joinToString() ?: "null"
 
-    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
-        FormattedPromptTraceResult(AiPromptTrace(promptInfo, modelInfo, execInfo, output), formattedOutputs)
+    override fun copy(
+        promptInfo: PromptInfo?,
+        modelInfo: AiModelInfo?,
+        execInfo: AiExecInfo,
+        outputInfo: AiOutputInfo?,
+        viewId: String?,
+        parentTaskId: String?
+    ) = FormattedPromptTraceResult(AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo), formattedOutputs)
 
 }

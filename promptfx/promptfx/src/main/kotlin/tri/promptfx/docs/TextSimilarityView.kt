@@ -26,7 +26,7 @@ import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -59,9 +59,9 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         val scoreText = "Overall similarity: %.2f%%".format(score * 100)
 
         return if (chunks.size == 1) {
-            AiPromptTrace(
-                modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.text(scoreText)
+            AiTaskTrace(
+                model = AiModelInfo(mod.modelId),
+                output = AiOutputInfo.text(scoreText)
             )
         } else {
             val scores = chunks.mapIndexed { index, line ->
@@ -72,9 +72,9 @@ class TextSimilarityView: AiTaskView("Text Similarity",
             val secondText =
                 "${"Second closest paragraph match: %.2f%%\n".format(scores[1].second * 100)}${scores[1].first}"
 
-            AiPromptTrace(
-                modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
+            AiTaskTrace(
+                model = AiModelInfo(mod.modelId),
+                output = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
             )
         }.asWorkflowResult()
     }

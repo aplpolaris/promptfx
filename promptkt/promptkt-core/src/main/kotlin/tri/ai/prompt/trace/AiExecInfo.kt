@@ -42,8 +42,11 @@ data class AiExecInfo(
     val attempts: Int? = null,
     /** Flag indicating whether this is an intermediate result. */
     val intermediateResult: Boolean? = null,
-    /** Id of view that initiated the execution. */
-    val viewId: String? = null
+    /**
+     * General-purpose statistics map for additional execution metrics.
+     * Use this to record any numeric or categorical statistics not covered by first-class fields.
+     */
+    val stats: Map<String, Any> = mapOf()
 ) {
     /** Return true if the execution succeeded. */
     fun succeeded() = error == null && throwable == null
