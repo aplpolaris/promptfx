@@ -120,12 +120,16 @@ sealed class AiOutput {
     /**
      * An arbitrary-object AI output. The [other] value is **not serialized** to JSON.
      * This subtype is used for non-text, non-message outputs such as embeddings or structured data.
+     * [toString] and [textContent] are exception-safe: if [other]'s own [toString] throws, a
+     * type-name fallback is returned instead of propagating the exception.
      */
     data class Other(@get:JsonIgnore override val other: Any) : AiOutput() {
-        override fun textContent(ifNone: String?) = other.toString()
+        private val fallback get() = "Other(${other::class.simpleName})"
+        override fun textContent(ifNone: String?) = runCatching { other.toString() }
+            .getOrElse { ifNone ?: fallback }
         override fun imageContent(): String? = null
         override fun content(): Any = other
-        override fun toString() = other.toString()
+        override fun toString() = runCatching { other.toString() }.getOrElse { fallback }
     }
 
     // -------------------------------------------------------------------------
