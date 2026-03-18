@@ -168,23 +168,13 @@ class AiTaskTraceTest {
             taskId = "test-id",
             env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             input = AiTaskInputInfo("Hello, world!"),
-            exec = AiExecInfo(),
+            exec = AiExecInfo(queryTokens = 10, responseTokens = 5, stats = mapOf("custom_metric" to 42)),
             output = AiOutputInfo.text("Hi!")
         )
         val json = jsonWriter.writeValueAsString(trace)
-        assertNotNull(json)
-        assertTrue(json.contains("test-id") || json.contains("gpt-4o"))
-    }
-
-    @Test
-    fun testSerializeWithStats() {
-        val trace = AiTaskTrace(
-            env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
-            exec = AiExecInfo(queryTokens = 10, responseTokens = 50, stats = mapOf("custom_metric" to 42)),
-            output = AiOutputInfo.text("test output")
-        )
-        val json = jsonWriter.writeValueAsString(trace)
-        assertNotNull(json)
+        assertTrue(json.contains("test-id"))
+        assertTrue(json.contains("gpt-4o"))
+        assertTrue(json.contains("custom_metric"))
     }
 
     //endregion
