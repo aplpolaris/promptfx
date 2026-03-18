@@ -33,7 +33,7 @@ class AiTaskTraceTest {
         assertNotNull(trace.taskId)
         assertNull(trace.parentTaskId)
         assertNull(trace.viewId)
-        assertNull(trace.model)
+        assertNull(trace.env)
         assertNull(trace.input)
         assertNull(trace.output)
         assertTrue(trace.exec.succeeded())
@@ -45,7 +45,7 @@ class AiTaskTraceTest {
             taskId = "task-1",
             parentTaskId = "parent-0",
             viewId = "my-view",
-            model = AiModelInfo("gpt-4o"),
+            env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             input = AiTaskInputInfo(prompt = "Tell me about {{topic}}", params = mapOf("topic" to "AI")),
             exec = AiExecInfo(),
             output = AiOutputInfo.text("AI stands for artificial intelligence.")
@@ -53,7 +53,7 @@ class AiTaskTraceTest {
         assertEquals("task-1", trace.taskId)
         assertEquals("parent-0", trace.parentTaskId)
         assertEquals("my-view", trace.viewId)
-        assertEquals("gpt-4o", trace.model?.modelId)
+        assertEquals("gpt-4o", trace.env?.modelId)
         assertEquals("Tell me about {{topic}}", trace.input?.prompt)
         assertEquals("AI", trace.input?.params?.get("topic"))
         assertEquals("AI stands for artificial intelligence.", trace.firstValue.textContent())
@@ -73,7 +73,7 @@ class AiTaskTraceTest {
         val trace = AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo)
 
         // New-style access
-        assertEquals("test-model", trace.model?.modelId)
+        assertEquals("test-model", trace.env?.modelId)
         assertEquals("Translate {{text}} to French.", trace.input?.prompt)
         assertEquals("Hello!", trace.input?.params?.get("text"))
         assertEquals("Bonjour!", trace.firstValue.textContent())
@@ -89,7 +89,7 @@ class AiTaskTraceTest {
     fun testBackwardCompatConstructorNullPromptInfo() {
         val modelInfo = AiModelInfo("test-model")
         val trace = AiTaskTrace(null, modelInfo, AiExecInfo(), AiOutputInfo.text("result"))
-        assertEquals("test-model", trace.model?.modelId)
+        assertEquals("test-model", trace.env?.modelId)
         assertNull(trace.input)
         assertEquals("result", trace.firstValue.textContent())
     }
@@ -123,10 +123,10 @@ class AiTaskTraceTest {
 
     @Test
     fun testCopyPreservesTaskId() {
-        val trace = AiTaskTrace(taskId = "orig-id", model = AiModelInfo("m1"))
+        val trace = AiTaskTrace(taskId = "orig-id", env = AiEnvInfo(model = AiModelInfo("m1")))
         val copied = trace.copy(modelInfo = AiModelInfo("m2"))
         assertEquals("orig-id", copied.taskId)
-        assertEquals("m2", copied.model?.modelId)
+        assertEquals("m2", copied.env?.modelId)
     }
 
     @Test
@@ -146,7 +146,7 @@ class AiTaskTraceTest {
         val trace = AiTaskTrace.error(AiModelInfo("m1"), "something failed", null)
         assertFalse(trace.exec.succeeded())
         assertEquals("something failed", trace.exec.error)
-        assertEquals("m1", trace.model?.modelId)
+        assertEquals("m1", trace.env?.modelId)
     }
 
     @Test
@@ -164,7 +164,7 @@ class AiTaskTraceTest {
     fun testSerializeBasicTrace() {
         val trace = AiTaskTrace(
             taskId = "test-id",
-            model = AiModelInfo("gpt-4o"),
+            env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             input = AiTaskInputInfo("Hello, world!"),
             exec = AiExecInfo(),
             output = AiOutputInfo.text("Hi!")
@@ -177,7 +177,7 @@ class AiTaskTraceTest {
     @Test
     fun testSerializeWithStats() {
         val trace = AiTaskTrace(
-            model = AiModelInfo("gpt-4o"),
+            env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             exec = AiExecInfo(queryTokens = 10, responseTokens = 50, stats = mapOf("custom_metric" to 42)),
             output = AiOutputInfo.text("test output")
         )

@@ -26,8 +26,8 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.asWorkflowResult
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
@@ -66,7 +66,7 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
             AiTaskTrace(
-                model = AiModelInfo(model.value!!.modelId),
+                env = AiEnvInfo.of(model.value!!.modelId),
                 output = AiOutputInfo.text(it)
             ).asWorkflowResult()
         }

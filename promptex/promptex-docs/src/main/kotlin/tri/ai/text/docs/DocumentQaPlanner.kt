@@ -82,7 +82,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         snippetCallback(matches)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
         context.logTrace("find-relevant-sections", AiTaskTrace(
-            model = modelId?.let { AiModelInfo(it) },
+            env = modelId?.let { AiEnvInfo.of(it) },
             output = AiOutputInfo.listSingleOutput(matches)
         ))
         matches

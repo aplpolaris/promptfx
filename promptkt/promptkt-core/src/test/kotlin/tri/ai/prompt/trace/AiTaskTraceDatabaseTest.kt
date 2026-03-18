@@ -25,7 +25,7 @@ import tri.util.json.jsonWriter
 
 class AiTaskTraceDatabaseTest {
 
-    private val modelInfo = AiModelInfo("not a model", modelParams = mapOf("maxTokens" to 100))
+    private val envInfo = AiEnvInfo(model = AiModelInfo("not a model", modelParams = mapOf("maxTokens" to 100)))
     private val inputInfo = AiTaskInputInfo(
         prompt = "Translate {{text}} into French.",
         params = mapOf("text" to "Hello, world!")
@@ -38,13 +38,13 @@ class AiTaskTraceDatabaseTest {
     @Test
     fun testAddAndDeduplicateTraces() {
         val db = AiTaskTraceDatabase().apply {
-            addTrace(AiTaskTrace(model = modelInfo, input = inputInfo, exec = execInfo1, output = outputInfo1))
-            addTrace(AiTaskTrace(model = modelInfo, input = inputInfo, exec = execInfo1, output = outputInfo1))
-            addTrace(AiTaskTrace(model = modelInfo, input = inputInfo, exec = execInfo2, output = outputInfo2))
-            addTrace(AiTaskTrace(model = modelInfo, input = inputInfo, exec = execInfo1, output = outputInfo2))
+            addTrace(AiTaskTrace(env = envInfo, input = inputInfo, exec = execInfo1, output = outputInfo1))
+            addTrace(AiTaskTrace(env = envInfo, input = inputInfo, exec = execInfo1, output = outputInfo1))
+            addTrace(AiTaskTrace(env = envInfo, input = inputInfo, exec = execInfo2, output = outputInfo2))
+            addTrace(AiTaskTrace(env = envInfo, input = inputInfo, exec = execInfo1, output = outputInfo2))
         }
         assertEquals(4, db.traces.size)
-        assertEquals(1, db.models.size)
+        assertEquals(1, db.envs.size)
         assertEquals(1, db.inputs.size)
         assertEquals(2, db.execs.size)
         assertEquals(2, db.outputs.size)
@@ -52,8 +52,8 @@ class AiTaskTraceDatabaseTest {
 
     @Test
     fun testTaskIdAndParentIdInDatabase() {
-        val parent = AiTaskTrace(taskId = "parent-task", model = modelInfo)
-        val child = AiTaskTrace(taskId = "child-task", parentTaskId = "parent-task", model = modelInfo)
+        val parent = AiTaskTrace(taskId = "parent-task", env = envInfo)
+        val child = AiTaskTrace(taskId = "child-task", parentTaskId = "parent-task", env = envInfo)
         val db = AiTaskTraceDatabase(listOf(parent, child))
         assertEquals(2, db.traces.size)
         assertEquals("parent-task", db.traces[0].taskId)
@@ -67,7 +67,7 @@ class AiTaskTraceDatabaseTest {
             addTrace(AiTaskTrace(
                 taskId = "t1",
                 viewId = "test-view",
-                model = modelInfo,
+                env = envInfo,
                 input = inputInfo,
                 exec = execInfo1,
                 output = outputInfo1
@@ -80,12 +80,12 @@ class AiTaskTraceDatabaseTest {
 
     @Test
     fun testRoundtripTracesFromDatabase() {
-        val trace1 = AiTaskTrace(taskId = "t1", model = modelInfo, input = inputInfo, exec = execInfo1, output = outputInfo1)
-        val trace2 = AiTaskTrace(taskId = "t2", parentTaskId = "t1", model = modelInfo, input = inputInfo, exec = execInfo2, output = outputInfo2)
+        val trace1 = AiTaskTrace(taskId = "t1", env = envInfo, input = inputInfo, exec = execInfo1, output = outputInfo1)
+        val trace2 = AiTaskTrace(taskId = "t2", parentTaskId = "t1", env = envInfo, input = inputInfo, exec = execInfo2, output = outputInfo2)
         val db = AiTaskTraceDatabase(listOf(trace1, trace2))
         val restored = db.taskTraces()
         assertEquals(2, restored.size)
-        assertEquals("not a model", restored[0].model?.modelId)
+        assertEquals("not a model", restored[0].env?.modelId)
         assertEquals("t1", restored[0].taskId)
         assertEquals("t2", restored[1].taskId)
         assertEquals("t1", restored[1].parentTaskId)

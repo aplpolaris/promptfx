@@ -31,7 +31,7 @@ class AiTaskTraceDatabase {
 
     var traces = mutableListOf<AiTaskTraceId>()
 
-    var models = mutableSetOf<AiModelInfo>()
+    var envs = mutableSetOf<AiEnvInfo>()
     var inputs = mutableSetOf<AiTaskInputInfo>()
     var execs = mutableSetOf<AiExecInfo>()
     var outputs = mutableSetOf<AiOutputInfo>()
@@ -50,7 +50,7 @@ class AiTaskTraceDatabase {
         taskId = taskId,
         parentTaskId = parentTaskId,
         viewId = viewId,
-        model = modelIndex?.let { models.elementAt(it) },
+        env = envIndex?.let { envs.elementAt(it) },
         input = inputIndex?.let { inputs.elementAt(it) },
         exec = execs.elementAt(execIndex),
         output = outputIndex?.let { outputs.elementAt(it) }
@@ -63,7 +63,7 @@ class AiTaskTraceDatabase {
 
     /** Adds the trace to the database, deduplicating components, and returns the stored ID record. */
     fun addTrace(trace: AiTaskTrace): AiTaskTraceId {
-        val model = addOrGet(models, trace.model)
+        val env = addOrGet(envs, trace.env)
         val input = addOrGet(inputs, trace.input)
         val exec = addOrGet(execs, trace.exec)
         val output = addOrGet(outputs, trace.output)
@@ -72,7 +72,7 @@ class AiTaskTraceDatabase {
             taskId = trace.taskId,
             parentTaskId = trace.parentTaskId,
             viewId = trace.viewId,
-            modelIndex = model?.let { models.indexOf(it) },
+            envIndex = env?.let { envs.indexOf(it) },
             inputIndex = input?.let { inputs.indexOf(it) },
             execIndex = execs.indexOf(exec),
             outputIndex = output?.let { outputs.indexOf(it) }
@@ -101,7 +101,7 @@ data class AiTaskTraceId(
     val taskId: String,
     val parentTaskId: String? = null,
     val viewId: String? = null,
-    val modelIndex: Int? = null,
+    val envIndex: Int? = null,
     val inputIndex: Int? = null,
     val execIndex: Int,
     val outputIndex: Int? = null

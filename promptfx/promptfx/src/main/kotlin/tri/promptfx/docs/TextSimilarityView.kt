@@ -24,7 +24,7 @@ import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
 import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.asWorkflowResult
-import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
@@ -60,7 +60,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
 
         return if (chunks.size == 1) {
             AiTaskTrace(
-                model = AiModelInfo(mod.modelId),
+                env = AiEnvInfo.of(mod.modelId),
                 output = AiOutputInfo.text(scoreText)
             )
         } else {
@@ -73,7 +73,7 @@ class TextSimilarityView: AiTaskView("Text Similarity",
                 "${"Second closest paragraph match: %.2f%%\n".format(scores[1].second * 100)}${scores[1].first}"
 
             AiTaskTrace(
-                model = AiModelInfo(mod.modelId),
+                env = AiEnvInfo.of(mod.modelId),
                 output = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
             )
         }.asWorkflowResult()

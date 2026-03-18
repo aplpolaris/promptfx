@@ -47,7 +47,7 @@ class AiPromptTraceDatabase() {
 
     /** Get the prompt trace by index. */
     fun AiPromptTraceId.promptTrace() = AiTaskTrace(
-        model = models.elementAt(modelIndex),
+        env = models.elementAt(modelIndex)?.let { AiEnvInfo.of(it) },
         input = prompts.elementAt(promptIndex)?.let { AiTaskInputInfo.of(it) },
         exec = execs.elementAt(execIndex),
         output = outputs.elementAt(outputIndex)

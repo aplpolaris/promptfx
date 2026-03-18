@@ -44,8 +44,8 @@ open class AiTaskTrace(
     var parentTaskId: String? = null,
     /** Identifier of the view or system component that initiated this task. */
     var viewId: String? = null,
-    /** Model and environment configuration (formerly [model]). */
-    var model: AiModelInfo? = null,
+    /** Model and environment configuration. Replaces the former bare [AiModelInfo] field. */
+    var env: AiEnvInfo? = null,
     /** Task input information. Replaces the former prompt/params as [AiTaskInputInfo]. */
     var input: AiTaskInputInfo? = null,
     /** Execution metadata (timing, errors, token usage). */
@@ -58,7 +58,7 @@ open class AiTaskTrace(
 
     /**
      * Backward-compatible constructor accepting the original [AiPromptTrace] parameters.
-     * Converts [PromptInfo] to [AiTaskInputInfo] automatically.
+     * Converts [PromptInfo] to [AiTaskInputInfo] and wraps [AiModelInfo] in [AiEnvInfo] automatically.
      * New code should prefer the primary constructor or factory methods.
      */
     @Suppress("DEPRECATION")
@@ -68,7 +68,7 @@ open class AiTaskTrace(
         execInfo: AiExecInfo = AiExecInfo(),
         outputInfo: AiOutputInfo? = null
     ) : this(
-        model = modelInfo,
+        env = modelInfo?.let { AiEnvInfo.of(it) },
         input = promptInfo?.let { AiTaskInputInfo.of(it) },
         exec = execInfo,
         output = outputInfo
@@ -91,6 +91,17 @@ open class AiTaskTrace(
     var prompt: PromptInfo?
         get() = input?.toPromptInfo()
         set(value) { input = value?.let { AiTaskInputInfo.of(it) } }
+
+    /**
+     * Backward-compatible access to the [AiModelInfo], derived from [env].
+     * Setting this property wraps the value in an [AiEnvInfo], preserving any existing
+     * [AiEnvInfo.system] and [AiEnvInfo.config] settings.
+     */
+    @get:JsonIgnore
+    @Deprecated("Use env", ReplaceWith("env"))
+    var model: AiModelInfo?
+        get() = env?.model
+        set(value) { env = value?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) } }
 
     // endregion
 
@@ -118,8 +129,10 @@ open class AiTaskTrace(
     /**
      * Creates a copy of this trace with optionally updated fields.
      *
-     * The [promptInfo] parameter is provided for backward compatibility and will be
-     * converted to [AiTaskInputInfo]. Prefer [inputInfo] for new code.
+     * The [promptInfo] and [modelInfo] parameters are provided for backward compatibility.
+     * [modelInfo] is wrapped in an [AiEnvInfo] that inherits any existing [AiEnvInfo.system]
+     * and [AiEnvInfo.config] from the current [env].
+     * New code should use [envInfo] directly.
      */
     open fun copy(
         promptInfo: PromptInfo? = this.prompt,
@@ -132,7 +145,7 @@ open class AiTaskTrace(
         taskId = taskId,
         parentTaskId = parentTaskId,
         viewId = viewId,
-        model = modelInfo,
+        env = modelInfo?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) },
         input = promptInfo?.let { AiTaskInputInfo.of(it) },
         exec = execInfo,
         output = outputInfo
@@ -144,7 +157,7 @@ open class AiTaskTrace(
     // endregion
 
     override fun toString() =
-        "AiTaskTrace(taskId=$taskId, model=$model, input=$input, exec=$exec, output=$output)"
+        "AiTaskTrace(taskId=$taskId, env=$env, input=$input, exec=$exec, output=$output)"
 
     // region COMPANION FACTORY METHODS
 
@@ -159,7 +172,7 @@ open class AiTaskTrace(
             durationTotal: Long? = null,
             attempts: Int? = null
         ) = AiTaskTrace(
-            model = modelInfo,
+            env = modelInfo?.let { AiEnvInfo.of(it) },
             exec = AiExecInfo(message, throwable, responseTimeMillis = duration, responseTimeMillisTotal = durationTotal, attempts = attempts)
         )
 
