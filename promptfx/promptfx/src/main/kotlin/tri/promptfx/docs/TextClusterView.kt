@@ -43,9 +43,9 @@ import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.docs.TextClustering.generateClusterHierarchy
 import tri.promptfx.promptFxFileChooser
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.FormattedTextNode
+import tri.ai.text.docs.withFormattedOutputs
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.docs.TextDocListUi
 import tri.promptfx.ui.docs.TextLibraryListUi
@@ -280,10 +280,10 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
             context.logTrace("clustering", AiTaskTrace(exec = AiExecInfo.durationSince(t0), output = AiOutputInfo.listSingleOutput(hierarchy)))
             hierarchy
         }
-        .task<FormattedPromptTraceResult>("formatting-results") { list, context ->
+        .task<AiTaskTrace>("formatting-results") { list, context ->
             runLater { resultClusters.setAll(list) }
             val ft = FormattedText(list.map { printCluster(it, "\n") }.flatten())
-            val result = FormattedPromptTraceResult(AiTaskTrace(output = AiOutputInfo.text("")), listOf(ft))
+            val result = AiTaskTrace(output = AiOutputInfo.text("")).withFormattedOutputs(listOf(ft))
             context.logTrace("formatting-results", result)
             result
         }

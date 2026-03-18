@@ -53,7 +53,7 @@ class RetryExecutor(
             val existingTrace = context.trace(task.id)
             if (existingTrace != null) {
                 context.logTrace(task.id, existingTrace.copy(
-                    execInfo = existingTrace.exec.copy(
+                    exec = existingTrace.exec.copy(
                         responseTimeMillis = it.attemptTime,
                         responseTimeMillisTotal = it.totalTime,
                         attempts = it.attempts

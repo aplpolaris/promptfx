@@ -44,7 +44,7 @@ class AiPromptRunConfig(
         modelInfo.modelId = chat.modelId
         val promptText = promptInfo.filled()
         val result = chat.chat(promptText, modelInfo)
-        return result.copy(promptInfo = promptInfo).mapOutput { AiOutput(text = it.message!!.content!!) }
+        return result.copy(input = AiTaskInputInfo.of(promptInfo)).mapOutput { AiOutput(text = it.message!!.content!!) }
     }
 
     /**

@@ -25,47 +25,4 @@ package tri.ai.prompt.trace
  * Returns an empty list if this trace has no output.
  */
 fun AiTaskTrace.splitImages(): List<AiTaskTrace> =
-    output?.outputs?.map { copy(outputInfo = AiOutputInfo(listOf(it))) } ?: emptyList()
-
-/**
- * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
- * Not designed for serialization (yet).
- *
- * @deprecated Use [AiTaskTrace] directly. The [splitImages] extension function on [AiTaskTrace] replaces
- * [splitImages]. Construct an [AiTaskTrace] with the same parameters via its primary or backward-compat constructor.
- */
-@Deprecated(
-    message = "Use AiTaskTrace directly. splitImages() is available as an extension function on AiTaskTrace.",
-    replaceWith = ReplaceWith("AiTaskTrace", "tri.ai.prompt.trace.AiTaskTrace")
-)
-class AiImageTrace(
-    promptInfo: PromptInfo?,
-    modelInfo: AiModelInfo?,
-    execInfo: AiExecInfo = AiExecInfo(),
-    outputInfo: AiOutputInfo? = AiOutputInfo(listOf())
-) : AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo) {
-
-    override fun toString() = "AiImageTrace(taskId='$taskId', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
-
-    /** Splits this image trace into individual images. */
-    @Suppress("DEPRECATION")
-    fun splitImages(): List<AiImageTrace> =
-        output!!.outputs.map {
-            AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
-        }
-
-    override fun copy(
-        promptInfo: PromptInfo?,
-        modelInfo: AiModelInfo?,
-        execInfo: AiExecInfo,
-        outputInfo: AiOutputInfo?,
-        callerId: String?,
-        parentTaskId: String?,
-        viewId: String?
-    ) = AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo).also {
-        it.taskId = taskId
-        it.parentTaskId = parentTaskId
-        it.callerId = viewId ?: callerId
-    }
-
-}
+    output?.outputs?.map { copy(output = AiOutputInfo(listOf(it))) } ?: emptyList()

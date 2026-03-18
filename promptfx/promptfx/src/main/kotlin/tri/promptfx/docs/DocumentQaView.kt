@@ -34,10 +34,10 @@ import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
+import tri.ai.text.docs.formattedOutputs
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver
@@ -219,8 +219,9 @@ class DocumentQaView: AiPlanTaskView(
     //endregion
 
     override fun addTrace(trace: AiPromptTraceSupport) {
-        if (trace is FormattedPromptTraceResult) {
-            enableHyperlinkActions(trace.formattedOutputs)
+        val formatted = trace.formattedOutputs
+        if (formatted != null) {
+            enableHyperlinkActions(formatted)
         }
         super.addTrace(trace)
     }

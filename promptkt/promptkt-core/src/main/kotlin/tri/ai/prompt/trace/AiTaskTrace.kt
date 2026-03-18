@@ -147,37 +147,34 @@ open class AiTaskTrace(
     val errorMessage: String?
         get() = exec.error ?: exec.throwable?.message
 
+    /**
+     * Open-ended map for storing non-serialized side-channel data associated with this trace
+     * (e.g. formatted outputs, rendering hints). Not serialized to JSON.
+     */
+    @get:JsonIgnore
+    val annotations: MutableMap<String, Any> = mutableMapOf()
+
     // endregion
 
     // region COPY / TRANSFORM
 
     /**
      * Creates a copy of this trace with optionally updated fields.
-     *
-     * The [promptInfo] and [modelInfo] parameters are provided for backward compatibility.
-     * The [viewId] parameter is also provided for backward compatibility and is treated as [callerId].
-     * New code should use [callerId] directly.
+     * Parameter order matches the primary constructor.
      */
     open fun copy(
-        promptInfo: PromptInfo? = this.prompt,
-        modelInfo: AiModelInfo? = this.model,
-        execInfo: AiExecInfo = this.exec,
-        outputInfo: AiOutputInfo? = this.output,
-        callerId: String? = this.callerId,
+        taskId: String = this.taskId,
         parentTaskId: String? = this.parentTaskId,
-        viewId: String? = null
-    ): AiTaskTrace = AiTaskTrace(
-        taskId = taskId,
-        parentTaskId = parentTaskId,
-        callerId = viewId ?: callerId,
-        env = modelInfo?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) },
-        input = promptInfo?.let { AiTaskInputInfo.of(it) },
-        exec = execInfo,
-        output = outputInfo
-    )
+        callerId: String? = this.callerId,
+        env: AiEnvInfo? = this.env,
+        input: AiTaskInputInfo? = this.input,
+        exec: AiExecInfo = this.exec,
+        output: AiOutputInfo? = this.output
+    ): AiTaskTrace = AiTaskTrace(taskId, parentTaskId, callerId, env, input, exec, output)
+        .also { it.annotations.putAll(annotations) }
 
     /** Returns a copy of this trace with the output transformed by [transform]. */
-    fun mapOutput(transform: (AiOutput) -> AiOutput) = copy(outputInfo = output?.map(transform))
+    fun mapOutput(transform: (AiOutput) -> AiOutput) = copy(output = output?.map(transform))
 
     // endregion
 

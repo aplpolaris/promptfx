@@ -19,63 +19,20 @@
  */
 package tri.ai.text.docs
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiTaskTrace
+
+private const val FORMATTED_OUTPUTS_KEY = "formattedOutputs"
 
 /**
- * Creates a copy of this trace annotated with a list of [FormattedText] outputs.
- * This is the preferred replacement for constructing a [FormattedPromptTraceResult].
+ * Returns a copy of this trace annotated with a list of [FormattedText] outputs.
+ * The outputs are stored in [AiTaskTrace.annotations] and can be retrieved via [formattedOutputs].
  */
-@Suppress("DEPRECATION")
-fun AiTaskTrace.withFormattedOutputs(outputs: List<FormattedText>): FormattedPromptTraceResult =
-    FormattedPromptTraceResult(this, outputs)
+fun AiTaskTrace.withFormattedOutputs(outputs: List<FormattedText>): AiTaskTrace =
+    apply { annotations[FORMATTED_OUTPUTS_KEY] = outputs }
 
 /**
- * Returns the formatted text outputs if this trace carries them, or `null` otherwise.
- * This is the preferred replacement for `(trace as? FormattedPromptTraceResult)?.formattedOutputs`.
+ * Returns the formatted text outputs stored on this trace via [withFormattedOutputs], or `null` if none are present.
  */
-@Suppress("DEPRECATION")
+@Suppress("UNCHECKED_CAST")
 val AiTaskTrace.formattedOutputs: List<FormattedText>?
-    get() = (this as? FormattedPromptTraceResult)?.formattedOutputs
-
-/**
- * Result including the trace and formatted text.
- *
- * @deprecated Use [AiTaskTrace] directly. Pair a trace with its formatted outputs using
- * [withFormattedOutputs] and retrieve them via the [formattedOutputs] extension property.
- */
-@Deprecated(
-    message = "Use AiTaskTrace directly. Use withFormattedOutputs() extension to attach formatted outputs, and formattedOutputs extension property to retrieve them.",
-    replaceWith = ReplaceWith("AiTaskTrace", "tri.ai.prompt.trace.AiTaskTrace")
-)
-class FormattedPromptTraceResult(trace: AiTaskTrace, @get:JsonIgnore val formattedOutputs: List<FormattedText>)
-    : AiTaskTrace(trace.prompt, trace.model, trace.exec, trace.output) {
-
-    init {
-        // The backward-compat constructor called by the super() call generates a new random taskId.
-        // Restore the identity fields from the source trace so they are preserved.
-        taskId = trace.taskId
-        parentTaskId = trace.parentTaskId
-        callerId = trace.callerId
-    }
-
-    override fun toString() = output?.outputs?.joinToString() ?: "null"
-
-    override fun copy(
-        promptInfo: PromptInfo?,
-        modelInfo: AiModelInfo?,
-        execInfo: AiExecInfo,
-        outputInfo: AiOutputInfo?,
-        callerId: String?,
-        parentTaskId: String?,
-        viewId: String?
-    ) = FormattedPromptTraceResult(
-        AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo).also {
-            it.taskId = taskId
-            it.parentTaskId = parentTaskId
-            it.callerId = viewId ?: callerId
-        },
-        formattedOutputs
-    )
-
-}
+    get() = annotations[FORMATTED_OUTPUTS_KEY] as? List<FormattedText>

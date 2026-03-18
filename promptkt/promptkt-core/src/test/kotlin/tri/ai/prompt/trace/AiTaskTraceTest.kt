@@ -126,7 +126,7 @@ class AiTaskTraceTest {
     @Test
     fun testCopyPreservesTaskId() {
         val trace = AiTaskTrace(taskId = "orig-id", env = AiEnvInfo(model = AiModelInfo("m1")))
-        val copied = trace.copy(modelInfo = AiModelInfo("m2"))
+        val copied = trace.copy(env = AiEnvInfo(model = AiModelInfo("m2")))
         assertEquals("orig-id", copied.taskId)
         assertEquals("m2", copied.env?.modelId)
     }
@@ -134,7 +134,7 @@ class AiTaskTraceTest {
     @Test
     fun testCopyWithCallerId() {
         val trace = AiTaskTrace()
-        val withCaller = trace.copy(callerId = "my-view", execInfo = AiExecInfo(intermediateResult = false))
+        val withCaller = trace.copy(callerId = "my-view", exec = AiExecInfo(intermediateResult = false))
         assertEquals("my-view", withCaller.callerId)
         assertEquals(false, withCaller.exec.intermediateResult)
     }
