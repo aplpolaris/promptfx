@@ -80,7 +80,7 @@ sealed class AiChatEngine : AiModel {
 }
 
 /** Executes a [CompletionBuilder] task dispatching to the appropriate chat interface. */
-suspend fun CompletionBuilder.execute(engine: AiChatEngine): tri.ai.prompt.trace.AiPromptTrace = when (engine) {
+suspend fun CompletionBuilder.execute(engine: AiChatEngine): tri.ai.prompt.trace.AiTaskTrace = when (engine) {
     is AiChatEngine.Text -> execute(engine.model)
     is AiChatEngine.Multimodal -> execute(engine.model)
 }

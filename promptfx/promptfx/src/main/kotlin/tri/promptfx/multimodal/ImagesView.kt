@@ -246,7 +246,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     //region CONTEXT MENU ACTIONS
 
     private fun copyPromptToClipboard(trace: AiTaskTrace) {
-        clipboard.putString(trace.prompt!!.template)
+        clipboard.putString(trace.input?.prompt ?: "")
     }
 
     private fun saveAllToFile() {
