@@ -112,10 +112,10 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val result = QuestionAnswerResult(
             query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
             matches = snippets,
-            trace = response.mapOutput { AiOutput(text = it.textContent()) },
+            trace = response.mapOutput { AiOutput.Text(it.textContent()) },
             responseEmbeddings = responseEmbeddings
         )
-        context.logTrace("question-answer", response.mapOutput { AiOutput(other = result) })
+        context.logTrace("question-answer", response.mapOutput { AiOutput.Other(result) })
         result
     }.task<FormattedPromptTraceResult>("process-result") { result, context ->
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")

@@ -43,12 +43,13 @@ enum class JsonListMergeStrategy {
  *   rather than using the first array-valued field; ignored when the JSON root is an array
  */
 fun AiOutput.tryJsonStringList(jsonKey: String? = null): List<String>? {
-    // access fields directly to avoid the exception thrown by textContent() when no content exists
-    val raw = text
-        ?: message?.content
-        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
-        ?: other?.toString()
-        ?: return null
+    // use sealed type pattern matching - return null immediately for empty/null content
+    val raw: String = when (this) {
+        is AiOutput.Text -> text.takeIf { it.isNotEmpty() } ?: return null
+        is AiOutput.ChatMessage -> message.content ?: return null
+        is AiOutput.MultimodalMessage -> multimodalMessage.content?.firstNotNullOfOrNull { it.text } ?: return null
+        is AiOutput.Other -> other.toString()
+    }
     // strip markdown code fences if present
     val text = raw.trim().let {
         if (it.startsWith("```")) {

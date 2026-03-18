@@ -185,7 +185,7 @@ open class AiTaskTrace(
 
         /** Wraps a series of outputs as a single list output object. */
         fun outputListAsSingleResult(list: List<AiOutput>) =
-            output(AiOutput(other = list.map { it.content() }))
+            output(AiOutput.Other(list.map { it.content() }))
 
     }
 

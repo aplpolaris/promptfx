@@ -93,6 +93,6 @@ object AiWorkflowExecutor {
 
 /** Converts a plain task output value to [AiOutputInfo] for use in a synthetic trace. */
 private fun toOutputInfo(output: Any): AiOutputInfo = when (output) {
-    is List<*> -> AiOutputInfo.output(AiOutput(other = output))
+    is List<*> -> AiOutputInfo.output(AiOutput.Other(output))
     else -> AiOutputInfo.other(output)
 }

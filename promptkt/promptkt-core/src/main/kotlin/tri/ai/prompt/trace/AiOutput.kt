@@ -20,41 +20,137 @@
 package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
 
-/** Encapsulates outputs from an AI processing step. */
-class AiOutput(
-    val text: String? = null,
-    val message: TextChatMessage? = null,
-    val multimodalMessage: MultimodalChatMessage? = null,
-    @get:JsonIgnore
-    val other: Any? = null
-) {
+/**
+ * Sealed class hierarchy for individual AI task outputs.
+ *
+ * Use the typed subclasses [Text], [ChatMessage], [MultimodalMessage], or [Other] to represent
+ * different kinds of task output, or use the backward-compatible factory function [invoke] to
+ * create an appropriately-typed output from named parameters.
+ *
+ * Each subtype exposes backward-compatible nullable properties ([text], [message],
+ * [multimodalMessage], [other]) so that existing code using these properties compiles unchanged;
+ * properties not applicable to a given subtype return `null`.
+ */
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type",
+    defaultImpl = AiOutput.Text::class
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = AiOutput.Text::class, name = "text"),
+    JsonSubTypes.Type(value = AiOutput.ChatMessage::class, name = "message"),
+    JsonSubTypes.Type(value = AiOutput.MultimodalMessage::class, name = "multimodal"),
+    JsonSubTypes.Type(value = AiOutput.Other::class, name = "other"),
+)
+sealed class AiOutput {
 
-    override fun toString(): String = textContent(ifNone = other?.toString() ?: "(no output)")
+    /** Text content of this output, or `null` if this is not a [Text] output. */
+    open val text: String? get() = null
+
+    /** Chat message of this output, or `null` if this is not a [ChatMessage] output. */
+    open val message: TextChatMessage? get() = null
+
+    /** Multimodal message of this output, or `null` if this is not a [MultimodalMessage] output. */
+    open val multimodalMessage: MultimodalChatMessage? get() = null
+
+    /**
+     * Arbitrary object of this output, or `null` if this is not an [Other] output.
+     * Not serialized to JSON.
+     */
+    @get:JsonIgnore
+    open val other: Any? get() = null
 
     /**
      * Finds text content where possible in the output.
+     * Throws an error if no text content is found and [ifNone] is null.
      */
-    fun textContent(ifNone: String? = null): String = text
-        ?: message?.content
-        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
-        ?: other?.toString()
-        ?: ifNone
-        ?: error("No text content available in output: $this")
+    abstract fun textContent(ifNone: String? = null): String
 
     /**
-     * Finds image content based on message part type, or null if there is no image content.
+     * Finds image content based on message part type, or `null` if there is no image content.
      */
-    fun imageContent(): String? =
-        multimodalMessage?.content
-            ?.firstOrNull { it.partType == MPartType.IMAGE }
-            ?.inlineData
+    abstract fun imageContent(): String?
 
     /**
-     * Gets whichever message content is provided.
+     * Gets whichever typed content is provided by this output.
      */
-    fun content(): Any = message ?: multimodalMessage ?: text ?: other ?: error("No content available in output: $this")
+    abstract fun content(): Any
+
+    // -------------------------------------------------------------------------
+    // Sealed subtypes
+    // -------------------------------------------------------------------------
+
+    /** A plain-text AI output. */
+    data class Text(override val text: String) : AiOutput() {
+        override fun textContent(ifNone: String?) = text
+        override fun imageContent(): String? = null
+        override fun content(): Any = text
+        override fun toString() = text
+    }
+
+    /** A chat-message AI output (e.g. from a TextChat model). */
+    data class ChatMessage(override val message: TextChatMessage) : AiOutput() {
+        override fun textContent(ifNone: String?) = message.content
+            ?: ifNone
+            ?: error("No text content available in output: $this")
+        override fun imageContent(): String? = null
+        override fun content(): Any = message
+        override fun toString() = message.content ?: "(no message content)"
+    }
+
+    /** A multimodal-message AI output (e.g. from a vision or image-generation model). */
+    data class MultimodalMessage(override val multimodalMessage: MultimodalChatMessage) : AiOutput() {
+        override fun textContent(ifNone: String?) =
+            multimodalMessage.content?.firstNotNullOfOrNull { it.text }
+                ?: ifNone
+                ?: error("No text content available in output: $this")
+        override fun imageContent(): String? =
+            multimodalMessage.content?.firstOrNull { it.partType == MPartType.IMAGE }?.inlineData
+        override fun content(): Any = multimodalMessage
+        override fun toString() = textContent(ifNone = "(no text in multimodal output)")
+    }
+
+    /**
+     * An arbitrary-object AI output. The [other] value is **not serialized** to JSON.
+     * This subtype is used for non-text, non-message outputs such as embeddings or structured data.
+     */
+    data class Other(@get:JsonIgnore override val other: Any) : AiOutput() {
+        override fun textContent(ifNone: String?) = other.toString()
+        override fun imageContent(): String? = null
+        override fun content(): Any = other
+        override fun toString() = other.toString()
+    }
+
+    // -------------------------------------------------------------------------
+    // Backward-compatible factory
+    // -------------------------------------------------------------------------
+
+    companion object {
+        /**
+         * Backward-compatible factory function that selects the appropriate [AiOutput] subtype
+         * based on which parameter is non-null.
+         *
+         * At most one parameter should be non-null. If none are provided, returns an empty [Text]
+         * output (backward compat for `AiOutput()` with no arguments).
+         */
+        operator fun invoke(
+            text: String? = null,
+            message: TextChatMessage? = null,
+            multimodalMessage: MultimodalChatMessage? = null,
+            other: Any? = null
+        ): AiOutput = when {
+            text != null -> Text(text)
+            message != null -> ChatMessage(message)
+            multimodalMessage != null -> MultimodalMessage(multimodalMessage)
+            other != null -> Other(other)
+            else -> Text("") // backward compat: AiOutput() with no args
+        }
+    }
 }
