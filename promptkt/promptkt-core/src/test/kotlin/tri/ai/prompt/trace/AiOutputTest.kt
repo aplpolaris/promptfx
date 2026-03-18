@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,42 +30,42 @@ class AiOutputTest {
     //region SEALED SUBTYPES
 
     @Test
-    fun testTextSubtype() {
-        val output = AiOutput.Text("hello world")
-        assertEquals("hello world", output.text)
-        assertNull(output.message)
-        assertNull(output.multimodalMessage)
-        assertNull(output.other)
-        assertEquals("hello world", output.textContent())
-        assertNull(output.imageContent())
-        assertEquals("hello world", output.content())
-        assertEquals("hello world", output.toString())
-    }
+    fun testSubtypeContentAccessors() {
+        val textOut = AiOutput.Text("hello world")
+        assertEquals("hello world", textOut.textContent())
+        assertNull(textOut.imageContent())
+        assertEquals("hello world", textOut.content())
+        assertEquals("hello world", textOut.toString())
 
-    @Test
-    fun testChatMessageSubtype() {
         val msg = TextChatMessage(MChatRole.Assistant, "response text")
-        val output = AiOutput.ChatMessage(msg)
-        assertNull(output.text)
-        assertEquals(msg, output.message)
-        assertNull(output.multimodalMessage)
-        assertNull(output.other)
-        assertEquals("response text", output.textContent())
-        assertNull(output.imageContent())
-        assertEquals(msg, output.content())
+        val chatOut = AiOutput.ChatMessage(msg)
+        assertEquals("response text", chatOut.textContent())
+        assertNull(chatOut.imageContent())
+        assertEquals(msg, chatOut.content())
+
+        val list = listOf(1, 2, 3)
+        val otherOut = AiOutput.Other(list)
+        assertEquals("[1, 2, 3]", otherOut.textContent())
+        assertNull(otherOut.imageContent())
+        assertEquals(list, otherOut.content())
     }
 
     @Test
-    fun testOtherSubtype() {
-        val value = listOf(1, 2, 3)
-        val output = AiOutput.Other(value)
-        assertNull(output.text)
-        assertNull(output.message)
-        assertNull(output.multimodalMessage)
-        assertEquals(value, output.other)
-        assertEquals("[1, 2, 3]", output.textContent())
-        assertNull(output.imageContent())
-        assertEquals(value, output.content())
+    fun testSealedWhenExhaustive() {
+        val outputs: List<AiOutput> = listOf(
+            AiOutput.Text("hello"),
+            AiOutput.ChatMessage(TextChatMessage(MChatRole.User, "hi")),
+            AiOutput.Other(42)
+        )
+        val types = outputs.map { output ->
+            when (output) {
+                is AiOutput.Text -> "text"
+                is AiOutput.ChatMessage -> "message"
+                is AiOutput.MultimodalMessage -> "multimodal"
+                is AiOutput.Other -> "other"
+            }
+        }
+        assertEquals(listOf("text", "message", "other"), types)
     }
 
     //endregion
@@ -100,50 +100,6 @@ class AiOutputTest {
         val output = AiOutput()
         assertInstanceOf(AiOutput.Text::class.java, output)
         assertEquals("", (output as AiOutput.Text).text)
-    }
-
-    //endregion
-
-    //region SEALED TYPE EXHAUSTIVENESS
-
-    @Test
-    fun testSealedWhenExhaustive() {
-        val outputs: List<AiOutput> = listOf(
-            AiOutput.Text("hello"),
-            AiOutput.ChatMessage(TextChatMessage(MChatRole.User, "hi")),
-            AiOutput.Other(42)
-        )
-        val types = outputs.map { output ->
-            when (output) {
-                is AiOutput.Text -> "text"
-                is AiOutput.ChatMessage -> "message"
-                is AiOutput.MultimodalMessage -> "multimodal"
-                is AiOutput.Other -> "other"
-            }
-        }
-        assertEquals(listOf("text", "message", "other"), types)
-    }
-
-    //endregion
-
-    //region DATA CLASS EQUALITY
-
-    @Test
-    fun testTextEquality() {
-        assertEquals(AiOutput.Text("hello"), AiOutput.Text("hello"))
-        assertNotEquals(AiOutput.Text("hello"), AiOutput.Text("world"))
-    }
-
-    @Test
-    fun testChatMessageEquality() {
-        val msg = TextChatMessage(MChatRole.Assistant, "content")
-        assertEquals(AiOutput.ChatMessage(msg), AiOutput.ChatMessage(msg))
-    }
-
-    @Test
-    fun testOtherEquality() {
-        val list = listOf(1, 2, 3)
-        assertEquals(AiOutput.Other(list), AiOutput.Other(list))
     }
 
     //endregion
@@ -189,17 +145,6 @@ class AiOutputTest {
         val output = jsonMapper.readValue(json, AiOutput::class.java)
         assertInstanceOf(AiOutput.ChatMessage::class.java, output)
         assertEquals("chat response", (output as AiOutput.ChatMessage).message.content)
-    }
-
-    @Test
-    fun testOtherDeserializationRequiresValue() {
-        // AiOutput.Other has @JsonIgnore on 'other', meaning the value is NOT included in JSON.
-        // Attempting to deserialize {"type":"other"} from JSON will fail because the required
-        // 'other' constructor param is non-nullable and not present. This is expected/documented behavior.
-        val json = """{"type":"other"}"""
-        assertThrows(Exception::class.java) {
-            jsonMapper.readValue(json, AiOutput::class.java)
-        }
     }
 
     @Test

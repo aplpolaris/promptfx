@@ -20,6 +20,7 @@
 package tri.ai.prompt.trace
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tri.util.json.jsonWriter
 
@@ -74,8 +75,8 @@ class AiTaskTraceDatabaseTest {
             ))
         }
         val json = jsonWriter.writeValueAsString(db)
-        println(json)
-        assert(json.contains("t1") || json.isNotEmpty())
+        assertTrue(json.contains("t1"))
+        assertTrue(json.contains("test-view"))
     }
 
     @Test
