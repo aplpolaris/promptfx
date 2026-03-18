@@ -41,8 +41,7 @@ import tornadofx.*
 import tri.ai.core.EmbeddingModel
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
-import tri.ai.prompt.trace.AiImageTrace
-import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.formattedOutputs
 import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError
@@ -316,16 +315,12 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
 
     /** Adds trace of an execution to the output area. */
     protected open fun addTrace(trace: AiPromptTraceSupport) {
-        when (trace) {
-            is AiPromptTrace ->
-                resultArea.model.addTrace(trace)
-            is FormattedPromptTraceResult ->
-                formattedResultArea.model.addTrace(trace)
-            is AiImageTrace -> {
-                // ignore - this is handled by view
-            }
-            else -> throw IllegalStateException("Unexpected result type: $trace")
-        }
+        val formatted = trace.formattedOutputs
+        if (formatted != null)
+            formattedResultArea.model.addTrace(trace)
+        else if (trace.output != null)
+            resultArea.model.addTrace(trace)
+        // AiTaskTrace with image outputs: handled by the view (e.g. ImagesView)
     }
 
     /** Sets the output to display the result of the given execution. */

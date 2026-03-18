@@ -22,9 +22,42 @@ package tri.ai.text.docs
 import com.fasterxml.jackson.annotation.JsonIgnore
 import tri.ai.prompt.trace.*
 
-/** Result including the trace and formatted text. */
+/**
+ * Creates a copy of this trace annotated with a list of [FormattedText] outputs.
+ * This is the preferred replacement for constructing a [FormattedPromptTraceResult].
+ */
+@Suppress("DEPRECATION")
+fun AiTaskTrace.withFormattedOutputs(outputs: List<FormattedText>): FormattedPromptTraceResult =
+    FormattedPromptTraceResult(this, outputs)
+
+/**
+ * Returns the formatted text outputs if this trace carries them, or `null` otherwise.
+ * This is the preferred replacement for `(trace as? FormattedPromptTraceResult)?.formattedOutputs`.
+ */
+@Suppress("DEPRECATION")
+val AiTaskTrace.formattedOutputs: List<FormattedText>?
+    get() = (this as? FormattedPromptTraceResult)?.formattedOutputs
+
+/**
+ * Result including the trace and formatted text.
+ *
+ * @deprecated Use [AiTaskTrace] directly. Pair a trace with its formatted outputs using
+ * [withFormattedOutputs] and retrieve them via the [formattedOutputs] extension property.
+ */
+@Deprecated(
+    message = "Use AiTaskTrace directly. Use withFormattedOutputs() extension to attach formatted outputs, and formattedOutputs extension property to retrieve them.",
+    replaceWith = ReplaceWith("AiTaskTrace", "tri.ai.prompt.trace.AiTaskTrace")
+)
 class FormattedPromptTraceResult(trace: AiTaskTrace, @get:JsonIgnore val formattedOutputs: List<FormattedText>)
     : AiTaskTrace(trace.prompt, trace.model, trace.exec, trace.output) {
+
+    init {
+        // The backward-compat constructor called by the super() call generates a new random taskId.
+        // Restore the identity fields from the source trace so they are preserved.
+        taskId = trace.taskId
+        parentTaskId = trace.parentTaskId
+        callerId = trace.callerId
+    }
 
     override fun toString() = output?.outputs?.joinToString() ?: "null"
 

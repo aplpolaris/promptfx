@@ -53,7 +53,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     /** User input */
     private val input = SimpleStringProperty("")
     /** Image results */
-    private val images = observableListOf<AiImageTrace>()
+    private val images = observableListOf<AiTaskTrace>()
 
     private val imageModels = observableListOf<ImageGenerator>().apply {
         setAll(PromptFxModels.imageModels())
@@ -194,7 +194,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     init {
         onCompleted {
-            val fr = it.finalResult as AiImageTrace
+            val fr = it.finalResult
             if (fr.exec.error != null) {
                 error("Error: ${fr.exec.error}")
             } else {
@@ -231,13 +231,13 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 val base64 = uri.toString().substringAfter(";base64,")
                 AiOutput(multimodalMessage = MultimodalChatMessage.imageBase64(imageBase64 = base64))
             }
-            AiImageTrace(
+            AiTaskTrace(
                 promptInfo, modelInfo,
                 AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
                 AiOutputInfo(outputs)
             )
         } catch (x: Exception) {
-            AiImageTrace(promptInfo, modelInfo, AiExecInfo.error(x.message, x))
+            AiTaskTrace(promptInfo, modelInfo, AiExecInfo.error(x.message, x))
         }
         context.logTrace("generate-image", result)
         result.values ?: emptyList()
@@ -245,7 +245,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
 
     //region CONTEXT MENU ACTIONS
 
-    private fun copyPromptToClipboard(trace: AiImageTrace) {
+    private fun copyPromptToClipboard(trace: AiTaskTrace) {
         clipboard.putString(trace.prompt!!.template)
     }
 

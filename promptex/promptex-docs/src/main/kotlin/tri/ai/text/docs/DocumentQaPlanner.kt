@@ -117,9 +117,9 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         )
         context.logTrace("question-answer", response.mapOutput { AiOutput.Other(result) })
         result
-    }.task<FormattedPromptTraceResult>("process-result") { result, context ->
+    }.task<AiTaskTrace>("process-result") { result, context ->
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
-        val ft = FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
+        val ft = result.trace.withFormattedOutputs(result.splitOutputs().map { it.formatResult() })
         context.logTrace("process-result", ft)
         ft
     }

@@ -20,9 +20,24 @@
 package tri.ai.prompt.trace
 
 /**
+ * Splits this trace into individual traces, one per image output.
+ * Each returned trace contains a single output from the original list.
+ * Returns an empty list if this trace has no output.
+ */
+fun AiTaskTrace.splitImages(): List<AiTaskTrace> =
+    output?.outputs?.map { copy(outputInfo = AiOutputInfo(listOf(it))) } ?: emptyList()
+
+/**
  * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
  * Not designed for serialization (yet).
+ *
+ * @deprecated Use [AiTaskTrace] directly. The [splitImages] extension function on [AiTaskTrace] replaces
+ * [splitImages]. Construct an [AiTaskTrace] with the same parameters via its primary or backward-compat constructor.
  */
+@Deprecated(
+    message = "Use AiTaskTrace directly. splitImages() is available as an extension function on AiTaskTrace.",
+    replaceWith = ReplaceWith("AiTaskTrace", "tri.ai.prompt.trace.AiTaskTrace")
+)
 class AiImageTrace(
     promptInfo: PromptInfo?,
     modelInfo: AiModelInfo?,
@@ -33,6 +48,7 @@ class AiImageTrace(
     override fun toString() = "AiImageTrace(taskId='$taskId', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
 
     /** Splits this image trace into individual images. */
+    @Suppress("DEPRECATION")
     fun splitImages(): List<AiImageTrace> =
         output!!.outputs.map {
             AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
