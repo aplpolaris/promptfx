@@ -49,7 +49,7 @@ class AiTaskTraceDatabase {
     fun AiTaskTraceId.taskTrace() = AiTaskTrace(
         taskId = taskId,
         parentTaskId = parentTaskId,
-        viewId = viewId,
+        callerId = callerId,
         env = envIndex?.let { envs.elementAt(it) },
         input = inputIndex?.let { inputs.elementAt(it) },
         exec = execs.elementAt(execIndex),
@@ -71,7 +71,7 @@ class AiTaskTraceDatabase {
         return AiTaskTraceId(
             taskId = trace.taskId,
             parentTaskId = trace.parentTaskId,
-            viewId = trace.viewId,
+            callerId = trace.callerId,
             envIndex = env?.let { envs.indexOf(it) },
             inputIndex = input?.let { inputs.indexOf(it) },
             execIndex = execs.indexOf(exec),
@@ -100,7 +100,7 @@ class AiTaskTraceDatabase {
 data class AiTaskTraceId(
     val taskId: String,
     val parentTaskId: String? = null,
-    val viewId: String? = null,
+    val callerId: String? = null,
     val envIndex: Int? = null,
     val inputIndex: Int? = null,
     val execIndex: Int,

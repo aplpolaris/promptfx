@@ -33,8 +33,16 @@ class FormattedPromptTraceResult(trace: AiTaskTrace, @get:JsonIgnore val formatt
         modelInfo: AiModelInfo?,
         execInfo: AiExecInfo,
         outputInfo: AiOutputInfo?,
-        viewId: String?,
-        parentTaskId: String?
-    ) = FormattedPromptTraceResult(AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo), formattedOutputs)
+        callerId: String?,
+        parentTaskId: String?,
+        viewId: String?
+    ) = FormattedPromptTraceResult(
+        AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo).also {
+            it.taskId = taskId
+            it.parentTaskId = parentTaskId
+            it.callerId = viewId ?: callerId
+        },
+        formattedOutputs
+    )
 
 }

@@ -66,7 +66,7 @@ class AiTaskTraceDatabaseTest {
         val db = AiTaskTraceDatabase().apply {
             addTrace(AiTaskTrace(
                 taskId = "t1",
-                viewId = "test-view",
+                callerId = "test-view",
                 env = envInfo,
                 input = inputInfo,
                 exec = execInfo1,

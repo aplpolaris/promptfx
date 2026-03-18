@@ -32,7 +32,7 @@ class AiTaskTraceTest {
         val trace = AiTaskTrace()
         assertNotNull(trace.taskId)
         assertNull(trace.parentTaskId)
-        assertNull(trace.viewId)
+        assertNull(trace.callerId)
         assertNull(trace.env)
         assertNull(trace.input)
         assertNull(trace.output)
@@ -44,7 +44,7 @@ class AiTaskTraceTest {
         val trace = AiTaskTrace(
             taskId = "task-1",
             parentTaskId = "parent-0",
-            viewId = "my-view",
+            callerId = "my-view",
             env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             input = AiTaskInputInfo(prompt = "Tell me about {{topic}}", params = mapOf("topic" to "AI")),
             exec = AiExecInfo(),
@@ -52,7 +52,7 @@ class AiTaskTraceTest {
         )
         assertEquals("task-1", trace.taskId)
         assertEquals("parent-0", trace.parentTaskId)
-        assertEquals("my-view", trace.viewId)
+        assertEquals("my-view", trace.callerId)
         assertEquals("gpt-4o", trace.env?.modelId)
         assertEquals("Tell me about {{topic}}", trace.input?.prompt)
         assertEquals("AI", trace.input?.params?.get("topic"))
@@ -112,9 +112,11 @@ class AiTaskTraceTest {
     }
 
     @Test
-    fun testViewId() {
-        val trace = AiTaskTrace(viewId = "prompt-script-view")
-        assertEquals("prompt-script-view", trace.viewId)
+    fun testCallerId() {
+        val trace = AiTaskTrace(callerId = "prompt-script-view")
+        assertEquals("prompt-script-view", trace.callerId)
+        // AiTaskId convenience accessor
+        assertEquals("prompt-script-view", trace.id.callerId)
     }
 
     //endregion
@@ -130,11 +132,11 @@ class AiTaskTraceTest {
     }
 
     @Test
-    fun testCopyWithViewId() {
+    fun testCopyWithCallerId() {
         val trace = AiTaskTrace()
-        val withView = trace.copy(viewId = "my-view", execInfo = AiExecInfo(intermediateResult = false))
-        assertEquals("my-view", withView.viewId)
-        assertEquals(false, withView.exec.intermediateResult)
+        val withCaller = trace.copy(callerId = "my-view", execInfo = AiExecInfo(intermediateResult = false))
+        assertEquals("my-view", withCaller.callerId)
+        assertEquals(false, withCaller.exec.intermediateResult)
     }
 
     //endregion

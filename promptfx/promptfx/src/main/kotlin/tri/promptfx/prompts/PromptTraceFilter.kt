@@ -88,7 +88,7 @@ class PromptTraceFilter : Component() {
     private val AiTaskTrace.modelId
         get() = model?.modelId ?: UNKNOWN
     private val AiTaskTrace.traceViewId
-        get() = viewId ?: UNKNOWN
+        get() = callerId ?: UNKNOWN
     private val AiTaskTrace.statusId
         get() = if (exec.error != null) ERROR_STATUS else if (output == null || firstValue == null) MISSING_VALUE_STATUS else SUCCESS_STATUS
     private val AiTaskTrace.typeId

@@ -35,16 +35,19 @@ import java.util.UUID.randomUUID
  *
  * Compatible with OTel/LangFuse trace concepts.
  * Merges the functionality of the former [AiPromptTraceSupport] and [AiPromptTrace].
+ *
+ * Task identity is captured by [taskId], [parentTaskId], and [callerId], which are
+ * also grouped together as [id] (an [AiTaskId]).
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 open class AiTaskTrace(
-    /** Unique identifier for this trace (formerly [uuid]). */
+    /** Unique identifier for this trace. */
     var taskId: String = randomUUID().toString(),
     /** Parent task identifier, enabling reconstruction of call graphs. */
     var parentTaskId: String? = null,
-    /** Identifier of the view or system component that initiated this task. */
-    var viewId: String? = null,
-    /** Model and environment configuration. Replaces the former bare [AiModelInfo] field. */
+    /** Identifier of the caller or system component that initiated this task (replaces [viewId]). */
+    var callerId: String? = null,
+    /** Model and environment configuration. */
     var env: AiEnvInfo? = null,
     /** Task input information. Replaces the former prompt/params as [AiTaskInputInfo]. */
     var input: AiTaskInputInfo? = null,
@@ -103,6 +106,28 @@ open class AiTaskTrace(
         get() = env?.model
         set(value) { env = value?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) } }
 
+    /**
+     * Backward-compatible alias for [callerId], formerly the `viewId` field identifying which
+     * view or component initiated this task.
+     */
+    @get:JsonIgnore
+    @Deprecated("Use callerId", ReplaceWith("callerId"))
+    var viewId: String?
+        get() = callerId
+        set(value) { callerId = value }
+
+    // endregion
+
+    // region TASK IDENTITY
+
+    /**
+     * Returns the task identity as an [AiTaskId] grouping [taskId], [parentTaskId], and [callerId].
+     * This is a convenience accessor; the fields are stored directly on the trace.
+     */
+    @get:JsonIgnore
+    val id: AiTaskId
+        get() = AiTaskId(taskId, parentTaskId, callerId)
+
     // endregion
 
     // region COMPUTED PROPERTIES
@@ -130,21 +155,21 @@ open class AiTaskTrace(
      * Creates a copy of this trace with optionally updated fields.
      *
      * The [promptInfo] and [modelInfo] parameters are provided for backward compatibility.
-     * [modelInfo] is wrapped in an [AiEnvInfo] that inherits any existing [AiEnvInfo.system]
-     * and [AiEnvInfo.config] from the current [env].
-     * New code should use [envInfo] directly.
+     * The [viewId] parameter is also provided for backward compatibility and is treated as [callerId].
+     * New code should use [callerId] directly.
      */
     open fun copy(
         promptInfo: PromptInfo? = this.prompt,
         modelInfo: AiModelInfo? = this.model,
         execInfo: AiExecInfo = this.exec,
         outputInfo: AiOutputInfo? = this.output,
-        viewId: String? = this.viewId,
-        parentTaskId: String? = this.parentTaskId
+        callerId: String? = this.callerId,
+        parentTaskId: String? = this.parentTaskId,
+        viewId: String? = null
     ): AiTaskTrace = AiTaskTrace(
         taskId = taskId,
         parentTaskId = parentTaskId,
-        viewId = viewId,
+        callerId = viewId ?: callerId,
         env = modelInfo?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) },
         input = promptInfo?.let { AiTaskInputInfo.of(it) },
         exec = execInfo,
@@ -157,7 +182,7 @@ open class AiTaskTrace(
     // endregion
 
     override fun toString() =
-        "AiTaskTrace(taskId=$taskId, env=$env, input=$input, exec=$exec, output=$output)"
+        "AiTaskTrace(taskId=$taskId, callerId=$callerId, env=$env, input=$input, exec=$exec, output=$output)"
 
     // region COMPANION FACTORY METHODS
 

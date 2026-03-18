@@ -43,8 +43,13 @@ class AiImageTrace(
         modelInfo: AiModelInfo?,
         execInfo: AiExecInfo,
         outputInfo: AiOutputInfo?,
-        viewId: String?,
-        parentTaskId: String?
-    ) = AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo)
+        callerId: String?,
+        parentTaskId: String?,
+        viewId: String?
+    ) = AiImageTrace(promptInfo, modelInfo, execInfo, outputInfo).also {
+        it.taskId = taskId
+        it.parentTaskId = parentTaskId
+        it.callerId = viewId ?: callerId
+    }
 
 }
