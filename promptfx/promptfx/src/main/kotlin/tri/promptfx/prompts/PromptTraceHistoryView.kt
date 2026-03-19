@@ -22,8 +22,7 @@ package tri.promptfx.prompts
 import javafx.beans.property.SimpleBooleanProperty
 import tornadofx.*
 import tri.ai.pips.AiWorkflowResult
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.prompt.PromptTraceCardList
@@ -86,17 +85,17 @@ class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and expo
                     managedWhen(isShowDetailedOutput)
                 }
                 promptListUi.selectedPrompt.onChange {
-                    setTrace(it ?: AiPromptTrace())
+                    setTrace(it ?: AiTaskTrace())
                 }
                 this@output.add(this)
             }
         }
     }
 
-    fun selectPromptTrace(prompt: AiPromptTraceSupport) {
+    fun selectPromptTrace(prompt: AiTaskTrace) {
         // TODO - objects are edited when they reach history, this could be done better
         val foundPrompt = promptListUi.traces.firstOrNull {
-            it.prompt == prompt.prompt && it.model == prompt.model && it.output == prompt.output
+            it.input == prompt.input && it.env == prompt.env && it.output == prompt.output
         }
         promptListUi.selectTrace(foundPrompt ?: prompt)
     }
