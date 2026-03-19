@@ -241,7 +241,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     /** Generate CSV output (first input object only. */
     private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiTaskTrace>): String {
         val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
-        val csv = results.joinToString("\n") { "${it.input?.params?.get(PromptTemplate.INPUT)},${it.firstValue}" }
+        val csv = results.joinToString("\n") { "${it.input?.params?.get(PromptTemplate.INPUT) ?: ""},${it.firstValue}" }
         return "$csvHeader\n$csv".trim()
     }
 
