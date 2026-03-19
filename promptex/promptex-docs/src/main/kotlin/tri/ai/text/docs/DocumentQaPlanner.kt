@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
+import tri.ai.core.tool.resource
 import tri.ai.embedding.*
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.progressUpdate
@@ -41,11 +42,15 @@ import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
 
-/** Runs the document QA information retrieval, query, and summarization process. */
-class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatHistory: List<TextChatMessage>, val historySize: Int) {
+/**
+ * Runs the document QA information retrieval, query, and summarization process.
+ * Required context resources: [RESOURCE_EMBEDDING_INDEX], [RESOURCE_TEXT_CHAT].
+ */
+class DocumentQaPlanner(val chatHistory: List<TextChatMessage>, val historySize: Int) {
 
     /**
      * Asynchronous tasks to execute for answering the given question.
+     * The [ExecContext][tri.ai.core.tool.ExecContext] must have [RESOURCE_EMBEDDING_INDEX] and [RESOURCE_TEXT_CHAT] populated before execution.
      * @param question question to answer
      * @param prompt prompt to use for answering the question
      * @param chunksToRetrieve number of chunks to retrieve
@@ -69,6 +74,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         snippetCallback: (List<EmbeddingMatch>) -> Unit
     ) = AiTaskBuilder.task("load-embeddings-file-and-calculate") { context ->
         // trigger loading of embeddings file (with progress), the result is ignored
+        val index = context.resource<EmbeddingIndex>(RESOURCE_EMBEDDING_INDEX)
+            ?: error("Missing context resource: $RESOURCE_EMBEDDING_INDEX")
         val progressScope = CoroutineScope(currentCoroutineContext() + Job())
         index.onProgress = { msg, pct -> progressScope.launch { context.monitor.progressUpdate(msg, pct) } }
         try {
@@ -79,6 +86,7 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         }
     }.task<List<EmbeddingMatch>>("find-relevant-sections") { _, context ->
         // retrieve the real matches for this question, then notify via the callback
+        val index = context.resource<EmbeddingIndex>(RESOURCE_EMBEDDING_INDEX)!!
         val matches = index.findMostSimilar(question, chunksToRetrieve)
         snippetCallback(matches)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
@@ -88,6 +96,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         ))
         matches
     }.task<QuestionAnswerResult>("question-answer") { snippets, context ->
+        val index = context.resource<EmbeddingIndex>(RESOURCE_EMBEDDING_INDEX)!!
+        val chat = context.resource<TextChat>(RESOURCE_TEXT_CHAT)!!
         val queryChunks = snippets.filter { it.chunkSize >= minChunkSize }.take(contextChunks)
         val ctx = contextStrategy.constructContext(queryChunks)
         val query = prompt.template().fillInstruct(input = ctx, instruct = question)
@@ -130,6 +140,13 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val ft = result.trace.withFormattedOutputs(result.splitOutputs().map { it.formatResult() })
         context.logTrace("process-result", ft)
         ft
+    }
+
+    companion object {
+        /** Context resource key for the [EmbeddingIndex] used to retrieve relevant document sections. */
+        const val RESOURCE_EMBEDDING_INDEX = "embedding-index"
+        /** Context resource key for the [TextChat] used to answer the question. */
+        const val RESOURCE_TEXT_CHAT = "text-chat"
     }
 
 }

@@ -22,6 +22,7 @@ package tri.promptfx.docs
 import javafx.application.Platform
 import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
+import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.pips.AiWorkflowExecutor
 import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.PrintMonitor
@@ -79,6 +80,8 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
 
     override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int, context: ExecContext): AiWorkflowResult {
         view.question.set(input)
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, view.planner.embeddingIndex.value)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, view.controller.chatEngine.value.asTextChat())
         return AiWorkflowExecutor.execute(view.plan().plan, context)
     }
 
