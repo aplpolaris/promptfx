@@ -36,7 +36,7 @@ class PromptTraceHistoryPlugin : NavigableWorkspaceViewImpl<PromptTraceHistoryVi
 class PromptTraceHistoryView : AiTaskView("Prompt Trace History", "View and export history of prompt executions.") {
 
     private val promptListUi = find<PromptTraceCardList>(
-        "prompts" to controller.traceHistory.prompts,
+        "traces" to controller.traceHistory.prompts,
         "isShowFilter" to true,
         "isRemovable" to true,
         "toolbarLabel" to "Prompt Traces:"
