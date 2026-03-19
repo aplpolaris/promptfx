@@ -135,7 +135,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         outputPane.clear()
         output {
             splitpane(Orientation.VERTICAL) {
-                add(find<PromptTraceCardList>("prompts" to promptTraces))
+                add(find<PromptTraceCardList>("traces" to promptTraces))
                 vbox {
                     toolbar {
                         text("Aggregated Result")
