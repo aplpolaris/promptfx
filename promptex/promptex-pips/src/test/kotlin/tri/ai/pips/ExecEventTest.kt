@@ -25,16 +25,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 class ExecEventTest {
 
     /** Verify [ExecEvent] hierarchy covers expected subtypes. */
     @Test
     fun testExecEventHierarchy() {
-        val task = object : AiTask<Any?, AiPromptTrace>("test-task") {
+        val task = object : AiTask<Any?, AiTaskTrace>("test-task") {
             override suspend fun execute(input: Any?, context: ExecContext) =
-                AiPromptTrace(outputInfo = AiOutputInfo.text("result"))
+                AiTaskTrace(output = AiOutputInfo.text("result"))
         }
 
         val events: List<ExecEvent> = listOf(
@@ -77,9 +77,9 @@ class ExecEventTest {
     /** Verify [IgnoreMonitor] silently discards all events. */
     @Test
     fun testIgnoreMonitor() = runTest {
-        val task = object : AiTask<Any?, AiPromptTrace>("ignore-test") {
+        val task = object : AiTask<Any?, AiTaskTrace>("ignore-test") {
             override suspend fun execute(input: Any?, context: ExecContext) =
-                AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
+                AiTaskTrace(output = AiOutputInfo.text("done"))
         }
         // Should not throw
         IgnoreMonitor.emit(ExecEvent.TaskStarted(task))
@@ -95,9 +95,9 @@ class ExecEventTest {
             override suspend fun emit(value: ExecEvent) { collected.add(value) }
         }
 
-        val task = object : AiTask<Any?, AiPromptTrace>("ext-test") {
+        val task = object : AiTask<Any?, AiTaskTrace>("ext-test") {
             override suspend fun execute(input: Any?, context: ExecContext) =
-                AiPromptTrace(outputInfo = AiOutputInfo.text("done"))
+                AiTaskTrace(output = AiOutputInfo.text("done"))
         }
 
         with(collector) {
@@ -131,7 +131,7 @@ class ExecEventTest {
         val tasks = listOf(
             object : AiTask<Any?, String>("task-a") {
                 override suspend fun execute(input: Any?, context: ExecContext): String {
-                    context.logTrace(id, AiPromptTrace(outputInfo = AiOutputInfo.text("a")))
+                    context.logTrace(id, AiTaskTrace(output = AiOutputInfo.text("a")))
                     return "a"
                 }
             }

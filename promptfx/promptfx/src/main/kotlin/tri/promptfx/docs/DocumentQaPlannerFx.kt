@@ -33,9 +33,10 @@ import tri.ai.embedding.NoOpEmbeddingIndex
 import tri.ai.pips.AiTask
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.PromptDef
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
-import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.withFormattedOutputs
 import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.promptfx.AiChatEngine
 import tri.ai.text.docs.QuestionAnswerResult
@@ -82,7 +83,7 @@ class DocumentQaPlannerFx {
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
-    ): AiTaskBuilder<FormattedPromptTraceResult> {
+    ): AiTaskBuilder<AiTaskTrace> {
         val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!.asTextChat(), chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
@@ -97,12 +98,12 @@ class DocumentQaPlannerFx {
         )
         @Suppress("UNCHECKED_CAST")
         val questionAnswerBuilder = AiTaskBuilder(p.plan.dropLast(2), p.plan.dropLast(1).last() as AiTask<*, QuestionAnswerResult>)
-        return questionAnswerBuilder.task<FormattedPromptTraceResult>("process-result") { result, context ->
+        return questionAnswerBuilder.task<AiTaskTrace>("process-result") { result, context ->
             info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
             lastResult = result
             chatHistory.add(TextChatMessage(MChatRole.User, question))
             chatHistory.add(TextChatMessage(MChatRole.Assistant, result.trace.firstValue.textContent()))
-            val ft = FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
+            val ft = result.trace.withFormattedOutputs(result.splitOutputs().map { it.formatResult() })
             context.logTrace("process-result", ft)
             ft
         }

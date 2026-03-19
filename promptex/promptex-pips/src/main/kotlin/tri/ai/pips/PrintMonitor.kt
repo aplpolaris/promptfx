@@ -20,7 +20,8 @@
 package tri.ai.pips
 
 import kotlinx.coroutines.flow.FlowCollector
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiOutput
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.util.info
 import tri.util.warning
 
@@ -33,7 +34,7 @@ class PrintMonitor : FlowCollector<ExecEvent> {
             is ExecEvent.TaskUpdate -> printGray("Update: ${value.task.id} ${value.progress}")
             is ExecEvent.TaskCompleted -> {
                 val result = value.result
-                val v = (result as? AiPromptTrace)?.output?.outputs ?: result
+                val v = (result as? AiTaskTrace)?.output?.outputs ?: result
                 if (v is Iterable<*> && v.count() > 1) {
                     printGray("  result:")
                     v.forEach { printGray("\u001B[1m    - ${it.pretty()}") }
@@ -52,7 +53,11 @@ class PrintMonitor : FlowCollector<ExecEvent> {
     private fun Any?.pretty(): String = when (this) {
         null -> "null"
         is Unit -> "✓"
-        is AiPromptTrace -> output?.outputs?.let { if (it.size == 1) it[0].pretty() else it.joinToString(", ") { it.pretty() } } ?: "null"
+        is AiTaskTrace -> output?.outputs?.let { if (it.size == 1) it[0].pretty() else it.joinToString(", ") { it.pretty() } } ?: "null"
+        is AiOutput.Text -> text
+        is AiOutput.ChatMessage -> message.content ?: "(no message content)"
+        is AiOutput.MultimodalMessage -> textContent(ifNone = "(multimodal output)")
+        is AiOutput.Other -> runCatching { other.toString() }.getOrElse { "(${other::class.simpleName})" }
         else -> toString()
     }
 

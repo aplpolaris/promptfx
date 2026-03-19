@@ -28,6 +28,7 @@ import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.PromptTemplate.Companion.defaultInputParams
 import tri.ai.prompt.PromptTemplate.Companion.defaultInstructParams
 import tri.ai.prompt.template
+import tri.ai.prompt.trace.AiTaskInputInfo
 import tri.ai.prompt.trace.PromptInfo
 import tri.util.warning
 
@@ -77,7 +78,7 @@ class CompletionBuilder {
             stop = stop,
             numResponses = numResponses,
             requestJson = requestJson ?: (if (responseFormat == MResponseFormat.JSON) true else null)
-        ).copy(promptInfo = PromptInfo(template!!.template, params.toMap()))
+        ).copy(input = AiTaskInputInfo.of(PromptInfo(template!!.template, params.toMap())))
 
     /** Executes a [MultimodalChat] task with the provided parameters. */
     suspend fun execute(chat: MultimodalChat, messages: List<MultimodalChatMessage>? = null) =
@@ -90,7 +91,7 @@ class CompletionBuilder {
                 tokens = tokens,
                 variation = variation
             )
-        ).copy(promptInfo = PromptInfo(messages?.let { it.first().content!!.first().text } ?: template!!.template, params.toMap()))
+        ).copy(input = AiTaskInputInfo.of(PromptInfo(messages?.let { it.first().content!!.first().text } ?: template!!.template, params.toMap())))
 
     /** Executes a [TextCompletion] task with the provided parameters. */
     suspend fun execute(completion: TextCompletion) =
@@ -100,7 +101,7 @@ class CompletionBuilder {
             tokens = tokens,
             stop = stop,
             numResponses = numResponses,
-        ).copy(promptInfo = PromptInfo(template!!.template, params.toMap()))
+        ).copy(input = AiTaskInputInfo.of(PromptInfo(template!!.template, params.toMap())))
 
     /** Validates the completion object before execution. */
     private fun TextCompletion.validate(): TextCompletion {

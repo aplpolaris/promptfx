@@ -19,16 +19,15 @@
  */
 package tri.ai.pips
 
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Result of a workflow execution. */
-class AiWorkflowResult(val finalResult: AiPromptTraceSupport, val interimResults: Map<String, AiPromptTraceSupport>) {
+class AiWorkflowResult(val finalResult: AiTaskTrace, val interimResults: Map<String, AiTaskTrace>) {
 
     companion object {
         /** Return a result object indicating an error was thrown during execution. */
         fun error(message: String?, error: Throwable?) : AiWorkflowResult {
-            val trace = AiPromptTrace.error(null, message, error)
+            val trace = AiTaskTrace.error(null, message, error)
             return AiWorkflowResult(trace, mapOf("result" to trace))
         }
 
@@ -41,4 +40,4 @@ class AiWorkflowResult(val finalResult: AiPromptTraceSupport, val interimResults
 }
 
 /** Wraps this as a workflow result. */
-fun AiPromptTraceSupport.asWorkflowResult() = AiWorkflowResult(this, mapOf("result" to this))
+fun AiTaskTrace.asWorkflowResult() = AiWorkflowResult(this, mapOf("result" to this))

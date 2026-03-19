@@ -35,7 +35,7 @@ import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.JsonListMergeStrategy
 import tri.ai.prompt.trace.mergeJsonLists
 import tri.promptfx.AiPlanTaskView
@@ -205,7 +205,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         attempts: Int,
         strategy: JsonListMergeStrategy,
         minConsensus: Double
-    ): AiPromptTrace {
+    ): AiTaskTrace {
         builder.requestJson(true)
         val startTime = System.currentTimeMillis()
         val traces = (1..attempts).map { builder.execute(engine) }
@@ -223,7 +223,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         val successful = traces.filter { it.exec.succeeded() }
         if (successful.isEmpty()) {
             val last = traces.last()
-            return AiPromptTrace(last.prompt, last.model, baseExecInfo.copy(error = last.exec.error, throwable = last.exec.throwable))
+            return AiTaskTrace(env = last.env, input = last.input, exec = baseExecInfo.copy(error = last.exec.error, throwable = last.exec.throwable))
         }
 
         val parsedResults = successful.mapNotNull { trace ->
@@ -241,8 +241,8 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         }
         if (parsedResults.isEmpty()) {
             val last = successful.last()
-            return AiPromptTrace(last.prompt, last.model,
-                baseExecInfo.copy(error = "No valid list result from ${successful.size} of $attempts attempt(s)"))
+            return AiTaskTrace(env = last.env, input = last.input,
+                exec = baseExecInfo.copy(error = "No valid list result from ${successful.size} of $attempts attempt(s)"))
         }
 
         // Merge: metadata from first result; items_in_input with strategy; new_items union filtered to merged items
@@ -262,8 +262,8 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
             new_items = mergedNewItems
         )
         val last = successful.last()
-        return AiPromptTrace(last.prompt, last.model, baseExecInfo,
-            AiOutputInfo.text(JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(merged))
+        return AiTaskTrace(env = last.env, input = last.input, exec = baseExecInfo,
+            output = AiOutputInfo.text(JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(merged))
         )
     }
 

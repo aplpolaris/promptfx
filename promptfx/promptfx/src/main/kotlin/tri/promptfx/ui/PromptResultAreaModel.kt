@@ -24,8 +24,8 @@ import javafx.stage.Window
 import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.prompt.trace.AiPromptTraceSupport
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.formattedOutputs
 import tri.ai.text.docs.toHtml
 import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
@@ -137,7 +137,7 @@ class PromptResultAreaModel {
                     ?: "(no result)"
             } ?: listOf("(no result)")
             this.results.setAll(results)
-            this.resultsFormatted.setAll((trace.value as? FormattedPromptTraceResult)?.formattedOutputs ?: listOf())
+            this.resultsFormatted.setAll(trace.value?.formattedOutputs ?: listOf())
             resultIndex.set(0)
         }
     }

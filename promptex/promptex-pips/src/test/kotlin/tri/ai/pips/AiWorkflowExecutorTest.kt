@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 class AiWorkflowExecutorTest {
 
@@ -70,7 +70,7 @@ class AiWorkflowExecutorTest {
 
     class GoTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, String>(id, null, deps) {
         override suspend fun execute(input: Any?, context: ExecContext): String {
-            val trace = AiPromptTrace(outputInfo = AiOutputInfo.text("go"))
+            val trace = AiTaskTrace(output = AiOutputInfo.text("go"))
             context.logTrace(id, trace)
             return "go"
         }
@@ -78,7 +78,7 @@ class AiWorkflowExecutorTest {
 
     class FailTask(id: String, deps: Set<String> = setOf()): AiTask<Any?, String?>(id, null, deps) {
         override suspend fun execute(input: Any?, context: ExecContext): String? {
-            context.logTrace(id, AiPromptTrace.error(null, "fail", Exception("fail")))
+            context.logTrace(id, AiTaskTrace.error(null, "fail", Exception("fail")))
             return null
         }
     }

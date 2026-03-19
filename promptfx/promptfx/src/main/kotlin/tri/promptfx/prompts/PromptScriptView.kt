@@ -75,7 +75,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
     private val joinerPrompt = PromptSelectionModel("$TEXT_JOINER_PREFIX/basic")
 
     // result list
-    private val promptTraces = observableListOf<AiPromptTraceSupport>()
+    private val promptTraces = observableListOf<AiTaskTrace>()
 
     // result options
     private val showUniqueResults = SimpleBooleanProperty(true)
@@ -165,7 +165,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         // TODO - need to include the prompt trace as part of the output
         return tasks.map {
             it.monitorTrace { runLater { promptTraces.add(it) } }
-        }.aggregate().task<AiPromptTrace>("process-results") { _, context ->
+        }.aggregate().task<AiTaskTrace>("process-results") { _, context ->
             // each batch task logs its trace via context.logTrace(id, ...) in AiPromptRunConfig.task()
             val allTraces = tasks.mapNotNull { context.trace(it.id) }
             val result = postProcess(allTraces, docInputs)
@@ -186,7 +186,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
         runs = inputs.size
     }
 
-    private suspend fun postProcess(results: List<AiPromptTraceSupport>, inputs: List<ChunksWithHeader>): AiPromptTrace {
+    private suspend fun postProcess(results: List<AiTaskTrace>, inputs: List<ChunksWithHeader>): AiTaskTrace {
         // TODO - for now assuming each trace has a single result
 
         val resultSets = mutableMapOf<String, String>()
@@ -208,7 +208,7 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
             val key = "CSV Output"
             resultSets[key] = generateCsvOutput(inputs, results)
         }
-        val promptInfo: PromptInfo
+        val inputInfo: AiTaskInputInfo
         if (summarizeResults.value) {
             val key = "LLM Summarized Results"
             val joined = joinerPrompt.fill("matches" to
@@ -219,9 +219,9 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 .text(summarizer)
                 .execute(chatEngine)
             resultSets[key] = summarizerResult.firstValue.textContent()
-            promptInfo = PromptInfo(summaryPrompt.text.value, mapOf(PromptTemplate.INPUT to joined))
+            inputInfo = AiTaskInputInfo(prompt = summaryPrompt.text.value, params = mapOf(PromptTemplate.INPUT to joined))
         } else {
-            promptInfo = PromptInfo("")
+            inputInfo = AiTaskInputInfo()
         }
         val output = if (resultSets.size <= 1) {
             resultSets.values.firstOrNull() ?: ""
@@ -230,18 +230,18 @@ class PromptScriptView : AiPlanTaskView("Prompt Scripting",
                 "${it.key}\n" + "-".repeat(it.key.length) + "\n${it.value}"
             }
         }
-        return AiPromptTrace(
-            promptInfo,
-            AiModelInfo(chatEngine.modelId, modelParams = common.toModelParams()),
-            AiExecInfo(),
-            AiOutputInfo.text(output)
+        return AiTaskTrace(
+            input = inputInfo,
+            env = AiEnvInfo.of(AiModelInfo(chatEngine.modelId, modelParams = common.toModelParams())),
+            exec = AiExecInfo(),
+            output = AiOutputInfo.text(output)
         )
     }
 
     /** Generate CSV output (first input object only. */
-    private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiPromptTraceSupport>): String {
+    private fun generateCsvOutput(inputs: List<ChunksWithHeader>, results: List<AiTaskTrace>): String {
         val csvHeader = inputs.first().headerRow?.let { "$it,output" } ?: "input,output"
-        val csv = results.joinToString("\n") { "${it.prompt!!.params[PromptTemplate.INPUT]},${it.firstValue}" }
+        val csv = results.joinToString("\n") { "${it.input?.params?.get(PromptTemplate.INPUT) ?: ""},${it.firstValue}" }
         return "$csvHeader\n$csv".trim()
     }
 

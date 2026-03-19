@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptfx
+ * tri.promptfx:promptkt
  * %%
  * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
@@ -20,25 +20,9 @@
 package tri.ai.prompt.trace
 
 /**
- * Details of an executed image prompt, including prompt configuration, model configuration, execution metadata, and output.
- * Not designed for serialization (yet).
+ * Splits this trace into individual traces, one per image output.
+ * Each returned trace contains a single output from the original list.
+ * Returns an empty list if this trace has no output.
  */
-class AiImageTrace(
-    promptInfo: PromptInfo?,
-    modelInfo: AiModelInfo?,
-    execInfo: AiExecInfo = AiExecInfo(),
-    outputInfo: AiOutputInfo? = AiOutputInfo(listOf())
-) : AiPromptTraceSupport(promptInfo, modelInfo, execInfo, outputInfo) {
-
-    override fun toString() = "AiImageTrace(uuid='$uuid', promptInfo=$prompt, modelInfo=$model, execInfo=$exec, outputInfo=$output)"
-
-    /** Splits this image trace into individual images. */
-    fun splitImages(): List<AiImageTrace> =
-        output!!.outputs.map {
-            AiImageTrace(prompt, model, exec, AiOutputInfo(listOf(it)))
-        }
-
-    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
-        AiImageTrace(promptInfo, modelInfo, execInfo, output)
-
-}
+fun AiTaskTrace.splitImages(): List<AiTaskTrace> =
+    output?.outputs?.map { copy(output = AiOutputInfo(listOf(it))) } ?: emptyList()

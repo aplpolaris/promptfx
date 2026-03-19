@@ -36,9 +36,9 @@ import tri.promptfx.PromptFxWorkspace
 import tri.promptfx.buildsendresultmenu
 import tri.promptfx.promptFxFileChooser
 import tri.promptfx.ui.prompt.PromptTraceDetailsUi
-import tri.promptfx.ui.prompt.exportPromptTraceDatabase
-import tri.promptfx.ui.prompt.exportPromptTraceList
-import tri.promptfx.ui.prompt.exportPromptTraceListCsv
+import tri.promptfx.ui.prompt.exportTraceDatabase
+import tri.promptfx.ui.prompt.exportTraceList
+import tri.promptfx.ui.prompt.exportTraceCsv
 import tri.util.ui.PlantUmlUtils.plantUmlUrlText
 import tri.util.ui.graphic
 import tri.util.ui.showImageDialog
@@ -177,17 +177,17 @@ fun EventTarget.addtoolbar(model: PromptResultAreaModel, component: UIComponent)
         menubutton("Export") {
             item("as CSV...") {
                 action {
-                    component.exportPromptTraceListCsv(model.traces.toList())
+                    component.exportTraceCsv(model.traces.toList())
                 }
             }
             item("as JSON/YAML List...") {
                 action {
-                    component.exportPromptTraceList(model.traces.toList())
+                    component.exportTraceList(model.traces.toList())
                 }
             }
             item("as JSON/YAML Database...") {
                 action {
-                    component.exportPromptTraceDatabase(model.traces.toList())
+                    component.exportTraceDatabase(model.traces.toList())
                 }
             }
         }

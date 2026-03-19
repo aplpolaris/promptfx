@@ -19,16 +19,20 @@
  */
 package tri.ai.text.docs
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import tri.ai.prompt.trace.*
+import tri.ai.prompt.trace.AiTaskTrace
 
-/** Result including the trace and formatted text. */
-class FormattedPromptTraceResult(trace: AiPromptTrace, @get:JsonIgnore val formattedOutputs: List<FormattedText>)
-    : AiPromptTraceSupport(trace.prompt, trace.model, trace.exec, trace.output) {
+private const val FORMATTED_OUTPUTS_KEY = "formattedOutputs"
 
-    override fun toString() = output?.outputs?.joinToString() ?: "null"
+/**
+ * Returns a copy of this trace annotated with a list of [FormattedText] outputs.
+ * The outputs are stored in [AiTaskTrace.annotations] and can be retrieved via [formattedOutputs].
+ */
+fun AiTaskTrace.withFormattedOutputs(outputs: List<FormattedText>): AiTaskTrace =
+    apply { annotations[FORMATTED_OUTPUTS_KEY] = outputs }
 
-    override fun copy(promptInfo: PromptInfo?, modelInfo: AiModelInfo?, execInfo: AiExecInfo) =
-        FormattedPromptTraceResult(AiPromptTrace(promptInfo, modelInfo, execInfo, output), formattedOutputs)
-
-}
+/**
+ * Returns the formatted text outputs stored on this trace via [withFormattedOutputs], or `null` if none are present.
+ */
+@Suppress("UNCHECKED_CAST")
+val AiTaskTrace.formattedOutputs: List<FormattedText>?
+    get() = annotations[FORMATTED_OUTPUTS_KEY] as? List<FormattedText>

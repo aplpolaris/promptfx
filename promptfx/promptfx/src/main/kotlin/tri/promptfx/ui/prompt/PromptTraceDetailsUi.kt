@@ -31,7 +31,7 @@ import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
 import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.*
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.LOCATE_IN_PROMPT_HISTORY
@@ -45,7 +45,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     // TODO - add a PromptDetailsUi dialog or view
 
-    var trace = SimpleObjectProperty<AiPromptTraceSupport>()
+    var trace = SimpleObjectProperty<AiTaskTrace>()
 
     val prompt = SimpleStringProperty("")
     val promptParams = SimpleObjectProperty<Map<String, Any>>(null)
@@ -60,12 +60,12 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     lateinit var playButton: Button
     private var player: MediaPlayer? = null
 
-    fun setTrace(trace: AiPromptTraceSupport?) {
+    fun setTrace(trace: AiTaskTrace?) {
         this.trace.set(trace)
-        prompt.value = trace?.prompt?.template
-        promptParams.value = trace?.prompt?.params
-        model.value = trace?.model?.modelId
-        modelParams.value = trace?.model?.modelParams
+        prompt.value = trace?.input?.prompt ?: ""
+        promptParams.value = trace?.input?.params
+        model.value = trace?.env?.modelId ?: ""
+        modelParams.value = trace?.env?.modelParams
         exec.value = trace?.exec
         val outputs = trace?.output?.outputs ?: listOf("No result")
         if (outputs.size == 1)

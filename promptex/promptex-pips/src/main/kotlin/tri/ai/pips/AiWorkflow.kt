@@ -20,7 +20,7 @@
 package tri.ai.pips
 
 import tri.ai.core.tool.ExecContext
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 /**
  * A workflow that encapsulates a list of tasks as a single composable [AiTask].
@@ -56,7 +56,7 @@ class AiWorkflow<in I, out O>(
             innerContext.put(id, input)
             // Add a synthetic successful trace so inner tasks declaring this workflow's id as a
             // dependency can be scheduled (AiWorkflowExecutor checks traces for dependency readiness).
-            innerContext.logTrace(id, AiPromptTrace())
+            innerContext.logTrace(id, AiTaskTrace())
         }
 
         val result = AiWorkflowExecutor.execute(tasks, innerContext)

@@ -81,9 +81,9 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val matches = index.findMostSimilar(question, chunksToRetrieve)
         snippetCallback(matches)
         val modelId = (index as? LocalFolderEmbeddingIndex)?.embeddingStrategy?.modelId
-        context.logTrace("find-relevant-sections", AiPromptTrace(
-            modelInfo = modelId?.let { AiModelInfo(it) },
-            outputInfo = AiOutputInfo.listSingleOutput(matches)
+        context.logTrace("find-relevant-sections", AiTaskTrace(
+            env = modelId?.let { AiEnvInfo.of(it) },
+            output = AiOutputInfo.listSingleOutput(matches)
         ))
         matches
     }.task<QuestionAnswerResult>("question-answer") { snippets, context ->
@@ -103,8 +103,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
                 it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
             }
         }
-        val model = response.model ?: AiModelInfo(chat.modelId)
-        model.modelParams = (response.model?.modelParams ?: mapOf()) + mapOf<String, Any>(
+        val model = response.env?.model ?: AiModelInfo(chat.modelId)
+        model.modelParams = (response.env?.modelParams ?: mapOf()) + mapOf<String, Any>(
             EMBEDDING_MODEL to embeddingModel.modelId,
             CHUNKER_ID to "PromptFx",
             CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
@@ -112,14 +112,14 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
         val result = QuestionAnswerResult(
             query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
             matches = snippets,
-            trace = response.mapOutput { AiOutput(text = it.textContent()) },
+            trace = response.mapOutput { AiOutput.Text(it.textContent()) },
             responseEmbeddings = responseEmbeddings
         )
-        context.logTrace("question-answer", response.mapOutput { AiOutput(other = result) })
+        context.logTrace("question-answer", response.mapOutput { AiOutput.Other(result) })
         result
-    }.task<FormattedPromptTraceResult>("process-result") { result, context ->
+    }.task<AiTaskTrace>("process-result") { result, context ->
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
-        val ft = FormattedPromptTraceResult(result.trace, result.splitOutputs().map { it.formatResult() })
+        val ft = result.trace.withFormattedOutputs(result.splitOutputs().map { it.formatResult() })
         context.logTrace("process-result", ft)
         ft
     }

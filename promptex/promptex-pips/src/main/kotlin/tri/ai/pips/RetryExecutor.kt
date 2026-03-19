@@ -20,8 +20,7 @@
 package tri.ai.pips
 
 import tri.ai.core.tool.ExecContext
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.util.info
 import java.time.Duration
 
@@ -54,20 +53,20 @@ class RetryExecutor(
             val existingTrace = context.trace(task.id)
             if (existingTrace != null) {
                 context.logTrace(task.id, existingTrace.copy(
-                    execInfo = existingTrace.exec.copy(
+                    exec = existingTrace.exec.copy(
                         responseTimeMillis = it.attemptTime,
                         responseTimeMillisTotal = it.totalTime,
                         attempts = it.attempts
                     )
                 ))
             } else {
-                check(output !is AiPromptTraceSupport) {
-                    "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
+                check(output !is AiTaskTrace) {
+                    "Task '${task.id}' returned AiTaskTrace directly. Use context.logTrace() instead of returning traces from execute()."
                 }
             }
             output
         }, onFailure = {
-            val errorTrace = AiPromptTrace.error(
+            val errorTrace = AiTaskTrace.error(
                 modelInfo = null,
                 message = it.error!!.message,
                 throwable = it.error,

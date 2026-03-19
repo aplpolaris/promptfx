@@ -22,8 +22,7 @@ package tri.ai.pips
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Executor for chaining together a collection of tasks to be accomplished by AI or APIs. */
 object AiWorkflowExecutor {
@@ -60,13 +59,13 @@ object AiWorkflowExecutor {
                     val input = if (task.dependencies.size == 1) context.get(task.dependencies.first()) else null
                     val output = executor.execute(task, input, context)
                     // Resolve trace: prefer context.getTrace (set by task or RetryExecutor), then synthesize
-                    val trace: AiPromptTraceSupport = context.trace(task.id)
+                    val trace: AiTaskTrace = context.trace(task.id)
                         ?: run {
-                            check(output !is AiPromptTraceSupport) {
-                                "Task '${task.id}' returned AiPromptTraceSupport directly. Use context.logTrace() instead of returning traces from execute()."
+                            check(output !is AiTaskTrace) {
+                                "Task '${task.id}' returned AiTaskTrace directly. Use context.logTrace() instead of returning traces from execute()."
                             }
-                            if (output != null) AiPromptTrace(outputInfo = toOutputInfo(output))
-                            else AiPromptTrace(outputInfo = null)
+                            if (output != null) AiTaskTrace(output = toOutputInfo(output))
+                            else AiTaskTrace()
                         }
                     // Always store the resolved trace in context so dependency checks can use it
                     context.logTrace(task.id, trace)
@@ -81,12 +80,12 @@ object AiWorkflowExecutor {
                 } catch (x: Exception) {
                     x.printStackTrace()
                     context.monitor.emitTaskFailed(task, x)
-                    context.logTrace(task.id, AiPromptTrace.error(null, x.message ?: "Unknown error", x))
+                    context.logTrace(task.id, AiTaskTrace.error(null, x.message ?: "Unknown error", x))
                 }
             }
         } while (tasksToDo.isNotEmpty())
 
-        val lastTaskResult = context.trace(tasks.last().id) ?: AiPromptTrace.error(null, "Inputs failed.")
+        val lastTaskResult = context.trace(tasks.last().id) ?: AiTaskTrace.error(null, "Inputs failed.")
         return AiWorkflowResult(lastTaskResult, context.traces.toMap())
     }
 
@@ -94,6 +93,6 @@ object AiWorkflowExecutor {
 
 /** Converts a plain task output value to [AiOutputInfo] for use in a synthetic trace. */
 private fun toOutputInfo(output: Any): AiOutputInfo = when (output) {
-    is List<*> -> AiOutputInfo.output(AiOutput(other = output))
+    is List<*> -> AiOutputInfo.output(AiOutput.Other(output))
     else -> AiOutputInfo.other(output)
 }

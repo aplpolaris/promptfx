@@ -23,8 +23,12 @@ package tri.ai.prompt.trace
  * In-memory database of prompt traces, allowing for reuse of prompt, model, exec, and output objects,
  * and storage of these in separate tables.
  *
+ * @deprecated Use [AiTaskTraceDatabase] for new code. This class is retained for legacy prompt database
+ * format compatibility (reading/writing the old prompt-based trace format).
+ *
  * TODO - this is not optimized for large databases, but should work well for up to a few thousand
  */
+@Deprecated("Use AiTaskTraceDatabase for new code; this class is for legacy format compatibility")
 class AiPromptTraceDatabase() {
 
     var traces = mutableListOf<AiPromptTraceId>()
@@ -34,7 +38,7 @@ class AiPromptTraceDatabase() {
     var execs = mutableSetOf<AiExecInfo>()
     var outputs = mutableSetOf<AiOutputInfo>()
 
-    constructor(traces: Iterable<AiPromptTraceSupport>) : this() {
+    constructor(traces: Iterable<AiTaskTrace>) : this() {
         addTraces(traces)
     }
 
@@ -42,27 +46,27 @@ class AiPromptTraceDatabase() {
     fun promptTraces() = traces.map { it.promptTrace() }
 
     /** Get the prompt trace by index. */
-    fun AiPromptTraceId.promptTrace() = AiPromptTrace(
-        prompts.elementAt(promptIndex),
-        models.elementAt(modelIndex),
-        execs.elementAt(execIndex),
-        outputs.elementAt(outputIndex)
+    fun AiPromptTraceId.promptTrace() = AiTaskTrace(
+        env = models.elementAt(modelIndex)?.let { AiEnvInfo.of(it) },
+        input = prompts.elementAt(promptIndex)?.let { AiTaskInputInfo.of(it) },
+        exec = execs.elementAt(execIndex),
+        output = outputs.elementAt(outputIndex)
     )
 
     /** Add all provided traces to the database. */
-    fun addTraces(result: Iterable<AiPromptTraceSupport>) {
+    fun addTraces(result: Iterable<AiTaskTrace>) {
         result.forEach { addTrace(it) }
     }
 
     /** Adds the trace to the database, updating object references as needed and returning the object added. */
-    fun addTrace(trace: AiPromptTraceSupport): AiPromptTraceId {
+    fun addTrace(trace: AiTaskTrace): AiPromptTraceId {
         val prompt = addOrGet(prompts, trace.prompt)
         val model = addOrGet(models, trace.model)
         val exec = addOrGet(execs, trace.exec)
         val output = addOrGet(outputs, trace.output)
 
         return AiPromptTraceId(
-            trace.uuid,
+            trace.taskId,
             prompts.indexOf(prompt),
             models.indexOf(model),
             execs.indexOf(exec),

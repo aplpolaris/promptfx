@@ -43,12 +43,13 @@ enum class JsonListMergeStrategy {
  *   rather than using the first array-valued field; ignored when the JSON root is an array
  */
 fun AiOutput.tryJsonStringList(jsonKey: String? = null): List<String>? {
-    // access fields directly to avoid the exception thrown by textContent() when no content exists
-    val raw = text
-        ?: message?.content
-        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
-        ?: other?.toString()
-        ?: return null
+    // use sealed type pattern matching - return null immediately for empty/null content
+    val raw: String = when (this) {
+        is AiOutput.Text -> text.takeIf { it.isNotEmpty() } ?: return null
+        is AiOutput.ChatMessage -> message.content ?: return null
+        is AiOutput.MultimodalMessage -> multimodalMessage.content?.firstNotNullOfOrNull { it.text } ?: return null
+        is AiOutput.Other -> other.toString()
+    }
     // strip markdown code fences if present
     val text = raw.trim().let {
         if (it.startsWith("```")) {
@@ -156,7 +157,7 @@ fun mergeJsonLists(
  * @param jsonKey if provided, extract the JSON object field with this name from each response
  *   rather than using the first array-valued field; useful when the response is a JSON object
  *   with multiple array fields (e.g. `"items_in_input"` vs `"known_items"`)
- * @return a merged [AiPromptTrace] whose single output contains the merged `List<String>`,
+ * @return a merged [AiTaskTrace] whose single output contains the merged `List<String>`,
  *   or an error trace if all attempts fail or no valid JSON lists are found
  */
 suspend fun CompletionBuilder.executeMultiAttemptJsonList(
@@ -165,7 +166,7 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     mergeStrategy: JsonListMergeStrategy = JsonListMergeStrategy.TOP_REPEATED,
     minAttemptFraction: Double = 0.5,
     jsonKey: String? = null
-): AiPromptTrace {
+): AiTaskTrace {
     // ensure JSON output is requested
     requestJson(true)
 
@@ -186,9 +187,10 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     val successful = traces.filter { it.exec.succeeded() }
     if (successful.isEmpty()) {
         val last = traces.last()
-        return AiPromptTrace(
-            last.prompt, last.model,
-            baseExecInfo.copy(error = last.exec.error, throwable = last.exec.throwable)
+        return AiTaskTrace(
+            env = last.env,
+            input = last.input,
+            exec = baseExecInfo.copy(error = last.exec.error, throwable = last.exec.throwable)
         )
     }
 
@@ -197,13 +199,14 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     }
     if (parsedLists.isEmpty()) {
         val last = successful.last()
-        return AiPromptTrace(
-            last.prompt, last.model,
-            baseExecInfo.copy(error = "No valid JSON list found in any of $attempts attempt(s)")
+        return AiTaskTrace(
+            env = last.env,
+            input = last.input,
+            exec = baseExecInfo.copy(error = "No valid JSON list found in any of $attempts attempt(s)")
         )
     }
 
     val merged = mergeJsonLists(parsedLists, mergeStrategy, minAttemptFraction)
     val last = successful.last()
-    return AiPromptTrace(last.prompt, last.model, baseExecInfo, AiOutputInfo.listSingleOutput(merged))
+    return AiTaskTrace(env = last.env, input = last.input, exec = baseExecInfo, output = AiOutputInfo.listSingleOutput(merged))
 }

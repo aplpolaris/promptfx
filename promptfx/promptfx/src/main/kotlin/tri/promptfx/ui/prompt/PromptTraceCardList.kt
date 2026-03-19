@@ -36,9 +36,7 @@ import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_MAX_CHUNK_SIZE
 import tri.ai.prompt.trace.AiModelInfo.Companion.EMBEDDING_MODEL
 import tri.ai.prompt.trace.AiModelInfo.Companion.MAX_TOKENS
 import tri.ai.prompt.trace.AiModelInfo.Companion.TEMPERATURE
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceDatabase
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.writeTraceDatabase
 import tri.ai.prompt.trace.writeTraces
 import tri.promptfx.PromptFxConfig.Companion.DIR_KEY_TRACE
@@ -58,28 +56,28 @@ import tri.util.ui.graphic
 import java.io.File
 import kotlin.text.isNotBlank
 
-/** UI for a list of [AiPromptTrace]s. */
+/** UI for a list of [AiTaskTrace]s. */
 class PromptTraceCardList: Fragment() {
 
     private val isRemovable: Boolean by param(false)
     private val isShowFilter: Boolean by param(false)
     private val toolbarLabel: String by param("Results:")
-    val prompts: ObservableList<AiPromptTraceSupport> by param()
+    val traces: ObservableList<AiTaskTrace> by param()
 
     private val controller: PromptFxController by inject()
-    private val isGlobalHistoryView = controller.promptHistory.prompts === prompts
-    private val promptFilter: PromptTraceFilter = find<PromptTraceFilter>()
-    private val filteredPrompts = observableListOf<AiPromptTraceSupport>()
-    private lateinit var promptSelectionModel: MultipleSelectionModel<AiPromptTraceSupport>
-    val selectedPrompt = SimpleObjectProperty<AiPromptTraceSupport>()
+    private val isGlobalHistoryView = controller.traceHistory.prompts === traces
+    private val traceFilter: PromptTraceFilter = find<PromptTraceFilter>()
+    private val filteredTraces = observableListOf<AiTaskTrace>()
+    private lateinit var traceSelectionModel: MultipleSelectionModel<AiTaskTrace>
+    val selectedPrompt = SimpleObjectProperty<AiTaskTrace>()
 
     init {
-        prompts.onChange {
-            promptFilter.updateFilterOptions(it.list)
+        traces.onChange {
+            traceFilter.updateFilterOptions(it.list)
             refilter()
         }
-        promptFilter.filter.onChange { refilter() }
-        promptFilter.updateFilterOptions(prompts)
+        traceFilter.filter.onChange { refilter() }
+        traceFilter.updateFilterOptions(traces)
         refilter()
     }
 
@@ -92,22 +90,22 @@ class PromptTraceCardList: Fragment() {
         if (isShowFilter) {
             toolbar {
                 label("Filter by:")
-                checklistmenu("view", promptFilter.viewFilters) { refilter() }
-                checklistmenu("model", promptFilter.modelFilters) { refilter() }
-                checklistmenu("status", promptFilter.statusFilters) { refilter() }
-                checklistmenu("type", promptFilter.typeFilters) { refilter() }
+                checklistmenu("view", traceFilter.viewFilters) { refilter() }
+                checklistmenu("model", traceFilter.modelFilters) { refilter() }
+                checklistmenu("status", traceFilter.statusFilters) { refilter() }
+                checklistmenu("type", traceFilter.typeFilters) { refilter() }
             }
         }
-        val list = listview(filteredPrompts) {
+        val list = listview(filteredTraces) {
             vgrow = Priority.ALWAYS
-            promptSelectionModel = selectionModel
+            traceSelectionModel = selectionModel
             selectedPrompt.bind(selectionModel.selectedItemProperty())
             cellFormat {
                 graphic = PromptTraceCard().apply { setTrace(it) }.root
             }
             // add context menu
             lazyContextmenu {
-                item("Prompt trace details...") {
+                item("Trace details...") {
                     enableWhen(selectionModel.selectedItemProperty().isNotNull)
                     action {
                         val selected = selectionModel.selectedItem
@@ -120,7 +118,7 @@ class PromptTraceCardList: Fragment() {
                 }
                 item(SEND_TO_PROMPT_TEMPLATE, graphic = FontAwesomeIcon.SEND.graphic) {
                     enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                        it?.prompt?.template?.isNotBlank() == true
+                        it?.input?.prompt?.isNotBlank() == true
                     })
                     action {
                         val selected = selectionModel.selectedItem
@@ -131,7 +129,7 @@ class PromptTraceCardList: Fragment() {
                 if (!isGlobalHistoryView) {
                     item(LOCATE_IN_PROMPT_HISTORY, graphic = FontAwesomeIcon.SEARCH.graphic) {
                         enableWhen(selectionModel.selectedItemProperty().booleanBinding {
-                            it?.prompt?.template?.isNotBlank() == true
+                            it?.input?.prompt?.isNotBlank() == true
                         })
                         action {
                             val selected = selectionModel.selectedItem
@@ -155,7 +153,7 @@ class PromptTraceCardList: Fragment() {
             }
             if (isRemovable) {
                 button("", FontAwesomeIcon.REMOVE.graphic) {
-                    tooltip("Remove selected prompt traces.")
+                    tooltip("Remove selected traces.")
                     enableWhen(list.selectionModel.selectedItemProperty().isNotNull)
                     action {
                         confirm(
@@ -164,37 +162,37 @@ class PromptTraceCardList: Fragment() {
                             owner = currentWindow
                         ) {
                             val selection = list.selectionModel.selectedItems.toList()
-                            prompts.removeAll(selection)
+                            traces.removeAll(selection)
                             list.selectionModel.clearSelection()
                         }
                     }
                 }
             }
             menubutton("", FontAwesomeIcon.DOWNLOAD.graphic) {
-                tooltip("Export prompt traces with details to a file.")
-                enableWhen(prompts.sizeProperty.greaterThan(0))
+                tooltip("Export traces with details to a file.")
+                enableWhen(traces.sizeProperty.greaterThan(0))
                 item("Export as JSON/YAML List...") {
                     action {
-                        exportPromptTraceList(filteredPrompts.toList())
+                        exportTraceList(filteredTraces.toList())
                     }
                 }
                 item("Export as JSON/YAML Database...") {
                     action {
-                        exportPromptTraceDatabase(filteredPrompts.toList())
+                        exportTraceDatabase(filteredTraces.toList())
                     }
                 }
                 item("Export as CSV...") {
                     action {
-                        exportPromptTraceListCsv(filteredPrompts.toList())
+                        exportTraceCsv(filteredTraces.toList())
                     }
                 }
             }
             if (isRemovable) {
                 button("", FontAwesomeIcon.TRASH.graphic) {
-                    enableWhen(prompts.sizeProperty.greaterThan(0))
+                    enableWhen(traces.sizeProperty.greaterThan(0))
                     action {
-                        confirm("Clear all prompt traces?", "Are you sure you want to clear all prompt traces?", owner = currentWindow) {
-                            prompts.clear()
+                        confirm("Clear all traces?", "Are you sure you want to clear all traces?", owner = currentWindow) {
+                            traces.clear()
                             list.selectionModel.clearSelection()
                         }
                     }
@@ -204,15 +202,15 @@ class PromptTraceCardList: Fragment() {
             // settings enabled for global history only
             if (isGlobalHistoryView) {
                 button("", FontAwesomeIcon.GEARS.graphic) {
-                    tooltip("Adjust prompt history settings.")
+                    tooltip("Adjust trace history settings.")
                     action {
-                        TextInputDialog(controller.promptHistory.maxHistorySize.value.toString()).apply {
+                        TextInputDialog(controller.traceHistory.maxHistorySize.value.toString()).apply {
                             initOwner(currentWindow)
-                            title = "Adjust Prompt History Settings"
-                            headerText = "Enter max # of prompt traces to keep in history."
+                            title = "Adjust Trace History Settings"
+                            headerText = "Enter max # of traces to keep in history."
                             contentText = "Max Entries:"
                             showAndWait().ifPresent {
-                                it.toIntOrNull()?.let { controller.promptHistory.maxHistorySize.set(it) }
+                                it.toIntOrNull()?.let { controller.traceHistory.maxHistorySize.set(it) }
                             }
                         }
                     }
@@ -223,21 +221,21 @@ class PromptTraceCardList: Fragment() {
 
     private fun refilter() {
         if (isShowFilter) {
-            val filter = promptFilter.filter.value
-            filteredPrompts.setAll(prompts.toList().filter(filter))
+            val filter = traceFilter.filter.value
+            filteredTraces.setAll(traces.toList().filter(filter))
         } else {
-            filteredPrompts.setAll(prompts.toList())
+            filteredTraces.setAll(traces.toList())
         }
     }
 
-    fun selectPromptTrace(prompt: AiPromptTraceSupport) {
-        promptSelectionModel.select(prompt)
+    fun selectTrace(trace: AiTaskTrace) {
+        traceSelectionModel.select(trace)
     }
 
 }
 
 /** Exports the given list of prompt traces to a JSON file. */
-fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport>) {
+fun UIComponent.exportTraceList(traces: List<AiTaskTrace>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as JSON/YAML List",
@@ -248,8 +246,8 @@ fun UIComponent.exportPromptTraceList(traces: List<AiPromptTraceSupport>) {
     }
 }
 
-/** Exports the given list of prompt traces as a [AiPromptTraceDatabase] to a user-selected file. */
-fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport>) {
+/** Exports the given list of prompt traces as a [tri.ai.prompt.trace.AiTaskTraceDatabase] to a user-selected file. */
+fun UIComponent.exportTraceDatabase(traces: List<AiTaskTrace>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as JSON/YAML Database",
@@ -261,7 +259,7 @@ fun UIComponent.exportPromptTraceDatabase(traces: List<AiPromptTraceSupport>) {
 }
 
 /** Exports the given list of prompt traces as a CSV file. */
-fun UIComponent.exportPromptTraceListCsv(traces: List<AiPromptTraceSupport>) {
+fun UIComponent.exportTraceCsv(traces: List<AiTaskTrace>) {
     promptFxFileChooser(
         dirKey = DIR_KEY_TRACE,
         title = "Export Prompt Traces as CSV",
@@ -320,8 +318,8 @@ data class DocQaCsvRow(
     val error: String?
 )
 
-/** Writes the given [AiPromptTraceDatabase] to the specified CSV file. */
-fun writeTraceListCsv(traces: List<AiPromptTraceSupport>, file: File) {
+/** Writes the given [tri.ai.prompt.trace.AiTaskTraceDatabase] to the specified CSV file. */
+fun writeTraceListCsv(traces: List<AiTaskTrace>, file: File) {
     val mapper = CsvMapper().apply {
         registerKotlinModule()
     }
@@ -329,12 +327,12 @@ fun writeTraceListCsv(traces: List<AiPromptTraceSupport>, file: File) {
     val rows = traces.flatMap { t ->
         t.output?.outputs?.mapIndexed { i, output ->
             DocQaCsvRow("PromptFx",
-                t.model?.modelParams?.get(EMBEDDING_MODEL),
-                t.model?.modelParams?.get(CHUNKER_MAX_CHUNK_SIZE),
-                t.model?.modelId ?: "unknown",
-                t.model?.modelParams?.get(TEMPERATURE),
-                t.model?.modelParams?.get(MAX_TOKENS),
-                t.prompt?.params?.get(PromptTemplate.INSTRUCT),
+                t.env?.modelParams?.get(EMBEDDING_MODEL),
+                t.env?.modelParams?.get(CHUNKER_MAX_CHUNK_SIZE),
+                t.env?.modelId ?: "unknown",
+                t.env?.modelParams?.get(TEMPERATURE),
+                t.env?.modelParams?.get(MAX_TOKENS),
+                t.input?.params?.get(PromptTemplate.INSTRUCT),
                 output.toString(),
                 i+1,
                 null
@@ -343,10 +341,10 @@ fun writeTraceListCsv(traces: List<AiPromptTraceSupport>, file: File) {
         listOf(DocQaCsvRow("PromptFx",
             "unknown",
             "0",
-            t.model?.modelId ?: "unknown",
-            t.model?.modelParams?.get(TEMPERATURE),
-            t.model?.modelParams?.get(MAX_TOKENS),
-            t.prompt?.params?.get(PromptTemplate.INPUT),
+            t.env?.modelId ?: "unknown",
+            t.env?.modelParams?.get(TEMPERATURE),
+            t.env?.modelParams?.get(MAX_TOKENS),
+            t.input?.params?.get(PromptTemplate.INPUT),
             "",
             0,
             "No output"

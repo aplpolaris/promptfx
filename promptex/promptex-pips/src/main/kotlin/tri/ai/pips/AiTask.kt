@@ -21,7 +21,7 @@ package tri.ai.pips
 
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiOutput
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /**
  * Task that can be executed by AI or API, typed by its input type [I] and output type [O].
@@ -47,17 +47,17 @@ abstract class AiTask<in I, out O>(
     fun monitor(callback: (List<AiOutput>) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiTaskTrace)
             trace?.output?.outputs?.let { callback(it) }
             return res
         }
     }
 
     /** Wrap this in a task that monitors and informs a callback when result is obtained. */
-    fun monitorTrace(callback: (AiPromptTraceSupport) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
+    fun monitorTrace(callback: (AiTaskTrace) -> Unit): AiTask<I, O> = object : AiTask<I, O>(id) {
         override suspend fun execute(input: I, context: ExecContext): O {
             val res = this@AiTask.execute(input, context)
-            val trace = context.trace(id) ?: (res as? AiPromptTraceSupport)
+            val trace = context.trace(id) ?: (res as? AiTaskTrace)
             if (trace != null) callback(trace)
             return res
         }

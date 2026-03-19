@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
 
-/** Text inference output info. */
+/** Container for the outputs of an AI task, holding a list of typed [AiOutput] values. */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class AiOutputInfo(
     var outputs: List<AiOutput>
@@ -40,26 +40,26 @@ data class AiOutputInfo(
         fun output(output: AiOutput) = AiOutputInfo(listOf(output))
         fun output(outputs: List<AiOutput>) = AiOutputInfo(outputs)
 
-        fun text(text: String) = output(AiOutput(text = text))
-        fun text(texts: List<String>) = output(texts.map { AiOutput(text = it) })
+        fun text(text: String) = output(AiOutput.Text(text))
+        fun text(texts: List<String>) = output(texts.map { AiOutput.Text(it) })
 
-        fun message(message: TextChatMessage) = output(AiOutput(message = message))
-        fun messages(messages: List<TextChatMessage>) = output(messages.map { AiOutput(message = it) })
+        fun message(message: TextChatMessage) = output(AiOutput.ChatMessage(message))
+        fun messages(messages: List<TextChatMessage>) = output(messages.map { AiOutput.ChatMessage(it) })
 
-        fun multimodalMessage(message: MultimodalChatMessage) = output(AiOutput(multimodalMessage = message))
-        fun multimodalMessages(messages: List<MultimodalChatMessage>) = output(messages.map { AiOutput(multimodalMessage = it) })
+        fun multimodalMessage(message: MultimodalChatMessage) = output(AiOutput.MultimodalMessage(message))
+        fun multimodalMessages(messages: List<MultimodalChatMessage>) = output(messages.map { AiOutput.MultimodalMessage(it) })
 
-        /** Return an output where the entire list is stored as a single output. */
-        fun <T: Any> listSingleOutput(items: List<T>) = output(AiOutput(other = items))
+        /** Return an output where the entire list is stored as a single [AiOutput.Other] output. */
+        fun <T: Any> listSingleOutput(items: List<T>) = output(AiOutput.Other(items))
 
-        /** Accepts any object type, attempting to automatically populate content based on object type. */
+        /** Accepts any object type, automatically selecting the appropriate [AiOutput] subtype. */
         fun other(content: Any) = when (content) {
             is AiOutput -> output(content)
             is String -> text(content)
             is TextChatMessage -> message(content)
             is MultimodalChatMessage -> multimodalMessage(content)
             is List<*> -> error("use `listSingleOutput` for lists, or map to multiple outputs")
-            else -> AiOutputInfo(listOf(AiOutput(other = content)))
+            else -> AiOutputInfo(listOf(AiOutput.Other(content)))
         }
     }
 }
