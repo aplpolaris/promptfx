@@ -31,6 +31,7 @@ import tri.ai.embedding.*
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.pips.progressUpdate
 import tri.ai.prompt.PromptDef
+import tri.ai.prompt.PromptTemplate
 import tri.ai.prompt.template
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.AiModelInfo.Companion.CHUNKER_ID
@@ -109,13 +110,20 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
             CHUNKER_ID to "PromptFx",
             CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
         )
+        val responseWithSourceInput = response.copy(
+            input = AiTaskInputInfo(
+                prompt = prompt.template,
+                params = mapOf(PromptTemplate.INPUT to ctx, PromptTemplate.INSTRUCT to question),
+                inputs = mapOf("promptId" to prompt.id)
+            )
+        )
         val result = QuestionAnswerResult(
             query = SemanticTextQuery(question, questionEmbedding, embeddingModel.modelId),
             matches = snippets,
-            trace = response.mapOutput { AiOutput.Text(it.textContent()) },
+            trace = responseWithSourceInput.mapOutput { AiOutput.Text(it.textContent()) },
             responseEmbeddings = responseEmbeddings
         )
-        context.logTrace("question-answer", response.mapOutput { AiOutput.Other(result) })
+        context.logTrace("question-answer", responseWithSourceInput.mapOutput { AiOutput.Other(result) })
         result
     }.task<AiTaskTrace>("process-result") { result, context ->
         info<DocumentQaPlanner>("$ANSI_GRAY Similarity of question to response: ${result.responseScore}$ANSI_RESET")
