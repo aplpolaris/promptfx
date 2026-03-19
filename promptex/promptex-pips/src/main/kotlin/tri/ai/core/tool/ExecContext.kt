@@ -57,6 +57,10 @@ class ExecContext(
     /** Returns the resource for [key], or null if absent. */
     fun resource(key: String): Any? = _resources[key]
 
+    /** Returns the resource for [key] cast to [T], or null if absent or not of the expected type. */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> resource(key: String, type: Class<T>): T? = _resources[key]?.let { type.cast(it) }
+
     //endregion
 
     //region SCRATCHPAD
@@ -102,3 +106,6 @@ class ExecContext(
     //endregion
 
 }
+
+/** Returns the resource for [key] cast to [T], or null if absent or not of the expected type. */
+inline fun <reified T> ExecContext.resource(key: String): T? = resource(key, T::class.java)

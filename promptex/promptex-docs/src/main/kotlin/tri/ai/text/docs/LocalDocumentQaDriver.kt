@@ -94,7 +94,9 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
         context: ExecContext
     ): AiWorkflowResult {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
-        val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, index)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, chatModelInst)
+        val planner = DocumentQaPlanner(listOf(), historySize).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,

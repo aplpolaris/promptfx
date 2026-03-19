@@ -38,7 +38,6 @@ import tri.ai.text.chunks.TextLibrary
 import tri.ai.text.docs.DocumentQaPlanner
 import tri.ai.text.docs.withFormattedOutputs
 import tri.ai.text.docs.GroupingTemplateJoiner
-import tri.promptfx.AiChatEngine
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -79,12 +78,11 @@ class DocumentQaPlannerFx {
         minChunkSize: Int?,
         contextStrategy: GroupingTemplateJoiner,
         contextChunks: Int?,
-        chatEngine: AiChatEngine?,
         maxTokens: Int?,
         temp: Double?,
         numResponses: Int?
     ): AiTaskBuilder<AiTaskTrace> {
-        val p = DocumentQaPlanner(embeddingIndex.value!!, chatEngine!!.asTextChat(), chatHistory, historySize.value).plan(
+        val p = DocumentQaPlanner(chatHistory, historySize.value).plan(
             question = question,
             prompt = prompt!!,
             chunksToRetrieve = chunksToRetrieve!!,

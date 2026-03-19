@@ -38,6 +38,8 @@ import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.ai.text.docs.formattedOutputs
+import tri.ai.text.docs.DocumentQaPlanner
+import tri.promptfx.AiChatEngine
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver
@@ -194,6 +196,13 @@ class DocumentQaView: AiPlanTaskView(
         question.set(questionInput)
     }
 
+    override suspend fun processUserInput(): AiWorkflowResult {
+        val context = ExecContext(monitor = progress)
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, planner.embeddingIndex.value)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, controller.chatEngine.value.asTextChat())
+        return AiWorkflowExecutor.execute(plan().plan, context)
+    }
+
     override fun plan() = questionTaskList(question.value)
 
     private fun questionTaskList(question: String) =
@@ -204,7 +213,6 @@ class DocumentQaView: AiPlanTaskView(
             minChunkSize = minChunkSizeForRelevancy.value,
             contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
             contextChunks = chunksToSendWithQuery.value,
-            chatEngine = controller.chatEngine.value,
             maxTokens = common.maxTokens.value,
             temp = common.temp.value,
             numResponses = common.numResponses.value
