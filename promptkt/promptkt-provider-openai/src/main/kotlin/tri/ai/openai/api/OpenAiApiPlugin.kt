@@ -84,12 +84,6 @@ class OpenAiApiPlugin : TextPlugin {
             e.index.multimodalModels().map { OpenAiMultimodalChat(it, e.source, client(e)) }
         }
 
-    @Deprecated("Use multimodalModels() instead")
-    override fun visionLanguageModels() =
-        config.endpoints.flatMap { e ->
-            e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, e.source, client(e)) }
-        }
-
     override fun imageGeneratorModels() =
         config.endpoints.flatMap { e ->
             e.index.imageGeneratorModels().map { OpenAiImageGenerator(it, e.source, client(e)) }

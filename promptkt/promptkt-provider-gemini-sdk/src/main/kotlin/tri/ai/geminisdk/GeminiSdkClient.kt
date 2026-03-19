@@ -76,34 +76,6 @@ class GeminiSdkClient : Closeable {
         return genClient.models.generateContent(modelId, contents, config)
     }
 
-    /**
-     * Generate content with vision/image support.
-     */
-    fun generateContentVision(
-        messages: List<VisionLanguageChatMessage>,
-        modelId: String,
-        variation: MChatVariation = MChatVariation(),
-        numResponses: Int = 1
-    ): GenerateContentResponse {
-        val genClient = client ?: throw IllegalStateException("Client not initialized")
-        
-        val contents = messages.filter { it.role != MChatRole.System }.map { msg ->
-            val parts = mutableListOf<Part>()
-            if (msg.content.isNotBlank()) {
-                parts.add(Part.fromText(msg.content))
-            }
-            parts.add(parseDataUrlToPart(msg.image.toString()))
-            Content.builder()
-                .parts(parts)
-                .role(msg.role.toGeminiRole())
-                .build()
-        }
-
-        val systemInstruction = messages.firstOrNull { it.role == MChatRole.System }?.content
-        val config = buildGenerateContentConfig(systemInstruction, variation, null, numResponses)
-        return genClient.models.generateContent(modelId, contents, config)
-    }
-
     private fun buildContentList(history: List<MultimodalChatMessage>): List<Content> {
         return history.filter { it.role != MChatRole.System }.map { msg ->
             Content.builder()

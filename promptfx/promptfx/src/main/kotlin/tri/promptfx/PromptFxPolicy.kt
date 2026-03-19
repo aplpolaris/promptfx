@@ -43,11 +43,6 @@ abstract class PromptFxPolicy {
     abstract fun multimodalModels(): List<MultimodalChat>
     open fun multimodalModelDefault() = multimodalModels().firstOrNull()
 
-    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-    open fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
-    @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
-    open fun visionLanguageModelDefault() = visionLanguageModels().firstOrNull()
-
     abstract fun imageModels(): List<ImageGenerator>
     open fun imageModelDefault() = imageModels().firstOrNull()
 
@@ -86,9 +81,6 @@ abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
     override fun textCompletionModels() = plugin.textCompletionModels()
     override fun chatModels() = plugin.chatModels()
     override fun multimodalModels() = plugin.multimodalModels()
-    @Suppress("DEPRECATION")
-    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-    override fun visionLanguageModels() = plugin.visionLanguageModels()
     override fun imageModels() = plugin.imageGeneratorModels()
     override fun textToSpeechModels() = plugin.textToSpeechModels()
     override fun speechToTextModels() = plugin.speechToTextModels()
@@ -115,9 +107,6 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override fun textCompletionModels() = TextPlugin.textCompletionModels()
     override fun chatModels() = TextPlugin.chatModels()
     override fun multimodalModels() = TextPlugin.multimodalModels()
-    @Suppress("DEPRECATION")
-    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-    override fun visionLanguageModels() = TextPlugin.visionLanguageModels()
     override fun imageModels() = TextPlugin.imageGeneratorModels()
     override fun textToSpeechModels() = TextPlugin.textToSpeechModels()
     override fun speechToTextModels() = TextPlugin.speechToTextModels()

@@ -39,7 +39,6 @@ class GeminiModelIndexTest {
         println(GeminiModelIndex.moderationModels())
         println(GeminiModelIndex.ttsModels())
         println(GeminiModelIndex.imageGeneratorModels())
-        println(GeminiModelIndex.visionLanguageModels())
 
         assertTrue(GeminiModelIndex.multimodalModels().isNotEmpty())
         assertTrue(GeminiModelIndex.imageGeneratorModels().isNotEmpty())
