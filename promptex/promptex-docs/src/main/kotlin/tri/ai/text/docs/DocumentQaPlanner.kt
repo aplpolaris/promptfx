@@ -103,8 +103,8 @@ class DocumentQaPlanner(val index: EmbeddingIndex, val chat: TextChat, val chatH
                 it.responseScore = cosineSimilarity(responseEmbeddings[0], it.chunkEmbedding).toFloat()
             }
         }
-        val model = response.model ?: AiModelInfo(chat.modelId)
-        model.modelParams = (response.model?.modelParams ?: mapOf()) + mapOf<String, Any>(
+        val model = response.env?.model ?: AiModelInfo(chat.modelId)
+        model.modelParams = (response.env?.modelParams ?: mapOf()) + mapOf<String, Any>(
             EMBEDDING_MODEL to embeddingModel.modelId,
             CHUNKER_ID to "PromptFx",
             CHUNKER_MAX_CHUNK_SIZE to ((index as? LocalFolderEmbeddingIndex)?.maxChunkSize ?: -1),
