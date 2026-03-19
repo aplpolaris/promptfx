@@ -20,6 +20,7 @@
 package tri.ai.pips
 
 import tri.ai.core.tool.ExecContext
+import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.util.info
 import java.time.Duration
@@ -54,9 +55,11 @@ class RetryExecutor(
             if (existingTrace != null) {
                 context.logTrace(task.id, existingTrace.copy(
                     exec = existingTrace.exec.copy(
-                        responseTimeMillis = it.attemptTime,
-                        responseTimeMillisTotal = it.totalTime,
-                        attempts = it.attempts
+                        stats = existingTrace.exec.stats + mapOf(
+                            AiExecInfo.RESPONSE_TIME_MILLIS to it.attemptTime,
+                            AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL to it.totalTime,
+                            AiExecInfo.ATTEMPTS to it.attempts
+                        )
                     )
                 ))
             } else {

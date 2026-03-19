@@ -134,9 +134,9 @@ class AiTaskTraceTest {
     @Test
     fun testCopyWithCallerId() {
         val trace = AiTaskTrace()
-        val withCaller = trace.copy(callerId = "my-view", exec = AiExecInfo(intermediateResult = false))
+        val withCaller = trace.copy(callerId = "my-view", exec = AiExecInfo(stats = mapOf(AiExecInfo.INTERMEDIATE_RESULT to false)))
         assertEquals("my-view", withCaller.callerId)
-        assertEquals(false, withCaller.exec.intermediateResult)
+        assertEquals(false, withCaller.exec.stats[AiExecInfo.INTERMEDIATE_RESULT])
     }
 
     //endregion
@@ -168,7 +168,7 @@ class AiTaskTraceTest {
             taskId = "test-id",
             env = AiEnvInfo(model = AiModelInfo("gpt-4o")),
             input = AiTaskInputInfo("Hello, world!"),
-            exec = AiExecInfo(queryTokens = 10, responseTokens = 5, stats = mapOf("custom_metric" to 42)),
+            exec = AiExecInfo(stats = mapOf(AiExecInfo.QUERY_TOKENS to 10, AiExecInfo.RESPONSE_TOKENS to 5, "custom_metric" to 42)),
             output = AiOutputInfo.text("Hi!")
         )
         val json = jsonWriter.writeValueAsString(trace)

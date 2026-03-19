@@ -51,7 +51,7 @@ class GeminiSdkVisionLanguageChat(
             AiPromptTrace(
                 null,
                 modelInfo,
-                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiExecInfo.durationSince(t0),
                 AiOutputInfo.text(response.text() ?: "")
             )
         } catch (e: Exception) {

@@ -57,7 +57,7 @@ class GeminiSdkTextChat(
             AiPromptTrace(
                 null,
                 modelInfo,
-                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiExecInfo.durationSince(t0),
                 if (responseTexts.size == 1) AiOutputInfo.text(responseTexts.first()) else AiOutputInfo.text(responseTexts)
             )
         } catch (e: Exception) {

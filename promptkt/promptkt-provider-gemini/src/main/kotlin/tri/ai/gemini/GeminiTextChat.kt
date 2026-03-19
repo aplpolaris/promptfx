@@ -74,7 +74,7 @@ class GeminiTextChat(override val modelId: String = GEMINI_25_FLASH_LITE, val cl
                 AiPromptTrace(
                     null,
                     modelInfo,
-                    AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                    AiExecInfo.durationSince(t0),
                     AiOutputInfo.messages(msgs)
                 )
             }
