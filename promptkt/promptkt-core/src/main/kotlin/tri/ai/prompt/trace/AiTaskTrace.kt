@@ -195,7 +195,11 @@ open class AiTaskTrace(
             attempts: Int? = null
         ) = AiTaskTrace(
             env = modelInfo?.let { AiEnvInfo.of(it) },
-            exec = AiExecInfo(message, throwable, responseTimeMillis = duration, responseTimeMillisTotal = durationTotal, attempts = attempts)
+            exec = AiExecInfo(message, throwable, buildMap {
+                duration?.let { put(AiExecInfo.RESPONSE_TIME_MILLIS, it) }
+                durationTotal?.let { put(AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL, it) }
+                attempts?.let { put(AiExecInfo.ATTEMPTS, it) }
+            })
         )
 
         /** Creates a trace representing a request that was not attempted because the model ID was invalid. */

@@ -27,6 +27,7 @@ import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
 import tri.ai.pips.AiWorkflowResult
+import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.text.chunks.SmartTextChunker
 import tri.promptfx.prompts.AiTaskTraceHistoryModel
 
@@ -52,10 +53,10 @@ class PromptFxController : Controller() {
     /** Adds a workflow execution result to history. */
     fun addPromptTraces(viewTitle: String, traces: AiWorkflowResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
-            it.copy(exec = it.exec.copy(intermediateResult = true), callerId = viewTitle)
+            it.copy(exec = it.exec.copy(stats = it.exec.stats + mapOf(AiExecInfo.INTERMEDIATE_RESULT to true)), callerId = viewTitle)
         }
         traceHistory.prompts.addAll(interim)
-        val final = traces.finalResult.let { it.copy(exec = it.exec.copy(intermediateResult = false), callerId = viewTitle) }
+        val final = traces.finalResult.let { it.copy(exec = it.exec.copy(stats = it.exec.stats + mapOf(AiExecInfo.INTERMEDIATE_RESULT to false)), callerId = viewTitle) }
         traceHistory.prompts.add(final)
     }
 

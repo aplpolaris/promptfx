@@ -233,7 +233,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             }
             AiTaskTrace(
                 promptInfo, modelInfo,
-                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiExecInfo.durationSince(t0),
                 AiOutputInfo(outputs)
             )
         } catch (x: Exception) {

@@ -43,7 +43,7 @@ class GeminiSdkSpeechToText(
             AiPromptTrace(
                 PromptInfo(transcribePrompt),
                 AiModelInfo(modelId),
-                AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                AiExecInfo.durationSince(t0),
                 AiOutputInfo.text(text)
             )
         } catch (e: Exception) {

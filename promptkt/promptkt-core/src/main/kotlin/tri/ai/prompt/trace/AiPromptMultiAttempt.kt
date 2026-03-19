@@ -174,14 +174,16 @@ suspend fun CompletionBuilder.executeMultiAttemptJsonList(
     val traces = (1..attempts).map { execute(chat) }
     val totalTime = System.currentTimeMillis() - startTime
 
-    val totalQueryTokens = traces.sumOf { it.exec.queryTokens ?: 0 }.takeIf { it > 0 }
-    val totalResponseTokens = traces.sumOf { it.exec.responseTokens ?: 0 }.takeIf { it > 0 }
+    val totalQueryTokens = traces.sumOf { (it.exec.stats[AiExecInfo.QUERY_TOKENS] as? Int) ?: 0 }.takeIf { it > 0 }
+    val totalResponseTokens = traces.sumOf { (it.exec.stats[AiExecInfo.RESPONSE_TOKENS] as? Int) ?: 0 }.takeIf { it > 0 }
 
     val baseExecInfo = AiExecInfo(
-        attempts = attempts,
-        responseTimeMillisTotal = totalTime,
-        queryTokens = totalQueryTokens,
-        responseTokens = totalResponseTokens
+        stats = buildMap {
+            put(AiExecInfo.ATTEMPTS, attempts)
+            put(AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL, totalTime)
+            totalQueryTokens?.let { put(AiExecInfo.QUERY_TOKENS, it) }
+            totalResponseTokens?.let { put(AiExecInfo.RESPONSE_TOKENS, it) }
+        }
     )
 
     val successful = traces.filter { it.exec.succeeded() }

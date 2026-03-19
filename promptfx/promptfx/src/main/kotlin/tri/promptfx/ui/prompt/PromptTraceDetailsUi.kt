@@ -196,9 +196,9 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     private fun AiExecInfo?.pretty() = this?.let {
         mapOf<String, Any?>(
             "error" to it.error,
-            "query_tokens" to it.queryTokens,
-            "response_tokens" to it.responseTokens,
-            "duration" to it.responseTimeMillis?.let { "${it}ms" }
+            "query_tokens" to it.stats[AiExecInfo.QUERY_TOKENS],
+            "response_tokens" to it.stats[AiExecInfo.RESPONSE_TOKENS],
+            "duration" to (it.stats[AiExecInfo.RESPONSE_TIME_MILLIS] as? Long)?.let { ms -> "${ms}ms" }
         ).entries.filter { it.value != null }
             .joinToString(", ") { (k, v) -> "$k: $v" }
     }

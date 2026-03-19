@@ -53,7 +53,7 @@ class GeminiSpeechToText(
                 AiPromptTrace(
                     PromptInfo(transcribePrompt),
                     AiModelInfo(modelId),
-                    AiExecInfo(responseTimeMillis = System.currentTimeMillis() - t0),
+                    AiExecInfo.durationSince(t0),
                     AiOutputInfo.text(response.candidates?.get(0)?.content?.parts?.get(0)?.text.orEmpty())
                 )
             }

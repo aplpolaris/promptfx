@@ -23,6 +23,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
 import tornadofx.*
+import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiTaskTrace
 
 /** Model for filtering prompt trace objects. */
@@ -92,7 +93,7 @@ class PromptTraceFilter : Component() {
     private val AiTaskTrace.statusId
         get() = if (exec.error != null) ERROR_STATUS else if (output == null || firstValue == null) MISSING_VALUE_STATUS else SUCCESS_STATUS
     private val AiTaskTrace.typeId
-        get() = if (exec.intermediateResult == true) INTERMEDIATE_RESULT else if (exec.intermediateResult == false) FINAL_RESULT else UNKNOWN
+        get() = if (exec.stats[AiExecInfo.INTERMEDIATE_RESULT] == true) INTERMEDIATE_RESULT else if (exec.stats[AiExecInfo.INTERMEDIATE_RESULT] == false) FINAL_RESULT else UNKNOWN
 
     //endregion
 

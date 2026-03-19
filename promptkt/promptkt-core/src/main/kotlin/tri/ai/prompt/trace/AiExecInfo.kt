@@ -30,34 +30,66 @@ data class AiExecInfo(
     /** Throwable error, if any. */
     @JsonIgnore
     var throwable: Throwable? = null,
-    /** Number of query tokens. */
-    var queryTokens: Int? = null,
-    /** Number of response tokens. */
-    var responseTokens: Int? = null,
-    /** Response time in milliseconds. */
-    var responseTimeMillis: Long? = null,
-    /** Response time in milliseconds, total duration including retries. */
-    var responseTimeMillisTotal: Long? = null,
-    /** Number of executions attempted. */
-    val attempts: Int? = null,
-    /** Flag indicating whether this is an intermediate result. */
-    val intermediateResult: Boolean? = null,
     /**
-     * General-purpose statistics map for additional execution metrics.
-     * Use this to record any numeric or categorical statistics not covered by first-class fields.
+     * General-purpose statistics map for execution metrics (token counts, timing, attempt count, etc.).
+     * Use the string constants in the companion object as keys to avoid magic strings.
      */
     val stats: Map<String, Any> = mapOf()
 ) {
     /** Return true if the execution succeeded. */
     fun succeeded() = error == null && throwable == null
 
+    // region DEPRECATED STAT PROPERTIES (backed by stats map)
+
+    /** Number of query tokens. */
+    @Deprecated("Use stats[QUERY_TOKENS]", ReplaceWith("stats[AiExecInfo.QUERY_TOKENS] as? Int"))
+    val queryTokens: Int? get() = stats[QUERY_TOKENS] as? Int
+
+    /** Number of response tokens. */
+    @Deprecated("Use stats[RESPONSE_TOKENS]", ReplaceWith("stats[AiExecInfo.RESPONSE_TOKENS] as? Int"))
+    val responseTokens: Int? get() = stats[RESPONSE_TOKENS] as? Int
+
+    /** Response time in milliseconds. */
+    @Deprecated("Use stats[RESPONSE_TIME_MILLIS]", ReplaceWith("stats[AiExecInfo.RESPONSE_TIME_MILLIS] as? Long"))
+    val responseTimeMillis: Long? get() = stats[RESPONSE_TIME_MILLIS] as? Long
+
+    /** Response time in milliseconds, total duration including retries. */
+    @Deprecated("Use stats[RESPONSE_TIME_MILLIS_TOTAL]", ReplaceWith("stats[AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL] as? Long"))
+    val responseTimeMillisTotal: Long? get() = stats[RESPONSE_TIME_MILLIS_TOTAL] as? Long
+
+    /** Number of executions attempted. */
+    @Deprecated("Use stats[ATTEMPTS]", ReplaceWith("stats[AiExecInfo.ATTEMPTS] as? Int"))
+    val attempts: Int? get() = stats[ATTEMPTS] as? Int
+
+    /** Flag indicating whether this is an intermediate result. */
+    @Deprecated("Use stats[INTERMEDIATE_RESULT]", ReplaceWith("stats[AiExecInfo.INTERMEDIATE_RESULT] as? Boolean"))
+    val intermediateResult: Boolean? get() = stats[INTERMEDIATE_RESULT] as? Boolean
+
+    // endregion
+
     companion object {
+        /** Stats key for the number of query/prompt tokens. */
+        const val QUERY_TOKENS = "queryTokens"
+        /** Stats key for the number of response/completion tokens. */
+        const val RESPONSE_TOKENS = "responseTokens"
+        /** Stats key for the response time in milliseconds (last attempt). */
+        const val RESPONSE_TIME_MILLIS = "responseTimeMillis"
+        /** Stats key for the total response time in milliseconds, including all retries. */
+        const val RESPONSE_TIME_MILLIS_TOTAL = "responseTimeMillisTotal"
+        /** Stats key for the number of execution attempts. */
+        const val ATTEMPTS = "attempts"
+        /** Stats key for a flag indicating whether this is an intermediate result. */
+        const val INTERMEDIATE_RESULT = "intermediateResult"
+
         /** Execution from a given time in millis. */
         fun durationSince(millis: Long, queryTokens: Int? = null, responseTokens: Int? = null) = AiExecInfo(
-            responseTimeMillis = System.currentTimeMillis() - millis,
-            queryTokens = queryTokens,
-            responseTokens = responseTokens
+            stats = buildMap {
+                put(RESPONSE_TIME_MILLIS, System.currentTimeMillis() - millis)
+                queryTokens?.let { put(QUERY_TOKENS, it) }
+                responseTokens?.let { put(RESPONSE_TOKENS, it) }
+            }
         )
+
         /** Create an execution info with an error. */
         fun error(errorMessage: String?, throwable: Throwable? = null) = AiExecInfo(
             error = errorMessage,
