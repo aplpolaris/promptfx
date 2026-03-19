@@ -69,11 +69,6 @@ class GeminiSdkPlugin : TextPlugin {
         GeminiSdkTextCompletion(it, client)
     }
 
-    @Deprecated("Use multimodalModels() instead")
-    override fun visionLanguageModels() = models(GeminiSdkModelIndex.visionLanguageModels()) { 
-        GeminiSdkVisionLanguageChat(it, client) 
-    }
-
     override fun imageGeneratorModels(): List<tri.ai.core.ImageGenerator> =
         models(GeminiSdkModelIndex.imageGeneratorModels()) { GeminiSdkImageGenerator(it, modelSource(), client) }
 

@@ -39,5 +39,5 @@ class ModelLibrary {
     fun modelInfoIndex() = models.values.flatten().associateBy { it.id }
 
     /** Get list of all model ids in the library. */
-    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + responses + tts + vision_language
+    fun modelIds(): Set<String> = audio.toSet() + chat + multimodal + completion + embeddings + image_generator + moderation + responses + tts
 }

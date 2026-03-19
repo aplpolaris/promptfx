@@ -110,7 +110,6 @@ class OpenAiModelIndexTest {
         println("Multimodal: " + OpenAiModelIndex.multimodalModels())
         println("Responses: " + OpenAiModelIndex.responsesModels())
         println("TTS: " + OpenAiModelIndex.ttsModels())
-        println("Vision-Language: " + OpenAiModelIndex.visionLanguageModels())
     }
 
 }

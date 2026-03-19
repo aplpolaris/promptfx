@@ -58,10 +58,6 @@ class GeminiAiPlugin : TextPlugin {
             GeminiTextCompletion(it, client)
         }
 
-    @Deprecated("Use multimodalModels() instead")
-    override fun visionLanguageModels() =
-        models(GeminiModelIndex.visionLanguageModels()) { GeminiVisionLanguageChat(it, client) }
-
     override fun imageGeneratorModels() = models(GeminiModelIndex.imageGeneratorModels()) { GeminiImageGenerator(it, modelSource(), client) }
 
     override fun speechToTextModels() =

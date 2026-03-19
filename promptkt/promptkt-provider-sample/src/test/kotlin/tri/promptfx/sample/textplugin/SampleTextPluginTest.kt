@@ -105,12 +105,6 @@ class SampleTextPluginTest {
     }
 
     @Test
-    fun `plugin should have empty vision language models`() {
-        val plugin = SampleTextPlugin()
-        assertTrue(plugin.visionLanguageModels().isEmpty())
-    }
-
-    @Test
     fun `plugin should have empty image generator models`() {
         val plugin = SampleTextPlugin()
         assertTrue(plugin.imageGeneratorModels().isEmpty())

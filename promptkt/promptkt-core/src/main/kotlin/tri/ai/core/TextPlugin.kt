@@ -48,11 +48,6 @@ interface TextPlugin {
     /** Provide a list of text completion engines. */
     fun textCompletionModels(): List<TextCompletion>
 
-    /** Provide a list of vision language models.
-     * @deprecated Use [multimodalModels] instead. */
-    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-    fun visionLanguageModels(): List<VisionLanguageChat> = emptyList()
-
     /** Provide a list of image generators. */
     fun imageGeneratorModels(): List<ImageGenerator>
 
@@ -99,10 +94,6 @@ interface TextPlugin {
         fun chatModels() = orderedPlugins.flatMap { it.chatModels() }
         /** Get registered multimodal models. */
         fun multimodalModels() = orderedPlugins.flatMap { it.multimodalModels() }
-        /** Get registered vision language models.
-         * @deprecated Use [multimodalModels] instead. */
-        @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-        fun visionLanguageModels() = orderedPlugins.flatMap { it.visionLanguageModels() }
         /** Get registered image models. */
         fun imageGeneratorModels() = orderedPlugins.flatMap { it.imageGeneratorModels() }
         /** Get registered text-to-speech models. */
@@ -122,11 +113,6 @@ interface TextPlugin {
         /** Get a multimodal model by id. Throws an exception if not found. */
         fun multimodalModel(modelId: String) =
             multimodalModels().first { it.matchesModelId(modelId) }
-        /** Get a vision language model by id. Throws an exception if not found.
-         * @deprecated Use [multimodalModel] instead. */
-        @Deprecated("Use multimodalModel() instead", ReplaceWith("multimodalModel(modelId)"))
-        fun visionLanguageModel(modelId: String) =
-            visionLanguageModels().first { it.matchesModelId(modelId) }
         /** Get an image model by id. Throws an exception if not found. */
         fun imageGeneratorModel(modelId: String) =
             imageGeneratorModels().first { it.matchesModelId(modelId) }

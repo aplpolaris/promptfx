@@ -59,7 +59,7 @@ open class ModelIndex(val modelFileName: String) {
 
     /** Get audio models. */
     fun audioModels() = models(ModelLibrary::audio)
-    /** Get chat models without vision-language models. */
+    /** Get chat models. */
     fun chatModels() = models(ModelLibrary::chat)
     /** Get text completion models. */
     fun completionModels() = models(ModelLibrary::completion)
@@ -75,9 +75,6 @@ open class ModelIndex(val modelFileName: String) {
     fun responsesModels() = models(ModelLibrary::responses)
     /** Get text-to-speech models. */
     fun ttsModels() = models(ModelLibrary::tts)
-    /** Get vision-language models. */
-    @Deprecated("Use multimodalModels() instead")
-    fun visionLanguageModels() = models(ModelLibrary::vision_language)
 
     //region HELPERS
 

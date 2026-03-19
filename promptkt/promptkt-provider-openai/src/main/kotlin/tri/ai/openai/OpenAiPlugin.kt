@@ -59,10 +59,6 @@ class OpenAiPlugin : TextPlugin {
         models(OpenAiModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) } +
         models(OpenAiModelIndex.responsesModels()) { OpenAiResponsesChat(it, modelSource(), client) }
 
-    @Deprecated("Use multimodalModels() instead")
-    override fun visionLanguageModels() =
-        models(OpenAiModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, modelSource(), client) }
-
     override fun imageGeneratorModels() =
         models(OpenAiModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, modelSource(), client) }
 

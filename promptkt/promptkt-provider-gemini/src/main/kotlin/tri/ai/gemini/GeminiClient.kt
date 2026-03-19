@@ -25,7 +25,6 @@ import kotlinx.serialization.Serializable
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
 import tri.ai.core.MChatVariation
-import tri.ai.core.VisionLanguageChatMessage
 import java.io.Closeable
 
 /**
@@ -119,22 +118,6 @@ class GeminiClient : Closeable {
                 Content(listOf(Part.text(it.content)), role)
             },
             systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) },
-            generationConfig = config
-        )
-        return generateContent(modelId, request)
-    }
-
-    suspend fun generateContentVision(messages: List<VisionLanguageChatMessage>, modelId: String, config: GenerationConfig? = null): GenerateContentResponse {
-        val system = messages.lastOrNull { it.role == MChatRole.System }?.content
-        val request = GenerateContentRequest(
-            messages.filter { it.role != MChatRole.System }.map {
-                val role = it.role.toGeminiRole()
-                Content(listOf(
-                    Part.text(it.content),
-                    Part(inlineData = Blob.fromDataUrl(it.image))
-                ), role)
-            },
-            systemInstruction = system?.let { Content(listOf(Part.text(it)), ContentRole.user) }, // TODO - support for system messages
             generationConfig = config
         )
         return generateContent(modelId, request)

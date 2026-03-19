@@ -55,11 +55,6 @@ object PromptFxModels {
     fun speechToTextModels() = policy.speechToTextModels()
     fun speechToTextModelDefault() = policy.speechToTextModelDefault()
 
-    @Deprecated("Use multimodalModels() instead", ReplaceWith("multimodalModels()"))
-    fun visionLanguageModels() = policy.visionLanguageModels()
-    @Deprecated("Use multimodalModelDefault() instead", ReplaceWith("multimodalModelDefault()"))
-    fun visionLanguageModelDefault() = policy.visionLanguageModelDefault()
-
     fun modelIds() = (
             textCompletionModels().map { it.modelId } +
             embeddingModels().map { it.modelId } +
@@ -67,8 +62,7 @@ object PromptFxModels {
             multimodalModels().map { it.modelId } +
             imageModels().map { it.modelId } +
             textToSpeechModels().map { it.modelId } +
-            speechToTextModels().map { it.modelId } +
-            visionLanguageModels().map { it.modelId }
+            speechToTextModels().map { it.modelId }
         ).toSet()
 
     /** Returns all model IDs configured in the current policy, regardless of runtime config filters. */
@@ -79,8 +73,7 @@ object PromptFxModels {
             policy.multimodalModels().map { it.modelId } +
             policy.imageModels().map { it.modelId } +
             policy.textToSpeechModels().map { it.modelId } +
-            policy.speechToTextModels().map { it.modelId } +
-            policy.visionLanguageModels().map { it.modelId }
+            policy.speechToTextModels().map { it.modelId }
         ).toSet()
 
 }
