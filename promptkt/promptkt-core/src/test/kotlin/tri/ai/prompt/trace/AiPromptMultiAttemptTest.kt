@@ -88,7 +88,7 @@ class AiPromptMultiAttemptTest {
     }
 
     @Test
-    fun `tryJsonStringList - null text returns null`() {
+    fun `tryJsonStringList - empty text returns null`() {
         val output = AiOutput.Text("")
         assertNull(output.tryJsonStringList())
     }
