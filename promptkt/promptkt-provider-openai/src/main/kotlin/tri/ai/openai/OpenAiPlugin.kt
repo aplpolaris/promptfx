@@ -20,13 +20,13 @@
 package tri.ai.openai
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 
 /**
- * Implementation of [TextPlugin] using OpenAI API.
+ * Implementation of [AiModelProvider] using OpenAI API.
  * Models are as described in `openai-models.yaml`.
  */
-class OpenAiPlugin : TextPlugin {
+class OpenAiPlugin : AiModelProvider {
 
     val client = OpenAiAdapter.INSTANCE
 

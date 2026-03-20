@@ -36,7 +36,7 @@ import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
 import tri.ai.openai.OpenAiAdapter
@@ -171,11 +171,11 @@ class DocumentQa: CliktCommand(name = "qa") {
             if (config.chatModel != null) {
                 System.err.println("Chat model attempted: ${config.chatModel}")
             }
-            System.err.println("Available chat models: ${TextPlugin.chatModels().map { it.modelId }}")
+            System.err.println("Available chat models: ${AiModelProvider.chatModels().map { it.modelId }}")
             if (config.embeddingModel != null) {
                 System.err.println("Embedding model attempted: ${config.embeddingModel}")
             }
-            System.err.println("Available embedding models: ${TextPlugin.embeddingModels().map { it.modelId }}")
+            System.err.println("Available embedding models: ${AiModelProvider.embeddingModels().map { it.modelId }}")
             exitProcess(1)
         }
 
@@ -208,9 +208,9 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings") {
     override fun run() {
         val docsFolder = config.docsFolder
         val embeddingModel = try {
-            TextPlugin.embeddingModel(config.embeddingModel!!)
+            AiModelProvider.embeddingModel(config.embeddingModel!!)
         } catch (x: NoSuchElementException) {
-            val available = TextPlugin.embeddingModels().map { it.modelId }
+            val available = AiModelProvider.embeddingModels().map { it.modelId }
             System.err.println("Embedding model '${config.embeddingModel}' not found. Available models: $available")
             exitProcess(1)
         }
@@ -231,7 +231,7 @@ class DocumentEmbeddings: CliktCommand(name = "embeddings") {
             System.err.println("Reindexing failed: ${x}")
             exitProcess(1)
         }
-        TextPlugin.orderedPlugins.forEach { it.close() }
+        AiModelProvider.orderedPlugins.forEach { it.close() }
     }
 }
 
@@ -267,7 +267,7 @@ class DocumentChunker: CliktCommand(name = "chunk") {
         docs.saveIndex()
 
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
-        TextPlugin.orderedPlugins.forEach { it.close() }
+        AiModelProvider.orderedPlugins.forEach { it.close() }
     }
 }
 
@@ -290,12 +290,12 @@ fun createQaDriver(config: DocumentQaConfig) = LocalDocumentQaDriver(config.root
 
     info<DocumentQa>("Asking question about documents in $folder")
     if (config.chatModel != null) {
-        validateModelOrExit(config.chatModel, TextPlugin.chatModels().map { it.modelId }, "Chat")
+        validateModelOrExit(config.chatModel, AiModelProvider.chatModels().map { it.modelId }, "Chat")
         chatModel = config.chatModel
     }
     info<DocumentQa>("  using chat engine $chatModel")
     if (config.embeddingModel != null) {
-        validateModelOrExit(config.embeddingModel, TextPlugin.embeddingModels().map { it.modelId }, "Embedding")
+        validateModelOrExit(config.embeddingModel, AiModelProvider.embeddingModels().map { it.modelId }, "Embedding")
         embeddingModel = config.embeddingModel
     }
     info<DocumentQa>("  using embedding model $embeddingModel")

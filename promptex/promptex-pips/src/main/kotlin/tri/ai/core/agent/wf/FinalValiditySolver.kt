@@ -22,7 +22,7 @@ package tri.ai.core.agent.wf
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.core.tool.ExecContext
@@ -56,7 +56,7 @@ class FinalValiditySolver(val config: AgentChatConfig) : WorkflowSolver(
         )
 
         // use LLM to generate a response
-        val chat = TextPlugin.Companion.chatModel(config.modelId)
+        val chat = AiModelProvider.Companion.chatModel(config.modelId)
         val response = CompletionBuilder()
             .tokens(config.maxTokens)
             .temperature(config.temperature)

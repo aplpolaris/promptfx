@@ -22,7 +22,7 @@ package tri.ai.text.docs
 import com.aallam.openai.api.embedding.Embedding
 import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
@@ -65,12 +65,12 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     override var chatModel
         get() = chatModelInst.modelId
         set(value) {
-            chatModelInst = TextPlugin.chatModels().first { it.modelId == value }
+            chatModelInst = AiModelProvider.chatModels().first { it.modelId == value }
         }
     override var embeddingModel
         get() = embeddingModelInst.modelId
         set(value) {
-            embeddingModelInst = TextPlugin.embeddingModels().first { it.modelId == value }
+            embeddingModelInst = AiModelProvider.embeddingModels().first { it.modelId == value }
         }
     override var temp: Double = 1.0
     override var maxTokens: Int = 2000
@@ -84,7 +84,7 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     }
 
     override fun close() {
-        TextPlugin.orderedPlugins.forEach { it.close() }
+        AiModelProvider.orderedPlugins.forEach { it.close() }
     }
 
     override suspend fun answerQuestion(

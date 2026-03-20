@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 
 module tri.promptkt.core {
     requires transitive kotlin.stdlib;
@@ -52,5 +52,5 @@ module tri.promptkt.core {
     exports tri.util.json;
 
     // services (service loader API)
-    uses TextPlugin;
+    uses AiModelProvider;
 }

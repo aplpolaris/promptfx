@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentEventPrinter
@@ -44,7 +44,7 @@ import tri.ai.prompt.fill
 class ToolChainExecutorTest {
 
     private val MODEL_ID = GPT35_TURBO
-    private val GPT35 = TextPlugin.textCompletionModels().first { it.modelId == MODEL_ID }
+    private val GPT35 = AiModelProvider.textCompletionModels().first { it.modelId == MODEL_ID }
     private val CHAT_CONFIG = AgentChatConfig(modelId = MODEL_ID)
     private val PROMPTS = PromptLibrary.INSTANCE
 

@@ -22,7 +22,7 @@ package tri.promptfx
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
@@ -34,7 +34,7 @@ import tri.promptfx.prompts.AiTaskTraceHistoryModel
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
+    val openAiPlugin = AiModelProvider.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
 
     val chatEngine: SimpleObjectProperty<AiChatEngine> =
         SimpleObjectProperty(PromptFxModels.chatEngineDefault())
@@ -76,7 +76,7 @@ class PromptFxController : Controller() {
         } catch (x: Exception) {
             println("There was an error closing the OpenAI client: ${x.message}")
         }
-        TextPlugin.orderedPlugins.forEach {
+        AiModelProvider.orderedPlugins.forEach {
             try {
                 it.close()
             } catch (x: Exception) {

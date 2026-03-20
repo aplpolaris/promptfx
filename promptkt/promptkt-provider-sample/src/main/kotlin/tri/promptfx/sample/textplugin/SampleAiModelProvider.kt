@@ -20,16 +20,17 @@
 package tri.promptfx.sample.textplugin
 
 import tri.ai.core.*
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** 
- * Sample plugin demonstrating TextPlugin implementation.
+ * Sample plugin demonstrating [AiModelProvider] implementation.
  * This provides a simple echo-based AI model for demonstration purposes.
  */
-class SampleTextPlugin : TextPlugin {
+class SampleAiModelProvider : AiModelProvider {
 
     override fun isApiConfigured() = true
 
@@ -73,7 +74,7 @@ class SampleTextPlugin : TextPlugin {
 /** Sample text completion model that echoes input with a prefix. */
 class SampleTextCompletionModel : TextCompletion {
     override val modelId = "sample-echo-v1"
-    override val modelSource = SampleTextPlugin.MODEL_SOURCE
+    override val modelSource = SampleAiModelProvider.MODEL_SOURCE
     override fun toString() = modelDisplayName()
 
     override suspend fun complete(
@@ -82,13 +83,12 @@ class SampleTextCompletionModel : TextCompletion {
         tokens: Int?,
         stop: List<String>?,
         numResponses: Int?
-    ): AiPromptTrace {
+    ): AiTaskTrace {
         val response = "Sample Echo: $text"
-        return AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.text(response)
+        return AiTaskTrace(
+            env = AiEnvInfo(AiModelInfo(modelId)),
+            exec = AiExecInfo(),
+            output = AiOutputInfo.text(response)
         )
     }
 }
@@ -96,7 +96,7 @@ class SampleTextCompletionModel : TextCompletion {
 /** Sample chat model that echoes the last message. */
 class SampleChatModel : TextChat {
     override val modelId = "sample-chat-v1"
-    override val modelSource = SampleTextPlugin.MODEL_SOURCE
+    override val modelSource = SampleAiModelProvider.MODEL_SOURCE
     override fun toString() = modelDisplayName()
 
     override suspend fun chat(
@@ -106,14 +106,13 @@ class SampleChatModel : TextChat {
         stop: List<String>?,
         numResponses: Int?,
         requestJson: Boolean?
-    ): AiPromptTrace {
+    ): AiTaskTrace {
         val lastMessage = messages.lastOrNull()?.content ?: "No message provided"
         val response = TextChatMessage(MChatRole.Assistant, "Sample response to: $lastMessage")
-        return AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.messages(listOf(response))
+        return AiTaskTrace(
+            env = AiEnvInfo(AiModelInfo(modelId)),
+            exec = AiExecInfo(),
+            output = AiOutputInfo.messages(listOf(response))
         )
     }
 }

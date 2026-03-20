@@ -19,16 +19,17 @@
  */
 package tri.ai.core
 
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiOutputInfo
+import tri.ai.prompt.trace.AiTaskTrace
 
 /**
- * Minimal test implementation of [TextPlugin] for testing purposes only.
+ * Minimal test implementation of [AiModelProvider] for testing purposes only.
  * This shim plugin provides minimal implementations to avoid circular dependencies.
  */
-class TextPluginTest : TextPlugin {
+class AiModelProviderTest : AiModelProvider {
     override fun isApiConfigured() = true
     override fun modelSource() = "TestShim"
     override fun modelInfo() = listOf(ModelInfo("test-model", ModelType.TEXT_COMPLETION, "TestShim"))
@@ -46,7 +47,7 @@ internal class TestTextCompletion : TextCompletion {
     override val modelSource = "TestShim"
     override fun toString() = modelDisplayName()
     override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
-        AiPromptTrace(null, AiModelInfo(modelId), AiExecInfo(), AiOutputInfo.text("test response"))
+        AiTaskTrace(env = AiEnvInfo(AiModelInfo(modelId)), exec = AiExecInfo(), output = AiOutputInfo.text("test response"))
 }
 
 /** Minimal test text chat model. */
@@ -55,10 +56,9 @@ internal class TestTextChat : TextChat {
     override val modelSource = "TestShim"
     override fun toString() = modelDisplayName()
     override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
-        AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response")))
+        AiTaskTrace(
+            env = AiEnvInfo(AiModelInfo(modelId)),
+            exec = AiExecInfo(),
+            output = AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response")))
         )
 }

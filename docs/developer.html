@@ -90,10 +90,10 @@ mvn -B test --file promptkt/pom.xml</code></pre>
 
     <h3>Text Completion &amp; Chat</h3>
     <p>
-      The <code>TextPlugin</code> interface (in <code>promptkt-core</code>) defines the core API for
+      The <code>AiModelProvider</code> interface (in <code>promptkt-core</code>) defines the core API for
       text completion and chat. Provider implementations are in the <code>promptkt-provider-*</code> modules.
     </p>
-    <pre><code>// Get a chat response from any configured TextPlugin
+    <pre><code>// Get a chat response from any configured AiModelProvider
 val response = plugin.chat(listOf(
     ChatMessage(role = Role.System, content = "You are a helpful assistant."),
     ChatMessage(role = Role.User, content = "What is RAG?")
@@ -151,7 +151,7 @@ val result = task.execute(context)</code></pre>
     </p>
     <ol class="step-list">
       <li><div>Copy <code>promptkt-provider-sample/</code> to a new module directory.</div></li>
-      <li><div>Implement the <code>TextPlugin</code> (and optionally <code>EmbeddingPlugin</code> / <code>ImageGenerator</code>) interfaces.</div></li>
+      <li><div>Implement the <code>AiModelProvider</code> (and optionally <code>EmbeddingPlugin</code> / <code>ImageGenerator</code>) interfaces.</div></li>
       <li><div>Register your provider via the service-loader mechanism (add it to <code>META-INF/services/</code>).</div></li>
       <li><div>Add the new module as a dependency in <code>promptfx/pom.xml</code> to enable it in the UI.</div></li>
     </ol>

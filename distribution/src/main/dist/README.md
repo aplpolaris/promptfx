@@ -307,7 +307,7 @@ See the `prompts/README.md` file for more details on prompt structure and usage.
 
 PromptFX supports two types of plugins that extend its functionality:
 
-- **API Plugins (TextPlugin)**: Add support for new AI model providers (chat, completion, embedding, multimodal, image generation, audio models)
+- **API Plugins (AiModelProvider)**: Add support for new AI model providers (chat, completion, embedding, multimodal, image generation, audio models)
 - **View Plugins (NavigableWorkspaceView)**: Add custom UI views to the PromptFX workspace
 
 Plugins are installed by copying JAR files to the `config/plugins/` directory and restarting PromptFX. They are automatically discovered using Java's ServiceLoader mechanism.

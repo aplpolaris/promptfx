@@ -25,26 +25,26 @@ import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.*
 import java.util.*
 
-class SampleTextPluginTest {
+class SampleAiModelProviderTest {
 
     @Test
     fun `plugin should be discoverable via ServiceLoader`() {
-        val loader = ServiceLoader.load(TextPlugin::class.java)
+        val loader = ServiceLoader.load(AiModelProvider::class.java)
         val plugins = loader.toList()
         
-        val samplePlugin = plugins.find { it is SampleTextPlugin }
-        assertNotNull(samplePlugin, "SampleTextPlugin should be discoverable via ServiceLoader")
+        val samplePlugin = plugins.find { it is SampleAiModelProvider }
+        assertNotNull(samplePlugin, "SampleAiModelProvider should be discoverable via ServiceLoader")
     }
 
     @Test
     fun `plugin should have correct model source`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         assertEquals("SampleText", plugin.modelSource())
     }
 
     @Test
     fun `plugin should provide model info`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         val modelInfo = plugin.modelInfo()
         
         assertEquals(2, modelInfo.size)
@@ -54,7 +54,7 @@ class SampleTextPluginTest {
 
     @Test
     fun `plugin should provide chat model`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         val chatModels = plugin.chatModels()
         
         assertEquals(1, chatModels.size)
@@ -63,7 +63,7 @@ class SampleTextPluginTest {
 
     @Test
     fun `plugin should provide text completion model`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         val completionModels = plugin.textCompletionModels()
         
         assertEquals(1, completionModels.size)
@@ -94,19 +94,19 @@ class SampleTextPluginTest {
 
     @Test
     fun `plugin should have empty embedding models`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         assertTrue(plugin.embeddingModels().isEmpty())
     }
 
     @Test
     fun `plugin should have empty multimodal models`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         assertTrue(plugin.multimodalModels().isEmpty())
     }
 
     @Test
     fun `plugin should have empty image generator models`() {
-        val plugin = SampleTextPlugin()
+        val plugin = SampleAiModelProvider()
         assertTrue(plugin.imageGeneratorModels().isEmpty())
     }
 }

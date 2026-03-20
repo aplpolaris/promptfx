@@ -27,7 +27,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
@@ -70,7 +70,7 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
         val result = runBlocking {
-            val tasks = batch.plan { TextPlugin.chatModel(it) }
+            val tasks = batch.plan { AiModelProvider.chatModel(it) }
             AiWorkflowExecutor.execute(tasks.plan).finalResult
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
