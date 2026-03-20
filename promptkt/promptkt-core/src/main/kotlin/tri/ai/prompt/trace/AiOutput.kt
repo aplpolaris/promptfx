@@ -122,6 +122,16 @@ sealed class AiOutput {
      * This subtype is used for non-text, non-message outputs such as embeddings or structured data.
      * [toString] and [textContent] are exception-safe: if [other]'s own [toString] throws, a
      * type-name fallback is returned instead of propagating the exception.
+     *
+     * **Serialization note:** When a trace containing an [Other] output is persisted (JSON/YAML) and
+     * later reloaded, the output will deserialize as an empty `Other` instance — the [other] value is
+     * silently lost. Callers that need durable storage of arbitrary outputs must extract and persist
+     * [other] separately before the trace is written to disk.
+     *
+     * A future fix could use a custom `@JsonSerialize`/`@JsonDeserialize` pair that attempts
+     * `Jackson.writeValueAsString(other)` and stores the result as a `rawJson: String?` property,
+     * falling back to `null` for non-serializable types. Deserialization would then restore as
+     * `JsonNode` rather than the original type, which is sufficient for many read-only use cases.
      */
     data class Other(@get:JsonIgnore override val other: Any) : AiOutput() {
         private val fallback get() = "Other(${other::class.simpleName})"
@@ -132,29 +142,4 @@ sealed class AiOutput {
         override fun toString() = runCatching { other.toString() }.getOrElse { fallback }
     }
 
-    // -------------------------------------------------------------------------
-    // Backward-compatible factory
-    // -------------------------------------------------------------------------
-
-    companion object {
-        /**
-         * Backward-compatible factory function that selects the appropriate [AiOutput] subtype
-         * based on which parameter is non-null.
-         *
-         * At most one parameter should be non-null. If none are provided, returns an empty [Text]
-         * output (backward compat for `AiOutput()` with no arguments).
-         */
-        operator fun invoke(
-            text: String? = null,
-            message: TextChatMessage? = null,
-            multimodalMessage: MultimodalChatMessage? = null,
-            other: Any? = null
-        ): AiOutput = when {
-            text != null -> Text(text)
-            message != null -> ChatMessage(message)
-            multimodalMessage != null -> MultimodalMessage(multimodalMessage)
-            other != null -> Other(other)
-            else -> Text("") // backward compat: AiOutput() with no args
-        }
-    }
 }

@@ -19,13 +19,16 @@
  */
 package tri.ai.text.docs
 
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 
 private const val FORMATTED_OUTPUTS_KEY = "formattedOutputs"
 
 /**
  * Returns a copy of this trace annotated with a list of [FormattedText] outputs.
- * The outputs are stored in [AiTaskTrace.annotations] and can be retrieved via [formattedOutputs].
+ * The outputs are stored in [AiOutputInfo.annotations] (accessed via [AiTaskTrace.annotations])
+ * and can be retrieved via [formattedOutputs]. The trace must have a non-null [AiTaskTrace.output]
+ * for the annotations to be retained; if [output] is null the annotations are silently discarded.
  */
 fun AiTaskTrace.withFormattedOutputs(outputs: List<FormattedText>): AiTaskTrace =
     apply { annotations[FORMATTED_OUTPUTS_KEY] = outputs }

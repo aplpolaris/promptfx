@@ -61,34 +61,32 @@ class AiTaskTraceTest {
 
     //endregion
 
-    //region BACKWARD COMPAT CONSTRUCTOR
+    //region PRIMARY CONSTRUCTOR WITH PROMPT/MODEL INFO
 
     @Test
-    fun testBackwardCompatConstructorWithPromptInfo() {
+    fun testConstructionWithPromptInfo() {
         val promptInfo = PromptInfo("Translate {{text}} to French.", mapOf("text" to "Hello!"))
         val modelInfo = AiModelInfo("test-model")
         val execInfo = AiExecInfo()
         val outputInfo = AiOutputInfo.text("Bonjour!")
 
-        val trace = AiTaskTrace(promptInfo, modelInfo, execInfo, outputInfo)
+        val trace = AiTaskTrace(
+            env = AiEnvInfo.of(modelInfo),
+            input = AiTaskInputInfo.of(promptInfo),
+            exec = execInfo,
+            output = outputInfo
+        )
 
-        // New-style access
         assertEquals("test-model", trace.env?.modelId)
         assertEquals("Translate {{text}} to French.", trace.input?.prompt)
         assertEquals("Hello!", trace.input?.params?.get("text"))
         assertEquals("Bonjour!", trace.firstValue.textContent())
-
-        // Backward compat property
-        @Suppress("DEPRECATION")
-        assertEquals("Translate {{text}} to French.", trace.prompt?.template)
-        @Suppress("DEPRECATION")
-        assertEquals("Hello!", trace.prompt?.params?.get("text"))
     }
 
     @Test
-    fun testBackwardCompatConstructorNullPromptInfo() {
+    fun testConstructionWithNullPromptInfo() {
         val modelInfo = AiModelInfo("test-model")
-        val trace = AiTaskTrace(null, modelInfo, AiExecInfo(), AiOutputInfo.text("result"))
+        val trace = AiTaskTrace(env = AiEnvInfo.of(modelInfo), output = AiOutputInfo.text("result"))
         assertEquals("test-model", trace.env?.modelId)
         assertNull(trace.input)
         assertEquals("result", trace.firstValue.textContent())
@@ -105,10 +103,7 @@ class AiTaskTraceTest {
 
         assertEquals("parent-id", child.parentTaskId)
         assertEquals("child-id", child.taskId)
-
-        // uuid backward compat
-        @Suppress("DEPRECATION")
-        assertEquals("parent-id", parent.uuid)
+        assertEquals("parent-id", parent.taskId)
     }
 
     @Test

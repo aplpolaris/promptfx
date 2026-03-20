@@ -19,13 +19,18 @@
  */
 package tri.ai.pips
 
+import tri.ai.core.MChatVariation
 import tri.ai.core.TextChat
+import tri.ai.core.TextChatMessage
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput
+import tri.ai.prompt.trace.AiTaskInputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.batch.AiPromptBatch
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
+import tri.ai.prompt.trace.PromptInfo.Companion.filled
 
 /**
  * Generate executable list of tasks for a prompt batch.
@@ -45,8 +50,40 @@ fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {
         context.logTrace(id, trace)
         trace.output?.outputs?.firstOrNull()
     } catch (x: NoSuchElementException) {
-        val trace = AiTaskTrace(promptInfo, modelInfo, AiExecInfo.error("Model not found: ${modelInfo.modelId}"))
+        val trace = AiTaskTrace(
+            env = tri.ai.prompt.trace.AiEnvInfo.of(modelInfo),
+            input = AiTaskInputInfo.of(promptInfo),
+            exec = AiExecInfo.error("Model not found: ${modelInfo.modelId}")
+        )
         context.logTrace(id, trace)
         null
     }
 }
+
+/**
+ * Executes a text chat completion for this run config using [chat].
+ * Does not mutate [AiPromptRunConfig.modelInfo]; the actual model ID used is taken from [chat].
+ */
+private suspend fun AiPromptRunConfig.execute(chat: TextChat): tri.ai.prompt.trace.AiPromptTrace {
+    val promptText = promptInfo.filled()
+    val result = chatWithModelInfo(chat, promptText, modelInfo)
+    return result.copy(input = AiTaskInputInfo.of(promptInfo)).mapOutput { AiOutput.Text(it.message!!.content!!) }
+}
+
+private suspend fun chatWithModelInfo(chat: TextChat, text: String, modelInfo: AiModelInfo) =
+    chat.chat(
+        messages = listOf(TextChatMessage.user(text)),
+        tokens = modelInfo.modelParams[AiModelInfo.MAX_TOKENS] as? Int,
+        variation = modelInfo.toVariation(),
+        stop = modelInfo.modelParams[AiModelInfo.STOP] as? List<String>
+            ?: (modelInfo.modelParams[AiModelInfo.STOP] as? String)?.let { listOf(it) },
+        numResponses = modelInfo.modelParams[AiModelInfo.NUM_RESPONSES] as? Int
+    )
+
+private fun AiModelInfo.toVariation() = MChatVariation(
+    seed = (modelParams[AiModelInfo.SEED] as? Number)?.toInt(),
+    temperature = modelParams[AiModelInfo.TEMPERATURE] as? Double,
+    topP = modelParams[AiModelInfo.TOP_P] as? Double,
+    presencePenalty = modelParams[AiModelInfo.PRESENCE_PENALTY] as? Double,
+    frequencyPenalty = modelParams[AiModelInfo.FREQUENCY_PENALTY] as? Double,
+)

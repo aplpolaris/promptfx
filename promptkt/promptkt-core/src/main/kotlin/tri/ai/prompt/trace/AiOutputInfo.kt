@@ -19,6 +19,7 @@
  */
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
@@ -28,6 +29,17 @@ import tri.ai.core.TextChatMessage
 data class AiOutputInfo(
     var outputs: List<AiOutput>
 ) {
+    /**
+     * Open-ended map for storing non-serialized, in-process side-channel data associated with these
+     * outputs (e.g. formatted text, rendering hints, post-processed views of the raw output).
+     * Not serialized to JSON; lost when the trace is persisted or copied.
+     *
+     * Access via [AiTaskTrace.output]`.annotations`. Callers that need the annotated output to
+     * survive serialization must extract and store the annotation values separately.
+     */
+    @get:JsonIgnore
+    val annotations: MutableMap<String, Any> = mutableMapOf()
+
     /** Convert output using a provided function. */
     fun map(transform: (AiOutput) -> AiOutput) =
         AiOutputInfo(outputs.map(transform))
