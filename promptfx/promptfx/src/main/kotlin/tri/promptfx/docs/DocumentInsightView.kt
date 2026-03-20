@@ -159,7 +159,7 @@ class DocumentInsightView: AiPlanTaskView(
                     .prompt(reducePrompt.prompt.value)
                     .paramsInput(concat)
                     .execute(chatEngine)
-                    .mapOutput { AiOutput(other = concat to it.message!!.content) }
+                    .mapOutput { AiOutput.Other(concat to it.message!!.content) }
             }
     }
 

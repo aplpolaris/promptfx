@@ -70,36 +70,29 @@ class AiOutputTest {
 
     //endregion
 
-    //region BACKWARD COMPAT FACTORY
+    //region DIRECT SUBTYPE CONSTRUCTION
 
     @Test
-    fun testBackwardCompatFactoryText() {
-        val output = AiOutput(text = "text content")
+    fun testDirectTextConstruction() {
+        val output = AiOutput.Text("text content")
         assertInstanceOf(AiOutput.Text::class.java, output)
-        assertEquals("text content", (output as AiOutput.Text).text)
+        assertEquals("text content", output.text)
     }
 
     @Test
-    fun testBackwardCompatFactoryMessage() {
+    fun testDirectMessageConstruction() {
         val msg = TextChatMessage(MChatRole.Assistant, "msg")
-        val output = AiOutput(message = msg)
+        val output = AiOutput.ChatMessage(msg)
         assertInstanceOf(AiOutput.ChatMessage::class.java, output)
-        assertEquals(msg, (output as AiOutput.ChatMessage).message)
+        assertEquals(msg, output.message)
     }
 
     @Test
-    fun testBackwardCompatFactoryOther() {
+    fun testDirectOtherConstruction() {
         val data = mapOf("key" to "value")
-        val output = AiOutput(other = data)
+        val output = AiOutput.Other(data)
         assertInstanceOf(AiOutput.Other::class.java, output)
-        assertEquals(data, (output as AiOutput.Other).other)
-    }
-
-    @Test
-    fun testBackwardCompatFactoryNoArgs() {
-        val output = AiOutput()
-        assertInstanceOf(AiOutput.Text::class.java, output)
-        assertEquals("", (output as AiOutput.Text).text)
+        assertEquals(data, output.other)
     }
 
     //endregion

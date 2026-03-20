@@ -97,7 +97,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         return AiPromptTrace(null,
             AiModelInfo.embedding(modelId, outputDimensionality),
             AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.output(resp.embeddings.map { AiOutput(other = it.embedding) })
+            AiOutputInfo.output(resp.embeddings.map { AiOutput.Other(it.embedding) })
         )
     }
 
@@ -144,7 +144,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     }
 
     suspend fun chatCompletion(completionRequest: ChatCompletionRequest) =
-        chat(completionRequest, multimodal = false).mapOutput { AiOutput(text = it.textContent(ifNone = "(no response)")) }
+        chat(completionRequest, multimodal = false).mapOutput { AiOutput.Text(it.textContent(ifNone = "(no response)")) }
 
     /**
      * Runs a chat response.

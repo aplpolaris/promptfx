@@ -34,74 +34,74 @@ class AiPromptMultiAttemptTest {
 
     @Test
     fun `tryJsonStringList - clean JSON array`() {
-        val output = AiOutput(text = """["apple", "banana", "cherry"]""")
+        val output = AiOutput.Text("""["apple", "banana", "cherry"]""")
         assertEquals(listOf("apple", "banana", "cherry"), output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - JSON object with first array field`() {
-        val output = AiOutput(text = """{"items": ["alpha", "beta", "gamma"]}""")
+        val output = AiOutput.Text("""{"items": ["alpha", "beta", "gamma"]}""")
         assertEquals(listOf("alpha", "beta", "gamma"), output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - jsonKey selects named field in JSON object`() {
-        val output = AiOutput(text = """{"known_items": ["fox", "cat"], "items_in_input": ["fox", "dog"]}""")
+        val output = AiOutput.Text("""{"known_items": ["fox", "cat"], "items_in_input": ["fox", "dog"]}""")
         assertEquals(listOf("fox", "dog"), output.tryJsonStringList(jsonKey = "items_in_input"))
     }
 
     @Test
     fun `tryJsonStringList - jsonKey returns null when key not found`() {
-        val output = AiOutput(text = """{"items": ["a", "b"]}""")
+        val output = AiOutput.Text("""{"items": ["a", "b"]}""")
         assertNull(output.tryJsonStringList(jsonKey = "missing_key"))
     }
 
     @Test
     fun `tryJsonStringList - jsonKey ignored for plain JSON array`() {
-        val output = AiOutput(text = """["apple", "banana"]""")
+        val output = AiOutput.Text("""["apple", "banana"]""")
         assertEquals(listOf("apple", "banana"), output.tryJsonStringList(jsonKey = "ignored"))
     }
 
     @Test
     fun `tryJsonStringList - without jsonKey picks first array field (known_items before items_in_input)`() {
         // Demonstrates the bug that jsonKey fixes: without it, "known_items" is returned
-        val output = AiOutput(text = """{"known_items": ["fox"], "items_in_input": ["fox", "dog"]}""")
+        val output = AiOutput.Text("""{"known_items": ["fox"], "items_in_input": ["fox", "dog"]}""")
         assertEquals(listOf("fox"), output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - markdown code fence`() {
-        val output = AiOutput(text = "```json\n[\"one\", \"two\", \"three\"]\n```")
+        val output = AiOutput.Text("```json\n[\"one\", \"two\", \"three\"]\n```")
         assertEquals(listOf("one", "two", "three"), output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - markdown code fence no language tag`() {
-        val output = AiOutput(text = "```\n[\"x\", \"y\"]\n```")
+        val output = AiOutput.Text("```\n[\"x\", \"y\"]\n```")
         assertEquals(listOf("x", "y"), output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - invalid JSON returns null`() {
-        val output = AiOutput(text = "This is not JSON at all.")
+        val output = AiOutput.Text("This is not JSON at all.")
         assertNull(output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - null text returns null`() {
-        val output = AiOutput()
+        val output = AiOutput.Text("")
         assertNull(output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - JSON object with no array field returns null`() {
-        val output = AiOutput(text = """{"key": "value"}""")
+        val output = AiOutput.Text("""{"key": "value"}""")
         assertNull(output.tryJsonStringList())
     }
 
     @Test
     fun `tryJsonStringList - JSON scalar returns null`() {
-        val output = AiOutput(text = "42")
+        val output = AiOutput.Text("42")
         assertNull(output.tryJsonStringList())
     }
 

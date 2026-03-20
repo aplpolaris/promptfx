@@ -34,7 +34,6 @@ import java.util.UUID.randomUUID
  * - Batch processing and pipeline steps
  *
  * Compatible with OTel/LangFuse trace concepts.
- * Merges the functionality of the former [AiPromptTraceSupport] and [AiPromptTrace].
  *
  * Task identity is captured by [taskId], [parentTaskId], and [callerId], which are
  * also grouped together as [id] (an [AiTaskId]).
@@ -45,78 +44,17 @@ open class AiTaskTrace(
     var taskId: String = randomUUID().toString(),
     /** Parent task identifier, enabling reconstruction of call graphs. */
     var parentTaskId: String? = null,
-    /** Identifier of the caller or system component that initiated this task (replaces [viewId]). */
+    /** Identifier of the caller or system component that initiated this task. */
     var callerId: String? = null,
     /** Model and environment configuration. */
     var env: AiEnvInfo? = null,
-    /** Task input information. Replaces the former prompt/params as [AiTaskInputInfo]. */
+    /** Task input information. */
     var input: AiTaskInputInfo? = null,
     /** Execution metadata (timing, errors, token usage). */
     var exec: AiExecInfo = AiExecInfo(),
     /** Task output values. */
     var output: AiOutputInfo? = null
 ) {
-
-    // region BACKWARD COMPATIBILITY
-
-    /**
-     * Backward-compatible constructor accepting the original [AiPromptTrace] parameters.
-     * Converts [PromptInfo] to [AiTaskInputInfo] and wraps [AiModelInfo] in [AiEnvInfo] automatically.
-     * New code should prefer the primary constructor or factory methods.
-     */
-    @Suppress("DEPRECATION")
-    constructor(
-        promptInfo: PromptInfo?,
-        modelInfo: AiModelInfo? = null,
-        execInfo: AiExecInfo = AiExecInfo(),
-        outputInfo: AiOutputInfo? = null
-    ) : this(
-        env = modelInfo?.let { AiEnvInfo.of(it) },
-        input = promptInfo?.let { AiTaskInputInfo.of(it) },
-        exec = execInfo,
-        output = outputInfo
-    )
-
-    /**
-     * Backward-compatible alias for [taskId] (formerly the unique trace identifier stored as [uuid]).
-     */
-    @Deprecated("Use taskId", ReplaceWith("taskId"))
-    var uuid: String
-        get() = taskId
-        set(value) { taskId = value }
-
-    /**
-     * Backward-compatible access to the prompt information, derived from [input].
-     * Returns null if [input] has no prompt template.
-     */
-    @get:JsonIgnore
-    @Deprecated("Use input", ReplaceWith("input"))
-    var prompt: PromptInfo?
-        get() = input?.toPromptInfo()
-        set(value) { input = value?.let { AiTaskInputInfo.of(it) } }
-
-    /**
-     * Backward-compatible access to the [AiModelInfo], derived from [env].
-     * Setting this property wraps the value in an [AiEnvInfo], preserving any existing
-     * [AiEnvInfo.system] and [AiEnvInfo.config] settings.
-     */
-    @get:JsonIgnore
-    @Deprecated("Use env", ReplaceWith("env"))
-    var model: AiModelInfo?
-        get() = env?.model
-        set(value) { env = value?.let { env?.copy(model = it) ?: AiEnvInfo.of(it) } }
-
-    /**
-     * Backward-compatible alias for [callerId], formerly the `viewId` field identifying which
-     * view or component initiated this task.
-     */
-    @get:JsonIgnore
-    @Deprecated("Use callerId", ReplaceWith("callerId"))
-    var viewId: String?
-        get() = callerId
-        set(value) { callerId = value }
-
-    // endregion
 
     // region TASK IDENTITY
 
@@ -148,11 +86,15 @@ open class AiTaskTrace(
         get() = exec.error ?: exec.throwable?.message
 
     /**
-     * Open-ended map for storing non-serialized side-channel data associated with this trace
-     * (e.g. formatted outputs, rendering hints). Not serialized to JSON.
+     * Open-ended map for storing non-serialized, in-process side-channel data for the outputs of
+     * this trace (e.g. formatted text, rendering hints). Delegates to [output]`.annotations`.
+     * Not serialized to JSON; lost when the trace is persisted or copied.
+     *
+     * Returns an empty map and discards writes if [output] is null.
      */
     @get:JsonIgnore
-    val annotations: MutableMap<String, Any> = mutableMapOf()
+    val annotations: MutableMap<String, Any>
+        get() = output?.annotations ?: mutableMapOf()
 
     // endregion
 
@@ -171,7 +113,6 @@ open class AiTaskTrace(
         exec: AiExecInfo = this.exec,
         output: AiOutputInfo? = this.output
     ): AiTaskTrace = AiTaskTrace(taskId, parentTaskId, callerId, env, input, exec, output)
-        .also { it.annotations.putAll(annotations) }
 
     /** Returns a copy of this trace with the output transformed by [transform]. */
     fun mapOutput(transform: (AiOutput) -> AiOutput) = copy(output = output?.map(transform))

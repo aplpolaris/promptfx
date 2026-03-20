@@ -55,6 +55,6 @@ class OpenAiChat(override val modelId: String = GPT35_TURBO, override val modelS
             stop = stop,
             n = numResponses,
             responseFormat = if (requestJson == true) ChatResponseFormat.JsonObject else null
-        )).mapOutput { AiOutput(message = TextChatMessage(MChatRole.Assistant, it.text!!)) }
+        )).mapOutput { AiOutput.ChatMessage(TextChatMessage(MChatRole.Assistant, it.text!!)) }
 
 }

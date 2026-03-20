@@ -229,15 +229,20 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
             val uris = generator.generateImage(input.value, params)
             val outputs = uris.map { uri ->
                 val base64 = uri.toString().substringAfter(";base64,")
-                AiOutput(multimodalMessage = MultimodalChatMessage.imageBase64(imageBase64 = base64))
+                AiOutput.MultimodalMessage(MultimodalChatMessage.imageBase64(imageBase64 = base64))
             }
             AiTaskTrace(
-                promptInfo, modelInfo,
-                AiExecInfo.durationSince(t0),
-                AiOutputInfo(outputs)
+                env = AiEnvInfo.of(modelInfo),
+                input = AiTaskInputInfo.of(promptInfo),
+                exec = AiExecInfo.durationSince(t0),
+                output = AiOutputInfo(outputs)
             )
         } catch (x: Exception) {
-            AiTaskTrace(promptInfo, modelInfo, AiExecInfo.error(x.message, x))
+            AiTaskTrace(
+                env = AiEnvInfo.of(modelInfo),
+                input = AiTaskInputInfo.of(promptInfo),
+                exec = AiExecInfo.error(x.message, x)
+            )
         }
         context.logTrace("generate-image", result)
         result.values ?: emptyList()

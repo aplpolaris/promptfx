@@ -60,8 +60,8 @@ class AiPromptTraceDatabase() {
 
     /** Adds the trace to the database, updating object references as needed and returning the object added. */
     fun addTrace(trace: AiTaskTrace): AiPromptTraceId {
-        val prompt = addOrGet(prompts, trace.prompt)
-        val model = addOrGet(models, trace.model)
+        val prompt = addOrGet(prompts, trace.input?.toPromptInfo())
+        val model = addOrGet(models, trace.env?.model)
         val exec = addOrGet(execs, trace.exec)
         val output = addOrGet(outputs, trace.output)
 
