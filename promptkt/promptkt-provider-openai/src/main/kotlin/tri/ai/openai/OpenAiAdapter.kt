@@ -94,10 +94,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         ))
         usage.increment(resp.usage)
 
-        return AiPromptTrace(null,
-            AiModelInfo.embedding(modelId, outputDimensionality),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.output(resp.embeddings.map { AiOutput.Other(it.embedding) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo.embedding(modelId, outputDimensionality)),
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            output = AiOutputInfo.output(resp.embeddings.map { AiOutput.Other(it.embedding) })
         )
     }
 
@@ -116,10 +116,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             usage.increment(it.toInt(), UsageUnit.AUDIO_SECONDS)
         }
 
-        return AiPromptTrace(null,
-            AiModelInfo(modelId),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.text(resp.text)
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(modelId)),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.text(resp.text)
         )
     }
 
@@ -135,11 +135,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.completion(completionRequest)
         usage.increment(resp.usage)
 
-        return AiPromptTrace(
-            completionRequest.prompt?.let { PromptInfo(it) },
-            completionRequest.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            AiOutputInfo.text(resp.choices.map { it.text })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(completionRequest.toModelInfo()),
+            input = completionRequest.prompt?.let { AiTaskInputInfo.of(PromptInfo(it)) },
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            output = AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
@@ -171,11 +171,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             else -> AiOutputInfo.messages(resp.choices.map { it.message.fromOpenAiMessage() })
         }
 
-        return AiPromptTrace(
-            prompt?.let { PromptInfo(it) },
-            completionRequest.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            outputInfo
+        return AiTaskTrace(
+            env = AiEnvInfo.of(completionRequest.toModelInfo()),
+            input = prompt?.let { AiTaskInputInfo.of(PromptInfo(it)) },
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            output = outputInfo
         )
     }
 
@@ -231,10 +231,17 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         // Propagate API-level errors (status:"failed") as a failed trace rather than returning empty output
         if (resp.status == "failed") {
             val errorMsg = resp.error?.message ?: "Responses API returned status: failed for model ${request.model.id}"
-            return AiPromptTrace(null, modelInfo, execInfo.also { it.error = errorMsg }, null)
+            return AiTaskTrace(
+                env = AiEnvInfo.of(modelInfo),
+                exec = execInfo.also { it.error = errorMsg }
+            )
         }
 
-        return AiPromptTrace(null, modelInfo, execInfo, AiOutputInfo.multimodalMessages(outputMessages))
+        return AiTaskTrace(
+            env = AiEnvInfo.of(modelInfo),
+            exec = execInfo,
+            output = AiOutputInfo.multimodalMessages(outputMessages)
+        )
     }
 
     /** Runs an edit request (deprecated API). */
@@ -246,11 +253,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.edit(request)
         usage.increment(resp.usage)
 
-        return AiPromptTrace(
-            request.toPromptInfo(),
-            request.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.text(resp.choices.map { it.text })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(request.toModelInfo()),
+            input = request.toPromptInfo()?.let { AiTaskInputInfo.of(it) },
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            output = AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
@@ -262,11 +269,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.imageURL(imageCreation)
         usage.increment(resp.size, UsageUnit.IMAGES)
 
-        return AiPromptTrace(
-            null,
-            imageCreation.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageUrl(imageUrl = it.url) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageUrl(imageUrl = it.url) })
         )
     }
 
@@ -278,11 +284,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.imageJSON(imageCreation)
         usage.increment(resp.size, UsageUnit.IMAGES)
 
-        return AiPromptTrace(
-            null,
-            imageCreation.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageBase64(imageBase64 = it.b64JSON) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageBase64(imageBase64 = it.b64JSON) })
         )
     }
 
@@ -293,11 +298,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val t0 = System.currentTimeMillis()
         val resp = client.speech(request)
 
-        return AiPromptTrace(
-            null,
-            request.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.other(resp)
+        return AiTaskTrace(
+            env = AiEnvInfo.of(request.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.other(resp)
         )
     }
 

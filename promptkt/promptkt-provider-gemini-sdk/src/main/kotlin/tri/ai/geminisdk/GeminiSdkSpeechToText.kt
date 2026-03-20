@@ -40,11 +40,11 @@ class GeminiSdkSpeechToText(
         return try {
             val response = client.generateContentAudio(modelId, audioFile.readBytes(), mimeType, transcribePrompt)
             val text = response.text() ?: ""
-            AiPromptTrace(
-                PromptInfo(transcribePrompt),
-                AiModelInfo(modelId),
-                AiExecInfo.durationSince(t0),
-                AiOutputInfo.text(text)
+            AiTaskTrace(
+                env = AiEnvInfo.of(AiModelInfo(modelId)),
+                input = AiTaskInputInfo.of(PromptInfo(transcribePrompt)),
+                exec = AiExecInfo.durationSince(t0),
+                output = AiOutputInfo.text(text)
             )
         } catch (e: Exception) {
             AiPromptTrace.error(AiModelInfo(modelId), e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
