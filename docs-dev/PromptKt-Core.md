@@ -14,10 +14,11 @@ Text/chat models include:
 Special types:
 - `EmbeddingModel` - calculate embedding vector from one or more text strings, with optional dimensionality parameter
 - `ImageGenerator` - generates an image from text, returning image URLs
+- `TextToSpeechModel` - convert text to speech audio
+- `SpeechToTextModel` - transcribe audio to text
 
-Future:
+Partially supported (model type metadata exists, provider implementations may vary):
 - Moderation
-- Audio (text-to-speech, speech-to-text)
 - Responses
 
 Deprecated:
@@ -25,7 +26,9 @@ Deprecated:
 
 ## Model Plugins
 
-`TextPlugin` is a one-stop shop for models from a single provider, supporting the common types above. (This is a legacy name, and would be more descriptive as `AiModelProvider`.) It also provides model metadata as `ModelInfo`.
+`AiModelProvider` is a one-stop shop for models from a single provider, supporting the common types above. It also provides model metadata as `ModelInfo`.
+
+`TextPlugin` is a deprecated typealias for `AiModelProvider`. Prefer using `AiModelProvider` directly.
 
 ## Model Metadata
 
