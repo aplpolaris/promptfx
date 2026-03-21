@@ -41,7 +41,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-openai</artifactId>
-            <version>0.15.0</version>
+            <version>0.15.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

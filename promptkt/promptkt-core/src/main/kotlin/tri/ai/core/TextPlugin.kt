@@ -19,6 +19,5 @@
  */
 package tri.ai.core
 
-/** Deprecated alias for [AiModelProvider]. Use [AiModelProvider] instead. */
-@Deprecated("Use AiModelProvider instead", ReplaceWith("AiModelProvider", "tri.ai.core.AiModelProvider"))
+/** Alias for [AiModelProvider]. Prefer using [AiModelProvider] directly. */
 typealias TextPlugin = AiModelProvider

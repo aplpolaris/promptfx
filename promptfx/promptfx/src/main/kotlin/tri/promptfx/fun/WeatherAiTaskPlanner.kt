@@ -68,7 +68,7 @@ class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParame
     private suspend inline fun <reified T> CompletionBuilder.executeJson(engine: AiChatEngine) =
         requestJson(true).execute(engine).mapOutput {
             try {
-                AiOutput.Other(JSON_MAPPER.readValue<T>(it.textContent().trim()))
+                AiOutput.Other(JSON_MAPPER.readValue<T>(it.textContent().trim()) as Any)
             } catch (x: JsonMappingException) {
                 fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
                 AiOutput.Text("Failed to parse response as JSON: ${x.message}")

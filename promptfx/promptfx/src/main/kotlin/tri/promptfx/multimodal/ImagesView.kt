@@ -131,7 +131,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                         isPreserveRatio = true
                         isPickOnBounds = true // so you can click anywhere on transparent images
                         tooltip { graphic = VBox().apply {
-                            val text = text(it.prompt!!.template) {
+                            val text = text(it.input?.prompt ?: "") {
                                 style = "-fx-fill: white;"
                             }
                             val image = imageview(it.firstValue.imageContent()!!.base64ToImage())
