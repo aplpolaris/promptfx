@@ -29,6 +29,7 @@ import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.createTool
+import tri.ai.prompt.trace.AiOutput
 import tri.util.json.tryJson
 
 /**
@@ -54,7 +55,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             MultimodalChatMessage.text(MChatRole.User, question)
         )
 
-        var response = chat.chat(messages, params).firstValue.multimodalMessage!!
+        var response = (chat.chat(messages, params).firstValue as AiOutput.MultimodalMessage).multimodalMessage
         messages += response
         var toolCalls = response.toolCalls
 
@@ -80,7 +81,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
                 }
             }
 
-            response = chat.chat(messages = messages, params).firstValue.multimodalMessage!!
+            response = (chat.chat(messages = messages, params).firstValue as AiOutput.MultimodalMessage).multimodalMessage
             messages += response
             toolCalls = response.toolCalls
         }

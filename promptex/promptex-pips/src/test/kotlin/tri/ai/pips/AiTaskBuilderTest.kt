@@ -38,7 +38,7 @@ class AiTaskBuilderTest {
                 input + input
             }.plan
             val result = AiWorkflowExecutor.execute(plan, printingExecContext())
-            assertEquals("gogo", result.finalResult.firstValue.text)
+            assertEquals("gogo", result.finalResult.firstValue.textContent())
         }
     }
 
@@ -62,7 +62,7 @@ class AiTaskBuilderTest {
         val result2 = runBlocking {
             AiWorkflowExecutor.execute(plan2, printingExecContext())
         }
-        assertEquals("go, stop", result2.finalResult.firstValue.text)
+        assertEquals("go, stop", result2.finalResult.firstValue.textContent())
     }
 
 }

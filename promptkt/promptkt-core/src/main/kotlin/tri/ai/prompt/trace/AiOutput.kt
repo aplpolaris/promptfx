@@ -30,12 +30,8 @@ import tri.ai.core.TextChatMessage
  * Sealed class hierarchy for individual AI task outputs.
  *
  * Use the typed subclasses [Text], [ChatMessage], [MultimodalMessage], or [Other] to represent
- * different kinds of task output, or use the backward-compatible factory function [invoke] to
- * create an appropriately-typed output from named parameters.
- *
- * Each subtype exposes backward-compatible nullable properties ([text], [message],
- * [multimodalMessage], [other]) so that existing code using these properties compiles unchanged;
- * properties not applicable to a given subtype return `null`.
+ * different kinds of task output.  Downstream code should use `when`/`is` type checks to access
+ * subtype-specific properties rather than relying on the base class.
  */
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -50,22 +46,6 @@ import tri.ai.core.TextChatMessage
     JsonSubTypes.Type(value = AiOutput.Other::class, name = "other"),
 )
 sealed class AiOutput {
-
-    /** Text content of this output, or `null` if this is not a [Text] output. */
-    open val text: String? get() = null
-
-    /** Chat message of this output, or `null` if this is not a [ChatMessage] output. */
-    open val message: TextChatMessage? get() = null
-
-    /** Multimodal message of this output, or `null` if this is not a [MultimodalMessage] output. */
-    open val multimodalMessage: MultimodalChatMessage? get() = null
-
-    /**
-     * Arbitrary object of this output, or `null` if this is not an [Other] output.
-     * Not serialized to JSON.
-     */
-    @get:JsonIgnore
-    open val other: Any? get() = null
 
     /**
      * Finds text content where possible in the output.
@@ -88,7 +68,7 @@ sealed class AiOutput {
     // -------------------------------------------------------------------------
 
     /** A plain-text AI output. */
-    data class Text(override val text: String) : AiOutput() {
+    data class Text(val text: String) : AiOutput() {
         override fun textContent(ifNone: String?) = text
         override fun imageContent(): String? = null
         override fun content(): Any = text
@@ -96,7 +76,7 @@ sealed class AiOutput {
     }
 
     /** A chat-message AI output (e.g. from a TextChat model). */
-    data class ChatMessage(override val message: TextChatMessage) : AiOutput() {
+    data class ChatMessage(val message: TextChatMessage) : AiOutput() {
         override fun textContent(ifNone: String?) = message.content
             ?: ifNone
             ?: error("No text content available in output: $this")
@@ -106,7 +86,7 @@ sealed class AiOutput {
     }
 
     /** A multimodal-message AI output (e.g. from a vision or image-generation model). */
-    data class MultimodalMessage(override val multimodalMessage: MultimodalChatMessage) : AiOutput() {
+    data class MultimodalMessage(val multimodalMessage: MultimodalChatMessage) : AiOutput() {
         override fun textContent(ifNone: String?) =
             multimodalMessage.content?.firstNotNullOfOrNull { it.text }
                 ?: ifNone
@@ -133,7 +113,7 @@ sealed class AiOutput {
      * falling back to `null` for non-serializable types. Deserialization would then restore as
      * `JsonNode` rather than the original type, which is sufficient for many read-only use cases.
      */
-    data class Other(@get:JsonIgnore override val other: Any) : AiOutput() {
+    data class Other(@get:JsonIgnore val other: Any) : AiOutput() {
         private val fallback get() = "Other(${other::class.simpleName})"
         override fun textContent(ifNone: String?) = runCatching { other.toString() }
             .getOrElse { ifNone ?: fallback }

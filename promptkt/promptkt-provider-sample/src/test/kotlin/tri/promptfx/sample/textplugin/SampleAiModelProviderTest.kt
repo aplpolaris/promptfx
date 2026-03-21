@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import tri.ai.core.*
+import tri.ai.prompt.trace.AiOutput
 import java.util.*
 
 class SampleAiModelProviderTest {
@@ -75,7 +76,7 @@ class SampleAiModelProviderTest {
         val model = SampleTextCompletionModel()
         val result = model.complete("Hello World", MChatVariation(), null, null, null)
         
-        assertEquals("Sample Echo: Hello World", result.firstValue.text)
+        assertEquals("Sample Echo: Hello World", result.firstValue.textContent())
     }
 
     @Test
@@ -86,7 +87,7 @@ class SampleAiModelProviderTest {
         )
         val result = model.chat(messages, MChatVariation(), null, null, null, null)
         
-        val response = result.firstValue.message
+        val response = (result.firstValue as? AiOutput.ChatMessage)?.message
         assertNotNull(response)
         assertEquals(MChatRole.Assistant, response?.role)
         assertTrue(response?.content?.contains("Test message") == true)

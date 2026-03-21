@@ -67,7 +67,7 @@ fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {
 private suspend fun AiPromptRunConfig.execute(chat: TextChat): tri.ai.prompt.trace.AiPromptTrace {
     val promptText = promptInfo.filled()
     val result = chatWithModelInfo(chat, promptText, modelInfo)
-    return result.copy(input = AiTaskInputInfo.of(promptInfo)).mapOutput { AiOutput.Text(it.message!!.content!!) }
+    return result.copy(input = AiTaskInputInfo.of(promptInfo)).mapOutput { AiOutput.Text(it.textContent()) }
 }
 
 private suspend fun chatWithModelInfo(chat: TextChat, text: String, modelInfo: AiModelInfo) =

@@ -48,7 +48,7 @@ class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParame
                 .paramsInput(input)
                 .tokens(500)
                 .executeJson<WeatherRequest>(chatEngine)
-                .output!!.outputs.first().other as WeatherRequest
+                .output!!.outputs.first().let { (it as AiOutput.Other).other as WeatherRequest }
         }.task("weather-api") { it, _ ->
             weatherService.getWeather(it) as WeatherResult
         }.task("weather-response-formatter") { it, context ->

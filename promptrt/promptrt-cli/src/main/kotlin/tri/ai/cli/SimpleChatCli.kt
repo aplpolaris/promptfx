@@ -32,6 +32,7 @@ import tri.ai.core.MChatRole
 import tri.ai.core.AiModelProvider
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.ai.prompt.trace.AiOutput
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
@@ -80,7 +81,7 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
             while (input != "bye") {
                 chatHistory.add(TextChatMessage(MChatRole.User, input))
                 val response = chatModelInst.chat(chatHistory)
-                val message = response.firstValue.message!!
+                val message = (response.firstValue as AiOutput.ChatMessage).message
                 println(message)
                 chatHistory.add(TextChatMessage(MChatRole.Assistant, message.content))
                 while (chatHistory.size > historySize) {

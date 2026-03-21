@@ -272,7 +272,7 @@ class AiPromptMultiAttemptTest {
 
         assertTrue(trace.exec.succeeded())
         assertEquals(3, trace.exec.stats[AiExecInfo.ATTEMPTS] as? Int)
-        val result = trace.values?.firstOrNull()?.other as? List<*>
+        val result = (trace.values?.firstOrNull() as? AiOutput.Other)?.other as? List<*>
         assertNotNull(result)
         // "apple" appears 3 times, "banana" 2 times; both should be present
         assertTrue(result!!.contains("apple"))
@@ -335,7 +335,7 @@ class AiPromptMultiAttemptTest {
             .executeMultiAttemptJsonList(chat, attempts = 2, mergeStrategy = JsonListMergeStrategy.UNION)
 
         assertTrue(trace.exec.succeeded())
-        val result = trace.values?.firstOrNull()?.other as? List<*>
+        val result = (trace.values?.firstOrNull() as? AiOutput.Other)?.other as? List<*>
         assertEquals(listOf("a", "b", "c"), result)
     }
 
@@ -347,7 +347,7 @@ class AiPromptMultiAttemptTest {
             .executeMultiAttemptJsonList(chat, attempts = 2, mergeStrategy = JsonListMergeStrategy.INTERSECTION)
 
         assertTrue(trace.exec.succeeded())
-        val result = trace.values?.firstOrNull()?.other as? List<*>
+        val result = (trace.values?.firstOrNull() as? AiOutput.Other)?.other as? List<*>
         assertEquals(listOf("b", "c"), result)
     }
 
@@ -365,7 +365,7 @@ class AiPromptMultiAttemptTest {
             )
 
         assertTrue(trace.exec.succeeded())
-        val result = trace.values?.firstOrNull()?.other as? List<*>
+        val result = (trace.values?.firstOrNull() as? AiOutput.Other)?.other as? List<*>
         // Should contain fox and dog, NOT just fox (from known_items)
         assertEquals(listOf("fox", "dog"), result)
     }
