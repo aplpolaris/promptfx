@@ -61,8 +61,6 @@ By default, `{{today}}` is automatically injected with the current ISO-8601 date
 
 `findFields()` returns the list of all Mustache field names found in the template.
 
-Standard field name constants are defined on `PromptTemplate.Companion`: `INPUT`, `INSTRUCT`, `TODAY`.
-
 ### `PromptDef`
 
 `PromptDef` is the serializable descriptor for a single prompt template. Key fields:
