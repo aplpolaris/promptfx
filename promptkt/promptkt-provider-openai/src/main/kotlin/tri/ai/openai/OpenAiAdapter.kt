@@ -36,8 +36,19 @@ import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
@@ -51,13 +62,44 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.*
 
-/** Adapter for an OpenAI client with usage tracking. */
+/**
+ * Adapter for an OpenAI client with usage tracking.
+ *
+ * Most API calls are delegated to the [OpenAI] client from `com.aallam.openai.client`, which handles
+ * authentication, serialization, and error handling. A small number of calls bypass that library and
+ * instead use a direct Ktor (CIO engine) HTTP client ([httpClient]):
+ *
+ * - **[imageJSONDirect]**: Used for `gpt-image-*` models (e.g. `gpt-image-1`, `gpt-image-1.5`,
+ *   `gpt-image-1-mini`). The `openai-kotlin` library's `imageJSON()` always appends
+ *   `response_format: "b64_json"` to the request, but these models reject that as an unknown
+ *   parameter — they return base64 data by default. The direct call omits `response_format`
+ *   entirely to avoid the API error.
+ */
 class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
 
     var client = _client
         internal set
 
+    /** Ktor HTTP client for direct API calls (e.g. for models that don't support response_format). */
+    private val httpClient: HttpClient by lazy {
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json(Json {
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                })
+            }
+            defaultRequest {
+                url(settings.baseUrl ?: OPENAI_BASE_URL)
+                header("Authorization", "Bearer ${settings.apiKey}")
+                contentType(ContentType.Application.Json)
+            }
+        }
+    }
+
     companion object {
+        private const val OPENAI_BASE_URL = "https://api.openai.com/"
         private val INSTANCE_SETTINGS = OpenAiApiSettingsBasic()
         val INSTANCE = OpenAiAdapter(INSTANCE_SETTINGS, INSTANCE_SETTINGS.buildClient())
         var apiKey
@@ -291,6 +333,35 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         )
     }
 
+    /**
+     * Runs an image creation request without the response_format parameter.
+     * Used for models like gpt-image-* that do not support response_format but return b64_json by default.
+     */
+    suspend fun imageJSONDirect(imageCreation: ImageCreation): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val requestBody = OpenAiImageRequest(
+            model = imageCreation.model?.id ?: DALLE2_ID,
+            prompt = imageCreation.prompt,
+            n = imageCreation.n,
+            size = imageCreation.size?.size,
+            quality = imageCreation.quality?.value,
+            style = imageCreation.style?.value
+        )
+        val resp = httpClient.post("v1/images/generations") {
+            setBody(requestBody)
+        }.body<OpenAiImageResponse>()
+        usage.increment(resp.data.size, UsageUnit.IMAGES)
+
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.data.mapNotNull { it.b64Json }
+                .map { MultimodalChatMessage.imageBase64(imageBase64 = it) })
+        )
+    }
+
     /** Runs a speech request. */
     suspend fun speech(request: SpeechRequest): AiPromptTraceSupport {
         settings.checkApiKey()
@@ -438,6 +509,34 @@ enum class UsageUnit {
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
+
+//endregion
+
+//region DIRECT IMAGE API DATA CLASSES
+
+/** Request body for the OpenAI images generations endpoint (used for direct calls without response_format). */
+@Serializable
+internal data class OpenAiImageRequest(
+    val model: String,
+    val prompt: String,
+    val n: Int? = null,
+    val size: String? = null,
+    val quality: String? = null,
+    val style: String? = null
+)
+
+/** Response body from the OpenAI images generations endpoint. */
+@Serializable
+internal data class OpenAiImageResponse(
+    val data: List<OpenAiImageData> = emptyList()
+)
+
+/** A single image entry in [OpenAiImageResponse]. */
+@Serializable
+internal data class OpenAiImageData(
+    @SerialName("b64_json") val b64Json: String? = null,
+    val url: String? = null
+)
 
 //endregion
 
