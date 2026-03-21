@@ -20,10 +20,11 @@
 package tri.promptfx.sample.textplugin
 
 import tri.ai.core.*
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** 
  * Sample plugin demonstrating TextPlugin implementation.
@@ -82,13 +83,11 @@ class SampleTextCompletionModel : TextCompletion {
         tokens: Int?,
         stop: List<String>?,
         numResponses: Int?
-    ): AiPromptTrace {
+    ): AiTaskTrace {
         val response = "Sample Echo: $text"
-        return AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.text(response)
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(modelId)),
+            output = AiOutputInfo.text(response)
         )
     }
 }
@@ -106,14 +105,12 @@ class SampleChatModel : TextChat {
         stop: List<String>?,
         numResponses: Int?,
         requestJson: Boolean?
-    ): AiPromptTrace {
+    ): AiTaskTrace {
         val lastMessage = messages.lastOrNull()?.content ?: "No message provided"
         val response = TextChatMessage(MChatRole.Assistant, "Sample response to: $lastMessage")
-        return AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.messages(listOf(response))
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(modelId)),
+            output = AiOutputInfo.messages(listOf(response))
         )
     }
 }
