@@ -32,16 +32,19 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
     override fun toString() = modelDisplayName()
 
     override suspend fun generateImage(text: String, params: ImageGenerationParams): List<URI> {
-        val images = client.imageJSON(
-            ImageCreation(
-                model = ModelId(modelId),
-                prompt = text,
-                n = params.numResponses ?: 1,
-                size = params.size?.toOpenAiSize() ?: com.aallam.openai.api.image.ImageSize.is1024x1024,
-                quality = params.quality?.let { com.aallam.openai.api.image.Quality(it) },
-                style = params.style?.let { com.aallam.openai.api.image.Style(it) }
-            )
+        val imageCreation = ImageCreation(
+            model = ModelId(modelId),
+            prompt = text,
+            n = params.numResponses ?: 1,
+            size = params.size?.toOpenAiSize() ?: com.aallam.openai.api.image.ImageSize.is1024x1024,
+            quality = params.quality?.let { com.aallam.openai.api.image.Quality(it) },
+            style = params.style?.let { com.aallam.openai.api.image.Style(it) }
         )
+        val images = if (modelId in GPT_IMAGE_MODELS) {
+            client.imageJSONDirect(imageCreation)
+        } else {
+            client.imageJSON(imageCreation)
+        }
         return images.output!!.outputs.map { output ->
             val base64 = output.imageContent()
                 ?: throw IllegalStateException("No image content in response for model $modelId")
@@ -54,6 +57,11 @@ class OpenAiImageGenerator(override val modelId: String = OpenAiModelIndex.IMAGE
         "512x512" -> com.aallam.openai.api.image.ImageSize.is512x512
         "1024x1024" -> com.aallam.openai.api.image.ImageSize.is1024x1024
         else -> com.aallam.openai.api.image.ImageSize(this)
+    }
+
+    companion object {
+        /** Models that do not support the response_format parameter in image generation. */
+        val GPT_IMAGE_MODELS = setOf("gpt-image-1", "gpt-image-1.5", "gpt-image-1-mini")
     }
 
 }

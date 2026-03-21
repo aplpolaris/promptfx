@@ -21,7 +21,8 @@ package tri.ai.core
 
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiOutputInfo
 
 /**
@@ -46,7 +47,7 @@ internal class TestTextCompletion : TextCompletion {
     override val modelSource = "TestShim"
     override fun toString() = modelDisplayName()
     override suspend fun complete(text: String, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?) =
-        AiPromptTrace(null, AiModelInfo(modelId), AiExecInfo(), AiOutputInfo.text("test response"))
+        AiTaskTrace(env = AiEnvInfo.of(AiModelInfo(modelId)), output = AiOutputInfo.text("test response"))
 }
 
 /** Minimal test text chat model. */
@@ -55,10 +56,8 @@ internal class TestTextChat : TextChat {
     override val modelSource = "TestShim"
     override fun toString() = modelDisplayName()
     override suspend fun chat(messages: List<TextChatMessage>, variation: MChatVariation, tokens: Int?, stop: List<String>?, numResponses: Int?, requestJson: Boolean?) =
-        AiPromptTrace(
-            null,
-            AiModelInfo(modelId),
-            AiExecInfo(),
-            AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response")))
+        AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(modelId)),
+            output = AiOutputInfo.messages(listOf(TextChatMessage(MChatRole.Assistant, "test response")))
         )
 }

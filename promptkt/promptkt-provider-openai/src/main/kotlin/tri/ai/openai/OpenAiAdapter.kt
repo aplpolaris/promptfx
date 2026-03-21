@@ -36,8 +36,20 @@ import com.aallam.openai.api.model.Model
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import tri.ai.core.*
 import tri.ai.openai.OpenAiModelIndex.AUDIO_WHISPER
 import tri.ai.openai.OpenAiModelIndex.DALLE2_ID
@@ -56,6 +68,16 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
 
     var client = _client
         internal set
+
+    /** Ktor HTTP client for direct API calls (used for models that don't support response_format). */
+    private val directHttpClient: HttpClient = HttpClient {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                explicitNulls = false
+            })
+        }
+    }
 
     companion object {
         private val INSTANCE_SETTINGS = OpenAiApiSettingsBasic()
@@ -94,10 +116,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         ))
         usage.increment(resp.usage)
 
-        return AiPromptTrace(null,
-            AiModelInfo.embedding(modelId, outputDimensionality),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.output(resp.embeddings.map { AiOutput.Other(it.embedding) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo.embedding(modelId, outputDimensionality)),
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            output = AiOutputInfo.output(resp.embeddings.map { AiOutput.Other(it.embedding) })
         )
     }
 
@@ -105,7 +127,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     suspend fun quickTranscribe(modelId: String = AUDIO_WHISPER, audioFile: File): AiPromptTrace {
         settings.checkApiKey()
         if (!audioFile.isAudioFile())
-            return AiPromptTrace.invalidRequest(modelId, "Audio file not provided.")
+            return AiTaskTrace.invalidRequest(modelId, "Audio file not provided.")
 
         val t0 = System.currentTimeMillis()
         val resp = client.transcription(TranscriptionRequest(
@@ -116,10 +138,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             usage.increment(it.toInt(), UsageUnit.AUDIO_SECONDS)
         }
 
-        return AiPromptTrace(null,
-            AiModelInfo(modelId),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.text(resp.text)
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(modelId)),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.text(resp.text)
         )
     }
 
@@ -135,11 +157,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.completion(completionRequest)
         usage.increment(resp.usage)
 
-        return AiPromptTrace(
-            completionRequest.prompt?.let { PromptInfo(it) },
-            completionRequest.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            AiOutputInfo.text(resp.choices.map { it.text })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(completionRequest.toModelInfo()),
+            input = completionRequest.prompt?.let { AiTaskInputInfo.of(PromptInfo(it)) },
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            output = AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
@@ -171,11 +193,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
             else -> AiOutputInfo.messages(resp.choices.map { it.message.fromOpenAiMessage() })
         }
 
-        return AiPromptTrace(
-            prompt?.let { PromptInfo(it) },
-            completionRequest.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
-            outputInfo
+        return AiTaskTrace(
+            env = AiEnvInfo.of(completionRequest.toModelInfo()),
+            input = prompt?.let { AiTaskInputInfo.of(PromptInfo(it)) },
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage?.promptTokens, responseTokens = resp.usage?.completionTokens),
+            output = outputInfo
         )
     }
 
@@ -231,10 +253,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         // Propagate API-level errors (status:"failed") as a failed trace rather than returning empty output
         if (resp.status == "failed") {
             val errorMsg = resp.error?.message ?: "Responses API returned status: failed for model ${request.model.id}"
-            return AiPromptTrace(null, modelInfo, execInfo.also { it.error = errorMsg }, null)
+            return AiTaskTrace(env = AiEnvInfo.of(modelInfo), exec = execInfo.also { it.error = errorMsg })
         }
 
-        return AiPromptTrace(null, modelInfo, execInfo, AiOutputInfo.multimodalMessages(outputMessages))
+        return AiTaskTrace(env = AiEnvInfo.of(modelInfo), exec = execInfo, output = AiOutputInfo.multimodalMessages(outputMessages))
     }
 
     /** Runs an edit request (deprecated API). */
@@ -246,11 +268,11 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.edit(request)
         usage.increment(resp.usage)
 
-        return AiPromptTrace(
-            request.toPromptInfo(),
-            request.toModelInfo(),
-            AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
-            AiOutputInfo.text(resp.choices.map { it.text })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(request.toModelInfo()),
+            input = AiTaskInputInfo.of(request.toPromptInfo()),
+            exec = AiExecInfo.durationSince(t0, queryTokens = resp.usage.promptTokens, responseTokens = resp.usage.completionTokens),
+            output = AiOutputInfo.text(resp.choices.map { it.text })
         )
     }
 
@@ -262,11 +284,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.imageURL(imageCreation)
         usage.increment(resp.size, UsageUnit.IMAGES)
 
-        return AiPromptTrace(
-            null,
-            imageCreation.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageUrl(imageUrl = it.url) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageUrl(imageUrl = it.url) })
         )
     }
 
@@ -278,11 +299,41 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val resp = client.imageJSON(imageCreation)
         usage.increment(resp.size, UsageUnit.IMAGES)
 
-        return AiPromptTrace(
-            null,
-            imageCreation.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageBase64(imageBase64 = it.b64JSON) })
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.map { MultimodalChatMessage.imageBase64(imageBase64 = it.b64JSON) })
+        )
+    }
+
+    /**
+     * Runs an image creation request without the response_format parameter.
+     * Required for models such as gpt-image-1 that do not support response_format.
+     */
+    suspend fun imageJSONDirect(imageCreation: ImageCreation): AiPromptTrace {
+        settings.checkApiKey()
+
+        val t0 = System.currentTimeMillis()
+        val request = DirectImageRequest(
+            model = imageCreation.model?.id ?: DALLE2_ID,
+            prompt = imageCreation.prompt,
+            n = imageCreation.n,
+            size = imageCreation.size?.size,
+            quality = imageCreation.quality?.value,
+            style = imageCreation.style?.value
+        )
+        val baseUrl = (settings.baseUrl ?: "https://api.openai.com/v1").trimEnd('/') + "/"
+        val resp = directHttpClient.post("${baseUrl}images/generations") {
+            header("Authorization", "Bearer ${settings.apiKey}")
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body<DirectImageResponse>()
+        usage.increment(resp.data.size, UsageUnit.IMAGES)
+
+        return AiTaskTrace(
+            env = AiEnvInfo.of(imageCreation.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.multimodalMessages(resp.data.mapNotNull { it.b64Json }.map { MultimodalChatMessage.imageBase64(imageBase64 = it) })
         )
     }
 
@@ -293,11 +344,10 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         val t0 = System.currentTimeMillis()
         val resp = client.speech(request)
 
-        return AiPromptTrace(
-            null,
-            request.toModelInfo(),
-            AiExecInfo.durationSince(t0),
-            AiOutputInfo.other(resp)
+        return AiTaskTrace(
+            env = AiEnvInfo.of(request.toModelInfo()),
+            exec = AiExecInfo.durationSince(t0),
+            output = AiOutputInfo.other(resp)
         )
     }
 
@@ -434,6 +484,30 @@ enum class UsageUnit {
 
 fun File.isAudioFile() = extension.lowercase(Locale.getDefault()) in
         listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm")
+
+/** Request body for image generation without response_format. */
+@Serializable
+private data class DirectImageRequest(
+    val model: String,
+    val prompt: String,
+    val n: Int? = null,
+    val size: String? = null,
+    val quality: String? = null,
+    val style: String? = null
+)
+
+/** Response from image generation API. */
+@Serializable
+private data class DirectImageResponse(
+    val created: Long = 0,
+    val data: List<DirectImageData> = emptyList()
+)
+
+/** A single image item in the image generation response. */
+@Serializable
+private data class DirectImageData(
+    @SerialName("b64_json") val b64Json: String? = null
+)
 
 //endregion
 

@@ -48,11 +48,10 @@ class GeminiSdkTextCompletion(
             val response = client.generateContent(modelId, variation, listOf(message), tools = null, numResponses ?: 1)
             val responseTexts = response.extractTexts(numResponses ?: 1)
             
-            AiPromptTrace(
-                null,
-                modelInfo,
-                AiExecInfo.durationSince(t0),
-                if (responseTexts.size == 1) AiOutputInfo.text(responseTexts.first()) else AiOutputInfo.text(responseTexts)
+            AiTaskTrace(
+                env = AiEnvInfo.of(modelInfo),
+                exec = AiExecInfo.durationSince(t0),
+                output = if (responseTexts.size == 1) AiOutputInfo.text(responseTexts.first()) else AiOutputInfo.text(responseTexts)
             )
         } catch (e: Exception) {
             AiPromptTrace.error(modelInfo, e.message ?: "Unknown error", duration = System.currentTimeMillis() - t0)
