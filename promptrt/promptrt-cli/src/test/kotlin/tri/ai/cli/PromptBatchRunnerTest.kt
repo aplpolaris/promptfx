@@ -44,8 +44,8 @@ class PromptBatchRunnerTest {
         // write input to temporary file
         val inputFile = kotlin.io.path.createTempFile("prompt-batch-input", ".yaml")
         inputFile.writeText(input)
-        val outputFile = kotlin.io.path.createTempFile("prompt-batch-output", ".yaml")
-        val outputFile2 = kotlin.io.path.createTempFile("prompt-batch-output", ".yaml")
+        val outputFile = kotlin.io.path.createTempFile("prompt-batch-output", ".json")
+        val outputFile2 = kotlin.io.path.createTempFile("prompt-batch-output", ".json")
 
         PromptBatchRunner().main(arrayOf(inputFile.toString(), outputFile.toString()))
         println(outputFile.readText())

@@ -38,7 +38,7 @@ import java.util.UUID.randomUUID
  * Task identity is captured by [taskId], [parentTaskId], and [callerId], which are
  * also grouped together as [id] (an [AiTaskId]).
  */
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 open class AiTaskTrace(
     /** Unique identifier for this trace. */
     var taskId: String = randomUUID().toString(),
