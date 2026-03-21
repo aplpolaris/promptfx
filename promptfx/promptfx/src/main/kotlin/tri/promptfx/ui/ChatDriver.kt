@@ -24,6 +24,7 @@ import tornadofx.ScopedInstance
 import tri.ai.openai.OpenAiChat
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO
+import tri.ai.prompt.trace.AiOutput
 
 /** General-purpose tool that generates responses to chat messages. */
 abstract class ChatDriver : ScopedInstance, Component() {
@@ -55,7 +56,7 @@ class OpenAiChatDriver : ChatDriver() {
     override suspend fun chat(messages: List<ChatEntry>): ChatEntry {
         val inputChats = listOfNotNull(systemMessage) + messages.takeLast(chatHistorySize)
         val response = chatter.chat(inputChats.mapNotNull { it.toTextChatMessage() })
-        val first = response.output?.outputs?.getOrNull(0)
+        val first = response.output?.outputs?.getOrNull(0) as? AiOutput.ChatMessage
         return ChatEntry(systemName, first?.message?.content ?: "No response",
             first?.message?.role?.toChatRoleStyle() ?: ChatEntryRole.ERROR)
     }

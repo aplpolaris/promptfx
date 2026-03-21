@@ -24,6 +24,7 @@ import tri.ai.core.*
 import tri.ai.pips.ExecEvent
 import tri.ai.pips.emitProgress
 import tri.ai.pips.emitResponse
+import tri.ai.prompt.trace.AiOutput
 
 /**
  * Default implementation of [AgentChat] supporting any multimodal model from the plugin system.
@@ -48,7 +49,7 @@ class DefaultAgentChat : AgentChatSupport() {
         val chat = findMultimodalChat(session, this)
         emitProgress("Generating response...")
         val response = builder.execute(chat, contextMessages)
-        val responseMessage = response.output?.outputs?.firstOrNull()?.multimodalMessage
+        val responseMessage = (response.output?.outputs?.firstOrNull() as? AiOutput.MultimodalMessage)?.multimodalMessage
             ?: throw IllegalStateException("No response from chat API")
 
         // store and log response, maybe update session name

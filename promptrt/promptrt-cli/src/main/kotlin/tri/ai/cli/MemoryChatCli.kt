@@ -33,6 +33,7 @@ import tri.ai.memory.*
 import tri.ai.openai.*
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.ai.prompt.trace.AiOutput
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
@@ -99,9 +100,10 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(MChatRole.System, persona.getSystemMessage()))
         val response = chatModelInst.chat(personaMessage + contextualHistory).firstValue
-        memory.addChat(MemoryItem(response.message!!))
+        val msg = (response as AiOutput.ChatMessage).message
+        memory.addChat(MemoryItem(msg))
         memory.saveMemory(interimSave = true)
-        return response.message!!
+        return msg
     }
 
     //region INPUT/OUTPUT

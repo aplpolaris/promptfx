@@ -34,6 +34,7 @@ import tri.promptfx.execute
 import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.JsonListMergeStrategy
@@ -152,7 +153,7 @@ class ListGeneratorView: AiPlanTaskView("Convert to List",
         onCompleted {
             val firstValue = it.finalResult.firstValue
             // Multi-attempt result: `other` holds the merged ListPromptResult
-            val mergedResult = firstValue.other as? ListPromptResult
+            val mergedResult = (firstValue as? AiOutput.Other)?.other as? ListPromptResult
             if (mergedResult != null) {
                 output.set(mergedResult)
                 outputItems.setAll(mergedResult.items_in_input.distinct())
