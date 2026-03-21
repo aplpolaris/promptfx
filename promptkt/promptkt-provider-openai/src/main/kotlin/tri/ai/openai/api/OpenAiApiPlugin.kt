@@ -21,15 +21,15 @@ package tri.ai.openai.api
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.ApiSettings
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.openai.*
 import tri.util.warning
 
 /**
- * Implementation of [TextPlugin] using OpenAI-compatible API.
+ * Implementation of [AiModelProvider] using OpenAI-compatible API.
  * Allows for connection to multiple API endpoints with different functionality.
  */
-class OpenAiApiPlugin : TextPlugin {
+class OpenAiApiPlugin : AiModelProvider {
 
     val config = OpenAiApiConfig.INSTANCE
     private val clients = mutableMapOf<OpenAiApiSettingsGeneric, OpenAiAdapter>()

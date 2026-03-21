@@ -50,11 +50,11 @@ class GeminiSpeechToText(
             if (response.candidates.isNullOrEmpty()) {
                 AiPromptTrace.error(AiModelInfo(modelId), "Gemini returned no candidates", duration = System.currentTimeMillis() - t0)
             } else {
-                AiPromptTrace(
-                    PromptInfo(transcribePrompt),
-                    AiModelInfo(modelId),
-                    AiExecInfo.durationSince(t0),
-                    AiOutputInfo.text(response.candidates?.get(0)?.content?.parts?.get(0)?.text.orEmpty())
+                AiTaskTrace(
+                    env = AiEnvInfo.of(AiModelInfo(modelId)),
+                    input = AiTaskInputInfo.of(PromptInfo(transcribePrompt)),
+                    exec = AiExecInfo.durationSince(t0),
+                    output = AiOutputInfo.text(response.candidates?.get(0)?.content?.parts?.get(0)?.text.orEmpty())
                 )
             }
         } catch (e: Exception) {

@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptKt Parent POM, including the core PromptKt API and TextPlugin provider implementations.</description>
+    <description>PromptKt Parent POM, including the core PromptKt API and AiModelProvider provider implementations.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 

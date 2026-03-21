@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.flow
 import tri.ai.core.MultimodalChat
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.textContent
 import tri.ai.pips.ExecEvent
 import tri.ai.pips.emitError
@@ -90,9 +90,9 @@ abstract class AgentChatSupport : AgentChat {
     protected suspend fun findMultimodalChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): MultimodalChat {
         collector.emitProgress("Finding model...")
         return try {
-            TextPlugin.multimodalModel(session.config.modelId)
+            AiModelProvider.multimodalModel(session.config.modelId)
         } catch (e: Exception) {
-            val first = TextPlugin.Companion.multimodalModels().first()
+            val first = AiModelProvider.Companion.multimodalModels().first()
             collector.emitError(NullPointerException("Model ${session.config.modelId} not found, defaulting to first available model ${first.modelId}."))
             first
         }
@@ -101,7 +101,7 @@ abstract class AgentChatSupport : AgentChat {
     /** Looks up a model for a given session. */
     protected suspend fun findChat(session: AgentChatSession, collector: FlowCollector<ExecEvent>): TextChat {
         collector.emitProgress("Finding model...")
-        return TextPlugin.chatModel(session.config.modelId)
+        return AiModelProvider.chatModel(session.config.modelId)
     }
 
     /** Generate a session name from the first user message. */

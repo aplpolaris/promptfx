@@ -29,7 +29,7 @@ import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.util.MIN_LEVEL_TO_LOG
@@ -58,7 +58,7 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
     private val greeting
         get() = "You are chatting with $model. Say 'bye' to exit."
     private val chatModelInst
-        get() = TextPlugin.chatModels().first { it.modelId == model }
+        get() = AiModelProvider.chatModels().first { it.modelId == model }
 
 
     override fun run() {

@@ -27,7 +27,7 @@ import tri.ai.openai.OpenAiPlugin
 abstract class PromptFxPolicy {
 
     /** Returns the list of plugins that are supported by this policy. */
-    abstract fun supportedPlugins(): List<TextPlugin>
+    abstract fun supportedPlugins(): List<AiModelProvider>
     /** Returns information about all models supported by this policy. */
     abstract fun modelInfo(): List<ModelInfo>
 
@@ -74,7 +74,7 @@ data class PromptFxPolicyBar(
 )
 
 /** Policy based on a provided plugin. */
-abstract class PromptFxPolicyPlugin(val plugin: TextPlugin) : PromptFxPolicy() {
+abstract class PromptFxPolicyPlugin(val plugin: AiModelProvider) : PromptFxPolicy() {
     override fun supportedPlugins() = listOf(plugin)
     override fun modelInfo() = plugin.modelInfo()
     override fun embeddingModels() = plugin.embeddingModels()
@@ -101,14 +101,14 @@ object PromptFxPolicyUnrestricted : PromptFxPolicy() {
     override val isShowBanner = false
     override val isShowApiKeyButton = true
     override val bar = PromptFxPolicyBar("Unrestricted", Color.GRAY, Color.WHITE)
-    override fun supportedPlugins() = TextPlugin.orderedPlugins
-    override fun modelInfo() = TextPlugin.modelInfo()
-    override fun embeddingModels() = TextPlugin.embeddingModels()
-    override fun textCompletionModels() = TextPlugin.textCompletionModels()
-    override fun chatModels() = TextPlugin.chatModels()
-    override fun multimodalModels() = TextPlugin.multimodalModels()
-    override fun imageModels() = TextPlugin.imageGeneratorModels()
-    override fun textToSpeechModels() = TextPlugin.textToSpeechModels()
-    override fun speechToTextModels() = TextPlugin.speechToTextModels()
+    override fun supportedPlugins() = AiModelProvider.orderedPlugins
+    override fun modelInfo() = AiModelProvider.modelInfo()
+    override fun embeddingModels() = AiModelProvider.embeddingModels()
+    override fun textCompletionModels() = AiModelProvider.textCompletionModels()
+    override fun chatModels() = AiModelProvider.chatModels()
+    override fun multimodalModels() = AiModelProvider.multimodalModels()
+    override fun imageModels() = AiModelProvider.imageGeneratorModels()
+    override fun textToSpeechModels() = AiModelProvider.textToSpeechModels()
+    override fun speechToTextModels() = AiModelProvider.speechToTextModels()
     override fun supportsView(simpleName: String) = true
 }

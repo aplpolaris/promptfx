@@ -25,14 +25,14 @@ import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelLifecycle
 import tri.ai.core.ModelType
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import kotlin.jvm.optionals.getOrNull
 
 /** Plugin registering models and services via the Gemini official SDK. */
-class GeminiSdkPlugin : TextPlugin {
+class GeminiSdkPlugin : AiModelProvider {
 
     val client = GeminiSdkClient()
 

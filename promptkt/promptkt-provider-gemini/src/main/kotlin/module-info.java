@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 import tri.ai.gemini.GeminiAiPlugin;
 
 module tri.promptkt.gemini {
@@ -42,7 +42,7 @@ module tri.promptkt.gemini {
     exports tri.ai.gemini;
 
     // services (service loader API)
-    uses TextPlugin;
+    uses AiModelProvider;
 
-    provides TextPlugin with GeminiAiPlugin;
+    provides AiModelProvider with GeminiAiPlugin;
 }

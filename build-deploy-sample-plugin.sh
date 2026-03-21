@@ -23,7 +23,7 @@ if [ $? -eq 0 ]; then
     echo "To use the plugins:"
     echo "1. Start PromptFx"
     echo "2. NavigableWorkspaceView plugin: Look for 'Hello World' under the 'Custom' tab in the UI (Sample Plugin category)"
-    echo "3. TextPlugin: Look for 'SampleText' models in any model selection dropdown"
+    echo "3. AiModelProvider: Look for 'SampleText' models in any model selection dropdown"
 else
     echo "Build failed! Please check the Maven output above for errors."
     exit 1

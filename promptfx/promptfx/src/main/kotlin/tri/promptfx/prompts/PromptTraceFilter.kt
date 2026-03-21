@@ -87,7 +87,7 @@ class PromptTraceFilter : Component() {
     }
 
     private val AiTaskTrace.modelId
-        get() = model?.modelId ?: UNKNOWN
+        get() = env?.model?.modelId ?: UNKNOWN
     private val AiTaskTrace.traceViewId
         get() = callerId ?: UNKNOWN
     private val AiTaskTrace.statusId

@@ -68,11 +68,10 @@ class GeminiSdkMultimodalChat(
             } else {
                 val firstCandidate = candidates.first()
                 val msg = firstCandidate.fromGeminiCandidate()
-                return AiPromptTrace(
-                    null,
-                    modelInfo,
-                    AiExecInfo.durationSince(t0),
-                    AiOutputInfo.multimodalMessage(msg)
+                return AiTaskTrace(
+                    env = AiEnvInfo.of(modelInfo),
+                    exec = AiExecInfo.durationSince(t0),
+                    output = AiOutputInfo.multimodalMessage(msg)
                 )
             }
         } catch (e: Exception) {

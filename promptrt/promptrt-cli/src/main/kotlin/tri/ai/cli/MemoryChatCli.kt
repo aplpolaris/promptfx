@@ -28,7 +28,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.memory.*
 import tri.ai.openai.*
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
@@ -56,9 +56,9 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
     private val greeting
         get() = "You are chatting with $model (with memory). Say 'bye' to exit."
     private val chatModelInst
-        get() = TextPlugin.chatModels().first { it.modelId == model }
+        get() = AiModelProvider.chatModels().first { it.modelId == model }
     private val embeddingModelInst
-        get() = TextPlugin.embeddingModels().first { it.modelId == embedding }
+        get() = AiModelProvider.embeddingModels().first { it.modelId == embedding }
 
     private val persona: BotPersona = HelperPersona("Jack")
     private val memory: MemoryService by lazy { BotMemory(persona, chatModelInst, embeddingModelInst) }

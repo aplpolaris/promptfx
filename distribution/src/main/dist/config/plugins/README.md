@@ -6,9 +6,9 @@ This folder contains plugin JAR files that should be loaded by PromptFx at runti
 
 PromptFx supports two types of plugins:
 
-### 1. API Plugins (TextPlugin)
+### 1. API Plugins (AiModelProvider)
 
-API plugins extend PromptFx with support for additional AI model providers. They implement the `TextPlugin` interface and can provide:
+API plugins extend PromptFx with support for additional AI model providers. They implement the `AiModelProvider` interface and can provide:
 - Chat models
 - Text completion models
 - Multimodal chat models
@@ -17,7 +17,7 @@ API plugins extend PromptFx with support for additional AI model providers. They
 - Speech-to-text models
 - Text-to-speech models
 
-**Example:** A plugin that adds support for a custom AI API endpoint would implement `TextPlugin` and register custom model implementations.
+**Example:** A plugin that adds support for a custom AI API endpoint would implement `AiModelProvider` and register custom model implementations.
 
 ### 2. View Plugins (NavigableWorkspaceView)
 
@@ -43,14 +43,14 @@ Plugins must:
 - Be packaged as standard JAR files
 - Register their services via `META-INF/services/` or `module-info.java`
 - Implement one of the supported plugin interfaces:
-  - `tri.ai.core.TextPlugin` for API plugins
+  - `tri.ai.core.AiModelProvider` for API plugins
   - `tri.util.ui.NavigableWorkspaceView` for view plugins
 
 ## Example Plugins
 
 The PromptFx repository includes two sample plugins as references:
 
-- **promptkt-provider-sample**: Demonstrates how to create a custom `TextPlugin` to provide AI models
+- **promptkt-provider-sample**: Demonstrates how to create a custom `AiModelProvider` to provide AI models
 - **promptfx-sample-view-plugin**: Demonstrates how to create a custom `NavigableWorkspaceView` for the UI
 
 See the README files in those modules for detailed implementation guides.

@@ -20,14 +20,14 @@
 package tri.ai.prompt.trace.batch
 
 import tri.ai.core.TextChat
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.prompt.trace.*
 
 /** Configuration required for executing a text completion prompt. */
 class AiPromptRunConfig(
     val promptInfo: PromptInfo,
     val modelInfo: AiModelInfo,
-    val modelLookup: (String) -> TextChat = { TextPlugin.chatModel(it) }
+    val modelLookup: (String) -> TextChat = { AiModelProvider.chatModel(it) }
 ) {
     override fun toString() =
         "AiPromptRunConfig(promptInfo=$promptInfo, modelInfo=$modelInfo)"

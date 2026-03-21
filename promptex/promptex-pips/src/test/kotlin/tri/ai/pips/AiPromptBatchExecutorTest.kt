@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiPromptTraceDatabase
@@ -38,7 +38,7 @@ class AiPromptBatchExecutorTest {
 
     private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
 
-    private val defaultTextCompletion = TextPlugin.textCompletionModels().firstOrNull()
+    private val defaultTextCompletion = AiModelProvider.textCompletionModels().firstOrNull()
 
     private val batch = AiPromptBatchCyclic("test-batch-languages").apply {
         model = defaultTextCompletion?.modelId ?: "not a model"
@@ -64,7 +64,7 @@ class AiPromptBatchExecutorTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiWorkflowExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, printingExecContext()).interimResults.values.onEach {
+            AiWorkflowExecutor.execute(batch.tasks { AiModelProvider.chatModel(it) }, printingExecContext()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -79,7 +79,7 @@ class AiPromptBatchExecutorTest {
                 AiModelInfo(defaultTextCompletion!!.modelId),
                 4
             )
-            val result = AiWorkflowExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, printingExecContext())
+            val result = AiWorkflowExecutor.execute(batch.tasks { AiModelProvider.chatModel(it) }, printingExecContext())
             val db = AiPromptTraceDatabase().apply {
                 addTraces(result.interimResults.values)
             }

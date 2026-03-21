@@ -33,7 +33,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import tornadofx.*
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.gemini.GeminiAiPlugin
 import tri.ai.gemini.GeminiSettings
 import tri.ai.geminisdk.GeminiSdkPlugin
@@ -173,7 +173,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
             separator()
 
             // All Discovered Plugins
-            val allPlugins = TextPlugin.orderedPlugins
+            val allPlugins = AiModelProvider.orderedPlugins
             val policyPlugins = PromptFxModels.policy.supportedPlugins()
             vbox(5) {
                 label("Current Plugins:") {

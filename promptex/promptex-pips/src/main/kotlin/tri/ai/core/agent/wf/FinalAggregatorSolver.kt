@@ -21,7 +21,7 @@ package tri.ai.core.agent.wf
 
 import com.fasterxml.jackson.databind.JsonNode
 import tri.ai.core.CompletionBuilder
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.impl.PROMPTS
 import tri.ai.core.tool.ExecContext
@@ -48,7 +48,7 @@ class FinalAggregatorSolver(val config: AgentChatConfig) : WorkflowSolver(
             INPUTS_PARAM to inputData
         )
 
-        val chat = TextPlugin.Companion.chatModel(config.modelId)
+        val chat = AiModelProvider.Companion.chatModel(config.modelId)
         val response = CompletionBuilder()
             .tokens(config.maxTokens)
             .temperature(config.temperature)

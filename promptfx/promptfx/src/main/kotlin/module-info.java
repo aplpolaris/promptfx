@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 import tri.promptfx.agents.*;
 import tri.promptfx.mcp.McpPromptPlugin;
 import tri.promptfx.mcp.McpResourcePlugin;
@@ -94,7 +94,7 @@ module tri.promptfx {
     exports tri.util.ui.starship;
 
     // services (service loader API)
-    uses TextPlugin;
+    uses AiModelProvider;
     uses NavigableWorkspaceView;
 
     provides NavigableWorkspaceView with

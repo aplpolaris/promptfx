@@ -31,7 +31,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.mcp.McpProvider
 import tri.ai.mcp.McpProviderEmbedded
 import tri.ai.mcp.McpException
@@ -276,11 +276,11 @@ class McpCli : CliktCommand(name = "mcp-fx") {
                     }
 
                     val model = try {
-                        TextPlugin.multimodalModel(model)
+                        AiModelProvider.multimodalModel(model)
                     } catch (x: NoSuchElementException) {
                         throw McpException(
                             "Model '$model' not found. Available models: ${
-                                TextPlugin.chatModels().joinToString { it.modelId }
+                                AiModelProvider.chatModels().joinToString { it.modelId }
                             }", x
                         )
                     }

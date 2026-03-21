@@ -82,11 +82,10 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
             } else {
                 val firstCandidate = candidates!!.first()
                 val msg = firstCandidate.fromGeminiCandidate()
-                AiPromptTrace(
-                    null,
-                    modelInfo,
-                    AiExecInfo.durationSince(t0),
-                    AiOutputInfo.multimodalMessage(msg)
+                AiTaskTrace(
+                    env = AiEnvInfo.of(modelInfo),
+                    exec = AiExecInfo.durationSince(t0),
+                    output = AiOutputInfo.multimodalMessage(msg)
                 )
             }
         }

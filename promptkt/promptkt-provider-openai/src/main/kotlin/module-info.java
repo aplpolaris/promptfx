@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 import tri.ai.openai.OpenAiPlugin;
 import tri.ai.openai.api.OpenAiApiPlugin;
 
@@ -48,5 +48,5 @@ module tri.promptkt.openai {
     exports tri.ai.openai.azure;
 
     // services (service loader API)
-    provides TextPlugin with OpenAiPlugin, OpenAiApiPlugin;
+    provides AiModelProvider with OpenAiPlugin, OpenAiApiPlugin;
 }

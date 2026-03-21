@@ -7,12 +7,12 @@ See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-a
 
 ## Package Overview
 
-- `promptkt` (maven multi-module project) - PromptKt: core API and TextPlugin provider implementations.
+- `promptkt` (maven multi-module project) - PromptKt: core API and AiModelProvider implementations.
   - `promptkt-core` - LLM and prompt engineering, core API definitions.
   - `promptkt-provider-openai` - OpenAI plugin for prompt engineering and LLM interactions, also supports alternate APIs compatible with the OpenAI API.
   - `promptkt-provider-gemini` - Gemini AI plugin for prompt engineering and LLM interactions.
   - `promptkt-provider-gemini-sdk` - Gemini AI plugin using Google's official Java SDK for prompt engineering and LLM interactions.
-  - `promptkt-provider-sample` - Sample TextPlugin provider implementation.
+  - `promptkt-provider-sample` - Sample AiModelProvider implementation.
 - `promptex` (maven multi-module project) - Execution/service layer for AI workflows, RAG pipelines, and MCP integration.
   - `promptex-pips` - Agent, tool, and pipeline logic.
   - `promptex-docs` - Document management and RAG pipelines.

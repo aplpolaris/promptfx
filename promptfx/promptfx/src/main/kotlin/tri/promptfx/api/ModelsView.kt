@@ -29,7 +29,7 @@ import tornadofx.*
 import tri.ai.core.DataModality
 import tri.ai.core.ModelInfo
 import tri.ai.core.ModelType
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
 import tri.util.info
@@ -142,7 +142,7 @@ class ModelsView : AiTaskView("Models", "List all models from API call, sorted b
         }
     }
 
-    private fun loadModelsFromPlugin(plugin: TextPlugin) {
+    private fun loadModelsFromPlugin(plugin: AiModelProvider) {
         runAsync {
             try {
                 info<ModelsView>("Loading models from ${plugin.modelSource()}...")
