@@ -176,14 +176,10 @@ class OpenAiResponsesChat(
 
         /**
          * Returns the correct JSON value for the `image_url` field of an `input_image` content item.
-         * Plain URLs are returned as a [JsonPrimitive]; data URIs (starting with `data:`) are wrapped
-         * in a [JsonObject] `{ "url": "..." }` as required by the Responses API.
+         * Both plain URLs and data URIs are returned as a [JsonPrimitive] string, as required by the Responses API.
          */
         internal fun imageUrlJsonElement(inlineData: String): JsonElement =
-            if (inlineData.startsWith("data:"))
-                buildJsonObject { put("url", inlineData) }
-            else
-                JsonPrimitive(inlineData)
+            JsonPrimitive(inlineData)
 
         /** Get role string for this message. */
         private fun MultimodalChatMessage.roleString() = when (role) {

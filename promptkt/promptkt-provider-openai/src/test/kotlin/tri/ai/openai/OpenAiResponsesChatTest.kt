@@ -150,8 +150,8 @@ class OpenAiResponsesChatTest {
     fun testImageUrlJsonElement_DataUri() {
         val dataUri = "data:image/png;base64,iVBORw0KGgo="
         val element = imageUrlJsonElement(dataUri)
-        assertTrue(element is JsonObject, "Data URI should be serialized as a JsonObject { \"url\": ... }")
-        assertEquals(dataUri, (element as JsonObject)["url"]?.jsonPrimitive?.content)
+        assertTrue(element is JsonPrimitive, "Data URI should be serialized as a JsonPrimitive string")
+        assertEquals(dataUri, (element as JsonPrimitive).content)
     }
 
     @Test
@@ -200,8 +200,8 @@ class OpenAiResponsesChatTest {
         }
         assertNotNull(imagePart, "Should have an input_image content part")
         val imageUrlValue = imagePart!!["image_url"]
-        assertTrue(imageUrlValue is JsonObject, "Data URI should serialize image_url as a JsonObject { url: ... }")
-        assertEquals(dataUri, (imageUrlValue as JsonObject)["url"]?.jsonPrimitive?.content)
+        assertTrue(imageUrlValue is JsonPrimitive, "Data URI should serialize image_url as a plain JsonPrimitive string")
+        assertEquals(dataUri, imageUrlValue!!.jsonPrimitive.content)
     }
 
     //endregion
