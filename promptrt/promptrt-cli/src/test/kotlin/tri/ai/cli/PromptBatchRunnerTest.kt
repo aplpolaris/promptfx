@@ -46,8 +46,10 @@ class PromptBatchRunnerTest {
         inputFile.writeText(input)
         val outputFile = kotlin.io.path.createTempFile("prompt-batch-output", ".yaml")
         val outputFile2 = kotlin.io.path.createTempFile("prompt-batch-output", ".yaml")
+
         PromptBatchRunner().main(arrayOf(inputFile.toString(), outputFile.toString()))
         println(outputFile.readText())
+
         PromptBatchRunner().main(arrayOf(inputFile.toString(), outputFile2.toString(), "--database"))
         println(outputFile2.readText())
 

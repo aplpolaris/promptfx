@@ -76,7 +76,7 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         when (database) {
-            true -> writeTraceDatabase(AiPromptTraceDatabase(listOf(result)), outputFile)
+            true -> writeTraceDatabase(AiTaskTraceDatabase(listOf(result)), outputFile)
             else -> writeTrace(result, outputFile)
         }
         println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
