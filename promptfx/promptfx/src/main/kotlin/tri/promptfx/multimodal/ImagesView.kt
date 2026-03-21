@@ -320,6 +320,7 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
     companion object {
         private const val DALLE2_ID = "dall-e-2"
         private const val DALLE3_ID = "dall-e-3"
+        private const val GPT_IMAGE1_5 = "gpt-image-1.5"
         private const val GPT_IMAGE1 = "gpt-image-1"
         private const val GPT_IMAGE1_MINI = "gpt-image-1-mini"
         private const val GEMINI_SOURCE = "Gemini"
@@ -337,6 +338,12 @@ class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
                 qualities = listOf("standard", "hd", "auto"),
                 styles = listOf("vivid", "natural"),
                 counts = 1..1
+            ),
+            GPT_IMAGE1_5 to ImageModelCapabilities(GPT_IMAGE1_5,
+                sizes = listOf("1024x1024", "1536x1024", "1024x1536", "auto"),
+                qualities = listOf("low", "medium", "high", "auto"),
+                styles = listOf(),
+                counts = 1..10
             ),
             GPT_IMAGE1 to ImageModelCapabilities(GPT_IMAGE1,
                 sizes = listOf("1024x1024", "1536x1024", "1024x1536", "auto"),
