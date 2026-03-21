@@ -184,14 +184,3 @@ Holds execution metadata:
 - `AiOutput.Other(other: Any)` — an arbitrary object result; **not serialized to JSON** (lost on persistence)
 
 All subtypes expose `textContent()`, `imageContent()`, and `content()` for uniform access regardless of type.
-
-### Factory Methods
-
-`AiTaskTrace.Companion` provides convenience factories:
-```kotlin
-AiTaskTrace.output("some text")           // wraps a String
-AiTaskTrace.output(listOf("a", "b"))      // wraps multiple strings
-AiTaskTrace.outputMessage(message)        // wraps a TextChatMessage
-AiTaskTrace.error(modelInfo, "msg", ex)   // creates a failed trace
-AiTaskTrace.invalidRequest(modelId, "msg") // failed trace for bad model ID
-```
