@@ -36,36 +36,9 @@ data class AiExecInfo(
      */
     val stats: Map<String, Any> = mapOf()
 ) {
+
     /** Return true if the execution succeeded. */
     fun succeeded() = error == null && throwable == null
-
-    // region DEPRECATED STAT PROPERTIES (backed by stats map)
-
-    /** Number of query tokens. */
-    @Deprecated("Use stats[QUERY_TOKENS]", ReplaceWith("stats[AiExecInfo.QUERY_TOKENS] as? Int"))
-    val queryTokens: Int? get() = stats[QUERY_TOKENS] as? Int
-
-    /** Number of response tokens. */
-    @Deprecated("Use stats[RESPONSE_TOKENS]", ReplaceWith("stats[AiExecInfo.RESPONSE_TOKENS] as? Int"))
-    val responseTokens: Int? get() = stats[RESPONSE_TOKENS] as? Int
-
-    /** Response time in milliseconds. */
-    @Deprecated("Use stats[RESPONSE_TIME_MILLIS]", ReplaceWith("stats[AiExecInfo.RESPONSE_TIME_MILLIS] as? Long"))
-    val responseTimeMillis: Long? get() = stats[RESPONSE_TIME_MILLIS] as? Long
-
-    /** Response time in milliseconds, total duration including retries. */
-    @Deprecated("Use stats[RESPONSE_TIME_MILLIS_TOTAL]", ReplaceWith("stats[AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL] as? Long"))
-    val responseTimeMillisTotal: Long? get() = stats[RESPONSE_TIME_MILLIS_TOTAL] as? Long
-
-    /** Number of executions attempted. */
-    @Deprecated("Use stats[ATTEMPTS]", ReplaceWith("stats[AiExecInfo.ATTEMPTS] as? Int"))
-    val attempts: Int? get() = stats[ATTEMPTS] as? Int
-
-    /** Flag indicating whether this is an intermediate result. */
-    @Deprecated("Use stats[INTERMEDIATE_RESULT]", ReplaceWith("stats[AiExecInfo.INTERMEDIATE_RESULT] as? Boolean"))
-    val intermediateResult: Boolean? get() = stats[INTERMEDIATE_RESULT] as? Boolean
-
-    // endregion
 
     companion object {
         /** Stats key for the number of query/prompt tokens. */

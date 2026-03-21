@@ -242,7 +242,7 @@ class AiPromptMultiAttemptTest {
                 stop: List<String>?,
                 numResponses: Int?,
                 requestJson: Boolean?
-            ) = AiPromptTrace.output(responses[iter.next()])
+            ) = AiTaskTrace.output(responses[iter.next()])
         }
     }
 
@@ -256,7 +256,7 @@ class AiPromptMultiAttemptTest {
             stop: List<String>?,
             numResponses: Int?,
             requestJson: Boolean?
-        ) = AiPromptTrace.error(modelInfo = null, message = "simulated error")
+        ) = AiTaskTrace.error(modelInfo = null, message = "simulated error")
     }
 
     @Test
@@ -271,7 +271,7 @@ class AiPromptMultiAttemptTest {
             .executeMultiAttemptJsonList(chat, attempts = 3, mergeStrategy = JsonListMergeStrategy.TOP_REPEATED)
 
         assertTrue(trace.exec.succeeded())
-        assertEquals(3, trace.exec.attempts)
+        assertEquals(3, trace.exec.stats[AiExecInfo.ATTEMPTS] as? Int)
         val result = trace.values?.firstOrNull()?.other as? List<*>
         assertNotNull(result)
         // "apple" appears 3 times, "banana" 2 times; both should be present
@@ -292,9 +292,9 @@ class AiPromptMultiAttemptTest {
                 stop: List<String>?,
                 numResponses: Int?,
                 requestJson: Boolean?
-            ): AiPromptTrace {
+            ): AiTaskTrace {
                 capturedRequestJson = requestJson
-                return AiPromptTrace.output("""["a"]""")
+                return AiTaskTrace.output("""["a"]""")
             }
         }
         tri.ai.core.CompletionBuilder()
@@ -311,7 +311,7 @@ class AiPromptMultiAttemptTest {
             .executeMultiAttemptJsonList(errorChat(), attempts = 2)
 
         assertFalse(trace.exec.succeeded())
-        assertEquals(2, trace.exec.attempts)
+        assertEquals(2, trace.exec.stats[AiExecInfo.ATTEMPTS] as? Int)
         assertEquals("simulated error", trace.exec.error)
     }
 
@@ -323,7 +323,7 @@ class AiPromptMultiAttemptTest {
             .executeMultiAttemptJsonList(chat, attempts = 2)
 
         assertFalse(trace.exec.succeeded())
-        assertEquals(2, trace.exec.attempts)
+        assertEquals(2, trace.exec.stats[AiExecInfo.ATTEMPTS] as? Int)
         assertNotNull(trace.exec.error)
     }
 
