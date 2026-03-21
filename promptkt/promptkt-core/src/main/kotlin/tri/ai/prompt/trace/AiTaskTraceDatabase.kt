@@ -19,6 +19,8 @@
  */
 package tri.ai.prompt.trace
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 /**
  * In-memory database of [AiTaskTrace] objects, enabling deduplication of trace components for efficient storage.
  */
@@ -92,6 +94,7 @@ class AiTaskTraceDatabase {
 /**
  * Database reference for a stored [AiTaskTrace], using component indices to avoid duplication.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AiTaskTraceId(
     val taskId: String,
     val parentTaskId: String? = null,

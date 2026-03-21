@@ -39,7 +39,7 @@ import java.util.UUID.randomUUID
  * also grouped together as [id] (an [AiTaskId]).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-open class AiTaskTrace(
+class AiTaskTrace(
     /** Unique identifier for this trace. */
     var taskId: String = randomUUID().toString(),
     /** Parent task identifier, enabling reconstruction of call graphs. */
