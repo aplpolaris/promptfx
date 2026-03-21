@@ -33,7 +33,7 @@ module tri.promptkt.openai {
 
     requires io.ktor.client.core;
     requires io.ktor.client.content.negotiation;
-    requires io.ktor.client.okhttp;
+    requires io.ktor.client.cio;
     requires io.ktor.http;
     requires io.ktor.serialization;
     requires io.ktor.serialization.kotlinx.json;

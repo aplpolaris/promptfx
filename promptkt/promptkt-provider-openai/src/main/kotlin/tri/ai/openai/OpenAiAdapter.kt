@@ -38,7 +38,7 @@ import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
+import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.*
@@ -70,7 +70,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
 
     /** Ktor HTTP client for direct API calls (e.g. for models that don't support response_format). */
     private val httpClient: HttpClient by lazy {
-        HttpClient(OkHttp) {
+        HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(Json {
                     isLenient = true
