@@ -22,10 +22,12 @@ package tri.ai.gemini
 import tri.ai.core.MChatVariation
 import tri.ai.core.TextCompletion
 import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Text completion with Gemini models. */
 class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
@@ -61,11 +63,10 @@ class GeminiTextCompletion(override val modelId: String = GEMINI_25_FLASH_LITE, 
                 // Gemini API appears to return all candidates as parts of content of the first candidate response as well as across multiple candidates, so flatmap doesn't work
                 // val respText = candidates?.flatMap { it.content.parts.map { it.text } }?.filterNotNull()
                 val respText = candidates?.mapNotNull { it.content.parts.firstOrNull { it.text != null }?.text }
-                return AiPromptTrace(
-                    null,
-                    modelInfo,
-                    AiExecInfo.durationSince(t0),
-                    AiOutputInfo.text(respText ?: listOf())
+                return AiTaskTrace(
+                    env = AiEnvInfo.of(modelInfo),
+                    exec = AiExecInfo.durationSince(t0),
+                    output = AiOutputInfo.text(respText ?: listOf())
                 )
             }
         }

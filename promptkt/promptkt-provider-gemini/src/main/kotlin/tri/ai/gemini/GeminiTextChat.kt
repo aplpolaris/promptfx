@@ -24,10 +24,12 @@ import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
 import tri.ai.gemini.GeminiClient.Companion.fromGeminiRole
 import tri.ai.gemini.GeminiModelIndex.GEMINI_25_FLASH_LITE
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** Text chat with Gemini models. */
 class GeminiTextChat(override val modelId: String = GEMINI_25_FLASH_LITE, val client: GeminiClient = GeminiClient.INSTANCE) :
@@ -71,11 +73,10 @@ class GeminiTextChat(override val modelId: String = GEMINI_25_FLASH_LITE, val cl
                 val firstCandidate = candidates!!.first()
                 val role = firstCandidate.content.role.fromGeminiRole()
                 val msgs = firstCandidate.content.parts.map { TextChatMessage(role, it.text) }
-                AiPromptTrace(
-                    null,
-                    modelInfo,
-                    AiExecInfo.durationSince(t0),
-                    AiOutputInfo.messages(msgs)
+                AiTaskTrace(
+                    env = AiEnvInfo.of(modelInfo),
+                    exec = AiExecInfo.durationSince(t0),
+                    output = AiOutputInfo.messages(msgs)
                 )
             }
         }
