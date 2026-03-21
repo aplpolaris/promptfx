@@ -172,7 +172,6 @@ Convenience read-only properties:
 Holds execution metadata:
 - `error: String?` and `throwable: Throwable?` — failure information
 - `stats: Map<String, Any>` — general-purpose metrics map; standard keys are constants on the companion object
-- `succeeded(): Boolean` — true if no error or throwable is set
 
 ### `AiOutputInfo` and `AiOutput`
 
