@@ -46,20 +46,10 @@ Prompt templates and their library are in the package `tri.ai.prompt`.
 
 ```kotlin
 val template = PromptTemplate("Summarize the following: {{{input}}}")
-
-// fill with named fields
 val prompt = template.fill("input" to "The quick brown fox...")
-
-// shorthand for a single 'input' field
-val prompt = template.fillInput("The quick brown fox...")
-
-// shorthand for 'input' and 'instruct' fields
-val prompt = template.fillInstruct(input = "The quick brown fox...", instruct = "Use bullet points.")
 ```
 
 By default, `{{today}}` is automatically injected with the current ISO-8601 date. This can be disabled by setting `injectToday = false`.
-
-`findFields()` returns the list of all Mustache field names found in the template.
 
 ### `PromptDef`
 
