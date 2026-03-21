@@ -70,12 +70,14 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
         internal set
 
     /** Ktor HTTP client for direct API calls (used for models that don't support response_format). */
-    private val directHttpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                explicitNulls = false
-            })
+    private val directHttpClient: HttpClient by lazy {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                })
+            }
         }
     }
 
@@ -277,7 +279,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     }
 
     /** Runs an image creation request. */
-    suspend fun imageURL(imageCreation: ImageCreation): AiPromptTrace {
+    suspend fun imageURL(imageCreation: ImageCreation): AiTaskTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -292,7 +294,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
     }
 
     /** Runs an image creation request. */
-    suspend fun imageJSON(imageCreation: ImageCreation): AiPromptTrace {
+    suspend fun imageJSON(imageCreation: ImageCreation): AiTaskTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
@@ -310,7 +312,7 @@ class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
      * Runs an image creation request without the response_format parameter.
      * Required for models such as gpt-image-1 that do not support response_format.
      */
-    suspend fun imageJSONDirect(imageCreation: ImageCreation): AiPromptTrace {
+    suspend fun imageJSONDirect(imageCreation: ImageCreation): AiTaskTrace {
         settings.checkApiKey()
 
         val t0 = System.currentTimeMillis()
