@@ -62,7 +62,19 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.*
 
-/** Adapter for an OpenAI client with usage tracking. */
+/**
+ * Adapter for an OpenAI client with usage tracking.
+ *
+ * Most API calls are delegated to the [OpenAI] client from `com.aallam.openai.client`, which handles
+ * authentication, serialization, and error handling. A small number of calls bypass that library and
+ * instead use a direct Ktor (CIO engine) HTTP client ([httpClient]):
+ *
+ * - **[imageJSONDirect]**: Used for `gpt-image-*` models (e.g. `gpt-image-1`, `gpt-image-1.5`,
+ *   `gpt-image-1-mini`). The `openai-kotlin` library's `imageJSON()` always appends
+ *   `response_format: "b64_json"` to the request, but these models reject that as an unknown
+ *   parameter — they return base64 data by default. The direct call omits `response_format`
+ *   entirely to avoid the API error.
+ */
 class OpenAiAdapter(val settings: OpenAiApiSettings, _client: OpenAI) {
 
     var client = _client
