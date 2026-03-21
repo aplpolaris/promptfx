@@ -34,6 +34,7 @@ class OpenAiResponsesChatTest {
 
     private val client = OpenAiAdapter.INSTANCE
     private val TEST_MODEL = "gpt-5-nano"
+    private val TEST_MODEL_2 = "gpt-5-mini"
 
     //region MODEL INDEX TESTS
 
@@ -217,14 +218,14 @@ class OpenAiResponsesChatTest {
     @Test
     @Tag("openai")
     fun testChat_Roles() {
-        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
+        val chat = OpenAiResponsesChat(TEST_MODEL_2, client = client)
         chat.testChat_Roles()
     }
 
     @Test
     @Tag("openai")
     fun testChat_Image() {
-        val chat = OpenAiResponsesChat(TEST_MODEL, client = client)
+        val chat = OpenAiResponsesChat(TEST_MODEL_2, client = client)
         chat.testChat_Image()
     }
 

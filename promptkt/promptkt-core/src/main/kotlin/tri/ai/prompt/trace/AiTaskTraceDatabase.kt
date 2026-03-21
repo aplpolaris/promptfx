@@ -20,21 +20,16 @@
 package tri.ai.prompt.trace
 
 /**
- * In-memory database of [AiTaskTrace] objects, enabling deduplication of model, exec, and output
- * components for memory-efficient storage.
- *
- * Designed as the replacement for the legacy [AiPromptTraceDatabase]. Use this class for all new code.
- *
- * TODO - this is not optimized for large databases, but should work well for up to a few thousand traces.
+ * In-memory database of [AiTaskTrace] objects, enabling deduplication of trace components for efficient storage.
  */
 class AiTaskTraceDatabase {
 
     var traces = mutableListOf<AiTaskTraceId>()
 
-    var envs = mutableSetOf<AiEnvInfo>()
-    var inputs = mutableSetOf<AiTaskInputInfo>()
-    var execs = mutableSetOf<AiExecInfo>()
-    var outputs = mutableSetOf<AiOutputInfo>()
+    var envs: LinkedHashSet<AiEnvInfo> = LinkedHashSet()
+    var inputs: LinkedHashSet<AiTaskInputInfo> = LinkedHashSet()
+    var execs: LinkedHashSet<AiExecInfo> = LinkedHashSet()
+    var outputs: LinkedHashSet<AiOutputInfo> = LinkedHashSet()
 
     constructor()
 
