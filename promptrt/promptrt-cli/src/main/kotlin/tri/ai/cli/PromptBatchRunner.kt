@@ -69,15 +69,15 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         }
 
         println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
-        val result = runBlocking {
+        val workflowResult = runBlocking {
             val tasks = batch.plan { AiModelProvider.chatModel(it) }
-            AiWorkflowExecutor.execute(tasks.plan).finalResult
+            AiWorkflowExecutor.execute(tasks.plan)
         }
         println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
 
         when (database) {
-            true -> writeTraceDatabase(AiPromptTraceDatabase(listOf(result)), outputFile)
-            else -> writeTrace(result, outputFile)
+            true -> writeTraceDatabase(AiTaskTraceDatabase(workflowResult.interimResults.values), outputFile)
+            else -> writeTrace(workflowResult.finalResult, outputFile)
         }
         println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
     }

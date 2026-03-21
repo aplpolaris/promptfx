@@ -26,6 +26,7 @@ import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput
+import tri.ai.prompt.trace.AiOutputInfo
 import tri.ai.prompt.trace.AiTaskInputInfo
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.prompt.trace.batch.AiPromptBatch
@@ -40,8 +41,24 @@ fun AiPromptBatch.tasks(modelLookup: (String) -> TextChat) =
     runConfigs(modelLookup).mapIndexed { i, v -> v.task("$id $i") }
 
 /** Get list of tasks for executing this batch of prompts. */
-fun AiPromptBatch.plan(modelLookup: (String) -> TextChat) =
-    tasks(modelLookup).aggregate()
+fun AiPromptBatch.plan(modelLookup: (String) -> TextChat): AiTaskBuilder<List<AiOutput?>> {
+    val batchTasks = tasks(modelLookup)
+    val batchId = id
+    require(batchTasks.map { it.id }.toSet().size == batchTasks.size) { "Duplicate task IDs" }
+    val finalTask = object : AiTask<Any?, List<AiOutput?>>("promptBatch", dependencies = batchTasks.map { it.id }.toSet()) {
+        override suspend fun execute(input: Any?, context: ExecContext): List<AiOutput?> {
+            val outputs = dependencies.map { dep -> context.get(dep) as AiOutput? }.toList()
+            val nonNullOutputs = outputs.filterNotNull()
+            val trace = AiTaskTrace(
+                callerId = batchId,
+                output = if (nonNullOutputs.isEmpty()) null else AiOutputInfo(nonNullOutputs)
+            )
+            context.logTrace(id, trace)
+            return outputs
+        }
+    }
+    return AiTaskBuilder(batchTasks, finalTask)
+}
 
 /** Create task for executing a run config. */
 fun AiPromptRunConfig.task(id: String) = object : AiTask<Any?, AiOutput?>(id) {
