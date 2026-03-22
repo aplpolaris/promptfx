@@ -7,6 +7,10 @@ See [below](https://github.com/aplpolaris/promptfx/tree/main#building-promptkt-a
 
 ## Package Overview
 
+<p align="center">
+<img width="570" height="179" alt="image" src="https://github.com/user-attachments/assets/a1a894af-8938-4abe-8631-0696b17ccb8d" />
+</p>
+
 - `promptkt` (maven multi-module project) - PromptKt: core API and AiModelProvider implementations.
   - `promptkt-core` - LLM and prompt engineering, core API definitions.
   - `promptkt-provider-openai` - OpenAI plugin for prompt engineering and LLM interactions, also supports alternate APIs compatible with the OpenAI API.
