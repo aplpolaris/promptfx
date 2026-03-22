@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.16.0</version>
+    <version>0.16.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
@@ -49,7 +49,7 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-      <tag>promptkt-0.16.0</tag>
+      <tag>promptkt-0.15.0</tag>
   </scm>
 
     <issueManagement>
