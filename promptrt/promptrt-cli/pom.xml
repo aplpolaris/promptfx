@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.googlecode.blaisemath</groupId>
         <artifactId>promptrt</artifactId>
-        <version>0.15.1-SNAPSHOT</version>
+        <version>0.16.0</version>
     </parent>
 
     <artifactId>promptrt-cli</artifactId>
@@ -18,29 +18,29 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-docs</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.0</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-mcp</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.0</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-pips</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.0</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-gemini</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.0</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-openai</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.0</version>
         </dependency>
 
         <dependency>
