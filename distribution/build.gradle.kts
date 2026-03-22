@@ -3,10 +3,10 @@ plugins {
 }
 
 group = "com.googlecode.blaisemath"
-version = "0.15.0"
+version = "0.16.0"
 
 val appName = "promptfx"
-val appVersion = "0.15.0"
+val appVersion = "0.16.0"
 
 repositories {
     mavenLocal()
