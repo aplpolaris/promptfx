@@ -19,6 +19,8 @@
         <module>promptkt-provider-openai</module>
         <module>promptkt-provider-gemini</module>
         <module>promptkt-provider-gemini-sdk</module>
+        <!-- Anthropic provider -->
+        <module>promptkt-provider-anthropic</module>
 		<!-- Template project -->
         <module>promptkt-provider-sample</module>
     </modules>
