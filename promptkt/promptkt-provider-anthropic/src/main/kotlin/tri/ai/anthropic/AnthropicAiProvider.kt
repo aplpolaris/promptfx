@@ -22,7 +22,7 @@ package tri.ai.anthropic
 import tri.ai.core.*
 
 /** Plugin registering models and services via the Anthropic API. */
-class AnthropicAiPlugin : AiModelProvider {
+class AnthropicAiProvider : AiModelProvider {
 
     val client = AnthropicClient()
 

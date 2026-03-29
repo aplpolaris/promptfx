@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 
 class AnthropicPluginTest {
 
-    val plugin = AnthropicAiPlugin()
+    val plugin = AnthropicAiProvider()
 
     @Test
     fun testModelSource() {
