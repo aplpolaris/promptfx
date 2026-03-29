@@ -20,12 +20,28 @@
 package tri.util.ui.starship
 
 import com.fasterxml.jackson.databind.JsonNode
+import javafx.application.Platform
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
 import tornadofx.stringBinding
+import tri.ai.pips.api.PPlanStep
+
+/** Possible states for a pipeline step in the progress strip. */
+enum class PipelineStepState { PENDING, ACTIVE, DONE, FAILED }
+
+/** An observable entry for a single pipeline step shown in the progress strip. */
+class PipelineStepEntry(
+    /** Display name derived from the step's description, saveAs variable, or tool name. */
+    val name: String
+) {
+    /** Current execution state of this step. */
+    val state: SimpleObjectProperty<PipelineStepState> = SimpleObjectProperty(PipelineStepState.PENDING)
+}
 
 /** Object collecting observable results from a pipeline execution. */
 class StarshipPipelineResults {
@@ -41,6 +57,29 @@ class StarshipPipelineResults {
     val activeStepVar = SimpleObjectProperty<String>(null)
     /** Flag indicating completion. */
     val completed = SimpleBooleanProperty(false)
+
+    /** Observable list of pipeline steps with their current states, used by the progress strip. */
+    val stepStates: ObservableList<PipelineStepEntry> = FXCollections.observableArrayList()
+
+    /**
+     * Initialises the step list from the pipeline plan. Must be called at the start of each execution.
+     * Safe to call from a background thread.
+     */
+    fun initSteps(steps: List<PPlanStep>) {
+        Platform.runLater {
+            stepStates.setAll(steps.map { PipelineStepEntry(it.description ?: it.saveAs ?: it.tool) })
+        }
+    }
+
+    /**
+     * Updates the execution state for the step at [index].
+     * Safe to call from a background thread.
+     */
+    fun setStepState(index: Int, state: PipelineStepState) {
+        Platform.runLater {
+            if (index in stepStates.indices) stepStates[index].state.set(state)
+        }
+    }
 
     /** Creates an observable value for tracking the value of a variable, if not already present. */
     fun observableFor(widget: StarshipConfigWidget) =
@@ -77,6 +116,7 @@ class StarshipPipelineResults {
         started.set(false)
         completed.set(false)
         activeStepVar.set(null)
+        stepStates.forEach { it.state.set(PipelineStepState.PENDING) }
     }
 }
 
