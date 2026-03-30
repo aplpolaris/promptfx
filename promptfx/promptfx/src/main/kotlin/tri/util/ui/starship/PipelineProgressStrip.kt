@@ -93,7 +93,7 @@ private class StepIndicatorItem(private val entry: PipelineStepEntry) : HBox(6.0
         glyphStyle = "-fx-fill: $COLOR_MUTED;"
         opacity = 0.5
     }
-    private val nameLabel = label(entry.name) {
+    private val nameLabel = javafx.scene.control.Label(entry.name).apply {
         style = "-fx-text-fill: $COLOR_MUTED; -fx-font-size: 13px;"
     }
     private var pulseTimeline: Timeline? = null
