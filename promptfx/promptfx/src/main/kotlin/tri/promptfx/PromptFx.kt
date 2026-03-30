@@ -20,6 +20,9 @@
 package tri.promptfx
 
 import javafx.scene.Cursor
+import javafx.scene.control.Alert
+import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.TextArea
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
 import javafx.stage.Stage
@@ -39,10 +42,27 @@ class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
     }
 
     override fun start(stage: Stage) {
-        super.start(stage)
-        // as of 0.10.0, workspace doesn't seem to be initialized properly unless this is set here. not sure what changed
-        // (moved "onBeforeShow" with default view to the workspace code, since it didn't seem to be docking properly)
-        scope.workspace(find<PromptFxWorkspace>())
+        try {
+            super.start(stage)
+            // as of 0.10.0, workspace doesn't seem to be initialized properly unless this is set here. not sure what changed
+            // (moved "onBeforeShow" with default view to the workspace code, since it didn't seem to be docking properly)
+            scope.workspace(find<PromptFxWorkspace>())
+        } catch (e: Throwable) {
+            val deepestCause = generateSequence(e) { it.cause }.lastOrNull() ?: e
+            val message = "PromptFx failed to start.\n\nCause: ${deepestCause.javaClass.simpleName}: ${deepestCause.message}\n\n" +
+                "Please check your API key and model configuration files."
+            LogFactory.getLog(PromptFx::class.java).error("PromptFx startup failed", e)
+            stage.hide()
+            Alert(AlertType.ERROR).apply {
+                title = "PromptFx - Startup Error"
+                headerText = "PromptFx could not start"
+                dialogPane.expandableContent = TextArea(e.stackTraceToString()).apply { isEditable = false }
+                contentText = message
+            }.showAndWait()
+            // Use exitProcess rather than Platform.exit() because the app is in a partially-initialized state
+            // and calling stop() via Platform.exit() could itself fail.
+            exitProcess(1)
+        }
     }
 
     override fun stop() {

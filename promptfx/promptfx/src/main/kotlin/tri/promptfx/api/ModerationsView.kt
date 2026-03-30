@@ -57,7 +57,7 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
             input = listOf(input.value),
             model = model.value
         )
-        val response = controller.openAiPlugin.client.client.moderations(request)
+        val response = controller.openAiPlugin!!.client.client.moderations(request)
         val responseText = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response)
         return AiTaskTrace(
             env = AiEnvInfo.of(AiModelInfo(model.value.model)),
