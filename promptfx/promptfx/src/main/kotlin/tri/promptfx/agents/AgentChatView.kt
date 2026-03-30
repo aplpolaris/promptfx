@@ -76,10 +76,6 @@ class AgentChatView : View("Agent Chat") {
 
     //endregion
 
-    init {
-        createNewSession()
-    }
-
     override val root = borderpane {
         // LEFT: session sidebar
         left = vbox(6.0) {
@@ -553,6 +549,13 @@ class AgentChatView : View("Agent Chat") {
     }
 
     //endregion
+
+    override fun onDock() {
+        // Create an initial session the first time the view is shown (root is now initialized)
+        if (sessions.isEmpty()) {
+            createNewSession()
+        }
+    }
 
     override fun onUndock() {
         coroutineScope.cancel()
