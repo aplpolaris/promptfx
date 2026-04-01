@@ -28,6 +28,8 @@ module tri.promptkt.gemini.sdk {
     // Google Gen AI Java SDK
     requires com.google.genai;
 
+    opens tri.ai.geminisdk.resources;
+
     exports tri.ai.geminisdk;
 
     // services (service loader API)

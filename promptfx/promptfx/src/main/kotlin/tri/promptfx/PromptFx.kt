@@ -27,8 +27,14 @@ import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.impl.Jdk14Logger
 import org.apache.pdfbox.pdmodel.font.PDSimpleFont
 import tornadofx.*
+import tri.ai.gemini.GeminiAiPlugin
+import tri.ai.openai.OpenAiModelIndex
+import tri.ai.openai.OpenAiPlugin
 import tri.promptfx.docs.DocumentQaView
+import java.io.File
+import java.net.URL
 import java.util.logging.Level
+import kotlin.jvm.javaClass
 import kotlin.system.exitProcess
 
 class PromptFx : App(PromptFxWorkspace::class, PromptFxStyles::class) {
