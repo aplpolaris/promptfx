@@ -38,6 +38,7 @@ module tri.promptkt.gemini {
     requires io.ktor.utils;
 
     opens tri.ai.gemini to io.ktor.serialization;
+    opens tri.ai.gemini.resources;
 
     exports tri.ai.gemini;
 

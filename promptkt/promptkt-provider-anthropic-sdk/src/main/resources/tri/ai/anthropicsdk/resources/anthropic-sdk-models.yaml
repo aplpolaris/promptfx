@@ -1,0 +1,30 @@
+# Library of Anthropic Claude Models (SDK-based)
+# See https://docs.anthropic.com/en/docs/about-claude/models
+---
+chat:
+  - claude-3-5-haiku-latest
+  - claude-3-5-sonnet-latest
+  - claude-3-7-sonnet-latest
+  - claude-opus-4-5
+  - claude-sonnet-4-5
+  - claude-haiku-4-5
+  - claude-opus-4-0
+  - claude-sonnet-4-0
+completion:
+  - claude-3-5-haiku-latest
+  - claude-3-5-sonnet-latest
+  - claude-3-7-sonnet-latest
+  - claude-opus-4-5
+  - claude-sonnet-4-5
+  - claude-haiku-4-5
+  - claude-opus-4-0
+  - claude-sonnet-4-0
+multimodal:
+  - claude-3-5-haiku-latest
+  - claude-3-5-sonnet-latest
+  - claude-3-7-sonnet-latest
+  - claude-opus-4-5
+  - claude-sonnet-4-5
+  - claude-haiku-4-5
+  - claude-opus-4-0
+  - claude-sonnet-4-0

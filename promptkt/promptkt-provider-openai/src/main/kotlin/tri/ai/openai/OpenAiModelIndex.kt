@@ -39,10 +39,10 @@ object OpenAiModelIndex : ModelIndex("openai-models.yaml") {
 
     //endregion
 
-    val AUDIO_WHISPER = modelInfoIndex[WHISPER_ID]!!.id
-    val EMBEDDING_ADA = modelInfoIndex[ADA_ID]!!.id
-    val IMAGE_DALLE2 = modelInfoIndex[DALLE2_ID]!!.id
-    val GPT35_TURBO = modelInfoIndex[GPT35_TURBO_ID]!!.id
-    val GPT35_TURBO_INSTRUCT = modelInfoIndex[GPT35_TURBO_INSTRUCT_ID]!!.id
+    val AUDIO_WHISPER = modelInfoIndex[WHISPER_ID]?.id ?: WHISPER_ID
+    val EMBEDDING_ADA = modelInfoIndex[ADA_ID]?.id ?: ADA_ID
+    val IMAGE_DALLE2 = modelInfoIndex[DALLE2_ID]?.id ?: DALLE2_ID
+    val GPT35_TURBO = modelInfoIndex[GPT35_TURBO_ID]?.id ?: GPT35_TURBO_ID
+    val GPT35_TURBO_INSTRUCT = modelInfoIndex[GPT35_TURBO_INSTRUCT_ID]?.id ?: GPT35_TURBO_INSTRUCT_ID
 
 }

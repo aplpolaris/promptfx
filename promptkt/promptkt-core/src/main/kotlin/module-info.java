@@ -43,6 +43,7 @@ module tri.promptkt.core {
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
     opens tri.util.json to com.fasterxml.jackson.databind;
+    opens tri.ai.prompt.resources;
 
     exports tri.ai.core;
     exports tri.ai.prompt;

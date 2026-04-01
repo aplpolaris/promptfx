@@ -34,7 +34,7 @@ import tri.promptfx.prompts.AiTaskTraceHistoryModel
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiPlugin = AiModelProvider.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
+    val openAiPlugin: OpenAiPlugin? = AiModelProvider.orderedPlugins.firstOrNull { it is OpenAiPlugin } as? OpenAiPlugin
 
     val chatEngine: SimpleObjectProperty<AiChatEngine> =
         SimpleObjectProperty(PromptFxModels.chatEngineDefault())
@@ -62,9 +62,9 @@ class PromptFxController : Controller() {
 
     /** Update usage stats for the OpenAI endpoint. */
     fun updateUsage() {
-        tokensUsed.value = openAiPlugin.client.usage[UsageUnit.TOKENS] ?: 0
-        audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_SECONDS] ?: 0
-        imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
+        tokensUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.TOKENS) ?: 0
+        audioUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.AUDIO_SECONDS) ?: 0
+        imagesUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.IMAGES) ?: 0
     }
 
     //endregion
@@ -72,16 +72,20 @@ class PromptFxController : Controller() {
     /** Called to release resources when the application is closed. */
     fun close() {
         try {
-            openAiPlugin.client.client.close()
+            openAiPlugin?.client?.client?.close()
         } catch (x: Exception) {
             println("There was an error closing the OpenAI client: ${x.message}")
         }
-        AiModelProvider.orderedPlugins.forEach {
-            try {
-                it.close()
-            } catch (x: Exception) {
-                println("There was an error closing the plugin $it: ${x.message}")
+        try {
+            AiModelProvider.orderedPlugins.forEach {
+                try {
+                    it.close()
+                } catch (x: Exception) {
+                    println("There was an error closing the plugin $it: ${x.message}")
+                }
             }
+        } catch (x: Exception) {
+            println("There was an error closing model provider plugins: ${x.message}")
         }
     }
 
