@@ -30,7 +30,6 @@ import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.impl.Jdk14Logger
 import org.apache.pdfbox.pdmodel.font.PDSimpleFont
 import tornadofx.*
-import tri.promptfx.docs.DocumentQaView
 import java.util.logging.Level
 import kotlin.system.exitProcess
 

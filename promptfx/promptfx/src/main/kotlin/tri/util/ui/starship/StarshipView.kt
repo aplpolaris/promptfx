@@ -120,6 +120,8 @@ class StarshipView : Fragment("Starship") {
             addBackgroundIcons()
             // add rocket indicator in lower-right corner to indicate ongoing processing
             addProgressIndicator()
+            // add pipeline step progress strip at the bottom of the screen
+            addPipelineProgressStrip(results, screenWidth.toDouble(), screenHeight.toDouble())
             // add explainer overlay that can be turned on/off with "X" keypress
             explainer = addExplainerOverlay()
         }

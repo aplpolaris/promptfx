@@ -31,6 +31,7 @@ import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.AiPlanStepTask
 import tri.ai.pips.api.PPlan
 import tri.ai.pips.api.PPlanExecutor
+import tri.ai.pips.api.PPlanStep
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.PromptFxWorkspace
 
@@ -55,23 +56,41 @@ class StarshipPipelineExecutor(
     /** Custom monitor for managing delay and tracking completed steps. */
     val monitor = object : FlowCollector<ExecEvent> {
         val print = PrintMonitor()
+        /** Pre-built identity-keyed index map for O(1) step lookups. */
+        val stepIndex: Map<PPlanStep, Int> = java.util.IdentityHashMap<PPlanStep, Int>().also { map ->
+            plan.steps.forEachIndexed { i, s -> map[s] = i }
+        }
         override suspend fun emit(value: ExecEvent) {
             print.emit(value)
             when (value) {
+                is ExecEvent.TaskStarted -> {
+                    val task = value.task
+                    if (task is AiPlanStepTask) {
+                        stepIndex[task.step]?.let { results.setStepState(it, PipelineStepState.ACTIVE) }
+                    }
+                }
                 is ExecEvent.TaskCompleted -> {
                     val completedTask = value.task
                     if (completedTask is AiPlanStepTask) {
                         results.activeStepVar.set(completedTask.step.saveAs)
+                        stepIndex[completedTask.step]?.let { results.setStepState(it, PipelineStepState.DONE) }
                     }
                     Thread.sleep(stepDelayMs.toLong())
                 }
-                is ExecEvent.TaskFailed -> Thread.sleep(stepDelayMs.toLong())
+                is ExecEvent.TaskFailed -> {
+                    val failedTask = value.task
+                    if (failedTask is AiPlanStepTask) {
+                        stepIndex[failedTask.step]?.let { results.setStepState(it, PipelineStepState.FAILED) }
+                    }
+                    Thread.sleep(stepDelayMs.toLong())
+                }
                 else -> {}
             }
         }
     }
 
     suspend fun execute() {
+        results.initSteps(plan.steps)
         results.started.set(true)
         val registry = ExecutableRegistry.create(
             listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +

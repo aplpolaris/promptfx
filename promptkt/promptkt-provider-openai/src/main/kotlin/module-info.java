@@ -43,6 +43,7 @@ module tri.promptkt.openai {
     opens tri.ai.openai to com.fasterxml.jackson.databind;
     opens tri.ai.openai.api to com.fasterxml.jackson.databind;
     opens tri.ai.openai.azure to com.fasterxml.jackson.databind;
+    opens tri.ai.openai.resources;
 
     exports tri.ai.openai;
     exports tri.ai.openai.api;
