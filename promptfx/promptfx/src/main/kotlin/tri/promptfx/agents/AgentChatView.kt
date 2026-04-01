@@ -404,11 +404,14 @@ class AgentChatView : View("Agent Chat") {
         inputText.set("")
         inputImage.set(null)
 
+        // Convert file: URIs to base64 data URIs — the API cannot download local files
+        val imageData = img?.toApiImageString()
+
         // Build the multimodal message
-        val message = if (img != null) {
+        val message = if (imageData != null) {
             chatMessage(MChatRole.User) {
                 if (text.isNotBlank()) text(text)
-                image(img.toString())
+                image(imageData)
             }
         } else {
             MultimodalChatMessage.user(text)
@@ -560,6 +563,27 @@ class AgentChatView : View("Agent Chat") {
     override fun onUndock() {
         coroutineScope.cancel()
     }
+}
+
+/**
+ * Converts a URI to a string suitable for the chat API image field.
+ * Local [file:] URIs are read from disk and returned as a base64 `data:` URI so that remote APIs
+ * (e.g. OpenAI) can process them; `data:` and HTTP(S) URIs are returned unchanged.
+ */
+private fun URI.toApiImageString(): String {
+    if (scheme == "file") {
+        val file = java.io.File(this)
+        val ext = file.extension.lowercase()
+        val mimeType = when (ext) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            else -> "image/png"
+        }
+        val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
+        return "data:$mimeType;base64,$base64"
+    }
+    return toString()
 }
 
 /** Dialog for configuring [AgentChatSession] settings. */
