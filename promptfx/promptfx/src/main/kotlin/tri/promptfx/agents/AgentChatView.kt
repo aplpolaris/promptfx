@@ -26,6 +26,7 @@ import javafx.geometry.Pos
 import javafx.scene.control.ListView
 import javafx.scene.image.Image
 import javafx.scene.input.TransferMode
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.scene.text.FontPosture
@@ -94,7 +95,7 @@ class AgentChatView : View("Agent Chat") {
                 vgrow = Priority.ALWAYS
                 prefHeight = 0.0
                 cellFormat { session ->
-                    graphic = borderpane {
+                    graphic = BorderPane().apply {
                         center = vbox(2.0) {
                             label(session.name) {
                                 isWrapText = true
