@@ -79,7 +79,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptex-docs</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>com.googlecode.blaisemath</groupId>
             <artifactId>promptex-mcp</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
