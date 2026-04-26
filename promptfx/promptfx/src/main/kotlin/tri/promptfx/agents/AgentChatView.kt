@@ -19,6 +19,8 @@
  */
 package tri.promptfx.agents
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.readValue
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.*
@@ -46,10 +48,21 @@ import tri.promptfx.hasImageFile
 import tri.util.ui.BlinkingIndicator
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.imageUri
+import tri.util.json.jsonMapper
+import tri.util.warning
+import java.io.File
 import java.net.URI
 
 /** Plugin for the [AgentChatView]. */
 class AgentChatPlugin : NavigableWorkspaceViewImpl<AgentChatView>("Agents", "Agent Chat", type = AgentChatView::class)
+
+/** Jackson mapper for chat session persistence. */
+private val CHAT_JSON_MAPPER = jsonMapper.copy().apply {
+    disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+}
+
+/** File used to persist chat sessions across application restarts. */
+private val CHAT_SESSIONS_FILE = File("config/agent-chat-sessions.json")
 
 /** A chat view backed by [AgentChatSession], with a session sidebar, message history, image upload, and streaming. */
 class AgentChatView : View("Agent Chat") {
@@ -65,6 +78,7 @@ class AgentChatView : View("Agent Chat") {
 
     private val sessions = observableListOf<AgentChatSession>()
     private val currentSession = SimpleObjectProperty<AgentChatSession?>(null)
+    private val currentModelId = SimpleStringProperty("")
     private val chatMessages = observableListOf<AgentMessageEntry>()
     private val inputText = SimpleStringProperty("")
     private val inputImage = SimpleObjectProperty<URI?>(null)
@@ -84,7 +98,7 @@ class AgentChatView : View("Agent Chat") {
             prefWidth = 220.0
             style { backgroundColor += Color.web("#f0f0f0") }
 
-            button("+ New Chat", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
+            button("New Chat", FontAwesomeIconView(FontAwesomeIcon.PLUS)) {
                 maxWidth = Double.MAX_VALUE
                 action { createNewSession() }
             }
@@ -126,9 +140,15 @@ class AgentChatView : View("Agent Chat") {
             top = hbox(10.0, Pos.CENTER_LEFT) {
                 padding = insets(8.0, 12.0)
                 style { backgroundColor += Color.web("#e8e8e8") }
-                label {
-                    textProperty().bind(currentSession.stringBinding { it?.name ?: "No Session" })
-                    style { fontWeight = FontWeight.BOLD; fontSize = 16.px }
+                vbox(2.0) {
+                    label {
+                        textProperty().bind(currentSession.stringBinding { it?.name ?: "No Session" })
+                        style { fontWeight = FontWeight.BOLD; fontSize = 16.px }
+                    }
+                    label {
+                        textProperty().bind(currentModelId)
+                        style { textFill = Color.web("#555555"); fontSize = 11.px }
+                    }
                 }
                 spacer()
                 val blinkIndicator = BlinkingIndicator(FontAwesomeIcon.CIRCLE).apply {
@@ -353,10 +373,12 @@ class AgentChatView : View("Agent Chat") {
         sessions.add(0, session)
         switchToSession(session)
         sessionListView.selectionModel.select(session)
+        saveSessionsToFile()
     }
 
     private fun switchToSession(session: AgentChatSession) {
         currentSession.set(session)
+        currentModelId.set("Model: ${session.config.modelId}")
         chatMessages.clear()
         // Reload messages from session history
         for (msg in session.messages) {
@@ -385,11 +407,13 @@ class AgentChatView : View("Agent Chat") {
                 sessionListView.selectionModel.select(sessions.first())
             } else {
                 currentSession.set(null)
+                currentModelId.set("")
                 chatMessages.clear()
                 thinkingEntry = null
                 isThinking.set(false)
             }
         }
+        saveSessionsToFile()
     }
 
     //endregion
@@ -481,6 +505,8 @@ class AgentChatView : View("Agent Chat") {
                 chatMessages.add(AgentMessageEntry(MessageType.ASSISTANT, "Assistant", responseText))
                 // Refresh session in sidebar to show updated message count
                 refreshCurrentSessionInSidebar(session)
+                // Persist updated session history
+                saveSessionsToFile()
             }
             is ExecEvent.Error -> {
                 stopThinking()
@@ -550,20 +576,50 @@ class AgentChatView : View("Agent Chat") {
         find<AgentChatSettingsDialog>(
             AgentChatSettingsDialog::session to session
         ).openModal(block = true)
+        // Refresh model info line after settings may have changed
+        currentModelId.set("Model: ${session.config.modelId}")
     }
 
     //endregion
 
     override fun onDock() {
-        // Create an initial session the first time the view is shown (root is now initialized)
+        // Load persisted sessions from disk, then create an initial one if none exist
+        loadSessionsFromFile()
         if (sessions.isEmpty()) {
             createNewSession()
+        } else {
+            switchToSession(sessions.first())
+            sessionListView.selectionModel.select(sessions.first())
         }
     }
 
     override fun onUndock() {
         coroutineScope.cancel()
     }
+
+    //region PERSISTENCE
+
+    private fun saveSessionsToFile() {
+        try {
+            CHAT_SESSIONS_FILE.parentFile?.mkdirs()
+            CHAT_JSON_MAPPER.writeValue(CHAT_SESSIONS_FILE, sessions.toList())
+        } catch (e: Exception) {
+            warning<AgentChatView>("Failed to save chat sessions: ${e.message}")
+        }
+    }
+
+    private fun loadSessionsFromFile() {
+        if (!CHAT_SESSIONS_FILE.exists()) return
+        try {
+            val saved: List<AgentChatSession> = CHAT_JSON_MAPPER.readValue(CHAT_SESSIONS_FILE)
+            sessions.setAll(saved)
+            saved.forEach { sessionManager.saveSession(it) }
+        } catch (e: Exception) {
+            warning<AgentChatView>("Failed to load chat sessions: ${e.message}")
+        }
+    }
+
+    //endregion
 }
 
 /**
