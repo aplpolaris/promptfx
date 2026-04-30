@@ -41,7 +41,7 @@ class SamplePluginTest {
         val plugin = SamplePlugin()
         
         assertEquals("Sample Plugin", plugin.category)
-        assertEquals("Hello World", plugin.name)
+        assertEquals("Sample Plugin Demo", plugin.name)
         assertEquals(WorkspaceViewAffordance.INPUT_ONLY, plugin.affordances)
     }
 
