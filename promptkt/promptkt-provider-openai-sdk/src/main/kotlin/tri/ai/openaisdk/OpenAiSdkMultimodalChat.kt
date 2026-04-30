@@ -21,6 +21,7 @@ package tri.ai.openaisdk
 
 import com.openai.models.chat.completions.ChatCompletionContentPart
 import com.openai.models.chat.completions.ChatCompletionContentPartImage
+import com.openai.models.chat.completions.ChatCompletionContentPartInputAudio
 import com.openai.models.chat.completions.ChatCompletionContentPartText
 import com.openai.models.chat.completions.ChatCompletionCreateParams
 import com.openai.models.chat.completions.ChatCompletionMessageParam
@@ -141,6 +142,22 @@ class OpenAiSdkMultimodalChat(
                             .imageUrl(
                                 ChatCompletionContentPartImage.ImageUrl.builder()
                                     .url(dataUrl)
+                                    .build()
+                            )
+                            .build()
+                    )
+                }
+                MPartType.AUDIO -> {
+                    val dataUrl = inlineData ?: ""
+                    val base64Data = dataUrl.substringAfter(";base64,", dataUrl)
+                    val formatStr = dataUrl.substringBefore(";base64,").substringAfter("data:audio/").ifBlank { "wav" }
+                    val format = ChatCompletionContentPartInputAudio.InputAudio.Format.of(formatStr)
+                    ChatCompletionContentPart.ofInputAudio(
+                        ChatCompletionContentPartInputAudio.builder()
+                            .inputAudio(
+                                ChatCompletionContentPartInputAudio.InputAudio.builder()
+                                    .data(base64Data)
+                                    .format(format)
                                     .build()
                             )
                             .build()

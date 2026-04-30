@@ -22,11 +22,9 @@ package tri.promptfx.api
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
+import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.control.Button
-import javafx.scene.layout.Priority
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import tornadofx.*
 import tri.ai.core.SpeechToTextModel
 import tri.promptfx.PromptFxModels
@@ -148,7 +146,7 @@ fun EventTarget.transcribeButton(
     if (isWorking != null) disableWhen(isWorking)
     action {
         val uri = audioUri() ?: return@action
-        val model = resolveOrChooseSttModel(this@transcribeButton) ?: return@action
+        val model = resolveOrChooseSttModel() ?: return@action
         val audioFile = if (uri.scheme == "file") File(uri) else null
         if (audioFile == null) {
             onError("Cannot transcribe: audio must be a local file.")
@@ -161,7 +159,7 @@ fun EventTarget.transcribeButton(
         } ui { res ->
             isDisable = false
             val tr = res.getOrElse { onError(it.message ?: "Unknown error"); return@ui }
-            val text = tr.outputText()
+            val text = tr.values?.firstOrNull()?.textContent()
             if (text.isNullOrBlank()) onError("Transcription returned empty text.")
             else onTranscript(text)
         }
@@ -169,7 +167,7 @@ fun EventTarget.transcribeButton(
 }
 
 /** Resolve the STT model from preferences or show chooser dialog; returns null if user cancels or no models are available. */
-private fun resolveOrChooseSttModel(context: UIComponent): SpeechToTextModel? {
+private fun resolveOrChooseSttModel(): SpeechToTextModel? {
     val existing = TranscribePreferences.resolvedModel()
     if (existing != null) return existing
     // No model stored or previously stored model is gone — show chooser
