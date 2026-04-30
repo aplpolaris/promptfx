@@ -19,7 +19,7 @@
  */
 package tri.ai.anthropicsdk
 
-import tri.ai.core.AiModelProvider
+import tri.ai.core.*
 
 /** Plugin registering Anthropic Claude models and services via the official SDK. */
 class AnthropicSdkPlugin : AiModelProvider {
@@ -30,25 +30,35 @@ class AnthropicSdkPlugin : AiModelProvider {
 
     override fun modelSource() = AnthropicSdkModelIndex.MODEL_SOURCE
 
-    override fun modelInfo() = emptyList<tri.ai.core.ModelInfo>()
+    override fun modelInfo(): List<ModelInfo> {
+        val allIds = (AnthropicSdkModelIndex.chatModels() +
+                AnthropicSdkModelIndex.completionModels() +
+                AnthropicSdkModelIndex.multimodalModels()).distinct()
+        return allIds.map { id ->
+            AnthropicSdkModelIndex.modelInfoIndex[id] ?: ModelInfo(id, ModelType.TEXT_CHAT, modelSource()).also {
+                it.capabilities.inputs = listOf(DataModality.text)
+                it.capabilities.outputs = listOf(DataModality.text)
+            }
+        }
+    }
 
-    override fun embeddingModels() = emptyList<tri.ai.core.EmbeddingModel>()
+    override fun embeddingModels() = emptyList<EmbeddingModel>()
 
-    override fun chatModels(): List<tri.ai.core.TextChat> = models(AnthropicSdkModelIndex.chatModels()) {
+    override fun chatModels(): List<TextChat> = models(AnthropicSdkModelIndex.chatModels()) {
         AnthropicSdkTextChat(it, client)
     }
 
-    override fun multimodalModels(): List<tri.ai.core.MultimodalChat> = models(AnthropicSdkModelIndex.multimodalModels()) {
+    override fun multimodalModels(): List<MultimodalChat> = models(AnthropicSdkModelIndex.multimodalModels()) {
         AnthropicSdkMultimodalChat(it, client)
     }
 
-    override fun textCompletionModels(): List<tri.ai.core.TextCompletion> = models(
+    override fun textCompletionModels(): List<TextCompletion> = models(
         AnthropicSdkModelIndex.completionModels()
     ) {
         AnthropicSdkTextCompletion(it, client)
     }
 
-    override fun imageGeneratorModels() = emptyList<tri.ai.core.ImageGenerator>()
+    override fun imageGeneratorModels() = emptyList<ImageGenerator>()
 
     override fun close() {
         client.close()
