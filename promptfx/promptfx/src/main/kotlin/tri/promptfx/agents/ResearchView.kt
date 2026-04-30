@@ -24,10 +24,8 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.control.ScrollPane
-import javafx.scene.control.TextArea
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.layout.Priority
@@ -47,6 +45,7 @@ import tri.ai.research.ResearchSession
 import tri.ai.research.WrittenReport
 import tri.promptfx.PromptFxController
 import tri.promptfx.PromptFxModels
+import tri.util.ui.BlinkingIndicator
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 import java.io.File
@@ -100,7 +99,7 @@ class ResearchView : View("Research") {
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     /** Reference to the artifacts TreeView, for updating items. */
-    private lateinit var artifactsTree: TreeView<String>
+    private lateinit var artifactsTree: TreeView<ArtifactNode>
 
     /** Reference to the center scroll pane, for auto-scrolling. */
     private lateinit var progressScrollPane: ScrollPane
@@ -205,11 +204,21 @@ class ResearchView : View("Research") {
                         style { fontWeight = FontWeight.BOLD; fontSize = 14.px }
                     }
                     spacer()
-                    // Blinking "thinking" indicator
-                    label("● Working…") {
+                    // Blinking thinking indicator
+                    val thinkingIndicator = BlinkingIndicator(FontAwesomeIcon.CIRCLE).apply {
+                        glyphSize = 12.0
+                        glyphStyle = "-fx-fill: #1565C0;"
+                        opacity = 0.0
+                    }
+                    thinkingIndicator.attachTo(this)
+                    label("Working…") {
                         visibleWhen(isRunning)
                         managedWhen(isRunning)
-                        style { textFill = Color.web("#1565C0"); fontStyle = FontPosture.ITALIC }
+                        style { textFill = Color.web("#1565C0"); fontStyle = FontPosture.ITALIC; fontSize = 12.px }
+                    }
+                    isRunning.onChange { running ->
+                        if (running) thinkingIndicator.startBlinking()
+                        else { thinkingIndicator.stopBlinking(); thinkingIndicator.opacity = 0.0 }
                     }
                 }
                 separator()
@@ -221,6 +230,39 @@ class ResearchView : View("Research") {
                 vbox(8.0) {
                     padding = insets(4.0)
                     bindChildren(progressEntries) { entry -> buildProgressBubble(entry) }
+
+                    // Agent "typing" bubble – shown only while actively computing (not paused for user input)
+                    hbox(8.0) {
+                        val activelyComputing = isRunning.and(canContinue.not())
+                        visibleWhen(activelyComputing)
+                        managedWhen(activelyComputing)
+                        vbox(3.0) {
+                            alignment = Pos.CENTER_LEFT
+                            label("Agent") {
+                                style { fontWeight = FontWeight.BOLD; textFill = Color.web("#1565C0"); fontSize = 11.px }
+                            }
+                            hbox(6.0, Pos.CENTER_LEFT) {
+                                padding = insets(8.0, 14.0)
+                                style {
+                                    backgroundColor += Color.web("#e3f2fd")
+                                    backgroundRadius += box(10.px)
+                                }
+                                val typingIndicator = BlinkingIndicator(FontAwesomeIcon.ELLIPSIS_H).apply {
+                                    glyphSize = 18.0
+                                    glyphStyle = "-fx-fill: #1565C0;"
+                                    opacity = 0.0
+                                    blinkTimeMillis = 800
+                                }
+                                typingIndicator.attachTo(this)
+                                activelyComputing.onChange { active ->
+                                    if (active) typingIndicator.startBlinking()
+                                    else { typingIndicator.stopBlinking(); typingIndicator.opacity = 0.0 }
+                                }
+                            }
+                        }
+                        spacer()
+                    }
+
                     heightProperty().onChange { progressScrollPane.vvalue = 1.0 }
                 }
             }
@@ -254,11 +296,16 @@ class ResearchView : View("Research") {
             label("Research Artifacts") {
                 style { fontWeight = FontWeight.BOLD }
             }
-            artifactsTree = treeview {
+            artifactsTree = treeview<ArtifactNode> {
                 vgrow = Priority.ALWAYS
-                root = TreeItem("Session")
+                root = TreeItem(ArtifactNode("Session", ""))
                 isShowRoot = true
                 root.isExpanded = true
+                cellFormat { node ->
+                    text = node?.label ?: ""
+                    val tt = node?.tooltip
+                    if (!tt.isNullOrBlank()) tooltip(tt) else tooltip = null
+                }
             }
         }
     }
@@ -506,7 +553,7 @@ class ResearchView : View("Research") {
 
     //region EXPORT
 
-    /** Exports the final report to a file chosen by the user. */
+    /** Exports only the final report content (and optional review notes) to a file chosen by the user. */
     private fun exportReport() {
         val session = currentSession.value ?: return
         val report = session.report ?: return
@@ -522,8 +569,7 @@ class ResearchView : View("Research") {
         }
         val file: File? = chooser.showSaveDialog(currentWindow)
         if (file != null) {
-            val content = buildReportMarkdown(session, report)
-            file.writeText(content)
+            file.writeText(buildFinalReport(session.request, report))
             addProgress(
                 ResearchStepType.AGENT_STEP, "Exported",
                 "Report saved to: ${file.absolutePath}"
@@ -531,34 +577,14 @@ class ResearchView : View("Research") {
         }
     }
 
-    /** Formats the session into a complete Markdown report document. */
-    private fun buildReportMarkdown(session: ResearchSession, report: WrittenReport): String = buildString {
-        appendLine("# Research Report")
-        appendLine()
-        appendLine("**Information Request:** ${session.request}")
-        appendLine()
-        if (session.plan != null) {
-            appendLine("## Research Plan")
-            appendLine()
-            appendLine(session.plan)
-            appendLine()
-        }
-        if (session.research != null) {
-            appendLine("## Research Findings")
-            appendLine()
-            appendLine(session.research)
-            appendLine()
-        }
-        appendLine("## Report Outline")
-        appendLine()
-        appendLine(report.outline)
-        appendLine()
-        appendLine("## Report")
-        appendLine()
+    /** Builds the final exported report – only the polished content, not intermediate artifacts. */
+    private fun buildFinalReport(request: String, report: WrittenReport): String = buildString {
         appendLine(report.content)
         if (report.reviewNotes != null) {
             appendLine()
-            appendLine("## Review Notes")
+            appendLine("---")
+            appendLine()
+            appendLine("## Quality Review Notes")
             appendLine()
             appendLine(report.reviewNotes)
         }
@@ -589,38 +615,57 @@ class ResearchView : View("Research") {
 
     /** Rebuilds the artifacts [TreeView] to reflect the current session's state. */
     private fun updateArtifactsTree(session: ResearchSession?) {
-        val root = TreeItem(if (session != null) "Session" else "No Session")
+        val root = TreeItem(ArtifactNode(
+            if (session != null) "Session" else "No Session",
+            session?.let { "Information Request:\n\n${it.request}" } ?: ""
+        ))
         root.isExpanded = true
         if (session != null) {
-            root.children.add(TreeItem("📋 Request: ${session.request.take(40)}${if (session.request.length > 40) "…" else ""}"))
-            if (session.plan != null) {
-                root.children.add(TreeItem("🗂 Research Plan [✓]"))
-            } else {
-                root.children.add(TreeItem("🗂 Research Plan [ ]"))
-            }
-            if (session.research != null) {
-                root.children.add(TreeItem("🔍 Research Findings [✓]"))
-            } else {
-                root.children.add(TreeItem("🔍 Research Findings [ ]"))
-            }
-            val outlineNode = if (session.report?.outline != null) {
-                TreeItem("📝 Report Outline [✓]")
-            } else {
-                TreeItem("📝 Report Outline [ ]")
-            }
-            root.children.add(outlineNode)
+            root.children.add(TreeItem(ArtifactNode(
+                "📋 Request: ${session.request.take(40)}${if (session.request.length > 40) "…" else ""}",
+                "Full information request:\n\n${session.request}"
+            )))
+
+            val planLabel = if (session.plan != null) "🗂 Research Plan [✓]" else "🗂 Research Plan [ ]"
+            val planTooltip = session.plan?.let { p ->
+                "Research plan preview:\n\n${p.take(300)}${if (p.length > 300) "…" else ""}"
+            } ?: "Pending – the InfoPlanner agent will analyze your request and produce an actionable plan."
+            root.children.add(TreeItem(ArtifactNode(planLabel, planTooltip)))
+
+            val researchLabel = if (session.research != null) "🔍 Research Findings [✓]" else "🔍 Research Findings [ ]"
+            val researchTooltip = session.research?.let { r ->
+                "Research findings preview:\n\n${r.take(300)}${if (r.length > 300) "…" else ""}"
+            } ?: "Pending – the Research agent will generate research questions and identify data sources."
+            root.children.add(TreeItem(ArtifactNode(researchLabel, researchTooltip)))
+
+            val outlineLabel = if (session.report?.outline != null) "📝 Report Outline [✓]" else "📝 Report Outline [ ]"
+            val outlineTooltip = session.report?.outline?.let { o ->
+                "Outline preview:\n\n${o.take(300)}${if (o.length > 300) "…" else ""}"
+            } ?: "Pending – the Writing agent will generate a structured outline before drafting."
+            root.children.add(TreeItem(ArtifactNode(outlineLabel, outlineTooltip)))
+
             val reportNode = if (session.report?.content != null) {
-                val node = TreeItem("📄 Report Draft [✓]")
-                val reportLocal = session.report
-                if (reportLocal != null && reportLocal.reviewNotes != null) {
-                    node.children.add(TreeItem("🔎 Review Notes [✓]"))
-                } else {
-                    node.children.add(TreeItem("🔎 Review Notes [ ]"))
-                }
+                // session.report is non-null here because content is on it (safe call would be null otherwise)
+                val rLocal = session.report ?: return
+                val contentPreview = rLocal.content.take(300)
+                    .let { "$it${if (rLocal.content.length > 300) "…" else ""}" }
+                val node = TreeItem(ArtifactNode(
+                    "📄 Report Draft [✓]",
+                    "Report draft preview:\n\n$contentPreview"
+                ))
+                val reviewLabel = if (rLocal.reviewNotes != null)
+                    "🔎 Review Notes [✓]" else "🔎 Review Notes [ ]"
+                val reviewTooltip = rLocal.reviewNotes?.let { rn ->
+                    "Review notes preview:\n\n${rn.take(300)}${if (rn.length > 300) "…" else ""}"
+                } ?: "Pending – the Review agent will evaluate the report for quality and suggest improvements."
+                node.children.add(TreeItem(ArtifactNode(reviewLabel, reviewTooltip)))
                 node.isExpanded = true
                 node
             } else {
-                TreeItem("📄 Report Draft [ ]")
+                TreeItem(ArtifactNode(
+                    "📄 Report Draft [ ]",
+                    "Pending – the Writing agent will produce a full draft based on the research findings and outline."
+                ))
             }
             root.children.add(reportNode)
         }
@@ -651,3 +696,9 @@ enum class ResearchStepType {
     /** An error occurred. */
     ERROR
 }
+
+/** A node in the research artifacts tree that carries both a display label and a tooltip. */
+data class ArtifactNode(
+    val label: String,
+    val tooltip: String = ""
+)

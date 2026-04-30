@@ -45,18 +45,20 @@ class ResearchOrchestrator(val chat: TextChat, val maxTokens: Int = 2000) {
         executePrompt("research-report/planner", "request" to request)
 
     /**
-     * Stage 2 – Research Agent.
-     * Generates research questions for [topic] based on the [plan].
-     * In a full implementation this stage would also query external data sources.
+     * Stage 2 – Research Agent (two-tier).
+     * First tier: generates research questions for [topic].
+     * Second tier: identifies the best data sources and search queries for the topic.
+     * The combined output forms the research pack for the writing agent.
      */
     suspend fun conductResearch(topic: String, plan: String): String {
-        val questions = executePrompt(
-            "research-report/questions",
-            "topic" to topic
-        )
+        val questions = executePrompt("research-report/questions", "topic" to topic)
+        val sources = executePrompt("research-report/sources", "topic" to topic, "plan" to plan)
         return buildString {
             appendLine("=== Research Questions ===")
             appendLine(questions)
+            appendLine()
+            appendLine("=== Recommended Data Sources and Search Strategy ===")
+            appendLine(sources)
             appendLine()
             appendLine("=== Research Plan Summary ===")
             appendLine(plan)
