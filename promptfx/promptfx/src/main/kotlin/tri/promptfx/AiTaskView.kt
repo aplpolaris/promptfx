@@ -414,6 +414,16 @@ fun Clipboard.hasImageFile() =
 /** Supported audio file extensions for drag-and-drop and file chooser. */
 val AUDIO_EXTENSIONS = listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm", "ogg")
 
+/** Maps an audio file extension (lowercase) to its MIME type. */
+fun audioMimeType(ext: String) = when (ext) {
+    "mp3", "mpeg", "mpga" -> "audio/mpeg"
+    "mp4" -> "audio/mp4"
+    "m4a" -> "audio/mp4"
+    "webm" -> "audio/webm"
+    "ogg" -> "audio/ogg"
+    else -> "audio/wav"
+}
+
 /** Check if clipboard has an audio file. */
 fun Clipboard.hasAudioFile() =
     files.isNotEmpty() && files.first().extension.lowercase() in AUDIO_EXTENSIONS

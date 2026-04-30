@@ -45,6 +45,7 @@ import tri.ai.core.agent.api.DefaultAgentChatSessionManager
 import tri.ai.pips.ExecEvent
 import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.PromptFxModels
+import tri.promptfx.audioMimeType
 import tri.promptfx.hasImageFile
 import tri.util.ui.AudioRecorder
 import tri.util.ui.BlinkingIndicator
@@ -718,17 +719,7 @@ private fun URI.toApiImageString(): String {
 private fun URI.toApiAudioString(): String {
     if (scheme == "file") {
         val file = java.io.File(this)
-        val ext = file.extension.lowercase()
-        val mimeType = when (ext) {
-            "mp3" -> "audio/mpeg"
-            "mp4" -> "audio/mp4"
-            "mpeg" -> "audio/mpeg"
-            "mpga" -> "audio/mpeg"
-            "m4a" -> "audio/mp4"
-            "webm" -> "audio/webm"
-            "ogg" -> "audio/ogg"
-            else -> "audio/wav"
-        }
+        val mimeType = audioMimeType(file.extension.lowercase())
         val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
         return "data:$mimeType;base64,$base64"
     }
