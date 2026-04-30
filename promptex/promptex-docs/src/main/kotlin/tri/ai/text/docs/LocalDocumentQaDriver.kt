@@ -22,13 +22,14 @@ package tri.ai.text.docs
 import com.aallam.openai.api.embedding.Embedding
 import tri.ai.core.EmbeddingModel
 import tri.ai.core.TextChat
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
+import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.pips.PrintMonitor
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.asWorkflowResult
 import tri.ai.prompt.PromptLibrary
 import tri.ai.text.chunks.SmartTextChunker
 import java.io.File
@@ -64,12 +65,12 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     override var chatModel
         get() = chatModelInst.modelId
         set(value) {
-            chatModelInst = TextPlugin.chatModels().first { it.modelId == value }
+            chatModelInst = AiModelProvider.chatModels().first { it.modelId == value }
         }
     override var embeddingModel
         get() = embeddingModelInst.modelId
         set(value) {
-            embeddingModelInst = TextPlugin.embeddingModels().first { it.modelId == value }
+            embeddingModelInst = AiModelProvider.embeddingModels().first { it.modelId == value }
         }
     override var temp: Double = 1.0
     override var maxTokens: Int = 2000
@@ -83,12 +84,19 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
     }
 
     override fun close() {
-        TextPlugin.orderedPlugins.forEach { it.close() }
+        AiModelProvider.orderedPlugins.forEach { it.close() }
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
+    override suspend fun answerQuestion(
+        input: String,
+        numResponses: Int,
+        historySize: Int,
+        context: ExecContext
+    ): AiWorkflowResult {
         val index = LocalFolderEmbeddingIndex(docsFolder, EmbeddingStrategy(embeddingModelInst, SmartTextChunker()))
-        val planner = DocumentQaPlanner(index, chatModelInst, listOf(), historySize).plan(
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, index)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, chatModelInst)
+        val planner = DocumentQaPlanner(listOf(), historySize).plan(
             question = input,
             prompt = prompt,
             chunksToRetrieve = 8,
@@ -100,9 +108,8 @@ class LocalDocumentQaDriver(val root: File) : DocumentQaDriver {
             numResponses = numResponses,
             snippetCallback = { }
         )
-        val monitor = PrintMonitor()
-        val result = AiPipelineExecutor.execute(planner.plan, monitor).finalResult
-        return result.asPipelineResult()
+        val result = AiWorkflowExecutor.execute(planner.plan, context).finalResult
+        return result.asWorkflowResult()
     }
 
     companion object {

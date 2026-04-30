@@ -23,11 +23,18 @@ import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.flow.FlowCollector
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
-import tri.ai.core.agent.AgentChatEvent
+import tri.ai.core.tool.ExecContext
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitPlanningTask
+import tri.ai.pips.emitProgress
+import tri.ai.pips.emitToolResult
+import tri.ai.pips.emitUsingTool
 import tri.ai.core.agent.AgentChatResponse
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.AgentChatSupport
 import tri.ai.pips.SimpleRetryExecutor
+import tri.util.json.createObject
 
 /**
  * Dynamic workflow executor, works by handing off execution to various solvers, which might perform task decomposition
@@ -40,7 +47,7 @@ class WorkflowExecutor(
     private var maxSteps = 8
 
     /** Solve the given problem using a dynamic workflow execution. */
-    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+    override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
         updateSession(message, session)
         logToolUsage()
@@ -53,67 +60,70 @@ class WorkflowExecutor(
     }
 
     /** Logs tool usage. */
-    suspend fun FlowCollector<AgentChatEvent>.logToolUsage() {
-        emit(AgentChatEvent.Progress("Using solvers: [${solvers.joinToString(", ") { it.name }}]"))
+    private suspend fun FlowCollector<ExecEvent>.logToolUsage() {
+        emitProgress("Using solvers: [${solvers.joinToString(", ") { it.name }}]")
     }
 
-    private suspend fun FlowCollector<AgentChatEvent>.solve(problem: WorkflowUserRequest): MultimodalChatMessage {
-        val state = WorkflowState(problem)
-        emit(AgentChatEvent.Progress("Workflow Planning..."))
+    private suspend fun FlowCollector<ExecEvent>.solve(problem: WorkflowUserRequest): MultimodalChatMessage {
+        val planState = WorkflowPlanState(problem)
+        val context = ExecContext(monitor = this)
+        context.putResource(RESOURCE_WORKFLOW_PLAN_STATE, planState)
+        context.initWorkflowContext()
+        emitProgress("Workflow Planning...")
 
         var i = 1
         val t0 = System.currentTimeMillis()
-        while (!state.isDone) {
+        while (!planState.isDone) {
             if (i > maxSteps) {
-                emit(AgentChatEvent.Error(Exception("Too many steps, stopping execution.")))
+                emitError(Exception("Too many steps, stopping execution."))
                 break
             }
 
             // 1. Do a planning step, which may involve breaking up a task into smaller tasks
             val execResult: Any = SimpleRetryExecutor().execute(
-                { strategy.decomposeTask(state, solvers) },
+                { strategy.decomposeTask(planState, solvers) },
                 onSuccess = { it.value!! },
                 onFailure = { it.error!! }
             )
 
             if (execResult is Exception) {
-                emit(AgentChatEvent.Error(execResult))
+                emitError(execResult)
                 break
             }
-            assert(execResult is WorkflowTaskPlan)
-            if ((execResult as WorkflowTaskPlan).decomp.isNotEmpty()) {
-                state.updateTasking(execResult)
-                emit(AgentChatEvent.Progress(state.printTaskPlan(listOf(state.taskTree))))
+            check(execResult is WorkflowTaskPlan) { "Expected WorkflowTaskPlan from decomposeTask, got ${execResult::class}" }
+            if (execResult.decomp.isNotEmpty()) {
+                planState.updateTasking(execResult)
+                emitProgress(planState.printTaskPlan(listOf(planState.taskTree)))
             }
 
             // 2. Select a solver and task to work on
-            emit(AgentChatEvent.Progress("Workflow Step ${i++}"))
-            val (solver, task) = strategy.nextSolver(state, solvers)
-            emit(AgentChatEvent.PlanningTask(task.id, task.name + (task.description?.let { " - $it" } ?: "")))
+            emitProgress("Workflow Step ${i++}")
+            val (solver, task) = strategy.nextSolver(planState, solvers)
+            emitPlanningTask(task.id, task.name + (task.description?.let { " - $it" } ?: ""))
 
-            // 3. Use the selected solver to solve part of the task
-            val step = solver.solve(state, task)
-            emit(AgentChatEvent.UsingTool(solver.name, step.inputs.prettyPrint()))
+            // 3. Use the selected solver to execute part of the task
+            context.putResource(RESOURCE_WORKFLOW_TASK, task)
+            val t0step = System.currentTimeMillis()
+            val inputJson = createObject(INPUT, context.aggregateWorkflowInputsAsStringFor(solver.name, task.name))
+            emitUsingTool(solver.name, inputJson.prettyPrint())
+            val outputJson = solver.execute(inputJson, context)
+            val step = WorkflowSolveStep(task, solver, inputJson, outputJson as com.fasterxml.jackson.databind.node.ObjectNode, System.currentTimeMillis() - t0step, true)
 
-            if (step.isSuccess) {
-                state.taskTree.setTaskDone(task)
-                state.addResults(task, step.outputs)
-                emit(AgentChatEvent.ToolResult(solver.name, step.outputs.prettyPrint()))
-            } else {
-                emit(AgentChatEvent.Error(Exception("Step failed, see logs for details.")))
-            }
-            state.solveHistory.add(step)
+            planState.taskTree.setTaskDone(task)
+            context.addWorkflowResults(task, step.outputs)
+            emitToolResult(solver.name, step.outputs.prettyPrint())
+            planState.solveHistory.add(step)
 
             // 4. Finally, check if the workflow has been completed
-            state.checkDone()
-            emit(AgentChatEvent.Progress(state.printTaskPlan(listOf(state.taskTree))))
-            if (!state.isDone)
-                emit(AgentChatEvent.Progress("Continuing workflow execution..."))
+            planState.checkDone()
+            emitProgress(planState.printTaskPlan(listOf(planState.taskTree)))
+            if (!planState.isDone)
+                emitProgress("Continuing workflow execution...")
         }
         if (i <= maxSteps) {
             val execTime = System.currentTimeMillis() - t0
-            emit(AgentChatEvent.Progress("Workflow execution complete in ${execTime}ms and ${i-1} steps!"))
-            val final = state.finalResult().prettyPrint()
+            emitProgress("Workflow execution complete in ${execTime}ms and ${i-1} steps!")
+            val final = context.workflowFinalResult().prettyPrint()
             val message = MultimodalChatMessage.text(MChatRole.Assistant, final)
             return message
         } else {

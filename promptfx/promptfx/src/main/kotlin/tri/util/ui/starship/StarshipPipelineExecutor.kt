@@ -25,12 +25,13 @@ import tri.ai.core.TextChat
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.ExecutableRegistry
 import tri.ai.core.tool.impl.PromptChatRegistry
-import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskMonitor
+import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
 import tri.ai.pips.PrintMonitor
 import tri.ai.pips.api.AiPlanStepTask
 import tri.ai.pips.api.PPlan
 import tri.ai.pips.api.PPlanExecutor
+import tri.ai.pips.api.PPlanStep
 import tri.ai.prompt.PromptLibrary
 import tri.promptfx.PromptFxWorkspace
 
@@ -53,39 +54,56 @@ class StarshipPipelineExecutor(
 ) {
 
     /** Custom monitor for managing delay and tracking completed steps. */
-    val monitor = object : AiTaskMonitor {
+    val monitor = object : FlowCollector<ExecEvent> {
         val print = PrintMonitor()
-        override fun taskStarted(task: AiTask) {
-            print.taskStarted(task)
+        /** Pre-built identity-keyed index map for O(1) step lookups. */
+        val stepIndex: Map<PPlanStep, Int> = java.util.IdentityHashMap<PPlanStep, Int>().also { map ->
+            plan.steps.forEachIndexed { i, s -> map[s] = i }
         }
-        override fun taskUpdate(task: AiTask, progress: Double) {
-            print.taskUpdate(task, progress)
-        }
-        override fun taskCompleted(task: AiTask, result: Any?) {
-            print.taskCompleted(task, result)
-            if (task is AiPlanStepTask) {
-                results.activeStepVar.set(task.step.saveAs)
+        override suspend fun emit(value: ExecEvent) {
+            print.emit(value)
+            when (value) {
+                is ExecEvent.TaskStarted -> {
+                    val task = value.task
+                    if (task is AiPlanStepTask) {
+                        stepIndex[task.step]?.let { results.setStepState(it, PipelineStepState.ACTIVE) }
+                    }
+                }
+                is ExecEvent.TaskCompleted -> {
+                    val completedTask = value.task
+                    if (completedTask is AiPlanStepTask) {
+                        results.activeStepVar.set(completedTask.step.saveAs)
+                        stepIndex[completedTask.step]?.let { results.setStepState(it, PipelineStepState.DONE) }
+                    }
+                    Thread.sleep(stepDelayMs.toLong())
+                }
+                is ExecEvent.TaskFailed -> {
+                    val failedTask = value.task
+                    if (failedTask is AiPlanStepTask) {
+                        stepIndex[failedTask.step]?.let { results.setStepState(it, PipelineStepState.FAILED) }
+                    }
+                    Thread.sleep(stepDelayMs.toLong())
+                }
+                else -> {}
             }
-            Thread.sleep(stepDelayMs.toLong())
-        }
-        override fun taskFailed(task: AiTask, error: Throwable) {
-            print.taskFailed(task, error)
-            Thread.sleep(stepDelayMs.toLong())
         }
     }
 
     suspend fun execute() {
-        val registry = ExecutableRegistry.Companion.create(
+        results.initSteps(plan.steps)
+        results.started.set(true)
+        val registry = ExecutableRegistry.create(
             listOf(StarshipExecutableQuestionGenerator(questionConfig, chat), StarshipExecutableCurrentView(workspace, baseComponentTitle)) +
-                    PromptChatRegistry(PromptLibrary.Companion.INSTANCE, chat).list()
+                    PromptChatRegistry(PromptLibrary.INSTANCE, chat).list()
         )
-        val context = ExecContext().apply {
+        val context = ExecContext(monitor = monitor).apply {
             variableSet = results::updateVariable
             results.getMultiChoiceValues().forEach {
                 put(it.key, TextNode.valueOf(it.value))
             }
         }
-        PPlanExecutor(registry).execute(plan, context, monitor)
+        PPlanExecutor(registry).execute(plan, context)
+        results.completed.set(true)
     }
 }
 

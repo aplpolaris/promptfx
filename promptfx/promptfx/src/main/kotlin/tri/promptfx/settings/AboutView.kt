@@ -26,6 +26,8 @@ import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import tornadofx.*
 import tri.promptfx.AiTaskView
+import tri.promptfx.textThemedDarker
+import tri.promptfx.themed
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
 import java.io.File
@@ -56,8 +58,7 @@ class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx a
                     alignment = Pos.CENTER
 
                     label {
-                        graphic = FontAwesomeIcon.ROCKET.graphic.apply {
-                            fill = Color.CORNFLOWERBLUE
+                        graphic = FontAwesomeIcon.ROCKET.graphic.themed.apply {
                             glyphSize = 64
                         }
                     }
@@ -66,7 +67,7 @@ class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx a
                         style {
                             fontSize = 36.px
                             fontWeight = FontWeight.BOLD
-                            textFill = Color.DARKBLUE
+                            textFill = textThemedDarker
                         }
                     }
 
@@ -144,7 +145,7 @@ class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx a
                         }
                     }
 
-                    label("Copyright © 2023-2025") {
+                    label("Copyright © 2023-2026") {
                         style {
                             fontSize = 12.px
                             textFill = Color.GRAY

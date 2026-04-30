@@ -3,6 +3,9 @@
 # To customize the Starship demo, edit this file or create a starship-custom.yaml alongside it.
 # See README-STARSHIP.md in the config folder for detailed instructions.
 ---
+# Delay in seconds before restarting the pipeline after completion.
+repeatDelaySeconds: 20
+
 # Question randomizer configuration
 question:
   template: |
@@ -63,7 +66,7 @@ layout:
 
   numCols: 3
   numRows: 3
-  isShowGrid: true
+  isShowGrid: false
 
   widgets:
     - varRef: question

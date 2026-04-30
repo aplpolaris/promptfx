@@ -26,12 +26,12 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import tornadofx.*
-import tri.ai.openai.OpenAiModelIndex
 import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.*
 import tri.promptfx.prompts.PromptTraceHistoryView
 import tri.promptfx.ui.LOCATE_IN_PROMPT_HISTORY
@@ -45,7 +45,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
 
     // TODO - add a PromptDetailsUi dialog or view
 
-    var trace = SimpleObjectProperty<AiPromptTraceSupport>()
+    var trace = SimpleObjectProperty<AiTaskTrace>()
 
     val prompt = SimpleStringProperty("")
     val promptParams = SimpleObjectProperty<Map<String, Any>>(null)
@@ -60,12 +60,12 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     lateinit var playButton: Button
     private var player: MediaPlayer? = null
 
-    fun setTrace(trace: AiPromptTraceSupport?) {
+    fun setTrace(trace: AiTaskTrace?) {
         this.trace.set(trace)
-        prompt.value = trace?.prompt?.template
-        promptParams.value = trace?.prompt?.params
-        model.value = trace?.model?.modelId
-        modelParams.value = trace?.model?.modelParams
+        prompt.value = trace?.input?.prompt ?: ""
+        promptParams.value = trace?.input?.params
+        model.value = trace?.env?.modelId ?: ""
+        modelParams.value = trace?.env?.modelParams
         exec.value = trace?.exec
         val outputs = trace?.output?.outputs ?: listOf("No result")
         if (outputs.size == 1)
@@ -148,7 +148,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                                     fitWidthProperty().bind(thumbnailSize)
                                     fitHeightProperty().bind(thumbnailSize)
                                     isPreserveRatio = true
-                                    tooltip { graphic = vbox {
+                                    tooltip { graphic = VBox().apply {
                                         val text = text(prompt) {
                                             style = "-fx-fill: white;"
                                         }
@@ -156,7 +156,7 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
                                         text.wrappingWidthProperty().bind(image.image.widthProperty())
                                     } }
                                 }
-                            } else if (result.value is ByteArray && model.value in OpenAiModelIndex.ttsModels()) { // TODO general support for audio models
+                            } else if (result.value is ByteArray && model.value in PromptFxModels.textToSpeechModels().map { it.modelId }) {
                                 playButton = box.button("Play", graphic = FontAwesomeIcon.PLAY.graphic) {
                                     action { playButtonPress(result.value as ByteArray) }
                                 }
@@ -196,9 +196,9 @@ class PromptTraceDetailsUi : Fragment("Prompt Trace") {
     private fun AiExecInfo?.pretty() = this?.let {
         mapOf<String, Any?>(
             "error" to it.error,
-            "query_tokens" to it.queryTokens,
-            "response_tokens" to it.responseTokens,
-            "duration" to it.responseTimeMillis?.let { "${it}ms" }
+            "query_tokens" to it.stats[AiExecInfo.QUERY_TOKENS],
+            "response_tokens" to it.stats[AiExecInfo.RESPONSE_TOKENS],
+            "duration" to (it.stats[AiExecInfo.RESPONSE_TIME_MILLIS] as? Long)?.let { ms -> "${ms}ms" }
         ).entries.filter { it.value != null }
             .joinToString(", ") { (k, v) -> "$k: $v" }
     }

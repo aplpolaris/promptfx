@@ -25,8 +25,8 @@ import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.*
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
 import tri.util.ifNotBlank
 
 /**
@@ -64,7 +64,7 @@ class ChatViewAdvanced : ChatView(
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val systemMessage = if (system.value.isNullOrBlank()) listOf() else
             listOf(MultimodalChatMessage.text(MChatRole.System, system.value))
         val messages = systemMessage + chatHistory.chatMessages().takeLast(messageHistory.value)
@@ -97,7 +97,7 @@ class ChatViewAdvanced : ChatView(
 
         val m = model.value!!
         val result = m.chat(messages, params)
-        return result.asPipelineResult()
+        return result.asWorkflowResult()
     }
 
 }

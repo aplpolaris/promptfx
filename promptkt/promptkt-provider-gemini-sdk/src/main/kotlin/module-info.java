@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 import tri.ai.geminisdk.GeminiSdkPlugin;
 
 module tri.promptkt.gemini.sdk {
@@ -28,10 +28,12 @@ module tri.promptkt.gemini.sdk {
     // Google Gen AI Java SDK
     requires com.google.genai;
 
+    opens tri.ai.geminisdk.resources;
+
     exports tri.ai.geminisdk;
 
     // services (service loader API)
-    uses TextPlugin;
+    uses AiModelProvider;
 
-    provides TextPlugin with GeminiSdkPlugin;
+    provides AiModelProvider with GeminiSdkPlugin;
 }

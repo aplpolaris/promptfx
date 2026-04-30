@@ -20,14 +20,14 @@
 package tri.ai.openai.azure
 
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.openai.*
 
 /**
- * Implementation of [TextPlugin] using OpenAI API.
+ * Implementation of [AiModelProvider] using OpenAI API.
  * Models are as described in `openai-models.yaml`.
  */
-class OpenAiAzurePlugin : TextPlugin {
+class OpenAiAzurePlugin : AiModelProvider {
 
     val client = OpenAiAzureSettings.INSTANCE
 
@@ -50,17 +50,14 @@ class OpenAiAzurePlugin : TextPlugin {
         models(OpenAiAzureModelIndex.embeddingModels()) { OpenAiEmbeddingModel(it, modelSource(), client) }
 
     override fun textCompletionModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiCompletionChat(it, modelSource(), client) } +
-        models(OpenAiAzureModelIndex.completionModels(false)) { OpenAiCompletion(it, modelSource(), client) }
+        models(OpenAiAzureModelIndex.chatModels()) { OpenAiCompletionChat(it, modelSource(), client) } +
+        models(OpenAiAzureModelIndex.completionModels()) { OpenAiCompletion(it, modelSource(), client) }
 
     override fun chatModels() =
-        models(OpenAiAzureModelIndex.chatModelsInclusive(false)) { OpenAiChat(it, modelSource(), client) }
+        models(OpenAiAzureModelIndex.chatModels()) { OpenAiChat(it, modelSource(), client) }
 
     override fun multimodalModels() =
         models(OpenAiAzureModelIndex.multimodalModels()) { OpenAiMultimodalChat(it, modelSource(), client) }
-
-    override fun visionLanguageModels() =
-        models(OpenAiAzureModelIndex.visionLanguageModels()) { OpenAiVisionLanguageChat(it, modelSource(), client) }
 
     override fun imageGeneratorModels() =
         models(OpenAiAzureModelIndex.imageGeneratorModels()) { OpenAiImageGenerator(it, modelSource(), client) }

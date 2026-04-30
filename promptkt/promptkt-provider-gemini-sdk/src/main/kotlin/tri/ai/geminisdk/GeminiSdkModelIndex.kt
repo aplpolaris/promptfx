@@ -33,6 +33,7 @@ object GeminiSdkModelIndex : ModelIndex("gemini-sdk-models.yaml") {
 
     const val GEMINI_25_FLASH = "gemini-2.5-flash"
     const val GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"
+    const val GEMINI_25_FLASH_IMAGE = "gemini-2.5-flash-image"
 
     //endregion
 

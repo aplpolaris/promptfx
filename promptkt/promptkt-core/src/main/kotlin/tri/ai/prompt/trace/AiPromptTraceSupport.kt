@@ -19,40 +19,9 @@
  */
 package tri.ai.prompt.trace
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import java.util.UUID.randomUUID
-
-/** Common elements of a prompt trace. */
-abstract class AiPromptTraceSupport(
-    var prompt: PromptInfo?,
-    var model: AiModelInfo?,
-    var exec: AiExecInfo,
-    var output: AiOutputInfo? = null
-) {
-
-    /** Unique identifier for this trace. */
-    var uuid = randomUUID().toString()
-
-    /** Make a copy of this trace with updated information. */
-    abstract fun copy(
-        promptInfo: PromptInfo? = this.prompt,
-        modelInfo: AiModelInfo? = this.model,
-        execInfo: AiExecInfo = this.exec
-    ): AiPromptTraceSupport
-
-    /** Get all outputs, if present. */
-    @get:JsonIgnore
-    val values: List<AiOutput>?
-        get() = output?.outputs
-
-    /** Get the first output value, if it exists, otherwise throw [NoSuchElementException]. */
-    @get:JsonIgnore
-    val firstValue: AiOutput
-        get() = output?.outputs?.firstOrNull() ?: throw NoSuchElementException("No output value")
-
-    /** Get error message, if present. */
-    @get:JsonIgnore
-    val errorMessage: String?
-        get() = exec.error ?: exec.throwable?.message
-
-}
+/** Common elements of a prompt trace. Replaced by [AiTaskTrace]. */
+@Deprecated(
+    "Use AiTaskTrace instead",
+    ReplaceWith("AiTaskTrace", "tri.ai.prompt.trace.AiTaskTrace")
+)
+typealias AiPromptTraceSupport = AiTaskTrace

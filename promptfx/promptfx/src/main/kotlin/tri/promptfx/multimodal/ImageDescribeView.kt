@@ -26,7 +26,7 @@ import tri.ai.core.MChatParameters
 import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChat
 import tri.ai.core.chatMessage
-import tri.ai.pips.tasktext
+import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.PromptFxModels
@@ -69,9 +69,9 @@ class ImageDescribeView: AiPlanTaskView("Image Description", "Drop an image to d
         }
     }
 
-    override fun plan() = tasktext("Describe Image") {
+    override fun plan() = AiTaskBuilder.task("Describe Image") {
         describeImage(prompt.text.value)
-    }.planner
+    }
 
     fun setImage(image: Image) {
         this.image.value = image

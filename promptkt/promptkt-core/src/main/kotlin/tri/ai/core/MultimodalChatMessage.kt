@@ -53,6 +53,16 @@ data class MultimodalChatMessage(
     }
 }
 
+/** The role of a chat message. */
+enum class MChatRole {
+    System,
+    User,
+    Assistant,
+    Tool,
+    /** Message with no role - useful for text completions. */
+    None
+}
+
 //region BUILDERS
 
 /** Gets text content from first message, if present, otherwise null. */

@@ -19,18 +19,29 @@
  */
 package tri.ai.core
 
-import java.net.URL
+import java.net.URI
 
 /** Interface for image generation. */
 interface ImageGenerator : AiModel {
-    /** Generate an image, return URL to access image. */
+    /** Generate images, returning a URI for each (may be an HTTP URL or a data: URI for base64-encoded images). */
     suspend fun generateImage(
         text: String,
-        size: ImageSize,
-        prompt: String? = null,
-        numResponses: Int? = null
-    ): List<URL>
-
+        params: ImageGenerationParams = ImageGenerationParams()
+    ): List<URI>
 }
+
+/** Parameters for image generation. Each generator uses the fields relevant to its API. */
+data class ImageGenerationParams(
+    /** Size string: pixel dimensions (e.g. "1024x1024") for OpenAI, image size code (e.g. "1K") for Gemini. */
+    val size: String? = null,
+    /** Aspect ratio string (e.g. "1:1", "16:9"). Used by Gemini; ignored by OpenAI which uses [size] for dimensions. */
+    val aspectRatio: String? = null,
+    /** Number of images to generate. */
+    val numResponses: Int? = null,
+    /** Quality setting (model-specific, e.g. "standard", "hd", "high", "auto"). */
+    val quality: String? = null,
+    /** Style setting (model-specific, e.g. "vivid", "natural"). */
+    val style: String? = null
+)
 
 data class ImageSize(val width: Int, val height: Int)

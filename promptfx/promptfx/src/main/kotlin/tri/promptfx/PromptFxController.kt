@@ -22,29 +22,26 @@ package tri.promptfx
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin
 import tri.ai.openai.UsageUnit
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.text.chunks.SmartTextChunker
-import tri.promptfx.prompts.PromptTraceHistoryModel
+import tri.promptfx.prompts.AiTaskTraceHistoryModel
 
 /** Controller for [PromptFx]. */
 class PromptFxController : Controller() {
 
-    val openAiPlugin = TextPlugin.orderedPlugins.first { it is OpenAiPlugin } as OpenAiPlugin
+    val openAiPlugin: OpenAiPlugin? = AiModelProvider.orderedPlugins.firstOrNull { it is OpenAiPlugin } as? OpenAiPlugin
 
-    val completionEngine: SimpleObjectProperty<TextCompletion> =
-        SimpleObjectProperty(PromptFxModels.textCompletionModelDefault())
-    val chatService: SimpleObjectProperty<TextChat> =
-        SimpleObjectProperty(PromptFxModels.chatModelDefault())
-    val embeddingStrategy: SimpleObjectProperty<EmbeddingStrategy> =
+    val chatEngine: SimpleObjectProperty<AiChatEngine> =
+        SimpleObjectProperty(PromptFxModels.chatEngineDefault())
+    val embeddingEngine: SimpleObjectProperty<EmbeddingStrategy> =
         SimpleObjectProperty(EmbeddingStrategy(PromptFxModels.embeddingModelDefault(), SmartTextChunker()))
 
-    val promptHistory = find<PromptTraceHistoryModel>()
+    val traceHistory = find<AiTaskTraceHistoryModel>()
     val mcpController = find<PromptFxMcpController>()
 
     val tokensUsed = SimpleIntegerProperty(0)
@@ -53,21 +50,21 @@ class PromptFxController : Controller() {
 
     //region UPDATERS
 
-    /** Adds a pipeline execution result to history. */
-    fun addPromptTraces(viewTitle: String, traces: AiPipelineResult) {
+    /** Adds a workflow execution result to history. */
+    fun addPromptTraces(viewTitle: String, traces: AiWorkflowResult) {
         val interim = (traces.interimResults.values - traces.finalResult).map {
-            it.copy(execInfo = it.exec.copy(intermediateResult = true, viewId = viewTitle))
+            it.copy(exec = it.exec.copy(stats = it.exec.stats + mapOf(AiExecInfo.INTERMEDIATE_RESULT to true)), callerId = viewTitle)
         }
-        promptHistory.prompts.addAll(interim)
-        val final = traces.finalResult.let { it.copy(execInfo = it.exec.copy(intermediateResult = false, viewId = viewTitle)) }
-        promptHistory.prompts.add(final)
+        traceHistory.prompts.addAll(interim)
+        val final = traces.finalResult.let { it.copy(exec = it.exec.copy(stats = it.exec.stats + mapOf(AiExecInfo.INTERMEDIATE_RESULT to false)), callerId = viewTitle) }
+        traceHistory.prompts.add(final)
     }
 
     /** Update usage stats for the OpenAI endpoint. */
     fun updateUsage() {
-        tokensUsed.value = openAiPlugin.client.usage[UsageUnit.TOKENS] ?: 0
-        audioUsed.value = openAiPlugin.client.usage[UsageUnit.AUDIO_SECONDS] ?: 0
-        imagesUsed.value = openAiPlugin.client.usage[UsageUnit.IMAGES] ?: 0
+        tokensUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.TOKENS) ?: 0
+        audioUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.AUDIO_SECONDS) ?: 0
+        imagesUsed.value = openAiPlugin?.client?.usage?.get(UsageUnit.IMAGES) ?: 0
     }
 
     //endregion
@@ -75,16 +72,20 @@ class PromptFxController : Controller() {
     /** Called to release resources when the application is closed. */
     fun close() {
         try {
-            openAiPlugin.client.client.close()
+            openAiPlugin?.client?.client?.close()
         } catch (x: Exception) {
             println("There was an error closing the OpenAI client: ${x.message}")
         }
-        TextPlugin.orderedPlugins.forEach {
-            try {
-                it.close()
-            } catch (x: Exception) {
-                println("There was an error closing the plugin $it: ${x.message}")
+        try {
+            AiModelProvider.orderedPlugins.forEach {
+                try {
+                    it.close()
+                } catch (x: Exception) {
+                    println("There was an error closing the plugin $it: ${x.message}")
+                }
             }
+        } catch (x: Exception) {
+            println("There was an error closing model provider plugins: ${x.message}")
         }
     }
 

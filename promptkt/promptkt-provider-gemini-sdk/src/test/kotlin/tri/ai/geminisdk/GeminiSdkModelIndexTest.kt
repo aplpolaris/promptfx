@@ -41,17 +41,9 @@ class GeminiSdkModelIndexTest {
     }
 
     @Test
-    fun testVisionLanguageModels() {
-        val models = GeminiSdkModelIndex.visionLanguageModels()
-        assertTrue(models.isNotEmpty())
-        assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
-        println("Vision language models: $models")
-    }
-
-    @Test
     fun testChatModelsInclusive() {
-        val models = GeminiSdkModelIndex.chatModelsInclusive()
-        assertTrue(models.isNotEmpty()) // chat + vision_language models
+        val models = GeminiSdkModelIndex.chatModels() + GeminiSdkModelIndex.multimodalModels()
+        assertTrue(models.isNotEmpty()) // chat + multimodal models
         assertTrue(models.contains(GeminiSdkModelIndex.GEMINI_25_FLASH_LITE))
         println("Chat models (inclusive): $models")
     }

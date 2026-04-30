@@ -19,17 +19,26 @@
  */
 package tri.ai.pips
 
-/** Tracks status of tasks. */
-interface AiTaskMonitor {
-    fun taskStarted(task: AiTask)
-    fun taskUpdate(task: AiTask, progress: Double)
-    fun taskCompleted(task: AiTask, result: Any?)
-    fun taskFailed(task: AiTask, error: Throwable)
+import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.core.tool.ExecContext
+
+/**
+ * Monitors execution status of tasks via [ExecEvent] emissions.
+ * This replaces the original callback-based interface with a [FlowCollector]<[ExecEvent]>-based model,
+ * so that task lifecycle and agent chat events share a single unified event stream.
+ */
+typealias AiTaskMonitor = FlowCollector<ExecEvent>
+
+/** Monitor that silently ignores all events. */
+object IgnoreMonitor : FlowCollector<ExecEvent> {
+    override suspend fun emit(value: ExecEvent) {}
 }
 
-object IgnoreMonitor : AiTaskMonitor {
-    override fun taskStarted(task: AiTask) {}
-    override fun taskUpdate(task: AiTask, progress: Double) {}
-    override fun taskCompleted(task: AiTask, result: Any?) {}
-    override fun taskFailed(task: AiTask, error: Throwable) {}
-}
+/**
+ * Reports sub-progress within a task with a descriptive message and a fractional progress value (0.0–1.0).
+ * Emits a [ExecEvent.TaskUpdate] carrying a temporary [AiTask] whose id holds the message.
+ */
+suspend fun FlowCollector<ExecEvent>.progressUpdate(message: String, progress: Double) =
+    emitTaskUpdate(object : AiTask<Any?, String>(message) {
+        override suspend fun execute(input: Any?, context: ExecContext) = message
+    }, progress)

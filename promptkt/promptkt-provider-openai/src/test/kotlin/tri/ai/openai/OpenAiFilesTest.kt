@@ -70,15 +70,15 @@ class OpenAiFilesTest {
 
     @Test
     @Tag("openai")
-    fun testDownloadFile() = runTest {
-        val content = "Hello from promptfx download test."
-        val tempFile = File.createTempFile("promptfx-dl-test-", ".txt").also {
+    fun `test upload and download batch file`() = runTest {
+        val content = """{"x":"Hello from promptfx download test."}"""
+        val tempFile = File.createTempFile("promptfx-dl-test-", ".jsonl").also {
             it.writeText(content)
             it.deleteOnExit()
         }
 
         val source = FileSource(Path(tempFile.absolutePath), SystemFileSystem)
-        val uploaded = adapter.uploadFile(source, "assistants")
+        val uploaded = adapter.uploadFile(source, "batch")
         println("Uploaded for download test: ${uploaded.filename} id=${uploaded.id}")
 
         try {

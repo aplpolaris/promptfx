@@ -4,7 +4,7 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptfx-meta</artifactId>
-    <version>0.15.0-SNAPSHOT</version>
+    <version>0.16.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
@@ -43,7 +43,8 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
@@ -65,7 +66,7 @@
         <slf4j.version>2.0.17</slf4j.version> <!-- match version in io.ktor -->
         
 		<javafx.version>21.0.4</javafx.version>
-        <tornadofx.version>2.2.0</tornadofx.version>
+        <tornadofx.version>2.2.2</tornadofx.version>
         <controlsfx.version>11.2.3</controlsfx.version>
         <fontawesome.version>4.7.0-9.1.2</fontawesome.version>
     </properties>

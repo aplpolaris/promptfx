@@ -20,27 +20,28 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
 
 /**
  * A recorder that captures all events from an [AgentChatFlow] and can print
  * a summary of the tool calls and reasoning steps after the workflow completes.
  */
-class AgentFlowRecorder : FlowCollector<AgentChatEvent> {
+class AgentFlowRecorder : FlowCollector<ExecEvent> {
 
     /** All collected events, in the order they were emitted. */
-    val events = mutableListOf<AgentChatEvent>()
+    val events = mutableListOf<ExecEvent>()
 
-    override suspend fun emit(event: AgentChatEvent) {
+    override suspend fun emit(event: ExecEvent) {
         events.add(event)
     }
 
     /** Print a structured summary of captured tool calls and reasoning steps to standard out. */
     fun printSummary() {
-        val planningTasks = events.filterIsInstance<AgentChatEvent.PlanningTask>()
-        val reasoningSteps = events.filterIsInstance<AgentChatEvent.Reasoning>()
-        val toolCallEvents = events.filterIsInstance<AgentChatEvent.UsingTool>()
-        val toolResultEvents = events.filterIsInstance<AgentChatEvent.ToolResult>()
-        val response = events.filterIsInstance<AgentChatEvent.Response>().lastOrNull()
+        val planningTasks = events.filterIsInstance<ExecEvent.PlanningTask>()
+        val reasoningSteps = events.filterIsInstance<ExecEvent.Reasoning>()
+        val toolCallEvents = events.filterIsInstance<ExecEvent.UsingTool>()
+        val toolResultEvents = events.filterIsInstance<ExecEvent.ToolResult>()
+        val response = events.filterIsInstance<ExecEvent.Response>().lastOrNull()
 
         println("=== Workflow Summary ===")
 

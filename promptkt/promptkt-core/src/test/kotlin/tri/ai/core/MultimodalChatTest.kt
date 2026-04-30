@@ -21,6 +21,7 @@ package tri.ai.core
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
+import tri.ai.prompt.trace.AiOutput
 import tri.util.BASE64_IMAGE_SAMPLE
 
 fun MultimodalChat.testChat_Simple() = runTest {
@@ -81,7 +82,7 @@ fun MultimodalChat.testChat_Tools() = runTest {
     )))
 
     // in the first call, the AI will provide a response indicating what tool to use
-    val toolCallMessage = chat(query, params).firstValue.multimodalMessage!!
+    val toolCallMessage = (chat(query, params).firstValue as AiOutput.MultimodalMessage).multimodalMessage
     assertEquals(MChatRole.Assistant, toolCallMessage.role)
     assertTrue(toolCallMessage.content.isNullOrEmpty() || toolCallMessage.content!!.first().partType == MPartType.TOOL_CALL)
 
@@ -95,6 +96,6 @@ fun MultimodalChat.testChat_Tools() = runTest {
     val toolResultMessage = MultimodalChatMessage.tool("V", calls[0].id.ifEmpty { calls[0].name })
     val finalResponse = chat(listOf(query, toolCallMessage, toolResultMessage), params)
 
-    println(finalResponse.firstValue.multimodalMessage!!.content!![0].text)
-    assertTrue(finalResponse.firstValue.multimodalMessage!!.content!![0].text!!.contains("V"))
+    println((finalResponse.firstValue as AiOutput.MultimodalMessage).multimodalMessage.content!![0].text)
+    assertTrue((finalResponse.firstValue as AiOutput.MultimodalMessage).multimodalMessage.content!![0].text!!.contains("V"))
 }

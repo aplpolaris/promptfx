@@ -4,8 +4,9 @@
 
 echo "Building PromptFx Sample Plugins..."
 
-# Build both plugins
-mvn clean package -pl promptkt/promptkt-provider-sample,promptfx/promptfx-sample-view-plugin -q
+# Build both plugins (each has its own Maven reactor, so they are built separately)
+mvn clean package -f promptkt/pom.xml -pl promptkt-provider-sample -q && \
+mvn clean package -f promptfx/pom.xml -pl promptfx-sample-view-plugin -q
 
 if [ $? -eq 0 ]; then
     echo "Build successful!"
@@ -22,7 +23,7 @@ if [ $? -eq 0 ]; then
     echo "To use the plugins:"
     echo "1. Start PromptFx"
     echo "2. NavigableWorkspaceView plugin: Look for 'Hello World' under the 'Custom' tab in the UI (Sample Plugin category)"
-    echo "3. TextPlugin: Look for 'SampleText' models in any model selection dropdown"
+    echo "3. AiModelProvider: Look for 'SampleText' models in any model selection dropdown"
 else
     echo "Build failed! Please check the Maven output above for errors."
     exit 1

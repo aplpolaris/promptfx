@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 
 module tri.promptkt.core {
     requires transitive kotlin.stdlib;
@@ -43,6 +43,7 @@ module tri.promptkt.core {
     opens tri.ai.prompt.trace to com.fasterxml.jackson.databind;
     opens tri.ai.prompt.trace.batch to com.fasterxml.jackson.databind;
     opens tri.util.json to com.fasterxml.jackson.databind;
+    opens tri.ai.prompt.resources;
 
     exports tri.ai.core;
     exports tri.ai.prompt;
@@ -52,5 +53,5 @@ module tri.promptkt.core {
     exports tri.util.json;
 
     // services (service loader API)
-    uses TextPlugin;
+    uses AiModelProvider;
 }

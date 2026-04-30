@@ -19,22 +19,23 @@
  */
 package tri.promptfx
 
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.AiPlanner
+import tri.ai.core.tool.ExecContext
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.AiTaskBuilder
 
 /**
- * View that gets result from a planned set of tasks from an [AiPlanner] object.
+ * View that gets result from a planned set of tasks from an [AiTaskBuilder] object.
  * These tasks can be monitored while executing.
  */
 abstract class AiPlanTaskView(title: String, description: String) : AiTaskView(title, description) {
 
     val common = ModelParameters()
 
-    override suspend fun processUserInput(): AiPipelineResult =
-        AiPipelineExecutor.execute(plan().plan(), progress)
+    override suspend fun processUserInput(): AiWorkflowResult =
+        AiWorkflowExecutor.execute(plan().plan, ExecContext(monitor = progress))
 
-    abstract fun plan(): AiPlanner
+    abstract fun plan(): AiTaskBuilder<*>
 
 }
 

@@ -25,6 +25,8 @@ import tri.util.json.jsonMapper
 import java.io.File
 import java.io.IOException
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -54,7 +56,8 @@ class OpenWeatherMapService(private val apiKey: String) : WeatherService {
     override fun getWeather(request: WeatherRequest): WeatherResult? {
         try {
             val endpoint = if (request.historical) "history" else "weather"
-            val url = "$baseUrl/$endpoint?q=${request.city}&appid=$apiKey&units=imperial"
+            val encodedGeo = URLEncoder.encode(request.city, StandardCharsets.UTF_8)
+            val url = "$baseUrl/$endpoint?q=$encodedGeo&appid=$apiKey&units=imperial"
             println(url)
             val response = URL(url).readText()
             val responseObj = jsonMapper.readValue<WeatherResponse>(response)

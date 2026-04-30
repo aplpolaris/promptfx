@@ -121,12 +121,14 @@ class ChatFragment: Fragment() {
 
     private fun generateChatResponse() {
         blinkIndicator(start = true)
+        panel.startThinking()
         runAsync {
             runBlocking {
                 chatDriver.chat(chats)
             }
         } ui {
             chats.add(it)
+            panel.stopThinking()
             blinkIndicator(start = false)
         }
     }

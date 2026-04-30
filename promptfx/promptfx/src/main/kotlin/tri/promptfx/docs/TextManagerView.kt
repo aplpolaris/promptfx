@@ -25,7 +25,7 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxConfig
@@ -99,7 +99,7 @@ class TextManagerView : AiTaskView("Text Manager", "Manage collections of docume
         model.loadTextLibrary(library, replace = false, selectAllDocs = false)
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }
 
 /** Track a library with where it was loaded from, null indicates not saved to a file. */

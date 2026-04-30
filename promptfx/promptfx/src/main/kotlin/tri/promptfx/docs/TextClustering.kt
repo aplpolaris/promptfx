@@ -2,11 +2,11 @@ package tri.promptfx.docs
 
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.EmbeddingModel
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
+import tri.promptfx.AiChatEngine
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.execute
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.util.fine
 import tri.util.ml.ClusterService
@@ -15,7 +15,7 @@ import tri.util.ml.ClusterService
 object TextClustering {
 
     /**
-     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [TextChat] and [EmbeddingModel].
+     * Generate a hierarchy of clusters with metadata and descriptions, via a chain of background tasks using [AiChatEngine] and [EmbeddingModel].
      * Summarizes clusters hierarchically whenever the list of chunks (or clusters) is at least size [minForRegroup].
      */
     suspend fun ClusterService.generateClusterHierarchy(
@@ -24,7 +24,7 @@ object TextClustering {
         itemType: String,
         categories: List<String>,
         sampleTheme: String,
-        chatEngine: TextChat,
+        chatEngine: AiChatEngine,
         embeddingModel: EmbeddingModel,
         minForRegroup: Int = 20,
         attempts: Int = 3,
@@ -72,7 +72,7 @@ object TextClustering {
     suspend fun ClusterService.generateClusters(
         input: List<EmbeddingCluster>,
         prompt: ClusteringPrompt,
-        chatEngine: TextChat,
+        chatEngine: AiChatEngine,
         attempts: Int,
         progress: (String, Double) -> Unit
     ): List<EmbeddingCluster> {
@@ -95,14 +95,14 @@ object TextClustering {
     }
 
     /**
-     * Generate a summary of a given cluster, using [TextCompletion] and an appropriate prompt.
+     * Generate a summary of a given cluster, using an [AiChatEngine] and an appropriate prompt.
      * Each cluster is associated with a theme and one or more categories.
      * Use [attempts] to run multiple text completions and combine the results.
      */
     suspend fun generateClusterSummary(
         cluster: List<EmbeddingCluster>,
         prompt: ClusteringPrompt,
-        chatEngine: TextChat,
+        chatEngine: AiChatEngine,
         attempts: Int
     ): ClusterDescription {
         val inputText = cluster.joinToString("\n") { it.description.theme!! }

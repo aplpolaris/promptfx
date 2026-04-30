@@ -17,8 +17,8 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
-import tri.promptfx.sample.textplugin.SampleTextPlugin;
+import tri.ai.core.AiModelProvider;
+import tri.promptfx.sample.textplugin.SampleAiModelProvider;
 
 module tri.promptfx.sample.api.plugin {
     requires transitive tri.promptkt.core;
@@ -27,6 +27,6 @@ module tri.promptfx.sample.api.plugin {
     exports tri.promptfx.sample.textplugin;
 
     // services (service loader API)
-    uses tri.ai.core.TextPlugin;
-    provides TextPlugin with SampleTextPlugin;
+    uses AiModelProvider;
+    provides AiModelProvider with SampleAiModelProvider;
 }

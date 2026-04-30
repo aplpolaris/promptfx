@@ -24,68 +24,64 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.core.EmbeddingModel
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.embedding.cosineSimilarity
+import tri.ai.pips.AiTaskBuilder
 import tri.util.json.jsonMapper
-import tri.ai.pips.AiPlanner
-import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutput
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.promptfx.AiChatEngine
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
+import tri.promptfx.execute
 import tri.util.fine
 import tri.util.info
 
 /** Uses OpenAI and a weather API to answer questions about the weather. */
-class WeatherAiTaskPlanner(val chatEngine: TextChat, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) : AiPlanner {
+class WeatherAiTaskPlanner(val chatEngine: AiChatEngine, val common: ModelParameters, val embeddingModel: EmbeddingModel, val input: String) {
 
-    override fun plan() =
-        aitask("weather-similarity-check") {
+    fun plan() =
+        AiTaskBuilder.task("weather-similarity-check") {
             checkWeatherSimilarity(input)
-        }.aitask("weather-api-request") {
+        }.task("weather-api-request") { _, _ ->
             CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-api-request"))
                 .paramsInput(input)
                 .tokens(500)
                 .executeJson<WeatherRequest>(chatEngine)
-        }.objtask<WeatherRequest, WeatherResult>("weather-api") {
-            weatherService.getWeather(it)
-        }.aitask("weather-response-formatter") {
+                .output!!.outputs.first().let { (it as AiOutput.Other).other as WeatherRequest }
+        }.task("weather-api") { it, _ ->
+            weatherService.getWeather(it) as WeatherResult
+        }.task("weather-response-formatter") { it, context ->
             val json = jsonMapper.writeValueAsString(it)
-            CompletionBuilder()
+            val result = CompletionBuilder()
                 .prompt(lookupPrompt("examples-api/weather-response-formatter"))
                 .paramsInstruct(instruct = input, input = json)
                 .execute(chatEngine)
-        }.plan
+            context.logTrace("weather-response-formatter", result)
+            result.output?.outputs?.firstOrNull()?.textContent(ifNone = "") ?: ""
+        }
 
     /**
      * Executes a [TextCompletion] task with the provided parameters, and attempts to parse the response as JSON.
      * Fails silently, returning null without throwing an exception if parsing fails.
      */
-    private suspend inline fun <reified T> CompletionBuilder.executeJson(completion: TextChat) =
-        requestJson(true).execute(completion).mapOutput {
+    private suspend inline fun <reified T> CompletionBuilder.executeJson(engine: AiChatEngine) =
+        requestJson(true).execute(engine).mapOutput {
             try {
-                AiOutput(other = JSON_MAPPER.readValue<T>(it.textContent().trim()))
+                AiOutput.Other(JSON_MAPPER.readValue<T>(it.textContent().trim()) as Any)
             } catch (x: JsonMappingException) {
                 fine<CompletionBuilder>("Failed to parse response as JSON: ${x.message}, returning null.")
-                AiOutput(text = "Failed to parse response as JSON: ${x.message}")
+                AiOutput.Text("Failed to parse response as JSON: ${x.message}")
             }
         }
 
-    private suspend fun checkWeatherSimilarity(input: String): AiPromptTrace {
+    private suspend fun checkWeatherSimilarity(input: String): String {
         val embeddings = embeddingModel.calculateEmbedding("is it raining snowing sunny windy in city new york", input)
         val similarity = cosineSimilarity(embeddings[0], embeddings[1])
         info<WeatherAiTaskPlanner>("Input alignment to weather: $similarity")
         if (similarity < 0.5)
             throw IllegalArgumentException("The input is not about weather.")
-
-        return AiPromptTrace(
-            modelInfo = AiModelInfo(embeddingModel.modelId),
-            outputInfo = AiOutputInfo.text(input)
-        )
+        return input
     }
 
 }

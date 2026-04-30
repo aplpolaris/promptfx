@@ -29,9 +29,10 @@ import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.openai.OpenAiAdapter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.ai.prompt.trace.AiOutput
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
@@ -58,7 +59,7 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
     private val greeting
         get() = "You are chatting with $model. Say 'bye' to exit."
     private val chatModelInst
-        get() = TextPlugin.chatModels().first { it.modelId == model }
+        get() = AiModelProvider.chatModels().first { it.modelId == model }
 
 
     override fun run() {
@@ -80,7 +81,7 @@ class SimpleChatCli : CliktCommand(name = "chat-simple") {
             while (input != "bye") {
                 chatHistory.add(TextChatMessage(MChatRole.User, input))
                 val response = chatModelInst.chat(chatHistory)
-                val message = response.firstValue.message!!
+                val message = (response.firstValue as AiOutput.ChatMessage).message
                 println(message)
                 chatHistory.add(TextChatMessage(MChatRole.Assistant, message.content))
                 while (chatHistory.size > historySize) {

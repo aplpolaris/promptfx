@@ -22,6 +22,7 @@ package tri.promptfx.mcp
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
@@ -32,7 +33,7 @@ import tri.ai.mcp.HttpProviderConfig
 import tri.ai.mcp.McpProviderConfig
 import tri.ai.mcp.StdioProviderConfig
 import tri.ai.mcp.TestProviderConfig
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -140,7 +141,7 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
                     serverListView = this
                     selectedProviderName.bind(this.selectionModel.selectedItemProperty())
                     cellFormat { serverName ->
-                        graphic = hbox(spacing = 5.0) {
+                        graphic = HBox(5.0).apply {
                             label(serverName) {
                                 minWidth = 100.0
                             }
@@ -461,5 +462,5 @@ class McpServerView : AiTaskView("MCP Servers", "View and configure MCP Servers.
         }
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }

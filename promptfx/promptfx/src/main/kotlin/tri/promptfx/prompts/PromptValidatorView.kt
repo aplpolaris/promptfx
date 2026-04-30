@@ -23,10 +23,10 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.clear
 import tornadofx.onChange
-import tri.ai.pips.aitask
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.pips.AiTaskBuilder
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiPlanTaskView
+import tri.promptfx.execute
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError
@@ -42,8 +42,8 @@ class PromptValidatorView : AiPlanTaskView(
 ) {
 
     val prompt = SimpleStringProperty("")
-    private val promptOutput = SimpleObjectProperty<AiPromptTraceSupport>()
-    private val validatorOutput = SimpleObjectProperty<AiPromptTraceSupport>()
+    private val promptOutput = SimpleObjectProperty<AiTaskTrace>()
+    private val validatorOutput = SimpleObjectProperty<AiTaskTrace>()
     private lateinit var validatorPromptUi: EditablePromptUi
 
     init {
@@ -74,22 +74,23 @@ class PromptValidatorView : AiPlanTaskView(
             })
         }
         onCompleted {
-            validatorOutput.set(it.finalResult as AiPromptTrace)
+            validatorOutput.set(it.finalResult as AiTaskTrace)
         }
     }
 
-    override fun plan() = aitask("complete-prompt") {
+    override fun plan() = AiTaskBuilder.task("complete-prompt") {
         common.completionBuilder()
             .numResponses(1)
             .template(prompt.value)
             .execute(chatEngine)
             .also { promptOutput.set(it) }
-    }.aitask("validate-result") {
-        val validatorPromptText = validatorPromptUi.fill("result" to it.textContent())
+    }.task("validate-result") { it, _ ->
+        val result = it.output!!.outputs.first().textContent()
+        val validatorPromptText = validatorPromptUi.fill("result" to result)
         common.completionBuilder()
             .template(validatorPromptText)
             .execute(chatEngine)
-    }.planner
+    }
 
     companion object {
         private const val PROMPT_VALIDATE_PREFIX = "validate"

@@ -40,7 +40,7 @@ class GeminiTextCompletionTest {
                 tokens = 100
             )
             println(res)
-            assertTrue("monde" in res.firstValue.text!!.lowercase())
+            assertTrue("monde" in res.firstValue.textContent().lowercase())
         }
     }
 

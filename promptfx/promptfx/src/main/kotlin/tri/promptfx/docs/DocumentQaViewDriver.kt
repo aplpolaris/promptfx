@@ -20,10 +20,12 @@
 package tri.promptfx.docs
 
 import javafx.application.Platform
+import tri.ai.core.tool.ExecContext
 import tri.ai.embedding.EmbeddingStrategy
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.IgnoreMonitor
+import tri.ai.text.docs.DocumentQaPlanner
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.PrintMonitor
 import tri.ai.text.chunks.SmartTextChunker
 import tri.ai.text.docs.DocumentQaDriver
 import tri.promptfx.PromptFxModels
@@ -45,16 +47,14 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
                 view.documentFolder.set(folderFile)
         }
     override var chatModel: String
-        get() = view.controller.chatService.value.modelId
+        get() = view.controller.chatEngine.value.modelId
         set(value) {
-            view.controller.chatService.set(
-                PromptFxModels.policy.chatModels().find { it.modelId == value }!!
-            )
+            view.controller.chatEngine.set(PromptFxModels.chatEngines().find { it.modelId == value }!!)
         }
     override var embeddingModel: String
-        get() = view.controller.embeddingStrategy.value.modelId
+        get() = view.controller.embeddingEngine.value.modelId
         set(value) {
-            view.controller.embeddingStrategy.set(
+            view.controller.embeddingEngine.set(
                 EmbeddingStrategy(PromptFxModels.policy.embeddingModels().find { it.modelId == value }!!,
                     SmartTextChunker())
             )
@@ -78,9 +78,11 @@ class DocumentQaViewDriver(val view: DocumentQaView) : DocumentQaDriver {
         Platform.exit()
     }
 
-    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int): AiPipelineResult {
+    override suspend fun answerQuestion(input: String, numResponses: Int, historySize: Int, context: ExecContext): AiWorkflowResult {
         view.question.set(input)
-        return AiPipelineExecutor.execute(view.plan().plan(), IgnoreMonitor) as AiPipelineResult
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, view.planner.embeddingIndex.value)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, view.controller.chatEngine.value.asTextChat())
+        return AiWorkflowExecutor.execute(view.plan().plan, context)
     }
 
 }

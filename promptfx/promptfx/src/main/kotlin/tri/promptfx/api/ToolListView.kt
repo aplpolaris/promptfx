@@ -24,6 +24,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import tornadofx.*
 import tri.ai.core.MTool
 
@@ -41,7 +42,7 @@ class ToolListView : Fragment() {
             isFillWidth = true
             vgrow = Priority.ALWAYS
             cellFormat {
-                graphic = vbox {
+                graphic = VBox().apply {
                     spacing = 10.0
                     hbox {
                         spacing = 10.0

@@ -26,7 +26,7 @@ import javafx.scene.control.Label
 import javafx.stage.Screen
 import javafx.stage.StageStyle
 import tornadofx.*
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.ai.text.chunks.TextLibrary
 import tri.promptfx.api.*
 import tri.promptfx.docs.DocumentQaView
@@ -110,7 +110,7 @@ class PromptFxWorkspace : Workspace() {
         primaryStage.width = 1200.0
         primaryStage.height = 800.0
         with(leftDrawer) {
-            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.steelBlue, listOf())) {
+            group(ViewGroupModel("API", FontAwesomeIcon.CLOUD.graphic.themed, listOf())) {
                 (this as DrawerItem).padding = insets(5.0)
                 hyperlinkview<ModelsView>("API", "Models")
                 separator { }
@@ -222,14 +222,14 @@ class PromptFxWorkspace : Workspace() {
     }
 
     /** Launches the template view with the given prompt trace. */
-    fun launchHistoryView(prompt: AiPromptTraceSupport) {
+    fun launchHistoryView(prompt: AiTaskTrace) {
         val view = find<PromptTraceHistoryView>()
         view.selectPromptTrace(prompt)
         workspace.dock(view)
     }
 
     /** Launches the template view with the given prompt trace. */
-    fun launchTemplateView(prompt: AiPromptTraceSupport) {
+    fun launchTemplateView(prompt: AiTaskTrace) {
         val view = find<PromptTemplateView>()
         view.importPromptTrace(prompt)
         workspace.dock(view)

@@ -23,7 +23,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.process.pdf.PdfMetadataGuesser
 import kotlin.io.path.toPath
 
@@ -63,7 +63,7 @@ class PdfUtilsTest {
     @Test
     fun testPdfGuesser() {
         runBlocking {
-            val metadata = PdfMetadataGuesser.guessPdfMetadata(TextPlugin.chatModels().first(), file, 2) {
+            val metadata = PdfMetadataGuesser.guessPdfMetadata(AiModelProvider.chatModels().first(), file, 2) {
                 println(it)
             }
             println(metadata)

@@ -28,12 +28,14 @@ import javafx.geometry.Pos
 import javafx.scene.control.ToggleGroup
 import javafx.scene.control.TreeItem
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.util.json.jsonMapper
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
+import tri.ai.pips.AiTaskBuilder
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxConfig
 import tri.promptfx.PromptFxConfig.Companion.FF_ALL
@@ -41,9 +43,9 @@ import tri.promptfx.PromptFxConfig.Companion.FF_JSON
 import tri.promptfx.TextLibraryReceiver
 import tri.promptfx.docs.TextClustering.generateClusterHierarchy
 import tri.promptfx.promptFxFileChooser
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.FormattedTextNode
+import tri.ai.text.docs.withFormattedOutputs
 import tri.promptfx.ui.chunk.TextChunkListView
 import tri.promptfx.ui.docs.TextDocListUi
 import tri.promptfx.ui.docs.TextLibraryListUi
@@ -131,7 +133,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                             visibleWhen(viewList)
                             managedWhen(viewList)
                             cellFormat {
-                                graphic = vbox {
+                                graphic = VBox().apply {
                                     hbox(5.0, Pos.CENTER_LEFT) {
                                         text(it.name) {
                                             style = CLUSTER_NAME_STYLE
@@ -160,7 +162,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                             visibleWhen(viewTree)
                             managedWhen(viewTree)
                             cellFormat {
-                                graphic = vbox {
+                                graphic = VBox().apply {
                                     hbox(5.0, Pos.CENTER_LEFT) {
                                         text(it.name) {
                                             style = CLUSTER_NAME_STYLE
@@ -251,7 +253,7 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
 
     override fun plan() = model
         .calculateEmbeddings()
-        .aitask("clustering") {
+        .task<List<EmbeddingCluster>>("clustering") { _, context ->
             val t0 = System.currentTimeMillis()
             val chunks = model.chunkListModel.filteredChunkList.toList().take(maxChunksToCluster.value)
             val summaryType = when {
@@ -266,8 +268,8 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                 itemType = inputType.value,
                 categories = categoryList.value.split(",").map { it.trim() },
                 sampleTheme = summarizeSample.value.ifBlank { "This content all appears to discuss animals or pets." },
-                chatEngine = controller.chatService.value,
-                embeddingModel = controller.embeddingStrategy.value.model,
+                chatEngine = controller.chatEngine.value,
+                embeddingModel = controller.embeddingEngine.value.model,
                 minForRegroup = minForRegroup.value,
                 attempts = attempts.value,
                 progress = { msg, pct ->
@@ -275,14 +277,16 @@ class TextClusterView : AiPlanTaskView("Text Clustering", "Cluster documents and
                     info<TextClusterView>("  $msg: %.2f%%".format(pct * 100))
                 }
             )
-            AiPromptTrace(execInfo = AiExecInfo.durationSince(t0), outputInfo = AiOutputInfo.listSingleOutput(hierarchy))
+            context.logTrace("clustering", AiTaskTrace(exec = AiExecInfo.durationSince(t0), output = AiOutputInfo.listSingleOutput(hierarchy)))
+            hierarchy
         }
-        .aitask("formatting-results") {
-            val list = it.content() as List<EmbeddingCluster>
+        .task<AiTaskTrace>("formatting-results") { list, context ->
             runLater { resultClusters.setAll(list) }
             val ft = FormattedText(list.map { printCluster(it, "\n") }.flatten())
-            FormattedPromptTraceResult(AiPromptTrace(outputInfo = AiOutputInfo.text("")), listOf(ft))
-        }.planner
+            val result = AiTaskTrace(output = AiOutputInfo.text("")).withFormattedOutputs(listOf(ft))
+            context.logTrace("formatting-results", result)
+            result
+        }
 
     //region PRETTY PRINT
 

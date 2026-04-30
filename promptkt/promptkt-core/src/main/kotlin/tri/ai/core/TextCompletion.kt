@@ -24,6 +24,7 @@ import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate.Companion.defaultInputParams
 import tri.ai.prompt.PromptTemplate.Companion.defaultInstructParams
 import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskInputInfo
 import tri.ai.prompt.trace.PromptInfo
 import tri.ai.prompt.trace.PromptInfo.Companion.filled
 
@@ -66,7 +67,7 @@ suspend fun TextCompletion.promptTask(promptText: String, tokenLimit: Int, temp:
 /** Generate a task that completes a prompt. */
 suspend fun TextCompletion.promptTask(promptInfo: PromptInfo, tokenLimit: Int, temp: Double?, stop: List<String>? = null, numResponses: Int? = null) =
     complete(promptInfo.filled(), temp(temp), tokenLimit, stop, numResponses).copy(
-        promptInfo = promptInfo
+        input = AiTaskInputInfo.of(promptInfo)
     )
 
 /** Generate a task that combines a single instruction or question about contextual text. */

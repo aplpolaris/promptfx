@@ -19,8 +19,9 @@
  */
 package tri.ai.pips
 
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.core.tool.ExecContext
+import tri.ai.prompt.trace.AiExecInfo
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.util.info
 import java.time.Duration
 
@@ -39,23 +40,36 @@ class RetryExecutor(
     val retry = SimpleRetryExecutor(maxRetries, initialRetryDelay, retryBackoff)
 
     /**
-     * Executes a task with given policy. Adds additional information about the execution to [AiPromptTraceSupport]
-     * related to the number of attempts and total duration.
+     * Executes a task with given policy. Logs trace information to [ExecContext.traces] with additional
+     * metadata about the number of attempts and total duration.
      */
-    suspend fun execute(task: AiTask, inputs: Map<String, AiPromptTraceSupport>, monitor: AiTaskMonitor): AiPromptTraceSupport {
+    suspend fun execute(task: AiTask<*, *>, input: Any?, context: ExecContext): Any? {
         return retry.execute({
-            task.execute(inputs, monitor)
+            @Suppress("UNCHECKED_CAST")
+            (task as AiTask<Any?, Any?>).execute(input, context)
         }, onSuccess = { it ->
-            val trace = it.value!!
-            trace.copy(
-                execInfo = trace.exec.copy(
-                    responseTimeMillis = it.attemptTime,
-                    responseTimeMillisTotal = it.totalTime,
-                    attempts = it.attempts
-                )
-            )
+            // output may be null when a task logs an error trace and returns null (rather than throwing)
+            val output = it.value
+            // Update trace in context if one was logged, enriching it with retry metadata
+            val existingTrace = context.trace(task.id)
+            if (existingTrace != null) {
+                context.logTrace(task.id, existingTrace.copy(
+                    exec = existingTrace.exec.copy(
+                        stats = existingTrace.exec.stats + mapOf(
+                            AiExecInfo.RESPONSE_TIME_MILLIS to it.attemptTime,
+                            AiExecInfo.RESPONSE_TIME_MILLIS_TOTAL to it.totalTime,
+                            AiExecInfo.ATTEMPTS to it.attempts
+                        )
+                    )
+                ))
+            } else {
+                check(output !is AiTaskTrace) {
+                    "Task '${task.id}' returned AiTaskTrace directly. Use context.logTrace() instead of returning traces from execute()."
+                }
+            }
+            output
         }, onFailure = {
-            AiPromptTrace.error(
+            val errorTrace = AiTaskTrace.error(
                 modelInfo = null,
                 message = it.error!!.message,
                 throwable = it.error,
@@ -63,6 +77,8 @@ class RetryExecutor(
                 durationTotal = it.totalTime,
                 attempts = it.attempts
             )
+            context.logTrace(task.id, errorTrace)
+            errorTrace
         })
     }
 

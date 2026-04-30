@@ -21,6 +21,7 @@ package tri.promptfx.`fun`
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.util.json.jsonMapper
 import java.time.LocalDate
@@ -83,6 +84,7 @@ class WeatherServiceTest {
     }
 
     @Test
+    @Disabled("Requires API key")
     fun testWeatherService() {
         val city = "New York" // Replace with your desired city
 

@@ -347,6 +347,7 @@ data class GenerationConfig(
     val stopSequences: List<String>? = null,
     val responseMimeType: String? = null,
     val responseSchema: Schema? = null,
+    val responseModalities: List<ResponseModality>? = null,
     val candidateCount: Int? = null, // only 1 allowed for now
     val maxOutputTokens: Int? = null,
     val temperature: Double? = null,
@@ -355,12 +356,26 @@ data class GenerationConfig(
     val presencePenalty: Double? = null,
     val frequencyPenalty: Double? = null,
     val responseLogprobs: Boolean? = null,
-    val logprobs: Int? = null
+    val logprobs: Int? = null,
+    val imageConfig: GeminiImageConfig? = null
 ) {
     init {
         require(responseMimeType in ALLOWED_MIMES) { "Unexpected responseMimeType: $responseMimeType" }
     }
 }
+
+enum class ResponseModality {
+    TEXT,
+    IMAGE,
+    AUDIO,
+    MODALITY_UNSPECIFIED,
+}
+
+@Serializable
+data class GeminiImageConfig(
+    val aspectRatio: String? = "1:1",
+    val imageSize: String? = "1K"
+)
 
 //endregion
 

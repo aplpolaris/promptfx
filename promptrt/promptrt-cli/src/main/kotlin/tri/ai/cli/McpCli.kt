@@ -31,7 +31,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.mcp.McpProvider
 import tri.ai.mcp.McpProviderEmbedded
 import tri.ai.mcp.McpException
@@ -42,6 +42,7 @@ import tri.ai.mcp.tool.McpContent
 import tri.ai.mcp.tool.McpToolLibraryStarter
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
 import tri.ai.prompt.PromptLibrary
+import tri.ai.prompt.trace.AiOutput
 import tri.util.ANSI_BOLD
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
@@ -276,11 +277,11 @@ class McpCli : CliktCommand(name = "mcp-fx") {
                     }
 
                     val model = try {
-                        TextPlugin.multimodalModel(model)
+                        AiModelProvider.multimodalModel(model)
                     } catch (x: NoSuchElementException) {
                         throw McpException(
                             "Model '$model' not found. Available models: ${
-                                TextPlugin.chatModels().joinToString { it.modelId }
+                                AiModelProvider.chatModels().joinToString { it.modelId }
                             }", x
                         )
                     }
@@ -297,7 +298,7 @@ class McpCli : CliktCommand(name = "mcp-fx") {
                         echo("Model returned an empty response.")
                     } else {
                         completed.values!!.forEach { message ->
-                            val mm = message.multimodalMessage!!
+                            val mm = (message as AiOutput.MultimodalMessage).multimodalMessage
                             if (this@McpCli.verbose) {
                                 echo("Role: ${mm.role}")
                             }

@@ -29,6 +29,7 @@ module tri.promptkt.pips {
 
     requires com.github.mustachejava;
 
+    opens tri.ai.core.agent to com.fasterxml.jackson.databind;
     opens tri.ai.core.agent.wf to com.fasterxml.jackson.databind;
     opens tri.ai.pips.api to com.fasterxml.jackson.databind;
 

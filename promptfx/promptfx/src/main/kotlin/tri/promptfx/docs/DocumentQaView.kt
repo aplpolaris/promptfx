@@ -28,15 +28,18 @@ import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.embedding.LocalFolderEmbeddingIndex
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPipelineResult
+import tri.ai.core.tool.ExecContext
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.pips.AiWorkflowResult
 import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.ai.text.chunks.BrowsableSource
 import tri.ai.text.chunks.TextLibrary
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
 import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
+import tri.ai.text.docs.formattedOutputs
+import tri.ai.text.docs.DocumentQaPlanner
+import tri.promptfx.AiChatEngine
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver
@@ -81,7 +84,7 @@ class DocumentQaView: AiPlanTaskView(
 
     val planner = DocumentQaPlannerFx().apply {
         documentLibrary = this@DocumentQaView.documentLibrary
-        embeddingIndex = controller.embeddingStrategy.objectBinding(documentFolder, maxChunkSize) {
+        embeddingIndex = controller.embeddingEngine.objectBinding(documentFolder, maxChunkSize) {
             LocalFolderEmbeddingIndex(documentFolder.value, it!!).apply {
                 maxChunkSize = this@DocumentQaView.maxChunkSize.value
             }
@@ -127,7 +130,12 @@ class DocumentQaView: AiPlanTaskView(
             })
         }
         documentsourceparameters(documentLibrary, documentFolder, maxChunkSize,
-            reindexOp = { planner.reindexAllDocuments() }
+            reindexOp = {
+                AiWorkflowExecutor.execute(
+                    planner.reindexTaskBuilder { msg, pct -> progress.progressUpdate(msg, pct) }.plan,
+                    ExecContext(monitor = progress)
+                )
+            }
         )
         parameters("Document Snippet Matching and Query") {
             field("# Matches") {
@@ -166,7 +174,7 @@ class DocumentQaView: AiPlanTaskView(
      * Executes task on a background thread and updates progress info.
      * Overwrites parent method to allow for batch execution.
      */
-    override fun runTask(op: suspend () -> AiPipelineResult) {
+    override fun runTask(op: suspend () -> AiWorkflowResult) {
         formattedResultArea.model.clearTraces()
         val questionInput = question.value
         val questions = if (singleInput.value) listOf(questionInput) else questionInput.split("\n").map { it.trim() }
@@ -178,7 +186,7 @@ class DocumentQaView: AiPlanTaskView(
         questions.forEach {
             question.set(it)
             super.runTask {
-                AiPipelineExecutor.execute(questionTaskList(it).planner.plan(), progress).also {
+                AiWorkflowExecutor.execute(questionTaskList(it).plan, createContext()).also {
                     runLater {
                         addTrace(it.finalResult)
                     }
@@ -188,7 +196,18 @@ class DocumentQaView: AiPlanTaskView(
         question.set(questionInput)
     }
 
-    override fun plan() = questionTaskList(question.value).planner
+    override suspend fun processUserInput(): AiWorkflowResult =
+        AiWorkflowExecutor.execute(plan().plan, createContext())
+
+    /** Creates an [ExecContext] with the required document QA resources populated. */
+    private fun createContext(): ExecContext {
+        val context = ExecContext(monitor = progress)
+        context.putResource(DocumentQaPlanner.RESOURCE_EMBEDDING_INDEX, planner.embeddingIndex.value)
+        context.putResource(DocumentQaPlanner.RESOURCE_TEXT_CHAT, controller.chatEngine.value.asTextChat())
+        return context
+    }
+
+    override fun plan() = questionTaskList(question.value)
 
     private fun questionTaskList(question: String) =
         planner.taskList(
@@ -198,7 +217,6 @@ class DocumentQaView: AiPlanTaskView(
             minChunkSize = minChunkSizeForRelevancy.value,
             contextStrategy = GroupingTemplateJoiner(joinerPrompt.id.value),
             contextChunks = chunksToSendWithQuery.value,
-            chatEngine = controller.chatService.value,
             maxTokens = common.maxTokens.value,
             temp = common.temp.value,
             numResponses = common.numResponses.value
@@ -213,8 +231,9 @@ class DocumentQaView: AiPlanTaskView(
     //endregion
 
     override fun addTrace(trace: AiPromptTraceSupport) {
-        if (trace is FormattedPromptTraceResult) {
-            enableHyperlinkActions(trace.formattedOutputs)
+        val formatted = trace.formattedOutputs
+        if (formatted != null) {
+            enableHyperlinkActions(formatted)
         }
         super.addTrace(trace)
     }

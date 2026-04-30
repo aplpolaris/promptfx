@@ -4,7 +4,7 @@ This module provides support for Google's Gemini AI models using the official [j
 
 ## Overview
 
-The `promptkt-gemini-sdk` plugin implements the `TextPlugin` interface to provide access to Gemini models through Google's official java-genai SDK. This is an alternative to the `promptkt-gemini` plugin, which uses direct REST API calls.
+The `promptkt-gemini-sdk` plugin implements the `AiModelProvider` interface to provide access to Gemini models through Google's official java-genai SDK. This is an alternative to the `promptkt-gemini` plugin, which uses direct REST API calls.
 
 ## Features
 
@@ -77,7 +77,7 @@ The plugin is automatically discovered via Java's ServiceLoader mechanism. Once 
 ### Example: Using the Plugin
 
 ```kotlin
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.geminisdk.GeminiSdkPlugin
 
 // The plugin is automatically loaded

@@ -47,8 +47,10 @@ class PPlanExecutorTest {
         override val version = "0.0.1"
         override val inputSchema: JsonNode? = null
         override val outputSchema: JsonNode? = null
-        override suspend fun execute(input: JsonNode, ctx: ExecContext) = input
+        override suspend fun execute(input: JsonNode, context: ExecContext) = input
     }
+
+    private fun context() = ExecContext(monitor = PrintMonitor())
 
     @Test
     fun `simple plan executes with dummy tool`() {
@@ -66,14 +68,14 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.vars.keys)
-            assertEquals("hi", (context.vars["out"] as JsonNode).get("msg").asText())
+            assertTrue(context.getJson("out") != null)
+            assertEquals("hi", context.getJson("out")!!.get("msg").asText())
         }
     }
 
@@ -93,14 +95,14 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parseYaml(yaml)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("smoke/demo@0.0.1", plan.id)
-            assertTrue("out" in context.vars.keys)
-            assertEquals("hi", (context.vars["out"] as JsonNode).get("msg").asText())
+            assertTrue(context.getJson("out") != null)
+            assertEquals("hi", context.getJson("out")!!.get("msg").asText())
         }
     }
 
@@ -125,17 +127,17 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
-            println("        Chat response: ${context.vars["chat1"]?.get("message")?.asText()}")
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
+            println("        Context: ${context.jsonScratchpad()}")
+            println("        Chat response: ${context.getJson("chat1")?.get("message")?.asText()}")
 
             // --- Assertions ---
             assertEquals("prompt-llm/demo@0.0.1", plan.id)
-            assertTrue("prompt1" in context.vars.keys)
-            assertTrue("chat1" in context.vars.keys)
-            assertTrue("red" in (context.vars["prompt1"]?.asText() ?: ""))
-            assertEquals("#ff0000", context.vars["chat1"]?.get("message")?.asText()?.lowercase(getDefault()))
+            assertTrue(context.getJson("prompt1") != null)
+            assertTrue(context.getJson("chat1") != null)
+            assertTrue("red" in (context.getJson("prompt1")?.asText() ?: ""))
+            assertEquals("#ff0000", context.getJson("chat1")?.get("message")?.asText()?.lowercase(getDefault()))
         }
     }
 
@@ -203,34 +205,34 @@ class PPlanExecutorTest {
             """.trimIndent()
 
             val plan = PPlan.parse(json)
-            val context = ExecContext()
-            PPlanExecutor(registry).execute(plan, context, PrintMonitor())
-            println("        Context: ${context.vars}")
+            val context = context()
+            PPlanExecutor(registry).execute(plan, context)
+            println("        Context: ${context.jsonScratchpad()}")
 
             // --- Assertions ---
             assertEquals("multi-step/analysis@0.1.0", plan.id)
             assertEquals(4, plan.steps.size)
 
             // Verify all steps saved their results
-            assertTrue("keywordPrompt" in context.vars.keys)
-            assertTrue("extractedKeywords" in context.vars.keys)
-            assertTrue("summaryPrompt" in context.vars.keys)
-            assertTrue("finalSummary" in context.vars.keys)
+            assertTrue(context.getJson("keywordPrompt") != null)
+            assertTrue(context.getJson("extractedKeywords") != null)
+            assertTrue(context.getJson("summaryPrompt") != null)
+            assertTrue(context.getJson("finalSummary") != null)
 
             // Verify the flow worked - keyword prompt should contain the input text
-            val keywordPrompt = context.vars["keywordPrompt"]?.asText() ?: ""
+            val keywordPrompt = context.getJson("keywordPrompt")?.asText() ?: ""
             assertTrue("Artificial intelligence" in keywordPrompt)
 
             // Verify the mock chat responses are flowing through
-            val extractedKeywords = context.vars["extractedKeywords"]?.get("message")?.asText() ?: ""
+            val extractedKeywords = context.getJson("extractedKeywords")?.get("message")?.asText() ?: ""
             assertEquals("AI, machine learning, natural language processing", extractedKeywords)
 
             // Verify the final summary prompt contains the extracted keywords
-            val summaryPrompt = context.vars["summaryPrompt"]?.asText() ?: ""
+            val summaryPrompt = context.getJson("summaryPrompt")?.asText() ?: ""
             assertTrue("AI, machine learning, natural language processing" in summaryPrompt)
 
             // Verify the final summary contains expected content
-            val finalSummary = context.vars["finalSummary"]?.get("message")?.asText() ?: ""
+            val finalSummary = context.getJson("finalSummary")?.get("message")?.asText() ?: ""
             assertEquals("This analysis covers key concepts in artificial intelligence.", finalSummary)
         }
     }

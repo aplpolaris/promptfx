@@ -27,7 +27,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.text.Text
 import kotlinx.coroutines.*
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxMcpController
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -132,5 +132,5 @@ class McpPromptView : AiTaskView("MCP Prompts", "View and test prompts for confi
         filteredPromptEntries.setAll(promptEntries.filter { promptNameFilter(it.prompt.name) })
     }
 
-    override suspend fun processUserInput() = AiPipelineResult.todo()
+    override suspend fun processUserInput() = AiWorkflowResult.todo()
 }

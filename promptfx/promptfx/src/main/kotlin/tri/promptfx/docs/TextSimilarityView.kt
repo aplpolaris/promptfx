@@ -22,11 +22,11 @@ package tri.promptfx.docs
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tri.ai.embedding.cosineSimilarity
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
-import tri.ai.prompt.trace.AiModelInfo
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 
@@ -50,18 +50,18 @@ class TextSimilarityView: AiTaskView("Text Similarity",
         addInputTextArea(secondText)
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val chunks = secondText.get().splitIntoChunks()
-        val mod = controller.embeddingStrategy.get().model
+        val mod = controller.embeddingEngine.get().model
         val embedList = mod.calculateEmbedding(listOf(firstText.get(), secondText.get()) + chunks)
 
         val score = cosineSimilarity(embedList[0], embedList[1])
         val scoreText = "Overall similarity: %.2f%%".format(score * 100)
 
         return if (chunks.size == 1) {
-            AiPromptTrace(
-                modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.text(scoreText)
+            AiTaskTrace(
+                env = AiEnvInfo.of(mod.modelId),
+                output = AiOutputInfo.text(scoreText)
             )
         } else {
             val scores = chunks.mapIndexed { index, line ->
@@ -72,11 +72,11 @@ class TextSimilarityView: AiTaskView("Text Similarity",
             val secondText =
                 "${"Second closest paragraph match: %.2f%%\n".format(scores[1].second * 100)}${scores[1].first}"
 
-            AiPromptTrace(
-                modelInfo = AiModelInfo(mod.modelId),
-                outputInfo = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
+            AiTaskTrace(
+                env = AiEnvInfo.of(mod.modelId),
+                output = AiOutputInfo.text("$scoreText\n\n$highestText\n\n$secondText")
             )
-        }.asPipelineResult()
+        }.asWorkflowResult()
     }
 
 }

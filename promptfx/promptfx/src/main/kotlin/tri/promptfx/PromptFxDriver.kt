@@ -36,8 +36,8 @@ import tornadofx.*
 import tri.ai.core.TextChatMessage
 import tri.ai.prompt.trace.AiPromptTrace
 import tri.ai.prompt.trace.AiPromptTraceSupport
-import tri.ai.text.docs.FormattedPromptTraceResult
 import tri.ai.text.docs.FormattedText
+import tri.ai.text.docs.formattedOutputs
 import tri.promptfx.docs.TextLibraryInfo
 import tri.promptfx.ui.toFxNodes
 import tri.util.ui.graphic
@@ -85,7 +85,7 @@ object PromptFxDriver {
         } else {
             inputArea.text = input
             val result = taskView.processUserInput().finalResult
-            val nodeResult = (result as? FormattedPromptTraceResult)?.formattedOutputs?.firstOrNull()
+            val nodeResult = result.formattedOutputs?.firstOrNull()
                 ?: (result.firstValue as? TextChatMessage)?.let { FormattedText(it.content!!) }
                 ?: FormattedText(result.firstValue.toString())
             Platform.runLater {

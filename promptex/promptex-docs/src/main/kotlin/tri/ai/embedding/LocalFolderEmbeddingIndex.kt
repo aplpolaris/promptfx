@@ -63,8 +63,9 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
     /**
      * Reindex just new documents, calculating and storing embedding vectors for them.
      * Saves over existing library of chunked document embeddings if there are any changes.
+     * @param onProgress optional callback invoked with a status message and fractional progress (0.0–1.0)
      */
-    suspend fun reindexNew() {
+    suspend fun reindexNew(onProgress: ((String, Double) -> Unit)? = null) {
         val allPaths = chunkableFiles().map { it.toURI() }
         val docsWithEmbeddings = library.docs.filter {
             it.chunks.all { it.getEmbeddingInfo(embeddingStrategy.modelId) != null }
@@ -72,18 +73,35 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
 
         // add to existing chunks that just need embedding calculations
         val docsNeedingEmbeddings = (library.docs - docsWithEmbeddings).toSet()
-        docsNeedingEmbeddings.forEach { it.calculateMissingEmbeddings(embeddingStrategy.model) }
+        val newDocs = allPaths - library.docs.mapNotNull { it.metadata.path }.toSet()
+        val totalItems = docsNeedingEmbeddings.size + newDocs.size
+        var processed = 0
+
+        docsNeedingEmbeddings.forEach { doc ->
+            val docName = doc.metadata.id ?: doc.metadata.path?.toString()?.substringAfterLast('/') ?: "document"
+            val docIndex = processed
+            doc.calculateMissingEmbeddings(embeddingStrategy.model) { msg, pct ->
+                if (totalItems > 0)
+                    onProgress?.invoke("$docName: $msg", (docIndex + pct) / totalItems)
+            }
+            processed++
+        }
 
         // add new documents from file system that were not in library
-        val newDocs = allPaths - library.docs.mapNotNull { it.metadata.path }.toSet()
-        newDocs.forEach {
+        newDocs.forEach { uri ->
+            val fileName = uri.path.substringAfterLast('/')
+            val docIndex = processed
             try {
-                library.docs += calculateDocChunksAndEmbeddings(it, it.readText())
+                library.docs += calculateDocChunksAndEmbeddings(uri, uri.readText()) { msg, pct ->
+                    if (totalItems > 0)
+                        onProgress?.invoke("$fileName: $msg", (docIndex + pct) / totalItems)
+                }
             } catch (x: IOException) {
-                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+                warning<LocalFolderEmbeddingIndex>("Failed to read text from $uri: ${x.message}", x)
             } catch (x: UnsupportedFileFormatException) {
-                warning<LocalFolderEmbeddingIndex>("Failed to read text from $it: ${x.message}", x)
+                warning<LocalFolderEmbeddingIndex>("Failed to read text from $uri: ${x.message}", x)
             }
+            processed++
         }
 
         if (newDocs.isNotEmpty() || docsNeedingEmbeddings.isNotEmpty())
@@ -94,10 +112,17 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
      * Reindex all documents, calculating and storing embedding vectors for them.
      * This may remove existing embedding calculations from other models.
      * Replaces the existing library of chunked document embeddings.
+     * @param onProgress optional callback invoked with a status message and fractional progress (0.0–1.0)
      */
-    suspend fun reindexAll() {
-        val updatedDocs = chunkableFiles().map { it.toURI() }.map {
-            calculateDocChunksAndEmbeddings(it, it.readText())
+    suspend fun reindexAll(onProgress: ((String, Double) -> Unit)? = null) {
+        val uris = chunkableFiles().map { it.toURI() }
+        val total = uris.size
+        val updatedDocs = uris.mapIndexed { idx, uri ->
+            val fileName = uri.path.substringAfterLast('/')
+            calculateDocChunksAndEmbeddings(uri, uri.readText()) { msg, pct ->
+                if (total > 0)
+                    onProgress?.invoke("$fileName: $msg", (idx + pct) / total)
+            }
         }
         library.docs.clear()
         library.docs.addAll(updatedDocs)
@@ -123,8 +148,9 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
     //region INDEXERS
 
     /** Chunks the document and calculates the embedding for each chunk. */
-    private suspend fun calculateDocChunksAndEmbeddings(uri: URI, text: String) =
-        embeddingStrategy.chunkedEmbedding(uri, text, maxChunkSize)
+    private suspend fun calculateDocChunksAndEmbeddings(uri: URI, text: String,
+                                                        onProgress: ((String, Double) -> Unit)? = null) =
+        embeddingStrategy.chunkedEmbedding(uri, text, maxChunkSize, onProgress)
 
     //endregion
 
@@ -137,7 +163,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
         val modelId = embeddingStrategy.modelId
         val queryEmbedding = embeddingStrategy.model.calculateEmbedding(query)
         val semanticTextQuery = SemanticTextQuery(query, queryEmbedding, modelId)
-        reindexNew()
+        reindexNew(onProgress)
         val matches = library.docChunks().map { (doc, chunk) ->
             val chunkEmbedding = chunk.getEmbeddingInfo(modelId)
                 ?: throw IllegalStateException("Chunk is missing embedding for model $modelId: ${chunk.text(doc.all)}")
@@ -151,7 +177,7 @@ class LocalFolderEmbeddingIndex(val rootDir: File, embeddingStrategy: EmbeddingS
 
     /** Gets embedding index, processing new files and overwriting saved library if needed. */
     suspend fun calculateAndGetDocs(): List<TextDoc> {
-        reindexNew()
+        reindexNew(onProgress)
         return library.docs.toList()
     }
 

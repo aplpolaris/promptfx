@@ -29,7 +29,7 @@ import javafx.scene.layout.Priority
 import kotlinx.coroutines.*
 import tornadofx.*
 import tri.ai.mcp.McpResource
-import tri.ai.pips.AiPipelineResult
+import tri.ai.pips.AiWorkflowResult
 import tri.promptfx.AiTaskView
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.graphic
@@ -193,8 +193,8 @@ class McpResourceView : AiTaskView("MCP Resources", "View and test resources for
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
-        return AiPipelineResult.todo()
+    override suspend fun processUserInput(): AiWorkflowResult {
+        return AiWorkflowResult.todo()
     }
 
     private fun loadResources() {

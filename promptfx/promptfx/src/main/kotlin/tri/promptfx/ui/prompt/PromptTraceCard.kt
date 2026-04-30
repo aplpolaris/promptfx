@@ -24,17 +24,17 @@ import tornadofx.Fragment
 import tornadofx.label
 import tornadofx.onLeftClick
 import tornadofx.vbox
-import tri.ai.prompt.trace.AiPromptTraceSupport
+import tri.ai.prompt.trace.AiTaskTrace
 
 /** A card that displays the trace of a prompt. */
 class PromptTraceCard : Fragment() {
 
     val result = SimpleObjectProperty<Any>("")
 
-    private var trace: AiPromptTraceSupport? = null
+    private var trace: AiTaskTrace? = null
 
-    fun setTrace(trace: AiPromptTraceSupport) {
-        result.value = trace.values?.firstOrNull() ?: "No result"
+    fun setTrace(trace: AiTaskTrace) {
+        result.value = trace.firstValue ?: "No result"
         this.trace = trace
     }
 

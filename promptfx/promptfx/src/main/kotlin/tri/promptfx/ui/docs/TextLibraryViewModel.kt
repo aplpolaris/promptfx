@@ -31,6 +31,7 @@ import tornadofx.Component
 import tornadofx.ScopedInstance
 import tornadofx.observableListOf
 import tornadofx.onChange
+import tri.ai.core.tool.ExecContext
 import tri.ai.pips.*
 import tri.ai.text.chunks.TextChunk
 import tri.ai.text.chunks.TextDoc
@@ -57,8 +58,8 @@ import java.time.LocalDateTime
 class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     private val controller: PromptFxController by inject()
-    private val embeddingStrategy
-        get() = controller.embeddingStrategy
+    private val embeddingEngine
+        get() = controller.embeddingEngine
 
     val libraryList = observableListOf<TextLibraryInfo>()
     val librarySelection = SimpleObjectProperty<TextLibraryInfo>()
@@ -146,7 +147,7 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
 
     /** Prompts user to select an embedding model from the available models in the loaded library. */
     private fun promptEmbeddingModelSelection(availableModels: Set<String>) {
-        val currentModel = embeddingStrategy.value.modelId
+        val currentModel = embeddingEngine.value.modelId
         if (currentModel in availableModels) {
             // Current model is already available in the library, no prompt needed
             return
@@ -224,7 +225,10 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     /** Calculates embeddings for all selected collections, returning associated task. */
     fun calculateEmbeddingsTask(progress: AiTaskMonitor) = runAsync {
         runBlocking {
-            AiPipelineExecutor.execute(calculateEmbeddings().plan, progress)
+            AiWorkflowExecutor.execute(
+                calculateEmbeddings().asWorkflow("calculate-embeddings"),
+                ExecContext(monitor = progress)
+            )
         }
     }
 
@@ -278,8 +282,8 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
     //region LONG-RUNNING TASKS
 
     /** Get tasks that can be used to calculate any missing embeddings for the selected embedding service. */
-    fun calculateEmbeddings(): AiTaskList {
-        val service = embeddingStrategy.value
+    fun calculateEmbeddings(): AiTaskBuilder<String> {
+        val service = embeddingEngine.value
         val result = mutableMapOf<TextChunk, List<Double>>()
         return listOf(librarySelection.value).flatMap { it.library.docs }.map { doc ->
             AiTask.task("calculate-embeddings: " + doc.metadata.id) {
@@ -295,8 +299,8 @@ class TextLibraryViewModel : Component(), ScopedInstance, TextLibraryReceiver {
                 }
                 "Calculated $count embeddings for ${doc.metadata.id}."
             }
-        }.aggregate().task("summarize-results") {
-            "Calculated ${result.size} total embeddings."
+        }.aggregate().task("summarize-results") { it, _ ->
+            "Calculated ${it.size} total embeddings."
         }
     }
 

@@ -11,6 +11,7 @@ target/
 build/
 .idea/
 .gradle/
+.claude/
 
 # Compiled class file
 *.class

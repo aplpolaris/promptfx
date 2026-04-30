@@ -20,27 +20,34 @@
 package tri.ai.core.agent.impl
 
 import kotlinx.coroutines.flow.FlowCollector
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitUsingTool
+import tri.ai.pips.emitToolResult
 import tri.ai.core.*
 import tri.ai.core.agent.*
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.createTool
+import tri.ai.prompt.trace.AiOutput
 import tri.util.json.tryJson
 
 /**
  * Executes a prompt using tools and a [MultimodalChat]. This will attempt to use tools in sequence as needed until a response
- * is achieved, at which point the system will return the final response.
+ * is achieved, at which point the system will return the final response. All intermediate tool calls and responses are
+ * maintained as part of the message history, so the system can call multiple tools in sequence if needed.
  */
 class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
 
     val params = MChatParameters(tools = MChatTools(tools = tools.mapNotNull { it.createTool() }))
 
-    override suspend fun FlowCollector<AgentChatEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
+    override suspend fun FlowCollector<ExecEvent>.sendMessageSafe(session: AgentChatSession, message: MultimodalChatMessage): AgentChatResponse {
         val question = logTextContent(message)
         updateSession(message, session)
         logToolUsage()
 
-        // prepare chat and message history
+        // prepare chat and message history, share one ExecContext across all tool calls in this run
+        val execContext = ExecContext(monitor = this)
         val chat = findMultimodalChat(session, this)
         val systemMessage = PROMPTS.get("tools/json-tool-system-message")!!.template!!
         val messages = mutableListOf(
@@ -48,7 +55,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
             MultimodalChatMessage.text(MChatRole.User, question)
         )
 
-        var response = chat.chat(messages, params).firstValue.multimodalMessage!!
+        var response = (chat.chat(messages, params).firstValue as AiOutput.MultimodalMessage).multimodalMessage
         messages += response
         var toolCalls = response.toolCalls
 
@@ -65,8 +72,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
                     emitError(IllegalArgumentException("Invalid or missing json: $json"))
                 }
                 if (tool != null && json != null) {
-                    val context = ExecContext()
-                    val result = tool.execute(json, context)
+                    val result = tool.execute(json, execContext)
                     val resultText = result.get("result")?.asText() ?: result.toString()
                     emitToolResult(call.name, resultText)
 
@@ -75,7 +81,7 @@ class JsonToolExecutor(tools: List<Executable>) : AgentToolChatSupport(tools) {
                 }
             }
 
-            response = chat.chat(messages = messages, params).firstValue.multimodalMessage!!
+            response = (chat.chat(messages = messages, params).firstValue as AiOutput.MultimodalMessage).multimodalMessage
             messages += response
             toolCalls = response.toolCalls
         }

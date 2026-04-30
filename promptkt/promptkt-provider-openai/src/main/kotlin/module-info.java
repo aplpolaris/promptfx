@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-import tri.ai.core.TextPlugin;
+import tri.ai.core.AiModelProvider;
 import tri.ai.openai.OpenAiPlugin;
 import tri.ai.openai.api.OpenAiApiPlugin;
 
@@ -26,12 +26,14 @@ module tri.promptkt.openai {
 
     requires openai.core.jvm;
     requires openai.client.jvm;
+    requires kotlinx.io.core.jvm;
 
     requires okhttp3;
     requires okio;
 
     requires io.ktor.client.core;
     requires io.ktor.client.content.negotiation;
+    requires io.ktor.client.cio;
     requires io.ktor.http;
     requires io.ktor.serialization;
     requires io.ktor.serialization.kotlinx.json;
@@ -41,11 +43,12 @@ module tri.promptkt.openai {
     opens tri.ai.openai to com.fasterxml.jackson.databind;
     opens tri.ai.openai.api to com.fasterxml.jackson.databind;
     opens tri.ai.openai.azure to com.fasterxml.jackson.databind;
+    opens tri.ai.openai.resources;
 
     exports tri.ai.openai;
     exports tri.ai.openai.api;
     exports tri.ai.openai.azure;
 
     // services (service loader API)
-    provides TextPlugin with OpenAiPlugin, OpenAiApiPlugin;
+    provides AiModelProvider with OpenAiPlugin, OpenAiApiPlugin;
 }

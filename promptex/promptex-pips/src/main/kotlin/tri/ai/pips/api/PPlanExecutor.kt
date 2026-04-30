@@ -28,71 +28,50 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import tri.ai.core.tool.ExecContext
 import tri.ai.core.tool.Executable
 import tri.ai.core.tool.ExecutableRegistry
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.AiPlanner
+import tri.ai.pips.AiWorkflowExecutor
 import tri.ai.pips.AiTask
-import tri.ai.pips.AiTaskMonitor
-import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
-import tri.ai.prompt.trace.AiPromptTraceSupport
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_RESET
 import tri.util.info
 import tri.util.json.jsonMapper
 
 /**
- * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiPipelineExecutor].
+ * Executes a [PPlan] by converting to a series of [AiTask<*>] objects and using [tri.ai.pips.AiWorkflowExecutor].
  * Supports monitoring intermediate status.
  */
 class PPlanExecutor(private val registry: ExecutableRegistry) {
 
-    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext(), monitor: AiTaskMonitor) {
+    suspend fun execute(plan: PPlan, context: ExecContext = ExecContext()) {
         PPlanValidator.validateNames(plan)
         PPlanValidator.validateToolsExist(plan, registry)
         PPlanValidator.validateHasSteps(plan)
 
-        val planner = PPlanPlanner(plan, context, registry)
-        val tasks = planner.plan()
-        AiPipelineExecutor.execute(tasks, monitor)
-    }
-
-}
-
-/** Converts a [PPlan] to a series of [AiTask<*>] objects. */
-class PPlanPlanner(
-    private val plan: PPlan,
-    private val context: ExecContext = ExecContext(),
-    private val registry: ExecutableRegistry
-) : AiPlanner {
-
-    override fun plan(): List<AiTask> {
-        return plan.steps.map { step ->
+        val tasks = plan.steps.map { step ->
             val exec = registry.get(step.tool)
                 ?: throw IllegalArgumentException("No executable found for ${step.tool}")
             AiPlanStepTask(step, exec, context)
         }
+        AiWorkflowExecutor.execute(tasks, context)
     }
 
 }
 
 /** An executable task for a plan step. */
-class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val context: ExecContext) :
-    AiTask(step.tool, description = null, dependencies = setOf()) {
+class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private val stepContext: ExecContext) :
+    AiTask<Any?, Any?>(step.tool, description = null, dependencies = setOf()) {
 
-    override suspend fun execute(
-        inputs: Map<String, AiPromptTraceSupport>,
-        monitor: AiTaskMonitor
-    ): AiPromptTraceSupport {
-        log("context", context.vars)
+    override suspend fun execute(input: Any?, context: ExecContext): Any {
+        val jsonScratchpad = stepContext.jsonScratchpad()
+        log("context", jsonScratchpad)
 
-        val inputMap = step.input.resolveRefs(context.vars)
+        val inputMap = step.input.resolveRefs(jsonScratchpad)
         log("input", inputMap)
 
-        val result = exec.execute(inputMap, context)
+        val result = exec.execute(inputMap, stepContext)
         log("output", result)
 
-        step.saveAs?.let { context.put(it, result) }
-        return AiPromptTrace(outputInfo = AiOutputInfo.other(result))
+        step.saveAs?.let { stepContext.put(it, result) }
+        return result
     }
 
     private fun log(label: String, node: JsonNode) {
@@ -122,7 +101,10 @@ class AiPlanStepTask(val step: PPlanStep, private val exec: Executable, private 
                     val varField = node.get("\$var")
                     if (varField != null && varField.isTextual) {
                         val name = varField.asText()
-                        val target = vars[name] ?: throw IllegalArgumentException("Unknown \$var: $name")
+                        val target = when {
+                            name !in vars -> throw IllegalArgumentException("Unknown \$var: $name (variable not found in context)")
+                            else -> vars[name]!!
+                        }
                         if (!stack.add(name)) error("Cyclic \$var detected at: $name")
                         val selected = select(target, node.get("\$ptr")?.takeIf { it.isTextual }?.asText())
                         val resolved = resolve(selected, stack) // allow nested refs inside target

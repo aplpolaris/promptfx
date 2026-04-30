@@ -21,15 +21,15 @@ package tri.ai.openai.api
 
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.ApiSettings
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.openai.*
 import tri.util.warning
 
 /**
- * Implementation of [TextPlugin] using OpenAI-compatible API.
+ * Implementation of [AiModelProvider] using OpenAI-compatible API.
  * Allows for connection to multiple API endpoints with different functionality.
  */
-class OpenAiApiPlugin : TextPlugin {
+class OpenAiApiPlugin : AiModelProvider {
 
     val config = OpenAiApiConfig.INSTANCE
     private val clients = mutableMapOf<OpenAiApiSettingsGeneric, OpenAiAdapter>()
@@ -70,23 +70,18 @@ class OpenAiApiPlugin : TextPlugin {
 
     override fun textCompletionModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiCompletionChat(it, e.source, client(e)) } +
+            e.index.chatModels().map { OpenAiCompletionChat(it, e.source, client(e)) } +
             e.index.completionModels().map { OpenAiCompletion(it, e.source, client(e)) }
         }
 
     override fun chatModels() =
         config.endpoints.flatMap { e ->
-            e.index.chatModelsInclusive().map { OpenAiChat(it, e.source, client(e)) }
+            e.index.chatModels().map { OpenAiChat(it, e.source, client(e)) }
         }
 
     override fun multimodalModels() =
         config.endpoints.flatMap { e ->
             e.index.multimodalModels().map { OpenAiMultimodalChat(it, e.source, client(e)) }
-        }
-
-    override fun visionLanguageModels() =
-        config.endpoints.flatMap { e ->
-            e.index.visionLanguageModels().map { OpenAiVisionLanguageChat(it, e.source, client(e)) }
         }
 
     override fun imageGeneratorModels() =

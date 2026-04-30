@@ -4,8 +4,8 @@
 using OpenAI and Google Gemini models, or models provided via another endpoint.
 It provides a graphical user interface to ask questions of local documents (Q&A),
 test large language models (LLMs), organize prompts, switch between runtime modes, 
-and interact with results — all in one clean, tabbed UI. It supports chat models, vision language models,
-audio models, and more.
+and interact with results — all in one clean, tabbed UI. It supports chat models, multimodal models,
+audio models, image generation models, and more.
 
 PromptFX is ideal for experimentation, prototyping, and learning about prompt workflows using real APIs.
 
@@ -81,6 +81,8 @@ promptfx/
 │
 ├── config/                        # YAML configuration files
 │   │
+│   ├── PromptFx.properties        # (optional) Runtime prompt/model filters
+│   │
 │   ├── openai-api-config.yaml     # API and Model Configurations
 │   ├── gemini-models.yaml
 │   ├── ollama-models.yaml
@@ -129,6 +131,38 @@ Many of these files have default versions included in the JAR, but you can creat
 Many of these settings and customizations can be viewed when PromptFx is launched in the `Settings` view.
 
 Additional information on runtime configuration can be found at https://github.com/aplpolaris/promptfx/wiki/PromptFx#configuring-views-at-runtime.
+
+#### Runtime Properties (`PromptFx.properties`)
+
+The optional `PromptFx.properties` file provides a simple key-value mechanism for tuning PromptFX behavior at runtime without modifying YAML configuration files.
+PromptFX looks for this file in the working directory first, then in the `config/` subdirectory.
+A template with all supported properties (commented out) is included in `config/PromptFx.properties`.
+
+All properties are optional — omit or leave blank to use the default behavior.
+
+**Prompt and model filters:**
+
+| Property | Description |
+|---|---|
+| `prompt.include` | Comma-separated glob patterns; only prompts whose id or category matches at least one pattern are active. Omit or leave blank to include all. |
+| `prompt.exclude` | Comma-separated glob patterns; prompts whose id or category matches any pattern are deactivated. Overrides `prompt.include`. |
+| `model.include` | Comma-separated glob patterns; only models whose id matches at least one pattern are active. Omit or leave blank to include all. |
+| `model.exclude` | Comma-separated glob patterns; models whose id matches any pattern are deactivated. Overrides `model.include`. |
+
+Glob syntax: `*` matches any characters within a single path segment (no `/`), `**` matches across segments (including `/`), `?` matches exactly one character.
+
+**Example — restrict to Gemini models and text prompts only:**
+```properties
+model.include=*gemini*
+prompt.include=text/**
+```
+
+**Example — hide preview models:**
+```properties
+model.exclude=*preview*
+```
+
+Prompts filtered out by these rules remain visible in the **Prompt Library** view but are shown at reduced opacity to indicate they are inactive.
 
 #### API Configuration and Models
 
@@ -231,6 +265,8 @@ MCP:
 
 You can add links for any tab category (API, MCP, Prompts, Text, Documents, etc.) by creating groups with labels and URLs. The links will automatically appear at the bottom of the corresponding navigation pane under "Documentation/Links".
 
+---
+
 ### 📝 Custom Prompts
 
 Custom prompt templates can be added or modified in the `prompts/` folder:
@@ -271,7 +307,7 @@ See the `prompts/README.md` file for more details on prompt structure and usage.
 
 PromptFX supports two types of plugins that extend its functionality:
 
-- **API Plugins (TextPlugin)**: Add support for new AI model providers (chat, completion, embedding, vision, audio models)
+- **API Plugins (AiModelProvider)**: Add support for new AI model providers (chat, completion, embedding, multimodal, image generation, audio models)
 - **View Plugins (NavigableWorkspaceView)**: Add custom UI views to the PromptFX workspace
 
 Plugins are installed by copying JAR files to the `config/plugins/` directory and restarting PromptFX. They are automatically discovered using Java's ServiceLoader mechanism.

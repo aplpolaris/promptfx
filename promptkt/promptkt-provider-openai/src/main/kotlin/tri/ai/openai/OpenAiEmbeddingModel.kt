@@ -21,6 +21,7 @@ package tri.ai.openai
 
 import tri.ai.core.EmbeddingModel
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
+import tri.ai.prompt.trace.AiOutput
 
 /** An embedding service that uses the OpenAI API. */
 class OpenAiEmbeddingModel(override val modelId: String = EMBEDDING_ADA, override val modelSource: String = OpenAiModelIndex.MODEL_SOURCE, val client: OpenAiAdapter = OpenAiAdapter.INSTANCE) :
@@ -33,7 +34,7 @@ class OpenAiEmbeddingModel(override val modelId: String = EMBEDDING_ADA, overrid
     override suspend fun calculateEmbedding(text: List<String>, outputDimensionality: Int?): List<List<Double>> {
         val uncached = text.filter { (it to outputDimensionality) !in embeddingCache }
         val uncachedCalc = uncached.chunked(MAX_EMBEDDING_BATCH_SIZE).flatMap {
-            client.quickEmbedding(modelId, outputDimensionality, it).values!!.map { it.other as List<Double> }
+            client.quickEmbedding(modelId, outputDimensionality, it).values!!.map { (it as AiOutput.Other).other as List<Double> }
         }
         uncachedCalc.forEachIndexed { index, embedding -> embeddingCache[uncached[index] to outputDimensionality] = embedding }
         return text.map { embeddingCache[it to outputDimensionality]!! }

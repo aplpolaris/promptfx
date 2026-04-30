@@ -20,41 +20,106 @@
 package tri.ai.prompt.trace
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import tri.ai.core.MPartType
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
 
-/** Encapsulates outputs from an AI processing step. */
-class AiOutput(
-    val text: String? = null,
-    val message: TextChatMessage? = null,
-    val multimodalMessage: MultimodalChatMessage? = null,
-    @get:JsonIgnore
-    val other: Any? = null
-) {
-
-    override fun toString(): String = textContent(ifNone = other?.toString() ?: "(no output)")
+/**
+ * Sealed class hierarchy for individual AI task outputs.
+ *
+ * Use the typed subclasses [Text], [ChatMessage], [MultimodalMessage], or [Other] to represent
+ * different kinds of task output.  Downstream code should use `when`/`is` type checks to access
+ * subtype-specific properties rather than relying on the base class.
+ */
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type",
+    defaultImpl = AiOutput.Text::class
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = AiOutput.Text::class, name = "text"),
+    JsonSubTypes.Type(value = AiOutput.ChatMessage::class, name = "message"),
+    JsonSubTypes.Type(value = AiOutput.MultimodalMessage::class, name = "multimodal"),
+    JsonSubTypes.Type(value = AiOutput.Other::class, name = "other"),
+)
+sealed class AiOutput {
 
     /**
      * Finds text content where possible in the output.
+     * Throws an error if no text content is found and [ifNone] is null.
      */
-    fun textContent(ifNone: String? = null): String = text
-        ?: message?.content
-        ?: multimodalMessage?.content?.firstNotNullOfOrNull { it.text }
-        ?: other?.toString()
-        ?: ifNone
-        ?: error("No text content available in output: $this")
+    abstract fun textContent(ifNone: String? = null): String
 
     /**
-     * Finds image content based on message part type, or null if there is no image content.
+     * Finds image content based on message part type, or `null` if there is no image content.
      */
-    fun imageContent(): String? =
-        multimodalMessage?.content
-            ?.firstOrNull { it.partType == MPartType.IMAGE }
-            ?.inlineData
+    abstract fun imageContent(): String?
 
     /**
-     * Gets whichever message content is provided.
+     * Gets whichever typed content is provided by this output.
      */
-    fun content(): Any = message ?: multimodalMessage ?: text ?: other ?: error("No content available in output: $this")
+    abstract fun content(): Any
+
+    // -------------------------------------------------------------------------
+    // Sealed subtypes
+    // -------------------------------------------------------------------------
+
+    /** A plain-text AI output. */
+    data class Text(val text: String) : AiOutput() {
+        override fun textContent(ifNone: String?) = text
+        override fun imageContent(): String? = null
+        override fun content(): Any = text
+        override fun toString() = text
+    }
+
+    /** A chat-message AI output (e.g. from a TextChat model). */
+    data class ChatMessage(val message: TextChatMessage) : AiOutput() {
+        override fun textContent(ifNone: String?) = message.content
+            ?: ifNone
+            ?: error("No text content available in output: $this")
+        override fun imageContent(): String? = null
+        override fun content(): Any = message
+        override fun toString() = message.content ?: "(no message content)"
+    }
+
+    /** A multimodal-message AI output (e.g. from a vision or image-generation model). */
+    data class MultimodalMessage(val multimodalMessage: MultimodalChatMessage) : AiOutput() {
+        override fun textContent(ifNone: String?) =
+            multimodalMessage.content?.firstNotNullOfOrNull { it.text }
+                ?: ifNone
+                ?: error("No text content available in output: $this")
+        override fun imageContent(): String? =
+            multimodalMessage.content?.firstOrNull { it.partType == MPartType.IMAGE }?.inlineData
+        override fun content(): Any = multimodalMessage
+        override fun toString() = textContent(ifNone = "(no text in multimodal output)")
+    }
+
+    /**
+     * An arbitrary-object AI output. The [other] value is **not serialized** to JSON.
+     * This subtype is used for non-text, non-message outputs such as embeddings or structured data.
+     * [toString] and [textContent] are exception-safe: if [other]'s own [toString] throws, a
+     * type-name fallback is returned instead of propagating the exception.
+     *
+     * **Serialization note:** When a trace containing an [Other] output is persisted (JSON/YAML) and
+     * later reloaded, the output will deserialize as an empty `Other` instance — the [other] value is
+     * silently lost. Callers that need durable storage of arbitrary outputs must extract and persist
+     * [other] separately before the trace is written to disk.
+     *
+     * A future fix could use a custom `@JsonSerialize`/`@JsonDeserialize` pair that attempts
+     * `Jackson.writeValueAsString(other)` and stores the result as a `rawJson: String?` property,
+     * falling back to `null` for non-serializable types. Deserialization would then restore as
+     * `JsonNode` rather than the original type, which is sufficient for many read-only use cases.
+     */
+    data class Other(@get:JsonIgnore val other: Any) : AiOutput() {
+        private val fallback get() = "Other(${other::class.simpleName})"
+        override fun textContent(ifNone: String?) = runCatching { other.toString() }
+            .getOrElse { ifNone ?: fallback }
+        override fun imageContent(): String? = null
+        override fun content(): Any = other
+        override fun toString() = runCatching { other.toString() }.getOrElse { fallback }
+    }
+
 }

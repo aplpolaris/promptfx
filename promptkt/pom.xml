@@ -4,11 +4,11 @@
 
     <groupId>com.googlecode.blaisemath</groupId>
     <artifactId>promptkt</artifactId>
-    <version>0.15.0-SNAPSHOT</version>
+    <version>0.16.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-    <description>PromptKt Parent POM, including the core PromptKt API and TextPlugin provider implementations.</description>
+    <description>PromptKt Parent POM, including the core PromptKt API and AiModelProvider provider implementations.</description>
     <url>https://github.com/aplpolaris/promptfx</url>
     <inceptionYear>2023</inceptionYear>
 
@@ -19,6 +19,7 @@
         <module>promptkt-provider-openai</module>
         <module>promptkt-provider-gemini</module>
         <module>promptkt-provider-gemini-sdk</module>
+        <module>promptkt-provider-anthropic-sdk</module>
 		<!-- Template project -->
         <module>promptkt-provider-sample</module>
     </modules>
@@ -49,7 +50,8 @@
         <url>https://github.com/aplpolaris/promptfx</url>
         <connection>scm:git:git://github.com/aplpolaris/promptfx.git</connection>
         <developerConnection>scm:git:git@github.com:aplpolaris/promptfx.git</developerConnection>
-    </scm>
+      <tag>promptkt-0.15.0</tag>
+  </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
@@ -68,6 +70,7 @@
         <junit.version>6.0.3</junit.version>
         <kotlin.version>2.3.10</kotlin.version>
         <kotlinx-coroutines-core.version>1.10.2</kotlinx-coroutines-core.version> <!-- match version in openai-client -->
+        <kotlinx-io-core.version>0.5.4</kotlinx-io-core.version>
         <kotlinx-serialization.version>1.10.0</kotlinx-serialization.version>
         <kotlin-dokka.version>2.1.0</kotlin-dokka.version>
         <ktor.version>3.4.0</ktor.version> <!-- match version in openai-client -->

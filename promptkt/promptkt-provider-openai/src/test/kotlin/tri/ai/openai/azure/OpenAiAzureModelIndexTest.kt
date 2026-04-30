@@ -32,7 +32,6 @@ class OpenAiAzureModelIndexTest {
         println(OpenAiAzureModelIndex.audioModels())
         println(OpenAiAzureModelIndex.ttsModels())
         println(OpenAiAzureModelIndex.imageGeneratorModels())
-        println(OpenAiAzureModelIndex.visionLanguageModels())
     }
 
 }

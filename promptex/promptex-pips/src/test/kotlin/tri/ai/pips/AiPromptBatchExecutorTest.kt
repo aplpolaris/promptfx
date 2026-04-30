@@ -21,12 +21,13 @@ package tri.ai.pips
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
+import tri.ai.core.tool.ExecContext
 import tri.ai.prompt.trace.AiModelInfo
-import tri.ai.prompt.trace.AiPromptTraceDatabase
+import tri.ai.prompt.trace.AiTaskTraceDatabase
 import tri.ai.prompt.trace.PromptInfo
 import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
 import tri.ai.prompt.trace.batch.AiPromptRunConfig
@@ -35,7 +36,9 @@ import tri.util.json.jsonWriter
 
 class AiPromptBatchExecutorTest {
 
-    private val defaultTextCompletion = TextPlugin.textCompletionModels().firstOrNull()
+    private fun printingExecContext() = ExecContext(monitor = PrintMonitor())
+
+    private val defaultTextCompletion = AiModelProvider.textCompletionModels().firstOrNull()
 
     private val batch = AiPromptBatchCyclic("test-batch-languages").apply {
         model = defaultTextCompletion?.modelId ?: "not a model"
@@ -61,7 +64,7 @@ class AiPromptBatchExecutorTest {
     @Tag("openai")
     fun testExecute() {
         runBlocking {
-            AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor()).interimResults.values.onEach {
+            AiWorkflowExecutor.execute(batch.tasks { AiModelProvider.chatModel(it) }, printingExecContext()).interimResults.values.onEach {
                 println("AiTaskResult with nested AiPromptTrace:\n${jsonWriter.writeValueAsString(it)}")
             }
         }
@@ -76,17 +79,33 @@ class AiPromptBatchExecutorTest {
                 AiModelInfo(defaultTextCompletion!!.modelId),
                 4
             )
-            val result = AiPipelineExecutor.execute(batch.tasks { TextPlugin.chatModel(it) }, PrintMonitor())
-            val db = AiPromptTraceDatabase().apply {
+            val result = AiWorkflowExecutor.execute(batch.tasks { AiModelProvider.chatModel(it) }, printingExecContext())
+            val db = AiTaskTraceDatabase().apply {
                 addTraces(result.interimResults.values)
             }
             val output = jsonWriter.writeValueAsString(db)
-            val db2 = jsonMapper.readValue<AiPromptTraceDatabase>(output)
-            Assertions.assertEquals(db.traces, db2.traces)
-            Assertions.assertEquals(db.prompts, db2.prompts)
-            Assertions.assertEquals(db.models, db2.models)
-            Assertions.assertEquals(db.execs, db2.execs)
+            println(output)
+            val db2 = jsonMapper.readValue<AiTaskTraceDatabase>(output)
+            assertEquals(db.envs, db2.envs)
+            assertEquals(db.inputs, db2.inputs)
+            assertEquals(db.outputs, db2.outputs)
+            // execs map values may have slight differences, e.g. Long vs Int, so compare fields rather than whole objects
+            db.execs.forEachIndexed { i, first ->
+                val second = db2.execs.elementAt(i)
+                assertEquals(first.error, second.error)
+                assertEqualsValues(first.stats, second.stats)
+            }
             println(jsonWriter.writeValueAsString(db2))
+        }
+    }
+
+    private fun assertEqualsValues(expected: Map<String, Any>, actual: Map<String, Any>) {
+        assertEquals(expected.keys, actual.keys)
+        expected.forEach { (key, value) ->
+            if (value is Number && actual[key] is Number)
+                assertEquals(value.toDouble(), (actual[key] as Number).toDouble(), 0.0001)
+            else
+                assertEquals(value, actual[key])
         }
     }
 
@@ -94,7 +113,10 @@ class AiPromptBatchExecutorTest {
     fun testExecute_RunConfig() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).values
+            val task = runConfig.task("test-task-id")
+            val context = ExecContext(monitor = PrintMonitor())
+            RetryExecutor().execute(task, null, context)
+            val trace = context.trace(task.id)
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }
@@ -105,7 +127,10 @@ class AiPromptBatchExecutorTest {
     fun testExecute_RunConfig2() {
         runBlocking {
             val runConfig = AiPromptRunConfig(promptInfo, modelInfo2)
-            val trace = RetryExecutor().execute(runConfig.task("test-task-id"), mapOf(), PrintMonitor()).firstValue
+            val task = runConfig.task("test-task-id")
+            val context = ExecContext(monitor = PrintMonitor())
+            RetryExecutor().execute(task, null, context)
+            val trace = context.trace(task.id)
             println("Trace: $trace")
             println("Trace: ${jsonWriter.writeValueAsString(trace)}")
         }

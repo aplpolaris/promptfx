@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download &amp; Run PromptFx – User Guide</title>
+  <meta name="description" content="Download PromptFx and start using Document Q&A and other AI-powered tools on your local machine in minutes." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────────── -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="#3a7bd5"/>
+        <path d="M7 9h14M7 14h10M7 19h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="21" cy="19" r="3" fill="#00c9a7"/>
+      </svg>
+      PromptFx
+    </a>
+    <ul class="nav-links">
+      <li><a href="user-guide.html" class="active">Download &amp; Run</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── PAGE HERO ─────────────────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="breadcrumb"><a href="index.html">Home</a> › Download &amp; Run</p>
+    <h1>📄 Download &amp; Run PromptFx</h1>
+    <p class="page-hero-desc">
+      Get up and running with document Q&amp;A, NLP tasks, image generation, and more in just a few minutes.
+      No coding required.
+    </p>
+  </div>
+</div>
+
+<!-- ─── CONTENT ───────────────────────────────────────────────────────── -->
+<section class="content-section">
+  <div class="content-inner">
+
+    <h2>Requirements</h2>
+    <ul>
+      <li><strong>Java 17 or later</strong> — required to run the application.
+        Download from <a href="https://adoptium.net/" target="_blank" rel="noopener">Adoptium</a> or use your system package manager.</li>
+      <li><strong>An API key</strong> — PromptFx works with <a href="https://platform.openai.com/" target="_blank" rel="noopener">OpenAI</a> (recommended) or
+        <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google Gemini</a>.</li>
+    </ul>
+
+    <h2>Step-by-step Setup</h2>
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>Download the latest release</strong><br/>
+          Go to the <a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener">Releases page</a>
+          and download the <code>promptfx-*-jar-with-dependencies.jar</code> file.
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Place your API key</strong><br/>
+          Create a plain text file named <code>apikey.txt</code> in the same folder as the JAR,
+          and paste your OpenAI API key into it. Alternatively, set the
+          <code>OPENAI_API_KEY</code> environment variable.<br/>
+          For Gemini, create <code>apikey-gemini.txt</code> with your Gemini key.
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Run the application</strong><br/>
+          Open a terminal in the folder containing the JAR and run:
+          <pre><code>java -jar promptfx-0.1.0-SNAPSHOT-jar-with-dependencies.jar</code></pre>
+          On Windows you can also double-click the JAR if your Java installation is associated with <code>.jar</code> files.
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>(Optional) Set the API key from within the app</strong><br/>
+          Click the <strong>key 🔑 button</strong> in the top toolbar to enter or update your OpenAI API key interactively.
+        </div>
+      </li>
+    </ol>
+
+    <div class="note-box">
+      <strong>Tip:</strong> PromptFx opens to the <em>Document Q&amp;A</em> view by default.
+      Click <strong>Open Folder</strong> to select a folder of documents (.pdf, .docx, .txt) and start asking questions immediately.
+    </div>
+
+    <h2>Document Q&amp;A Quick Start</h2>
+    <p>
+      The Document Q&amp;A view lets you ask natural-language questions about a folder of local documents
+      using <a href="https://en.wikipedia.org/wiki/Retrieval-augmented_generation" target="_blank" rel="noopener">retrieval-augmented generation (RAG)</a>.
+    </p>
+    <ol class="step-list">
+      <li><div>Click <strong>Open Folder</strong> and navigate to a folder containing PDF, DOCX, or TXT files.</div></li>
+      <li><div>Type your question in the input box and press <strong>Enter</strong> (or click <strong>Ask</strong>).</div></li>
+      <li><div>PromptFx automatically extracts text, computes embeddings, retrieves relevant snippets, and generates an answer with source citations.</div></li>
+      <li><div>Click any snippet in the results to open the source document and jump to the exact page.</div></li>
+    </ol>
+
+    <div class="screenshot-wrapper" style="margin: 1.5rem 0;">
+      <div class="screenshot-chrome">
+        <span class="chrome-dot"></span><span class="chrome-dot"></span><span class="chrome-dot"></span>
+        <span class="chrome-title">Document Q&amp;A – full-screen mode</span>
+      </div>
+      <img src="https://github.com/aplpolaris/promptfx/assets/13057929/a063f5b3-59be-4b87-b0ef-76d5d22a9fa6"
+        alt="PromptFx Document Q&A in full screen mode showing PDF thumbnail previews" loading="lazy" />
+    </div>
+
+    <h2>Other Built-in Views</h2>
+    <ul>
+      <li><strong>API tab</strong> — Test completions, chat, images, embeddings, and audio APIs directly.</li>
+      <li><strong>Tools tab</strong> — Browse the prompt library, run prompt templates, and execute batch scripts.</li>
+      <li><strong>Text tab</strong> — Translation, summarization, sentiment analysis, entity extraction, and more.</li>
+      <li><strong>Fun tab</strong> — Experimental: emoji conversion, AI-to-AI chat, and other demos.</li>
+      <li><strong>Audio tab</strong> — Speech-to-text (Whisper) and text-to-speech.</li>
+      <li><strong>Vision tab</strong> — Image generation (DALL-E, Gemini Imagen) and image description.</li>
+    </ul>
+
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li>If the app doesn't start, check that Java 17+ is installed: <code>java -version</code></li>
+      <li>If you see authentication errors, verify your API key is correct and placed in the right file.</li>
+      <li>For further help, see the <a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a> or
+        <a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">open an issue</a>.</li>
+    </ul>
+
+    <div style="margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+      <a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener" class="btn btn-primary">Download Latest Release ↗</a>
+      <a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener" class="btn btn-outline">Read the Wiki ↗</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <ul class="footer-links">
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+    </ul>
+    <p>PromptFx is open source software licensed under the <a href="https://github.com/aplpolaris/promptfx/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0 License</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

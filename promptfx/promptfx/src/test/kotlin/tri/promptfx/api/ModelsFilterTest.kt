@@ -34,12 +34,12 @@ class ModelsFilterTest {
         
         // Create a model with modalities
         val modelWithModalities = ModelInfo("model2", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = listOf(DataModality.text)
-            outputs = listOf(DataModality.text)
+            capabilities.inputs = listOf(DataModality.text)
+            capabilities.outputs = listOf(DataModality.text)
         }
         
         // Create filter with text modality selected
-        val filter = ModalityFilter { it.inputs ?: emptyList() }
+        val filter = ModalityFilter { it.capabilities.inputs ?: emptyList() }
         filter.updateAttributeOptions(setOf(modelWithoutModalities, modelWithModalities)) {}
         
         // Get the text modality and select it
@@ -62,18 +62,18 @@ class ModelsFilterTest {
     fun testModalityFilterWithEmptyList() {
         // Create a model with empty modalities list
         val modelWithEmptyModalities = ModelInfo("model1", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = emptyList()
-            outputs = emptyList()
+            capabilities.inputs = emptyList()
+            capabilities.outputs = emptyList()
         }
         
         // Create a model with modalities
         val modelWithModalities = ModelInfo("model2", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = listOf(DataModality.text)
-            outputs = listOf(DataModality.text)
+            capabilities.inputs = listOf(DataModality.text)
+            capabilities.outputs = listOf(DataModality.text)
         }
         
         // Create filter with text modality selected
-        val filter = ModalityFilter { it.inputs ?: emptyList() }
+        val filter = ModalityFilter { it.capabilities.inputs ?: emptyList() }
         filter.updateAttributeOptions(setOf(modelWithEmptyModalities, modelWithModalities)) {}
         
         // Get the text modality and select it
@@ -97,11 +97,11 @@ class ModelsFilterTest {
         // Create models
         val model1 = ModelInfo("model1", ModelType.TEXT_CHAT, "test-source")
         val model2 = ModelInfo("model2", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = listOf(DataModality.text)
+            capabilities.inputs = listOf(DataModality.text)
         }
         
         // Create filter with no modality selected
-        val filter = ModalityFilter { it.inputs ?: emptyList() }
+        val filter = ModalityFilter { it.capabilities.inputs ?: emptyList() }
         filter.updateAttributeOptions(setOf(model1, model2)) {}
         filter.selectNone()
         
@@ -116,16 +116,16 @@ class ModelsFilterTest {
     fun testModalityFilterWithNonMatchingModality() {
         // Create a model with audio modality
         val modelWithAudio = ModelInfo("model1", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = listOf(DataModality.audio)
+            capabilities.inputs = listOf(DataModality.audio)
         }
         
         // Create a model with text modality
         val modelWithText = ModelInfo("model2", ModelType.TEXT_CHAT, "test-source").apply {
-            inputs = listOf(DataModality.text)
+            capabilities.inputs = listOf(DataModality.text)
         }
         
         // Create filter with only text modality selected
-        val filter = ModalityFilter { it.inputs ?: emptyList() }
+        val filter = ModalityFilter { it.capabilities.inputs ?: emptyList() }
         filter.updateAttributeOptions(setOf(modelWithAudio, modelWithText)) {}
         
         // Select only text modality

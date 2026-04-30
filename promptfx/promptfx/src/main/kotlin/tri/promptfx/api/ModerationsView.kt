@@ -26,12 +26,13 @@ import javafx.beans.property.SimpleStringProperty
 import tornadofx.combobox
 import tornadofx.field
 import tri.util.json.jsonMapper
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
 import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
 
 /** View for text moderation API. */
@@ -51,19 +52,18 @@ class ModerationsView : AiTaskView("Moderations", "Enter text to generate modera
         }
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val request = ModerationRequest(
             input = listOf(input.value),
             model = model.value
         )
-        val response = controller.openAiPlugin.client.client.moderations(request)
+        val response = controller.openAiPlugin!!.client.client.moderations(request)
         val responseText = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response)
-        return AiPromptTrace(
-            null,
-            AiModelInfo(model.value.model),
-            AiExecInfo(),
-            AiOutputInfo.text(responseText)
-        ).asPipelineResult()
+        return AiTaskTrace(
+            env = AiEnvInfo.of(AiModelInfo(model.value.model)),
+            exec = AiExecInfo(),
+            output = AiOutputInfo.text(responseText)
+        ).asWorkflowResult()
     }
 
 }

@@ -24,12 +24,12 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
-import tri.ai.pips.AiPipelineResult
-import tri.ai.pips.asPipelineResult
+import tri.ai.pips.AiWorkflowResult
+import tri.ai.pips.asWorkflowResult
+import tri.ai.prompt.trace.AiEnvInfo
 import tri.ai.prompt.trace.AiExecInfo
-import tri.ai.prompt.trace.AiModelInfo
 import tri.ai.prompt.trace.AiOutputInfo
-import tri.ai.prompt.trace.AiPromptTrace
+import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiTaskView
 import tri.promptfx.PromptFxModels
 
@@ -59,16 +59,16 @@ class EmbeddingsView : AiTaskView("Embeddings", "Enter text to calculate embeddi
         outputEditor.isWrapText = false
     }
 
-    override suspend fun processUserInput(): AiPipelineResult {
+    override suspend fun processUserInput(): AiWorkflowResult {
         val inputs = input.get().split("\n").filter { it.isNotBlank() }
         val ouputDim = if (customOutputDimensionality.value) outputDimensionality.value else null
         return model.value!!.calculateEmbedding(inputs, ouputDim).let {
             it.joinToString("\n") { it.joinToString(",", prefix = "[", postfix = "]") { it.format(3) } }
         }.let {
-            AiPromptTrace(
-                modelInfo = AiModelInfo(model.value!!.modelId),
-                outputInfo = AiOutputInfo.text(it)
-            ).asPipelineResult()
+            AiTaskTrace(
+                env = AiEnvInfo.of(model.value!!.modelId),
+                output = AiOutputInfo.text(it)
+            ).asWorkflowResult()
         }
     }
 

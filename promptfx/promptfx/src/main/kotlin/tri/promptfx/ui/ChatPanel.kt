@@ -19,7 +19,9 @@
  */
 package tri.promptfx.ui
 
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.StringProperty
 import javafx.event.EventTarget
@@ -27,6 +29,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import tornadofx.*
+import tri.util.ui.BlinkingIndicator
 import kotlin.math.abs
 
 /** A generic panel that shows labeled text within a scrolling vertical pane. */
@@ -38,6 +41,8 @@ class ChatPanel: Fragment() {
     var chatEntryBox: StringProperty? = null
     /** If true, randomize colors for each user. */
     var randomColors: Boolean = true
+    /** Whether to show the thinking indicator (blinking "..." at the bottom). */
+    val isThinking = SimpleBooleanProperty(false)
 
     override val root = scrollpane(fitToWidth = true) {
         vgrow = Priority.ALWAYS
@@ -47,9 +52,33 @@ class ChatPanel: Fragment() {
             spacing = 5.0
             bindChildren(chats) { chatmessageui(it, it == chats.last() && it.style != ChatEntryRole.USER) }
 
+            // Blinking "..." thinking indicator shown while the assistant is responding
+            hbox {
+                managedWhen(isThinking)
+                visibleWhen(isThinking)
+                val indicator = BlinkingIndicator(FontAwesomeIcon.ELLIPSIS_H).apply {
+                    glyphSize = 20.0
+                    glyphStyle = "-fx-fill: #888888;"
+                }
+                isThinking.onChange { thinking ->
+                    if (thinking) indicator.startBlinking() else indicator.stopBlinking()
+                }
+                indicator.attachTo(this)
+            }
+
             // scroll to bottom when new messages are added
             heightProperty().onChange { vvalue = 1.0 }
         }
+    }
+
+    /** Start showing the blinking thinking indicator. */
+    fun startThinking() {
+        isThinking.set(true)
+    }
+
+    /** Stop showing the blinking thinking indicator. */
+    fun stopThinking() {
+        isThinking.set(false)
     }
 
     /** Create the UI for a single chat message. */

@@ -39,12 +39,9 @@ import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
 import tri.ai.core.EmbeddingModel
-import tri.ai.core.TextChat
-import tri.ai.core.TextCompletion
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*
-import tri.ai.prompt.trace.AiImageTrace
-import tri.ai.text.docs.FormattedPromptTraceResult
+import tri.ai.text.docs.formattedOutputs
 import tri.promptfx.ui.PromptResultAreaFormatted
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError
@@ -70,14 +67,12 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     val formattedResultArea = PromptResultAreaFormatted()
 
     val runTooltip = SimpleStringProperty("")
-    val onCompleted: MutableList<(AiPipelineResult) -> Unit> = mutableListOf()
+    val onCompleted: MutableList<(AiWorkflowResult) -> Unit> = mutableListOf()
 
-    val chatEngine: TextChat
-        get() = controller.chatService.value
-    val completionEngine: TextCompletion
-        get() = controller.completionEngine.value
-    val embeddingModel: EmbeddingModel
-        get() = controller.embeddingStrategy.value.model
+    val chatEngine: AiChatEngine
+        get() = controller.chatEngine.value
+    val embeddingEngine: EmbeddingModel
+        get() = controller.embeddingEngine.value.model
 
     init {
         disableCreate()
@@ -186,25 +181,10 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Adds default model parameters (model, temperature, tokens) to the view. */
-    @Deprecated("use chat model instead")
-    fun addDefaultTextCompletionParameters(common: ModelParameters) {
-        parameters("Text Completion Model") {
-            field("Model") {
-                combobox(controller.completionEngine, PromptFxModels.textCompletionModels())
-            }
-            with (common) {
-                temperature()
-                maxTokens()
-                numResponses()
-            }
-        }
-    }
-
-    /** Adds default model parameters (model, temperature, tokens) to the view. */
     fun addDefaultChatParameters(common: ModelParameters) {
         parameters("Chat Model") {
             field("Model") {
-                combobox(controller.chatService, PromptFxModels.chatModels())
+                combobox(controller.chatEngine, PromptFxModels.chatEngines())
             }
             with (common) {
                 temperature()
@@ -335,16 +315,12 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
 
     /** Adds trace of an execution to the output area. */
     protected open fun addTrace(trace: AiPromptTraceSupport) {
-        when (trace) {
-            is AiPromptTrace ->
-                resultArea.model.addTrace(trace)
-            is FormattedPromptTraceResult ->
-                formattedResultArea.model.addTrace(trace)
-            is AiImageTrace -> {
-                // ignore - this is handled by view
-            }
-            else -> throw IllegalStateException("Unexpected result type: $trace")
-        }
+        val formatted = trace.formattedOutputs
+        if (formatted != null)
+            formattedResultArea.model.addTrace(trace)
+        else if (trace.output != null)
+            resultArea.model.addTrace(trace)
+        // AiTaskTrace with image outputs: handled by the view (e.g. ImagesView)
     }
 
     /** Sets the output to display the result of the given execution. */
@@ -384,18 +360,18 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Processes whatever input user has provided. */
-    abstract suspend fun processUserInput(): AiPipelineResult
+    abstract suspend fun processUserInput(): AiWorkflowResult
 
     /** Adds a hook to be called when the task has completed. */
-    fun onCompleted(op: (AiPipelineResult) -> Unit) {
+    fun onCompleted(op: (AiWorkflowResult) -> Unit) {
         onCompleted.add(op)
     }
 
     /** Called when the task has completed. */
-    internal fun taskCompleted(message: AiPipelineResult) = onCompleted.forEach { it(message) }
+    internal fun taskCompleted(message: AiWorkflowResult) = onCompleted.forEach { it(message) }
 
     /** Executes task on a background thread and updates progress info. */
-    internal open fun runTask(op: suspend () -> AiPipelineResult = ::processUserInput) {
+    internal open fun runTask(op: suspend () -> AiWorkflowResult = ::processUserInput) {
         val task = executeTask {
             op()
         }
@@ -418,13 +394,13 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
     }
 
     /** Run task on a background thread. */
-    private fun executeTask(block: suspend () -> AiPipelineResult) = runAsync {
+    private fun executeTask(block: suspend () -> AiWorkflowResult) = runAsync {
         runBlocking {
             try {
                 block()
             } catch (x: Exception) {
                 x.printStackTrace()
-                AiPipelineResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
+                AiWorkflowResult(AiPromptTrace.error(null, x.message ?: "Unknown error", x), mapOf())
             }
         }
     }

@@ -23,26 +23,38 @@ import tri.util.json.jsonWriter
 import tri.util.json.yamlWriter
 import java.io.File
 
-/** Writes the given [AiPromptTraceDatabase] to the specified file. */
+/** Writes the given [AiTaskTraceDatabase] to the specified file. */
+fun writeTraceDatabase(database: AiTaskTraceDatabase, file: File) {
+    val writer = if (file.extension == "json") jsonWriter else yamlWriter
+    writer.writeValue(file, database)
+}
+
+/** Writes the given list of traces as an [AiTaskTraceDatabase] to the specified file. */
+fun writeTraceDatabase(traces: List<AiTaskTrace>, file: File) {
+    val writer = if (file.extension == "json") jsonWriter else yamlWriter
+    writer.writeValue(file, AiTaskTraceDatabase(traces))
+}
+
+/** Writes the given [AiTaskTrace] to the specified file. */
+fun writeTrace(trace: AiTaskTrace, file: File) {
+    val writer = if (file.extension == "json") jsonWriter else yamlWriter
+    writer.writeValue(file, trace)
+}
+
+/** Writes a list of [AiTaskTrace]s to the specified file. */
+fun writeTraces(traces: List<AiTaskTrace>, file: File) {
+    val writer = if (file.extension == "json") jsonWriter else yamlWriter
+    writer.writeValue(file, traces)
+}
+
+//region LEGACY (AiPromptTraceDatabase)
+
+/** Writes the given legacy [AiPromptTraceDatabase] to the specified file. */
+@Suppress("DEPRECATION")
+@Deprecated("Use writeTraceDatabase(AiTaskTraceDatabase, File)")
 fun writeTraceDatabase(database: AiPromptTraceDatabase, file: File) {
     val writer = if (file.extension == "json") jsonWriter else yamlWriter
     writer.writeValue(file, database)
 }
 
-/** Writes the given [AiPromptTraceDatabase] to the specified file. */
-fun writeTraceDatabase(traces: List<AiPromptTraceSupport>, file: File) {
-    val writer = if (file.extension == "json") jsonWriter else yamlWriter
-    writer.writeValue(file, AiPromptTraceDatabase(traces))
-}
-
-/** Writes the given [AiPromptTraceSupport] to the specified file. */
-fun writeTrace(trace: AiPromptTraceSupport, file: File) {
-    val writer = if (file.extension == "json") jsonWriter else yamlWriter
-    writer.writeValue(file, trace)
-}
-
-/** Writes a list of [AiPromptTraceSupport]s to the specified file. */
-fun writeTraces(traces: List<AiPromptTraceSupport>, file: File) {
-    val writer = if (file.extension == "json") jsonWriter else yamlWriter
-    writer.writeValue(file, traces)
-}
+//endregion

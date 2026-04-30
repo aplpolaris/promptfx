@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptFx – AI Prompt Engineering &amp; Document Q&amp;A</title>
+  <meta name="description" content="PromptFx is a JavaFX GUI and Kotlin library for AI prompt engineering, document Q&A, LLM pipeline testing, and more — powered by OpenAI and Google Gemini." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────────── -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="#3a7bd5"/>
+        <path d="M7 9h14M7 14h10M7 19h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="21" cy="19" r="3" fill="#00c9a7"/>
+      </svg>
+      PromptFx
+    </a>
+    <ul class="nav-links">
+      <li><a href="user-guide.html">Download &amp; Run</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Open Source · Kotlin · JavaFX</div>
+    <h1>AI Prompts &amp; Document Q&amp;A<br><span>made visual</span></h1>
+    <p class="hero-sub">
+      PromptFx is a desktop application and Kotlin library for exploring large language models,
+      testing prompts, building pipelines, and asking questions of your own documents — all in one place.
+    </p>
+    <div class="hero-actions">
+      <a href="user-guide.html" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 8l4 4 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Get Started
+      </a>
+      <a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener" class="btn btn-outline">
+        Download Latest Release ↗
+      </a>
+    </div>
+
+    <!-- Screenshot -->
+    <div class="screenshot-wrapper">
+      <div class="screenshot-chrome">
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+        <span class="chrome-title">PromptFx – Document Q&amp;A</span>
+      </div>
+      <img
+        src="https://github.com/aplpolaris/promptfx/assets/13057929/a063f5b3-59be-4b87-b0ef-76d5d22a9fa6"
+        alt="PromptFx Document Q&A interface showing RAG-based question answering with PDF source previews"
+        loading="eager"
+      />
+    </div>
+  </div>
+</section>
+
+<!-- ─── USER PATHS ─────────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-inner">
+    <p class="section-label">Find your path</p>
+    <h2 class="section-title">What brings you here?</h2>
+    <p class="section-desc">PromptFx serves different audiences. Choose the path that matches your goals.</p>
+
+    <div class="path-grid">
+
+      <a href="user-guide.html" class="path-card user-card">
+        <div class="path-icon user" aria-hidden="true">📄</div>
+        <h3>Run Document Q&amp;A</h3>
+        <p>
+          Download the pre-built application and start asking questions of your own PDFs, Word docs,
+          and text files using state-of-the-art retrieval-augmented generation (RAG).
+        </p>
+        <span class="path-arrow">
+          Get the app
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+
+      <a href="prompting.html" class="path-card tester-card">
+        <div class="path-icon tester" aria-hidden="true">🧪</div>
+        <h3>Test Prompts &amp; Pipelines</h3>
+        <p>
+          Use PromptFx's built-in workbench to craft and compare prompts, experiment with
+          templates, chain LLM calls, run NLP tasks, and benchmark model responses.
+        </p>
+        <span class="path-arrow">
+          Explore the workbench
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+
+      <a href="developer.html" class="path-card dev-card">
+        <div class="path-icon dev" aria-hidden="true">⚙️</div>
+        <h3>Build with the Library</h3>
+        <p>
+          Integrate PromptKt into your own Kotlin or JVM project. Use the API for document
+          chunking, embeddings, prompt templates, agent pipelines, and MCP tool integration.
+        </p>
+        <span class="path-arrow">
+          Developer docs
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ───────────────────────────────────────────────────────────── -->
+<section class="section features-section">
+  <div class="section-inner">
+    <p class="section-label">Capabilities</p>
+    <h2 class="section-title">Everything in one app</h2>
+    <p class="section-desc">A full-featured desktop workbench for AI exploration and document intelligence.</p>
+
+    <div class="features-grid">
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🗂️</div>
+        <h4>Document Q&amp;A (RAG)</h4>
+        <p>Ask questions across folders of PDFs, DOCX, and text files using semantic embeddings and retrieval-augmented generation.</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">✏️</div>
+        <h4>Prompt Engineering</h4>
+        <p>Author, test, and version prompt templates using Mustache syntax. Browse a built-in prompt library with hundreds of examples.</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🔗</div>
+        <h4>LLM Pipelines</h4>
+        <p>Chain prompts and API calls into multi-step AI pipelines. Script batch prompt execution and automatic validation.</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🌐</div>
+        <h4>Multi-Provider Support</h4>
+        <p>Works with OpenAI, Google Gemini, and any OpenAI-compatible API. Switch models without changing your workflow.</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🔤</div>
+        <h4>NLP Tasks</h4>
+        <p>Translation, summarization, entity extraction, sentiment analysis, and more — all powered by the LLM of your choice.</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon" aria-hidden="true">🖼️</div>
+        <h4>Vision &amp; Audio</h4>
+        <p>Generate images with DALL-E and Gemini Imagen, describe images, and transcribe or synthesize speech with Whisper.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── GALLERY ─────────────────────────────────────────────────────────────── -->
+<section class="section gallery-section">
+  <div class="section-inner">
+    <p class="section-label">Screenshots</p>
+    <h2 class="section-title">See it in action</h2>
+
+    <div class="gallery-grid">
+      <div class="gallery-item">
+        <img
+          src="https://github.com/aplpolaris/promptfx/assets/13057929/f5d6d17c-335f-4074-848a-87d0ea7c2aaa"
+          alt="PromptFx Document Q&A view showing question answering on research papers"
+          loading="lazy"
+        />
+        <p class="gallery-caption"><strong>Document Q&amp;A</strong> — Ask questions across a folder of research papers. Relevant snippets are retrieved and used to formulate the answer.</p>
+      </div>
+      <div class="gallery-item">
+        <img
+          src="https://github.com/aplpolaris/promptfx/assets/13057929/3a1d64b7-ecb8-49df-933b-458776351c36"
+          alt="PromptFx Prompt Template view showing Mustache-based prompt editing"
+          loading="lazy"
+        />
+        <p class="gallery-caption"><strong>Prompt Templates</strong> — Edit, preview, and run Mustache-based prompt templates with live parameter substitution.</p>
+      </div>
+      <div class="gallery-item">
+        <img
+          src="https://github.com/aplpolaris/promptfx/assets/13057929/8052d13f-7335-46e1-8e14-e3db00162e35"
+          alt="PromptFx Text tab showing NLP task views"
+          loading="lazy"
+        />
+        <p class="gallery-caption"><strong>Text &amp; NLP Tasks</strong> — Translation, summarization, sentiment analysis, and entity extraction powered by LLMs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <ul class="footer-links">
+      <li><a href="https://github.com/aplpolaris/promptfx" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/releases" target="_blank" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/wiki" target="_blank" rel="noopener">Wiki</a></li>
+      <li><a href="https://github.com/aplpolaris/promptfx/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="user-guide.html">User Guide</a></li>
+      <li><a href="prompting.html">Prompt Testing</a></li>
+      <li><a href="developer.html">Developer Docs</a></li>
+    </ul>
+    <p>PromptFx is open source software licensed under the <a href="https://github.com/aplpolaris/promptfx/blob/main/LICENSE" target="_blank" rel="noopener">Apache 2.0 License</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

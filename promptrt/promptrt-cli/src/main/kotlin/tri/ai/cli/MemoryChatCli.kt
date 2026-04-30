@@ -28,11 +28,12 @@ import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.coroutines.runBlocking
 import tri.ai.core.TextChatMessage
 import tri.ai.core.MChatRole
-import tri.ai.core.TextPlugin
+import tri.ai.core.AiModelProvider
 import tri.ai.memory.*
 import tri.ai.openai.*
 import tri.ai.openai.OpenAiModelIndex.EMBEDDING_ADA
 import tri.ai.openai.OpenAiModelIndex.GPT35_TURBO_ID
+import tri.ai.prompt.trace.AiOutput
 import tri.util.MIN_LEVEL_TO_LOG
 import java.util.logging.Level
 import kotlin.system.exitProcess
@@ -56,9 +57,9 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
     private val greeting
         get() = "You are chatting with $model (with memory). Say 'bye' to exit."
     private val chatModelInst
-        get() = TextPlugin.chatModels().first { it.modelId == model }
+        get() = AiModelProvider.chatModels().first { it.modelId == model }
     private val embeddingModelInst
-        get() = TextPlugin.embeddingModels().first { it.modelId == embedding }
+        get() = AiModelProvider.embeddingModels().first { it.modelId == embedding }
 
     private val persona: BotPersona = HelperPersona("Jack")
     private val memory: MemoryService by lazy { BotMemory(persona, chatModelInst, embeddingModelInst) }
@@ -99,9 +100,10 @@ class MemoryChatCli : CliktCommand(name = "chat-memory") {
         val contextualHistory = memory.buildContextualConversationHistory(userItem).map { it.toChatMessage() }
         val personaMessage = listOf(TextChatMessage(MChatRole.System, persona.getSystemMessage()))
         val response = chatModelInst.chat(personaMessage + contextualHistory).firstValue
-        memory.addChat(MemoryItem(response.message!!))
+        val msg = (response as AiOutput.ChatMessage).message
+        memory.addChat(MemoryItem(msg))
         memory.saveMemory(interimSave = true)
-        return response.message!!
+        return msg
     }
 
     //region INPUT/OUTPUT

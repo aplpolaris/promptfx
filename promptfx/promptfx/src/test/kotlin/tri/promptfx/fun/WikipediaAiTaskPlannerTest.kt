@@ -24,15 +24,15 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.openai.OpenAiChat
-import tri.ai.pips.AiPipelineExecutor
-import tri.ai.pips.PrintMonitor
-import tri.ai.openai.OpenAiCompletion
+import tri.promptfx.AiChatEngine
+import tri.ai.pips.AiWorkflowExecutor
+import tri.ai.core.tool.ExecContext
 import tri.ai.openai.OpenAiModelIndex
 import tri.promptfx.ModelParameters
 
 class WikipediaAiTaskPlannerTest {
 
-    val engine = OpenAiChat(OpenAiModelIndex.GPT35_TURBO)
+    val engine = AiChatEngine.Text(OpenAiChat(OpenAiModelIndex.GPT35_TURBO))
 
     @Test
     @Disabled("Disabled to prevent excessive API calls")
@@ -53,8 +53,8 @@ class WikipediaAiTaskPlannerTest {
     @Test
     fun testPlanner() {
         val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
-        assertEquals(4, tasks.size)
-        assertEquals("wikipedia-page-guess", tasks[0].id)
+        assertEquals(4, tasks.plan.size)
+        assertEquals("wikipedia-page-guess", tasks.plan[0].id)
     }
 
     @Test
@@ -62,7 +62,7 @@ class WikipediaAiTaskPlannerTest {
     fun testExecute() {
         runTest {
             val tasks = WikipediaAiTaskPlanner(engine, ModelParameters(), null, "How big is Texas?").plan()
-            val result = AiPipelineExecutor.execute(tasks, PrintMonitor())
+            val result = AiWorkflowExecutor.execute(tasks.plan, ExecContext())
             println(result.interimResults)
             assertEquals(4, result.interimResults.size)
             println(result.finalResult)

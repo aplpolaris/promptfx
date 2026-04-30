@@ -20,18 +20,34 @@
 package tri.ai.core.agent
 
 import kotlinx.coroutines.flow.*
+import tri.ai.pips.ExecEvent
+import tri.ai.pips.emitError
+import tri.ai.pips.emitProgress
+import tri.ai.pips.emitPlanningTask
+import tri.ai.pips.emitReasoning
+import tri.ai.pips.emitResponse
+import tri.ai.pips.emitStreamingToken
+import tri.ai.pips.emitToolResult
+import tri.ai.pips.emitUsingTool
+import tri.ai.pips.emitUser
+
+/**
+ * Backward-compatibility type alias: agent chat event streams now use [ExecEvent].
+ * @see ExecEvent
+ */
+typealias AgentChatEvent = ExecEvent
 
 /**
  * Represents an ongoing agent chat operation that can be monitored for progress.
  * Allows streaming of interim results, reasoning, and progress updates.
  */
-class AgentChatFlow(val events: Flow<AgentChatEvent>) {
+class AgentChatFlow(val events: Flow<ExecEvent>) {
     /**
      * Await the final response from the operation.
      * This suspends until a Response event is emitted.
      */
     suspend fun awaitResponse() =
-        events.filterIsInstance<AgentChatEvent.Response>().first().response
+        events.filterIsInstance<ExecEvent.Response>().first().response
 
     /**
      * Await the final response from the operation, while logging all events to the console.
@@ -39,38 +55,7 @@ class AgentChatFlow(val events: Flow<AgentChatEvent>) {
     suspend fun awaitResponseWithLogging() =
         events
         .onEach { event -> AgentEventPrinter().emit(event) }
-        .filterIsInstance<AgentChatEvent.Response>().first()
+        .filterIsInstance<ExecEvent.Response>().first()
         .response
 }
 
-suspend fun FlowCollector<AgentChatEvent>.emitUser(message: String) = emit(AgentChatEvent.User(message))
-suspend fun FlowCollector<AgentChatEvent>.emitProgress(message: String) = emit(AgentChatEvent.Progress(message))
-suspend fun FlowCollector<AgentChatEvent>.emitReasoning(reasoning: String) = emit(AgentChatEvent.Reasoning(reasoning))
-suspend fun FlowCollector<AgentChatEvent>.emitPlanningTask(taskId: String, description: String) = emit(AgentChatEvent.PlanningTask(taskId, description))
-suspend fun FlowCollector<AgentChatEvent>.emitUsingTool(toolName: String, input: String) = emit(AgentChatEvent.UsingTool(toolName, input))
-suspend fun FlowCollector<AgentChatEvent>.emitToolResult(toolName: String, result: String) = emit(AgentChatEvent.ToolResult(toolName, result))
-suspend fun FlowCollector<AgentChatEvent>.emitStreamingToken(token: String) = emit(AgentChatEvent.StreamingToken(token))
-suspend fun FlowCollector<AgentChatEvent>.emitResponse(response: AgentChatResponse) = emit(AgentChatEvent.Response(response))
-suspend fun FlowCollector<AgentChatEvent>.emitError(error: Throwable) = emit(AgentChatEvent.Error(error))
-
-/** Events emitted during an agent chat operation. */
-sealed class AgentChatEvent {
-    /** User message received. */
-    data class User(val message: String) : AgentChatEvent()
-    /** Progress update during processing. */
-    data class Progress(val message: String) : AgentChatEvent()
-    /** Interim reasoning/thought process. */
-    data class Reasoning(val reasoning: String) : AgentChatEvent()
-    /** Task planning. */
-    data class PlanningTask(val taskId: String, val description: String) : AgentChatEvent()
-    /** Tool invocation. */
-    data class UsingTool(val toolName: String, val input: String) : AgentChatEvent()
-    /** Result from a tool invocation. */
-    data class ToolResult(val toolName: String, val result: String) : AgentChatEvent()
-    /** Streaming token from response generation. */
-    data class StreamingToken(val token: String) : AgentChatEvent()
-    /** Final response from the agent. */
-    data class Response(val response: AgentChatResponse) : AgentChatEvent()
-    /** Error occurred during processing. */
-    data class Error(val error: Throwable) : AgentChatEvent()
-}
