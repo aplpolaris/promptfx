@@ -47,6 +47,7 @@ import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.PromptFxModels
 import tri.promptfx.audioMimeType
 import tri.promptfx.hasImageFile
+import tri.promptfx.toApiAudioString
 import tri.util.ui.AudioRecorder
 import tri.util.ui.BlinkingIndicator
 import tri.util.ui.NavigableWorkspaceViewImpl
@@ -706,20 +707,6 @@ private fun URI.toApiImageString(): String {
             "webp" -> "image/webp"
             else -> "image/png"
         }
-        val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
-        return "data:$mimeType;base64,$base64"
-    }
-    return toString()
-}
-
-/**
- * Converts a URI to a base64 `data:` URI suitable for the chat API audio field.
- * Local [file:] URIs are read from disk and encoded; `data:` URIs are returned unchanged.
- */
-private fun URI.toApiAudioString(): String {
-    if (scheme == "file") {
-        val file = java.io.File(this)
-        val mimeType = audioMimeType(file.extension.lowercase())
         val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
         return "data:$mimeType;base64,$base64"
     }

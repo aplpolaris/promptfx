@@ -35,6 +35,7 @@ import tornadofx.*
 import tri.ai.core.*
 import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.hasImageFile
+import tri.promptfx.toApiAudioString
 import tri.util.ui.graphic
 import tri.util.ui.imageUri
 import java.io.FileInputStream
@@ -80,7 +81,7 @@ class ChatHistoryView(roles: List<MChatRole> = listOf(MChatRole.Assistant, MChat
                 // TODO - add detailImageProperty to API (used in OpenAI)
                 // it.detailImageProperty.value.let { if (it == "auto") null else it })
             if (it.contentAudio != null)
-                audio(it.contentAudio.toString())
+                audio(it.contentAudio!!.toApiAudioString())
             toolCalls(it.toolCalls ?: listOf())
             toolCallId(it.toolCallId)
         }

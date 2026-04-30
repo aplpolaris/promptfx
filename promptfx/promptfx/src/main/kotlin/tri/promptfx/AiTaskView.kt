@@ -48,6 +48,7 @@ import tri.promptfx.ui.checkError
 import tri.util.ui.graphic
 import java.io.File
 import java.lang.Exception
+import java.net.URI
 
 /**
  * A view that executes a task and displays the result. Provides placeholders for input, output, and parameters.
@@ -427,6 +428,20 @@ fun audioMimeType(ext: String) = when (ext) {
 /** Check if clipboard has an audio file. */
 fun Clipboard.hasAudioFile() =
     files.isNotEmpty() && files.first().extension.lowercase() in AUDIO_EXTENSIONS
+
+/**
+ * Converts a URI to a base64 `data:` URI suitable for the chat API audio field.
+ * Local [file:] URIs are read from disk and encoded; `data:` URIs are returned unchanged.
+ */
+fun URI.toApiAudioString(): String {
+    if (scheme == "file") {
+        val file = File(this)
+        val mimeType = audioMimeType(file.extension.lowercase())
+        val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
+        return "data:$mimeType;base64,$base64"
+    }
+    return toString()
+}
 
 /** Check if clipboard has an image file path. */
 fun Clipboard.hasImageFilePath() =
