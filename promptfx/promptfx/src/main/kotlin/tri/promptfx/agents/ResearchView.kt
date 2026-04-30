@@ -31,6 +31,7 @@ import javafx.scene.control.TextArea
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.FontPosture
 import javafx.scene.text.FontWeight
@@ -168,7 +169,7 @@ class ResearchView : View("Research") {
                 prefHeight = 0.0
                 cellFormat { session ->
                     val preview = session.request.take(60).let { if (session.request.length > 60) "$it…" else it }
-                    graphic = vbox(2.0) {
+                    graphic = VBox(2.0).apply {
                         label(preview) {
                             isWrapText = true
                             style { fontWeight = FontWeight.BOLD; fontSize = 11.px }
@@ -387,7 +388,7 @@ class ResearchView : View("Research") {
 
         addProgress(ResearchStepType.USER_REQUEST, "Information Request", request)
 
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.IO) {
             runResearchWorkflow(request)
         }
     }
@@ -580,8 +581,10 @@ class ResearchView : View("Research") {
         val updated = transform(old)
         currentSession.set(updated)
         val idx = sessions.indexOf(old)
-        if (idx >= 0) sessions[idx] = updated
-        runLater { updateArtifactsTree(updated) }
+        runLater {
+            if (idx >= 0) sessions[idx] = updated
+            updateArtifactsTree(updated)
+        }
     }
 
     /** Rebuilds the artifacts [TreeView] to reflect the current session's state. */
