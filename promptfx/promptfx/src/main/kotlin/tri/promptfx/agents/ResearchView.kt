@@ -530,7 +530,9 @@ class ResearchView : View("Research") {
             canContinue.set(false)
         }
 
-        updateArtifactsTree(currentSession.value)
+        runLater {
+            updateArtifactsTree(currentSession.value)
+        }
     }
 
     /** Signals the workflow to proceed past the current pause point. */
