@@ -149,6 +149,7 @@ class GeminiMultimodalChat(override val modelId: String = GeminiModelIndex.GEMIN
         fun MChatMessagePart.gemini(): Part = when (partType) {
             MPartType.TEXT -> Part(text = text)
             MPartType.IMAGE -> Part(inlineData = Blob.fromDataUrl(inlineData!!))
+            MPartType.AUDIO -> Part(inlineData = Blob.fromDataUrl(inlineData!!))
             MPartType.TOOL_CALL -> Part(functionCall = FunctionCall(name = functionName!!, args = functionArgs!!))
             MPartType.TOOL_RESPONSE -> Part(functionResponse = FunctionResponse(name = functionName!!, response = functionArgs!!))
         }

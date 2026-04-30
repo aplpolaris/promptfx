@@ -123,6 +123,9 @@ class AnthropicSdkClient : Closeable {
             MPartType.IMAGE -> ContentBlockParam.ofImage(
                 buildImageBlockParam(inlineData!!)
             )
+            MPartType.AUDIO -> ContentBlockParam.ofText(
+                TextBlockParam.builder().text("[Audio attachment]").build()
+            )
             MPartType.TOOL_CALL -> ContentBlockParam.ofToolUse(
                 ToolUseBlockParam.builder()
                     .id(functionName ?: "")

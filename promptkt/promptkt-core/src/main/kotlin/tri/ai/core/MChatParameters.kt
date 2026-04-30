@@ -142,6 +142,7 @@ data class MChatMessagePart(
     init {
         require(if (partType == MPartType.TEXT) text != null else true) { "Text must be provided for text part type." }
         require(if (partType == MPartType.IMAGE) inlineData != null else true) { "Inline data must be provided for image part type." }
+        require(if (partType == MPartType.AUDIO) inlineData != null else true) { "Inline data must be provided for audio part type." }
         require(if (partType == MPartType.TOOL_CALL) functionName != null && functionArgs != null else true) { "Function name and arguments must be provided for tool call part type." }
         require(if (partType == MPartType.TOOL_RESPONSE) functionName != null && functionArgs != null else true) { "Function name and arguments must be provided for tool response part type." }
     }
@@ -149,6 +150,7 @@ data class MChatMessagePart(
     companion object {
         fun text(text: String) = MChatMessagePart(MPartType.TEXT, text)
         fun image(inlineData: String) = MChatMessagePart(MPartType.IMAGE, inlineData = inlineData)
+        fun audio(inlineData: String) = MChatMessagePart(MPartType.AUDIO, inlineData = inlineData)
         fun toolCall(name: String, args: Map<String, String>) = MChatMessagePart(MPartType.TOOL_CALL, functionName = name, functionArgs = args)
         fun toolResponse(name: String, response: Map<String, String>) = MChatMessagePart(MPartType.TOOL_RESPONSE, functionName = name, functionArgs = response)
     }
@@ -157,6 +159,7 @@ data class MChatMessagePart(
 enum class MPartType {
     TEXT,
     IMAGE,
+    AUDIO,
     TOOL_CALL,
     TOOL_RESPONSE
 }

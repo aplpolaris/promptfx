@@ -411,6 +411,13 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
 fun Clipboard.hasImageFile() =
     files.isNotEmpty() && files.first().extension.lowercase() in listOf("png", "jpg", "jpeg")
 
+/** Supported audio file extensions for drag-and-drop and file chooser. */
+val AUDIO_EXTENSIONS = listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm", "ogg")
+
+/** Check if clipboard has an audio file. */
+fun Clipboard.hasAudioFile() =
+    files.isNotEmpty() && files.first().extension.lowercase() in AUDIO_EXTENSIONS
+
 /** Check if clipboard has an image file path. */
 fun Clipboard.hasImageFilePath() =
     fileFromPlainTextContent()?.let { it.extension.lowercase() in listOf("png", "jpg", "jpeg") } ?: false

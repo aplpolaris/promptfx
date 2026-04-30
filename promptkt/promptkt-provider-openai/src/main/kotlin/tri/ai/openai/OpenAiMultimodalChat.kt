@@ -77,10 +77,12 @@ class OpenAiMultimodalChat(override val modelId: String = OpenAiModelIndex.GPT35
                         if (textVal != null)
                             text(textVal)
                         val inlineDataVal = it.inlineData
-                        if (inlineDataVal != null)
-                            // TODO - validation of data type for this call ??
-                            image(inlineDataVal)
-                        // TODO - API support for additional modalities when available
+                        if (inlineDataVal != null) when (it.partType) {
+                            MPartType.IMAGE -> image(inlineDataVal)
+                            // TODO - add direct audio input support when the openai-kotlin client library exposes it
+                            MPartType.AUDIO -> { /* audio inline data not yet supported by openai-kotlin chat builder */ }
+                            else -> { /* ignore other inline data types */ }
+                        }
                     }
                 }
                 val toolCallsVal = this@openAi.toolCalls

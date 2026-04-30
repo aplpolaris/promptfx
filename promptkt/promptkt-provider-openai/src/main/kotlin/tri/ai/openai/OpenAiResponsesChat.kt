@@ -133,6 +133,15 @@ class OpenAiResponsesChat(
                                 put("type", "input_text")
                                 put("text", part.text)
                             })
+                            part.partType == MPartType.AUDIO && part.inlineData != null -> add(buildJsonObject {
+                                put("type", "input_audio")
+                                val base64 = part.inlineData!!.substringAfter(";base64,", part.inlineData!!)
+                                val format = part.inlineData!!.substringBefore(";base64,").substringAfter("data:audio/").substringBefore(";").ifBlank { "wav" }
+                                put("input_audio", buildJsonObject {
+                                    put("data", base64)
+                                    put("format", format)
+                                })
+                            })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
                                 put("image_url", imageUrlJsonElement(part.inlineData!!))
@@ -163,6 +172,15 @@ class OpenAiResponsesChat(
                             part.text != null -> add(buildJsonObject {
                                 put("type", "input_text")
                                 put("text", part.text)
+                            })
+                            part.partType == MPartType.AUDIO && part.inlineData != null -> add(buildJsonObject {
+                                put("type", "input_audio")
+                                val base64 = part.inlineData!!.substringAfter(";base64,", part.inlineData!!)
+                                val format = part.inlineData!!.substringBefore(";base64,").substringAfter("data:audio/").substringBefore(";").ifBlank { "wav" }
+                                put("input_audio", buildJsonObject {
+                                    put("data", base64)
+                                    put("format", format)
+                                })
                             })
                             part.inlineData != null -> add(buildJsonObject {
                                 put("type", "input_image")
