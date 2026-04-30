@@ -17,6 +17,7 @@
         <module>promptkt-core</module>
         <!-- API client modules -->
         <module>promptkt-provider-openai</module>
+        <module>promptkt-provider-openai-sdk</module>
         <module>promptkt-provider-gemini</module>
         <module>promptkt-provider-gemini-sdk</module>
         <module>promptkt-provider-anthropic-sdk</module>

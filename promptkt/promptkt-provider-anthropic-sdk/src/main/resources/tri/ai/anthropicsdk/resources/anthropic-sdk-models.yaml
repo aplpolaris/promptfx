@@ -28,3 +28,132 @@ multimodal:
   - claude-haiku-4-5
   - claude-opus-4-0
   - claude-sonnet-4-0
+
+models:
+
+  Claude 3.5:
+
+    - id: claude-3-5-haiku-latest
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude 3.5 Haiku
+        description: >
+          Fast, compact model for near-instant responsiveness.
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 8192
+
+    - id: claude-3-5-sonnet-latest
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude 3.5 Sonnet
+        description: >
+          Intelligent, efficient model balancing speed and capability.
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 8192
+
+  Claude 3.7:
+
+    - id: claude-3-7-sonnet-latest
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude 3.7 Sonnet
+        description: >
+          Extended thinking model with hybrid reasoning capabilities.
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 128000
+
+  Claude 4:
+
+    - id: claude-haiku-4-5
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude Haiku 4.5
+        description: >
+          Fastest and most compact Claude 4 model.
+        lifecycle: PRODUCTION
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 8192
+
+    - id: claude-sonnet-4-5
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude Sonnet 4.5
+        description: >
+          Excellent performance at speed in the Claude 4 family.
+        lifecycle: PRODUCTION
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 64000
+
+    - id: claude-opus-4-5
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude Opus 4.5
+        description: >
+          Highly capable model with flexible reasoning in the Claude 4 family.
+        lifecycle: PRODUCTION
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 32000
+
+    - id: claude-sonnet-4-0
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude Sonnet 4.0
+        description: >
+          Intelligent, efficient model in the Claude 4 generation.
+        lifecycle: PRODUCTION
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 64000
+
+    - id: claude-opus-4-0
+      type: TEXT_CHAT
+      source: Anthropic-SDK
+      metadata:
+        name: Claude Opus 4.0
+        description: >
+          Top-level intelligence and performance in the Claude 4 generation.
+        lifecycle: PRODUCTION
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        inputTokenLimit: 200000
+        outputTokenLimit: 32000
+

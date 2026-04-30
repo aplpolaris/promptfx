@@ -34,6 +34,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import tornadofx.*
 import tri.ai.core.AiModelProvider
+import tri.ai.anthropicsdk.AnthropicSdkPlugin
+import tri.ai.anthropicsdk.AnthropicSdkSettings
 import tri.ai.gemini.GeminiAiPlugin
 import tri.ai.gemini.GeminiSettings
 import tri.ai.geminisdk.GeminiSdkPlugin
@@ -215,6 +217,7 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                     is OpenAiAzurePlugin -> listOf(it to it.client.settings)
                     is GeminiAiPlugin -> listOf(it to it.client.settings)
                     is GeminiSdkPlugin -> listOf(it to it.client.settings)
+                    is AnthropicSdkPlugin -> listOf(it to it.client.settings)
                     else -> listOf()
                 }
             }.forEach { (plugin, settings) ->
@@ -254,6 +257,9 @@ class PromptFxSettingsView : AiTaskView("PromptFx Settings", "View and manage ap
                             label("Project Id: ${settings.projectId}")
                             label("Location: ${settings.location}")
                             label("Use Vertex AI: ${settings.useVertexAI}")
+                        }
+                        is AnthropicSdkSettings -> {
+                            // AnthropicSdkSettings has no additional fields beyond base URL and API key
                         }
                         else -> {
                             label("No specific API client configuration available for ${plugin.javaClass.simpleName}.")
