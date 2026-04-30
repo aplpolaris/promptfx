@@ -428,7 +428,7 @@ class ResearchView : View("Research") {
             addProgress(ResearchStepType.RESULT, "Research Plan", plan)
             addProgress(
                 ResearchStepType.WAITING, "Paused after Planning",
-                "The research plan is ready. Click ▶ Continue to proceed to the Research phase."
+                "The research plan is ready. Click the Continue button to proceed to the Research phase."
             )
             waitForContinue()
 
@@ -439,7 +439,7 @@ class ResearchView : View("Research") {
             addProgress(ResearchStepType.RESULT, "Research Findings", research)
             addProgress(
                 ResearchStepType.WAITING, "Paused after Research",
-                "Research is complete. Click ▶ Continue to proceed to the Writing phase."
+                "Research is complete. Click the Continue button to proceed to the Writing phase."
             )
             waitForContinue()
 
@@ -455,16 +455,18 @@ class ResearchView : View("Research") {
             addProgress(ResearchStepType.RESULT, "Report Draft", draft)
             addProgress(
                 ResearchStepType.WAITING, "Paused after Writing",
-                "Draft report is ready. Click ▶ Continue to proceed to the Review phase."
+                "Draft report is ready. Click the Continue button to proceed to the Review phase."
             )
             waitForContinue()
 
             // --- STAGE 4: Review Agent ---
             addProgress(ResearchStepType.AGENT_STEP, "Review Agent", "Evaluating the report for quality…")
             val reviewNotes = orchestrator.reviewReport(draft)
+            // outline and draft are captured from stage 3; the fallback creates a new report if
+            // for some reason it.report is null at this stage (should not happen in normal flow)
             updateCurrentSession {
-                val updated = it.copy(report = it.report?.copy(reviewNotes = reviewNotes) ?: WrittenReport(outline, draft, reviewNotes))
-                updated
+                it.copy(report = it.report?.copy(reviewNotes = reviewNotes)
+                    ?: WrittenReport(outline = outline, content = draft, reviewNotes = reviewNotes))
             }
             addProgress(ResearchStepType.RESULT, "Review Notes", reviewNotes)
             addProgress(
@@ -587,7 +589,7 @@ class ResearchView : View("Research") {
         val root = TreeItem(if (session != null) "Session" else "No Session")
         root.isExpanded = true
         if (session != null) {
-            root.children.add(TreeItem("📋 Request: ${session.request.take(30)}…"))
+            root.children.add(TreeItem("📋 Request: ${session.request.take(40)}${if (session.request.length > 40) "…" else ""}"))
             if (session.plan != null) {
                 root.children.add(TreeItem("🗂 Research Plan [✓]"))
             } else {

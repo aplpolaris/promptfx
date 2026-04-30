@@ -1,6 +1,6 @@
 /*-
  * #%L
- * tri.promptfx:promptkt
+ * tri.promptfx:promptex-docs
  * %%
  * Copyright (C) 2023 - 2026 Johns Hopkins University Applied Physics Laboratory
  * %%
