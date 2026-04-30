@@ -20,6 +20,7 @@
 package tri.ai.anthropicsdk
 
 import tri.ai.core.*
+import tri.util.warning
 
 /** Plugin registering Anthropic Claude models and services via the official SDK. */
 class AnthropicSdkPlugin : AiModelProvider {
@@ -35,9 +36,12 @@ class AnthropicSdkPlugin : AiModelProvider {
                 AnthropicSdkModelIndex.completionModels() +
                 AnthropicSdkModelIndex.multimodalModels()).distinct()
         return allIds.map { id ->
-            AnthropicSdkModelIndex.modelInfoIndex[id] ?: ModelInfo(id, ModelType.TEXT_CHAT, modelSource()).also {
-                it.capabilities.inputs = listOf(DataModality.text)
-                it.capabilities.outputs = listOf(DataModality.text)
+            AnthropicSdkModelIndex.modelInfoIndex[id] ?: run {
+                warning<AnthropicSdkPlugin>("Model info not found for '$id'; using default capabilities.")
+                ModelInfo(id, ModelType.TEXT_VISION_CHAT, modelSource()).also {
+                    it.capabilities.inputs = listOf(DataModality.text, DataModality.image)
+                    it.capabilities.outputs = listOf(DataModality.text)
+                }
             }
         }
     }
