@@ -23,14 +23,15 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
 import javafx.scene.control.ButtonType
-import javafx.scene.control.ToggleGroup
 import tornadofx.*
 import tri.ai.prompt.PromptDef
 import tri.promptfx.PromptFxGlobals
 import tri.promptfx.PromptFxWorkspaceModel
 import tri.promptfx.RuntimePromptViewConfigs
+import tri.promptfx.ui.PromptSelectionModel
 import tri.promptfx.ui.RuntimePromptViewConfig
 import tri.promptfx.ui.RuntimeUserControls
+import tri.promptfx.ui.promptfield
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Dialog for creating a new custom view configuration. */
@@ -39,25 +40,26 @@ class NewViewDialog : Fragment("Create New Custom View") {
     private val viewName = SimpleStringProperty("")
     private val viewCategory = SimpleStringProperty("")
     private val viewDescription = SimpleStringProperty("")
-    
-    private val useExistingPrompt = SimpleBooleanProperty(true)
-    private val selectedPromptId = SimpleStringProperty("")
-    private val customTemplate = SimpleStringProperty("")
+
+    private val availablePromptIds = getAvailablePromptIds()
+    // Start with no prompt selected (Custom/empty), so the user must explicitly choose one
+    private val promptModel = PromptSelectionModel(PromptSelectionModel.CUSTOM, "")
 
     private val showPrompt = SimpleBooleanProperty(true)
     private val showModelParameters = SimpleBooleanProperty(false)
     private val showMultipleResponses = SimpleBooleanProperty(false)
-    
+    private val requestJson = SimpleBooleanProperty(false)
+
     private val validationMessage = SimpleStringProperty("")
-    
+
     private var result: RuntimePromptViewConfig? = null
 
     init {
         // Set up validation
         viewName.addListener { _, _, _ -> validateInput() }
-        selectedPromptId.addListener { _, _, _ -> validateInput() }
-        customTemplate.addListener { _, _, _ -> validateInput() }
-        useExistingPrompt.addListener { _, _, _ -> validateInput() }
+        viewCategory.addListener { _, _, _ -> validateInput() }
+        promptModel.id.addListener { _, _, _ -> validateInput() }
+        promptModel.text.addListener { _, _, _ -> validateInput() }
     }
 
     override val root = borderpane {
@@ -92,39 +94,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
             }
             
             fieldset("Prompt Configuration") {
-                field("Prompt Source") {
-                    labelContainer.alignment = Pos.TOP_LEFT
-                    val toggleGroup = ToggleGroup()
-                    vbox(5) {
-                        alignment = Pos.TOP_LEFT
-                        
-                        // Use existing prompt option
-                        hbox(5) {
-                            alignment = Pos.CENTER_LEFT
-                            radiobutton("Use Existing Prompt:", toggleGroup, value = useExistingPrompt) {
-                                isSelected = true
-                            }
-                            combobox<String>(selectedPromptId) {
-                                items = getAvailablePromptIds().asObservable()
-                                isEditable = true
-                                promptText = "Select or enter prompt ID"
-                                prefWidth = 300.0
-                                disableWhen(useExistingPrompt.not())
-                            }
-                        }
-                        
-                        // Create new prompt option
-                        radiobutton("Create New Prompt", toggleGroup, value = useExistingPrompt.not())
-                        
-                        textarea(customTemplate) {
-                            promptText = "Enter your prompt template here..."
-                            prefRowCount = 5
-                            prefColumnCount = 40
-                            isWrapText = true
-                            enableWhen(useExistingPrompt.not())
-                        }
-                    }
-                }
+                promptfield("Prompt", promptModel, availablePromptIds, workspace)
             }
             
             fieldset("User Controls") {
@@ -134,6 +104,7 @@ class NewViewDialog : Fragment("Create New Custom View") {
                         checkbox("Show Prompt Selection", showPrompt)
                         checkbox("Show Model Parameters", showModelParameters)
                         checkbox("Show Multiple Response Option", showMultipleResponses)
+                        checkbox("Request JSON response format", requestJson)
                     }
                 }
             }
@@ -177,20 +148,12 @@ class NewViewDialog : Fragment("Create New Custom View") {
         if (viewName.value.isNullOrBlank()) {
             errors.add("View name is required")
         } else {
-            // Check for duplicate names by generating the view ID and checking if it exists
-            val potentialViewId = if (viewCategory.value.isNotBlank()) {
-                ViewConfigManager.generateViewId(viewCategory.value, viewName.value)
-            } else {
-                viewName.value.lowercase().replace(" ", "-")
-            }
-            
-            // Only check for duplicates if we're not generating a unique ID
+            // Only check for duplicates if category is also provided
             val baseId = if (viewCategory.value.isNotBlank()) {
                 "${viewCategory.value.lowercase().replace(" ", "-")}-${viewName.value.lowercase().replace(" ", "-")}"
             } else {
                 viewName.value.lowercase().replace(" ", "-")
             }
-            
             if (ViewConfigManager.viewExists(baseId)) {
                 errors.add("A view with this name already exists in this category")
             }
@@ -201,15 +164,9 @@ class NewViewDialog : Fragment("Create New Custom View") {
             errors.add("Category is required")
         }
         
-        // Check prompt configuration
-        if (useExistingPrompt.value) {
-            if (selectedPromptId.value.isNullOrBlank()) {
-                errors.add("Prompt ID is required when using existing prompt")
-            }
-        } else {
-            if (customTemplate.value.isNullOrBlank()) {
-                errors.add("Template is required when creating new prompt")
-            }
+        // Check prompt: if Custom is selected, a template must be provided
+        if (promptModel.id.value == PromptSelectionModel.CUSTOM && promptModel.text.value.isNullOrBlank()) {
+            errors.add("Prompt template is required")
         }
         
         validationMessage.set(errors.joinToString("; "))
@@ -237,31 +194,34 @@ class NewViewDialog : Fragment("Create New Custom View") {
     }
 
     private fun createAndSaveViewConfig() {
-        val promptDef = if (useExistingPrompt.value) {
-            PromptDef(
-                id = selectedPromptId.value,
-                category = viewCategory.value,
-                name = viewName.value,
-                description = viewDescription.value.ifBlank { null }
-            )
-        } else {
+        val promptDef = if (promptModel.id.value == PromptSelectionModel.CUSTOM) {
+            // Custom template: generate a new prompt ID from category/name
             PromptDef(
                 id = "${viewCategory.value.lowercase().replace(" ", "-")}/${viewName.value.lowercase().replace(" ", "-")}",
                 category = viewCategory.value,
                 name = viewName.value,
                 description = viewDescription.value.ifBlank { null },
-                template = customTemplate.value
+                template = promptModel.text.value
+            )
+        } else {
+            // Existing prompt: store the selected ID and override the name with the view name
+            PromptDef(
+                id = promptModel.id.value,
+                category = viewCategory.value,
+                name = viewName.value,
+                description = viewDescription.value.ifBlank { null }
             )
         }
         
         val config = RuntimePromptViewConfig(
             promptDef = promptDef,
-            args = listOf(), // For now, keep it simple
+            args = listOf(),
             userControls = RuntimeUserControls(
                 prompt = showPrompt.value,
                 modelParameters = showModelParameters.value,
                 multipleResponses = showMultipleResponses.value,
             ),
+            requestJson = requestJson.value,
             affordances = WorkspaceViewAffordance.INPUT_ONLY
         )
         

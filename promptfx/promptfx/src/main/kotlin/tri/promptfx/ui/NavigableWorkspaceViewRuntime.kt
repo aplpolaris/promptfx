@@ -28,7 +28,7 @@ class NavigableWorkspaceViewRuntime(val config: RuntimePromptViewConfig) : Navig
     override val category: String
         get() = config.prompt.category!!
     override val name: String
-        get() = config.prompt.title ?: config.prompt.name ?: config.prompt.id
+        get() = config.promptDef.name ?: config.prompt.title()
     override val affordances: WorkspaceViewAffordance
         get() = WorkspaceViewAffordance.INPUT_ONLY // TODO - should this be added into runtime configs??
     val view by lazy {

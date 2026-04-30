@@ -48,7 +48,7 @@ import tri.util.ui.*
 class ImagesApiPlugin : NavigableWorkspaceViewImpl<ImagesView>("Multimodal", "Text-to-Image", WorkspaceViewAffordance.Companion.INPUT_ONLY, ImagesView::class)
 
 /** View for image generation, supporting multiple providers (e.g. OpenAI DALL-E, Gemini). */
-class ImagesView : AiPlanTaskView("Images", "Enter image prompt") {
+class ImagesView : AiPlanTaskView("Text-to-Image", "Enter image prompt") {
 
     /** User input */
     private val input = SimpleStringProperty("")
