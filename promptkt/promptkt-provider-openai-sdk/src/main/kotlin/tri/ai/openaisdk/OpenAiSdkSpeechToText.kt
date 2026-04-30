@@ -41,7 +41,7 @@ class OpenAiSdkSpeechToText(
             val paramsBuilder = TranscriptionCreateParams.builder()
                 .model(modelId)
                 .file(audioFile.toPath())
-            prompt?.let { paramsBuilder.language(it) }
+            prompt?.let { paramsBuilder.prompt(it) }
 
             val response = client.getClient().audio().transcriptions().create(paramsBuilder.build())
             val text = response.asTranscription().text()
