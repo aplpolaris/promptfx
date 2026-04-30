@@ -32,7 +32,7 @@ import java.io.File
 import java.util.Properties
 
 /** Plugin for the [AboutView]. */
-class AboutPlugin : NavigableWorkspaceViewImpl<AboutView>("Settings", "About", type = AboutView::class)
+class AboutPlugin : NavigableWorkspaceViewImpl<AboutView>("Settings", "About PromptFx", type = AboutView::class)
 
 /** About view showing application information. */
 class AboutView : AiTaskView("About PromptFx", "Information about the PromptFx application.", showInput = false) {

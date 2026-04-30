@@ -174,9 +174,10 @@ class PromptFxWorkspace : Workspace() {
     /** Attempts to restore a view by its identifier (category:name). Returns true if successful. */
     private fun tryRestoreView(viewIdentifier: String): Boolean {
         return try {
-            val parts = viewIdentifier.split(":", limit = 2)
+            val resolvedIdentifier = LEGACY_VIEW_ALIASES[viewIdentifier] ?: viewIdentifier
+            val parts = resolvedIdentifier.split(":", limit = 2)
             if (parts.size != 2) return false
-            
+
             val (category, name) = parts
             val viewInfo = views[category]?.get(name)
             
@@ -407,5 +408,17 @@ class PromptFxWorkspace : Workspace() {
 
     //endregion
 
-}
+    private companion object {
+        // Keep backward compatibility for last-active view identifiers persisted before naming cleanup.
+        val LEGACY_VIEW_ALIASES = mapOf(
+            "Fun:AI Conversations" to "Fun:AI Chatting with Itself",
+            "Fun:Ask about Weather" to "Fun:Weather",
+            "Fun:Wikipedia Q&A" to "Fun:Wikipedia",
+            "Fun:Text-to-Color" to "Fun:Colors",
+            "Multimodal:Images" to "Multimodal:Text-to-Image",
+            "Settings:About" to "Settings:About PromptFx",
+            "Sample Plugin:Hello World" to "Sample Plugin:Sample Plugin Demo",
+        )
+    }
 
+}

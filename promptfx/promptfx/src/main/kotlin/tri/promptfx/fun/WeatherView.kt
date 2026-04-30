@@ -27,7 +27,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.AudioPanel
 
 /** Plugin for the [WeatherView]. */
-class WeatherViewPlugin : NavigableWorkspaceViewImpl<WeatherView>("Fun", "Ask about Weather", type = WeatherView::class)
+class WeatherViewPlugin : NavigableWorkspaceViewImpl<WeatherView>("Fun", "Weather", type = WeatherView::class)
 
 /** View demonstrating integration of an external API and audio input. */
 class WeatherView : AiPlanTaskView("Weather", "Enter a natural language query for weather information.") {

@@ -27,7 +27,7 @@ import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
 
 /** Sample plugin demonstrating NavigableWorkspaceView implementation. */
-class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>("Sample Plugin", "Hello World", WorkspaceViewAffordance.INPUT_ONLY, SampleView::class)
+class SamplePlugin : NavigableWorkspaceViewImpl<SampleView>("Sample Plugin", "Sample Plugin Demo", WorkspaceViewAffordance.INPUT_ONLY, SampleView::class)
 
 /** Simple view demonstrating basic functionality. */
 class SampleView : View("Sample Plugin Demo") {
