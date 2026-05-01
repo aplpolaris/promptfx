@@ -132,6 +132,7 @@ module tri.promptfx {
             // 6 - agents
             AgenticPlugin,
             AgentChatPlugin,
+            ResearchPlugin,
 
             // 7 - settings
             AboutPlugin,
