@@ -25,7 +25,9 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Pos
+import javafx.scene.control.ButtonType
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.Tooltip
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.layout.Priority
@@ -40,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import tornadofx.*
+import tri.ai.research.InformationRequest
 import tri.ai.research.ResearchOrchestrator
 import tri.ai.research.ResearchSession
 import tri.ai.research.WrittenReport
@@ -48,6 +51,7 @@ import tri.promptfx.PromptFxModels
 import tri.util.ui.BlinkingIndicator
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.WorkspaceViewAffordance
+import java.awt.Desktop
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -302,9 +306,16 @@ class ResearchView : View("Research") {
                 isShowRoot = true
                 root.isExpanded = true
                 cellFormat { node ->
-                    text = node?.label ?: ""
-                    val tt = node?.tooltip
-                    if (!tt.isNullOrBlank()) tooltip(tt) else tooltip = null
+                    text = node.label
+                    val tt = node.tooltip
+                    tooltip = if (tt.isBlank()) {
+                        null
+                    } else {
+                        Tooltip(tt).apply {
+                            isWrapText = true
+                            prefWidth = 360.0
+                        }
+                    }
                 }
             }
         }
@@ -428,6 +439,7 @@ class ResearchView : View("Research") {
         canExport.set(false)
         isRunning.set(true)
 
+        val informationRequest = InformationRequest(request)
         val session = ResearchSession(request = request)
         currentSession.set(session)
         sessions.add(0, session)
@@ -436,7 +448,7 @@ class ResearchView : View("Research") {
         addProgress(ResearchStepType.USER_REQUEST, "Information Request", request)
 
         coroutineScope.launch(Dispatchers.IO) {
-            runResearchWorkflow(request)
+            runResearchWorkflow(informationRequest)
         }
     }
 
@@ -459,7 +471,7 @@ class ResearchView : View("Research") {
     }
 
     /** Runs the full multi-agent research workflow, pausing between each major stage. */
-    private suspend fun runResearchWorkflow(request: String) {
+    private suspend fun runResearchWorkflow(request: InformationRequest) {
         val chat = controller.chatEngine.value?.asTextChat()
             ?: run {
                 addProgress(ResearchStepType.ERROR, "Error", "No chat model configured. Please select a model.")
@@ -571,16 +583,43 @@ class ResearchView : View("Research") {
         }
         val file: File? = chooser.showSaveDialog(currentWindow)
         if (file != null) {
-            file.writeText(buildFinalReport(session.request, report))
+            file.writeText(buildFinalReport(report))
             addProgress(
                 ResearchStepType.AGENT_STEP, "Exported",
                 "Report saved to: ${file.absolutePath}"
             )
+            promptToOpenSavedReport(file)
+        }
+    }
+
+    /** Prompts the user to open a saved report in the system default application. */
+    private fun promptToOpenSavedReport(file: File) {
+        val dialog = confirmation(
+            "Report Saved",
+            "Report saved to:\n${file.absolutePath}\n\nOpen it now in your system default application?",
+            ButtonType.YES, ButtonType.NO
+        )
+        if (dialog.result == ButtonType.YES) {
+            openReportInSystem(file)
+        }
+    }
+
+    /** Opens the saved report in the system default application. */
+    private fun openReportInSystem(file: File) {
+        try {
+            when {
+                !file.exists() -> error("File Not Found", "Could not find saved report:\n${file.absolutePath}")
+                !Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN) ->
+                    error("Open Not Supported", "Opening files is not supported on this system.")
+                else -> Desktop.getDesktop().open(file)
+            }
+        } catch (e: Exception) {
+            error("Open Failed", "Failed to open saved report:\n${e.message ?: file.absolutePath}")
         }
     }
 
     /** Builds the final exported report – only the polished content, not intermediate artifacts. */
-    private fun buildFinalReport(request: String, report: WrittenReport): String = buildString {
+    private fun buildFinalReport(report: WrittenReport): String = buildString {
         appendLine(report.content)
         if (report.reviewNotes != null) {
             appendLine()

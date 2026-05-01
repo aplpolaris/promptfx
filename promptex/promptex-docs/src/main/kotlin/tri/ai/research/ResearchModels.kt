@@ -28,6 +28,7 @@ data class InformationRequest(
 
 /** Captures a research plan for a given information request. */
 data class ResearchPlan(
+    val description: String,
     val objectives: List<String>,
     val tasks: List<String>,
     val queries: List<String>,
@@ -41,8 +42,9 @@ data class ResearchPack(
 
 /** A single resource in a research pack. */
 data class ResearchResource(
-    val title: String
-    // TODO
+    val title: String,
+    val summary: String,
+    val userNotes: String
 )
 
 /** A written report produced by the writing agent. */

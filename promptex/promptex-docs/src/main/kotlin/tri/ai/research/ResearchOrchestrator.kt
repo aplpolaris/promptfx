@@ -33,7 +33,7 @@ import tri.ai.prompt.PromptLibrary
  * Each stage delegates to prompts in the built-in prompt library
  * (`research-report/` and `research-quality/` groups).
  */
-class ResearchOrchestrator(val chat: TextChat, val maxTokens: Int = 2000) {
+class ResearchOrchestrator(val chat: TextChat, val maxTokens: Int = 5000) {
 
     private val library = PromptLibrary.INSTANCE
 
@@ -41,45 +41,42 @@ class ResearchOrchestrator(val chat: TextChat, val maxTokens: Int = 2000) {
      * Stage 1 – Planner Agent.
      * Analyzes the [request] and returns a detailed, actionable research plan as plain text.
      */
-    suspend fun generatePlan(request: String): String =
-        executePrompt("research-report/planner", "request" to request)
+    suspend fun generatePlan(request: InformationRequest): String =
+        executePrompt("research-report/planner", "request" to request.request)
 
     /**
      * Stage 2 – Research Agent (two-tier).
-     * First tier: generates research questions for [topic].
+     * First tier: generates research questions for [request].
      * Second tier: identifies the best data sources and search queries for the topic.
      * The combined output forms the research pack for the writing agent.
      */
-    suspend fun conductResearch(topic: String, plan: String): String {
-        val questions = executePrompt("research-report/questions", "topic" to topic)
-        val sources = executePrompt("research-report/sources", "topic" to topic, "plan" to plan)
+    suspend fun conductResearch(request: InformationRequest, plan: String): String {
+        val questions = executePrompt("research-report/questions", "topic" to request.request)
+        val sources = executePrompt("research-report/sources", "topic" to request.request, "plan" to plan)
         return buildString {
             appendLine("=== Research Questions ===")
             appendLine(questions)
             appendLine()
             appendLine("=== Recommended Data Sources and Search Strategy ===")
             appendLine(sources)
-            appendLine()
-            appendLine("=== Research Plan Summary ===")
-            appendLine(plan)
         }
     }
 
     /**
      * Stage 3a – Writing Agent (outline step).
-     * Generates a structured report outline for [topic].
+     * Generates a structured report outline for [request].
      */
-    suspend fun generateOutline(topic: String): String =
-        executePrompt("research-report/outline", "topic" to topic)
+    suspend fun generateOutline(request: InformationRequest): String =
+        executePrompt("research-report/outline", "topic" to request.request)
 
     /**
      * Stage 3b – Writing Agent (draft step).
-     * Combines [research] findings and [outline] to produce a full draft report for [topic].
+     * Combines [research] findings and [outline] to produce a full draft report for [request].
      */
-    suspend fun writeDraft(topic: String, research: String, outline: String): String =
+    suspend fun writeDraft(request: InformationRequest, research: String, outline: String): String =
         executePrompt(
             "research-report/draft",
-            "topic" to topic,
+            "topic" to request.request,
             "research" to research,
             "outline" to outline
         )
@@ -100,6 +97,6 @@ class ResearchOrchestrator(val chat: TextChat, val maxTokens: Int = 2000) {
             .params(*params)
             .tokens(maxTokens)
             .execute(chat)
-            .firstValue.textContent() ?: ""
+            .firstValue.textContent()
     }
 }
