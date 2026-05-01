@@ -127,18 +127,7 @@ class OpenAiResponsesChat(
                 contentParts.size == 1 && contentParts[0].partType == MPartType.TEXT ->
                     JsonPrimitive(contentParts[0].text ?: "")
                 else -> buildJsonArray {
-                    contentParts.forEach { part ->
-                        when {
-                            part.text != null -> add(buildJsonObject {
-                                put("type", "input_text")
-                                put("text", part.text)
-                            })
-                            part.inlineData != null -> add(buildJsonObject {
-                                put("type", "input_image")
-                                put("image_url", imageUrlJsonElement(part.inlineData!!))
-                            })
-                        }
-                    }
+                    contentParts.forEach { part -> add(part.toContentPartJson()) }
                 }
             }
             return ResponseInputItem(
@@ -158,20 +147,34 @@ class OpenAiResponsesChat(
                 contentParts.size == 1 && contentParts[0].partType == MPartType.TEXT ->
                     put("content", contentParts[0].text ?: "")
                 else -> putJsonArray("content") {
-                    contentParts.forEach { part ->
-                        when {
-                            part.text != null -> add(buildJsonObject {
-                                put("type", "input_text")
-                                put("text", part.text)
-                            })
-                            part.inlineData != null -> add(buildJsonObject {
-                                put("type", "input_image")
-                                put("image_url", imageUrlJsonElement(part.inlineData!!))
-                            })
-                        }
-                    }
+                    contentParts.forEach { part -> add(part.toContentPartJson()) }
                 }
             }
+        }
+
+        /** Convert a single [MChatMessagePart] to a JSON content-part object for the Responses API. */
+        private fun MChatMessagePart.toContentPartJson(): JsonObject = when {
+            text != null -> buildJsonObject {
+                put("type", "input_text")
+                put("text", text)
+            }
+            partType == MPartType.AUDIO && inlineData != null -> buildJsonObject {
+                put("type", "input_audio")
+                put("input_audio", audioDataJsonElement(inlineData!!))
+            }
+            inlineData != null -> buildJsonObject {
+                put("type", "input_image")
+                put("image_url", imageUrlJsonElement(inlineData!!))
+            }
+            else -> buildJsonObject { put("type", "input_text"); put("text", "") }
+        }
+
+        /** Build the `input_audio` JSON object from a base64 audio data URI. */
+        private fun audioDataJsonElement(inlineData: String): JsonObject = buildJsonObject {
+            val base64 = inlineData.substringAfter(";base64,", inlineData)
+            val format = inlineData.substringBefore(";base64,").substringAfter("data:audio/").substringBefore(";").ifBlank { "wav" }
+            put("data", base64)
+            put("format", format)
         }
 
         /**

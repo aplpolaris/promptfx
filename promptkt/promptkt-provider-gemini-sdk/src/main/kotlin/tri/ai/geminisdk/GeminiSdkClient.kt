@@ -88,6 +88,7 @@ class GeminiSdkClient : Closeable {
     private fun MChatMessagePart.toGeminiPart(): Part = when (partType) {
         MPartType.TEXT -> Part.fromText(text)
         MPartType.IMAGE -> parseDataUrlToPart(inlineData!!)
+        MPartType.AUDIO -> parseDataUrlToPart(inlineData!!)
         MPartType.TOOL_CALL -> Part.fromFunctionCall(functionName, functionArgs)
         MPartType.TOOL_RESPONSE -> Part.fromFunctionResponse(functionName, functionArgs)
     }

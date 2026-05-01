@@ -43,8 +43,13 @@ import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.DefaultAgentChat
 import tri.ai.core.agent.api.DefaultAgentChatSessionManager
 import tri.ai.pips.ExecEvent
+import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.PromptFxModels
+import tri.promptfx.audioMimeType
 import tri.promptfx.hasImageFile
+import tri.promptfx.api.transcribeButton
+import tri.promptfx.toApiAudioString
+import tri.util.ui.AudioRecorder
 import tri.util.ui.BlinkingIndicator
 import tri.util.ui.NavigableWorkspaceViewImpl
 import tri.util.ui.imageUri
@@ -82,9 +87,11 @@ class AgentChatView : View("Agent Chat") {
     private val chatMessages = observableListOf<AgentMessageEntry>()
     private val inputText = SimpleStringProperty("")
     private val inputImage = SimpleObjectProperty<URI?>(null)
+    private val inputAudio = SimpleObjectProperty<URI?>(null)
     private val isThinking = SimpleBooleanProperty(false)
 
     private var thinkingEntry: AgentMessageEntry? = null
+    private var audioRecorder: AudioRecorder? = null
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private lateinit var sessionListView: ListView<AgentChatSession>
@@ -197,6 +204,14 @@ class AgentChatView : View("Agent Chat") {
                     imageview(Image(entry.imageUri.toString())) {
                         fitWidth = 200.0
                         isPreserveRatio = true
+                    }
+                }
+                if (entry.audioUri != null) {
+                    hbox(4.0, Pos.CENTER_LEFT) {
+                        label("") { graphic = FontAwesomeIconView(FontAwesomeIcon.MICROPHONE) }
+                        label("Audio: ${entry.audioUri.toString().substringAfterLast("/").substringAfterLast("\\").ifBlank { "audio" }}") {
+                            style { textFill = Color.web("#555"); fontSize = 11.px; fontStyle = FontPosture.ITALIC }
+                        }
                     }
                 }
                 label {
@@ -314,12 +329,45 @@ class AgentChatView : View("Agent Chat") {
             }
         }
 
+        // Audio preview row (only visible when an audio file is attached)
+        hbox(8.0, Pos.CENTER_LEFT) {
+            managedWhen(inputAudio.isNotNull)
+            visibleWhen(inputAudio.isNotNull)
+            label("", FontAwesomeIconView(FontAwesomeIcon.MICROPHONE))
+            label {
+                textProperty().bind(inputAudio.stringBinding { it?.toString()?.substringAfterLast("/")?.substringAfterLast("\\")?.ifBlank { "audio" }?.let { "Audio: $it" } ?: "" })
+                style { fontWeight = FontWeight.BOLD }
+            }
+            transcribeButton(
+                audioUri = { inputAudio.value },
+                isWorking = isThinking,
+                onTranscript = { transcript ->
+                    inputText.set(
+                        listOf(inputText.value.orEmpty(), transcript.trim())
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n")
+                    )
+                },
+                onError = { message -> error("Transcription Error", message) }
+            )
+            button("", FontAwesomeIconView(FontAwesomeIcon.TIMES_CIRCLE)) {
+                tooltip("Remove audio")
+                action { inputAudio.set(null) }
+            }
+        }
+
         // Message input row
         hbox(6.0, Pos.CENTER) {
             // Attach image button
             button("", FontAwesomeIconView(FontAwesomeIcon.PAPERCLIP)) {
                 tooltip("Attach image (or drag-and-drop an image onto the text area)")
                 action { attachImage() }
+            }
+
+            // Record / attach audio button
+            val recordBtn = button("", FontAwesomeIconView(FontAwesomeIcon.MICROPHONE)) {
+                tooltip("Record audio (click to start/stop) or drag-and-drop an audio file onto the text area")
+                action { toggleAudioRecording(this) }
             }
 
             // Message text area
@@ -336,18 +384,20 @@ class AgentChatView : View("Agent Chat") {
                     }
                 }
 
-                // Drag-and-drop image support
+                // Drag-and-drop image or audio support
                 setOnDragOver { event ->
-                    if (event.dragboard.hasImage() || event.dragboard.hasImageFile()) {
+                    if (event.dragboard.hasImage() || event.dragboard.hasImageFile() ||
+                        (event.dragboard.hasFiles() && event.dragboard.files.firstOrNull()?.extension?.lowercase() in AUDIO_EXTENSIONS)) {
                         event.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
                     }
                     event.consume()
                 }
                 setOnDragDropped { event ->
-                    if (event.dragboard.hasImage()) {
-                        inputImage.set(URI.create(event.dragboard.image.imageUri()))
-                    } else if (event.dragboard.hasImageFile()) {
-                        inputImage.set(event.dragboard.files.first().toURI())
+                    val audioFile = event.dragboard.files.firstOrNull()?.takeIf { it.extension.lowercase() in AUDIO_EXTENSIONS }
+                    when {
+                        audioFile != null -> inputAudio.set(audioFile.toURI())
+                        event.dragboard.hasImage() -> inputImage.set(URI.create(event.dragboard.image.imageUri()))
+                        event.dragboard.hasImageFile() -> inputImage.set(event.dragboard.files.first().toURI())
                     }
                     event.isDropCompleted = true
                     event.consume()
@@ -356,7 +406,7 @@ class AgentChatView : View("Agent Chat") {
 
             // Send button
             button("", FontAwesomeIconView(FontAwesomeIcon.PAPER_PLANE)) {
-                disableWhen(inputText.isBlank().and(inputImage.isNull).or(isThinking))
+                disableWhen(inputText.isBlank().and(inputImage.isNull).and(inputAudio.isNull).or(isThinking))
                 tooltip("Send message (or press Enter in the text area)")
                 action { sendMessage() }
             }
@@ -392,7 +442,9 @@ class AgentChatView : View("Agent Chat") {
             val author = msg.role.name.lowercase().replaceFirstChar { it.uppercase() }
             val imageUri = msg.content?.firstOrNull { it.partType == MPartType.IMAGE }?.inlineData
                 ?.let { runCatching { URI.create(it) }.getOrNull() }
-            chatMessages.add(AgentMessageEntry(type, author, text, imageUri))
+            val audioUri = msg.content?.firstOrNull { it.partType == MPartType.AUDIO }?.inlineData
+                ?.let { runCatching { URI.create(it) }.getOrNull() }
+            chatMessages.add(AgentMessageEntry(type, author, text, imageUri, audioUri))
         }
         thinkingEntry = null
         isThinking.set(false)
@@ -423,27 +475,31 @@ class AgentChatView : View("Agent Chat") {
     private fun sendMessage() {
         val text = inputText.value?.trim() ?: ""
         val img = inputImage.value
-        if (text.isBlank() && img == null) return
+        val aud = inputAudio.value
+        if (text.isBlank() && img == null && aud == null) return
 
         val session = currentSession.value ?: return
         inputText.set("")
         inputImage.set(null)
+        inputAudio.set(null)
 
         // Convert file: URIs to base64 data URIs — the API cannot download local files
         val imageData = img?.toApiImageString()
+        val audioData = aud?.toApiAudioString()
 
         // Build the multimodal message
-        val message = if (imageData != null) {
+        val message = if (imageData != null || audioData != null) {
             chatMessage(MChatRole.User) {
                 if (text.isNotBlank()) text(text)
-                image(imageData)
+                if (imageData != null) image(imageData)
+                if (audioData != null) audio(audioData)
             }
         } else {
             MultimodalChatMessage.user(text)
         }
 
         // Show user message in UI
-        chatMessages.add(AgentMessageEntry(MessageType.USER, "You", text, img))
+        chatMessages.add(AgentMessageEntry(MessageType.USER, "You", text, img, aud))
         startThinking()
 
         // Send via agent chat in background
@@ -569,6 +625,31 @@ class AgentChatView : View("Agent Chat") {
 
     //endregion
 
+    //region AUDIO ATTACHMENT
+
+    private fun toggleAudioRecording(btn: javafx.scene.control.Button) {
+        val recorder = audioRecorder
+        if (recorder != null) {
+            // Stop recording
+            recorder.finish()
+            recorder.cancel()
+            inputAudio.set(recorder.tempFile.toURI())
+            audioRecorder = null
+            btn.graphic = FontAwesomeIconView(FontAwesomeIcon.MICROPHONE)
+            btn.tooltip("Record audio (click to start/stop) or drag-and-drop an audio file onto the text area")
+        } else {
+            // Start recording
+            audioRecorder = AudioRecorder().apply {
+                val thread = Thread(this)
+                thread.start()
+            }
+            btn.graphic = FontAwesomeIconView(FontAwesomeIcon.STOP)
+            btn.tooltip("Recording... click to stop")
+        }
+    }
+
+    //endregion
+
     //region SETTINGS DIALOG
 
     private fun openSettingsDialog() {
@@ -594,6 +675,8 @@ class AgentChatView : View("Agent Chat") {
     }
 
     override fun onUndock() {
+        audioRecorder?.let { it.finish(); it.cancel() }
+        audioRecorder = null
         coroutineScope.cancel()
     }
 
@@ -736,7 +819,8 @@ class AgentMessageEntry(
     val type: MessageType,
     val author: String,
     text: String = "",
-    val imageUri: URI? = null
+    val imageUri: URI? = null,
+    val audioUri: URI? = null
 ) {
     /** Mutable text property so streaming and thinking-text updates are reflected in the UI. */
     val textProperty = SimpleStringProperty(text)

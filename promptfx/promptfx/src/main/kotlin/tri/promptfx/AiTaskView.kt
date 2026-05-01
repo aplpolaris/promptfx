@@ -48,6 +48,7 @@ import tri.promptfx.ui.checkError
 import tri.util.ui.graphic
 import java.io.File
 import java.lang.Exception
+import java.net.URI
 
 /**
  * A view that executes a task and displays the result. Provides placeholders for input, output, and parameters.
@@ -410,6 +411,37 @@ abstract class AiTaskView(title: String, val instruction: String, val showInput:
 /** Check if clipboard has an image. */
 fun Clipboard.hasImageFile() =
     files.isNotEmpty() && files.first().extension.lowercase() in listOf("png", "jpg", "jpeg")
+
+/** Supported audio file extensions for drag-and-drop and file chooser. */
+val AUDIO_EXTENSIONS = listOf("mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm", "ogg")
+
+/** Maps an audio file extension (lowercase) to its MIME type. */
+fun audioMimeType(ext: String) = when (ext) {
+    "mp3", "mpeg", "mpga" -> "audio/mpeg"
+    "mp4" -> "audio/mp4"
+    "m4a" -> "audio/mp4"
+    "webm" -> "audio/webm"
+    "ogg" -> "audio/ogg"
+    else -> "audio/wav"
+}
+
+/** Check if clipboard has an audio file. */
+fun Clipboard.hasAudioFile() =
+    files.isNotEmpty() && files.first().extension.lowercase() in AUDIO_EXTENSIONS
+
+/**
+ * Converts a URI to a base64 `data:` URI suitable for the chat API audio field.
+ * Local [file:] URIs are read from disk and encoded; `data:` URIs are returned unchanged.
+ */
+fun URI.toApiAudioString(): String {
+    if (scheme == "file") {
+        val file = File(this)
+        val mimeType = audioMimeType(file.extension.lowercase())
+        val base64 = java.util.Base64.getEncoder().encodeToString(file.readBytes())
+        return "data:$mimeType;base64,$base64"
+    }
+    return toString()
+}
 
 /** Check if clipboard has an image file path. */
 fun Clipboard.hasImageFilePath() =

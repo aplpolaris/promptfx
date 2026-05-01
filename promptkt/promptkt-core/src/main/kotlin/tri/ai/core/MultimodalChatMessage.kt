@@ -44,6 +44,8 @@ data class MultimodalChatMessage(
         fun imageUrl(role: MChatRole = MChatRole.Assistant, imageUrl: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(MPartType.IMAGE, inlineData = imageUrl)))
         /** Chat message with just an image (base 64). */
         fun imageBase64(role: MChatRole = MChatRole.Assistant, imageBase64: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(MPartType.IMAGE, inlineData = imageBase64)))
+        /** Chat message with just audio (base 64 data URI). */
+        fun audio(role: MChatRole = MChatRole.User, audioDataUri: String) = MultimodalChatMessage(role, listOf(MChatMessagePart(MPartType.AUDIO, inlineData = audioDataUri)))
         /** Chat message with a tool result. */
         fun tool(result: String, toolId: String) = MultimodalChatMessage(
             MChatRole.Tool,
@@ -91,6 +93,9 @@ class MChatMessageBuilder {
     }
     fun image(imageUrl: String) {
         content += MChatMessagePart(MPartType.IMAGE, inlineData = imageUrl)
+    }
+    fun audio(audioDataUri: String) {
+        content += MChatMessagePart(MPartType.AUDIO, inlineData = audioDataUri)
     }
     fun content(vararg parts: MChatMessagePart) {
         content += parts.toList()

@@ -33,7 +33,9 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.Priority
 import tornadofx.*
 import tri.ai.core.*
+import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.hasImageFile
+import tri.promptfx.toApiAudioString
 import tri.util.ui.graphic
 import tri.util.ui.imageUri
 import java.io.FileInputStream
@@ -78,6 +80,8 @@ class ChatHistoryView(roles: List<MChatRole> = listOf(MChatRole.Assistant, MChat
                 image(it.contentImage.toString())
                 // TODO - add detailImageProperty to API (used in OpenAI)
                 // it.detailImageProperty.value.let { if (it == "auto") null else it })
+            if (it.contentAudio != null)
+                audio(it.contentAudio!!.toApiAudioString())
             toolCalls(it.toolCalls ?: listOf())
             toolCallId(it.toolCallId)
         }
@@ -108,6 +112,31 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
                 button("", FontAwesomeIcon.MINUS_SQUARE.graphic) {
                     action {
                         chat.contentImageProperty.set(null)
+                    }
+                }
+            }
+            hbox(5.0, Pos.CENTER_LEFT) {
+                managedWhen(chat.contentAudioProperty.isNotNull)
+                visibleWhen(chat.contentAudioProperty.isNotNull)
+                padding = insets(5.0, 2.0)
+                label("", FontAwesomeIconView(FontAwesomeIcon.MICROPHONE))
+                label {
+                    textProperty().bind(chat.contentAudioProperty.stringBinding { it?.toString()?.substringAfterLast("/")?.substringAfterLast("\\")?.ifBlank { "audio" } ?: "" })
+                }
+                transcribeButton(
+                    audioUri = { chat.contentAudio },
+                    onTranscript = { transcript ->
+                        chat.contentTextProperty.set(
+                            listOf(chat.contentTextProperty.value.orEmpty(), transcript.trim())
+                                .filter { it.isNotBlank() }
+                                .joinToString("\n")
+                        )
+                    },
+                    onError = { message -> error("Transcription Error", message) }
+                )
+                button("", FontAwesomeIcon.MINUS_SQUARE.graphic) {
+                    action {
+                        chat.contentAudioProperty.set(null)
                     }
                 }
             }
@@ -167,19 +196,21 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
             }
             imagethumbnail(chat.contentImageProperty)
             setOnDragOver {
-                if (it.dragboard.hasImage() || it.dragboard.hasImageFile()) {
+                val audioFile = it.dragboard.files.firstOrNull()?.takeIf { f -> f.extension.lowercase() in AUDIO_EXTENSIONS }
+                if (it.dragboard.hasImage() || it.dragboard.hasImageFile() || audioFile != null) {
                     it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
                 }
                 it.consume()
             }
-            setOnDragDropped { it
-                if (it.dragboard.hasImage()) {
-                    chat.contentImageProperty.set(URI.create(it.dragboard.image.imageUri()))
-                } else if (it.dragboard.hasImageFile()) {
-                    chat.contentImageProperty.set(URI.create(Image(FileInputStream(it.dragboard.files.first())).imageUri()))
+            setOnDragDropped { ev ->
+                val audioFile = ev.dragboard.files.firstOrNull()?.takeIf { f -> f.extension.lowercase() in AUDIO_EXTENSIONS }
+                when {
+                    audioFile != null -> chat.contentAudioProperty.set(audioFile.toURI())
+                    ev.dragboard.hasImage() -> chat.contentImageProperty.set(URI.create(ev.dragboard.image.imageUri()))
+                    ev.dragboard.hasImageFile() -> chat.contentImageProperty.set(URI.create(Image(FileInputStream(ev.dragboard.files.first())).imageUri()))
                 }
-                it.isDropCompleted = true
-                it.consume()
+                ev.isDropCompleted = true
+                ev.consume()
             }
         }
     }
@@ -213,6 +244,7 @@ class ChatMessageUiModel(
     role: MChatRole = MChatRole.User,
     contentText: String = "",
     contentImage: URI? = null,
+    contentAudio: URI? = null,
     name: String? = null,
     _toolCalls: List<MToolCall>? = null,
     _toolCallId: String? = null
@@ -226,6 +258,9 @@ class ChatMessageUiModel(
     val contentImageProperty = SimpleObjectProperty<URI>(contentImage)
     var contentImage: URI? by contentImageProperty
     val detailImageProperty = SimpleStringProperty("auto")
+
+    val contentAudioProperty = SimpleObjectProperty<URI>(contentAudio)
+    var contentAudio: URI? by contentAudioProperty
 
     val nameProperty = SimpleStringProperty(name)
     var name: String? by nameProperty
@@ -247,6 +282,7 @@ class ChatMessageUiModel(
         roleProperty.set(other.role)
         contentTextProperty.set(other.contentText)
         contentImageProperty.set(other.contentImage)
+        contentAudioProperty.set(other.contentAudio)
         nameProperty.set(other.name)
         toolCallsNameProperty.set(other.toolCallsNameProperty.value)
         toolCallsArgsProperty.set(other.toolCallsArgsProperty.value)
@@ -262,6 +298,7 @@ class ChatMessageUiModel(
                 role = it.role,
                 contentText = it.content?.firstOrNull()?.text ?: "",
                 contentImage = it.imageUri(),
+                contentAudio = it.audioUri(),
                 _toolCalls = it.toolCalls,
                 _toolCallId = it.toolCallId
             )
@@ -275,5 +312,9 @@ class ChatMessageUiModel(
         /** Find first image content in a message, if present. */
         fun MultimodalChatMessage.imageUri(): URI? =
             content?.firstOrNull { it.partType == MPartType.IMAGE }?.let { URI.create(it.inlineData) }
+
+        /** Find first audio content in a message, if present. */
+        fun MultimodalChatMessage.audioUri(): URI? =
+            content?.firstOrNull { it.partType == MPartType.AUDIO }?.let { URI.create(it.inlineData) }
     }
 }
