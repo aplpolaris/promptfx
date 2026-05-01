@@ -208,3 +208,36 @@ prompts:
       3. **Revised Version**: A complete rewrite of the section incorporating your suggestions
       
       Review and Editing Recommendations:
+
+  - id: research-report/sources@1.0.0
+    title: Identify Research Data Sources
+    description: Identify the most relevant data sources and optimized search queries for a research topic
+    args:
+      - name: topic
+        description: The research topic to find sources for
+        required: true
+        type: string
+      - name: plan
+        description: The research plan with objectives and key questions (optional)
+        required: false
+        type: string
+    template: |
+      Identify the most relevant data sources and search strategies for the following research topic{{#plan}}, informed by the provided research plan{{/plan}}.
+
+      Topic: {{{topic}}}
+
+      {{#plan}}Research Plan Summary:
+      ```
+      {{{plan}}}
+      ```
+
+      {{/plan}}Please provide:
+      1. **Primary Sources**: 5 to 8 of the most authoritative and relevant source types or specific outlets (websites, academic databases, government agencies, industry bodies) for this topic, with a brief explanation of why each is relevant
+      2. **Optimized Search Queries**: 6 to 10 ready-to-use search queries, including Boolean operators and advanced syntax where appropriate (e.g., site:, filetype:, intitle:)
+      3. **Key Search Terms**: Essential keywords, synonyms, related terminology, and jargon to include or exclude
+      4. **Source Quality Criteria**: 3 to 5 specific criteria to apply when evaluating credibility and relevance for this particular topic
+      5. **Research Strategy**: A concise step-by-step approach for systematically gathering and organizing information
+
+      Be specific and actionable so a researcher can immediately begin collecting high-quality information.
+
+      Data Sources and Research Strategy:

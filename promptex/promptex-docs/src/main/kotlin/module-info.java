@@ -35,6 +35,7 @@ module tri.promptkt.docs {
 
     exports tri.ai.embedding;
     exports tri.ai.process.pdf;
+    exports tri.ai.research;
     exports tri.ai.text.chunks;
     exports tri.ai.text.docs;
     exports tri.util.io;
