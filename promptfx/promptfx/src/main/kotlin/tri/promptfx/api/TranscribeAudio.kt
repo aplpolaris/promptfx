@@ -21,6 +21,8 @@ package tri.promptfx.api
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.event.EventTarget
 import javafx.geometry.Pos
@@ -40,6 +42,7 @@ object TranscribePreferences {
     private const val KEY_MODEL_ID = "stt.model.id"
 
     private var _modelId: String? = null
+    var isTranscribeModelSelected: Boolean = false
 
     /** The last-used speech-to-text model ID, loaded lazily from disk. */
     var modelId: String?
@@ -119,6 +122,7 @@ class TranscribeModelChooser : Fragment("Choose Speech-to-Text Model") {
                 action {
                     result = selected.value
                     TranscribePreferences.modelId = result?.modelId
+                    TranscribePreferences.isTranscribeModelSelected = result != null
                     close()
                 }
             }
@@ -133,7 +137,7 @@ class TranscribeModelChooser : Fragment("Choose Speech-to-Text Model") {
 /**
  * Adds a "Transcribe" button that:
  * - Is only enabled when [audioUri] is non-null
- * - Picks or prompts for a STT model on the first click
+ * - Picks or prompts for STT model on the first click
  * - Calls [onTranscript] with the transcribed text on success, or [onError] on failure
  */
 fun EventTarget.transcribeButton(
@@ -143,7 +147,13 @@ fun EventTarget.transcribeButton(
     onError: (String) -> Unit
 ): Button = button("", FontAwesomeIconView(FontAwesomeIcon.FONT)) {
     tooltip("Transcribe audio to text")
-    if (isWorking != null) disableWhen(isWorking)
+    val isTranscribing = SimpleBooleanProperty(false)
+    if (isWorking != null) {
+        val externalBusy = Bindings.createBooleanBinding({ isWorking.value == true }, isWorking)
+        disableProperty().bind(Bindings.or(isTranscribing, externalBusy))
+    } else {
+        disableWhen(isTranscribing)
+    }
     action {
         val uri = audioUri() ?: return@action
         val model = resolveOrChooseSttModel() ?: return@action
@@ -152,12 +162,12 @@ fun EventTarget.transcribeButton(
             onError("Cannot transcribe: audio must be a local file.")
             return@action
         }
-        isDisable = true
+        isTranscribing.set(true)
         // Run transcription in a background thread
         runAsync {
             runCatching { kotlinx.coroutines.runBlocking { model.transcribe(audioFile) } }
         } ui { res ->
-            isDisable = false
+            isTranscribing.set(false)
             val tr = res.getOrElse { onError(it.message ?: "Unknown error"); return@ui }
             val text = tr.values?.firstOrNull()?.textContent()
             if (text.isNullOrBlank()) onError("Transcription returned empty text.")
@@ -168,9 +178,10 @@ fun EventTarget.transcribeButton(
 
 /** Resolve the STT model from preferences or show chooser dialog; returns null if user cancels or no models are available. */
 private fun resolveOrChooseSttModel(): SpeechToTextModel? {
-    val existing = TranscribePreferences.resolvedModel()
-    if (existing != null) return existing
-    // No model stored or previously stored model is gone — show chooser
+    if (TranscribePreferences.isTranscribeModelSelected) {
+        return TranscribePreferences.resolvedModel()
+    }
+    // Always prompt until a model is selected in the current app run.
     val chooser = find<TranscribeModelChooser>()
     chooser.openModal(block = true)
     return chooser.result

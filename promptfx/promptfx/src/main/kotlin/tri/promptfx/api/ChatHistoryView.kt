@@ -123,6 +123,17 @@ class ChatHistoryItem(val chat: ChatMessageUiModel, roles: List<MChatRole>, remo
                 label {
                     textProperty().bind(chat.contentAudioProperty.stringBinding { it?.toString()?.substringAfterLast("/")?.substringAfterLast("\\")?.ifBlank { "audio" } ?: "" })
                 }
+                transcribeButton(
+                    audioUri = { chat.contentAudio },
+                    onTranscript = { transcript ->
+                        chat.contentTextProperty.set(
+                            listOf(chat.contentTextProperty.value.orEmpty(), transcript.trim())
+                                .filter { it.isNotBlank() }
+                                .joinToString("\n")
+                        )
+                    },
+                    onError = { message -> error("Transcription Error", message) }
+                )
                 button("", FontAwesomeIcon.MINUS_SQUARE.graphic) {
                     action {
                         chat.contentAudioProperty.set(null)

@@ -47,6 +47,7 @@ import tri.promptfx.AUDIO_EXTENSIONS
 import tri.promptfx.PromptFxModels
 import tri.promptfx.audioMimeType
 import tri.promptfx.hasImageFile
+import tri.promptfx.api.transcribeButton
 import tri.promptfx.toApiAudioString
 import tri.util.ui.AudioRecorder
 import tri.util.ui.BlinkingIndicator
@@ -337,6 +338,18 @@ class AgentChatView : View("Agent Chat") {
                 textProperty().bind(inputAudio.stringBinding { it?.toString()?.substringAfterLast("/")?.substringAfterLast("\\")?.ifBlank { "audio" }?.let { "Audio: $it" } ?: "" })
                 style { fontWeight = FontWeight.BOLD }
             }
+            transcribeButton(
+                audioUri = { inputAudio.value },
+                isWorking = isThinking,
+                onTranscript = { transcript ->
+                    inputText.set(
+                        listOf(inputText.value.orEmpty(), transcript.trim())
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n")
+                    )
+                },
+                onError = { message -> error("Transcription Error", message) }
+            )
             button("", FontAwesomeIconView(FontAwesomeIcon.TIMES_CIRCLE)) {
                 tooltip("Remove audio")
                 action { inputAudio.set(null) }
