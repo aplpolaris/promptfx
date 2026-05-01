@@ -102,6 +102,15 @@ Developer and user documentation lives in [`docs/wiki/`](docs/wiki/), covering m
 and configuration. The online mirror is at https://github.com/aplpolaris/promptfx/wiki — prefer the local copy
 as it may be more up to date.
 
+## Architecture Docs
+
+| Module | Doc |
+|--------|-----|
+| `promptkt` | [`docs/design/PROMPTKT_ARCHITECTURE.md`](docs/design/PROMPTKT_ARCHITECTURE.md) — model interfaces, provider plugin pattern, result/trace types |
+| `promptex` | [`docs/design/PROMPTEX_ARCHITECTURE.md`](docs/design/PROMPTEX_ARCHITECTURE.md) — task pipeline, RAG/embedding stack, MCP |
+| `promptrt` | [`docs/design/PROMPTRT_ARCHITECTURE.md`](docs/design/PROMPTRT_ARCHITECTURE.md) — CLI entry points, memory service |
+| `promptfx` | [`docs/design/PROMPTFX_ARCHITECTURE.md`](docs/design/PROMPTFX_ARCHITECTURE.md) — how the UI layer consumes the library |
+
 ## UI Style Guide
 
 See [`docs/design/JAVAFX_STYLE_GUIDE.md`](docs/design/JAVAFX_STYLE_GUIDE.md) for JavaFX/TornadoFX coding conventions,
