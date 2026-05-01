@@ -64,6 +64,32 @@ class OpenAiModelInfoComparisonTest {
 
         /** Regex matching dated snapshot model IDs, e.g. `gpt4o-1120` or `gpt4-06-13` or `gpt5-preview` or `gpt5-latest`. */
         private val SNAPSHOT_MODEL_REGEX = Regex(".*-(\\d{4}|\\d{2}-\\d{2}|preview)$")
+
+        /** Exact model ids to ignore from API/index delta checks. */
+        private val IGNORED_MODEL_IDS = setOf(
+            "gpt-3.5-turbo-16k",
+            // Models seen in API listings that currently do not respond to completion/chat/responses probes.
+            "chatgpt-image-latest",
+            "gpt-4o-transcribe-diarize",
+            "gpt-5.2-chat-latest",
+            "gpt-5.1-chat-latest",
+            "gpt-5-chat-latest",
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-mini",
+            "gpt-image-2",
+            "gpt-realtime",
+            "gpt-realtime-1.5",
+            "gpt-realtime-mini",
+            "o4-mini-deep-research",
+            "sora-2",
+            "sora-2-pro"
+        )
+
+        /** Suffix-based ids to ignore (e.g. wildcard requests like *-latest, *-search-api). */
+        private val IGNORED_MODEL_SUFFIX_REGEX = listOf(
+            Regex(".*-search-api$")
+        )
     }
 
     //region DATA CLASSES
@@ -122,9 +148,9 @@ class OpenAiModelInfoComparisonTest {
             val apiModelIds = res.map { it.id.id }.toSet()
             val indexIds = OpenAiModelIndex.modelInfoIndex.values.map { it.id }.toSet()
 
-            // Models from the API not in the local index, excluding snapshot/dated variants
+            // Models from the API not in the local index, excluding ignored/snapshot variants.
             val newModelIds = (apiModelIds - indexIds)
-                .filter { !it.isSnapshotModel() }
+                .filter { !it.isIgnoredModelId() }
                 .sorted()
 
             println("=".repeat(80))
@@ -134,16 +160,22 @@ class OpenAiModelInfoComparisonTest {
             if (newModelIds.isEmpty()) {
                 println("No new models found.")
             } else {
+                val reportable = mutableListOf<Pair<String, ModelType>>()
                 newModelIds.forEach { modelId ->
                     val detected = detectModelCard(modelId)
-                    val recommended = recommendTypeFromDetected(detected)
+                    val recommended = recommendTypeFromDetected(detected) ?: return@forEach
+                    reportable += modelId to recommended
                     println()
                     println("Model: $modelId")
                     println("  Detected:         $detected")
-                    println("  Suggested type:   ${recommended ?: "(unknown — no API responded)"}")
+                    println("  Suggested type:   $recommended")
                 }
                 println()
-                println("Recommendation: add these ${newModelIds.size} model(s) to openai-models.yaml.")
+                if (reportable.isEmpty()) {
+                    println("No new reportable models found after ignore/no-response filtering.")
+                } else {
+                    println("Recommendation: add these ${reportable.size} model(s) to openai-models.yaml.")
+                }
             }
             println("=".repeat(80))
         }
@@ -253,7 +285,11 @@ class OpenAiModelInfoComparisonTest {
      * Returns true if this model id looks like a dated snapshot (e.g. `gpt-4o-2024-11-20`
      * or `gpt-4-0613`), i.e. ends with a suffix matching `-YYYY`, `-YYYY-MM`, or `-YYYY-MM-DD`.
      */
-    private fun String.isSnapshotModel() = matches(SNAPSHOT_MODEL_REGEX)
+    private fun String.isIgnoredModelId(): Boolean {
+        if (this in IGNORED_MODEL_IDS) return true
+        if (matches(SNAPSHOT_MODEL_REGEX)) return true
+        return IGNORED_MODEL_SUFFIX_REGEX.any { it.matches(this) }
+    }
 
     //endregion
 

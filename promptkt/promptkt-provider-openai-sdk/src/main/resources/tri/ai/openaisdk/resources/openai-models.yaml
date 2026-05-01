@@ -7,14 +7,58 @@ completion: [ gpt-3.5-turbo-instruct, davinci-002, babbage-002 ]
 embeddings: [ text-embedding-ada-002, text-embedding-3-large, text-embedding-3-small ]
 image_generator: [ gpt-image-1.5, gpt-image-1, gpt-image-1-mini, dall-e-3, dall-e-2 ]
 moderation: [ omni-moderation-latest ]
-multimodal: [ gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, o4-mini, o3, o1 ]
-responses: [ o1-pro, gpt-5.4, gpt-5.3-chat-latest, gpt-5.3-codex, gpt-5.2, gpt-5.2-codex, gpt-5.1, gpt-5.1-codex, gpt-5, gpt-5-codex, gpt-5-pro, gpt-5-mini, gpt-5-nano ]
+multimodal: [
+  gpt-4.1, gpt-4.1-mini, gpt-4.1-nano,
+  gpt-4o, gpt-4o-mini,
+  o4-mini, o3, o1
+]
+responses: [
+  o1-pro,
+  gpt-5.5, gpt-5.5-pro,
+  gpt-5.4, gpt-5.4-mini, gpt-5.4-nano, gpt-5.4-pro,
+  gpt-5.3-chat-latest, gpt-5.3-codex,
+  gpt-5.2, gpt-5.2-pro, gpt-5.2-codex,
+  gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-max, gpt-5.1-codex-mini,
+  gpt-5, gpt-5-codex, gpt-5-pro, gpt-5-mini, gpt-5-nano
+]
 tts: [ gpt-4o-mini-tts, tts-1, tts-1-hd ]
 vision_language: [ ]
 
 models:
 
   GPT-5:
+
+    - id: gpt-5.5
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.5
+        description: >
+          A new class of intelligence for coding and professional work.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.5
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 1050000
+        outputTokenLimit: 128000
+
+    - id: gpt-5.5-pro
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.5 pro
+        description: >
+          Version of GPT-5.5 that produces smarter and more precise responses.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.5-pro
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 1050000
+        outputTokenLimit: 128000
 
     - id: gpt-5.4
       type: RESPONSES
@@ -29,6 +73,57 @@ models:
         outputs: [ text ]
       params:
         totalTokenLimit: 1050000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.4-pro
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.4 pro
+        description: >
+          Version of GPT-5.4 that produces smarter and more precise responses.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.4-pro
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 1050000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.4-mini
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.4 mini
+        description: >
+          Our strongest mini model yet for coding, computer use, and subagents.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.4-mini
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 400000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.4-nano
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.4 nano
+        description: >
+          Our cheapest GPT-5.4-class model for simple high-volume tasks.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.4-nano
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 400000
         outputTokenLimit: 128000
 
 
@@ -55,6 +150,23 @@ models:
         name: GPT-5.2
         description: >
           Previous frontier model for professional work with configurable reasoning effort
+        lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 400000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.2-pro
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.2 pro
+        description: >
+          Previous pro model for professional work that produces smarter and more precise responses.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.2-pro
         lifecycle: PRODUCTION_ALIAS
       capabilities:
         inputs: [ text, image ]
@@ -187,6 +299,40 @@ models:
         description: >
           A version of GPT-5.1 optimized for agentic coding in Codex.
         lifecycle: PRODUCTION_ALIAS
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 400000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.1-codex-max
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.1-Codex-Max
+        description: >
+          A version of GPT-5.1-codex optimized for long running tasks.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.1-codex-max
+        lifecycle: DEPRECATED
+      capabilities:
+        inputs: [ text, image ]
+        outputs: [ text ]
+      params:
+        totalTokenLimit: 400000
+        outputTokenLimit: 128000
+
+
+    - id: gpt-5.1-codex-mini
+      type: RESPONSES
+      source: OpenAI
+      metadata:
+        name: GPT-5.1 Codex mini
+        description: >
+          Smaller, more cost-effective, less-capable version of GPT-5.1-Codex.
+        modelInfoUrl: https://developers.openai.com/api/docs/models/gpt-5.1-codex-mini
+        lifecycle: DEPRECATED
       capabilities:
         inputs: [ text, image ]
         outputs: [ text ]

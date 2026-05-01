@@ -102,6 +102,8 @@ Developer and user documentation lives in [`docs/wiki/`](docs/wiki/), covering m
 and configuration. The online mirror is at https://github.com/aplpolaris/promptfx/wiki — prefer the local copy
 as it may be more up to date.
 
+- Model list maintenance guide: [`promptkt/docs/how-to/review-and-update-model-lists.md`](promptkt/docs/how-to/review-and-update-model-lists.md)
+
 ## Architecture Docs
 
 | Module | Doc |

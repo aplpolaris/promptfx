@@ -27,6 +27,31 @@ class OpenAiModelIndexTest {
 
     val client = OpenAiAdapter.INSTANCE.client
 
+    companion object {
+        private val SNAPSHOT_MODEL_REGEX = Regex(".*-(\\d{4}|\\d{2}-\\d{2}|preview)$")
+        private val IGNORED_MODEL_IDS = setOf(
+            "gpt-3.5-turbo-16k",
+            "chatgpt-image-latest",
+            "gpt-4o-transcribe-diarize",
+            "gpt-5-chat-latest",
+            "gpt-5.1-chat-latest",
+            "gpt-5.2-chat-latest",
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-mini",
+            "gpt-image-2",
+            "gpt-realtime",
+            "gpt-realtime-1.5",
+            "gpt-realtime-mini",
+            "o4-mini-deep-research",
+            "sora-2",
+            "sora-2-pro"
+        )
+        private val IGNORED_MODEL_SUFFIX_REGEX = listOf(
+            Regex(".*-search-api$")
+        )
+    }
+
     @Test
     fun testModelLibrary() {
         OpenAiModelIndex.modelInfoIndex.forEach { (key, info) ->
@@ -54,8 +79,11 @@ class OpenAiModelIndexTest {
         }
     }
 
-    // use regex to identify and skip model ids with suffix like "-####" or "-####-##-##"
-    private fun String.snapshotModel() = matches(Regex(".*-\\d{4}(-\\d{2}(-\\d{2})?)?\$"))
+    private fun String.isIgnoredModelId(): Boolean {
+        if (this in IGNORED_MODEL_IDS) return true
+        if (matches(SNAPSHOT_MODEL_REGEX)) return true
+        return IGNORED_MODEL_SUFFIX_REGEX.any { it.matches(this) }
+    }
 
     @Test
     @Tag("openai")
@@ -86,7 +114,7 @@ class OpenAiModelIndexTest {
             println("-".repeat(50))
             println("OpenAI API models not in local index:")
             val ids = apiModelIds - indexIds
-            ids.sorted().filter { !it.snapshotModel() }.forEach {
+            ids.sorted().filter { !it.isIgnoredModelId() }.forEach {
                 println("  $it")
             }
             println("-".repeat(50))

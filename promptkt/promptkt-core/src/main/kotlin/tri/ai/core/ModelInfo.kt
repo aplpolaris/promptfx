@@ -44,6 +44,7 @@ class ModelInfo(var id: String, var type: ModelType, var source: String) {
 class ModelMetadata {
     var name: String? = null
     var description: String? = null
+    var modelInfoUrl: String? = null
     var version: String? = null
     var created: LocalDate? = null
     var deprecation: String? = null
