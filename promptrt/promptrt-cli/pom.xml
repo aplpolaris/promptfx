@@ -48,6 +48,11 @@
             <artifactId>clikt-jvm</artifactId>
             <version>${clikt.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>3.27.1</version>
+        </dependency>
 		
         <dependency>
             <groupId>org.junit.jupiter</groupId>
