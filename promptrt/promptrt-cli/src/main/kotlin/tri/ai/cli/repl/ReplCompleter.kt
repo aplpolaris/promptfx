@@ -29,7 +29,7 @@ import tri.ai.core.AiModelProvider
 private val SLASH_COMMANDS = listOf(
     "/mode", "/model", "/provider", "/memory", "/rag", "/tools",
     "/stream", "/json", "/temp", "/topp", "/seed", "/system",
-    "/batch", "/status", "/reset", "/help", "/quit"
+    "/batch", "/status", "/models", "/providers", "/reset", "/help", "/quit"
 )
 
 class ReplCompleter(private val config: PromptRtConfig) : Completer {

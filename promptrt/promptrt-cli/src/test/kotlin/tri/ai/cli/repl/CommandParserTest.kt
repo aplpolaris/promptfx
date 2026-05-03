@@ -88,4 +88,8 @@ class CommandParserTest {
 
     @Test fun `slash provider parses name`() =
         assertEquals(ReplCommand.Provider("anthropic"), CommandParser.parse("/provider anthropic"))
+
+    @Test fun `slash models`() = assertIs<ReplCommand.Models>(CommandParser.parse("/models"))
+
+    @Test fun `slash providers`() = assertIs<ReplCommand.Providers>(CommandParser.parse("/providers"))
 }

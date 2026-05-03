@@ -43,6 +43,8 @@ sealed class ReplCommand {
     // Session
     data class Batch(val path: String) : ReplCommand()
     object Status : ReplCommand()
+    object Models : ReplCommand()
+    object Providers : ReplCommand()
     object Reset : ReplCommand()
     object Help : ReplCommand()
     object Quit : ReplCommand()

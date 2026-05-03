@@ -80,6 +80,8 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             is ReplCommand.Quit    -> { printInfo("Goodbye!"); kotlin.system.exitProcess(0) }
             is ReplCommand.Help    -> printHelp()
             is ReplCommand.Status  -> printStatus()
+            is ReplCommand.Models  -> printModels()
+            is ReplCommand.Providers -> printProviders()
             is ReplCommand.Reset   -> { state.reset(config); printInfo("reset → mode: ${state.activeMode.name}  model: ${state.effectiveModel}") }
             is ReplCommand.Unknown -> printError(cmd.input)
             is ReplCommand.Mode    -> {
@@ -145,6 +147,34 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         }
     }
 
+    private fun printModels() {
+        val chat = AiModelProvider.chatModels()
+        val embed = AiModelProvider.embeddingModels()
+        println("${ANSI_CYAN}─── chat models (${chat.size}) ────────────────────${ANSI_RESET}")
+        chat.forEach { m ->
+            println("  ${m.modelId}")
+        }
+        if (embed.isNotEmpty()) {
+            println("${ANSI_CYAN}─── embedding models (${embed.size}) ──────────────${ANSI_RESET}")
+            embed.forEach { println("  ${it.modelId}") }
+        }
+        println("${ANSI_CYAN}────────────────────────────────────────${ANSI_RESET}")
+    }
+
+    private fun printProviders() {
+        val plugins = AiModelProvider.orderedPlugins
+        println("${ANSI_CYAN}─── providers (${plugins.size}) ─────────────────────${ANSI_RESET}")
+        if (plugins.isEmpty()) {
+            printError("No providers loaded. Check API key environment variables.")
+        } else {
+            plugins.forEach { p -> println("  ${p.javaClass.simpleName}") }
+            println()
+            println("  ${ANSI_GRAY}Total chat models: ${AiModelProvider.chatModels().size}${ANSI_RESET}")
+            println("  ${ANSI_GRAY}Total embedding models: ${AiModelProvider.embeddingModels().size}${ANSI_RESET}")
+        }
+        println("${ANSI_CYAN}────────────────────────────────────────${ANSI_RESET}")
+    }
+
     private fun printHelp() {
         printInfo("""
             Commands:
@@ -162,6 +192,8 @@ class PromptRtRepl(private val config: PromptRtConfig) {
               /seed <n>           set sampling seed
               /batch <file>       run a batch job
               /status             show current session config
+              /models             list available models
+              /providers          list loaded providers
               /reset              restore default mode
               /help               show this help
               /quit               exit

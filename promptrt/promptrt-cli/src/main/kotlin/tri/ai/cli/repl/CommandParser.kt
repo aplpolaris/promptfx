@@ -55,6 +55,8 @@ object CommandParser {
             "/batch"    -> arg?.let { ReplCommand.Batch(it) }
                            ?: ReplCommand.Unknown("/batch requires a file path")
             "/status"   -> ReplCommand.Status
+            "/models"   -> ReplCommand.Models
+            "/providers" -> ReplCommand.Providers
             "/reset"    -> ReplCommand.Reset
             "/help"     -> ReplCommand.Help
             "/quit"     -> ReplCommand.Quit

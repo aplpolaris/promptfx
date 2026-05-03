@@ -22,11 +22,19 @@ package tri.ai.cli
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import kotlinx.coroutines.runBlocking
 import tri.ai.cli.config.ConfigLoader
 import tri.ai.cli.repl.PromptRtRepl
+import tri.ai.cli.repl.SessionState
+import tri.ai.core.AiModelProvider
+import tri.ai.core.MChatRole
+import tri.ai.core.TextChatMessage
+import tri.ai.prompt.trace.AiOutput
 import java.io.File
 
 class PromptRt : CliktCommand(name = "promptrt") {
@@ -35,7 +43,7 @@ class PromptRt : CliktCommand(name = "promptrt") {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) = PromptRt()
-            .subcommands(PromptRtChatOnce(), PromptRtBatch(), PromptRtModels(), PromptRtShowConfig())
+            .subcommands(PromptRtChatOnce(), PromptRtBatch(), PromptRtModels(), PromptRtProviders(), PromptRtShowConfig())
             .main(args)
     }
 
@@ -54,7 +62,31 @@ class PromptRt : CliktCommand(name = "promptrt") {
 }
 
 class PromptRtChatOnce : CliktCommand(name = "chat") {
-    override fun run() = echo("[stub] single-turn chat not yet implemented")
+    private val message by argument(help = "Message to send")
+    private val mode by option("--mode", help = "Mode to use").default("plain")
+    private val jsonOutput by option("--json", help = "Output as JSON").flag()
+
+    override fun run() {
+        val config = ConfigLoader.loadDefault()
+        val state = SessionState.fromConfig(config.copy(defaultMode = mode))
+        val model = try {
+            AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
+        } catch (e: NoSuchElementException) {
+            System.err.println("Model '${state.effectiveModel}' not found.")
+            System.err.println("Available: ${AiModelProvider.chatModels().map { it.modelId }.joinToString()}")
+            return
+        }
+        val response = runBlocking {
+            model.chat(listOf(TextChatMessage(MChatRole.User, message)))
+        }
+        val text = (response.firstValue as AiOutput.ChatMessage).message.content ?: ""
+        if (jsonOutput) {
+            val escaped = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(text)
+            println("""{"response":$escaped}""")
+        } else {
+            println(text)
+        }
+    }
 }
 
 class PromptRtBatch : CliktCommand(name = "batch") {
@@ -62,9 +94,40 @@ class PromptRtBatch : CliktCommand(name = "batch") {
 }
 
 class PromptRtModels : CliktCommand(name = "models") {
-    override fun run() = echo("[stub] models not yet implemented")
+    override fun run() {
+        val chat = AiModelProvider.chatModels()
+        println("Chat models (${chat.size}):")
+        chat.forEach { println("  ${it.modelId}") }
+        val embed = AiModelProvider.embeddingModels()
+        if (embed.isNotEmpty()) {
+            println("\nEmbedding models (${embed.size}):")
+            embed.forEach { println("  ${it.modelId}") }
+        }
+    }
+}
+
+class PromptRtProviders : CliktCommand(name = "providers") {
+    override fun run() {
+        val plugins = AiModelProvider.orderedPlugins
+        if (plugins.isEmpty()) {
+            println("No providers loaded. Check API key environment variables.")
+            return
+        }
+        println("Loaded providers (${plugins.size}):")
+        plugins.forEach { p -> println("  ${p.javaClass.simpleName}") }
+        println("\nTotal chat models:      ${AiModelProvider.chatModels().size}")
+        println("Total embedding models: ${AiModelProvider.embeddingModels().size}")
+    }
 }
 
 class PromptRtShowConfig : CliktCommand(name = "config") {
-    override fun run() = echo("[stub] config display not yet implemented")
+    override fun run() {
+        val config = ConfigLoader.loadDefault()
+        val configFile = File(System.getProperty("user.home"), ".promptrt/config.yaml")
+        println("Config file: ${configFile.absolutePath}")
+        println("Exists:      ${configFile.exists()}")
+        println("Default mode: ${config.defaultMode}")
+        println("Modes: ${config.allModeNames.joinToString(", ")}")
+        println("Providers configured: ${config.providers.keys.joinToString(", ").ifEmpty { "(none)" }}")
+    }
 }
