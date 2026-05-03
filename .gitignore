@@ -9,6 +9,7 @@ starship-custom.yaml
 conf/
 target/
 build/
+dependency-reduced-pom.xml
 .idea/
 .gradle/
 .claude/
