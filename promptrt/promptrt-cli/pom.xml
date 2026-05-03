@@ -44,6 +44,22 @@
         </dependency>
 
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptkt-provider-openai-sdk</artifactId>
+            <version>0.16.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptkt-provider-gemini-sdk</artifactId>
+            <version>0.16.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptkt-provider-anthropic-sdk</artifactId>
+            <version>0.16.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.ajalt.clikt</groupId>
             <artifactId>clikt-jvm</artifactId>
             <version>${clikt.version}</version>
