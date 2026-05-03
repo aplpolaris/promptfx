@@ -26,11 +26,7 @@ import com.github.ajalt.clikt.parameters.arguments.validate
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
-import kotlinx.coroutines.runBlocking
-import tri.ai.core.AiModelProvider
-import tri.ai.pips.*
-import tri.ai.prompt.trace.*
-import tri.ai.prompt.trace.batch.AiPromptBatchCyclic
+import tri.ai.cli.batch.BatchRunner
 import tri.util.*
 import java.io.File
 import kotlin.system.exitProcess
@@ -55,31 +51,14 @@ class PromptBatchRunner : CliktCommand(name = "prompt-batch") {
         .flag()
 
     override fun run() {
-        val jsonIn = inputFile.extension == "json"
-
         println("${ANSI_CYAN}Reading prompt batch from ${inputFile}...$ANSI_RESET")
-        val batch = try {
-            if (jsonIn)
-                AiPromptBatchCyclic.fromJson(inputFile.readText())
-            else
-                AiPromptBatchCyclic.fromYaml(inputFile.readText())
+        try {
+            val path = BatchRunner.execute(inputFile, outputFile, database)
+            println("${ANSI_CYAN}Output written to $path.$ANSI_RESET")
         } catch (x: Exception) {
-            println("Error reading input file: $x")
+            println("Error executing batch: $x")
             exitProcess(1)
         }
-
-        println("${ANSI_CYAN}Executing prompt batch with ${batch.runs} runs...$ANSI_RESET")
-        val workflowResult = runBlocking {
-            val tasks = batch.plan { AiModelProvider.chatModel(it) }
-            AiWorkflowExecutor.execute(tasks.plan)
-        }
-        println("${ANSI_CYAN}Processing complete.$ANSI_RESET")
-
-        when (database) {
-            true -> writeTraceDatabase(AiTaskTraceDatabase(workflowResult.interimResults.values), outputFile)
-            else -> writeTrace(workflowResult.finalResult, outputFile)
-        }
-        println("${ANSI_CYAN}Output written to $outputFile.$ANSI_RESET")
     }
 }
 

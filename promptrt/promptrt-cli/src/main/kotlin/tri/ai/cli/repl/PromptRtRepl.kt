@@ -126,7 +126,21 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 if (!cmd.on) state.agentSession = null
                 printInfo("tools: ${cmd.on}")
             }
-            is ReplCommand.Batch   -> printInfo("[stub] /batch not yet wired")
+            is ReplCommand.Batch   -> {
+                val file = java.io.File(cmd.path)
+                if (!file.exists()) {
+                    printError("File not found: ${cmd.path}")
+                    return
+                }
+                val outFile = java.io.File(file.parent, file.nameWithoutExtension + "-output.json")
+                printInfo("Running batch: ${file.name} → ${outFile.name}")
+                try {
+                    val path = tri.ai.cli.batch.BatchRunner.execute(file, outFile)
+                    printInfo("Done. Output: $path")
+                } catch (e: Exception) {
+                    printError("Batch failed: ${e.message}")
+                }
+            }
             is ReplCommand.Chat    -> handleChat(cmd.text)
         }
     }
