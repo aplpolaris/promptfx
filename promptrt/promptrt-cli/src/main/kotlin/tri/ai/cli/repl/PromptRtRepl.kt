@@ -25,6 +25,7 @@ import org.jline.reader.UserInterruptException
 import org.jline.reader.impl.history.DefaultHistory
 import org.jline.terminal.TerminalBuilder
 import tri.ai.cli.config.PromptRtConfig
+import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_LIGHTBLUE
 import tri.util.ANSI_RED
@@ -41,6 +42,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         val reader = LineReaderBuilder.builder()
             .terminal(terminal)
             .completer(ReplCompleter(config))
+            .highlighter(ReplHighlighter())
             .history(history)
             .variable(org.jline.reader.LineReader.HISTORY_FILE,
                 File(System.getProperty("user.home"), ".promptrt/history").absolutePath)
@@ -114,21 +116,24 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         """.trimIndent())
     }
 
+    private fun statusLine(label: String, value: String) =
+        println("$ANSI_CYAN  %-12s$ANSI_RESET $value".format(label))
+
     private fun printStatus() {
-        printInfo("""
-            Mode:        ${state.activeMode.name}
-            Model:       ${state.effectiveModel}
-            Memory:      ${state.memoryEnabled}
-            RAG:         ${state.ragEnabled}${if (state.ragPath != null) " (${state.ragPath})" else ""}
-            Tools:       ${state.toolsEnabled}
-            Stream:      ${state.streamEnabled}
-            JSON mode:   ${state.jsonMode}
-            Temperature: ${state.temperature}
-            Top-P:       ${state.topP ?: "default"}
-            Seed:        ${state.seed ?: "none"}
-            System:      ${state.systemPrompt ?: "none"}
-            History:     ${state.history.size} messages
-        """.trimIndent())
+        println("${ANSI_CYAN}─── session status ───────────────────${ANSI_RESET}")
+        statusLine("mode:",     state.activeMode.name)
+        statusLine("model:",    state.effectiveModel)
+        statusLine("memory:",   state.memoryEnabled.toString())
+        statusLine("rag:",      if (state.ragEnabled) "on${if (state.ragPath != null) " (${state.ragPath})" else ""}" else "off")
+        statusLine("tools:",    state.toolsEnabled.toString())
+        statusLine("stream:",   state.streamEnabled.toString())
+        statusLine("json:",     state.jsonMode.toString())
+        statusLine("temp:",     state.temperature.toString())
+        statusLine("top-p:",    state.topP?.toString() ?: "default")
+        statusLine("seed:",     state.seed?.toString() ?: "none")
+        statusLine("system:",   state.systemPrompt ?: "none")
+        statusLine("history:",  "${state.history.size} messages")
+        println("${ANSI_CYAN}──────────────────────────────────────${ANSI_RESET}")
     }
 
     internal fun printResponse(text: String) = println("$ANSI_LIGHTBLUE$text$ANSI_RESET")
