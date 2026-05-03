@@ -37,7 +37,6 @@ import tri.ai.core.agent.AgentEventPrinter
 import tri.ai.memory.HelperPersona
 import tri.ai.pips.ExecEvent
 import tri.ai.memory.MemoryItem
-import tri.ai.prompt.trace.AiOutput
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_LIGHTBLUE
@@ -256,10 +255,10 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             }
         } ?: return
 
-        val message = (response.firstValue as AiOutput.ChatMessage).message
+        val responseText = response.firstValue.textContent(ifNone = "")
         printInfo("[${state.effectiveModel}]")
-        printResponse(message.content ?: "")
-        state.history.add(TextChatMessage(MChatRole.Assistant, message.content ?: ""))
+        printResponse(responseText)
+        state.history.add(TextChatMessage(MChatRole.Assistant, responseText))
 
         // Trim history to prevent unbounded growth
         while (state.history.size > 40) state.history.removeAt(0)
@@ -285,12 +284,12 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 val contextHistory = memory.buildContextualConversationHistory(userItem)
                     .map { it.toChatMessage() }
                 val sysMsg = listOf(TextChatMessage(MChatRole.System, memory.persona.getSystemMessage()))
-                val response = model.chat(sysMsg + contextHistory).firstValue
-                val msg = (response as AiOutput.ChatMessage).message
+                val responseText = model.chat(sysMsg + contextHistory).firstValue.textContent(ifNone = "")
+                val msg = TextChatMessage(MChatRole.Assistant, responseText)
                 memory.addChat(MemoryItem(msg))
                 memory.saveMemory(interimSave = true)
                 printInfo("[${state.effectiveModel}]")
-                printResponse(msg.content ?: "")
+                printResponse(responseText)
             } catch (e: Exception) {
                 printError("Memory chat error: ${e.message}")
             }
