@@ -23,8 +23,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import tri.ai.core.EmbeddingPrecision
+import tri.ai.core.AiChatEngine
 import tri.ai.openai.OpenAiChat
-import tri.promptfx.AiChatEngine
 import tri.ai.openai.OpenAiEmbeddingModel
 import tri.ai.text.chunks.TextChunkRaw
 import tri.ai.text.chunks.TextDocEmbeddings.putEmbeddingInfo
