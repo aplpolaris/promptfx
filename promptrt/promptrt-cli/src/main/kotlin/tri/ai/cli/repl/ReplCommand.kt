@@ -22,8 +22,8 @@ package tri.ai.cli.repl
 sealed class ReplCommand {
     // Navigation
     data class Mode(val name: String) : ReplCommand()
-    data class Model(val id: String) : ReplCommand()
-    data class Provider(val name: String) : ReplCommand()
+    data class Model(val id: String?) : ReplCommand()
+    data class Provider(val name: String?) : ReplCommand()
 
     // Feature toggles
     data class Memory(val on: Boolean) : ReplCommand()

@@ -30,10 +30,8 @@ object CommandParser {
         return when (cmd) {
             "/mode"     -> arg?.let { ReplCommand.Mode(it) }
                            ?: ReplCommand.Unknown("/mode requires a mode name")
-            "/model"    -> arg?.let { ReplCommand.Model(it) }
-                           ?: ReplCommand.Unknown("/model requires a model id")
-            "/provider" -> arg?.let { ReplCommand.Provider(it) }
-                           ?: ReplCommand.Unknown("/provider requires a provider name")
+            "/model"    -> ReplCommand.Model(arg)
+            "/provider" -> ReplCommand.Provider(arg)
             "/memory"   -> parseToggle(arg) { ReplCommand.Memory(it) }
             "/tools"    -> parseToggle(arg) { ReplCommand.Tools(it) }
             "/stream"   -> parseToggle(arg) { ReplCommand.Stream(it) }

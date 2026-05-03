@@ -91,8 +91,14 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 state.switchMode(preset)
                 printInfo("mode: ${state.activeMode.name}  model: ${state.effectiveModel}  (history cleared)")
             }
-            is ReplCommand.Model   -> { state.applyModelOverride(cmd.id); printInfo("model: ${cmd.id}") }
-            is ReplCommand.Provider -> printInfo("[stub] /provider not yet wired")
+            is ReplCommand.Model   -> {
+                if (cmd.id == null) printInfo("model: ${state.effectiveModel}  (use /model <id> to switch)")
+                else { state.applyModelOverride(cmd.id); printInfo("model: ${cmd.id}") }
+            }
+            is ReplCommand.Provider -> {
+                if (cmd.name == null) printInfo("provider: ${AiModelProvider.defaultPlugin.modelSource()}  (use /provider <name> to switch)")
+                else printInfo("[stub] /provider switching not yet wired — use /model <id> to select a specific model")
+            }
             is ReplCommand.Temp    -> { state.temperature = cmd.value; printInfo("temperature: ${cmd.value}") }
             is ReplCommand.TopP    -> { state.topP = cmd.value; printInfo("top-p: ${cmd.value}") }
             is ReplCommand.Seed    -> { state.seed = cmd.value; printInfo("seed: ${cmd.value}") }
@@ -151,31 +157,43 @@ class PromptRtRepl(private val config: PromptRtConfig) {
 
     private fun printModels() {
         val engines = AiModelProvider.allChatEngines()
+        val byProvider = engines.groupBy { it.modelSource }
         val embed = AiModelProvider.embeddingModels()
-        println("${ANSI_CYAN}─── chat models (${engines.size}) ────────────────────${ANSI_RESET}")
-        engines.forEach { e ->
-            val tag = if (e is AiChatEngine.Multimodal) " ${ANSI_GRAY}[multimodal]${ANSI_RESET}" else ""
-            println("  ${e.modelId}$tag")
+        println("${ANSI_CYAN}--- chat models (${engines.size}) ---${ANSI_RESET}")
+        byProvider.forEach { (source, models) ->
+            println("${ANSI_CYAN}  [$source]${ANSI_RESET}")
+            models.forEach { e ->
+                val tag = if (e is AiChatEngine.Multimodal) " ${ANSI_GRAY}[mm]${ANSI_RESET}" else ""
+                println("    ${e.modelId}$tag")
+            }
         }
         if (embed.isNotEmpty()) {
-            println("${ANSI_CYAN}─── embedding models (${embed.size}) ──────────────${ANSI_RESET}")
-            embed.forEach { println("  ${it.modelId}") }
+            val embedByProvider = embed.groupBy { it.modelSource }
+            println("${ANSI_CYAN}--- embedding models (${embed.size}) ---${ANSI_RESET}")
+            embedByProvider.forEach { (source, models) ->
+                println("${ANSI_CYAN}  [$source]${ANSI_RESET}")
+                models.forEach { println("    ${it.modelId}") }
+            }
         }
-        println("${ANSI_CYAN}────────────────────────────────────────${ANSI_RESET}")
+        println("${ANSI_CYAN}---${ANSI_RESET}")
     }
 
     private fun printProviders() {
         val plugins = AiModelProvider.orderedPlugins
-        println("${ANSI_CYAN}─── providers (${plugins.size}) ─────────────────────${ANSI_RESET}")
+        println("${ANSI_CYAN}--- providers (${plugins.size}) ---${ANSI_RESET}")
         if (plugins.isEmpty()) {
             printError("No providers loaded. Check API key environment variables.")
         } else {
-            plugins.forEach { p -> println("  ${p.javaClass.simpleName}") }
+            plugins.forEach { p ->
+                val chatCount = AiModelProvider.allChatEngines().count { it.modelSource == p.modelSource() }
+                val embedCount = AiModelProvider.embeddingModels().count { it.modelSource == p.modelSource() }
+                println("  ${p.modelSource()}  ${ANSI_GRAY}(${p.javaClass.simpleName}, $chatCount chat, $embedCount embedding)${ANSI_RESET}")
+            }
             println()
             println("  ${ANSI_GRAY}Total chat models: ${AiModelProvider.allChatEngines().size}${ANSI_RESET}")
             println("  ${ANSI_GRAY}Total embedding models: ${AiModelProvider.embeddingModels().size}${ANSI_RESET}")
         }
-        println("${ANSI_CYAN}────────────────────────────────────────${ANSI_RESET}")
+        println("${ANSI_CYAN}---${ANSI_RESET}")
     }
 
     private fun printHelp() {
@@ -207,7 +225,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         println("$ANSI_CYAN  %-12s$ANSI_RESET $value".format(label))
 
     private fun printStatus() {
-        println("${ANSI_CYAN}─── session status ───────────────────${ANSI_RESET}")
+        println("${ANSI_CYAN}--- session status ---${ANSI_RESET}")
         statusLine("mode:",     state.activeMode.name)
         statusLine("model:",    state.effectiveModel)
         statusLine("memory:",   state.memoryEnabled.toString())
@@ -220,7 +238,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         statusLine("seed:",     state.seed?.toString() ?: "none")
         statusLine("system:",   state.systemPrompt ?: "none")
         statusLine("history:",  "${state.history.size} messages")
-        println("${ANSI_CYAN}──────────────────────────────────────${ANSI_RESET}")
+        println("${ANSI_CYAN}---${ANSI_RESET}")
     }
 
     private fun handleChat(userInput: String) {
