@@ -102,7 +102,22 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 }
                 printInfo("memory: ${cmd.on}")
             }
-            is ReplCommand.Rag     -> printInfo("[stub] /rag not yet wired")
+            is ReplCommand.Rag -> {
+                if (!cmd.on) {
+                    state.ragDriver?.close()
+                    state.ragDriver = null
+                    state.ragEnabled = false
+                    printInfo("rag: off")
+                } else {
+                    if (cmd.path != null) state.ragPath = cmd.path
+                    if (state.ragPath == null) {
+                        printError("/rag requires a path — use /rag <path> or /rag on after setting a path")
+                        return
+                    }
+                    state.ragEnabled = true
+                    printInfo("rag: on (${state.ragPath})")
+                }
+            }
             is ReplCommand.Tools   -> printInfo("[stub] /tools not yet wired")
             is ReplCommand.Batch   -> printInfo("[stub] /batch not yet wired")
             is ReplCommand.Chat    -> handleChat(cmd.text)
@@ -154,7 +169,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
 
     private fun handleChat(userInput: String) {
         if (state.memoryEnabled) { handleMemoryChat(userInput); return }
-        if (state.ragEnabled)    { printInfo("[stub] /rag not yet wired"); return }
+        if (state.ragEnabled)    { handleRagChat(userInput); return }
         if (state.toolsEnabled)  { printInfo("[stub] /tools not yet wired"); return }
 
         val model = try {
@@ -221,6 +236,28 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 printResponse(msg.content ?: "")
             } catch (e: Exception) {
                 printError("Memory chat error: ${e.message}")
+            }
+        }
+    }
+
+    private fun handleRagChat(userInput: String) {
+        val driver = try {
+            state.getOrCreateRagDriver()
+        } catch (e: Exception) {
+            printError("RAG init failed: ${e.message}")
+            return
+        }
+        if (driver == null) {
+            printError("RAG enabled but no path set — use /rag <path>")
+            return
+        }
+        runBlocking {
+            try {
+                val result = driver.answerQuestion(userInput)
+                printInfo("[${state.effectiveModel}]")
+                printResponse(result.finalResult.toString())
+            } catch (e: Exception) {
+                printError("RAG error: ${e.message}")
             }
         }
     }

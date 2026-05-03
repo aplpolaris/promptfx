@@ -19,13 +19,17 @@
  */
 package tri.ai.cli.repl
 
+import tri.ai.cli.DocumentQaConfig
 import tri.ai.cli.config.ModePreset
 import tri.ai.cli.config.PromptRtConfig
+import tri.ai.cli.createQaDriver
 import tri.ai.core.AiModelProvider
 import tri.ai.core.TextChatMessage
 import tri.ai.memory.BotMemory
 import tri.ai.memory.BotPersona
 import tri.ai.memory.HelperPersona
+import tri.ai.text.docs.LocalDocumentQaDriver
+import kotlin.io.path.Path
 
 /**
  * Mutable live state for the duration of a REPL session.
@@ -51,12 +55,30 @@ class SessionState private constructor(
     val history: MutableList<TextChatMessage>
 ) {
     var botMemory: BotMemory? = null
+    var ragDriver: LocalDocumentQaDriver? = null
 
     val effectiveModel: String
         get() = modelOverride ?: activeMode.resolvedModel
 
     fun applyModelOverride(id: String) {
         modelOverride = id
+    }
+
+    fun getOrCreateRagDriver(): LocalDocumentQaDriver? {
+        val path = ragPath ?: return null
+        if (ragDriver == null) {
+            val root = java.io.File(path).absoluteFile
+            ragDriver = createQaDriver(DocumentQaConfig(
+                root = root.toPath(),
+                folder = "",
+                chatModel = effectiveModel,
+                embeddingModel = AiModelProvider.embeddingModels().firstOrNull()?.modelId,
+                temp = temperature,
+                maxTokens = 2000,
+                templateId = null
+            ))
+        }
+        return ragDriver
     }
 
     fun getOrCreateMemory(persona: BotPersona = HelperPersona("Assistant")): BotMemory {
@@ -80,6 +102,8 @@ class SessionState private constructor(
         systemPrompt = preset.system
         history.clear()
         botMemory = null
+        ragDriver?.close()
+        ragDriver = null
     }
 
     fun reset(config: PromptRtConfig) {
