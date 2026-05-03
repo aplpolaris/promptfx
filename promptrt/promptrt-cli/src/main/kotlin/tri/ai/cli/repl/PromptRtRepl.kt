@@ -69,7 +69,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             } catch (e: UserInterruptException) {
                 continue
             } catch (e: EndOfFileException) {
-                break
+                printInfo("Goodbye!"); kotlin.system.exitProcess(0)
             }
 
             if (line.isBlank()) continue
@@ -96,14 +96,27 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 else { state.applyModelOverride(cmd.id); printInfo("model: ${cmd.id}") }
             }
             is ReplCommand.Provider -> {
-                if (cmd.name == null) printInfo("provider: ${state.effectiveProvider}  (use /provider <name> to switch)")
-                else printInfo("[stub] /provider switching not yet wired — use /model <id> to select a specific model")
+                if (cmd.name == null) {
+                    printInfo("provider: ${state.effectiveProvider}  (use /provider <name> to switch)")
+                } else {
+                    val engines = AiModelProvider.allChatEngines()
+                        .filter { it.modelSource.equals(cmd.name, ignoreCase = true) }
+                    if (engines.isEmpty()) {
+                        printError("Unknown provider '${cmd.name}'. Use /providers to list available providers.")
+                    } else {
+                        val resolvedSource = engines.first().modelSource
+                        val autoModel = state.applyProviderSwitch(resolvedSource)
+                        val modelNote = if (autoModel != null) "  (auto-selected model: $autoModel)" else ""
+                        printInfo("provider: $resolvedSource  model: ${state.effectiveModel}$modelNote")
+                    }
+                }
             }
             is ReplCommand.Temp    -> { state.temperature = cmd.value; printInfo("temperature: ${cmd.value}") }
             is ReplCommand.TopP    -> { state.topP = cmd.value; printInfo("top-p: ${cmd.value}") }
             is ReplCommand.SystemPrompt -> { state.systemPrompt = cmd.text; printInfo("system prompt updated") }
             is ReplCommand.JsonMode -> { state.jsonMode = cmd.on; printInfo("json: ${cmd.on}") }
             is ReplCommand.Memory -> {
+                // TODO: revisit whether /memory on|off and /mode memory should be unified or kept separate
                 state.memoryEnabled = cmd.on
                 if (cmd.on) {
                     try { state.getOrCreateMemory() }
@@ -238,6 +251,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
     private fun printStatus() {
         println("${ANSI_CYAN}--- session status ---${ANSI_RESET}")
         statusLine("mode:",     state.activeMode.name)
+        statusLine("provider:", state.effectiveProvider)
         statusLine("model:",    state.effectiveModel)
         statusLine("memory:",   state.memoryEnabled.toString())
         statusLine("rag:",      if (state.ragEnabled) "on${if (state.ragPath != null) " (${state.ragPath})" else ""}" else "off")
@@ -246,7 +260,8 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         statusLine("temp:",     state.temperature.toString())
         statusLine("top-p:",    state.topP?.toString() ?: "default")
         statusLine("system:",   state.systemPrompt ?: "none")
-        statusLine("history:",  "${state.history.size} messages")
+        val historyCount = state.botMemory?.chatHistory?.size ?: state.history.size
+        statusLine("history:",  "$historyCount messages")
         println("${ANSI_CYAN}---${ANSI_RESET}")
     }
 

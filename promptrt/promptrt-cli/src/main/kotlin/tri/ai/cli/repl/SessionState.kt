@@ -25,6 +25,7 @@ import tri.ai.cli.config.PromptRtConfig
 import tri.ai.cli.createQaDriver
 import tri.ai.core.AiModelProvider
 import tri.ai.core.MChatVariation
+import tri.ai.core.allChatEngines
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
@@ -75,6 +76,23 @@ class SessionState private constructor(
 
     fun applyModelOverride(id: String) {
         modelOverride = id
+    }
+
+    /** Switches the active provider, keeping other mode settings intact.
+     * If the current model is not available from the new provider, auto-selects
+     * the first model from that source. Does NOT clear history. */
+    fun applyProviderSwitch(sourceName: String): String? {
+        activeMode = activeMode.copy(provider = sourceName)
+        modelOverride = null
+        val enginesFromSource = AiModelProvider.allChatEngines()
+            .filter { it.modelSource.equals(sourceName, ignoreCase = true) }
+        if (enginesFromSource.isEmpty()) return null
+        val currentStillAvailable = enginesFromSource.any { it.modelId == effectiveModel }
+        return if (!currentStillAvailable) {
+            val first = enginesFromSource.first().modelId
+            modelOverride = first
+            first
+        } else null
     }
 
     fun resolveChat(): TextChat =
