@@ -41,6 +41,8 @@ import kotlin.system.exitProcess
 /** Example of a chat that has a memory of previous conversations. */
 class MemoryChatCli : CliktCommand(name = "chat-memory") {
 
+    // DEPRECATED: use `promptrt` REPL instead. Scheduled for deletion after soak period.
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
