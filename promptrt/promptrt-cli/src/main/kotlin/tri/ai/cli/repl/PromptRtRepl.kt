@@ -19,12 +19,17 @@
  */
 package tri.ai.cli.repl
 
+import kotlinx.coroutines.runBlocking
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.UserInterruptException
 import org.jline.reader.impl.history.DefaultHistory
 import org.jline.terminal.TerminalBuilder
 import tri.ai.cli.config.PromptRtConfig
+import tri.ai.core.AiModelProvider
+import tri.ai.core.MChatRole
+import tri.ai.core.TextChatMessage
+import tri.ai.prompt.trace.AiOutput
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
 import tri.util.ANSI_LIGHTBLUE
@@ -89,7 +94,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             is ReplCommand.Rag     -> printInfo("[stub] /rag not yet wired")
             is ReplCommand.Tools   -> printInfo("[stub] /tools not yet wired")
             is ReplCommand.Batch   -> printInfo("[stub] /batch not yet wired")
-            is ReplCommand.Chat    -> printInfo("[chat stub] ${cmd.text}")
+            is ReplCommand.Chat    -> handleChat(cmd.text)
         }
     }
 
@@ -134,6 +139,47 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         statusLine("system:",   state.systemPrompt ?: "none")
         statusLine("history:",  "${state.history.size} messages")
         println("${ANSI_CYAN}──────────────────────────────────────${ANSI_RESET}")
+    }
+
+    private fun handleChat(userInput: String) {
+        if (state.memoryEnabled) { printInfo("[stub] /memory not yet wired"); return }
+        if (state.ragEnabled)    { printInfo("[stub] /rag not yet wired"); return }
+        if (state.toolsEnabled)  { printInfo("[stub] /tools not yet wired"); return }
+
+        val model = try {
+            AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
+        } catch (e: NoSuchElementException) {
+            printError("Model '${state.effectiveModel}' not found. Available: ${
+                AiModelProvider.chatModels().map { it.modelId }.joinToString()
+            }")
+            return
+        }
+
+        val messages = buildList {
+            if (state.systemPrompt != null)
+                add(TextChatMessage(MChatRole.System, state.systemPrompt!!))
+            addAll(state.history)
+            add(TextChatMessage(MChatRole.User, userInput))
+        }
+
+        state.history.add(TextChatMessage(MChatRole.User, userInput))
+
+        val response = runBlocking {
+            try {
+                model.chat(messages)
+            } catch (e: Exception) {
+                printError("Model error: ${e.message}")
+                null
+            }
+        } ?: return
+
+        val message = (response.firstValue as AiOutput.ChatMessage).message
+        printInfo("[${state.effectiveModel}]")
+        printResponse(message.content ?: "")
+        state.history.add(TextChatMessage(MChatRole.Assistant, message.content ?: ""))
+
+        // Trim history to prevent unbounded growth
+        while (state.history.size > 40) state.history.removeAt(0)
     }
 
     internal fun printResponse(text: String) = println("$ANSI_LIGHTBLUE$text$ANSI_RESET")
