@@ -39,7 +39,7 @@ import tri.ai.text.docs.GroupingTemplateJoiner
 import tri.ai.text.docs.QuestionAnswerResult
 import tri.ai.text.docs.formattedOutputs
 import tri.ai.text.docs.DocumentQaPlanner
-import tri.promptfx.AiChatEngine
+import tri.ai.core.AiChatEngine
 import tri.promptfx.AiPlanTaskView
 import tri.promptfx.PromptFxGlobals.promptsWithPrefix
 import tri.promptfx.TextLibraryReceiver

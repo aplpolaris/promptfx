@@ -26,6 +26,7 @@ import tri.ai.cli.createQaDriver
 import tri.ai.core.AiModelProvider
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
+import tri.ai.core.chatEngine
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.api.DefaultAgentChatAPI
@@ -102,7 +103,7 @@ class SessionState private constructor(
 
     fun getOrCreateMemory(persona: BotPersona = HelperPersona("Assistant")): BotMemory {
         if (botMemory == null) {
-            val chatModel = AiModelProvider.chatModels().first { it.modelId == effectiveModel }
+            val chatModel = AiModelProvider.chatEngine(effectiveModel).asTextChat()
             val embeddingModel = AiModelProvider.embeddingModels().first()
             botMemory = BotMemory(persona, chatModel, embeddingModel)
             botMemory!!.initMemory()

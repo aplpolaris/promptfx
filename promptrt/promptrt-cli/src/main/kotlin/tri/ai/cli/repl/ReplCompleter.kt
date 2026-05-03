@@ -25,6 +25,7 @@ import org.jline.reader.LineReader
 import org.jline.reader.ParsedLine
 import tri.ai.cli.config.PromptRtConfig
 import tri.ai.core.AiModelProvider
+import tri.ai.core.allChatEngines
 
 private val SLASH_COMMANDS = listOf(
     "/mode", "/model", "/provider", "/memory", "/rag", "/tools",
@@ -49,7 +50,7 @@ class ReplCompleter(private val config: PromptRtConfig) : Completer {
 
             words[0] == "/model" ->
                 try {
-                    AiModelProvider.chatModels()
+                    AiModelProvider.allChatEngines()
                         .map { it.modelId }
                         .filter { it.contains(word, ignoreCase = true) }
                         .forEach { candidates.add(Candidate(it)) }

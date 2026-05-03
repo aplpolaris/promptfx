@@ -19,6 +19,8 @@
  */
 package tri.promptfx
 
+import tri.ai.core.AiChatEngine
+
 /**
  * Global manager for models available within PromptFx.
  * Model availability is determined by the current [PromptFxPolicy], further restricted by

@@ -23,10 +23,10 @@ import javafx.beans.property.Property
 import tri.ai.pips.AiTaskBuilder
 import tri.util.json.jsonMapper
 import tri.ai.prompt.PromptTemplate
-import tri.promptfx.AiChatEngine
+import tri.ai.core.AiChatEngine
+import tri.ai.core.execute
 import tri.promptfx.ModelParameters
 import tri.promptfx.PromptFxGlobals.lookupPrompt
-import tri.promptfx.execute
 import java.io.IOException
 import java.net.URI
 import java.net.URLEncoder

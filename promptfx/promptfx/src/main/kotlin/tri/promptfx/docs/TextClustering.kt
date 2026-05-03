@@ -4,9 +4,9 @@ import tri.ai.core.CompletionBuilder
 import tri.ai.core.EmbeddingModel
 import tri.ai.prompt.PromptDef
 import tri.ai.prompt.PromptTemplate
-import tri.promptfx.AiChatEngine
+import tri.ai.core.AiChatEngine
+import tri.ai.core.execute
 import tri.promptfx.PromptFxGlobals.lookupPrompt
-import tri.promptfx.execute
 import tri.promptfx.ui.chunk.TextChunkViewModel
 import tri.util.fine
 import tri.util.ml.ClusterService

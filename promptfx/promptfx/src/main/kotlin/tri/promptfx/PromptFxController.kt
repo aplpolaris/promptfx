@@ -22,6 +22,7 @@ package tri.promptfx
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.Controller
+import tri.ai.core.AiChatEngine
 import tri.ai.core.AiModelProvider
 import tri.ai.embedding.EmbeddingStrategy
 import tri.ai.openai.OpenAiPlugin

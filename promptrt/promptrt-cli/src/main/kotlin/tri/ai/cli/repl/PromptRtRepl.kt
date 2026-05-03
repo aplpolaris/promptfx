@@ -26,10 +26,13 @@ import org.jline.reader.UserInterruptException
 import org.jline.reader.impl.history.DefaultHistory
 import org.jline.terminal.TerminalBuilder
 import tri.ai.cli.config.PromptRtConfig
+import tri.ai.core.AiChatEngine
 import tri.ai.core.AiModelProvider
 import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
+import tri.ai.core.allChatEngines
+import tri.ai.core.chatEngine
 import tri.ai.core.agent.AgentEventPrinter
 import tri.ai.memory.HelperPersona
 import tri.ai.pips.ExecEvent
@@ -148,11 +151,12 @@ class PromptRtRepl(private val config: PromptRtConfig) {
     }
 
     private fun printModels() {
-        val chat = AiModelProvider.chatModels()
+        val engines = AiModelProvider.allChatEngines()
         val embed = AiModelProvider.embeddingModels()
-        println("${ANSI_CYAN}─── chat models (${chat.size}) ────────────────────${ANSI_RESET}")
-        chat.forEach { m ->
-            println("  ${m.modelId}")
+        println("${ANSI_CYAN}─── chat models (${engines.size}) ────────────────────${ANSI_RESET}")
+        engines.forEach { e ->
+            val tag = if (e is AiChatEngine.Multimodal) " ${ANSI_GRAY}[multimodal]${ANSI_RESET}" else ""
+            println("  ${e.modelId}$tag")
         }
         if (embed.isNotEmpty()) {
             println("${ANSI_CYAN}─── embedding models (${embed.size}) ──────────────${ANSI_RESET}")
@@ -169,7 +173,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         } else {
             plugins.forEach { p -> println("  ${p.javaClass.simpleName}") }
             println()
-            println("  ${ANSI_GRAY}Total chat models: ${AiModelProvider.chatModels().size}${ANSI_RESET}")
+            println("  ${ANSI_GRAY}Total chat models: ${AiModelProvider.allChatEngines().size}${ANSI_RESET}")
             println("  ${ANSI_GRAY}Total embedding models: ${AiModelProvider.embeddingModels().size}${ANSI_RESET}")
         }
         println("${ANSI_CYAN}────────────────────────────────────────${ANSI_RESET}")
@@ -226,10 +230,10 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         if (state.toolsEnabled)  { handleAgentChat(userInput); return }
 
         val model = try {
-            AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
+            AiModelProvider.chatEngine(state.effectiveModel).asTextChat()
         } catch (e: NoSuchElementException) {
             printError("Model '${state.effectiveModel}' not found. Available: ${
-                AiModelProvider.chatModels().map { it.modelId }.joinToString()
+                AiModelProvider.allChatEngines().map { it.modelId }.joinToString()
             }")
             return
         }
@@ -269,7 +273,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             return
         }
         val model = try {
-            AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
+            AiModelProvider.chatEngine(state.effectiveModel).asTextChat()
         } catch (e: NoSuchElementException) {
             printError("Model '${state.effectiveModel}' not found.")
             return

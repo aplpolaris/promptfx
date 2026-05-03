@@ -15,6 +15,12 @@
     <description>Command-line utilities for AI workflows.</description>
 
     <dependencies>
+        <!-- Pin to SNAPSHOT so AiChatEngine (added in 0.16.1) is on the compile classpath -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>promptkt-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-docs</artifactId>
@@ -104,22 +110,25 @@
 
     <build>
         <plugins>
-            <!-- create executable jar -->
+            <!-- create executable fat jar, using shade to merge META-INF/services files from all provider JARs -->
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
