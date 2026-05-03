@@ -29,6 +29,8 @@ import tri.ai.cli.config.PromptRtConfig
 import tri.ai.core.AiModelProvider
 import tri.ai.core.MChatRole
 import tri.ai.core.TextChatMessage
+import tri.ai.memory.HelperPersona
+import tri.ai.memory.MemoryItem
 import tri.ai.prompt.trace.AiOutput
 import tri.util.ANSI_CYAN
 import tri.util.ANSI_GRAY
@@ -90,7 +92,16 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             is ReplCommand.SystemPrompt -> { state.systemPrompt = cmd.text; printInfo("system prompt updated") }
             is ReplCommand.Stream  -> { state.streamEnabled = cmd.on; printInfo("stream: ${cmd.on}") }
             is ReplCommand.JsonMode -> { state.jsonMode = cmd.on; printInfo("json: ${cmd.on}") }
-            is ReplCommand.Memory  -> printInfo("[stub] /memory not yet wired")
+            is ReplCommand.Memory -> {
+                state.memoryEnabled = cmd.on
+                if (cmd.on) {
+                    try { state.getOrCreateMemory() }
+                    catch (e: Exception) { printError("Memory init failed: ${e.message}"); state.memoryEnabled = false; return }
+                } else {
+                    state.botMemory = null
+                }
+                printInfo("memory: ${cmd.on}")
+            }
             is ReplCommand.Rag     -> printInfo("[stub] /rag not yet wired")
             is ReplCommand.Tools   -> printInfo("[stub] /tools not yet wired")
             is ReplCommand.Batch   -> printInfo("[stub] /batch not yet wired")
@@ -142,7 +153,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
     }
 
     private fun handleChat(userInput: String) {
-        if (state.memoryEnabled) { printInfo("[stub] /memory not yet wired"); return }
+        if (state.memoryEnabled) { handleMemoryChat(userInput); return }
         if (state.ragEnabled)    { printInfo("[stub] /rag not yet wired"); return }
         if (state.toolsEnabled)  { printInfo("[stub] /tools not yet wired"); return }
 
@@ -180,6 +191,38 @@ class PromptRtRepl(private val config: PromptRtConfig) {
 
         // Trim history to prevent unbounded growth
         while (state.history.size > 40) state.history.removeAt(0)
+    }
+
+    private fun handleMemoryChat(userInput: String) {
+        val memory = try {
+            state.getOrCreateMemory()
+        } catch (e: Exception) {
+            printError("Memory unavailable: ${e.message}")
+            return
+        }
+        val model = try {
+            AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
+        } catch (e: NoSuchElementException) {
+            printError("Model '${state.effectiveModel}' not found.")
+            return
+        }
+        runBlocking {
+            try {
+                val userItem = MemoryItem(MChatRole.User, userInput)
+                memory.addChat(userItem)
+                val contextHistory = memory.buildContextualConversationHistory(userItem)
+                    .map { it.toChatMessage() }
+                val sysMsg = listOf(TextChatMessage(MChatRole.System, memory.persona.getSystemMessage()))
+                val response = model.chat(sysMsg + contextHistory).firstValue
+                val msg = (response as AiOutput.ChatMessage).message
+                memory.addChat(MemoryItem(msg))
+                memory.saveMemory(interimSave = true)
+                printInfo("[${state.effectiveModel}]")
+                printResponse(msg.content ?: "")
+            } catch (e: Exception) {
+                printError("Memory chat error: ${e.message}")
+            }
+        }
     }
 
     internal fun printResponse(text: String) = println("$ANSI_LIGHTBLUE$text$ANSI_RESET")

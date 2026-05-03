@@ -21,7 +21,11 @@ package tri.ai.cli.repl
 
 import tri.ai.cli.config.ModePreset
 import tri.ai.cli.config.PromptRtConfig
+import tri.ai.core.AiModelProvider
 import tri.ai.core.TextChatMessage
+import tri.ai.memory.BotMemory
+import tri.ai.memory.BotPersona
+import tri.ai.memory.HelperPersona
 
 /**
  * Mutable live state for the duration of a REPL session.
@@ -46,11 +50,23 @@ class SessionState private constructor(
     var seed: Int?,
     val history: MutableList<TextChatMessage>
 ) {
+    var botMemory: BotMemory? = null
+
     val effectiveModel: String
         get() = modelOverride ?: activeMode.resolvedModel
 
     fun applyModelOverride(id: String) {
         modelOverride = id
+    }
+
+    fun getOrCreateMemory(persona: BotPersona = HelperPersona("Assistant")): BotMemory {
+        if (botMemory == null) {
+            val chatModel = AiModelProvider.chatModels().first { it.modelId == effectiveModel }
+            val embeddingModel = AiModelProvider.embeddingModels().first()
+            botMemory = BotMemory(persona, chatModel, embeddingModel)
+            botMemory!!.initMemory()
+        }
+        return botMemory!!
     }
 
     fun switchMode(preset: ModePreset) {
@@ -63,6 +79,7 @@ class SessionState private constructor(
         streamEnabled = preset.streamOn
         systemPrompt = preset.system
         history.clear()
+        botMemory = null
     }
 
     fun reset(config: PromptRtConfig) {
