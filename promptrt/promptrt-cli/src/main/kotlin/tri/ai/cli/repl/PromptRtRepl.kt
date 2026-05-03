@@ -28,8 +28,11 @@ import org.jline.terminal.TerminalBuilder
 import tri.ai.cli.config.PromptRtConfig
 import tri.ai.core.AiModelProvider
 import tri.ai.core.MChatRole
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
+import tri.ai.core.agent.AgentEventPrinter
 import tri.ai.memory.HelperPersona
+import tri.ai.pips.ExecEvent
 import tri.ai.memory.MemoryItem
 import tri.ai.prompt.trace.AiOutput
 import tri.util.ANSI_CYAN
@@ -118,7 +121,11 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                     printInfo("rag: on (${state.ragPath})")
                 }
             }
-            is ReplCommand.Tools   -> printInfo("[stub] /tools not yet wired")
+            is ReplCommand.Tools   -> {
+                state.toolsEnabled = cmd.on
+                if (!cmd.on) state.agentSession = null
+                printInfo("tools: ${cmd.on}")
+            }
             is ReplCommand.Batch   -> printInfo("[stub] /batch not yet wired")
             is ReplCommand.Chat    -> handleChat(cmd.text)
         }
@@ -170,7 +177,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
     private fun handleChat(userInput: String) {
         if (state.memoryEnabled) { handleMemoryChat(userInput); return }
         if (state.ragEnabled)    { handleRagChat(userInput); return }
-        if (state.toolsEnabled)  { printInfo("[stub] /tools not yet wired"); return }
+        if (state.toolsEnabled)  { handleAgentChat(userInput); return }
 
         val model = try {
             AiModelProvider.chatModels().first { it.modelId == state.effectiveModel }
@@ -258,6 +265,36 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 printResponse(result.finalResult.toString())
             } catch (e: Exception) {
                 printError("RAG error: ${e.message}")
+            }
+        }
+    }
+
+    private fun handleAgentChat(userInput: String) {
+        val session = state.getOrCreateAgentSession()
+        runBlocking {
+            try {
+                val message = MultimodalChatMessage.text(MChatRole.User, userInput)
+                val op = state.agentApi.sendMessage(session, message)
+                op.events.collect { event ->
+                    when (event) {
+                        is ExecEvent.UsingTool ->
+                            printInfo("$ANSI_GRAY⚙ [tool] ${event.toolName}: ${event.input}$ANSI_RESET")
+                        is ExecEvent.ToolResult ->
+                            printInfo("$ANSI_GRAY  → [result] ${event.toolName}: ${event.result}$ANSI_RESET")
+                        is ExecEvent.Reasoning ->
+                            printInfo("$ANSI_GRAY  ∴ [reasoning] ${event.reasoning}$ANSI_RESET")
+                        is ExecEvent.Response -> {
+                            val responseText = event.response.message.content?.firstOrNull()?.text ?: "[No response]"
+                            printInfo("[${state.effectiveModel}]")
+                            printResponse(responseText)
+                        }
+                        is ExecEvent.Error ->
+                            printError("Agent error: ${event.error.message}")
+                        else -> { /* ignore task lifecycle, progress, streaming tokens, user echo */ }
+                    }
+                }
+            } catch (e: Exception) {
+                printError("Agent error: ${e.message}")
             }
         }
     }

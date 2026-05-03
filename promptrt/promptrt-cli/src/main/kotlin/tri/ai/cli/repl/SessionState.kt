@@ -24,7 +24,11 @@ import tri.ai.cli.config.ModePreset
 import tri.ai.cli.config.PromptRtConfig
 import tri.ai.cli.createQaDriver
 import tri.ai.core.AiModelProvider
+import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
+import tri.ai.core.agent.AgentChatConfig
+import tri.ai.core.agent.AgentChatSession
+import tri.ai.core.agent.api.DefaultAgentChatAPI
 import tri.ai.memory.BotMemory
 import tri.ai.memory.BotPersona
 import tri.ai.memory.HelperPersona
@@ -56,12 +60,27 @@ class SessionState private constructor(
 ) {
     var botMemory: BotMemory? = null
     var ragDriver: LocalDocumentQaDriver? = null
+    var agentSession: AgentChatSession? = null
+    internal val agentApi = DefaultAgentChatAPI()
 
     val effectiveModel: String
         get() = modelOverride ?: activeMode.resolvedModel
 
     fun applyModelOverride(id: String) {
         modelOverride = id
+    }
+
+    fun getOrCreateAgentSession(): AgentChatSession {
+        if (agentSession == null) {
+            val config = AgentChatConfig(
+                modelId = effectiveModel,
+                systemMessage = systemPrompt,
+                temperature = temperature,
+                enableTools = true
+            )
+            agentSession = agentApi.createSession(config)
+        }
+        return agentSession!!
     }
 
     fun getOrCreateRagDriver(): LocalDocumentQaDriver? {
@@ -104,6 +123,7 @@ class SessionState private constructor(
         botMemory = null
         ragDriver?.close()
         ragDriver = null
+        agentSession = null
     }
 
     fun reset(config: PromptRtConfig) {
