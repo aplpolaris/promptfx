@@ -30,7 +30,7 @@ import tornadofx.*
 import tri.ai.process.pdf.PdfMetadataGuesser
 import tri.ai.text.chunks.TextDoc
 import tri.ai.text.chunks.TextDocMetadata
-import tri.promptfx.AiChatEngine
+import tri.ai.core.AiChatEngine
 import tri.promptfx.AiProgressView
 import tri.promptfx.PromptFxController
 import tri.promptfx.ui.docs.TextLibraryViewModel.Companion.mergeIn

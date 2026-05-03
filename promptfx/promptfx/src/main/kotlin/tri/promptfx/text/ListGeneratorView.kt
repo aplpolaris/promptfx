@@ -29,8 +29,8 @@ import tornadofx.*
 import tri.ai.core.CompletionBuilder
 import tri.ai.core.CompletionBuilder.Companion.JSON_MAPPER
 import tri.ai.pips.AiTaskBuilder
-import tri.promptfx.AiChatEngine
-import tri.promptfx.execute
+import tri.ai.core.AiChatEngine
+import tri.ai.core.execute
 import tri.promptfx.taskPlan
 import tri.ai.prompt.PromptTemplate.Companion.INPUT
 import tri.ai.prompt.trace.AiExecInfo

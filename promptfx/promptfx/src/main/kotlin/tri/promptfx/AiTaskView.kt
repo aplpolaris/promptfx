@@ -38,6 +38,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.runBlocking
 import tornadofx.*
+import tri.ai.core.AiChatEngine
 import tri.ai.core.EmbeddingModel
 import tri.ai.pips.*
 import tri.ai.prompt.trace.*

@@ -23,8 +23,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import tri.ai.core.AiChatEngine
 import tri.ai.openai.OpenAiChat
-import tri.promptfx.AiChatEngine
 import tri.ai.pips.AiWorkflowExecutor
 import tri.ai.core.tool.ExecContext
 import tri.ai.openai.OpenAiModelIndex

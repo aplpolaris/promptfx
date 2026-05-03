@@ -42,6 +42,8 @@ import kotlin.system.exitProcess
  */
 class SimpleChatCli : CliktCommand(name = "chat-simple") {
 
+    // DEPRECATED: use `promptrt` REPL instead. Scheduled for deletion after soak period.
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {

@@ -26,7 +26,7 @@ import tornadofx.onChange
 import tri.ai.pips.AiTaskBuilder
 import tri.ai.prompt.trace.AiTaskTrace
 import tri.promptfx.AiPlanTaskView
-import tri.promptfx.execute
+import tri.ai.core.execute
 import tri.promptfx.ui.EditablePromptUi
 import tri.promptfx.ui.PromptResultArea
 import tri.promptfx.ui.checkError
