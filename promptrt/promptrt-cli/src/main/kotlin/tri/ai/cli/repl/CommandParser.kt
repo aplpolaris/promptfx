@@ -34,7 +34,6 @@ object CommandParser {
             "/provider" -> ReplCommand.Provider(arg)
             "/memory"   -> parseToggle(arg) { ReplCommand.Memory(it) }
             "/tools"    -> parseToggle(arg) { ReplCommand.Tools(it) }
-            "/stream"   -> parseToggle(arg) { ReplCommand.Stream(it) }
             "/json"     -> parseToggle(arg) { ReplCommand.JsonMode(it) }
             "/rag"      -> when (arg?.lowercase()) {
                                null  -> ReplCommand.Unknown("/rag requires on, off, or a path")
@@ -46,8 +45,6 @@ object CommandParser {
                            ?: ReplCommand.Unknown("/temp requires a number (e.g. /temp 0.7)")
             "/topp"     -> arg?.toDoubleOrNull()?.let { ReplCommand.TopP(it) }
                            ?: ReplCommand.Unknown("/topp requires a number (e.g. /topp 0.9)")
-            "/seed"     -> arg?.toIntOrNull()?.let { ReplCommand.Seed(it) }
-                           ?: ReplCommand.Unknown("/seed requires an integer")
             "/system"   -> arg?.let { ReplCommand.SystemPrompt(it) }
                            ?: ReplCommand.Unknown("/system requires prompt text")
             "/batch"    -> arg?.let { ReplCommand.Batch(it) }

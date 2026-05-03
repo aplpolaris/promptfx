@@ -81,8 +81,8 @@ class SessionStateTest {
         assertEquals("gpt-4o-mini", s.effectiveModel)  // memory mode model
     }
 
-    @Test fun `stream defaults to true from plain mode`() {
+    @Test fun `effectiveProvider comes from mode`() {
         val s = plainState()
-        assertTrue(s.streamEnabled)
+        assertEquals("OpenAI", s.effectiveProvider)
     }
 }

@@ -29,11 +29,10 @@ class ModePresetTest {
     fun `plain built-in has expected defaults`() {
         val plain = BuiltInModes.PLAIN
         assertEquals("gpt-4o-mini", plain.model)
-        assertEquals("openai", plain.provider)
+        assertEquals("OpenAI", plain.provider)
         assertFalse(plain.memory!!)
         assertFalse(plain.rag!!)
         assertFalse(plain.tools!!)
-        assert(plain.stream!!)
     }
 
     @Test
@@ -41,7 +40,7 @@ class ModePresetTest {
         val partial = ModePreset(name = "custom", model = "gpt-4o")
         val resolved = partial.mergedOnto(BuiltInModes.PLAIN)
         assertEquals("gpt-4o", resolved.model)
-        assertEquals("openai", resolved.provider)   // inherited
+        assertEquals("OpenAI", resolved.provider)   // inherited
         assertFalse(resolved.memory!!)              // inherited
     }
 

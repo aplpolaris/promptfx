@@ -29,13 +29,11 @@ sealed class ReplCommand {
     data class Memory(val on: Boolean) : ReplCommand()
     data class Rag(val on: Boolean, val path: String? = null) : ReplCommand()
     data class Tools(val on: Boolean) : ReplCommand()
-    data class Stream(val on: Boolean) : ReplCommand()
     data class JsonMode(val on: Boolean) : ReplCommand()
 
     // Sampling
     data class Temp(val value: Double) : ReplCommand()
     data class TopP(val value: Double) : ReplCommand()
-    data class Seed(val value: Int) : ReplCommand()
 
     // Prompt
     data class SystemPrompt(val text: String) : ReplCommand()

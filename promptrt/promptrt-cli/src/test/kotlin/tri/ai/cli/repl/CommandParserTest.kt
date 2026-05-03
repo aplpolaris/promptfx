@@ -60,8 +60,8 @@ class CommandParserTest {
     @Test fun `slash temp parses double`() =
         assertEquals(ReplCommand.Temp(0.8), CommandParser.parse("/temp 0.8"))
 
-    @Test fun `slash seed parses int`() =
-        assertEquals(ReplCommand.Seed(42), CommandParser.parse("/seed 42"))
+    @Test fun `slash seed is unknown`() =
+        assertIs<ReplCommand.Unknown>(CommandParser.parse("/seed 42"))
 
     @Test fun `slash status`() =
         assertIs<ReplCommand.Status>(CommandParser.parse("/status"))

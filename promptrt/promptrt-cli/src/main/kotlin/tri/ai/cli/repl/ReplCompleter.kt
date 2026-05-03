@@ -29,7 +29,7 @@ import tri.ai.core.allChatEngines
 
 private val SLASH_COMMANDS = listOf(
     "/mode", "/model", "/provider", "/memory", "/rag", "/tools",
-    "/stream", "/json", "/temp", "/topp", "/seed", "/system",
+    "/json", "/temp", "/topp", "/system",
     "/batch", "/status", "/models", "/providers", "/reset", "/help", "/quit"
 )
 
@@ -56,7 +56,7 @@ class ReplCompleter(private val config: PromptRtConfig) : Completer {
                         .forEach { candidates.add(Candidate(it)) }
                 } catch (_: Exception) { /* provider not available, skip */ }
 
-            words[0] in listOf("/memory", "/tools", "/stream", "/json") ->
+            words[0] in listOf("/memory", "/tools", "/json") ->
                 listOf("on", "off")
                     .filter { it.startsWith(word) }
                     .forEach { candidates.add(Candidate(it)) }

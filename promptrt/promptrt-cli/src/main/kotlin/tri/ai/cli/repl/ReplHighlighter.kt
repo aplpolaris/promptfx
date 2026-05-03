@@ -27,7 +27,7 @@ import org.jline.utils.AttributedStyle
 
 private val KNOWN_COMMANDS = setOf(
     "/mode", "/model", "/provider", "/memory", "/rag", "/tools",
-    "/stream", "/json", "/temp", "/topp", "/seed", "/system",
+    "/json", "/temp", "/topp", "/system",
     "/batch", "/status", "/models", "/providers", "/reset", "/help", "/quit"
 )
 

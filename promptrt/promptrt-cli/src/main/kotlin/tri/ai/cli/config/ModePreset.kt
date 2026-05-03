@@ -27,7 +27,6 @@ data class ModePreset(
     val rag: Boolean? = null,
     val ragPath: String? = null,
     val tools: Boolean? = null,
-    val stream: Boolean? = null,
     val system: String? = null
 ) {
     fun mergedOnto(base: ModePreset): ModePreset = ModePreset(
@@ -38,7 +37,6 @@ data class ModePreset(
         rag = rag ?: base.rag,
         ragPath = ragPath ?: base.ragPath,
         tools = tools ?: base.tools,
-        stream = stream ?: base.stream,
         system = system ?: base.system
     )
 
@@ -48,18 +46,16 @@ data class ModePreset(
     val memoryOn get() = memory ?: false
     val ragOn get() = rag ?: false
     val toolsOn get() = tools ?: false
-    val streamOn get() = stream ?: true
 }
 
 object BuiltInModes {
     val PLAIN = ModePreset(
         name = "plain",
         model = "gpt-4o-mini",
-        provider = "openai",
+        provider = "OpenAI",
         memory = false,
         rag = false,
         tools = false,
-        stream = true,
         system = null
     )
     val MEMORY = ModePreset(name = "memory", model = "gpt-4o-mini", memory = true)

@@ -83,14 +83,22 @@ suspend fun CompletionBuilder.execute(engine: AiChatEngine): tri.ai.prompt.trace
 
 /**
  * Resolves a model ID to an [AiChatEngine], checking [TextChat] models first, then [MultimodalChat] models.
- * This allows multimodal-only models (e.g. gpt-4o, Claude 3, Gemini) to be used as text chat engines.
+ * An optional [providerHint] narrows the search to models from a specific source (case-insensitive).
+ * If [providerHint] matches no model the search falls back to any provider.
  * Throws [NoSuchElementException] if no model with the given ID is found.
  */
-fun AiModelProvider.Companion.chatEngine(modelId: String): AiChatEngine {
+fun AiModelProvider.Companion.chatEngine(modelId: String, providerHint: String? = null): AiChatEngine {
     val (parsedId, parsedSource) = AiModelProvider.parseModelId(modelId)
-    fun matches(m: AiModel) = m.modelId == parsedId && (parsedSource.isEmpty() || m.modelSource == parsedSource)
-    chatModels().firstOrNull { matches(it) }?.let { return AiChatEngine.from(it) }
-    multimodalModels().firstOrNull { matches(it) }?.let { return AiChatEngine.from(it) }
+    val source = parsedSource.ifEmpty { providerHint }
+    fun exact(m: AiModel) = m.modelId == parsedId && (source.isNullOrEmpty() || m.modelSource.equals(source, ignoreCase = true))
+    fun loose(m: AiModel) = m.modelId == parsedId
+    // Try provider-scoped match first, then fall back to any provider
+    chatModels().firstOrNull { exact(it) }?.let { return AiChatEngine.from(it) }
+    multimodalModels().firstOrNull { exact(it) }?.let { return AiChatEngine.from(it) }
+    if (!source.isNullOrEmpty()) {
+        chatModels().firstOrNull { loose(it) }?.let { return AiChatEngine.from(it) }
+        multimodalModels().firstOrNull { loose(it) }?.let { return AiChatEngine.from(it) }
+    }
     throw NoSuchElementException("No chat or multimodal model found with id '$modelId'")
 }
 

@@ -24,17 +24,18 @@ import tri.ai.cli.config.ModePreset
 import tri.ai.cli.config.PromptRtConfig
 import tri.ai.cli.createQaDriver
 import tri.ai.core.AiModelProvider
+import tri.ai.core.MChatVariation
 import tri.ai.core.MultimodalChatMessage
+import tri.ai.core.TextChat
 import tri.ai.core.TextChatMessage
-import tri.ai.core.chatEngine
 import tri.ai.core.agent.AgentChatConfig
 import tri.ai.core.agent.AgentChatSession
 import tri.ai.core.agent.api.DefaultAgentChatAPI
+import tri.ai.core.chatEngine
 import tri.ai.memory.BotMemory
 import tri.ai.memory.BotPersona
 import tri.ai.memory.HelperPersona
 import tri.ai.text.docs.LocalDocumentQaDriver
-import kotlin.io.path.Path
 
 /**
  * Mutable live state for the duration of a REPL session.
@@ -43,6 +44,7 @@ import kotlin.io.path.Path
  * - [switchMode] switches the full preset AND clears history (and the model override).
  * - [reset] restores the default mode from config and clears all overrides.
  * - [effectiveModel] prefers [modelOverride] over the mode's model.
+ * - [effectiveProvider] returns the active mode's provider; used as a hint when resolving models.
  */
 class SessionState private constructor(
     var activeMode: ModePreset,
@@ -51,12 +53,10 @@ class SessionState private constructor(
     var ragEnabled: Boolean,
     var ragPath: String?,
     var toolsEnabled: Boolean,
-    var streamEnabled: Boolean,
     var jsonMode: Boolean,
     var systemPrompt: String?,
     var temperature: Double,
     var topP: Double?,
-    var seed: Int?,
     val history: MutableList<TextChatMessage>
 ) {
     var botMemory: BotMemory? = null
@@ -67,9 +67,18 @@ class SessionState private constructor(
     val effectiveModel: String
         get() = modelOverride ?: activeMode.resolvedModel
 
+    val effectiveProvider: String
+        get() = activeMode.resolvedProvider
+
+    val chatVariation: MChatVariation
+        get() = MChatVariation(temperature = temperature, topP = topP)
+
     fun applyModelOverride(id: String) {
         modelOverride = id
     }
+
+    fun resolveChat(): TextChat =
+        AiModelProvider.chatEngine(effectiveModel, effectiveProvider).asTextChat()
 
     fun getOrCreateAgentSession(): AgentChatSession {
         if (agentSession == null) {
@@ -103,7 +112,7 @@ class SessionState private constructor(
 
     fun getOrCreateMemory(persona: BotPersona = HelperPersona("Assistant")): BotMemory {
         if (botMemory == null) {
-            val chatModel = AiModelProvider.chatEngine(effectiveModel).asTextChat()
+            val chatModel = resolveChat()
             val embeddingModel = AiModelProvider.embeddingModels().first()
             botMemory = BotMemory(persona, chatModel, embeddingModel)
             botMemory!!.initMemory()
@@ -118,7 +127,6 @@ class SessionState private constructor(
         ragEnabled = preset.ragOn
         ragPath = preset.ragPath
         toolsEnabled = preset.toolsOn
-        streamEnabled = preset.streamOn
         systemPrompt = preset.system
         history.clear()
         botMemory = null
@@ -141,12 +149,10 @@ class SessionState private constructor(
                 ragEnabled = mode.ragOn,
                 ragPath = mode.ragPath,
                 toolsEnabled = mode.toolsOn,
-                streamEnabled = mode.streamOn,
                 jsonMode = false,
                 systemPrompt = mode.system,
                 temperature = 0.7,
                 topP = null,
-                seed = null,
                 history = mutableListOf()
             )
         }

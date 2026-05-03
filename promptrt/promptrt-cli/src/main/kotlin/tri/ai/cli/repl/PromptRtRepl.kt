@@ -32,7 +32,6 @@ import tri.ai.core.MChatRole
 import tri.ai.core.MultimodalChatMessage
 import tri.ai.core.TextChatMessage
 import tri.ai.core.allChatEngines
-import tri.ai.core.chatEngine
 import tri.ai.core.agent.AgentEventPrinter
 import tri.ai.memory.HelperPersona
 import tri.ai.pips.ExecEvent
@@ -42,6 +41,7 @@ import tri.util.ANSI_GRAY
 import tri.util.ANSI_LIGHTBLUE
 import tri.util.ANSI_RED
 import tri.util.ANSI_RESET
+import tri.util.ANSI_YELLOW
 import java.io.File
 
 class PromptRtRepl(private val config: PromptRtConfig) {
@@ -96,14 +96,12 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 else { state.applyModelOverride(cmd.id); printInfo("model: ${cmd.id}") }
             }
             is ReplCommand.Provider -> {
-                if (cmd.name == null) printInfo("provider: ${AiModelProvider.defaultPlugin.modelSource()}  (use /provider <name> to switch)")
+                if (cmd.name == null) printInfo("provider: ${state.effectiveProvider}  (use /provider <name> to switch)")
                 else printInfo("[stub] /provider switching not yet wired — use /model <id> to select a specific model")
             }
             is ReplCommand.Temp    -> { state.temperature = cmd.value; printInfo("temperature: ${cmd.value}") }
             is ReplCommand.TopP    -> { state.topP = cmd.value; printInfo("top-p: ${cmd.value}") }
-            is ReplCommand.Seed    -> { state.seed = cmd.value; printInfo("seed: ${cmd.value}") }
             is ReplCommand.SystemPrompt -> { state.systemPrompt = cmd.text; printInfo("system prompt updated") }
-            is ReplCommand.Stream  -> { state.streamEnabled = cmd.on; printInfo("stream: ${cmd.on}") }
             is ReplCommand.JsonMode -> { state.jsonMode = cmd.on; printInfo("json: ${cmd.on}") }
             is ReplCommand.Memory -> {
                 state.memoryEnabled = cmd.on
@@ -157,21 +155,25 @@ class PromptRtRepl(private val config: PromptRtConfig) {
 
     private fun printModels() {
         val engines = AiModelProvider.allChatEngines()
-        val byProvider = engines.groupBy { it.modelSource }
+        val bySource = engines.groupBy { it.modelSource }
         val embed = AiModelProvider.embeddingModels()
         println("${ANSI_CYAN}--- chat models (${engines.size}) ---${ANSI_RESET}")
-        byProvider.forEach { (source, models) ->
-            println("${ANSI_CYAN}  [$source]${ANSI_RESET}")
+        bySource.forEach { (source, models) ->
+            val sourceSelected = source.equals(state.effectiveProvider, ignoreCase = true)
+            val sourceLabel = if (sourceSelected) "$ANSI_YELLOW[$source]$ANSI_RESET" else "${ANSI_CYAN}[$source]$ANSI_RESET"
+            println("  $sourceLabel")
             models.forEach { e ->
+                val isActive = e.modelId == state.effectiveModel && sourceSelected
                 val tag = if (e is AiChatEngine.Multimodal) " ${ANSI_GRAY}[mm]${ANSI_RESET}" else ""
-                println("    ${e.modelId}$tag")
+                if (isActive) println("    $ANSI_YELLOW* ${e.modelId}$ANSI_RESET$tag")
+                else          println("    ${e.modelId}$tag")
             }
         }
         if (embed.isNotEmpty()) {
-            val embedByProvider = embed.groupBy { it.modelSource }
+            val embedBySource = embed.groupBy { it.modelSource }
             println("${ANSI_CYAN}--- embedding models (${embed.size}) ---${ANSI_RESET}")
-            embedByProvider.forEach { (source, models) ->
-                println("${ANSI_CYAN}  [$source]${ANSI_RESET}")
+            embedBySource.forEach { (source, models) ->
+                println("${ANSI_CYAN}  [$source]$ANSI_RESET")
                 models.forEach { println("    ${it.modelId}") }
             }
         }
@@ -179,19 +181,30 @@ class PromptRtRepl(private val config: PromptRtConfig) {
     }
 
     private fun printProviders() {
-        val plugins = AiModelProvider.orderedPlugins
-        println("${ANSI_CYAN}--- providers (${plugins.size}) ---${ANSI_RESET}")
-        if (plugins.isEmpty()) {
+        val allEngines = AiModelProvider.allChatEngines()
+        val allEmbed = AiModelProvider.embeddingModels()
+        val sources = (allEngines.map { it.modelSource } + allEmbed.map { it.modelSource }).toSortedSet()
+        if (sources.isEmpty()) {
             printError("No providers loaded. Check API key environment variables.")
-        } else {
-            plugins.forEach { p ->
-                val chatCount = AiModelProvider.allChatEngines().count { it.modelSource == p.modelSource() }
-                val embedCount = AiModelProvider.embeddingModels().count { it.modelSource == p.modelSource() }
-                println("  ${p.modelSource()}  ${ANSI_GRAY}(${p.javaClass.simpleName}, $chatCount chat, $embedCount embedding)${ANSI_RESET}")
+            return
+        }
+        println("${ANSI_CYAN}--- providers (${sources.size}) ---${ANSI_RESET}")
+        val selected = state.effectiveProvider
+        val sorted = sources.sortedWith(compareBy(
+            { !it.equals(selected, ignoreCase = true) },
+            { it.lowercase() }
+        ))
+        sorted.forEach { source ->
+            val chatCount = allEngines.count { it.modelSource == source }
+            val embedCount = allEmbed.count { it.modelSource == source }
+            val isSelected = source.equals(selected, ignoreCase = true)
+            val isEmpty = chatCount == 0 && embedCount == 0
+            val counts = "${ANSI_GRAY}($chatCount chat, $embedCount embedding)${ANSI_RESET}"
+            when {
+                isEmpty     -> println("  ${ANSI_GRAY}$source  $counts${ANSI_RESET}")
+                isSelected  -> println("  $ANSI_YELLOW* $source$ANSI_RESET  $counts")
+                else        -> println("  $source  $counts")
             }
-            println()
-            println("  ${ANSI_GRAY}Total chat models: ${AiModelProvider.allChatEngines().size}${ANSI_RESET}")
-            println("  ${ANSI_GRAY}Total embedding models: ${AiModelProvider.embeddingModels().size}${ANSI_RESET}")
         }
         println("${ANSI_CYAN}---${ANSI_RESET}")
     }
@@ -205,12 +218,10 @@ class PromptRtRepl(private val config: PromptRtConfig) {
               /memory <on|off>    toggle memory
               /rag <on|off|path>  toggle RAG
               /tools <on|off>     toggle tool use
-              /stream <on|off>    toggle streaming
               /json <on|off>      toggle JSON output mode
               /system <text>      set system prompt
               /temp <n>           set temperature
               /topp <n>           set top-p
-              /seed <n>           set sampling seed
               /batch <file>       run a batch job
               /status             show current session config
               /models             list available models
@@ -231,11 +242,9 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         statusLine("memory:",   state.memoryEnabled.toString())
         statusLine("rag:",      if (state.ragEnabled) "on${if (state.ragPath != null) " (${state.ragPath})" else ""}" else "off")
         statusLine("tools:",    state.toolsEnabled.toString())
-        statusLine("stream:",   state.streamEnabled.toString())
         statusLine("json:",     state.jsonMode.toString())
         statusLine("temp:",     state.temperature.toString())
         statusLine("top-p:",    state.topP?.toString() ?: "default")
-        statusLine("seed:",     state.seed?.toString() ?: "none")
         statusLine("system:",   state.systemPrompt ?: "none")
         statusLine("history:",  "${state.history.size} messages")
         println("${ANSI_CYAN}---${ANSI_RESET}")
@@ -247,7 +256,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
         if (state.toolsEnabled)  { handleAgentChat(userInput); return }
 
         val model = try {
-            AiModelProvider.chatEngine(state.effectiveModel).asTextChat()
+            state.resolveChat()
         } catch (e: NoSuchElementException) {
             printError("Model '${state.effectiveModel}' not found. Available: ${
                 AiModelProvider.allChatEngines().map { it.modelId }.joinToString()
@@ -266,7 +275,11 @@ class PromptRtRepl(private val config: PromptRtConfig) {
 
         val response = runBlocking {
             try {
-                model.chat(messages)
+                model.chat(
+                    messages,
+                    variation = state.chatVariation,
+                    requestJson = if (state.jsonMode) true else null
+                )
             } catch (e: Exception) {
                 printError("Model error: ${e.message}")
                 null
@@ -290,7 +303,7 @@ class PromptRtRepl(private val config: PromptRtConfig) {
             return
         }
         val model = try {
-            AiModelProvider.chatEngine(state.effectiveModel).asTextChat()
+            state.resolveChat()
         } catch (e: NoSuchElementException) {
             printError("Model '${state.effectiveModel}' not found.")
             return
@@ -302,7 +315,11 @@ class PromptRtRepl(private val config: PromptRtConfig) {
                 val contextHistory = memory.buildContextualConversationHistory(userItem)
                     .map { it.toChatMessage() }
                 val sysMsg = listOf(TextChatMessage(MChatRole.System, memory.persona.getSystemMessage()))
-                val responseText = model.chat(sysMsg + contextHistory).firstValue.textContent(ifNone = "")
+                val responseText = model.chat(
+                    sysMsg + contextHistory,
+                    variation = state.chatVariation,
+                    requestJson = if (state.jsonMode) true else null
+                ).firstValue.textContent(ifNone = "")
                 val msg = TextChatMessage(MChatRole.Assistant, responseText)
                 memory.addChat(MemoryItem(msg))
                 memory.saveMemory(interimSave = true)

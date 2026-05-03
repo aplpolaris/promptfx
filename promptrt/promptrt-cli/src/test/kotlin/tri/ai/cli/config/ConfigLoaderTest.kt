@@ -65,7 +65,6 @@ class ConfigLoaderTest {
         assertEquals("claude-3-5-sonnet", resolved.model)
         assertEquals("anthropic", resolved.provider)
         assertTrue(resolved.memoryOn)
-        assertTrue(resolved.streamOn)  // inherited from plain
     }
 
     @Test
