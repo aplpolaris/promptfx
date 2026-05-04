@@ -19,34 +19,34 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-core</artifactId>
-            <version>${project.version}</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-docs</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-mcp</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptex-pips</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-gemini</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>promptkt-provider-openai</artifactId>
-            <version>0.16.0</version>
+            <version>0.16.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -126,13 +126,79 @@
                             <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>tri.ai.cli.PromptRt</mainClass>
+                                </transformer>
                             </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- generate promptrt / promptrt.bat launch scripts alongside the fat jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-launch-scripts</id>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <echo file="${project.build.directory}/promptrt" append="false">#!/bin/sh
+exec java -jar "$(dirname "$0")/${project.build.finalName}-jar-with-dependencies.jar" "$@"
+</echo>
+                                <echo file="${project.build.directory}/promptrt.bat" append="false">@echo off
+java -jar "%~dp0${project.build.finalName}-jar-with-dependencies.jar" %*
+</echo>
+                                <chmod file="${project.build.directory}/promptrt" perm="755"/>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- run: mvn package -Pinstall-local -DskipTests  (from promptrt/ directory) -->
+        <profile>
+            <id>install-local</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>install-local-scripts</id>
+                                <phase>package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${user.home}/.local/lib/promptrt"/>
+                                        <mkdir dir="${user.home}/.local/bin"/>
+                                        <copy overwrite="true"
+                                              file="${project.build.directory}/${project.build.finalName}-jar-with-dependencies.jar"
+                                              todir="${user.home}/.local/lib/promptrt"/>
+                                        <echo file="${user.home}/.local/bin/promptrt" append="false">#!/bin/sh
+exec java -jar "${user.home}/.local/lib/promptrt/${project.build.finalName}-jar-with-dependencies.jar" "$@"
+</echo>
+                                        <echo file="${user.home}/.local/bin/promptrt.bat" append="false">@echo off
+java -jar "%USERPROFILE%\.local\lib\promptrt\${project.build.finalName}-jar-with-dependencies.jar" %*
+</echo>
+                                        <chmod file="${user.home}/.local/bin/promptrt" perm="755"/>
+                                        <echo>Installed to ${user.home}/.local/bin/promptrt</echo>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
