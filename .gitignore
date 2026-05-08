@@ -13,6 +13,7 @@ dependency-reduced-pom.xml
 .idea/
 .gradle/
 .claude/
+.worktrees/
 
 # Compiled class file
 *.class
